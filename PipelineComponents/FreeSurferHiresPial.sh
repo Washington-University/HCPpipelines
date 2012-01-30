@@ -39,16 +39,23 @@ T2="$mridir"/T2w_hires.nii.gz
 #fslmaths $mridir/invT2w_hires.masked.norm.nii.gz -uthr 110 $mridir/invT2w_hires.masked.norm.nii.gz
 #mri_convert $mridir/invT2w_hires.masked.norm.nii.gz $mridir/invT2w_hires.masked.norm.mgz 
 
-#"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 invT2w_hires.masked.norm CP10101_v1 lh
-#"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 invT2w_hires.masked.norm CP10101_v1 rh
+#"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 invT2w_hires.masked.norm "$SubjectID" lh
+#"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 invT2w_hires.masked.norm "$SubjectID" rh
 
-"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm CP10101_v1 lh
-"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm CP10101_v1 rh
+"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm "$SubjectID" lh
+"$PipelineComponents"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm "$SubjectID" rh
+
+#mri_surf2surf --s $SubjectID --sval-xyz pial --reg $reg "$mridir"/T1w_hires.nii.gz --tval-xyz --tval pial.hires --hemi lh
+#mri_surf2surf --s $SubjectID --sval-xyz pial --reg $reg "$mridir"/T1w_hires.nii.gz --tval-xyz --tval pial.hires --hemi rh
+
+cp $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2
+cp $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2
+
 
 #"$PipelineComponents"/mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 2 -surface "$surfdir"/lh.white.deformed identity.nofile -surface "$surfdir"/rh.white.deformed identity.nofile $mridir/T1w_hires.masked.mgz $mridir/T1w_hires.masked.norm.pial.mgz
 
-"$PipelineComponents"/mris_make_surfaces -nsigma_above 2 -nsigma_below 1.25 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID lh
-"$PipelineComponents"/mris_make_surfaces -nsigma_above 2 -nsigma_below 1.25 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID rh
+"$PipelineComponents"/mris_make_surfaces -nsigma_above 3 -nsigma_below 1.25 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID lh
+"$PipelineComponents"/mris_make_surfaces -nsigma_above 3 -nsigma_below 1.25 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID rh
 
 #"$PipelineComponents"/mris_make_surfaces_bugged -nsigma_above 1.25 -nsigma_below 2 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID lh
 #"$PipelineComponents"/mris_make_surfaces_bugged -nsigma_above 1.25 -nsigma_below 2 -sdir $SUBJECTS_DIR -orig white.deformed -nowhite -sdir $SUBJECTS_DIR -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.masked.norm -output .T2 $SubjectID rh

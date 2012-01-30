@@ -15,6 +15,8 @@ applywarp --interp=spline -i "$T1wImage" -r "$T1wImageFile"_1mm.nii.gz --premat=
 #Initial Recon-all Steps
 recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -autorecon1 -autorecon2 -nosmooth2 -noinflate2
 
+#recon-all -subjid $SubjectID -sd $SubjectDIR -white 
+
 #Highres white stuff and Fine Tune T2w to T1w Reg
 "$PipelineComponents"/FreeSurferHiresWhite.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$PipelineComponents" 
 

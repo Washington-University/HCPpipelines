@@ -140,10 +140,12 @@ for Hemisphere in L R ; do
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
     Type=`echo "$Types" | cut -d " " -f $i`
-    Secondary=`echo "$Type" cut -d "@" -f 2`
-    Type=`echo "$Type" cut -d "@" -f 1`
-    if [ ! -z $Secondary ] ; then
+    Secondary=`echo "$Type" | cut -d "@" -f 2`
+    Type=`echo "$Type" | cut -d "@" -f 1`
+    if [ ! $Secondary = $Type ] ; then
       Secondary=`echo " -surface-secondary-type ""$Secondary"`
+    else
+      Secondary=""
     fi
     caret_command -file-convert -sc -is CARET "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type $Type$Secondary
@@ -193,10 +195,12 @@ for Hemisphere in L R ; do
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
     Type=`echo "$Types" | cut -d " " -f $i`
-    Secondary=`echo "$Type" cut -d "@" -f 2`
-    Type=`echo "$Type" cut -d "@" -f 1`
-    if [ ! -z $Secondary ] ; then
+    Secondary=`echo "$Type" | cut -d "@" -f 2`
+    Type=`echo "$Type" | cut -d "@" -f 1`
+    if [ ! $Secondary = $Type ] ; then
       Secondary=`echo " -surface-secondary-type ""$Secondary"`
+    else
+      Secondary=""
     fi
     caret_command -file-convert -sc -is CARET "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.coord.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii -os GS "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii $Structure -surface-type $Type$Secondary
@@ -251,14 +255,16 @@ for Hemisphere in L R ; do
   done
   caret_command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec CLOSEDtopo_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii
   caret_command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec SPHERICALcoord_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".sphere."$DownSampleNameI"k_fs_LR.coord.gii
-  caret_command -surface-generate-inflated "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".midthickness."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec -output-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".inflated."$DownSampleNameI"k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".very_inflated."$DownSampleNameI"k_fs_LR.coord.gii
+  caret_command -surface-generate-inflated "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".midthickness."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -iterations-scale 0.75 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec -output-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".inflated."$DownSampleNameI"k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".very_inflated."$DownSampleNameI"k_fs_LR.coord.gii
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
     Type=`echo "$Types" | cut -d " " -f $i`
-    Secondary=`echo "$Type" cut -d "@" -f 2`
-    Type=`echo "$Type" cut -d "@" -f 1`
-    if [ ! -z $Secondary ] ; then
+    Secondary=`echo "$Type" | cut -d "@" -f 2`
+    Type=`echo "$Type" | cut -d "@" -f 1`
+    if [ ! $Secondary = $Type ] ; then
       Secondary=`echo " -surface-secondary-type ""$Secondary"`
+    else
+      Secondary=""
     fi
     caret_command -file-convert -sc -is CARET "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -os GS "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii $Structure -surface-type $Type$Secondary

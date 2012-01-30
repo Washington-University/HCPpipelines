@@ -54,10 +54,10 @@ echo "useRealRAS 1" >> $SubjectDIR/$SubjectID/scripts/control.hires.dat
 # the ventricles). Note that this *requires* at least one control point be put in by the user.
 # This is fixable but I haven't gotten a chance to yet.
 #"$PipelineComponents"/mri_normalize -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 2 -surface $SubjectDIR/$s/surf/$hemi.white.hires identity.nofile $hires    ${hires:r}.norm.mgz
-dim=`fslval $hires pixdim3`
-dim=`echo "scale=2; $var / 1" | bc -l`
+#dim=`fslval $hires pixdim3`
+#dim=`echo "scale=2; $var / 1" | bc -l`
 
-"$PipelineComponents"/mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 0$dim -surface "$surfdir"/lh.white.hires identity.nofile -surface "$surfdir"/rh.white.hires identity.nofile $mridir/T1w_hires.masked.mgz $mridir/T1w_hires.masked.norm.mgz
+"$PipelineComponents"/mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 1 -surface "$surfdir"/lh.white.hires identity.nofile -surface "$surfdir"/rh.white.hires identity.nofile $mridir/T1w_hires.masked.mgz $mridir/T1w_hires.masked.norm.mgz
 
 
 #deform the surfaces
