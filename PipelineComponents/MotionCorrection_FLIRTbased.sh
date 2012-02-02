@@ -14,6 +14,12 @@ OutputfMRIFile=`basename "$OutputfMRI"`
 #Do motion correction
 "$PipelineComponents"/mcflirt_acc "$InputfMRI" "$WorkingDirectory"/"$OutputfMRIFile" "$Scout"
 mv "$WorkingDirectory"/"$OutputfMRIFile"/mc.par "${WorkingDirectory}/${OutputfMRIFile}.par"
+if [ ! -e $OutputMotionMatrixFolder ] ; then
+  mkdir $OutputMotionMatrixFolder
+else 
+  rm -r $OutputMotionMatrixFolder
+  mkdir $OutputMotionMatrixFolder
+fi
 mv "$WorkingDirectory"/"$OutputfMRIFile"/* $OutputMotionMatrixFolder
 mv "$WorkingDirectory"/"$OutputfMRIFile".nii.gz "$OutputfMRI".nii.gz
 DIR=`pwd`
