@@ -42,8 +42,8 @@ OutputMNIT2wImage="T2w"
 OutputMNIT2wImageRestore="T2w_restore"
 OutputMNIT2wImageRestoreBrain="T2w_restore_brain"
 OutputOrigT1wToT1w="OrigT1w2T1w.nii.gz"
-OutputOrigT1wToStandard="OrigT2w2standard.nii.gz"
-OutputOrigT2wToT1w="OrigT1w2T2w.nii.gz"
+OutputOrigT1wToStandard="OrigT1w2standard.nii.gz" #File was OrigT2w2standard.nii.gz, regnerate and apply matrix
+OutputOrigT2wToT1w="OrigT2w2T1w.nii.gz" #mv OrigT1w2T2w.nii.gz OrigT2w2T1w.nii.gz
 OutputOrigT2wToStandard="OrigT2w2standard.nii.gz"
 BiasFieldOutput="BiasField"
 
