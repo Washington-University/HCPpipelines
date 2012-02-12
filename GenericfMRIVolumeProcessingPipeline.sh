@@ -19,6 +19,7 @@ PipelineComponents="${15}"
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
+T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
 T1wFolder="T1w" #Location of T1w images
 AtlasSpaceFolder="MNINonLinear"
 ResultsFolder="Results"
@@ -72,9 +73,11 @@ mkdir "$fMRIFolder"/FieldMapPreProcessing
 ##"$PipelineComponents"/DistortionCorrectionAndEPIToT1wReg_FugueAndFreeSurferBBRbasedVSM.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FugueAndFreeSurferBBRbasedVSM "$fMRIFolder"/"$OutputNameOffMRI"_mc "$ScoutFolder"/"$ScoutInputName" "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$FreeSurferBrainMask" "$FieldMapImageFolder"/"$FieldMapOutputName" "$FieldMapImageFolder"/"$MagnitudeOutputName" "$FieldMapImageFolder"/"$MagnitudeBrainOutputName" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" 
 
 #EPI Distortion Correction and EPI to T1w Registration
-rm -r "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+if [ -e "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
+  rm -r "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+fi
 mkdir "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-"$PipelineComponents"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutInputName" "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$FreeSurferBrainMask" "$fMRIFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" 
+"$PipelineComponents"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutInputName" "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$fMRIFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" 
 
 #One Step Resampling
 mkdir "$fMRIFolder"/OneStepResampling

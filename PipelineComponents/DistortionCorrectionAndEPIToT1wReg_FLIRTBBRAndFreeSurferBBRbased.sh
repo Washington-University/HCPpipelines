@@ -1,28 +1,27 @@
 WorkingDirectory="$1"
 ScoutInputName="$2"
 T1wImage="$3"
-T1wRestoreImage="$4"
-T1wBrainImage="$5"
-FieldMap="$6"
-Magnitude="$7"
-MagnitudeBrain="$8"
-DwellTime="$9"
-UnwarpDir="${10}"
-OutputTransform="${11}"
-BiasField="${12}"
-RegOutput="${13}"
-FreeSurferSubjectFolder="${14}"
-FreeSurferSubjectID="${15}"
+T1wBrainImage="$4"
+FieldMap="$5"
+Magnitude="$6"
+MagnitudeBrain="$7"
+DwellTime="$8"
+UnwarpDir="$9"
+OutputTransform="${10}"
+BiasField="${11}"
+RegOutput="${12}"
+FreeSurferSubjectFolder="${13}"
+FreeSurferSubjectID="${14}"
 
 ScoutInputFile=`basename $ScoutInputName`
-T1wRestoreImageFile=`basename $T1wRestoreImage`
+T1wBrainImageFile=`basename $T1wBrainImage`
 FieldMapFile=`basename $FieldMap`
 MagnitudeBrainFile=`basename $MagnitudeBrain`
 
 
-fslmaths "$T1wRestoreImage" -mas "$T1wBrainImage" "$T1wRestoreImage"_brain_fs
-cp "$T1wRestoreImage"_brain_fs.nii.gz "$WorkingDirectory"/"$T1wRestoreImageFile"_brain_fs.nii.gz
-epi_reg "$ScoutInputName" "$T1wImage" "$WorkingDirectory"/"$T1wRestoreImageFile"_brain_fs "$WorkingDirectory"/"$ScoutInputFile"_undistorted "$FieldMap" "$Magnitude" "$MagnitudeBrain" "$DwellTime" "$UnwarpDir"
+#fslmaths "$T1wRestoreImage" -mas "$T1wBrainImage" "$T1wRestoreImage"_brain_fs
+cp "$T1wBrainImage".nii.gz "$WorkingDirectory"/"$T1wBrainImageFile"_brain_fs.nii.gz
+epi_reg "$ScoutInputName" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile_brain_fs" "$WorkingDirectory"/"$ScoutInputFile"_undistorted "$FieldMap" "$Magnitude" "$MagnitudeBrain" "$DwellTime" "$UnwarpDir"
 applywarp --interp=spline -i "$ScoutInputName" -r "$T1wImage" -w "$WorkingDirectory"/"$ScoutInputFile"_undistorted_warp.nii.gz -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted_1vol.nii.gz
 fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted_1vol.nii.gz -div "$BiasField" "$WorkingDirectory"/"$ScoutInputFile"_undistorted_1vol.nii.gz
 mv "$WorkingDirectory"/"$ScoutInputFile"_undistorted_1vol.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_init.nii.gz 
