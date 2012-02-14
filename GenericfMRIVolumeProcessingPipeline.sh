@@ -77,7 +77,7 @@ if [ -e "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBB
   rm -r "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 fi
 mkdir "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-"$PipelineComponents"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutInputName" "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$fMRIFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" 
+"$PipelineComponents"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutInputName" "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$fMRIFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$fMRIFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" 
 
 #One Step Resampling
 mkdir "$fMRIFolder"/OneStepResampling

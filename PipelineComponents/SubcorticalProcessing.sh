@@ -11,7 +11,9 @@ SmoothingFWHM="$8"
 
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
-flirt -interp nearestneighbour -usesqform -in "$AtlasParcellation" -ref "$AtlasSpaceFolder"/wmparc."$FinalfMRIResolution" -applyxfm -out "$ROIFolder"/Atlas_wmparc."$FinalfMRIResolution"
+if [ ! -e "$ROIFolder"/Atlas_wmparc."$FinalfMRIResolution".nii.gz ] ; then
+  flirt -interp nearestneighbour -usesqform -in "$AtlasParcellation" -ref "$AtlasSpaceFolder"/wmparc."$FinalfMRIResolution" -applyxfm -out "$ROIFolder"/Atlas_wmparc."$FinalfMRIResolution"
+fi
 gunzip "$VolumefMRI".nii.gz
 fslmaths "$VolumefMRI".nii -sub "$VolumefMRI".nii "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
 fslmaths "$VolumefMRI".nii -sub "$VolumefMRI".nii "$VolumefMRI"_Subcortical_s"$SmoothingFWHM".nii.gz
@@ -24,9 +26,13 @@ i=1
 #One Loop to Rule Them All
 for Structure in $Structures ; do
   FreeSurferNumber=`echo "$FreeSurferNumberSTRING" | cut -d " " -f $i`
-  fslmaths "$AtlasSpaceFolder"/wmparc."$FinalfMRIResolution" -thr $FreeSurferNumber -uthr $FreeSurferNumber -bin "$ROIFolder"/"$Structure"."$FinalfMRIResolution"
-  fslmaths "$ROIFolder/"Atlas_wmparc."$FinalfMRIResolution" -thr $FreeSurferNumber -uthr $FreeSurferNumber -bin "$ROIFolder"/Atlas_"$Structure"."$FinalfMRIResolution"
-
+  if [ ! -e "$ROIFolder"/"$Structure"."$FinalfMRIResolution".nii.gz ] ; then
+    fslmaths "$AtlasSpaceFolder"/wmparc."$FinalfMRIResolution" -thr $FreeSurferNumber -uthr $FreeSurferNumber -bin "$ROIFolder"/"$Structure"."$FinalfMRIResolution"
+  fi
+  if [ ! -e "$ROIFolder"/Atlas_"$Structure"."$FinalfMRIResolution".nii.gz ] ; then
+    fslmaths "$ROIFolder/"Atlas_wmparc."$FinalfMRIResolution" -thr $FreeSurferNumber -uthr $FreeSurferNumber -bin "$ROIFolder"/Atlas_"$Structure"."$FinalfMRIResolution"
+  fi
+  
   caret_command -volume-roi-smoothing "$VolumefMRI".nii "$ROIFolder"/"$Structure"."$FinalfMRIResolution".nii.gz "$WorkingDirectory"/temp.nii $Sigma
   fslmaths "$VolumefMRI"_Subcortical_s"$SmoothingFWHM".nii.gz -add "$WorkingDirectory"/temp.nii "$VolumefMRI"_Subcortical_s"$SmoothingFWHM".nii.gz
   rm "$WorkingDirectory"/temp.nii      
