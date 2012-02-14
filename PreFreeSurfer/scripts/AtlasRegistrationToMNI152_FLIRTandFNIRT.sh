@@ -1,3 +1,5 @@
+#!/bin/bash -e
+
 WorkingDirectory="$1"
 T1wImage="$2"
 T1wRestore="$3"

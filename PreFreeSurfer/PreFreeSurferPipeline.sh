@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #Input Variables
 StudyFolder="$1" #Path to subject's data

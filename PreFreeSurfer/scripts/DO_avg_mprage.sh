@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 crop=yes;
 if [ X$1 = "X-n" ] ; then

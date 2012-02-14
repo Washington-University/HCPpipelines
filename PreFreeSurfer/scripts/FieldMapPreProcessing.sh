@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 FieldMapImageFolder="$1"
 MagnitudeInputName="$2"
