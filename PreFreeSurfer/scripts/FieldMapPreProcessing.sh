@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+echo -e "\n FieldMapPreProc"
+
 FieldMapImageFolder="$1"
 MagnitudeInputName="$2"
 FieldMapInputName="$3"
@@ -18,4 +20,5 @@ fslmaths "$FieldMapImageFolder"/"$FieldMapOutputName"_UnWrapped.nii.gz -div $TE 
 FieldMapMean=`fslstats "$FieldMapImageFolder"/"$FieldMapOutputName" -M` #Determine if there is a non-zero field map mean (i.e. a bulk translation)
 fslmaths "$FieldMapImageFolder"/"$FieldMapOutputName" -sub $FieldMapMean -mas "$FieldMapImageFolder"/"$MagnitudeBrainOutputName".nii.gz -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM "$FieldMapImageFolder"/"$FieldMapOutputName" #Remove non-zero field map mean to avoid bulk translation
 
+echo -e "\n END: FieldMapPreProc"
 

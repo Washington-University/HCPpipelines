@@ -25,6 +25,7 @@ T1wSampleSpacing="${21}"
 T2wSampleSpacing="${22}"
 UnwarpDir="${23}"
 PipelineComponents="${24}" #Location where the pipeline modules are
+Caret5_Command="$25"
 
 #Naming Conventions
 T1wImage="T1w"
@@ -96,7 +97,7 @@ mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
 
 #Bias Field Correction: Calculate bias field using square root of the product of T1w and T2w iamges.  Remove some additional non-brain tissue before dilating and smoothing bias field according to sigma
 mkdir -p "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w 
-"$PipelineComponents"/BiasFieldCorrection_sqrtT1wXT1w.sh "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/BiasField_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_restore "$T1wFolder"/"$T1wImage"_acpc_dc_restore_brain "$T1wFolder"/"$T2wImage"_acpc_dc_restore "$T1wFolder"/"$T2wImage"_acpc_dc_restore_brain
+"$PipelineComponents"/BiasFieldCorrection_sqrtT1wXT1w.sh "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/BiasField_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_restore "$T1wFolder"/"$T1wImage"_acpc_dc_restore_brain "$T1wFolder"/"$T2wImage"_acpc_dc_restore "$T1wFolder"/"$T2wImage"_acpc_dc_restore_brain Caret5_Command
 
 #Atlas Registration to MNI152: FLIRT + FNIRT  #Also applies registration to T1w and T2w images #Consider combining all transforms and recreating files with single resampling steps
 "$PipelineComponents"/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh "$AtlasSpaceFolder" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_restore "$T1wFolder"/"$T1wImage"_acpc_dc_restore_brain "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/"$T2wImage"_acpc_dc_restore "$T1wFolder"/"$T2wImage"_acpc_dc_restore_brain "$T1wTemplate" "$T1wTemplateBrain" "$TemplateMask" "$T1wTemplate2mm" "$Template2mmMask" "$AtlasSpaceFolder"/xfms/acpc_dc2standard.nii.gz "$AtlasSpaceFolder"/xfms/standard2acpc_dc.nii.gz "$AtlasSpaceFolder"/"$T1wImage" "$AtlasSpaceFolder"/"$T1wImage"_restore "$AtlasSpaceFolder"/"$T1wImage"_restore_brain "$AtlasSpaceFolder"/"$T2wImage" "$AtlasSpaceFolder"/"$T2wImage"_restore "$AtlasSpaceFolder"/"$T2wImage"_restore_brain "$FNIRTConfig"

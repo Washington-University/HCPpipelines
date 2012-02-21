@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+echo -e "\n BrainExtrtaction_FNIRT"
+
 WorkingDirectory="$1"
 Input="$2"
 Reference="$3"
@@ -17,8 +19,8 @@ InputFile=`basename $InputFile`;
 flirt -interp spline -dof 12 -in "$Input" -ref "$Reference" -omat "$WorkingDirectory"/roughlin.mat -out "$WorkingDirectory"/"$InputFile"_to_MNI_roughlin.nii.gz -nosearch
 cp "$Reference" "$WorkingDirectory"/MNI08mm.nii.gz
 cp "$Reference2mm" "$WorkingDirectory"/MNI2mm.nii.gz
-gunzip "$WorkingDirectory"/MNI08mm.nii.gz
-gunzip "$WorkingDirectory"/MNI2mm.nii.gz
+gunzip -f "$WorkingDirectory"/MNI08mm.nii.gz
+gunzip -f "$WorkingDirectory"/MNI2mm.nii.gz
 #aff_conv "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/0.8mm_to_2mm.mat wf
 aff_conv wf "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii "$WorkingDirectory"/0.8mm_to_2mm.mat
 gzip "$WorkingDirectory"/MNI08mm.nii
@@ -33,3 +35,4 @@ invwarp --ref="$Input" -w "$WorkingDirectory"/str2standard.nii.gz -o "$WorkingDi
 applywarp --interp=nn --in="$ReferenceMask" --ref="$Input" -w "$WorkingDirectory"/standard2str.nii.gz -o "$OutputBrainMask"
 fslmaths "$Input" -mas "$OutputBrainMask" "$OutputBrainExtractedImage"
 
+echo -e "\n END: BrainExtrtaction_FNIRT"

@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+echo -e "\n ACPCAlignment"
+
 WorkingDirectory="$1"
 Input="$2"
 Reference="$3"
@@ -19,3 +21,4 @@ flirt -interp spline -in "$WorkingDirectory"/maskedfov.nii.gz -ref "$Reference" 
 python "$PipelineComponents"/aff2rigid.py "$WorkingDirectory"/final.mat "$OutputMatrix"
 applywarp --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
+echo -e "\n END: ACPCAlignment"

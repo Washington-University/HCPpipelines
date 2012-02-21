@@ -9,6 +9,7 @@ OutputT1wRestoredImage="$6"
 OutputT1wRestoredBrainImage="$7"
 OutputT2wRestoredImage="$8"
 OutputT2wRestoredBrainImage="$9"
+Caret5_Command="10"
 
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
 BiasFieldSmoothingSigma=5 #Leave this at 5mm for now
@@ -27,7 +28,7 @@ echo $MEAN
 Lower=`echo "$MEAN - ($STD * $Factor)" | bc -l`
 echo $Lower
 fslmaths "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate -thr "$Lower" -bin -ero -mul 255 "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask
-caret_command -volume-remove-islands "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask.nii.gz "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask.nii.gz
+"Caret5_Command"/caret_command -volume-remove-islands "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask.nii.gz "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask.nii.gz
 #Reorient? #There is an error message on the next line, but no problem is detectable, ignoring.
 fslmaths "$WorkingDirectory"/T1wmulT2w_brain_norm.nii.gz -mas "$WorkingDirectory"/T1wmulT2w_brain_norm_modulate_mask.nii.gz -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD -dilD "$WorkingDirectory"/bias_raw.nii.gz -odt float
 fslmaths "$WorkingDirectory"/bias_raw.nii.gz -bin -s "$BiasFieldSmoothingSigma" "$WorkingDirectory"/SmoothNorm_s"$BiasFieldSmoothingSigma".nii.gz

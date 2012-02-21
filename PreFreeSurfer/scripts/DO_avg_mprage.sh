@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+echo -e "\n do_avg_mprage"
+
 crop=yes;
 if [ X$1 = "X-n" ] ; then
   crop=no;
@@ -89,5 +91,5 @@ else
 fi
 $FSLDIR/bin/fslmaths ${im1}_to_half -add ${im2}_to_half -div 2 ${output}
 
-
+echo -e "\n END: do_avg_mprage"
 
