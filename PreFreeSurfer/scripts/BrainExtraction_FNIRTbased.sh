@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-echo -e "\n BrainExtrtaction_FNIRT"
+echo -e "\n START: BrainExtrtaction_FNIRT"
 
 WorkingDirectory="$1"
 Input="$2"

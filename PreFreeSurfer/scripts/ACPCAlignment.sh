@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-echo -e "\n ACPCAlignment"
+echo -e "\n START: ACPCAlignment"
 
 WorkingDirectory="$1"
 Input="$2"

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-echo -e "\n FieldMapPreProc"
+echo -e "\n START: FieldMapPreProc"
 
 FieldMapImageFolder="$1"
 MagnitudeInputName="$2"

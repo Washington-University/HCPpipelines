@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-echo -e "\n do_avg_mprage"
+echo -e "\n START: do_avg_mprage"
 
 crop=yes;
 if [ X$1 = "X-n" ] ; then

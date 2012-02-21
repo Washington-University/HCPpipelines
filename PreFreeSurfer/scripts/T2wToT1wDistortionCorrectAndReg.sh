@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+echo -e "\n START: T2w to T1w Distortion Correction and Registration"
+
 WorkingDirectory="$1"
 T1wImage="$2"
 T1wImageBrain="$3"
@@ -47,7 +49,7 @@ applywarp --interp=spline -i "$T2wImage" -r "$T2wImage" -w "$FieldMapImageFile"2
 applywarp --interp=nn -i "$T2wImageBrain" -r "$T2wImageBrain" -w "$FieldMapImageFile"2"$T2wImageBrainFile"_Warp.nii.gz -o "$T2wImageBrainFile"
 fslmaths "$T2wImageFile" -mas "$T2wImageBrainFile" "$T2wImageBrainFile"
 
-mkdir T2w2T1w
+mkdir -p T2w2T1w
 epi_reg "$T2wImageBrainFile" "$T1wImageFile" "$T1wImageBrainFile" T2w2T1w/T2w_reg
 convertwarp --ref="$T1wImage" --warp1="$FieldMapImageFile"2"$T2wImageBrainFile"_Warp.nii.gz --postmat="$WorkingDirectory"/T2w2T1w/T2w_reg.mat -o T2w2T1w/T2w_dc_reg
 applywarp --interp=spline --in="$T2wImage" --ref="$T1wImage" --warp=T2w2T1w/T2w_dc_reg --out=T2w2T1w/T2w_reg
@@ -55,4 +57,5 @@ fslmaths T2w2T1w/T2w_reg.nii.gz -add 1 T2w2T1w/T2w_reg.nii.gz -odt float
 cp T2w2T1w/T2w_dc_reg.nii.gz "$OutputT2wTransform".nii.gz
 cp T2w2T1w/T2w_reg.nii.gz "$OutputT2wImage".nii.gz
 
+echo -e "\n END: T2w to T1w Distortion Correction and Registration"
 

@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+echo -e "\n START: AtlasRegistration to MNI152"
+
 WorkingDirectory="$1"
 T1wImage="$2"
 T1wRestore="$3"
@@ -34,8 +36,8 @@ applywarp --interp=spline -i "$T1wRestore" -r "$ReferenceBrain" --premat="$Worki
 
 cp "$Reference" "$WorkingDirectory"/MNI08mm.nii.gz
 cp "$Reference2mm" "$WorkingDirectory"/MNI2mm.nii.gz
-gunzip "$WorkingDirectory"/MNI08mm.nii.gz
-gunzip "$WorkingDirectory"/MNI2mm.nii.gz
+gunzip -f "$WorkingDirectory"/MNI08mm.nii.gz
+gunzip -f "$WorkingDirectory"/MNI2mm.nii.gz
 #aff_conv "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat wf
 aff_conv wf "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat
 
@@ -57,3 +59,4 @@ applywarp --interp=spline -i "$T2wRestore" -r "$Reference" -w "$OutputTransform"
 applywarp --interp=nn -i "$T2wRestoreBrain" -r "$Reference" -w "$OutputTransform" -o "$OutputT2wImageRestoreBrain"
 fslmaths "$OutputT2wImageRestore" -mas "$OutputT2wImageRestoreBrain" "$OutputT2wImageRestoreBrain"
 
+echo -e "\n END: AtlasRegistration to MNI152"
