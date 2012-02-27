@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash 
+set -e
 
 echo -e "\n START: T2w to T1w Distortion Correction and Registration"
 

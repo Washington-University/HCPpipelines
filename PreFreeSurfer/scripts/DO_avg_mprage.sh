@@ -1,4 +1,5 @@
-#!/bin/sh -e
+#!/bin/sh 
+set -e
 
 echo -e "\n START: do_avg_mprage"
 

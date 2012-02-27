@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash 
+set -e
 
 #Input Variables
 StudyFolder="$1" #Path to subject's data
@@ -98,7 +99,6 @@ mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
 
 #Bias Field Correction: Calculate bias field using square root of the product of T1w and T2w iamges.  Remove some additional non-brain tissue before dilating and smoothing bias field according to sigma
 mkdir -p "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w 
-echo ""$PipelineComponents"/BiasFieldCorrection_sqrtT1wXT1w.sh "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/BiasField_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_restore "$T1wFolder"/"$T1wImage"_acpc_dc_restore_brain "$T1wFolder"/"$T2wImage"_acpc_dc_restore "$T1wFolder"/"$T2wImage"_acpc_dc_restore_brain "$Caret5_Command""
 "$PipelineComponents"/BiasFieldCorrection_sqrtT1wXT1w.sh "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/BiasField_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_restore "$T1wFolder"/"$T1wImage"_acpc_dc_restore_brain "$T1wFolder"/"$T2wImage"_acpc_dc_restore "$T1wFolder"/"$T2wImage"_acpc_dc_restore_brain "$Caret5_Command"
 
 #Atlas Registration to MNI152: FLIRT + FNIRT  #Also applies registration to T1w and T2w images #Consider combining all transforms and recreating files with single resampling steps
