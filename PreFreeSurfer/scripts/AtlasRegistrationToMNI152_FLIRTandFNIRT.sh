@@ -35,15 +35,16 @@ T1wRestoreBrainFile=`basename $T1wRestoreBrainFile`;
 flirt -interp spline -dof 12 -in "$T1wRestoreBrain" -ref "$ReferenceBrain" -omat "$WorkingDirectory"/xfms/acpc2MNILinear.mat -out "$WorkingDirectory"/xfms/"$T1wRestoreBrainFile"_to_MNILinear
 applywarp --interp=spline -i "$T1wRestore" -r "$ReferenceBrain" --premat="$WorkingDirectory"/xfms/acpc2MNILinear.mat -o "$WorkingDirectory"/xfms/"$T1wRestoreFile"_to_MNILinear
 
-cp "$Reference" "$WorkingDirectory"/MNI08mm.nii.gz
-cp "$Reference2mm" "$WorkingDirectory"/MNI2mm.nii.gz
-gunzip -f "$WorkingDirectory"/MNI08mm.nii.gz
-gunzip -f "$WorkingDirectory"/MNI2mm.nii.gz
+#cp "$Reference" "$WorkingDirectory"/MNI08mm.nii.gz
+#cp "$Reference2mm" "$WorkingDirectory"/MNI2mm.nii.gz
+#gunzip -f "$WorkingDirectory"/MNI08mm.nii.gz
+#gunzip -f "$WorkingDirectory"/MNI2mm.nii.gz
 #aff_conv "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat wf
-aff_conv wf "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat
+#aff_conv wf "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii $FSLDIR/etc/flirtsch/ident.mat "$WorkingDirectory"/MNI08mm.nii "$WorkingDirectory"/MNI2mm.nii "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat
 
-rm "$WorkingDirectory"/MNI08mm.nii
-rm "$WorkingDirectory"/MNI2mm.nii
+#rm "$WorkingDirectory"/MNI08mm.nii
+#rm "$WorkingDirectory"/MNI2mm.nii
+flirt -in "$ReferenceBrain" -ref "$Reference2mm" -usesqform -applyxfm -omat "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat
 convert_xfm -omat "$WorkingDirectory"/xfms/acpc2MNILinear_2mm.mat -concat "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat "$WorkingDirectory"/xfms/acpc2MNILinear.mat
 applywarp --interp=spline -i "$T1wRestore" -r "$Reference2mm" --premat="$WorkingDirectory"/xfms/acpc2MNILinear_2mm.mat -o "$WorkingDirectory"/xfms/"$T1wRestoreFile"_to_MNILinear_2mm.nii.gz
 convert_xfm -omat "$WorkingDirectory"/xfms/2mm_to_0.8mm.mat -inverse "$WorkingDirectory"/xfms/0.8mm_to_2mm.mat
