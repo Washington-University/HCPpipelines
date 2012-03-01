@@ -1,0 +1,46 @@
+# 	name of reference image
+# --ref=/usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz
+--ref=MNI152_T1_2mm
+#	name of file with mask in reference space
+# --refmask=/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz
+--refmask=MNI152_T1_2mm_brain_mask_dil
+#	If =1, use implicit masking based on value in --ref image. Default =1
+--imprefm=1
+#	If =1, use implicit masking based on value in --in image, Default =1
+--impinm=1
+#	Value to mask out in --ref image. Default =0.0
+--imprefval=0
+#	Value to mask out in --in image. Default =0.0
+--impinval=0
+#	sub-sampling scheme, default 4,2,1,1
+--subsamp=4,4,2,2,1,1
+# 	Max # of non-linear iterations, default 5,5,5,5
+--miter=5,5,5,5,5,10
+#	FWHM (in mm) of gaussian smoothing kernel for input volume, default 6,4,2,2
+--infwhm=8,6,5,4.5,3,2
+#	FWHM (in mm) of gaussian smoothing kernel for ref volume, default 4,2,0,0
+--reffwhm=8,6,5,4,2,0
+#	Weigth of membrane energy regularisation, default depending on --ssqlambda and --regmod switches. See user documetation.
+--lambda=300,150,100,50,40,30
+#	Estimate intensity-mapping if set, deafult 1 (true)
+--estint=1,1,1,1,1,0
+#       Apply the mask if set, default 1 (true)
+--applyrefmask=1,1,1,1,1,1 
+#       Apply the mask if set, default 1 (true)
+--applyinmask=1
+#	(approximate) resolution (in mm) of warp basis in x-, y- and z-direction, default 10,10,10
+--warpres=10,10,10
+#	If set (=1), lambda is weighted by current ssq, default 1
+--ssqlambda=1
+#	Model for regularisation of warp-field [membrane_energy bending_energy], default bending_energy
+--regmod=bending_energy
+#	Model for intensity-mapping [none global_linear global_non_linear local_linear global_non_linear_with_bias local_non_linear]
+--intmod=global_non_linear_with_bias
+#	Order of poynomial for mapping intensities, default 5
+--intorder=5
+#	Resolution (in mm) of bias-field modelling local intensities, default 50,50,50
+--biasres=50,50,50
+#	Weight of regularisation for bias-field, default 10000
+--biaslambda=10000
+#	If =1, ref image is used to calculate derivatives. Default =0
+--refderiv=0
