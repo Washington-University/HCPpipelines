@@ -27,7 +27,7 @@ T2wSampleSpacing="${22}"
 UnwarpDir="${23}"
 PipelineComponents="${24}" #Location where the pipeline modules are
 Caret5_Command="${25}"
-# echo "$Caret5_Command"
+GlobalScripts="${26}"
 
 #Naming Conventions
 T1wImage="T1w"
@@ -75,7 +75,7 @@ cd $DIR
 
 #acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
 mkdir -p "$T1wFolder"/ACPCAlignment
-"$PipelineComponents"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$StandardFOVMask" "$PipelineComponents"
+"$PipelineComponents"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$StandardFOVMask" "$GlobalScripts"
 
 #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
 mkdir -p "$T1wFolder"/BrainExtraction_FNIRTbased
@@ -83,7 +83,7 @@ mkdir -p "$T1wFolder"/BrainExtraction_FNIRTbased
 
 #acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
 mkdir -p "$T2wFolder"/ACPCAlignment
-"$PipelineComponents"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$StandardFOVMask" "$PipelineComponents"
+"$PipelineComponents"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$StandardFOVMask" "$GlobalScripts"
 
 #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
 mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
@@ -95,7 +95,7 @@ mkdir -p "$T1wFolder"/FieldMapPreProcessing
 
 #Register T2w image of individual to T1w image of individual linearlly using FLIRT BBR
 mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
-"$PipelineComponents"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$T1wFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$T1wFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$T1wFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc
+"$PipelineComponents"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$T1wFolder"/FieldMapPreProcessing/"$FieldMapOutputName" "$T1wFolder"/FieldMapPreProcessing/"$MagnitudeOutputName" "$T1wFolder"/FieldMapPreProcessing/"$MagnitudeBrainOutputName" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts"
 
 #Bias Field Correction: Calculate bias field using square root of the product of T1w and T2w iamges.  Remove some additional non-brain tissue before dilating and smoothing bias field according to sigma
 mkdir -p "$T1wFolder"/BiasFieldCorrection_sqrtT1wXT1w 

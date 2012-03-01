@@ -19,6 +19,7 @@ OutputT1wImageBrain="${13}"
 OutputT1wTransform="${14}"
 OutputT2wImage="${15}"
 OutputT2wTransform="${16}"
+GlobalScripts="${17}"
 
 MagnitudeBrainImageFile=`basename "$MagnitudeBrainImage"`
 FieldMapImageFile=`basename "$FieldMapImage"`
@@ -51,7 +52,7 @@ applywarp --interp=nn -i "$T2wImageBrain" -r "$T2wImageBrain" -w "$FieldMapImage
 fslmaths "$T2wImageFile" -mas "$T2wImageBrainFile" "$T2wImageBrainFile"
 
 mkdir -p T2w2T1w
-epi_reg "$T2wImageBrainFile" "$T1wImageFile" "$T1wImageBrainFile" T2w2T1w/T2w_reg
+"$GlobalScripts"/epi_reg.sh "$T2wImageBrainFile" "$T1wImageFile" "$T1wImageBrainFile" T2w2T1w/T2w_reg
 convertwarp --ref="$T1wImage" --warp1="$FieldMapImageFile"2"$T2wImageBrainFile"_Warp.nii.gz --postmat="$WorkingDirectory"/T2w2T1w/T2w_reg.mat -o T2w2T1w/T2w_dc_reg
 applywarp --interp=spline --in="$T2wImage" --ref="$T1wImage" --warp=T2w2T1w/T2w_dc_reg --out=T2w2T1w/T2w_reg
 fslmaths T2w2T1w/T2w_reg.nii.gz -add 1 T2w2T1w/T2w_reg.nii.gz -odt float
