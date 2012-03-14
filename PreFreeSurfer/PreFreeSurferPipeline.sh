@@ -1,6 +1,12 @@
 #!/bin/bash 
 set -e
 
+if [ $# -eq 1 ]
+	then
+		echo "Version unknown..."
+		exit 0
+fi
+
 #Input Variables
 StudyFolder="$1" #Path to subject's data
 Subject="$2" #SubjectID
