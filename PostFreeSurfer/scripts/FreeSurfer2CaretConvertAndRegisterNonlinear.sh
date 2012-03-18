@@ -20,6 +20,7 @@ AtlasTransform="${15}"
 InverseAtlasTransform="${16}"
 AtlasSpaceT1wImage="${17}"
 T1wImageBrainMask="${18}"
+PipelineScripts="${19}"
 
 Species="Human"
 
@@ -99,7 +100,7 @@ for Hemisphere in L R ; do
 	echo "$Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type ANATOMICAL"
     $Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type ANATOMICAL
     $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
-    NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform"
+    "$PipelineScripts"/NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform" "$PipelineScripts"
     $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
   done
   #Add some other files to linear spec file and create linear midthickness surface by averaging white and pial surfaces
@@ -162,7 +163,7 @@ for Hemisphere in L R ; do
   cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fsaverage."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii
   #$Caret5_Command -file-convert -sc -is FSS /media/1TB/freesurfer/subjects/fsaverage/surf/"$hemisphere"h."$Surface" -os CARET "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii SPHERICAL CLOSED -struct $hemispherew
 
-
+echo "cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fs_"$Hemisphere"-to-fs_LR_fsaverage."$Hemisphere"_LR.spherical_std.164k_fs_"$Hemisphere".coord "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii"
   cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fs_"$Hemisphere"-to-fs_LR_fsaverage."$Hemisphere"_LR.spherical_std.164k_fs_"$Hemisphere".coord "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii
   $Caret5_Command -surface-sphere "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii
   $Caret5_Command -surface-sphere "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii
@@ -212,6 +213,7 @@ for Hemisphere in L R ; do
   done
 done
 
+echo "$Caret5_Command -surface-create-spheres $DownSampleI "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".R.sphere."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".R."$DownSampleNameI"k_fs_LR.topo.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".L.sphere."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".L."$DownSampleNameI"k_fs_LR.topo.gii"
 $Caret5_Command -surface-create-spheres $DownSampleI "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".R.sphere."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".R."$DownSampleNameI"k_fs_LR.topo.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".L.sphere."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject".L."$DownSampleNameI"k_fs_LR.topo.gii
 
 for Hemisphere in L R ; do
