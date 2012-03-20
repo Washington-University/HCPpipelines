@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# make pipeline engine happy.
 if [ $# -eq 1 ]
 	then
 		echo "Version unknown..."
@@ -15,10 +16,10 @@ DownSampleI="$5"
 DownSampleNameI="$6"
 PipelineScripts="$7"
 PipelineBinaries="$8"
-Caret5_Command="$9"
-Caret7_Command="${10}"
-# Caret7_Command="$PipelineBinaries"/"caret7/wb_command"
-# Caret5_Command="$PipelineBinaries"/"caret5/caret_command"
+GlobalScripts="${9}"
+Caret5_Command="${10}"
+Caret7_Command="${11}"
+
 
 
 #Naming Conventions
@@ -69,7 +70,7 @@ AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
-"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$FinalTemplateSpace"  "$T1wRestoreImage" "$CaretAtlasFolder" "$DownSampleI" "$DownSampleNameI" "$Caret5_Command" "$Caret7_Command" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$T1wImageBrainMask" "$PipelineScripts"
+"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$FinalTemplateSpace"  "$T1wRestoreImage" "$CaretAtlasFolder" "$DownSampleI" "$DownSampleNameI" "$Caret5_Command" "$Caret7_Command" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$T1wImageBrainMask" "$PipelineScripts" "$GlobalScripts"
 
 #Create FreeSurfer ribbon file at full resolution
 "$PipelineScripts"/CreateRibbon.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$Caret5_Command" "$Caret7_Command" "$AtlasSpaceT1wImage" "$T1wRestoreImage"
