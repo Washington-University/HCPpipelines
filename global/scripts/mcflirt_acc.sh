@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 #   Copyright (C) 2004-2011 University of Oxford
 #

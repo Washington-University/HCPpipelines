@@ -23,6 +23,11 @@ T1wImageBrainMask="${18}"
 PipelineScripts="${19}"
 GlobalScripts="${20}"
 
+# # # echo "Caret7: $Caret7_Command"
+# # # echo "Caret5: $Caret5_Command"
+# # # echo "Local: $PipelineScripts"
+# # # echo "Global: $GlobalScripts"
+
 Species="Human"
 
 #Make some folders for this and later scripts
@@ -98,6 +103,7 @@ for Hemisphere in L R ; do
     $Caret5_Command -surface-apply-transformation-matrix "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii -matrix $Matrix
     $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
     $Caret5_Command -file-convert -sc -is CARET "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
+	echo "$Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type ANATOMICAL"
     $Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type ANATOMICAL
     $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
     echo ""$GlobalScripts"/NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform" "$PipelineScripts" "$GlobalScripts" "$Caret5_Command""
