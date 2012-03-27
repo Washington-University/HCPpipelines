@@ -11,17 +11,19 @@ FreeSurferFolder="$6"
 FreeSurferInput="$7"
 FinalTemplateSpace="$8"
 T1wImage="$9"
-CaretAtlasSpaceFolder="${10}"
-DownSampleI="${11}"
-DownSampleNameI="${12}"
-Caret5_Command="${13}"
-Caret7_Command="${14}"
-AtlasTransform="${15}"
-InverseAtlasTransform="${16}"
-AtlasSpaceT1wImage="${17}"
-T1wImageBrainMask="${18}"
-PipelineScripts="${19}"
-GlobalScripts="${20}"
+T2wImage="${10}"
+CaretAtlasSpaceFolder="${11}"
+DownSampleI="${12}"
+DownSampleNameI="${13}"
+Caret5_Command="${14}"
+Caret7_Command="${15}"
+AtlasTransform="${16}"
+InverseAtlasTransform="${17}"
+AtlasSpaceT1wImage="${18}"
+AtlasSpaceT2wImage="${19}"
+T1wImageBrainMask="${20}"
+PipelineScripts="${21}"
+GlobalScripts="${22}"
 
 Species="Human"
 
@@ -87,60 +89,100 @@ for Hemisphere in L R ; do
   #Make caret5 spec files for linear and nonlinearly transformed datasets (in MNI space)
   DIR=`pwd`
   cd "$T1wFolder"/"$NativeFolder"
-    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec
+    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec
   cd $DIR
   cd "$AtlasSpaceFolder"/"$NativeFolder"
-    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec
+    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec
   cd $DIR
   #Convert and volumetrically register white and pial surfaces makign linear and nonlinear copies, add each to the appropriate spec file
   for Surface in white pial ; do
     $Caret5_Command -file-convert -sc -is FSS "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" -os CARET "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii FIDUCIAL CLOSED -struct $hemispherew
     $Caret5_Command -surface-apply-transformation-matrix "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii -matrix $Matrix
+<<<<<<< HEAD
+    $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec FIDUCIALcoord_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
+    "$GlobalScripts"/NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform" "$GlobalScripts" "$Caret5_Command"
+    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
+=======
     $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
     $Caret5_Command -file-convert -sc -is CARET "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
+
     $Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type ANATOMICAL
     $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
     echo ""$GlobalScripts"/NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform" "$PipelineScripts" "$GlobalScripts" "$Caret5_Command""
 	"$GlobalScripts"/NonlinearSurfaceWarpHackGeneric.sh "$StudyFolder"/"$Subject" "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$T1wImage".nii.gz "$FinalTemplateSpace" "$InverseAtlasTransform" "$GlobalScripts" "$Caret5_Command"
     $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
+>>>>>>> 563345d78b4bad06b309628ee102332ee53ab141
   done
   #Add some other files to linear spec file and create linear midthickness surface by averaging white and pial surfaces
-  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec volume_anatomy_file "$T1wFolder"/"$T1wImage".nii.gz
-  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.7.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
-  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec CLOSEDtopo_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/"$T2wImage".nii.gz
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/"$T1wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec CLOSEDtopo_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii
   $Caret5_Command -surface-average "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".pial.native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".white.native.coord.gii
-  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii
-  $Caret5_Command -file-convert -sc -is CARET "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii
-  $Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii $Structure -surface-type ANATOMICAL
-  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec FIDUCIALcoord_file "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii
+  $Caret5_Command -surface-generate-inflated "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec -output-inflated-file-name "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".inflated.native.coord.gii -output-very-inflated-file-name "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".very_inflated.native.coord.gii
+  Types="VERY_INFLATED ANATOMICAL@MIDTHICKNESS ANATOMICAL@GRAY_WHITE ANATOMICAL@PIAL INFLATED SPHERICAL"
+  i=1
+  for Surface in very_inflated midthickness white pial inflated ; do
+    Type=`echo "$Types" | cut -d " " -f $i`
+    Secondary=`echo "$Type" | cut -d "@" -f 2`
+    Type=`echo "$Type" | cut -d "@" -f 1`
+    if [ ! $Secondary = $Type ] ; then
+      Secondary=`echo " -surface-secondary-type ""$Secondary"`
+    else
+      Secondary=""
+    fi
+    $Caret5_Command -file-convert -sc -is CARET "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
+    $Caret7_Command -set-structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type $Type$Secondary
+    $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
+    i=$(($i+1))
+  done
+  
   #Convert original and registered spherical surfaces, make sure they are centered on 0,0,0 and add them to the nonlinear spec file
   for Surface in sphere.reg sphere ; do
     $Caret5_Command -file-convert -sc -is FSS "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" -os CARET "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii SPHERICAL CLOSED -struct $hemispherew
     $Caret5_Command -surface-sphere "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
-    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec SPHERICALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
+    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec SPHERICALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii
   done
   #Add more files to the spec file and convert other FreeSurfer surface data to metric/GIFTI including sulc, curv, and thickness.
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec CLOSEDtopo_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec CLOSEDtopo_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii
   $Caret5_Command -file-convert -fsc2c "$FreeSurferFolder"/surf/"$hemisphere"h.sulc "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec surface_shape_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec surface_shape_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii $Structure
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii MODE_AUTO_SCALE -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii
   $Caret5_Command -file-convert -fsc2c "$FreeSurferFolder"/surf/"$hemisphere"h.thickness "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/temp.shape.gii
   $Caret5_Command -metric-math "$AtlasSpaceFolder"/"$NativeFolder"/temp.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/temp.shape.gii 1 "abs[@1@]"
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/temp.shape.gii 1; rm "$AtlasSpaceFolder"/"$NativeFolder"/temp.shape.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec metric_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec metric_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii $Structure
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii
   $Caret5_Command -file-convert -fsc2c "$FreeSurferFolder"/surf/"$hemisphere"h.curv "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec metric_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec metric_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii $Structure
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+
+  mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h.aparc.annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec paint_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii $Structure
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii
+  mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h.aparc.a2009s.annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec paint_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii $Structure
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii
+  mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h.BA.annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec paint_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii $Structure
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii
+
   #Create nonlinear midthickness surface, add to nonlinear spec file, and generate Caret style inflated surfaces
   $Caret5_Command -surface-average "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".pial.native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".white.native.coord.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii
-  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.spec -output-inflated-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".inflated.native.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".very_inflated.native.coord.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii
+  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec -output-inflated-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".inflated.native.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".very_inflated.native.coord.gii
   Types="VERY_INFLATED ANATOMICAL@MIDTHICKNESS ANATOMICAL@GRAY_WHITE ANATOMICAL@PIAL INFLATED SPHERICAL"
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
@@ -154,15 +196,15 @@ for Hemisphere in L R ; do
     fi
     $Caret5_Command -file-convert -sc -is CARET "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.topo.gii -os GS "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii $Structure -surface-type $Type$Secondary
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii
     i=$(($i+1))
   done
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.7.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
   #Copy fsaverage data to subject's folder, ensure spheres are properly centered
   cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fsaverage."$Hemisphere".closed.164k_fs_"$Hemisphere".topo "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii
   cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fsaverage."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii
-  #$Caret5_Command -file-convert -sc -is FSS /media/1TB/freesurfer/subjects/fsaverage/surf/"$hemisphere"h."$Surface" -os CARET "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".sphere.164k_fs_"$Hemisphere".coord.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii SPHERICAL CLOSED -struct $hemispherew
 
   cp "$CaretAtlasSpaceFolder"/fs_"$Hemisphere"/fs_"$Hemisphere"-to-fs_LR_fsaverage."$Hemisphere"_LR.spherical_std.164k_fs_"$Hemisphere".coord "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii
   $Caret5_Command -surface-sphere "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".164k_fs_"$Hemisphere".topo.gii "$AtlasSpaceFolder"/fsaverage/"$Subject"."$Hemisphere".def_sphere.164k_fs_"$Hemisphere".coord.gii
@@ -181,21 +223,37 @@ for Hemisphere in L R ; do
   #Create and populate fs_LR spec file.  Deform surfaces and other data according to native to fs_LR deformation map.  Regenerate inflated surfaces.
   DIR=`pwd`
   cd $CaretFolder
-      $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec
+      $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec
   cd $DIR
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec CLOSEDtopo_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec SPHERICALcoord_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere.164k_fs_LR.coord.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec CLOSEDtopo_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec SPHERICALcoord_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere.164k_fs_LR.coord.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
   for Surface in white midthickness pial ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map COORDINATE "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.coord.gii 
-    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.coord.gii
+    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.coord.gii
   done
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec surface_shape_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii
-  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii $Structure
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.7.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
-  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".midthickness.164k_fs_LR.coord.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec -output-inflated-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".inflated.164k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".very_inflated.164k_fs_LR.coord.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec surface_shape_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii $Structure 
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.shape.gii
+
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii $Structure 
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.a2009s.164k_fs_LR.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.a2009s.164k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.a2009s.164k_fs_LR.label.gii $Structure 
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.a2009s.164k_fs_LR.label.gii
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".BA.164k_fs_LR.label.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".BA.164k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".BA.164k_fs_LR.label.gii $Structure 
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".BA.164k_fs_LR.label.gii
+  
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".midthickness.164k_fs_LR.coord.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii -iterations-scale 2.5 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec -output-inflated-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".inflated.164k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".very_inflated.164k_fs_LR.coord.gii
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
     Type=`echo "$Types" | cut -d " " -f $i`
@@ -208,7 +266,7 @@ for Hemisphere in L R ; do
     fi
     $Caret5_Command -file-convert -sc -is CARET "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.coord.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.topo.gii -os GS "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii $Structure -surface-type $Type$Secondary
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Surface".164k_fs_LR.surf.gii
     i=$(($i+1))
   done
 done
@@ -240,26 +298,15 @@ for Hemisphere in L R ; do
   #Create downsampled fs_LR spec file.  This is set to 32k for 2mm average node spacing (roughly the fMRI and diffusion data resolutions).  
   DIR=`pwd`
   cd "$AtlasSpaceFolder"
-    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec
+    $Caret5_Command -spec-file-create $Species $Subject $hemispherew OTHER -category Individual -spec-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec
   cd $DIR
-    #$Caret5_Command -spec-file-change-resolution "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.spec "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere" $DownSampleI
-    #rm "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/def_sphere.coord
-    #$Caret5_Command -file-convert -format-convert ASCII "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/def_sphere.deform_map
-    #cat "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/def_sphere.deform_map | sed s@def_sphere.coord@"$Subject"."$Hemisphere".sphere."$DownSampleNameI"k_fs_LR.coord.gii@g | sed s@fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"@fsaverage_LR"$DownSampleNameI"k@g > "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/164k_fs_LR2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map
-    #rm "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/def_sphere.deform_map
-    #if [ ! -e "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k ] ; then
-      #mkdir "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k
-    #fi
-    #cp "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"/* "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k
-    #rm -r "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k_"$Hemisphere"
-  #cd $DIR
   for Surface in white midthickness pial ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map COORDINATE "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.coord.gii 
-    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.coord.gii
+    $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec FIDUCIALcoord_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.coord.gii
   done
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec CLOSEDtopo_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec SPHERICALcoord_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".sphere."$DownSampleNameI"k_fs_LR.coord.gii
-  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".midthickness."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -iterations-scale 0.75 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec -output-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".inflated."$DownSampleNameI"k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".very_inflated."$DownSampleNameI"k_fs_LR.coord.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec CLOSEDtopo_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec SPHERICALcoord_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".sphere."$DownSampleNameI"k_fs_LR.coord.gii
+  $Caret5_Command -surface-generate-inflated "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".midthickness."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -iterations-scale 0.75 -generate-inflated -generate-very-inflated -output-spec "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec -output-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".inflated."$DownSampleNameI"k_fs_LR.coord.gii -output-very-inflated-file-name "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".very_inflated."$DownSampleNameI"k_fs_LR.coord.gii
   i=1
   for Surface in very_inflated midthickness white pial inflated sphere ; do
     Type=`echo "$Types" | cut -d " " -f $i`
@@ -272,15 +319,31 @@ for Hemisphere in L R ; do
     fi
     $Caret5_Command -file-convert -sc -is CARET "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.coord.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.topo.gii -os GS "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii $Structure -surface-type $Type$Secondary
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Surface"."$DownSampleNameI"k_fs_LR.surf.gii
     i=$(($i+1))
   done
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii $Structure
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec surface_shape_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii
-  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.7.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec surface_shape_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.shape.gii
+
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc."$DownSampleNameI"k_fs_LR.label.gii $Structure
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.a2009s.native.label.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc.a2009s."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc.a2009s."$DownSampleNameI"k_fs_LR.label.gii $Structure
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc.a2009s."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".aparc.a2009s."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BA.native.label.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".BA."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".BA."$DownSampleNameI"k_fs_LR.label.gii $Structure
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".BA."$DownSampleNameI"k_fs_LR.label.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".BA."$DownSampleNameI"k_fs_LR.label.gii
+
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$DownSampleNameI"k_fs_LR.c5.spec volume_anatomy_file "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 done
 
 #Remove fsaverage folder as it is no longer needed.
