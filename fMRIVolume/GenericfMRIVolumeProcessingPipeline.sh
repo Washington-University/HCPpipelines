@@ -1,5 +1,11 @@
 #!/bin/bash -e
 
+if [ $# -eq 1 ]
+	then
+		echo "Version unknown..."
+		exit 0
+fi
+
 Path="$1"
 Subject="$2"
 fMRIFolder="$3"

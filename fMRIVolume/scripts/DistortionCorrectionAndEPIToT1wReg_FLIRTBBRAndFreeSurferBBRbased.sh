@@ -54,4 +54,4 @@ fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$ScoutInputFile"_un
 
 cp "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w.nii.gz "$RegOutput".nii.gz
 
-echo -e "\n END: DistortionCorrectionEpiToT1wReg_FLIRTBBRAndFreeSurferBBRBased"
+echo " END: DistortionCorrectionEpiToT1wReg_FLIRTBBRAndFreeSurferBBRBased"
