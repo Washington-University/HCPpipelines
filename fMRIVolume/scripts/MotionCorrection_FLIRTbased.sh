@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/bash -e
+echo -e "\n START: MotionCorrection_FLIRTBased"
 
 WorkingDirectory="$1"
 InputfMRI="$2"
@@ -7,21 +8,22 @@ OutputfMRI="$4"
 OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
-PipelineComponents="$8"
+PipelineScripts="$8"
+GlobalScripts="$9"
 
 OutputfMRIFile=`basename "$OutputfMRI"`
 
 #Do motion correction
-"$PipelineComponents"/mcflirt_acc "$InputfMRI" "$WorkingDirectory"/"$OutputfMRIFile" "$Scout"
-mv "$WorkingDirectory"/"$OutputfMRIFile"/mc.par "${WorkingDirectory}/${OutputfMRIFile}.par"
+"$GlobalScripts"/mcflirt_acc.sh "$InputfMRI" "$WorkingDirectory"/"$OutputfMRIFile" "$Scout"
+mv -f "$WorkingDirectory"/"$OutputfMRIFile"/mc.par "${WorkingDirectory}/${OutputfMRIFile}.par"
 if [ ! -e $OutputMotionMatrixFolder ] ; then
   mkdir $OutputMotionMatrixFolder
 else 
   rm -r $OutputMotionMatrixFolder
   mkdir $OutputMotionMatrixFolder
 fi
-mv "$WorkingDirectory"/"$OutputfMRIFile"/* $OutputMotionMatrixFolder
-mv "$WorkingDirectory"/"$OutputfMRIFile".nii.gz "$OutputfMRI".nii.gz
+mv -f "$WorkingDirectory"/"$OutputfMRIFile"/* $OutputMotionMatrixFolder
+mv -f "$WorkingDirectory"/"$OutputfMRIFile".nii.gz "$OutputfMRI".nii.gz
 DIR=`pwd`
 if [ -e $OutputMotionMatrixFolder ] ; then
   cd $OutputMotionMatrixFolder
@@ -81,3 +83,4 @@ done
 cat $out | sed s/"  "/" "/g > ${out}_
 mv ${out}_ $out
 
+echo "   END: MotionCorrection_FLIRTBased"
