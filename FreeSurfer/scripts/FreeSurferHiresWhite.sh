@@ -15,7 +15,7 @@ surfdir=$SubjectDIR/$SubjectID/surf
 
 reg=$mridir/transforms/hires21mm.dat
 regII=$mridir/transforms/1mm2hires.dat
-cp "$T1wImage" "$mridir"/T1w_hires.nii.gz
+fslmaths "$T1wImage" -abs -add 1 "$mridir"/T1w_hires.nii.gz
 hires="$mridir"/T1w_hires.nii.gz
 
 # generate registration between conformed and hires based on headers
@@ -82,6 +82,7 @@ if [ ! -e "$mridir"/transforms/T2wtoT1w.mat ] ; then
   bbregister --s "$SubjectID" --mov "$T2wImage" --surf white.deformed --init-reg "$mridir"/transforms/eye.dat --t2 --reg "$mridir"/transforms/T2wtoT1w.dat --o "$mridir"/T2w_hires.nii.gz
   tkregister2 --noedit --reg "$mridir"/transforms/T2wtoT1w.dat --mov "$T2wImage" --targ "$mridir"/T1w_hires.nii.gz --fslregout "$mridir"/transforms/T2wtoT1w.mat
   applywarp --interp=spline -i "$T2wImage" -r "$mridir"/T1w_hires.nii.gz --premat="$mridir"/transforms/T2wtoT1w.mat -o "$mridir"/T2w_hires.nii.gz
+  fslmaths "$mridir"/T2w_hires.nii.gz -abs -add 1 "$mridir"/T2w_hires.nii.gz
   fslmaths "$mridir"/T1w_hires.nii.gz -mul "$mridir"/T2w_hires.nii.gz -sqrt "$mridir"/T1wMulT2w_hires.nii.gz
 else
   echo "Warning Reruning FreeSurfer Pipeline"
@@ -104,11 +105,19 @@ mri_surf2surf --s $SubjectID --sval-xyz white.deformed --reg $regII $mridir/orig
 
 cp $SubjectDIR/$SubjectID/surf/lh.curv $SubjectDIR/$SubjectID/surf/lh.curv.prehires
 cp $SubjectDIR/$SubjectID/surf/lh.area $SubjectDIR/$SubjectID/surf/lh.area.prehires
-cp $SubjectDIR/$SubjectID/label/lh.cortex.label $SubjectDIR/$SubjectID/surf/lh.cortex.prehires.label
+cp $SubjectDIR/$SubjectID/label/lh.cortex.label $SubjectDIR/$SubjectID/label/lh.cortex.prehires.label
+cp $SubjectDIR/$SubjectID/surf/rh.curv $SubjectDIR/$SubjectID/surf/rh.curv.prehires
+cp $SubjectDIR/$SubjectID/surf/rh.area $SubjectDIR/$SubjectID/surf/rh.area.prehires
+cp $SubjectDIR/$SubjectID/label/rh.cortex.label $SubjectDIR/$SubjectID/label/rh.cortex.prehires.label
+
 
 cp $SubjectDIR/$SubjectID/surf/lh.curv.deformed $SubjectDIR/$SubjectID/surf/lh.curv
 cp $SubjectDIR/$SubjectID/surf/lh.area.deformed  $SubjectDIR/$SubjectID/surf/lh.area
 cp $SubjectDIR/$SubjectID/label/lh.cortex.deformed.label $SubjectDIR/$SubjectID/label/lh.cortex.label
+cp $SubjectDIR/$SubjectID/surf/rh.curv.deformed $SubjectDIR/$SubjectID/surf/rh.curv
+cp $SubjectDIR/$SubjectID/surf/rh.area.deformed  $SubjectDIR/$SubjectID/surf/rh.area
+cp $SubjectDIR/$SubjectID/label/rh.cortex.deformed.label $SubjectDIR/$SubjectID/label/rh.cortex.label
+
 
 rm $SubjectDIR/$SubjectID/surf/lh.sphere.reg
 rm $SubjectDIR/$SubjectID/surf/rh.sphere.reg

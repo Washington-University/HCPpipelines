@@ -11,7 +11,7 @@ MagnitudeOutputName="$5"
 MagnitudeBrainOutputName="$6"
 TE="$7"
 
-
+echo "fslmaths "$MagnitudeInputName" -Tmean "$FieldMapImageFolder"/"$MagnitudeOutputName".nii.gz"
 fslmaths "$MagnitudeInputName" -Tmean "$FieldMapImageFolder"/"$MagnitudeOutputName".nii.gz
 bet "$FieldMapImageFolder"/"$MagnitudeOutputName".nii.gz "$FieldMapImageFolder"/"$MagnitudeBrainOutputName".nii.gz -f .35 -m #Brain extract the magnitude image
 fslmaths "$FieldMapImageFolder"/"$MagnitudeBrainOutputName".nii.gz -ero "$FieldMapImageFolder"/"$MagnitudeBrainOutputName".nii.gz

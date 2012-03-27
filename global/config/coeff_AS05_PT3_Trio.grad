@@ -1,0 +1,64 @@
+#*[ Script ****************************************************************\
+#
+# Name        : coeff_AS05_PT3.grad
+#
+# Author      : BV_ICE
+#
+# Language    : 
+#
+# Description : Defines Legendre coefficients in spherical harmonics for
+#               Gradient Coil AS05
+#
+#****************************************************************************/
+#* Changed: 08-May-2003; F. Hebrank, MREI-Phys          *********************\
+#
+# Requirement Key: 
+#
+# Description : Creation: coefficients received from Peter Dietz, MRFG1
+#
+#****************************************************************************/
+#* Changed: 18-Aug-2004; H. Werthner, MRES              *********************\
+#
+# Requirement Key: 
+#
+# Description : Copy of coeff_AS05.grad because "Trio a Tim System" gradient coils
+#               are the same as "Avanto" gradient coils (info of Eva Eberlein).
+#
+#****************************************************************************/
+
+#*] END: */
+vision/AS05, Gradientsystem AS05,  Gx,y,z = 40/28 mT/m
+ win_low = 0, win_high = 0, win_algo = 0, win_dummy = 2;
+ 0.25 m = R0,  lnorm = 4? A(1,0) = B(1,1) = A(1,1) = 0;
+ 0 = CoSyMode;
+ Expansion in Spherical Harmonics
+ ================================
+ 
+ NO.  TYPE             SPECTRUM                 AXIS
+
+  1 A( 3, 0)            0.00629                  z
+  2 A( 5, 0)           -0.15349                  z
+  3 A( 7, 0)            0.04859                  z
+  4 A( 9, 0)           -0.00179                  z
+  5 A(11, 0)           -0.00440                  z
+  6 A(13, 0)            0.00196                  z
+101 A( 3, 1)           -0.02504                  x
+102 A( 3, 3)           -0.00728                  x
+103 A( 5, 1)           -0.05383                  x
+104 A( 5, 3)           -0.00130                  x
+105 A( 5, 5)           -0.00285                  x
+106 A( 7, 1)           -0.01046                  x
+107 A( 7, 3)            0.00836                  x
+108 A( 9, 1)            0.01417                  x
+109 A( 9, 3)           -0.00499                  x
+110 A(11, 1)           -0.00517                  x
+201 B( 3, 1)           -0.01427                  y
+202 B( 3, 3)            0.00459                  y
+203 B( 5, 1)           -0.05697                  y
+204 B( 5, 5)           -0.00196                  y
+205 B( 7, 1)           -0.01356                  y
+206 B( 7, 3)           -0.00930                  y
+207 B( 9, 1)            0.01451                  y
+208 B( 9, 3)            0.00516                  y
+209 B(11, 1)           -0.00520                  y
+210 B(11, 3)           -0.00198                  y

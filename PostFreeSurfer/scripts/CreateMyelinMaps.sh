@@ -80,23 +80,35 @@ for Hemisphere in L R ; do
   $Caret5_Command -surface-region-of-interest-selection "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.roi "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.roi -metric "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii 1 0 0 NORMAL -remove-islands -invert-selection -remove-islands -invert-selection
   mv "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.roi "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii
   $Caret5_Command -metric-math "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii 1 "@1@ - 1"
-  $Caret5_Command -metric-roi-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii 1 "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii
+  $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii 1 "$Subject"_"$Hemisphere"_ROI
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii $Structure
-  $Caret5_Command -metric-smoothing "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii DILATE 50 1
+  $Caret7_Command -metric-dilate "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 20 "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
+  #$Caret5_Command -metric-smoothing "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii DILATE 50 1
   $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii 1 "$Subject"_"$Hemisphere"_Thickness
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii $Structure
-  $Caret5_Command -metric-smoothing "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii DILATE 50 1
+  cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
+  #$Caret5_Command -metric-smoothing "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii DILATE 50 1
+  $Caret7_Command -metric-dilate "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 20 "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii 1 "$Subject"_"$Hemisphere"_Curvature
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii $Structure
+  cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
 done
 
 #Run Myelin mapping algorithm
 $Caret5_Command -myelin-mapping "$T1wFolder"/"$Native"/"$Subject".L.midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject".R.midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject".L.native.topo.gii "$T1wFolder"/"$Native"/"$Subject".R.native.topo.gii "$OutputT1wImage".nii.gz "$OutputT2wImage".nii.gz "$T1wFolder"/ribbon.nii.gz "$AtlasSpaceFolder"/"$Native"/"$Subject".L.thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".L.curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".L.MyelinMappingOut.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.MyelinMappingOut.native.func.gii "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -neighbor-depth 10 -number-of-standard-deviations 4 -smoothing-FWHM 5 -volume-outliers 4
+
+#Add myelin mapping evaluation files to native mesh spec file
+$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+$Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w.nii.gz
+$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+$Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
 
 #Break out myelin mapping results into individual files, add them to caret7 spec files, deform them to 164k_fs_LR and 32k_fs_LR
 for Hemisphere in L R ; do
@@ -105,35 +117,43 @@ for Hemisphere in L R ; do
   elif [ $Hemisphere = "R" ] ; then 
     Structure="CORTEX_RIGHT"
   fi
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w.nii.gz
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii $Structure
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 2
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii 1 "$Subject"_"$Hemisphere"_Myelin_Map
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii $Structure
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
+  cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 3
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii 1 "$Subject"_"$Hemisphere"_Smoothed_Myelin_Map
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii $Structure
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
+  cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 4
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii 1 "$Subject"_"$Hemisphere"_corrThickness
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii $Structure
   $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
-  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.7.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
+  cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
+  $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_NEAREST_NODE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii $Structure
   for Map in thickness corrThickness curvature ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii $Structure
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
   done
   for Map in MyelinMap SmoothedMyelinMap ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.func.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii $Structure
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
   done
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_NEAREST_NODE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii $Structure
@@ -141,13 +161,13 @@ for Hemisphere in L R ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii $Structure
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
   done
   for Map in MyelinMap SmoothedMyelinMap ; do
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii $Structure
-    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.7.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
+    $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
   done
 done
 

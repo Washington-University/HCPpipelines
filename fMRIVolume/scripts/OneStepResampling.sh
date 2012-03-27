@@ -1,3 +1,6 @@
+#!/bin/bash -e
+echo -e "\n START: OneStepResampling"
+
 WorkingDirectory="$1"
 InputfMRI="$2"
 T1wImage="$3"
@@ -59,4 +62,5 @@ while [ $k -lt $NumFrames ] ; do
 done
 fslmerge -tr "$OutputfMRI" $FrameMergeSTRING $TR_vol
 
+echo "END: OneStepResampling"
 

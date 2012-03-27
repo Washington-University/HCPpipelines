@@ -1,0 +1,64 @@
+#*[ Script ****************************************************************\
+#
+# Name        : coeff_SC72C.grad
+#
+# Author      : P. DIETZ
+#
+# Language    : 
+#
+# Description : Defines Legendre coefficients in spherical harmonics for
+#               Gradient Coil SC72C
+#
+#****************************************************************************/
+#* Changed: 26-July-2005; H. Werthner MRES **********************************\
+#
+#  Notice, that the 5 lines between the "CoSyMode"-line and the "1 A(...)"-line
+#  will not be read, i. e. if the blank line after " NO.    TYPE ..." is missing,
+#  the first Legendre coefficient line "1 A(...) ..." will not be read!
+#
+#****************************************************************************/
+#* Changed: 15-September-2005; V. Canda MREW ********************************\
+#
+#  Added a new "red"-slice-related parameter BentBz. (Bent Slice Boundary
+#  in Z direction.) All slices outside of the ellipsoid [R0, R0, BentBz]
+#  will be "red", even if the slice sampling poins on the slice say: "green".
+#  This is necessary to make the "red" function monotonous on Espree.
+#
+#  The particular value 0.175m was experimentaly obtained by Ch.Koeglmeier.
+#
+#****************************************************************************/
+
+#*] END: */
+ vision/SC72, Gradientsystem SC72 , Gx,y,z = 70/45 mT/m
+ win_low = 0, win_high = 0, win_algo = 0, win_dummy = 2;
+ 0.20 m = R0, lnorm = 4? A(1,0) = B(1,1) = A(1,1) = 0;
+ 0 = CoSyMode, 
+ Expansion in   Spherical   Harmonics
+ ================================
+
+ NO.    TYPE                  SPECTRUM                                AXIS
+
+  1 A( 3, 0)                 -0.10420                                z
+  2 A( 5, 0)                 -0.04230                                z
+  3 A( 7, 0)                  0.02120                                z
+  4 A( 9, 0)                 -0.00610                                z
+101 A( 3, 1)                 -0.10260                                x
+102 A( 3, 3)                 -0.01515                                x
+103 A( 5, 1)                 -0.03340                                x
+104 A( 5, 3)                 -0.00424                                x
+105 A( 5, 5)                 -0.00329                                x
+106 A( 7, 1)                  0.01022                                x
+107 A( 7, 3)                  0.00572                                x
+108 A( 9, 1)                 -0.00164                                x
+109 A( 9, 3)                 -0.00190                                x
+201 B( 3, 1)                 -0.10098                                y
+202 B( 3, 3)                  0.00277                                y
+203 B( 5, 1)                 -0.03317                                y
+204 B( 5, 3)                  0.00424                                y
+205 B( 5, 5)                  0.00095                                y
+206 B( 7, 1)                  0.01091                                y
+207 B( 7, 3)                 -0.00416                                y
+208 B( 9, 1)                 -0.00191                                y
+209 B( 9, 3)                  0.00130                                y
+                                    
+                                    
