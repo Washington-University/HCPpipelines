@@ -8,8 +8,9 @@ OutputTransform="$5"
 
 DIR=`pwd`
 cd $WorkingDirectory
-gradient_unwarp.py "$InputFile".nii.gz trilinear.nii.gz siemens -g "$InputCoefficents" -n
+fslroi "$InputFile".nii.gz "$InputFile"_vol1.nii.gz 0 1
+gradient_unwarp.py "$InputFile"_vol1.nii.gz trilinear.nii.gz siemens -g "$InputCoefficents" -n
 convertwarp --ref=trilinear.nii.gz --premat=shiftMatrix.mat --warp1=fullWarp.nii.gz --out="$OutputTransform"
-applywarp --interp=spline -i "$InputFile" -r "$InputFile" -w "$OutputTransform" -o "$OutputFile"
+applywarp --interp=spline -i "$InputFile" -r "$InputFile"_vol1.nii.gz -w "$OutputTransform" -o "$OutputFile"
 cd $DIR
 

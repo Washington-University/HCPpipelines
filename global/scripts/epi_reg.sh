@@ -50,15 +50,15 @@ else
 fi
 
 # create the WM segmentation
-#if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
+if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmseg` = 0 ] ; then
     echo "Running FAST segmentation"
     $FSLDIR/bin/fast ${vrefbrain}
     $FSLDIR/bin/fslmaths ${vrefbrain}_pve_2 -thr 0.5 -bin ${vrefbrain}_wmseg
-#fi
+fi
 # make a WM edge map for visualisation (good to overlay in FSLView)
-#if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
+if [ `$FSLDIR/bin/imtest ${vrefbrain}_wmedge` = 0 ] ; then
   $FSLDIR/bin/fslmaths ${vrefbrain}_wmseg -edge -bin -mas ${vrefbrain}_wmseg ${vrefbrain}_wmedge
-#fi
+fi
 
 # do a standard flirt pre-alignment
 echo "FLIRT pre-alignment"

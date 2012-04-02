@@ -63,7 +63,8 @@ function Derive {
       Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "scale=10; ( $Forward - $Back ) / 2" | bc -l`
     fi
-    echo $Answer | sed s/"^\."/"0."/g | sed s/"^-\."/"-0."/g >> $random
+    Answer=`echo $Answer | sed s/"^\."/"0."/g | sed s/"^-\."/"-0."/g`
+    echo `printf "%10.6f" $Answer` >> $random
     j=$(($j + 1))
   done
   paste -d " " $out $random > ${out}_
@@ -72,7 +73,7 @@ function Derive {
 }
 
 in="${WorkingDirectory}/${OutputfMRIFile}.par"
-out="$OutputMotionRegressors"
+out="$OutputMotionRegressors".txt
 cat $in | sed s/"  "/" "/g > $out
 i=1
 while [ $i -le 6 ] ; do
@@ -82,5 +83,7 @@ done
 
 cat $out | sed s/"  "/" "/g > ${out}_
 mv ${out}_ $out
+
+awk -f "$GlobalScripts"/trendout.awk $out > "$OutputMotionRegressors"_dt.txt
 
 echo "   END: MotionCorrection_FLIRTBased"
