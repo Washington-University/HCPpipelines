@@ -157,10 +157,16 @@ mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
 #T2w to T1w Registration and Optional Readout Distortion Correction
 if [ "$AvgrdcSTRING" = "FIELDMAP" ] ; then
   echo "PERFORMING FIELDMAP READOUT DISTORTION CORRECTION"
-  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
-  "$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts"
+  if [ -e "$T2wFolder"/T2wToT1wDistortionCorrectAndReg ] ; then
+    rm -r "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
+  fi
+  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg    
+ "$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts" "$GradientDistortionCoeffs"
 else
-  mkdir -p "$T2wFolder"/T2wToT1wReg
+  if [ -e "$T2wFolder"/T2wToT1wReg ] ; then
+    rm -r "$T2wFolder"/T2wToT1wReg
+  fi
+  mkdir -p "$T2wFolder"/T2wToT1wReg   
   "$PipelineScripts"/T2wToT1wReg.sh "$T2wFolder"/T2wToT1wReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc
 fi  
 

@@ -21,6 +21,7 @@ OutputT1wTransform="${14}"
 OutputT2wImage="${15}"
 OutputT2wTransform="${16}"
 GlobalScripts="${17}"
+GradientDistortionCoeffs="${18}"
 
 T1wImageBrainFile=`basename "$T1wImageBrain"`
 T1wImageFile=`basename "$T1wImage"`
@@ -29,10 +30,11 @@ T2wImageFile=`basename "$T2wImage"`
 
 cd "$WorkingDirectory"
 
-fslmaths "$MagnitudeInputName" -Tmean "$WorkingDirectory"/Magnitude.nii.gz
-bet "$WorkingDirectory"/Magnitude.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz -f .35 -m #Brain extract the magnitude image
-cp "$PhaseInputName".nii.gz "$WorkingDirectory"/Phase.nii.gz
-"$GlobalScripts"/fmrib_prepare_fieldmap.sh SIEMENS "$WorkingDirectory"/Phase.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz "$WorkingDirectory"/FieldMap.nii.gz "$TE"
+if [ ! -e "$WorkingDirectory"/FieldMap ] ; then
+  mkdir "$WorkingDirectory"/FieldMap
+fi
+
+"$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" 
 
 fugue -v -i "$WorkingDirectory"/Magnitude_brain.nii.gz --icorr --unwarpdir="$UnwarpDir" --dwell=$T1wSampleSpacing --loadfmap="$WorkingDirectory"/FieldMap.nii.gz -w "$WorkingDirectory"/Magnitude_brain_warppedT1w
 flirt -dof 6 -in "$WorkingDirectory"/Magnitude_brain_warppedT1w -ref "$T1wImageBrain" -out "$WorkingDirectory"/Magnitude_brain_warppedT1w2"$T1wImageBrainFile" -omat "$WorkingDirectory"/fieldmap2"$T1wImageBrainFile".mat 

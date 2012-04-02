@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 #   Copyright (C) 2004-2011 University of Oxford
 #
@@ -39,6 +39,7 @@ else
   ref=${3}
 fi
 
+pi=$(echo "scale=10; 4*a(1)" | bc -l)
 outputFile=`basename ${output}`
 fslsplit $input ${output}_tmp
 for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
@@ -46,7 +47,18 @@ for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
     echo processing $i >> ${output}.ecclog
     ii=`basename $i | sed s/${outputFile}_tmp/MAT_/g`
     ${FSLDIR}/bin/flirt -in $i -ref $ref -nosearch -dof 6 -o $i -paddingsize 1 -omat ${output}/${ii}.mat >> ${output}.ecclog
-    echo `${FSLDIR}/bin/avscale --allparams ${output}/${ii}.mat | grep "Rotation Angles" | awk '{print $6 " " $7 " " $8}'` `avscale --allparams ${output}/${ii}.mat | grep "Translations" | awk '{print $5 " " $6 " " $7}'` >> ${output}/mc.par
+    mm=`avscale --allparams ${output}/${ii}.mat | grep "Translations" | awk '{print $5 " " $6 " " $7}'`
+    mmx=`echo $mm | cut -d " " -f 1`
+    mmy=`echo $mm | cut -d " " -f 2`
+    mmz=`echo $mm | cut -d " " -f 3`
+    radians=`${FSLDIR}/bin/avscale --allparams ${output}/${ii}.mat | grep "Rotation Angles" | awk '{print $6 " " $7 " " $8}'`
+    radx=`echo $radians | cut -d " " -f 1`
+    degx=`echo "$radx * (180 / $pi)" | bc -l`
+    rady=`echo $radians | cut -d " " -f 2`
+    degy=`echo "$rady * (180 / $pi)" | bc -l`
+    radz=`echo $radians | cut -d " " -f 3`
+    degz=`echo "$radz * (180 / $pi)" | bc -l`
+    echo `printf "%10.6f" $mmx``printf "%10.6f" $mmy``printf "%10.6f" $mmz``printf "%10.6f" $degx``printf "%10.6f" $degy``printf "%10.6f" $degz` >> ${output}/mc.par
 done
 
 ${FSLDIR}/bin/fslmerge -tr $output `${FSLDIR}/bin/imglob ${output}_tmp????.*` $TR

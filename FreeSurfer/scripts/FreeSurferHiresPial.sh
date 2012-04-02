@@ -49,8 +49,8 @@ cp $SubjectDIR/$SubjectID/surf/rh.pial.T2 $SubjectDIR/$SubjectID/surf/rh.pial.pr
 
 fslmaths "$mridir"/T1w_hires.nii.gz -div "$mridir"/T2w_hires.nii.gz -sqrt "$mridir"/T1wDividedByT2w_sqrt.nii.gz
 
-"$PipelineBinaries"/mris_make_surfaces -nsigma_above 3.5 -nsigma_below 0.75 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial.T2 -T2dura $Ratio -T1 T1w_hires.norm -output .Ratio $SubjectID lh
-"$PipelineBinaries"/mris_make_surfaces -nsigma_above 3.5 -nsigma_below 0.75 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial.T2 -T2dura $Ratio -T1 T1w_hires.norm -output .Ratio $SubjectID rh
+"$PipelineBinaries"/mris_make_surfaces -nsigma_above 4 -nsigma_below 0.75 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial.T2 -T2dura $Ratio -T1 T1w_hires.norm -output .Ratio $SubjectID lh
+"$PipelineBinaries"/mris_make_surfaces -nsigma_above 4 -nsigma_below 0.75 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial.T2 -T2dura $Ratio -T1 T1w_hires.norm -output .Ratio $SubjectID rh
 
 #mri_surf2surf --s $SubjectID --sval-xyz pial.T2 --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
 #mri_surf2surf --s $SubjectID --sval-xyz pial.T2 --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi rh
