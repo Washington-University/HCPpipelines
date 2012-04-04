@@ -8,18 +8,14 @@ Input="$2"
 Reference="$3"
 Output="$4"
 OutputMatrix="$5"
-StandardFOV="$6"
-GlobalScripts="$7"
+GlobalScripts="$6"
 
 
-cd "$WorkingDirectory"
-
-flirt -interp spline -in "$Input" -ref "$Reference" -omat "$WorkingDirectory"/initial.mat -out "$WorkingDirectory"/initial.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-convert_xfm -omat "$WorkingDirectory"/initial_inv.mat -inverse "$WorkingDirectory"/initial.mat
-applywarp --interp=nn -i "$StandardFOV" -r "$Input" --premat="$WorkingDirectory"/initial_inv.mat -o "$WorkingDirectory"/fov.nii.gz
-fslmaths "$Input" -mas "$WorkingDirectory"/fov.nii.gz "$WorkingDirectory"/maskedfov.nii.gz
-flirt -interp spline -in "$WorkingDirectory"/maskedfov.nii.gz -ref "$Reference" -init "$WorkingDirectory"/initial.mat -omat "$WorkingDirectory"/final.mat -out "$WorkingDirectory"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-python "$GlobalScripts"/aff2rigid.py "$WorkingDirectory"/final.mat "$OutputMatrix"
+robustfov -i "$Input" -m "$WorkingDirectory"/roi2full.mat -r "$WorkingDirectory"/robustroi.nii.gz
+convert_xfm -omat "$WorkingDirectory"/full2roi.mat -inverse "$WorkingDirectory"/roi2full.mat
+flirt -interp spline -in "$WorkingDirectory"/robustroi.nii.gz -ref "$Reference" -omat "$WorkingDirectory"/roi2std.mat -out "$WorkingDirectory"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+convert_xfm -omat "$WorkingDirectory"/full2std.mat -concat "$WorkingDirectory"/roi2std.mat "$WorkingDirectory"/full2roi.mat
+python "$GlobalScripts"/aff2rigid.py "$WorkingDirectory"/full2std.mat "$OutputMatrix"
 applywarp --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
 echo -e "\n END: ACPCAlignment"
