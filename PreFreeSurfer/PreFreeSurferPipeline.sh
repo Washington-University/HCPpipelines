@@ -117,7 +117,7 @@ if [ `echo $T1wInputImages | wc -w` -gt 1 ] ; then
     "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T1wFolder"/AverageT1wImages "$OutputT1wImageSTRING" "$T1wFolder"/"$T1wImage" "$TopupConfig"
   else
     echo "PERFORMING SIMPLE AVERAGING"
-    "$PipelineScripts"/AnatomicalAverage.sh -o "$T1wFolder"/"$T1wImage" -f "$StandardFOVMask" -s "$T1wTemplate" -m "$TemplateMask" -n -w "$T1wFolder"/AverageT1wImages --noclean -v $OutputT1wImageSTRING
+    "$PipelineScripts"/AnatomicalAverage.sh -o "$T1wFolder"/"$T1wImage" -s "$T1wTemplate" -m "$TemplateMask" -n -w "$T1wFolder"/AverageT1wImages --noclean -v $OutputT1wImageSTRING
   fi
 else
   echo "ONLY ONE AVERAGE FOUND: COPYING"
@@ -131,7 +131,7 @@ if [ `echo $T2wInputImages | wc -w` -gt 1 ] ; then
     "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T2wFolder"/AverageT2wImages "$OutputT2wImageSTRING" "$T2wFolder"/"$T2wImage" "$TopupConfig"
   else
     echo "PERFORMING SIMPLE AVERAGING"
-    "$PipelineScripts"/AnatomicalAverage.sh -o "$T2wFolder"/"$T2wImage" -f "$StandardFOVMask" -s "$T2wTemplate" -m "$TemplateMask" -n -w "$T2wFolder"/AverageT2wImages --noclean -v $OutputT2wImageSTRING
+    "$PipelineScripts"/AnatomicalAverage.sh -o "$T2wFolder"/"$T2wImage" -s "$T2wTemplate" -m "$TemplateMask" -n -w "$T2wFolder"/AverageT2wImages --noclean -v $OutputT2wImageSTRING
   fi
 else
   echo "ONLY ONE AVERAGE FOUND: COPYING"
@@ -140,15 +140,15 @@ fi
 
 #acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
 mkdir -p "$T1wFolder"/ACPCAlignment
-"$PipelineScripts"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$StandardFOVMask" "$GlobalScripts"
+"$PipelineScripts"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$GlobalScripts"
 
 #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
 mkdir -p "$T1wFolder"/BrainExtraction_FNIRTbased
 "$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T1wFolder"/BrainExtraction_FNIRTbased "$T1wFolder"/"$T1wImage"_acpc "$T1wTemplate" "$TemplateMask" "$T1wTemplate2mm" "$Template2mmMask" "$T1wFolder"/"$T1wImage"_acpc_brain "$T1wFolder"/"$T1wImage"_acpc_brain_mask "$FNIRTConfig"
 
-#acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
+#acpc align T2w image to 0.8mm MNI T1wTemplate to create native volume space
 mkdir -p "$T2wFolder"/ACPCAlignment
-"$PipelineScripts"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$StandardFOVMask" "$GlobalScripts"
+"$PipelineScripts"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$GlobalScripts"
 
 #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
 mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
