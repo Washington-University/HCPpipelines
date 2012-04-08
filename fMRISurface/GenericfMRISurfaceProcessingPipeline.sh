@@ -11,7 +11,7 @@ Caret7_Command="$8"
 PipelineScripts="$9"
 AtlasParcellation="${10}"
 AtlasSurfaceROI="${11}"
-BrainOrdinatesResolution="${12}" #Could be "SAME" or "DIFFERENT"
+BrainOrdinatesResolution="${12}" 
 SubcorticalBrainOrdinatesLabels="${13}"
 
 #Naming Conventions
@@ -40,8 +40,8 @@ mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
 
 #Subcortical Processing
 mkdir -p "$ResultsFolder"/SubcorticalProcessing 
-"$PipelineScripts"/SubcorticalProcessing.sh "$ResultsFolder"/SubcorticalProcessing "$AtlasSpaceFolder" "$ROIFolder" "$AtlasParcellation" "$FinalfMRIResolution" "$DownSampleNameI" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$Caret7_Command" "$SubcorticalBrainOrdinatesLabels" "$T1wAtlasName"
+"$PipelineScripts"/SubcorticalProcessing.sh "$ResultsFolder"/SubcorticalProcessing "$AtlasSpaceFolder" "$ROIFolder" "$AtlasParcellation" "$FinalfMRIResolution" "$DownSampleNameI" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$Caret7_Command" "$SubcorticalBrainOrdinatesLabels" "$T1wAtlasName" "$BrainOrdinatesResolution"
 
 #Generation of Dense Timeseries
-"$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$DownSampleNameI" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$FinalfMRIResolution" "$ROIFolder" "$ResultsFolder"/"$OutputDenseTimeseries" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$Caret7_Command"
+"$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$DownSampleNameI" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$FinalfMRIResolution" "$ROIFolder" "$ResultsFolder"/"$OutputDenseTimeseries" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$Caret7_Command" "$BrainOrdinatesResolution"
 
