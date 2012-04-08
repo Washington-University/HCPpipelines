@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/bin/bash -e
 
 WorkingDirectory="$1"
 InputCoefficents="$2"
 InputFile="$3"
 OutputFile="$4"
 OutputTransform="$5"
+GlobalScripts="$6"
 
 DIR=`pwd`
 cd $WorkingDirectory

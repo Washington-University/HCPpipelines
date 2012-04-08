@@ -1,5 +1,4 @@
-#!/bin/bash 
-set -e
+#!/bin/bash -e
 
 # make pipeline engine happy...
 if [ $# -eq 1 ]
@@ -79,7 +78,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
       mkdir "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"
     fi
     cp "$Image" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i".nii.gz
-    "$GlobalScripts"/GradientDistortionUnwarp.sh "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i" "$T1wFolder"/"$T1wImage""$i"_gdc "$T1wFolder"/xfms/"$T1wImage""$i"_gdc_warp
+    "$GlobalScripts"/GradientDistortionUnwarp.sh "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i" "$T1wFolder"/"$T1wImage""$i"_gdc "$T1wFolder"/xfms/"$T1wImage""$i"_gdc_warp "$GlobalScripts"
     OutputT1wImageSTRING=`echo "$OutputT1wImageSTRING""$T1wFolder""/""$T1wImage""$i""_gdc "`
     i=$(($i+1))
   done
@@ -153,6 +152,7 @@ mkdir -p "$T2wFolder"/ACPCAlignment
 #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
 mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
 "$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T2wFolder"/BrainExtraction_FNIRTbased "$T2wFolder"/"$T2wImage"_acpc "$T2wTemplate" "$TemplateMask" "$T2wTemplate2mm" "$Template2mmMask" "$T2wFolder"/"$T2wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc_brain_mask "$FNIRTConfig"
+
 
 #T2w to T1w Registration and Optional Readout Distortion Correction
 if [ "$AvgrdcSTRING" = "FIELDMAP" ] ; then
