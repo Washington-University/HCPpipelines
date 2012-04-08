@@ -14,7 +14,8 @@ T1wImageBrain="$4"
 T2wImage="$5" #T2w FreeSurfer Input (Full Resolution)
 PipelineScripts="$6"
 PipelineBinaries="$7"
-
+Caret5_Command="${8}"
+Caret7_Command="${9}"
 T1wImageFile=`remove_ext $T1wImage`;
 
 if [ -e "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh ] ; then
@@ -37,7 +38,7 @@ recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -auto
 recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -sphere -surfreg -jacobian_white -avgcurv -cortparc 
 
 #Highres pial stuff (this module will adjust the pial surface based on the the T2w image in the future)
-"$PipelineScripts"/FreeSurferHiresPial.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$PipelineBinaries"
+"$PipelineScripts"/FreeSurferHiresPial.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$PipelineBinaries" "$Caret5_Command" "$Caret7_Command"
 
 #Final Recon-all Steps
 recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec 

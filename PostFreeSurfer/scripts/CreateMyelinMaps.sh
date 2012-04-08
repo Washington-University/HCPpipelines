@@ -117,8 +117,8 @@ for Hemisphere in L R ; do
   elif [ $Hemisphere = "R" ] ; then 
     Structure="CORTEX_RIGHT"
   fi
-  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w.nii.gz
-  $Caret5_Command -spec-file-add "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w.nii.gz
+  $Caret5_Command -spec-file-add "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.c5.spec volume_anatomy_file "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii $Structure
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 2
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii 1 "$Subject"_"$Hemisphere"_Myelin_Map
