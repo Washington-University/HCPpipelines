@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
 echo -e "\n START: CreateMyelinMaps"
 
 StudyFolder="$1"
