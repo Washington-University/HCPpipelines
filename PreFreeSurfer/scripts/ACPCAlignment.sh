@@ -14,10 +14,9 @@ Reference="$3"
 Output="$4"
 OutputMatrix="$5"
 GlobalScripts="$6"
-if [ $# -ge 7 ] ; then BrainSizeOpt="-b $7"; fi
+BrainSizeOpt="$7"
 
-
-robustfov -i "$Input" -m "$WorkingDirectory"/roi2full.mat -r "$WorkingDirectory"/robustroi.nii.gz $BrainSizeOpt
+robustfov -i "$Input" -m "$WorkingDirectory"/roi2full.mat -r "$WorkingDirectory"/robustroi.nii.gz -b $BrainSizeOpt
 convert_xfm -omat "$WorkingDirectory"/full2roi.mat -inverse "$WorkingDirectory"/roi2full.mat
 flirt -interp spline -in "$WorkingDirectory"/robustroi.nii.gz -ref "$Reference" -omat "$WorkingDirectory"/roi2std.mat -out "$WorkingDirectory"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 convert_xfm -omat "$WorkingDirectory"/full2std.mat -concat "$WorkingDirectory"/roi2std.mat "$WorkingDirectory"/full2roi.mat
