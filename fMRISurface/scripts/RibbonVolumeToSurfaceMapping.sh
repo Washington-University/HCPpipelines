@@ -16,48 +16,46 @@ NeighborhoodSmoothing="5"
 Factor="0.5"
 
 
-if [ ! -e "$NativeFolder"/ribbon_only.nii.gz ] ; then
+LeftGreyRibbonValue="1"
+RightGreyRibbonValue="1"
 
-  LeftGreyRibbonValue="1"
-  RightGreyRibbonValue="1"
+for Hemisphere in L R ; do
+  if [ $Hemisphere = "L" ] ; then
+    GreyRibbonValue="$LeftGreyRibbonValue"
+  elif [ $Hemisphere = "R" ] ; then
+    GreyRibbonValue="$RightGreyRibbonValue"
+  fi    
+  $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$StructuralVolumeSpace".nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz
+  $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii "$StructuralVolumeSpace".nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz -thr 0 -bin -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
+  #$Caret5_Command -volume-remove-islands "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
+  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -bin "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz -uthr 0 -abs -bin -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
+  #$Caret5_Command -volume-fill-holes "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
+  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -bin "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -mas "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
+  #$Caret5_Command -volume-remove-islands "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
+  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
+  fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz -bin -mul $GreyRibbonValue "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
+  rm "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
+done
 
-  for Hemisphere in L R ; do
-    if [ $Hemisphere = "L" ] ; then
-      GreyRibbonValue="$LeftGreyRibbonValue"
-    elif [ $Hemisphere = "R" ] ; then
-      GreyRibbonValue="$RightGreyRibbonValue"
-    fi    
-    $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$StructuralVolumeSpace".nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".white.native.nii.gz
-    $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii "$StructuralVolumeSpace".nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".white.native.nii.gz -thr 0 -bin -mul 255 "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-    #$Caret5_Command -volume-remove-islands "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-    #fslreorient2std "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -bin "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.nii.gz -uthr 0 -abs -bin -mul 255 "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-    #$Caret5_Command -volume-fill-holes "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-    #fslreorient2std "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -bin "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -mas "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -mul 255 "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz
-    #$Caret5_Command -volume-remove-islands "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz
-    #fslreorient2std "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz
-    fslmaths "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz -bin -mul $GreyRibbonValue "$NativeFolder"/"$Subject"."$Hemisphere".ribbon.nii.gz
-    rm "$NativeFolder"/"$Subject"."$Hemisphere".white.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-  done
+fslmaths "$WorkingDirectory"/"$Subject".L.ribbon.nii.gz -add "$WorkingDirectory"/"$Subject".R.ribbon.nii.gz "$WorkingDirectory"/ribbon_only.nii.gz
+rm "$WorkingDirectory"/"$Subject".L.ribbon.nii.gz "$WorkingDirectory"/"$Subject".R.ribbon.nii.gz
 
-  fslmaths "$NativeFolder"/"$Subject".L.ribbon.nii.gz -add "$NativeFolder"/"$Subject".R.ribbon.nii.gz "$NativeFolder"/ribbon_only.nii.gz
-  rm "$NativeFolder"/"$Subject".L.ribbon.nii.gz "$NativeFolder"/"$Subject".R.ribbon.nii.gz
-fi
 fslmaths "$VolumefMRI" -Tmean "$WorkingDirectory"/mean -odt float
 fslmaths "$VolumefMRI" -Tstd "$WorkingDirectory"/std -odt float
 fslmaths "$WorkingDirectory"/std -div "$WorkingDirectory"/mean "$WorkingDirectory"/cov
 
-fslmaths "$WorkingDirectory"/cov -mas "$NativeFolder"/ribbon_only.nii.gz "$WorkingDirectory"/cov_ribbon
+fslmaths "$WorkingDirectory"/cov -mas "$WorkingDirectory"/ribbon_only.nii.gz "$WorkingDirectory"/cov_ribbon
 
 fslmaths "$WorkingDirectory"/cov_ribbon -div `fslstats "$WorkingDirectory"/cov_ribbon -M` "$WorkingDirectory"/cov_ribbon_norm
 fslmaths "$WorkingDirectory"/cov_ribbon_norm -bin -s $NeighborhoodSmoothing "$WorkingDirectory"/SmoothNorm
 fslmaths "$WorkingDirectory"/cov_ribbon_norm -s $NeighborhoodSmoothing -div "$WorkingDirectory"/SmoothNorm -dilD "$WorkingDirectory"/cov_ribbon_norm_s$NeighborhoodSmoothing
 fslmaths "$WorkingDirectory"/cov -div `fslstats "$WorkingDirectory"/cov_ribbon -M` -div "$WorkingDirectory"/cov_ribbon_norm_s$NeighborhoodSmoothing "$WorkingDirectory"/cov_norm_modulate
-fslmaths "$WorkingDirectory"/cov_norm_modulate -mas "$NativeFolder"/ribbon_only.nii.gz "$WorkingDirectory"/cov_norm_modulate_ribbon
+fslmaths "$WorkingDirectory"/cov_norm_modulate -mas "$WorkingDirectory"/ribbon_only.nii.gz "$WorkingDirectory"/cov_norm_modulate_ribbon
 
 STD=`fslstats "$WorkingDirectory"/cov_norm_modulate_ribbon -S`
 echo $STD

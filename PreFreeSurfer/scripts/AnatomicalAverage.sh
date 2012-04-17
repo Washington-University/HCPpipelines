@@ -59,6 +59,10 @@ while [ $# -ge 1 ] ; do
 	    wdir=`get_arg2 $1 $2`;
 	    cleanup=no;
 	    shift 2;;
+	-b)
+	    BrainSizeOpt=`get_arg2 $1 $2`;
+	    BrainSizeOpt="-b $BrainSizeOpt";
+	    shift 2;;
 	-v)
 	    verbose=yes; 
 	    shift;;
@@ -118,7 +122,7 @@ if [ $verbose = yes ] ; then echo "Images: $imagelist  Output: $output"; fi
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
   $FSLDIR/bin/fslreorient2std ${fn}.nii.gz ${fn}_reorient
-  $FSLDIR/bin/robustfov -i ${fn}_reorient -r ${fn}_roi -m ${fn}_roi2orig.mat
+  $FSLDIR/bin/robustfov -i ${fn}_reorient -r ${fn}_roi -m ${fn}_roi2orig.mat $BrainSizeOpt
   $FSLDIR/bin/convert_xfm -omat ${fn}TOroi.mat -inverse ${fn}_roi2orig.mat
   $FSLDIR/bin/flirt -in ${fn}_roi -ref "$StandardImage" -omat ${fn}roi_to_std.mat -out ${fn}roi_to_std -dof 12 -searchrx -30 30 -searchry -30 30 -searchrz -30 30
   $FSLDIR/bin/convert_xfm -omat ${fn}_std2roi.mat -inverse ${fn}roi_to_std.mat
