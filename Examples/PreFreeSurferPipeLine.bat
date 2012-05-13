@@ -29,7 +29,8 @@ T2wTemplateBrain="${TemplateFolder}/MNI152_T2_0.8mm_brain.nii.gz" #Brain extract
 T2wTemplate2mm="${TemplateFolder}/MNI152_T2_2mm.nii.gz" #MNI2mm T2wTemplate
 TemplateMask="${TemplateFolder}/MNI152_T1_0.8mm_brain_mask.nii.gz" #Brain mask MNI0.8mm template
 Template2mmMask="${TemplateFolder}/MNI152_T1_2mm_brain_mask_dil.nii.gz" #MNI2mm template
-StandardFOVMask="${TemplateFolder}/std_fov.nii.gz" #StandardFOV mask for averaging structurals
+# StandardFOVMask="${TemplateFolder}/std_fov.nii.gz" #StandardFOV mask for averaging structurals
+StandardFOVMask=150
 FNIRTConfig="${ConfigFolder}/T1_2_MNI152_2mm.cnf" #FNIRT 2mm T1w Config
 TE="2.46" #delta in ms TE for field map or "NONE" if not used
 T1wSampleSpacing="0.0000078" #DICOM field (0019,1018) = 7800/10^9 in s or "NONE" if not used
@@ -46,7 +47,9 @@ for Subject in $Subjlist ; do
   T1wInputImages="${StudyFolder}/${Subject}/T1w/${Subject}_T1w1.nii.gz@${StudyFolder}/${Subject}/T1w/${Subject}_T1w2.nii.gz" #T1w1@T1w2@etc..
   T2wInputImages="${StudyFolder}/${Subject}/T2w/${Subject}_T2w1.nii.gz@${StudyFolder}/${Subject}/T2w/${Subject}_T2w2.nii.gz" #T2w1@T2w2@etc..
 
-  FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap_`echo $Subject | cut -d "_" -f 2`" #Get session from SubjectID or "NONE" if not used
+  FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap"
+  # # # # ACK!  STUPID 
+  # # # # FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap_`echo $Subject | cut -d "_" -f 2`" #Get session from SubjectID or "NONE" if not used
   MagnitudeInputName="${Subject}_FieldMap_Mag.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
   PhaseInputName="${Subject}_FieldMap_Pha.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
 

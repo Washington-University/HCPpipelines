@@ -53,106 +53,106 @@ AtlasSpaceFolder="$StudyFolder"/"$Subject"/"$AtlasSpaceFolder"
 T1wInputImages=`echo "$T1wInputImages" | sed 's/@/ /g'`
 T2wInputImages=`echo "$T2wInputImages" | sed 's/@/ /g'`
 
-if [ ! -e "$T1wFolder"/xfms ] ; then
-  mkdir -p "$T1wFolder"/xfms/
-fi
+# if [ ! -e "$T1wFolder"/xfms ] ; then
+  # mkdir -p "$T1wFolder"/xfms/
+# fi
 
-if [ ! -e "$T2wFolder"/xfms ] ; then
-  mkdir -p "$T2wFolder"/xfms/
-fi
+# if [ ! -e "$T2wFolder"/xfms ] ; then
+  # mkdir -p "$T2wFolder"/xfms/
+# fi
 
-if [ ! -e "$AtlasSpaceFolder"/xfms ] ; then
-  mkdir -p "$AtlasSpaceFolder"/xfms/
-fi
+# if [ ! -e "$AtlasSpaceFolder"/xfms ] ; then
+  # mkdir -p "$AtlasSpaceFolder"/xfms/
+# fi
 
-DIR=`pwd`
+# DIR=`pwd`
 
-echo "POSIXLY_CORRECT=""$POSIXLY_CORRECT"
+# echo "POSIXLY_CORRECT=""$POSIXLY_CORRECT"
 
-#T1w and T2w gradient nonlinearity correction
-OutputT1wImageSTRING=""
-OutputT2wImageSTRING=""
-if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
-  i=1
-  for Image in $T1wInputImages ; do
-    if [ ! -e "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" ] ; then    
-      mkdir "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"
-    fi
-    cp "$Image" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i".nii.gz
-    "$GlobalScripts"/GradientDistortionUnwarp.sh "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i" "$T1wFolder"/"$T1wImage""$i"_gdc "$T1wFolder"/xfms/"$T1wImage""$i"_gdc_warp
-    OutputT1wImageSTRING=`echo "$OutputT1wImageSTRING""$T1wFolder""/""$T1wImage""$i""_gdc "`
-    i=$(($i+1))
-  done
-  i=1
-  for Image in $T2wInputImages ; do
-    if [ ! -e "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp" ] ; then    
-      mkdir "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"
-    fi
-    cp "$Image" "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"/"$T2wImage""$i".nii.gz
-    "$GlobalScripts"/GradientDistortionUnwarp.sh "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"/"$T2wImage""$i" "$T2wFolder"/"$T2wImage""$i"_gdc "$T2wFolder"/xfms/"$T2wImage""$i"_gdc_warp
-    OutputT2wImageSTRING=`echo "$OutputT2wImageSTRING""$T2wFolder""/""$T2wImage""$i""_gdc "`
-    i=$(($i+1))
-  done
-else
-  echo "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
-  i=1
-  for Image in $T1wInputImages ; do
-    cp "$Image" "$T1wFolder"/"$T1wImage""$i"_gdc.nii.gz
-    OutputT1wImageSTRING=`echo "$OutputT1wImageSTRING""$T1wFolder""/""$T1wImage""$i""_gdc "`
-    i=$(($i+1))
-  done
-  i=1
-  for Image in $T2wInputImages ; do
-    cp "$Image" "$T2wFolder"/"$T2wImage""$i"_gdc.nii.gz
-    OutputT2wImageSTRING=`echo "$OutputT2wImageSTRING""$T2wFolder""/""$T2wImage""$i""_gdc "`
-    i=$(($i+1))
-  done
-fi
+# #T1w and T2w gradient nonlinearity correction
+# OutputT1wImageSTRING=""
+# OutputT2wImageSTRING=""
+# if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
+  # i=1
+  # for Image in $T1wInputImages ; do
+    # if [ ! -e "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" ] ; then    
+      # mkdir "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"
+    # fi
+    # cp "$Image" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i".nii.gz
+    # "$GlobalScripts"/GradientDistortionUnwarp.sh "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T1wFolder"/"$T1wImage""$i""_GradientDistortionUnwarp"/"$T1wImage""$i" "$T1wFolder"/"$T1wImage""$i"_gdc "$T1wFolder"/xfms/"$T1wImage""$i"_gdc_warp
+    # OutputT1wImageSTRING=`echo "$OutputT1wImageSTRING""$T1wFolder""/""$T1wImage""$i""_gdc "`
+    # i=$(($i+1))
+  # done
+  # i=1
+  # for Image in $T2wInputImages ; do
+    # if [ ! -e "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp" ] ; then    
+      # mkdir "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"
+    # fi
+    # cp "$Image" "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"/"$T2wImage""$i".nii.gz
+    # "$GlobalScripts"/GradientDistortionUnwarp.sh "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp" "$GradientDistortionCoeffs" "$T2wFolder"/"$T2wImage""$i""_GradientDistortionUnwarp"/"$T2wImage""$i" "$T2wFolder"/"$T2wImage""$i"_gdc "$T2wFolder"/xfms/"$T2wImage""$i"_gdc_warp
+    # OutputT2wImageSTRING=`echo "$OutputT2wImageSTRING""$T2wFolder""/""$T2wImage""$i""_gdc "`
+    # i=$(($i+1))
+  # done
+# else
+  # echo "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
+  # i=1
+  # for Image in $T1wInputImages ; do
+    # cp "$Image" "$T1wFolder"/"$T1wImage""$i"_gdc.nii.gz
+    # OutputT1wImageSTRING=`echo "$OutputT1wImageSTRING""$T1wFolder""/""$T1wImage""$i""_gdc "`
+    # i=$(($i+1))
+  # done
+  # i=1
+  # for Image in $T2wInputImages ; do
+    # cp "$Image" "$T2wFolder"/"$T2wImage""$i"_gdc.nii.gz
+    # OutputT2wImageSTRING=`echo "$OutputT2wImageSTRING""$T2wFolder""/""$T2wImage""$i""_gdc "`
+    # i=$(($i+1))
+  # done
+# fi
 
-#Average Like Scans
-if [ `echo $T1wInputImages | wc -w` -gt 1 ] ; then
-  mkdir -p "$T1wFolder"/AverageT1wImages
-  if [ "$AvgrdcSTRING" = "TOPUP" ] ; then
-    echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
-    "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T1wFolder"/AverageT1wImages "$OutputT1wImageSTRING" "$T1wFolder"/"$T1wImage" "$TopupConfig"
-  else
-    echo "PERFORMING SIMPLE AVERAGING"
-    "$PipelineScripts"/AnatomicalAverage.sh -o "$T1wFolder"/"$T1wImage" -s "$T1wTemplate" -m "$TemplateMask" -n -w "$T1wFolder"/AverageT1wImages --noclean -v -b $BrainSize $OutputT1wImageSTRING
-  fi
-else
-  echo "ONLY ONE AVERAGE FOUND: COPYING"
-  cp "$T1wFolder"/"$T1wImage"1_gdc.nii.gz "$T1wFolder"/"$T1wImage".nii.gz
-fi
+# #Average Like Scans
+# if [ `echo $T1wInputImages | wc -w` -gt 1 ] ; then
+  # mkdir -p "$T1wFolder"/AverageT1wImages
+  # if [ "$AvgrdcSTRING" = "TOPUP" ] ; then
+    # echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
+    # "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T1wFolder"/AverageT1wImages "$OutputT1wImageSTRING" "$T1wFolder"/"$T1wImage" "$TopupConfig"
+  # else
+    # echo "PERFORMING SIMPLE AVERAGING"
+    # "$PipelineScripts"/AnatomicalAverage.sh -o "$T1wFolder"/"$T1wImage" -s "$T1wTemplate" -m "$TemplateMask" -n -w "$T1wFolder"/AverageT1wImages --noclean -v -b $BrainSize $OutputT1wImageSTRING
+  # fi
+# else
+  # echo "ONLY ONE AVERAGE FOUND: COPYING"
+  # cp "$T1wFolder"/"$T1wImage"1_gdc.nii.gz "$T1wFolder"/"$T1wImage".nii.gz
+# fi
 
-if [ `echo $T2wInputImages | wc -w` -gt 1 ] ; then
-  mkdir -p "$T2wFolder"/AverageT2wImages
-  if [ "$AvgrdcSTRING" = "TOPUP" ] ; then
-    echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
-    "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T2wFolder"/AverageT2wImages "$OutputT2wImageSTRING" "$T2wFolder"/"$T2wImage" "$TopupConfig"
-  else
-    echo "PERFORMING SIMPLE AVERAGING"
-    "$PipelineScripts"/AnatomicalAverage.sh -o "$T2wFolder"/"$T2wImage" -s "$T2wTemplate" -m "$TemplateMask" -n -w "$T2wFolder"/AverageT2wImages --noclean -v -b $BrainSize $OutputT2wImageSTRING
-  fi
-else
-  echo "ONLY ONE AVERAGE FOUND: COPYING"
-  cp "$T2wFolder"/"$T2wImage"1_gdc.nii.gz "$T2wFolder"/"$T2wImage".nii.gz
-fi
+# if [ `echo $T2wInputImages | wc -w` -gt 1 ] ; then
+  # mkdir -p "$T2wFolder"/AverageT2wImages
+  # if [ "$AvgrdcSTRING" = "TOPUP" ] ; then
+    # echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
+    # "$PipelineScripts"/TopupDistortionCorrectAndAverage.sh "$T2wFolder"/AverageT2wImages "$OutputT2wImageSTRING" "$T2wFolder"/"$T2wImage" "$TopupConfig"
+  # else
+    # echo "PERFORMING SIMPLE AVERAGING"
+    # "$PipelineScripts"/AnatomicalAverage.sh -o "$T2wFolder"/"$T2wImage" -s "$T2wTemplate" -m "$TemplateMask" -n -w "$T2wFolder"/AverageT2wImages --noclean -v -b $BrainSize $OutputT2wImageSTRING
+  # fi
+# else
+  # echo "ONLY ONE AVERAGE FOUND: COPYING"
+  # cp "$T2wFolder"/"$T2wImage"1_gdc.nii.gz "$T2wFolder"/"$T2wImage".nii.gz
+# fi
 
-#acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
-mkdir -p "$T1wFolder"/ACPCAlignment
-"$PipelineScripts"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$GlobalScripts" "$BrainSize"
+# #acpc align T1w image to 0.8mm MNI T1wTemplate to create native volume space
+# mkdir -p "$T1wFolder"/ACPCAlignment
+# "$PipelineScripts"/ACPCAlignment.sh "$T1wFolder"/ACPCAlignment "$T1wFolder"/"$T1wImage" "$T1wTemplate" "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/xfms/acpc.mat "$GlobalScripts" "$BrainSize"
 
-#Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
-mkdir -p "$T1wFolder"/BrainExtraction_FNIRTbased
-"$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T1wFolder"/BrainExtraction_FNIRTbased "$T1wFolder"/"$T1wImage"_acpc "$T1wTemplate" "$TemplateMask" "$T1wTemplate2mm" "$Template2mmMask" "$T1wFolder"/"$T1wImage"_acpc_brain "$T1wFolder"/"$T1wImage"_acpc_brain_mask "$FNIRTConfig"
+# #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
+# mkdir -p "$T1wFolder"/BrainExtraction_FNIRTbased
+# "$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T1wFolder"/BrainExtraction_FNIRTbased "$T1wFolder"/"$T1wImage"_acpc "$T1wTemplate" "$TemplateMask" "$T1wTemplate2mm" "$Template2mmMask" "$T1wFolder"/"$T1wImage"_acpc_brain "$T1wFolder"/"$T1wImage"_acpc_brain_mask "$FNIRTConfig"
 
-#acpc align T2w image to 0.8mm MNI T1wTemplate to create native volume space
-mkdir -p "$T2wFolder"/ACPCAlignment
-"$PipelineScripts"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$GlobalScripts" "$BrainSize"
+# #acpc align T2w image to 0.8mm MNI T1wTemplate to create native volume space
+# mkdir -p "$T2wFolder"/ACPCAlignment
+# "$PipelineScripts"/ACPCAlignment.sh "$T2wFolder"/ACPCAlignment "$T2wFolder"/"$T2wImage" "$T2wTemplate" "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/xfms/acpc.mat "$GlobalScripts" "$BrainSize"
 
-#Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
-mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
-"$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T2wFolder"/BrainExtraction_FNIRTbased "$T2wFolder"/"$T2wImage"_acpc "$T2wTemplate" "$TemplateMask" "$T2wTemplate2mm" "$Template2mmMask" "$T2wFolder"/"$T2wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc_brain_mask "$FNIRTConfig"
+# #Brain Extraction (FNIRT-based Masking) #Multiple Options to be evaluated here, however.
+# mkdir -p "$T2wFolder"/BrainExtraction_FNIRTbased
+# "$PipelineScripts"/BrainExtraction_FNIRTbased.sh "$T2wFolder"/BrainExtraction_FNIRTbased "$T2wFolder"/"$T2wImage"_acpc "$T2wTemplate" "$TemplateMask" "$T2wTemplate2mm" "$Template2mmMask" "$T2wFolder"/"$T2wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc_brain_mask "$FNIRTConfig"
 
 #T2w to T1w Registration and Optional Readout Distortion Correction
 if [ "$AvgrdcSTRING" = "FIELDMAP" ] ; then
@@ -160,7 +160,14 @@ if [ "$AvgrdcSTRING" = "FIELDMAP" ] ; then
   if [ -e "$T2wFolder"/T2wToT1wDistortionCorrectAndReg ] ; then
     rm -r "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
   fi
-  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg    
+  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg 
+  
+  
+  
+echo ""$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts" "$GradientDistortionCoeffs""  
+
+
+
  "$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts" "$GradientDistortionCoeffs"
 else
   if [ -e "$T2wFolder"/T2wToT1wReg ] ; then

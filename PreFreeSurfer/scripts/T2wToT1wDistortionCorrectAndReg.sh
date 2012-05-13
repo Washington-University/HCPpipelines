@@ -1,7 +1,6 @@
-#!/bin/bash 
-set -e
+#!/bin/bash -e
 
-echo -e "\n START: T2w to T1w Distortion Correction and Registration"
+echo -e "\n START: T2wToT1wDistortionCorrectionAndReg"
 
 
 WorkingDirectory="$1"
@@ -34,6 +33,8 @@ if [ ! -e "$WorkingDirectory"/FieldMap ] ; then
   mkdir "$WorkingDirectory"/FieldMap
 fi
 
+echo -e "\n\n\n"$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts""
+
 "$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" 
 
 fugue -v -i "$WorkingDirectory"/Magnitude_brain.nii.gz --icorr --unwarpdir="$UnwarpDir" --dwell=$T1wSampleSpacing --loadfmap="$WorkingDirectory"/FieldMap.nii.gz -w "$WorkingDirectory"/Magnitude_brain_warppedT1w
@@ -65,5 +66,5 @@ fslmaths T2w2T1w/T2w_reg.nii.gz -add 1 T2w2T1w/T2w_reg.nii.gz -odt float
 cp T2w2T1w/T2w_dc_reg.nii.gz "$OutputT2wTransform".nii.gz
 cp T2w2T1w/T2w_reg.nii.gz "$OutputT2wImage".nii.gz
 
-echo -e "\n END: T2w to T1w Distortion Correction and Registration"
+echo -e "\n END: T2wToT1wDistortionCorrectionAndReg"
 

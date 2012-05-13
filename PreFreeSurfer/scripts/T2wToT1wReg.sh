@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
+
+echo -e "\n START: T2w2T1Reg"
 
 WorkingDirectory="$1"
 T1wImage="$2"
@@ -25,3 +27,4 @@ fslmaths $OutputT1wTransform -mul 0 $OutputT1wTransform
 cp "$WorkingDirectory"/T2w2T1w.nii.gz "$OutputT2wImage".nii.gz
 convertwarp -r "$OutputT2wImage".nii.gz -w $OutputT1wTransform --postmat="$WorkingDirectory"/T2w2T1w.mat --out="$OutputT2wTransform"
 
+echo -e "\n START: T2w2T1Reg"
