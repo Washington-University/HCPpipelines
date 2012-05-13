@@ -1,5 +1,4 @@
-#!/bin/bash 
-set -e
+#!/bin/bash -e
 
 echo -e "\n START: Field Map Preprocessing and Gradient Unwarping"
 
@@ -14,11 +13,14 @@ FieldMapOutput="$8"
 GradientDistortionCoeffs="$9"
 GlobalScripts="${10}"
 
-
+echo "$MagnitudeInputName"
 fslmaths "$MagnitudeInputName" -Tmean "$WorkingDirectory"/Magnitude.nii.gz
+
 bet "$WorkingDirectory"/Magnitude.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz -f .35 -m #Brain extract the magnitude image
 cp "$PhaseInputName" "$WorkingDirectory"/Phase.nii.gz
 "$GlobalScripts"/fmrib_prepare_fieldmap.sh SIEMENS "$WorkingDirectory"/Phase.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz "$WorkingDirectory"/FieldMap.nii.gz "$TE"
+
+echo "DONE: fmrib_prepare_fieldmap.sh"
 
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   "$GlobalScripts"/GradientDistortionUnwarp.sh "$WorkingDirectory" "$GradientDistortionCoeffs" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_gdc "$WorkingDirectory"/Magnitude_gdc_warp

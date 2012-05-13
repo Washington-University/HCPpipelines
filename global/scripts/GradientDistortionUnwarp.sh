@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
+
+echo -e "\n START: GradientDistortionUnwarp"
 
 WorkingDirectory="$1"
 InputCoefficents="$2"
@@ -14,4 +16,6 @@ gradient_unwarp.py "$InputFile"_vol1.nii.gz trilinear.nii.gz siemens -g "$InputC
 convertwarp --ref=trilinear.nii.gz --premat=shiftMatrix.mat --warp1=fullWarp.nii.gz --out="$OutputTransform"
 applywarp --interp=spline -i "$InputFile" -r "$InputFile"_vol1.nii.gz -w "$OutputTransform" -o "$OutputFile"
 cd $DIR
+
+echo -e "\n END: GradientDistortionUnwarp"
 
