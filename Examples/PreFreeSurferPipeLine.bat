@@ -11,13 +11,14 @@ Subjlist="CP10104_v1"
 # Caret5_Command="/usr/bin/caret_command" #Location of Caret5 caret_command
 # GlobalScripts="/media/2TBB/Connectome_Project/Pipelines/global/scripts" #Location where the global pipeline modules are
 # TopupConfig="NONE" #Config for topup or "NONE" if not used
+
 # NRG environment...
 StudyFolder="/home/NRG/jwilso01/nifti/" #Path to subject's data folder
 TemplateFolder="/nrgpackages/atlas/HCP/" #Template Path
 ConfigFolder="/nrgpackages/tools/HCP/conf/" #Config Path
 PipelineScripts="/home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/scripts/" #Location where the pipeline modules are
 Caret5_Command="/nrgpackages/tools/HCP/bin/caret5/caret_command" #Location of Caret5 caret_command
-GlobalScripts="/nrgpackages/tools/HCP/scripts" #Location where the global pipeline modules are
+GlobalScripts="/home/NRG/jwilso01/dev/Pipelines/global/scripts/" #Location where the global pipeline modules are
 TopupConfig="NONE" #Config for topup or "NONE" if not used
 
 T1wTemplate="${TemplateFolder}/MNI152_T1_0.8mm.nii.gz" #MNI0.8mm template
