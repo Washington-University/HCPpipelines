@@ -1,5 +1,4 @@
-#!/bin/bash 
-set -e
+#!/bin/bash -e
 
 if [ $# -lt 6 ] ; then
   echo "Usage: `basename $0` <working dir> <input image> <reference image> <output image> <output matrix> <script directory> [brainsize]"

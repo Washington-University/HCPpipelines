@@ -1,5 +1,4 @@
-#!/bin/bash 
-set -e
+#!/bin/bash -e
 
 echo -e "\n START: BrainExtrtaction_FNIRT"
 

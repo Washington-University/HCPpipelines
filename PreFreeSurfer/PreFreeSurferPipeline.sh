@@ -160,8 +160,9 @@ if [ "$AvgrdcSTRING" = "FIELDMAP" ] ; then
   if [ -e "$T2wFolder"/T2wToT1wDistortionCorrectAndReg ] ; then
     rm -r "$T2wFolder"/T2wToT1wDistortionCorrectAndReg
   fi
-  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg    
- "$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts" "$GradientDistortionCoeffs"
+  mkdir -p "$T2wFolder"/T2wToT1wDistortionCorrectAndReg 
+  
+  "$PipelineScripts"/T2wToT1wDistortionCorrectAndReg.sh "$T2wFolder"/T2wToT1wDistortionCorrectAndReg "$T1wFolder"/"$T1wImage"_acpc "$T1wFolder"/"$T1wImage"_acpc_brain "$T2wFolder"/"$T2wImage"_acpc "$T2wFolder"/"$T2wImage"_acpc_brain "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$T1wFolder"/"$T1wImage"_acpc_dc "$T1wFolder"/"$T1wImage"_acpc_dc_brain "$T1wFolder"/xfms/"$T1wImage"_dc "$T1wFolder"/"$T2wImage"_acpc_dc "$T1wFolder"/xfms/"$T2wImage"_reg_dc "$GlobalScripts" "$GradientDistortionCoeffs"
 else
   if [ -e "$T2wFolder"/T2wToT1wReg ] ; then
     rm -r "$T2wFolder"/T2wToT1wReg
