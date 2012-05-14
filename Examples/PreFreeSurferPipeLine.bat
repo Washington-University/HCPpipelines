@@ -48,7 +48,6 @@ for Subject in $Subjlist ; do
   T2wInputImages="${StudyFolder}/${Subject}/T2w/${Subject}_T2w1.nii.gz@${StudyFolder}/${Subject}/T2w/${Subject}_T2w2.nii.gz" #T2w1@T2w2@etc..
 
   FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap"
-  # # # # ACK!  STUPID 
   # # # # FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap_`echo $Subject | cut -d "_" -f 2`" #Get session from SubjectID or "NONE" if not used
   MagnitudeInputName="${Subject}_FieldMap_Mag.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
   PhaseInputName="${Subject}_FieldMap_Pha.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
