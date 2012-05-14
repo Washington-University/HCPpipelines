@@ -7,9 +7,10 @@ SubjectDIR="$2"
 T1wImage="$3" #T1w FreeSurfer Input (Full Resolution)
 T2wImage="$4" #T2w FreeSurfer Input (Full Resolution)
 PipelineBinaries="$5"
-Caret5_Command="$6"
-Caret7_Command="$7"
+Caret5_Command="${6}"
+Caret7_Command="${7}"
 
+echo "$Caret5_Command"
 Sigma="5" #in mm
 
 export SUBJECTS_DIR="$SubjectDIR"
