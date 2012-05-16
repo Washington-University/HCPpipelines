@@ -24,17 +24,9 @@ PipelineBinaries="/home/NRG/jwilso01/dev/Pipelines/global/binaries"
 GlobalScripts="/home/NRG/jwilso01/dev/Pipelines/global/scripts" #Location where the global pipeline modules are
 Caret5_Command="/home/NRG/jwilso01/dev/Pipelines/global/binaries/caret5/caret_command"
 Caret7_Command=" /home/NRG/jwilso01/dev/Pipelines/global/binaries/caret7/exe_linux64/wb_command"
-  
-
-# # # TemplateFolder="/nrgpackages/atlas/HCP/" #Template Path
-# # # ConfigFolder="/nrgpackages/tools/HCP/conf/" #Config Path
-# # # PipelineScripts="/home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/scripts/" #Location where the pipeline modules are
-# # # GlobalScripts="/home/NRG/jwilso01/dev/Pipelines/global/scripts/" #Location where the global pipeline modules are
-# # # TopupConfig="NONE" #Config for topup or "NONE" if not used
 
 for Subject in $Subjlist ; do
 
-  
   Subject="$Subject"
 
   #set -- "$StudyFolder" "$Subject" "$FinalTemplateSpace" "$CaretAtlasFolder" "$DownSampleI" "$DownSampleNameI" "$PipelineScripts" "$PipelineBinaries" "$GlobalScripts" "$Caret5_Command" "$Caret7_Command" 
@@ -43,8 +35,6 @@ for Subject in $Subjlist ; do
   
   echo -e "$StudyFolder\n" "$Subject\n" "$FinalTemplateSpace\n" "$CaretAtlasFolder\n" "$DownSampleI\n" "$DownSampleNameI\n" "$PipelineScripts\n" "$PipelineBinaries\n" "$GlobalScripts\n" "$Caret5_Command\n" "$Caret7_Command" 
   /home/NRG/jwilso01/dev/Pipelines/PostFreeSurfer/PostFreeSurferPipeline.sh "$StudyFolder" "$Subject" "$FinalTemplateSpace" "$CaretAtlasFolder" "$DownSampleI" "$DownSampleNameI" "$PipelineScripts" "$PipelineBinaries" "$GlobalScripts" "$Caret5_Command" "$Caret7_Command" 
-  
-  
   
 done
 
