@@ -30,7 +30,7 @@ T2wTemplate2mm="${TemplateFolder}/MNI152_T2_2mm.nii.gz" #MNI2mm T2wTemplate
 TemplateMask="${TemplateFolder}/MNI152_T1_0.8mm_brain_mask.nii.gz" #Brain mask MNI0.8mm template
 Template2mmMask="${TemplateFolder}/MNI152_T1_2mm_brain_mask_dil.nii.gz" #MNI2mm template
 # StandardFOVMask="${TemplateFolder}/std_fov.nii.gz" #StandardFOV mask for averaging structurals
-StandardFOVMask=150
+BrainSize=150
 FNIRTConfig="${ConfigFolder}/T1_2_MNI152_2mm.cnf" #FNIRT 2mm T1w Config
 TE="2.46" #delta in ms TE for field map or "NONE" if not used
 T1wSampleSpacing="0.0000078" #DICOM field (0019,1018) = 7800/10^9 in s or "NONE" if not used
@@ -56,8 +56,8 @@ for Subject in $Subjlist ; do
   #set -- "$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$StandardFOVMask" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig"
   #echo "$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$StandardFOVMask" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig"
   
-  echo "/home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/PreFreeSurferPipeline.sh	"$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$StandardFOVMask" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig" "
-  /home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/PreFreeSurferPipeline.sh	"$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$StandardFOVMask" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig" 
+  echo "/home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/PreFreeSurferPipeline.sh	"$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$BrainSize" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig" "
+  # # # # /home/NRG/jwilso01/dev/Pipelines/PreFreeSurfer/PreFreeSurferPipeline.sh	"$StudyFolder" "$Subject" "$T1wInputImages" "$T2wInputImages" "$T1wTemplate" "$T1wTemplateBrain" "$T1wTemplate2mm" "$T2wTemplate" "$T2wTemplateBrain" "$T2wTemplate2mm" "$TemplateMask" "$Template2mmMask" "$StandardFOVMask" "$FNIRTConfig" "$FieldMapImageFolder" "$MagnitudeInputName" "$PhaseInputName" "$TE" "$T1wSampleSpacing" "$T2wSampleSpacing" "$UnwarpDir" "$PipelineScripts" "$Caret5_Command" "$GlobalScripts" "$GradientDistortionCoeffs" "$AvgrdcSTRING" "$TopupConfig" 
   
   sleep 10
   
