@@ -66,6 +66,10 @@ echo "useRealRAS 1" >> $SubjectDIR/$SubjectID/scripts/control.hires.dat
 "$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID lh
 "$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID rh
 
+#"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires_mm0.5 -orig white.deformed -filled filled.hires_mm0.5 -wm wm.hires_mm0.5 -sdir $SubjectDIR -T1 T1w_hires.masked.norm_mm0.5 -orig_white white.deformed -output .deformedII -w 0 $SubjectID lh
+#"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires_mm0.5 -orig white.deformed -filled filled.hires_mm0.5 -wm wm.hires_mm0.5 -sdir $SubjectDIR -T1 T1w_hires.masked.norm_mm0.5 -orig_white white.deformed -output .deformedII -w 0 $SubjectID rh
+
+
 #Fine Tune T2w to T1w Registration
 
 echo "$SubjectID" > "$mridir"/transforms/eye.dat
