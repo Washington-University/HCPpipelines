@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash 
+set -e
 echo -e "\n START: RibbonVolumeToSurfaceMapping"
 
 WorkingDirectory="$1"
