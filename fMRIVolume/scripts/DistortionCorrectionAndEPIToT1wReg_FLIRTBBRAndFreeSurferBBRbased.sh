@@ -22,6 +22,8 @@ GradientDistortionCoeffs="${17}"
 T2wRestoreImage="${18}"
 FNIRTConfig="${19}"
 QAImage="${20}"
+DistortionCorrection="${21}"
+TopupConfig="${22}"
 
 ScoutInputFile=`basename $ScoutInputName`
 T1wBrainImageFile=`basename $T1wBrainImage`
@@ -30,7 +32,15 @@ if [ ! -e "$WorkingDirectory"/FieldMap ] ; then
   mkdir "$WorkingDirectory"/FieldMap
 fi
 
-"$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" 
+if [ $DistortionCorrection = "FIELDMAP" ] ; then
+  "$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" 
+elif [ $DistortionCorrection = "TOPUP" ] ; then
+  #PhaseEncodeOne is MagnitudeInputName, PhaseEncodeTwo is PhaseInputName
+  "$GlobalScripts"/TopupPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$DwellTime" "$UnwarpDir" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/TopupField "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" "$TopupConfig"
+else
+  echo "UNKNOWN DISTORTION CORRECTION METHOD"
+  exit
+fi
 
 cp "$T1wBrainImage".nii.gz "$WorkingDirectory"/"$T1wBrainImageFile".nii.gz
 "$GlobalScripts"/epi_reg.sh "$ScoutInputName" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$ScoutInputFile"_undistorted "$WorkingDirectory"/FieldMap.nii.gz "$WorkingDirectory"/Magnitude.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz "$DwellTime" "$UnwarpDir"
