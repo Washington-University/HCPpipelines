@@ -1,4 +1,5 @@
 #!/bin/bash 
+set -e
 
 WorkingDirectory="$1"
 InputFiles="$2"

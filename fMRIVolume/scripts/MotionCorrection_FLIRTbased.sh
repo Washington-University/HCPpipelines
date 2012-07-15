@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash 
+set -e
 echo -e "\n START: MotionCorrection_FLIRTBased"
 
 WorkingDirectory="$1"
