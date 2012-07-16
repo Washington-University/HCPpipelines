@@ -21,7 +21,7 @@ surfdir=$SubjectDIR/$SubjectID/surf
 reg=$mridir/transforms/hires21mm.dat
 regII=$mridir/transforms/1mm2hires.dat
 hires="$mridir"/T1w_hires.nii.gz
-T2="$mridir"/T2w_hires.nii.gz
+T2="$mridir"/T2w_hires.norm.nii.gz
 Ratio="$mridir"/T1wDividedByT2w_sqrt.nii.gz
 
 mri_convert "$mridir"/wm.hires.mgz "$mridir"/wm.hires.nii.gz
@@ -29,6 +29,8 @@ fslmaths "$mridir"/wm.hires.nii.gz -thr 110 -uthr 110 "$mridir"/wm.hires.nii.gz
 wmMean=`fslstats "$mridir"/T1w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
 fslmaths "$mridir"/T1w_hires.nii.gz -div $wmMean -mul 110 "$mridir"/T1w_hires.norm.nii.gz
 mri_convert "$mridir"/T1w_hires.norm.nii.gz "$mridir"/T1w_hires.norm.mgz
+
+fslmaths "$mridir"/T2w_hires.nii.gz -div `fslstats "$mridir"/T2w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M` -mul 57 "$mridir"/T2w_hires.norm.nii.gz -odt float
 
 #"$PipelineBinaries"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm "$SubjectID" lh
 #"$PipelineBinaries"/mris_make_surfaces -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.masked.norm "$SubjectID" rh
@@ -45,9 +47,9 @@ cp $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2
 #"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 3 -nsigma_below 1.25 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID lh
 #"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 3 -nsigma_below 1.25 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID rh
 
-#For mris_make_surface with correct arguments
-"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 4 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID lh
-"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 4 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID rh
+#For mris_make_surface with correct arguments #Could go from 3 to 2 potentially...
+"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID lh
+"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2 $SubjectID rh
 
 #cp $SubjectDIR/$SubjectID/surf/lh.pial.T2 $SubjectDIR/$SubjectID/surf/lh.pial.preRatio
 #cp $SubjectDIR/$SubjectID/surf/rh.pial.T2 $SubjectDIR/$SubjectID/surf/rh.pial.preRatio
@@ -104,6 +106,7 @@ $Caret7_Command -create-signed-distance-volume "$surfdir"/rh.pial.surf.gii "$mri
 fslmaths "$surfdir"/lh.white.nii.gz -mul "$surfdir"/lh.pial.nii.gz -uthr 0 -mul -1 -bin "$mridir"/lh.ribbon.nii.gz
 fslmaths "$surfdir"/rh.white.nii.gz -mul "$surfdir"/rh.pial.nii.gz -uthr 0 -mul -1 -bin "$mridir"/rh.ribbon.nii.gz
 fslmaths "$mridir"/lh.ribbon.nii.gz -add "$mridir"/rh.ribbon.nii.gz -bin "$mridir"/ribbon.nii.gz
+fslcpgeom "$mridir"/T1w_hires.norm.nii.gz "$mridir"/ribbon.nii.gz
 
 fslmaths "$mridir"/ribbon.nii.gz -s $Sigma "$mridir"/ribbon_s"$Sigma".nii.gz
 fslmaths "$mridir"/T1w_hires.norm.nii.gz -mas "$mridir"/ribbon.nii.gz "$mridir"/T1w_hires.norm_ribbon.nii.gz
@@ -123,8 +126,9 @@ cp $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.one
 cp $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2.two
 cp $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2.two
 
-"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 4 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2.two $SubjectID lh
-"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 4 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2.two $SubjectID rh
+#Could go from 3 to 2 potentially...
+"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2.two $SubjectID lh
+"$PipelineBinaries"/mris_make_surfaces_T2 -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2dura $T2 -T1 T1w_hires.norm -output .T2.two $SubjectID rh
 
 mri_surf2surf --s $SubjectID --sval-xyz pial.T2.two --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
 mri_surf2surf --s $SubjectID --sval-xyz pial.T2.two --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi rh
