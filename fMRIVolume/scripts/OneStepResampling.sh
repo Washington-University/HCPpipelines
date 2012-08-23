@@ -27,8 +27,16 @@ TR_vol=`fslval "$InputfMRI" pixdim4 | cut -d " " -f 1`
 NumFrames=`fslval "$InputfMRI" dim4`
 
 #Create fMRIres standard space files for T1w image, wmparc, and brain mask, don't trust FLIRT to do spline interpolation with -applyisoxfm
-flirt -interp spline -in "$T1wImage" -ref "$T1wImage" -applyisoxfm $FinalfMRIResolution -out "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
-applywarp --interp=spline -i "$T1wImage" -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
+
+if [ "$FinalfMRIResolution" = "2" ] ; then
+  applywarp --interp=spline -i "$T1wImage" -r $FSLDIR/data/standard/MNI152_T1_2mm --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
+elif [ "$FinalfMRIResolution" = "1" ] ; then
+  applywarp --interp=spline -i "$T1wImage" -r $FSLDIR/data/standard/MNI152_T1_1mm --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
+else
+  flirt -interp spline -in "$T1wImage" -ref "$T1wImage" -applyisoxfm $FinalfMRIResolution -out "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
+  applywarp --interp=spline -i "$T1wImage" -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution"
+fi
+
 applywarp --interp=nn -i "$FreeSurferBrainMask".nii.gz -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$WorkingDirectory"/"$FreeSurferBrainMaskFile"."$FinalfMRIResolution".nii.gz
 fslmaths "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" -mas "$WorkingDirectory"/"$FreeSurferBrainMaskFile"."$FinalfMRIResolution".nii.gz "$WorkingDirectory"/"$FreeSurferBrainMaskFile"."$FinalfMRIResolution".nii.gz
 
