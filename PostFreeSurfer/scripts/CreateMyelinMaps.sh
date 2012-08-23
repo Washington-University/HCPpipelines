@@ -102,7 +102,7 @@ for Hemisphere in L R ; do
   $Caret7_Command -metric-dilate "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 20 "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii 1 "$Subject"_"$Hemisphere"_Curvature
-  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp
+  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -neg-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii $Structure
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".curvature.native.shape.gii
