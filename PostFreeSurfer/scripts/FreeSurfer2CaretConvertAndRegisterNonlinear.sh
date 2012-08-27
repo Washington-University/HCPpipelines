@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -e
+set -e
 echo -e "\n START: FS2CaretConvertRegisterNonlinear"
 
 StudyFolder="$1"
@@ -243,6 +243,9 @@ for Hemisphere in L R ; do
   $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec surface_shape_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sulc.164k_fs_LR.shape.gii
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sulc.164k_fs_LR.shape.gii $Structure 
   $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sulc.164k_fs_LR.shape.gii
+
+  $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".ArealDistortion.native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".ArealDistortion.164k_fs_LR.shape.gii
+  $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".ArealDistortion.164k_fs_LR.shape.gii $Structure 
 
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map PAINT "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".aparc.native.label.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii
   $Caret5_Command -spec-file-add "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".164k_fs_LR.c5.spec paint_file "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".aparc.164k_fs_LR.label.gii
