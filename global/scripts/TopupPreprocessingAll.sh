@@ -24,7 +24,6 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   "$GlobalScripts"/GradientDistortionUnwarp.sh "$WorkingDirectory" "$GradientDistortionCoeffs" "$WorkingDirectory"/PhaseTwo "$WorkingDirectory"/PhaseTwo_gdc "$WorkingDirectory"/PhaseTwo_gdc_warp
 fi
 
-echo "fslmerge -t "$WorkingDirectory"/BothPhases "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseTwo_gdc"
 fslmerge -t "$WorkingDirectory"/BothPhases "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseTwo_gdc
 
 txtfname="$WorkingDirectory"/acqparams.txt
@@ -69,7 +68,7 @@ elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
   done
 fi
 
-echo "topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --fout="$WorkingDirectory"/TopupField --iout="$WorkingDirectory"/Magnitudes"
+
 topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --fout="$WorkingDirectory"/TopupField --iout="$WorkingDirectory"/Magnitudes
 
 fslmaths "$WorkingDirectory"/Magnitudes -Tmean "$WorkingDirectory"/Magnitude.nii.gz
