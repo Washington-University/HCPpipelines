@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 
 workingdir=$1
-globalscriptsdir=$2
+globaldir=$2
 #topup_config_file=${FSLDIR}/bin/b02b0.cnf  #Should be in FSLDIR for FSL5.0, no need of globalscriptsdir
-topup_config_file=${globalscriptsdir}/config/b02b0.cnf
+topup_config_file=${globaldir}/config/b02b0.cnf
 
 ${FSLDIR}/bin/topup --imain=${workingdir}/Pos_Neg_b0 --datain=${workingdir}/acqparams.txt --config=${topup_config_file} --out=${workingdir}/topup_Pos_Neg_b0 -v
 
