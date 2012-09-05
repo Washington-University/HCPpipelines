@@ -25,7 +25,7 @@ make_absolute(){
 
 Usage() {
     echo ""
-    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataRL1@dataRL2 StudyFolder SubjectId EchoSpacing PhaseEncodingDir QCseries LocalScriptsDir GlobalScriptsDir"
+    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataRL1@dataRL2 StudyFolder SubjectId EchoSpacing PhaseEncodingDir QCseries LocalScriptsDir GlobalDir"
     echo ""
     echo "Input filenames should include absolute paths"
     echo "Working and Output durectory will be {StudyFolder}/{SubjectId}/Diffusion"
@@ -71,7 +71,7 @@ mkdir ${outdir}/data
 echospacing=$4
 PEdir=$5
 scriptsdir=$7
-globalscriptsdir=$8
+globaldir=$8
 
 InputImages=$1 
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
@@ -93,10 +93,10 @@ echo "Running Basic Preprocessing"
 ${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
 echo "Running Topup"
-${scriptsdir}/run_topup.sh ${outdir}/topup ${globalscriptsdir}
+${scriptsdir}/run_topup.sh ${outdir}/topup ${globaldir}
 
 echo "Running Eddy"
 ${scriptsdir}/run_eddy.sh ${outdir}/eddy
 
 echo "Running Eddy PostProcessing"
-${scriptsdir}/eddy_postproc.sh ${outdir} ${globalscriptsdir} 
+${scriptsdir}/eddy_postproc.sh ${outdir} ${globaldir} 

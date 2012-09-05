@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 workingdir=$1
 echo_spacing=$2

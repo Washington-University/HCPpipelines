@@ -1,7 +1,7 @@
 #!/bin/bash
 
 workingdir=$1
-globalscriptsdir=$2
+globaldir=$2
 
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
@@ -23,8 +23,8 @@ $FSLDIR/bin/imrm ${datadir}/data2
 echo "Computing gradient coil tensor"
 curdir=`pwd`
 cd ${datadir}
-${globalscriptsdir}/binaries/gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globalscriptsdir}/config/coeff_SC72C_Skyra.grad -n
-${globalscriptsdir}/binaries/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
+${globaldir}/binaries/gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globaldir}/config/coeff_SC72C_Skyra.grad -n
+${globaldir}/binaries/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
 ${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
 ${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 
 ${FSLDIR}/bin/imrm grad_dev_?
