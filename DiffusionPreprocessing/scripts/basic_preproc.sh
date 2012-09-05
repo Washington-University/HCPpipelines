@@ -13,9 +13,9 @@ isodd(){
 rawdir=${workingdir}/rawdata
 topupdir=${workingdir}/topup
 eddydir=${workingdir}/eddy
-if [ ${PEdir} -eq 1 ]; then    #LR/RL phase encoding
-    basePos="LR"
-    baseNeg="RL"
+if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+    basePos="RL"
+    baseNeg="LR"
 elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
     basePos="AP"
     baseNeg="PA"
@@ -24,7 +24,7 @@ fi
 
 #Compute Total_readout in secs with up to 6 decimal places
 any=`ls ${rawdir}/*${basePos}*.nii* |head -n 1`
-if [ ${PEdir} -eq 1 ]; then    #LR/RL phase encoding
+if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
     dimP=`${FSLDIR}/bin/fslval ${any} dim1`
 elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
     dimP=`${FSLDIR}/bin/fslval ${any} dim2`
@@ -61,7 +61,7 @@ do
 	cnt=`$FSLDIR/bin/zeropad $indcount 4`
 	echo "Extracting Pos Volume $count from ${entry} as a b=0. Measured b=$i" >>${rawdir}/extractedb0.txt
 	$FSLDIR/bin/fslroi ${entry} ${rawdir}/Pos_b0_${cnt} ${count} 1
-	if [ ${PEdir} -eq 1 ]; then    #LR/RL phase encoding
+	if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 	    echo 1 0 0 ${ro_time} >> ${rawdir}/acqparams.txt
 	elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
 	    echo 0 1 0 ${ro_time} >> ${rawdir}/acqparams.txt
@@ -100,7 +100,7 @@ do
 	cnt=`$FSLDIR/bin/zeropad $indcount 4`
 	echo "Extracting Neg Volume $count from ${entry} as a b=0. Measured b=$i" >>${rawdir}/extractedb0.txt
 	$FSLDIR/bin/fslroi ${entry} ${rawdir}/Neg_b0_${cnt} ${count} 1
-	if [ ${PEdir} -eq 1 ]; then    #LR/RL phase encoding
+	if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 	    echo -1 0 0 ${ro_time} >> ${rawdir}/acqparams.txt
 	elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
 	    echo 0 -1 0 ${ro_time} >> ${rawdir}/acqparams.txt
