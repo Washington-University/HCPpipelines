@@ -39,6 +39,8 @@ OutputOrigT2wToStandard="${34}"
 BiasFieldOutput="${35}"
 T1wMNIImageBrain="${36}"
 
+DIR=`pwd`
+
 #convertwarp --absout --ref="$T1wImageBrain" --premat="$InitialT1wTransform" --warp1="$dcT1wTransform" --out="$OutputOrigT1wToT1w"
 #convertwarp --absout --ref="$T1wImageBrain" --warp1="$AtlasTransform" --out="$AtlasTransform"a
 #convertwarp --absout --abs --ref="$T1wImageBrain" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform"a --out="$OutputOrigT1wToStandard"
@@ -148,30 +150,42 @@ for Hemisphere in L R ; do
   $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
+  cd "$AtlasSpaceFolder"
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_NEAREST_NODE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii
+  cd $DIR
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii $Structure
   for Map in thickness corrThickness curvature ; do
+    cd "$AtlasSpaceFolder"
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
+    cd $DIR
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii $Structure
     $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.shape.gii
   done
   for Map in MyelinMap SmoothedMyelinMap ; do
+    cd "$AtlasSpaceFolder"
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/native2164k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.func.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
+    cd $DIR
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".roi.164k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii $Structure
     $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Subject".164k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map".164k_fs_LR.func.gii
   done
+  cd "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k
   $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_NEAREST_NODE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii
+  cd $DIR
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii $Structure
   for Map in thickness corrThickness curvature ; do
+    cd "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
+    cd $DIR
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii $Structure
     $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.shape.gii
   done
   for Map in MyelinMap SmoothedMyelinMap ; do
+    cd "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k
     $Caret5_Command -deformation-map-apply "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere"."$Map".native.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
+    cd $DIR
     $Caret7_Command -metric-mask "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
     $Caret7_Command -set-structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii $Structure
     $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$DownSampleNameI"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$DownSampleNameI"k/"$Subject"."$Hemisphere"."$Map"."$DownSampleNameI"k_fs_LR.func.gii
