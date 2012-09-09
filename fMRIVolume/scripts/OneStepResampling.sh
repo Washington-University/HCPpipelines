@@ -16,6 +16,8 @@ OutputfMRI="${11}"
 FreeSurferBrainMask="${12}"
 BiasField="${13}"
 GradientDistortionField="${14}"
+ScoutInput="${15}"
+ScoutOutput="${16}"
 
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
@@ -71,6 +73,9 @@ while [ $k -lt $NumFrames ] ; do
   k=`echo "$k + 1" | bc`
 done
 fslmerge -tr "$OutputfMRI" $FrameMergeSTRING $TR_vol
+
+convertwarp --ref="$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" --warp1="$GradientDistortionField" --warp2="$OutputTransform" --out="$WorkingDirectory"/Scout_gdc_MNI_warp.nii.gz
+applywarp --interp=spline --in="$ScoutInput" -w "$WorkingDirectory"/Scout_gdc_MNI_warp.nii.gz -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" -o "$ScoutOutput"
 
 echo "END: OneStepResampling"
 

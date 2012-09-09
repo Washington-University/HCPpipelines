@@ -1,4 +1,4 @@
-#!/export/epd-7.0.2/bin/python
+#!/usr/bin/python
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
 #
 #   See COPYING file distributed along with the gradunwarp package for the

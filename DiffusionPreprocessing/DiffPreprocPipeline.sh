@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Preprocessing Pipeline for diffusion MRI. Generates the "data" directory that can be used as input to the fibre orientation estimation script.
 # Stamatios Sotiropoulos, Analysis Group, FMRIB Centre, 2012.
@@ -25,7 +26,7 @@ make_absolute(){
 
 Usage() {
     echo ""
-    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataRL1@dataRL2 StudyFolder SubjectId EchoSpacing PhaseEncodingDir QCseries LocalScriptsDir GlobalDir"
+    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataLR3 dataRL1@dataRL2@dataRL3 StudyFolder SubjectId EchoSpacing PhaseEncodingDir QCseries LocalScriptsDir GlobalDir"
     echo ""
     echo "Input filenames should include absolute paths"
     echo "Working and Output durectory will be {StudyFolder}/{SubjectId}/Diffusion"
@@ -39,15 +40,16 @@ Usage() {
 }
 
 [ "$1" = "" ] && Usage
-if [ $# -ne 8 ]; then
+if [ $# -ne 9 ]; then
     echo "Wrong Number of Arguments!"
     Usage
 fi
 
-StudyFolder=`make_absolute $2`
+StudyFolder=`make_absolute $3`
 StudyFolder=`echo ${StudyFolder} | sed 's/\/$/$/g'`
-echospacing=$4
-PEdir=$5
+Subject="$4"
+echospacing=$5
+PEdir=$6
 
 #ErrorHandling
 if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
@@ -57,7 +59,7 @@ if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
     exit 1
 fi
  
-outdir=${StudyFolder}/$3/Diffusion
+outdir=${StudyFolder}/$4/Diffusion
 if [ -d ${outdir} ]; then
     rm -r ${outdir}
 fi
@@ -67,13 +69,14 @@ mkdir ${outdir}/rawdata
 mkdir ${outdir}/topup
 mkdir ${outdir}/eddy
 mkdir ${outdir}/data
+mkdir ${outdir}/reg
 
-echospacing=$4
-PEdir=$5
-scriptsdir=$7
-globaldir=$8
+echospacing=$5
+PEdir=$6
+scriptsdir=$8
+globaldir=$9
 
-InputImages=$1 
+InputImages=`echo "$1 $2"` 
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
 
 echo "Copying raw data"
@@ -88,7 +91,6 @@ done
 ####################################################################################################
 
 
-
 echo "Running Basic Preprocessing"
 ${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
@@ -100,3 +102,45 @@ ${scriptsdir}/run_eddy.sh ${outdir}/eddy
 
 echo "Running Eddy PostProcessing"
 ${scriptsdir}/eddy_postproc.sh ${outdir} ${globaldir} 
+
+#Naming Conventions
+T1wImage="T1w_acpc_dc"
+T1wRestoreImage="T1w_acpc_dc_restore"
+T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
+T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
+AtlasSpaceFolder="${StudyFolder}/${Subject}/MNINonLinear"
+BiasField="BiasField_acpc_dc"
+FreeSurferBrainMask="brainmask_fs"
+RegOutput="Scout2T1w"
+AtlasTransform="acpc_dc2standard"
+QAImage="T1wMulEPI"
+xfmsFolder="xfms"
+OutputTransform="diff2str.mat"
+OutputInvTransform="str2diff.mat"
+OutputAtlasTransform="diff2standard"
+OutputInvAtlasTransform="standard2diff"
+OutputBrainMask="nodif_brain_mask"
+
+echo "Running Diffusion to Structural Registration"
+${scriptsdir}/DiffusionToStructural.sh \
+${outdir}/reg \
+${outdir}/data/data.nii.gz \
+"$T1wFolder"/"$T1wImage" \
+"$T1wFolder"/"$T1wRestoreImage" \
+"$T1wFolder"/"$T1wRestoreImageBrain" \
+"$AtlasSpaceFolder"/"$xfmsFolder"/"$AtlasTransform" \
+"$T1wFolder"/xfms/"$OutputTransform" \
+"$T1wFolder"/xfms/"$OutputInvTransform" \
+"$AtlasSpaceFolder"/"$xfmsFolder"/"$OutputAtlasTransform" \
+"$AtlasSpaceFolder"/"$xfmsFolder"/"$OutputInvAtlasTransform" \
+"$T1wFolder"/"$BiasField" \
+"$T1wFolder" \
+"$Subject" \
+"${outdir}"/reg/"$RegOutput" \
+"${outdir}"/reg/"$QAImage" \
+"$T1wFolder"/"$FreeSurferBrainMask" \
+"${outdir}"/data/"$OutputBrainMask" \
+${globaldir} 
+
+
+

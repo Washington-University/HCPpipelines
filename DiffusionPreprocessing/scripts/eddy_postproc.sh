@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+echo -e "\n START: postproc"
 
 workingdir=$1
 globaldir=$2
@@ -44,3 +46,6 @@ ${FSLDIR}/bin/immv ${datadir}/nodif_brain_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
 mv ${datadir}/shiftMatrix.mat ${datadir}/warped
+
+echo -e "\n END: postproc"
+
