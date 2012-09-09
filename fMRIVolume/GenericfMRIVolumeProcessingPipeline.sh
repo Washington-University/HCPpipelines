@@ -63,11 +63,11 @@ ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$OutputNameOffMRI"
 #Create "Scout" if it doesn't exist
 if [ $ScoutInputName = "NONE" ] ; then
   ScoutInputName="FakeScoutInput"
-  ScoutFolder="${fMRIFolder}_SB"
+  ScoutFolder="${fMRIFolder}_SBRef"
   if [ ! -e $ScoutFolder ] ; then 
     mkdir $ScoutFolder
   fi
-  fslroi "$fMRIFolder"/"$InputNameOffMRI" "$fMRIFolder"_SB/"$ScoutInputName" 0 1
+  fslroi "$fMRIFolder"/"$InputNameOffMRI" "$fMRIFolder"_SBRef/"$ScoutInputName" 0 1
 fi
 
 #Gradient Distortion Correction of fMRI
@@ -102,14 +102,14 @@ mkdir -p "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferB
 
 #One Step Resampling
 mkdir -p "$fMRIFolder"/OneStepResampling
-"$PipelineScripts"/OneStepResampling.sh "$fMRIFolder"/OneStepResampling "$fMRIFolder"/"$InputNameOffMRI" "$AtlasSpaceFolder"/"$T1wAtlasName" "$FinalfMRIResolution" "$AtlasSpaceFolder" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$AtlasSpaceFolder"/xfms/"$AtlasTransform" "$AtlasSpaceFolder"/xfms/"$OutputfMRI2StandardTransform" "$fMRIFolder"/"$MotionMatrixFolder" "$MotionMatrixPrefix" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$FreeSurferBrainMask" "$AtlasSpaceFolder"/"$BiasFieldMNI" "$fMRIFolder"/"$OutputNameOffMRI"_gdc_warp
+"$PipelineScripts"/OneStepResampling.sh "$fMRIFolder"/OneStepResampling "$fMRIFolder"/"$InputNameOffMRI" "$AtlasSpaceFolder"/"$T1wAtlasName" "$FinalfMRIResolution" "$AtlasSpaceFolder" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$AtlasSpaceFolder"/xfms/"$AtlasTransform" "$AtlasSpaceFolder"/xfms/"$OutputfMRI2StandardTransform" "$fMRIFolder"/"$MotionMatrixFolder" "$MotionMatrixPrefix" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$FreeSurferBrainMask" "$AtlasSpaceFolder"/"$BiasFieldMNI" "$fMRIFolder"/"$OutputNameOffMRI"_gdc_warp "$ScoutFolder"/"$ScoutInputName" "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin
 
 #Intensity Normalization and Bias Removal
-"$PipelineScripts"/IntensityNormalization.sh "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$BiasFieldMNI"."$FinalfMRIResolution" "$AtlasSpaceFolder"/"$FreeSurferBrainMask"."$FinalfMRIResolution" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm
+"$PipelineScripts"/IntensityNormalization.sh "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$BiasFieldMNI"."$FinalfMRIResolution" "$AtlasSpaceFolder"/"$FreeSurferBrainMask"."$FinalfMRIResolution" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin_norm
 
 mkdir -p "$ResultsFolder"
 cp -r "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm.nii.gz "$ResultsFolder"/"$OutputNameOffMRI".nii.gz
 cp -r "$fMRIFolder"/"$MovementRegressor".txt "$ResultsFolder"/"$MovementRegressor".txt
 cp -r "$fMRIFolder"/"$MovementRegressor"_dt.txt "$ResultsFolder"/"$MovementRegressor"_dt.txt
-
+cp -r "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin_norm.nii.gz "$ResultsFolder"/"$OutputNameOffMRI"_SBRef.nii.gz
 

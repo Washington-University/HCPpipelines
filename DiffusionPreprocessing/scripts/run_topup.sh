@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+echo -e "\n START: run_topup"
 
 
 workingdir=$1
@@ -19,3 +21,6 @@ ${FSLDIR}/bin/imrm ${workingdir}/Neg_b0
 
 echo "Running BET on the hifi b0"
 ${FSLDIR}/bin/bet ${workingdir}/hifib0 ${workingdir}/nodif_brain -m -f 0.2
+
+echo -e "\n END: run_topup"
+

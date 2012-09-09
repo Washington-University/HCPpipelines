@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+echo -e "\n START: basic_preproc"
 
 workingdir=$1
 echo_spacing=$2
@@ -174,6 +176,7 @@ mv ${rawdir}/Pos_Neg.bvecs ${eddydir}
 mv ${rawdir}/Pos.bv?? ${eddydir}
 mv ${rawdir}/Neg.bv?? ${eddydir}
 
+echo -e "\n END: basic_preproc"
 
 
 
