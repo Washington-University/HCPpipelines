@@ -1,5 +1,8 @@
-#$Header: /data/petsun4/data1/solaris/csh_scripts/RCS/mtrendout.awk,v 1.2 2012/09/09 23:10:48 avi Exp $
+#$Header: /data/petsun4/data1/solaris/csh_scripts/RCS/mtrendout.awk,v 1.3 2012/09/10 06:37:46 avi Exp $
 #$Log: mtrendout.awk,v $
+# Revision 1.3  2012/09/10  06:37:46  avi
+# correct bug in detrending loop
+#
 # Revision 1.2  2012/09/09  23:10:48  avi
 # typo
 #
@@ -38,7 +41,7 @@ END {
 	}
 	sxx = n*(n+1) / (3.*(n - 1));
 
-	for (j = 0; j < ncol; j++) {
+	for (j = 1; j <= ncol; j++) {
 		sy[j] = 0; sxy[j] = 0;
 		for (i = 0; i < n; i++) {
 			sy[j]  += data[i,j];
