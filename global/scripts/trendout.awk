@@ -1,3 +1,18 @@
+#$Header: /data/petsun4/data1/solaris/csh_scripts/RCS/mtrendout.awk,v 1.2 2012/09/09 23:10:48 avi Exp $
+#$Log: mtrendout.awk,v $
+# Revision 1.2  2012/09/09  23:10:48  avi
+# typo
+#
+# Revision 1.1  2012/09/09  23:08:56  avi
+# Initial revision
+#
+# Revision 1.2  2009/02/11  22:48:37  avi
+# pad output field with space for safety
+#
+# Revision 1.1  2005/12/02  08:10:05  avi
+# Initial revision
+#
+
 BEGIN {
 	n = 0;
 	init = 0;
@@ -32,12 +47,12 @@ END {
 		a0[j] = sy[j]/n;
 		a1[j] = sxy[j]/sxx;
 		for (i = 0; i < n; i++) {
-			data[i,j] -= a1[j]*x[i];
+			data[i,j] -= (a0[j] + a1[j]*x[i]);
 		}
 	}
 
 	for (i = 0; i < n; i++) {
-		for (j = 1; j <= ncol; j++) printf ("%10.6f", data[i,j])
+		for (j = 1; j <= ncol; j++) printf ("%10.6f ", data[i,j])
 		printf ("\n");
 	}
 }
