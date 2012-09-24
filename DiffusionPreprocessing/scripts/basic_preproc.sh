@@ -31,11 +31,42 @@ if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
     dimP=`${FSLDIR}/bin/fslval ${any} dim2`
 fi
-nPEsteps=$(($dimP - 1))
-#Total_readout=Echo_spacing*(#of_PE_steps-1)
+nPEsteps=$(($dimP - 1))                         #If GRAPPA is used this needs to include the GRAPPA factor!
+#Total_readout=Echo_spacing*(#of_PE_steps-1)   
 ro_time=`echo "${echo_spacing} * ${nPEsteps}" | bc -l`
 ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`
 echo "Total readout time is $ro_time secs"
+
+
+echo "Rescaling series to ensure consistency across baseline intensities"
+entry_cnt=0
+for entry in ${rawdir}/*${basePos}*.nii* ${rawdir}/*${baseNeg}*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
+do
+    echo $entry
+    basename=`imglob ${entry}`
+    ${FSLDIR}/bin/fslmaths ${entry} -Xmean -Ymean -Zmean ${basename}_mean
+    Posbvals=`cat ${basename}.bval`
+    mcnt=0
+    for i in ${Posbvals} #extract all b0s for the series
+    do
+	cnt=`$FSLDIR/bin/zeropad $mcnt 4`
+	if [ $i -lt ${b0maxbval} ]; then
+	    $FSLDIR/bin/fslroi ${basename}_mean ${basename}_b0_${cnt} ${mcnt} 1
+	fi
+	mcnt=$((${mcnt} + 1))
+    done
+    ${FSLDIR}/bin/fslmerge -t ${basename}_mean `echo ${basename}_b0_????.nii*`
+    ${FSLDIR}/bin/fslmaths ${basename}_mean -Tmean ${basename}_mean #This is the mean baseline b0 intensity for the series
+    imrm ${basename}_b0_????
+    if [ ${entry_cnt} -eq 0 ]; then  #Do not rescale the first series
+	rescale=`fslmeants -i ${basename}_mean`
+    else
+	scaleS=`fslmeants -i ${basename}_mean`
+	${FSLDIR}/bin/fslmaths ${basename} -mul ${rescale} -div ${scaleS} ${basename}_new
+    fi
+    entry_cnt=$((${entry_cnt} + 1))
+    imrm ${basename}_mean
+done
 
 
 echo "Extracting b0s from PE_Positive volumes and creating index and session files"
