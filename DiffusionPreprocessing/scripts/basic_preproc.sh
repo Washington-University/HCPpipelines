@@ -42,7 +42,6 @@ echo "Rescaling series to ensure consistency across baseline intensities"
 entry_cnt=0
 for entry in ${rawdir}/*${basePos}*.nii* ${rawdir}/*${baseNeg}*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
 do
-    echo $entry
     basename=`imglob ${entry}`
     ${FSLDIR}/bin/fslmaths ${entry} -Xmean -Ymean -Zmean ${basename}_mean
     Posbvals=`cat ${basename}.bval`
