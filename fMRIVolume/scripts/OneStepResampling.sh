@@ -18,6 +18,8 @@ BiasField="${13}"
 GradientDistortionField="${14}"
 ScoutInput="${15}"
 ScoutOutput="${16}"
+JacobianIn="${17}"
+JacobianOut="${18}"
 
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
@@ -76,6 +78,8 @@ fslmerge -tr "$OutputfMRI" $FrameMergeSTRING $TR_vol
 
 convertwarp --ref="$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" --warp1="$GradientDistortionField" --warp2="$OutputTransform" --out="$WorkingDirectory"/Scout_gdc_MNI_warp.nii.gz
 applywarp --interp=spline --in="$ScoutInput" -w "$WorkingDirectory"/Scout_gdc_MNI_warp.nii.gz -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" -o "$ScoutOutput"
+
+applywarp --interp=spline -i "$JacobianIn" -r "$WorkingDirectory"/"$T1wImageFile""$FinalfMRIResolution" -w "$StructuralToStandard" -o "$JacobianOut"
 
 echo "END: OneStepResampling"
 

@@ -52,6 +52,7 @@ AtlasTransform="acpc_dc2standard"
 OutputfMRI2StandardTransform="${OutputNameOffMRI}2standard"
 T2wRestoreImage="T2w_acpc_dc_restore"
 QAImage="T1wMulEPI"
+JacobianOut="Jacobian"
 
 fMRIFolder="$Path"/"$Subject"/"$fMRIFolder"
 FieldMapImageFolder="$Path"/"$Subject"/"$FieldMapImageFolder"
@@ -98,14 +99,14 @@ if [ -e "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBB
   rm -r "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 fi
 mkdir -p "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-"$PipelineScripts"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutName"_gdc "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" "$GlobalScripts" "$GradientDistortionCoeffs" "$T1wFolder"/"$T2wRestoreImage" "$FNIRTConfig" "$fMRIFolder"/"$QAImage" "$DistortionCorrection" "$TopupConfig"
+"$PipelineScripts"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutName"_gdc "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" "$GlobalScripts" "$GradientDistortionCoeffs" "$T1wFolder"/"$T2wRestoreImage" "$FNIRTConfig" "$fMRIFolder"/"$QAImage" "$DistortionCorrection" "$TopupConfig" "$fMRIFolder"/"$JacobianOut"
 
 #One Step Resampling
 mkdir -p "$fMRIFolder"/OneStepResampling
-"$PipelineScripts"/OneStepResampling.sh "$fMRIFolder"/OneStepResampling "$fMRIFolder"/"$InputNameOffMRI" "$AtlasSpaceFolder"/"$T1wAtlasName" "$FinalfMRIResolution" "$AtlasSpaceFolder" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$AtlasSpaceFolder"/xfms/"$AtlasTransform" "$AtlasSpaceFolder"/xfms/"$OutputfMRI2StandardTransform" "$fMRIFolder"/"$MotionMatrixFolder" "$MotionMatrixPrefix" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$FreeSurferBrainMask" "$AtlasSpaceFolder"/"$BiasFieldMNI" "$fMRIFolder"/"$OutputNameOffMRI"_gdc_warp "$ScoutFolder"/"$ScoutInputName" "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin
+"$PipelineScripts"/OneStepResampling.sh "$fMRIFolder"/OneStepResampling "$fMRIFolder"/"$InputNameOffMRI" "$AtlasSpaceFolder"/"$T1wAtlasName" "$FinalfMRIResolution" "$AtlasSpaceFolder" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$AtlasSpaceFolder"/xfms/"$AtlasTransform" "$AtlasSpaceFolder"/xfms/"$OutputfMRI2StandardTransform" "$fMRIFolder"/"$MotionMatrixFolder" "$MotionMatrixPrefix" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$FreeSurferBrainMask" "$AtlasSpaceFolder"/"$BiasFieldMNI" "$fMRIFolder"/"$OutputNameOffMRI"_gdc_warp "$ScoutFolder"/"$ScoutInputName" "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin "$fMRIFolder"/"$JacobianOut" "$fMRIFolder"/"$JacobianOut"_MNI."$FinalfMRIResolution"
 
 #Intensity Normalization and Bias Removal
-"$PipelineScripts"/IntensityNormalization.sh "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$BiasFieldMNI"."$FinalfMRIResolution" "$AtlasSpaceFolder"/"$FreeSurferBrainMask"."$FinalfMRIResolution" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin_norm
+"$PipelineScripts"/IntensityNormalization.sh "$fMRIFolder"/"$OutputNameOffMRI"_nonlin "$AtlasSpaceFolder"/"$BiasFieldMNI"."$FinalfMRIResolution" "$fMRIFolder"/"$JacobianOut"_MNI."$FinalfMRIResolution" "$AtlasSpaceFolder"/"$FreeSurferBrainMask"."$FinalfMRIResolution" "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin_norm
 
 mkdir -p "$ResultsFolder"
 cp -r "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm.nii.gz "$ResultsFolder"/"$OutputNameOffMRI".nii.gz
