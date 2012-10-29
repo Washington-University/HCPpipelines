@@ -48,12 +48,17 @@ elif [ $DistortionCorrection = "TOPUP" ] ; then
 
   "$GlobalScripts"/TopupPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$ScoutInputName" "$DwellTime" "$UnwarpDir" "$WorkingDirectory"/WarpField "$WorkingDirectory"/Jacobian "$GradientDistortionCoeffs" "$GlobalScripts" "$TopupConfig"
   applywarp --interp=spline -i "$ScoutInputName" -r "$ScoutInputName" -w "$WorkingDirectory"/WarpField.nii.gz -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted
-  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -mul "$WorkingDirectory"/Jacobian.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted
+  ###DISABLE JACOBIAN MODULATION###
+  #fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -mul "$WorkingDirectory"/Jacobian.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted
+  ###DISABLE JACOBIAN MODULATION###
   "$GlobalScripts"/epi_reg.sh "$WorkingDirectory"/"$ScoutInputFile"_undistorted "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$ScoutInputFile"_undistorted
   convertwarp -r "$T1wImage" --warp1="$WorkingDirectory"/WarpField.nii.gz --postmat="$WorkingDirectory"/"$ScoutInputFile"_undistorted.mat -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted_warp
   applywarp --interp=spline -i "$WorkingDirectory"/Jacobian.nii.gz -r "$T1wImage" --premat="$WorkingDirectory"/"$ScoutInputFile"_undistorted.mat -o "$WorkingDirectory"/Jacobian2T1w.nii.gz
   applywarp --interp=spline -i "$ScoutInputName" -r "$T1wImage" -w "$WorkingDirectory"/"$ScoutInputFile"_undistorted_warp -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted
-  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_init.nii.gz 
+  ###DISABLE JACOBIAN MODULATION###
+  #fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_init.nii.gz 
+  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -div "$BiasField" "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_init.nii.gz 
+  ###DISABLE JACOBIAN MODULATION###
 else
   echo "UNKNOWN DISTORTION CORRECTION METHOD"
   exit
@@ -74,7 +79,10 @@ bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$ScoutInputFile
 tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_init.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/fMRI2str.mat
 convertwarp --warp1="$WorkingDirectory"/"$ScoutInputFile"_undistorted_warp.nii.gz --ref="$T1wImage" --postmat="$WorkingDirectory"/fMRI2str.mat --out="$WorkingDirectory"/fMRI2str.nii.gz
 applywarp --interp=spline -i "$ScoutInputName" -r "$T1wImage".nii.gz -w "$WorkingDirectory"/fMRI2str.nii.gz -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w
-fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w
+###DISABLE JACOBIAN MODULATION###
+  #fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w
+  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w -div "$BiasField" "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w
+###DISABLE JACOBIAN MODULATION###
 
 if [ ! "$FNIRTConfig" = "NONE" ] ; then
   Mean=`fslstats "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w -k "$T1wBrainImage".nii.gz -M`

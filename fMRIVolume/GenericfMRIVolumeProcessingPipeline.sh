@@ -113,4 +113,5 @@ cp -r "$fMRIFolder"/"$OutputNameOffMRI"_nonlin_norm.nii.gz "$ResultsFolder"/"$Ou
 cp -r "$fMRIFolder"/"$MovementRegressor".txt "$ResultsFolder"/"$MovementRegressor".txt
 cp -r "$fMRIFolder"/"$MovementRegressor"_dt.txt "$ResultsFolder"/"$MovementRegressor"_dt.txt
 cp -r "$fMRIFolder"/"$OutputNameOffMRI"_SBRef_nonlin_norm.nii.gz "$ResultsFolder"/"$OutputNameOffMRI"_SBRef.nii.gz
+cp -r "$fMRIFolder"/"$JacobianOut"_MNI."$FinalfMRIResolution".nii.gz "$ResultsFolder"/"$OutputNameOffMRI"_"$JacobianOut".nii.gz
 
