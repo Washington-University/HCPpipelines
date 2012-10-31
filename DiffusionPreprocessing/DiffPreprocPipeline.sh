@@ -26,12 +26,14 @@ make_absolute(){
 
 Usage() {
     echo ""
-    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataLR3 dataRL1@dataRL2@dataRL3 StudyFolder SubjectId EchoSpacing PhaseEncodingDir QCseries LocalScriptsDir GlobalDir"
+    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@dataLR3 dataRL1@dataRL2@dataRL3 StudyFolder SubjectId EchoSpacing PhaseEncodingDir LocalScriptsDir GlobalDir QCSeries"
     echo ""
     echo "Input filenames should include absolute paths"
     echo "Working and Output durectory will be {StudyFolder}/{SubjectId}/Diffusion"
     echo "EchoSpacing should be in msecs"
     echo "PhaseEncodingDir: 1 for LR/RL, 2 for AP/PA"
+    echo "LocalScriptsDir : Absolute path for local scripts, e.g. ${Pipelines}/DiffusionPreprocessing/scripts"
+    echo "GlobalDir       : Absolute path for global directory of scripts, binaries, conf files, e.g. ${Pipelines}/global" 
     echo "QCseries is a text file containing the number of successfully acquired directions for each series"
     echo ""
     echo ""
@@ -73,8 +75,8 @@ mkdir ${outdir}/reg
 
 echospacing=$5
 PEdir=$6
-scriptsdir=$8
-globaldir=$9
+scriptsdir=$7
+globaldir=$8
 
 InputImages=`echo "$1 $2"` 
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`

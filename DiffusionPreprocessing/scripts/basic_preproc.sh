@@ -43,6 +43,7 @@ entry_cnt=0
 for entry in ${rawdir}/*${basePos}*.nii* ${rawdir}/*${baseNeg}*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
 do
     basename=`imglob ${entry}`
+    echo "Processing $basename"
     ${FSLDIR}/bin/fslmaths ${entry} -Xmean -Ymean -Zmean ${basename}_mean
     Posbvals=`cat ${basename}.bval`
     mcnt=0
@@ -56,17 +57,18 @@ do
     done
     ${FSLDIR}/bin/fslmerge -t ${basename}_mean `echo ${basename}_b0_????.nii*`
     ${FSLDIR}/bin/fslmaths ${basename}_mean -Tmean ${basename}_mean #This is the mean baseline b0 intensity for the series
-    imrm ${basename}_b0_????
-    if [ ${entry_cnt} -eq 0 ]; then  #Do not rescale the first series
+    ${FSLDIR}/bin/imrm ${basename}_b0_????
+    if [ ${entry_cnt} -eq 0 ]; then      #Do not rescale the first series
 	rescale=`fslmeants -i ${basename}_mean`
     else
 	scaleS=`fslmeants -i ${basename}_mean`
 	${FSLDIR}/bin/fslmaths ${basename} -mul ${rescale} -div ${scaleS} ${basename}_new
+	${FSLDIR}/bin/imrm ${basename}   #For the rest, replace the original dataseries with the rescaled one 
+        ${FSLDIR}/bin/immv ${basename}_new ${basename}
     fi
     entry_cnt=$((${entry_cnt} + 1))
-    imrm ${basename}_mean
+    ${FSLDIR}/bin/imrm ${basename}_mean
 done
-
 
 echo "Extracting b0s from PE_Positive volumes and creating index and session files"
 declare -i sesdimt #declare sesdimt as integer
