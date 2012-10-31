@@ -38,7 +38,7 @@ fi
 
 #Make 4dfp style motion parameter and derivative regressors for timeseries
 #Take the temporal derivative in column $1 of input $2 and output it as $3
-#Vectorized Matlab: d=[a(2)-a(1);(a(1:end-2)-a(3:end))/2;a(end)-a(end-1)]
+#Vectorized Matlab: d=[a(2)-a(1);(a(3:end)-a(1:end-2))/2;a(end)-a(end-1)]
 #Bash version of above algorithm
 function Derive {
   i="$1"
