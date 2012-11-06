@@ -95,7 +95,10 @@ if [ ! "$FNIRTConfig" = "NONE" ] ; then
   fnirt --in="$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w --ref="$T2wRestoreImage" --inmask="$WorkingDirectory"/inmask.nii.gz --refmask="$WorkingDirectory"/refmask.nii.gz --applyinmask=1 --applyrefmask=1 --config="$FNIRTConfig" --iout="$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz --fout="$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip_warp.nii.gz
   convertwarp --ref="$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz --warp1="$WorkingDirectory"/fMRI2str.nii.gz --warp2="$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip_warp.nii.gz --out="$WorkingDirectory"/fMRI_zblip2str.nii.gz
   applywarp --interp=spline -i "$ScoutInputName" -r "$T1wImage".nii.gz -w "$WorkingDirectory"/fMRI_zblip2str.nii.gz -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz
-  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz
+  ###DISABLE JACOBIAN MODULATION###
+  #fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz -div "$BiasField" -mul "$WorkingDirectory"/Jacobian2T1w.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz
+  fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz -div "$BiasField" "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz
+  ###DISABLE JACOBIAN MODULATION###
   cp "$WorkingDirectory"/"$ScoutInputFile"_undistorted2T1w_zblip.nii.gz "$RegOutput".nii.gz
   cp "$WorkingDirectory"/fMRI_zblip2str.nii.gz "$OutputTransform".nii.gz
 else
