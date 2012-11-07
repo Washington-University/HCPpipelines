@@ -3,10 +3,10 @@ GitRepo="/media/2TBB/Connectome_Project/Pipelines"
 StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
 
 
-Tasklist="MOTOR1_RL MOTOR2_LR"
+Tasklist="EMOTION1_RL EMOTION2_LR"
 PhaseEncodinglist="x x-"
 
-
+#set -xv
 for Subject in $Subjlist ; do
   i=1
   for Task in $Tasklist ; do
@@ -18,12 +18,12 @@ for Subject in $Subjlist ; do
     fi
     DIR=`pwd`
     cd "$StudyFolder"/"$Subject"
-    length=`ls . | grep ${Type}_${Task}_fnc | sed 's/_/ /g' | wc -w`
-    Session=`ls . | grep ${Type}_${Task}_fnc | cut -d "_" -f "$length"`
+    length=`ls . | grep BOLD_${Task}_fnc | sed 's/_/ /g' | wc -w`
+    Session=`ls . | grep BOLD_${Task}_fnc | cut -d "_" -f "$length"`
     SubjectStem=`echo $Subject | cut -d "_" -f 1`
-    fMRIFolder="${Type}_${Task}_${Session}"
+    fMRIFolder="BOLD_${Task}_${Session}"
     FieldMapImageFolder="SpinEchoFieldMap1_${Session}" #Either Standard Field Map or Folder with Both Spin Echo Images In it
-    ScoutFolder="${Type}_${Task}_SBRef_${Session}"
+    ScoutFolder="BOLD_${Task}_SBRef_${Session}"
     InputNameOffMRI="${SubjectStem}_${Session}_BOLD_${Task}.nii.gz"
     OutputNameOffMRI="${Type}_`echo ${Task} | cut -d "_" -f 1`"
     MagnitudeInputName="${SubjectStem}_${Session}_BOLD_LR_SB_SE.nii.gz" #Expects 4D Magnitude volume with two 3D timepoints or First Spin Echo Phase Encoding Direction LR
@@ -45,7 +45,7 @@ for Subject in $Subjlist ; do
       fsl_sub -q long.q ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig
       echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig"
     else
-      echo "fMRI Run ""$fMRIFolder"" Not Found"
+      echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
     fi
     i=`echo "$i + 1" | bc`
   done
