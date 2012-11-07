@@ -2,25 +2,37 @@
 set -e
 echo -e "\n START: postproc"
 
+#Hard-Coded filename. Flag from eddy to indicate that the jac method has been used for resampling
+EddyJacFlag="JacobianResampling" 
+
 workingdir=$1
 globaldir=$2
 
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
-cp ${eddydir}/Pos.bval ${datadir}/bvals
-cp ${eddydir}/Pos.bvec ${datadir}/bvecs
-dimt=`${FSLDIR}/bin/fslval ${eddydir}/eddy_unwarped_images dim4`
-dimt=`echo "scale=0; ${dimt} / 2" | bc -l`
+#Prepare for next eddy Release
+#if [ ! -e ${eddydir}/${EddyJacFlag} ]; then 
+#    echo "LSR resampling has been used. Eddy Output has already been combined."
+#    cp ${eddydir}/Pos.bval ${datadir}/bvals
+#    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
+#    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
+#else
+     echo "JAC resampling has been used. Eddy Output is now combined."
+     PosVols=`wc ${eddydir}/Pos.bval | awk {'print $2'}`
+     NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
+     ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 0 ${PosVols}
+     ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg ${PosVols} ${NegVols}
+     ${globaldir}/binaries/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
+                                        ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} 1
 
-$FSLDIR/bin/fslroi ${eddydir}/eddy_unwarped_images ${datadir}/data1 0 ${dimt}
-$FSLDIR/bin/fslroi ${eddydir}/eddy_unwarped_images ${datadir}/data2 ${dimt} -1
+     ${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
+     ${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
+     #rm ${eddydir}/Pos.bv*
+     #rm ${eddydir}/Neg.bv*
+#fi
 
-$FSLDIR/bin/fslmaths ${datadir}/data1 -add ${datadir}/data2 -div 2 ${datadir}/data
 $FSLDIR/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
-
-$FSLDIR/bin/imrm ${datadir}/data1
-$FSLDIR/bin/imrm ${datadir}/data2
 
 echo "Computing gradient coil tensor"
 curdir=`pwd`
@@ -31,6 +43,8 @@ ${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
 ${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 
 ${FSLDIR}/bin/imrm grad_dev_?
 
+
+#In the future, we want this applywarp to be part of eddy and avoid second resampling step.
 echo "Correcting for gradient nonlinearities"
 ${FSLDIR}/bin/immv data data_warped
 ${FSLDIR}/bin/applywarp -i data_warped -r nodif_brain -w fullWarp --premat=shiftMatrix.mat --interp=spline -o data
@@ -40,7 +54,7 @@ ${FSLDIR}/bin/imrm nodif_brain_unwarped
 ${FSLDIR}/bin/bet data nodif_brain -m -f 0.1
 
 cd ${curdir}
-mkdir ${datadir}/warped
+mkdir -p ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/nodif_brain_mask_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/nodif_brain_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
