@@ -17,7 +17,7 @@ for Subject in $Subjlist ; do
       Type="rfMRI"
     fi
     DIR=`pwd`
-    cd "$Path"/"$Subject"
+    cd "$StudyFolder"/"$Subject"
     length=`ls . | grep ${Type}_${Task}_fnc | sed 's/_/ /g' | wc -w`
     Session=`ls . | grep ${Type}_${Task}_fnc | cut -d "_" -f "$length"`
     SubjectStem=`echo $Subject | cut -d "_" -f 1`
