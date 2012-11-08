@@ -14,6 +14,7 @@ JacobianOutput="$8"
 GradientDistortionCoeffs="$9"
 GlobalScripts="${10}"
 TopupConfig="${11}"
+GlobalBinaries="${12}"
 
 cp $PhaseEncodeOne "$WorkingDirectory"/PhaseOne.nii.gz
 cp $PhaseEncodeTwo "$WorkingDirectory"/PhaseTwo.nii.gz
@@ -81,7 +82,7 @@ fi
 
 fslmaths "$WorkingDirectory"/BothPhases -abs -add 1 -mas "$WorkingDirectory"/Mask -dilD -dilD -dilD -dilD -dilD "$WorkingDirectory"/BothPhases
 
-topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --iout="$WorkingDirectory"/Magnitudes --fout="$WorkingDirectory"/TopupField --dfout="$WorkingDirectory"/WarpField --rbmout="$WorkingDirectory"/MotionMatrix --jacout="$WorkingDirectory"/Jacobian -v 
+${GlobalBinaries}/topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --iout="$WorkingDirectory"/Magnitudes --fout="$WorkingDirectory"/TopupField --dfout="$WorkingDirectory"/WarpField --rbmout="$WorkingDirectory"/MotionMatrix --jacout="$WorkingDirectory"/Jacobian -v 
 
 if [ $UnwarpDir = "x" ] ; then
   VolumeNumber=$(($dimtOne + 1))
@@ -129,7 +130,7 @@ fslmaths "$WorkingDirectory"/SBRef_dc.nii.gz -mul "$WorkingDirectory"/Jacobian.n
 
 #dimt=`fslval "$WorkingDirectory"/PhaseOne_gdc dim4`
 #dimt=$(($dimt + 1))
-#applytopup --interp=spline --imain="$WorkingDirectory"/PhaseOne_gdc,"$WorkingDirectory"/PhaseTwo_gdc --datain=$txtfname --inindex=1,$dimt --topup="$WorkingDirectory"/Coefficents --out="$WorkingDirectory"/Magnitudes
+#${GlobalBinaries}/applytopup --interp=spline --imain="$WorkingDirectory"/PhaseOne_gdc,"$WorkingDirectory"/PhaseTwo_gdc --datain=$txtfname --inindex=1,$dimt --topup="$WorkingDirectory"/Coefficents --out="$WorkingDirectory"/Magnitudes
 
 #fslmaths "$WorkingDirectory"/Magnitudes -Tmean "$WorkingDirectory"/Magnitude.nii.gz
 #bet "$WorkingDirectory"/Magnitude.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz -f .3 -m #Brain extract the magnitude image
