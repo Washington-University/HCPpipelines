@@ -3,8 +3,7 @@ GitRepo="/media/2TBB/Connectome_Project/Pipelines"
 StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
 
 
-Tasklist="MOTOR1 MOTOR2"
-
+Tasklist="EMOTION1 EMOTION2"
 
 for Subject in $Subjlist ; do
   for Task in $Tasklist ; do
