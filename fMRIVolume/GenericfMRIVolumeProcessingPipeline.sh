@@ -27,6 +27,7 @@ DistortionCorrection="${17}" #FIELDMAP or TOPUP (not functional currently)
 GradientDistortionCoeffs="${18}"
 FNIRTConfig="${19}" #NONE to turn off approximate zblip correction
 TopupConfig="${20}" #NONE if Topup is not being used
+GlobalBinaries="${21}"
 
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
@@ -99,7 +100,7 @@ if [ -e "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBB
   rm -r "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 fi
 mkdir -p "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-"$PipelineScripts"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutName"_gdc "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" "$GlobalScripts" "$GradientDistortionCoeffs" "$T1wFolder"/"$T2wRestoreImage" "$FNIRTConfig" "$fMRIFolder"/"$QAImage" "$DistortionCorrection" "$TopupConfig" "$fMRIFolder"/"$JacobianOut"
+"$PipelineScripts"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh "$fMRIFolder"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased "$ScoutFolder"/"$ScoutName"_gdc "$T1wFolder"/"$T1wImage" "$T1wFolder"/"$T1wRestoreImage" "$T1wFolder"/"$T1wRestoreImageBrain" "$FieldMapImageFolder"/"$MagnitudeInputName" "$FieldMapImageFolder"/"$PhaseInputName" "$TE" "$DwellTime" "$UnwarpDir" "$T1wFolder"/xfms/"$fMRI2strOutputTransform" "$T1wFolder"/"$BiasField" "$fMRIFolder"/"$RegOutput" "$T1wFolder" "$Subject" "$GlobalScripts" "$GradientDistortionCoeffs" "$T1wFolder"/"$T2wRestoreImage" "$FNIRTConfig" "$fMRIFolder"/"$QAImage" "$DistortionCorrection" "$TopupConfig" "$fMRIFolder"/"$JacobianOut" "${GlobalBinaries}"
 
 #One Step Resampling
 mkdir -p "$fMRIFolder"/OneStepResampling
