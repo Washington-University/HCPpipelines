@@ -41,7 +41,7 @@ def configuration(parent_package='', top_path=None):
     return config
 
 setup(name='gradunwarp',
-      version = '2.0_alpha',
+      version = '2.0_alpha-hcp-1',
       description = 'Gradient Unwarping Package for Python/Numpy',
       author = 'Krish Subramaniam',
       py_modules  = mods,
