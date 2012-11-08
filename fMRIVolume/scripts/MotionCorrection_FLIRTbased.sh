@@ -82,9 +82,10 @@ while [ $i -le 6 ] ; do
   i=`echo "$i + 1" | bc`
 done
 
-cat $out | sed s/"  "/" "/g > ${out}_
+cat ${out} | awk '{for(i=1;i<=NF;i++)printf("%10.6f ",$i);printf("\n")}' > ${out}_
 mv ${out}_ $out
 
-awk -f "$GlobalScripts"/trendout.awk $out > "$OutputMotionRegressors"_dt.txt
+
+awk -f "$GlobalScripts"/mtrendout.awk $out > "$OutputMotionRegressors"_dt.txt
 
 echo "   END: MotionCorrection_FLIRTBased"
