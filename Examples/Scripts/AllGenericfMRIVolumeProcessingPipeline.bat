@@ -39,11 +39,12 @@ for Subject in $Subjlist ; do
     GradientDistortionCoeffs="${GitRepo}/global/config/coeff_SC72C_Skyra.grad"
     FNIRTConfig="NONE" #Put a FNIRT config to use approximate zblip distortion correction otherwise NONE to turn that off
     TopUpConfig="${GitRepo}/global/config/b02b0.cnf" #Put a Topup Config if DistortionCorrection="TOPUP" is set
+    GlobalBinaries="${GitRepo}/global/binaries"
     cd $DIR
 
     if [ -e "$StudyFolder"/"$Subject"/"$fMRIFolder"/"$InputNameOffMRI" ] ; then
-      fsl_sub -q long.q ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig
-      echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig"
+      fsl_sub -q long.q ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries
+      echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries"
     else
       echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
     fi

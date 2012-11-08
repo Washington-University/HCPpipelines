@@ -37,7 +37,7 @@ $FSLDIR/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
 echo "Computing gradient coil tensor"
 curdir=`pwd`
 cd ${datadir}
-${globaldir}/binaries/gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globaldir}/config/coeff_SC72C_Skyra.grad -n
+gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globaldir}/config/coeff_SC72C_Skyra.grad -n
 ${globaldir}/binaries/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
 ${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
 ${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 

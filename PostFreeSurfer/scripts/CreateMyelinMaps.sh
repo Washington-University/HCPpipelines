@@ -38,6 +38,7 @@ OutputOrigT2wToT1w="${33}"
 OutputOrigT2wToStandard="${34}"
 BiasFieldOutput="${35}"
 T1wMNIImageBrain="${36}"
+Jacobian="${37}"
 
 DIR=`pwd`
 
@@ -76,6 +77,7 @@ fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
 fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrain" "$OutputMNIT2wImageRestoreBrain"
 
+$Caret7_Command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate true -disp-pos true -disp-neg false -disp-zero false -palette-name HSB8_clrmid -thresholding THRESHOLD_TYPE_NORMAL THRESHOLD_TEST_SHOW_OUTSIDE 0.5 2
 
 #Fix cortex ROI for any defects, fill in those defects in thickness and curvature maps
 for Hemisphere in L R ; do
@@ -96,7 +98,7 @@ for Hemisphere in L R ; do
   #$Caret5_Command -metric-smoothing "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".native.topo.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii DILATE 50 1
   $Caret7_Command -metric-mask "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii 1 "$Subject"_"$Hemisphere"_Thickness
-  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii $Structure
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".thickness.native.shape.gii
@@ -114,9 +116,9 @@ done
 $Caret5_Command -myelin-mapping "$T1wFolder"/"$Native"/"$Subject".L.midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject".R.midthickness.native.coord.gii "$T1wFolder"/"$Native"/"$Subject".L.native.topo.gii "$T1wFolder"/"$Native"/"$Subject".R.native.topo.gii "$OutputT1wImage".nii.gz "$OutputT2wImage".nii.gz "$T1wFolder"/ribbon.nii.gz "$AtlasSpaceFolder"/"$Native"/"$Subject".L.thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.thickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".L.curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.curvature.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".L.MyelinMappingOut.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject".R.MyelinMappingOut.native.func.gii "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -neighbor-depth 10 -number-of-standard-deviations 4 -smoothing-FWHM 5 -volume-outliers 4
 
 #Add myelin mapping evaluation files to native mesh spec file
-$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
 $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w.nii.gz
-$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+$Caret7_Command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
 $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
 
 #Break out myelin mapping results into individual files, add them to caret7 spec files, deform them to 164k_fs_LR and 32k_fs_LR
@@ -132,21 +134,21 @@ for Hemisphere in L R ; do
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 2
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii 1 "$Subject"_"$Hemisphere"_Myelin_Map
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii $Structure
-  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 3
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii 1 "$Subject"_"$Hemisphere"_Smoothed_Myelin_Map
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii $Structure
-  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii
   $Caret5_Command -metric-composite-identified-columns "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".MyelinMappingOut.native.func.gii 4
   $Caret5_Command -metric-set-column-name "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii 1 "$Subject"_"$Hemisphere"_corrThickness
   $Caret7_Command -set-structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii $Structure
-  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+  $Caret7_Command -metric-palette "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   $Caret7_Command -add-to-spec-file "$AtlasSpaceFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
   cp "$AtlasSpaceFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii
   $Caret7_Command -add-to-spec-file "$T1wFolder"/"$Native"/"$Subject".native.wb.spec $Structure "$T1wFolder"/"$Native"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii

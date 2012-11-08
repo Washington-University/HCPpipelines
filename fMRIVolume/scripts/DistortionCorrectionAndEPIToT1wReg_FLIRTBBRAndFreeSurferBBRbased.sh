@@ -25,6 +25,7 @@ QAImage="${20}"
 DistortionCorrection="${21}"
 TopupConfig="${22}"
 JacobianOut="${23}"
+GlobalBinaries="${24}"
 
 ScoutInputFile=`basename $ScoutInputName`
 T1wBrainImageFile=`basename $T1wBrainImage`
@@ -46,7 +47,7 @@ elif [ $DistortionCorrection = "TOPUP" ] ; then
   #PhaseEncodeOne is MagnitudeInputName, PhaseEncodeTwo is PhaseInputName
   #"$GlobalScripts"/TopupPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$DwellTime" "$UnwarpDir" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/TopupField "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" "$TopupConfig"
 
-  "$GlobalScripts"/TopupPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$ScoutInputName" "$DwellTime" "$UnwarpDir" "$WorkingDirectory"/WarpField "$WorkingDirectory"/Jacobian "$GradientDistortionCoeffs" "$GlobalScripts" "$TopupConfig"
+  "$GlobalScripts"/TopupPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$ScoutInputName" "$DwellTime" "$UnwarpDir" "$WorkingDirectory"/WarpField "$WorkingDirectory"/Jacobian "$GradientDistortionCoeffs" "$GlobalScripts" "$TopupConfig" "$GlobalBinaries"
   applywarp --interp=spline -i "$ScoutInputName" -r "$ScoutInputName" -w "$WorkingDirectory"/WarpField.nii.gz -o "$WorkingDirectory"/"$ScoutInputFile"_undistorted
   ###DISABLE JACOBIAN MODULATION###
   #fslmaths "$WorkingDirectory"/"$ScoutInputFile"_undistorted -mul "$WorkingDirectory"/Jacobian.nii.gz "$WorkingDirectory"/"$ScoutInputFile"_undistorted
