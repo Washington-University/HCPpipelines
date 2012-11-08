@@ -240,9 +240,29 @@ class Unwarper(object):
             vxyzw = CV(x=vxyz.x + self.polarity * dvx,
                        y=vxyz.y + self.polarity * dvy,
                        z=vxyz.z + self.polarity * dvz)
+
             # convert the locations got into RCS indices
             vrcsw = utils.transform_coordinates(vxyzw,
                                                 np.linalg.inv(m_rcs2lai))
+            # map the internal voxel coordinates to FSL scaled mm coordinates
+            pixdim1=float((subprocess.Popen(['fslval', self.name,'pixdim1'], stdout=subprocess.PIPE).communicate()[0]).strip())
+            pixdim2=float((subprocess.Popen(['fslval', self.name,'pixdim2'], stdout=subprocess.PIPE).communicate()[0]).strip())
+            pixdim3=float((subprocess.Popen(['fslval', self.name,'pixdim3'], stdout=subprocess.PIPE).communicate()[0]).strip())
+            dim1=float((subprocess.Popen(['fslval', self.name,'dim1'], stdout=subprocess.PIPE).communicate()[0]).strip())
+            outputOrient=subprocess.Popen(['fslorient', self.name], stdout=subprocess.PIPE).communicate()[0]
+            if outputOrient.strip() == 'NEUROLOGICAL':
+                # if neurological then flip x coordinate (both here in premat and later in postmat)
+                m_vox2fsl = np.array([[-1.0*pixdim1, 0.0, 0.0, pixdim1*(dim1-1)],
+                                  [0.0, pixdim2, 0.0, 0.0],
+                                  [0.0, 0.0, pixdim3, 0.0],
+                                  [0.0, 0.0, 0.0, 1.0]], dtype=np.float)
+            else:
+                m_vox2fsl = np.array([[pixdim1, 0.0, 0.0, 0.0],
+                                  [0.0, pixdim2, 0.0, 0.0],
+                                  [0.0, 0.0, pixdim3, 0.0],
+                                  [0.0, 0.0, 0.0, 1.0]], dtype=np.float)
+                
+            vfsl = utils.transform_coordinates(vrcsw, m_vox2fsl)
 
 
             #im_ = utils.interp3(self.vol, vrcsw.x, vrcsw.y, vrcsw.z)
@@ -280,22 +300,15 @@ class Unwarper(object):
                 im2 = im2 * jim2
                 vjacout[..., s] = jim2
 
-            fullWarp[...,s,0]=dvx
-            fullWarp[...,s,1]=dvy
-            fullWarp[...,s,2]=dvz*-1.0
+            fullWarp[...,s,0]=vfsl.x
+            fullWarp[...,s,1]=vfsl.y
+            fullWarp[...,s,2]=vfsl.z
             out[..., s] = im2
 
         print
-        outputOrient=subprocess.Popen(['fslorient', self.name], stdout=subprocess.PIPE).communicate()[0]
-        pixdim_one=float((subprocess.Popen(['fslval', self.name,'pixdim1'], stdout=subprocess.PIPE).communicate()[0]).strip())/2
-        pixdim_two=float((subprocess.Popen(['fslval', self.name,'pixdim2'], stdout=subprocess.PIPE).communicate()[0]).strip())/2
-        if outputOrient.strip() == 'NEUROLOGICAL':
-          pixdim_one*=-1.0
-        shiftMatrix=np.matrix('1 0 0 '+str(pixdim_one)+';0 1 0 '+str(pixdim_two)+';0 0 1 0;0 0 0 1')
-        np.savetxt("shiftMatrix.mat", shiftMatrix, fmt='%1.4f')
        
         img=nib.Nifti1Image(fullWarp,self.m_rcs2ras)
-        nib.save(img,"fullWarp.nii.gz")
+        nib.save(img,"fullWarp_abs.nii.gz")
         # return image and the jacobian
         return out, vjacout
 
