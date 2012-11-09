@@ -45,6 +45,7 @@ for Subject in $Subjlist ; do
     if [ -e "$StudyFolder"/"$Subject"/"$fMRIFolder"/"$InputNameOffMRI" ] ; then
       fsl_sub -q long.q ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries
       echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries"
+      sleep 1
     else
       echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
     fi
