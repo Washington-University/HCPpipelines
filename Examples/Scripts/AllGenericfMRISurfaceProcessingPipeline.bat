@@ -28,6 +28,7 @@ for Subject in $Subjlist ; do
     if [ -e "$StudyFolder"/"$Subject"/MNINonLinear/Results/"$OutputNameOffMRI"/"$OutputNameOffMRI".nii.gz ] ; then
       fsl_sub -q long.q ${GitRepo}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh $StudyFolder $Subject $OutputNameOffMRI $DownSampleNameI $FinalfMRIResolution $SmoothingFWHM $Caret5_Command $Caret7_Command $PipelineScripts $AtlasParcellation $AtlasSurfaceROIs $BrainOrdinatesResolution $SubcorticalBrainOrdinatesLabels
       echo "set -- $StudyFolder $Subject $OutputNameOffMRI $DownSampleNameI $FinalfMRIResolution $SmoothingFWHM $Caret5_Command $Caret7_Command $PipelineScripts $AtlasParcellation $AtlasSurfaceROIs $BrainOrdinatesResolution $SubcorticalBrainOrdinatesLabels"
+      sleep 1
     else
       echo "fMRI Run ""$OutputNameOffMRI"" Not Found"
     fi      
