@@ -171,7 +171,7 @@ echo "Running Topup"
 ${scriptsdir}/run_topup.sh ${outdir}/topup ${globaldir}
 
 echo "Running Eddy"
-${scriptsdir}/run_eddy.sh ${outdir}/eddy
+${scriptsdir}/run_eddy.sh ${outdir}/eddy ${globaldir}
 
 echo "Running Eddy PostProcessing"
 ${scriptsdir}/eddy_postproc.sh ${outdir} ${globaldir} 
