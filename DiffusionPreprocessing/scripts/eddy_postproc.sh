@@ -38,6 +38,7 @@ echo "Computing gradient coil tensor"
 curdir=`pwd`
 cd ${datadir}
 gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globaldir}/config/coeff_SC72C_Skyra.grad -n
+${FSLDIR}/bin/convertwarp --ref=fullWarp_abs --warp1=fullWarp_abs.nii.gz --relout --out=fullWarp
 ${globaldir}/binaries/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
 ${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
 ${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 
@@ -47,7 +48,7 @@ ${FSLDIR}/bin/imrm grad_dev_?
 #In the future, we want this applywarp to be part of eddy and avoid second resampling step.
 echo "Correcting for gradient nonlinearities"
 ${FSLDIR}/bin/immv data data_warped
-${FSLDIR}/bin/applywarp -i data_warped -r nodif_brain -w fullWarp --premat=shiftMatrix.mat --interp=spline -o data
+${FSLDIR}/bin/applywarp -i data_warped -r nodif_brain -w fullWarp_abs --abs --interp=spline -o data
 ${FSLDIR}/bin/immv nodif_brain nodif_brain_warped
 ${FSLDIR}/bin/immv nodif_brain_mask nodif_brain_mask_warped
 ${FSLDIR}/bin/imrm nodif_brain_unwarped
@@ -58,8 +59,8 @@ mkdir -p ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/nodif_brain_mask_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/nodif_brain_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
+${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
-mv ${datadir}/shiftMatrix.mat ${datadir}/warped
 
 echo -e "\n END: postproc"
 
