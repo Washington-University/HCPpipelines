@@ -17,8 +17,8 @@ for Subject in $Subjlist ; do
     DownSampleNameI="32"
     FinalfMRIResolution="2"
     SmoothingFWHM="2"
-    Caret5_Command="/usr/bin/caret_command" #Location of Caret5 caret_command
-    Caret7_Command="wb_command"
+    Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
+    Caret7_Command="${GitRepo}/global/binaries/caret7/bin_linux64/wb_command"
     PipelineScripts="${GitRepo}/fMRISurface/scripts"
     AtlasParcellation="${GitRepo}/global/templates/standard_mesh_atlases/CCNMD_MyelinMapping_Avgwmparc.nii.gz"
     AtlasSurfaceROIs="${GitRepo}/global/templates/standard_mesh_atlases/fs_L/CCNMD_MyelinMapping.L.Atlas_Cortex_ROI.164k_fs_LR.func.gii@${GitRepo}/global/templates/standard_mesh_atlases/fs_R/CCNMD_MyelinMapping.R.Atlas_Cortex_ROI.164k_fs_LR.func.gii" #delimit left and right files with @

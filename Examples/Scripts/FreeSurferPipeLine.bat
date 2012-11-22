@@ -12,8 +12,8 @@ for Subject in $Subjlist ; do
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
   PipelineScripts="${GitRepo}/FreeSurfer/scripts"
   PipelineBinaries="${GitRepo}/global/binaries"
-  Caret5_Command="/usr/bin/caret_command"
-  Caret7_Command="wb_command"
+  Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
+  Caret7_Command="${GitRepo}/global/binaries/caret7/bin_linux64/wb_command"
 
   fsl_sub -q short.q ${GitRepo}/FreeSurfer/FreeSurferPipeline.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T1wImageBrain" "$T2wImage" "$PipelineScripts" "$PipelineBinaries" "$Caret5_Command" "$Caret7_Command"
   echo "set -- $SubjectID $SubjectDIR $T1wImage $T1wImageBrain $T2wImage $PipelineScripts $PipelineBinaries $Caret5_Command $Caret7_Command"
