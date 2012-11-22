@@ -35,7 +35,7 @@ for Subject in $Subjlist ; do
   T2wSampleSpacing="0.0000021" #DICOM field (0019,1018) in s or "NONE" if not used
   UnwarpDir="z" #z appears to be best or "NONE" if not used
   PipelineScripts="${GitRepo}/PreFreeSurfer/scripts" #Location where the pipeline modules are
-  Caret5_Command="/usr/bin/caret_command" #Location of Caret5 caret_command
+  Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
   GlobalScripts="${GitRepo}/global/scripts" #Location where the global pipeline modules are
   GradientDistortionCoeffs="${ConfigFolder}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
   AvgrdcSTRING="FIELDMAP" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = average and distortion correct at the same time with topup/applytopup only works for 2 images currently

@@ -13,8 +13,8 @@ for Subject in $Subjlist ; do
   PipelineScripts="${GitRepo}/PostFreeSurfer/scripts"
   PipelineBinaries="${GitRepo}/global/binaries"
   GlobalScripts="${GitRepo}/global/scripts" #Location where the global pipeline modules are
-  Caret5_Command="/usr/bin/caret_command" #Location of Caret5 caret_command
-  Caret7_Command="wb_command"
+  Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
+  Caret7_Command="${GitRepo}/global/binaries/caret7/bin_linux64/wb_command"
   fsl_sub -q long.q ${GitRepo}/PostFreeSurfer/PostFreeSurferPipeline.sh "$StudyFolder" "$Subject" "$FinalTemplateSpace" "$CaretAtlasFolder" "$DownSampleI" "$DownSampleNameI" "$PipelineScripts" "$PipelineBinaries" "$GlobalScripts" "$Caret5_Command" "$Caret7_Command" 
   echo "set -- $StudyFolder $Subject $FinalTemplateSpace $CaretAtlasFolder $DownSampleI $DownSampleNameI $PipelineScripts $PipelineBinaries $GlobalScripts $Caret5_Command $Caret7_Command" 
 done
