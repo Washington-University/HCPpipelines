@@ -15,7 +15,7 @@ for Subject in $Subjlist ; do
   Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
   Caret7_Command="${GitRepo}/global/binaries/caret7/bin_linux64/wb_command"
 
-  fsl_sub -q short.q ${GitRepo}/FreeSurfer/FreeSurferPipeline.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T1wImageBrain" "$T2wImage" "$PipelineScripts" "$PipelineBinaries" "$Caret5_Command" "$Caret7_Command"
+  fsl_sub -q long.q ${GitRepo}/FreeSurfer/FreeSurferPipeline.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T1wImageBrain" "$T2wImage" "$PipelineScripts" "$PipelineBinaries" "$Caret5_Command" "$Caret7_Command"
   echo "set -- $SubjectID $SubjectDIR $T1wImage $T1wImageBrain $T2wImage $PipelineScripts $PipelineBinaries $Caret5_Command $Caret7_Command"
 done
 
