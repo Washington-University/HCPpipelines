@@ -6,7 +6,8 @@ echo -e "\n START: postproc"
 EddyJacFlag="JacobianResampling" 
 
 workingdir=$1
-globaldir=$2
+binarydir=$2
+configdir=$3
 
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
@@ -23,7 +24,7 @@ datadir=${workingdir}/data
      NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
      ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 0 ${PosVols}
      ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg ${PosVols} ${NegVols}
-     ${globaldir}/binaries/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
+     ${binarydir}/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
                                         ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} 1
 
      ${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
@@ -37,9 +38,9 @@ $FSLDIR/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
 echo "Computing gradient coil tensor"
 curdir=`pwd`
 cd ${datadir}
-gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${globaldir}/config/coeff_SC72C_Skyra.grad -n
+gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n
 ${FSLDIR}/bin/convertwarp --ref=fullWarp_abs --warp1=fullWarp_abs.nii.gz --relout --out=fullWarp
-${globaldir}/binaries/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
+${binarydir}/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
 ${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
 ${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 
 ${FSLDIR}/bin/imrm grad_dev_?

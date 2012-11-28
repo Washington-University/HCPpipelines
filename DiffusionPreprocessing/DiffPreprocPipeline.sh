@@ -51,7 +51,7 @@ Usage() {
 }
 
 [ "$1" = "" ] && Usage
-if [ $# -ne 8 ]; then
+if [ $# -ne 10 ]; then
     echo "Wrong Number of Arguments!"
     Usage
 fi
@@ -62,7 +62,9 @@ Subject="$4"
 echospacing=$5
 PEdir=$6
 scriptsdir=$7
-globaldir=$8
+binarydir=$8
+configdir=$9
+globalscriptsdir="${10}"
 
 #ErrorHandling
 if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
@@ -168,13 +170,13 @@ echo "Running Basic Preprocessing"
 ${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
 echo "Running Topup"
-${scriptsdir}/run_topup.sh ${outdir}/topup ${globaldir}
+${scriptsdir}/run_topup.sh ${outdir}/topup ${binarydir} ${configdir}
 
 echo "Running Eddy"
-${scriptsdir}/run_eddy.sh ${outdir}/eddy ${globaldir}
+${scriptsdir}/run_eddy.sh ${outdir}/eddy ${binarydir}
 
 echo "Running Eddy PostProcessing"
-${scriptsdir}/eddy_postproc.sh ${outdir} ${globaldir} 
+${scriptsdir}/eddy_postproc.sh ${outdir} ${binarydir} ${configdir}
 
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
@@ -213,7 +215,7 @@ ${outdir}/data/data.nii.gz \
 "${outdir}"/reg/"$QAImage" \
 "$T1wFolder"/"$FreeSurferBrainMask" \
 "${outdir}"/data/"$OutputBrainMask" \
-${globaldir} 
+${globalscriptsdir} 
 
 
 
