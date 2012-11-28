@@ -32,7 +32,7 @@ cp "$T1wBrainImage".nii.gz "$WorkingDirectory"/"$T1wBrainImageFile".nii.gz
 regimg="nodif"
 fslroi "$DiffusionInput" "$WorkingDirectory"/"$regimg" 0 1
 
-"$GlobalScripts"/scripts/epi_reg.sh "$WorkingDirectory"/"$regimg" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$regimg"2T1w_initII
+"$GlobalScripts"/epi_reg.sh "$WorkingDirectory"/"$regimg" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$regimg"2T1w_initII
 applywarp --interp=spline  -i "$WorkingDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
 applywarp --interp=spline -i "$WorkingDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
 fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
