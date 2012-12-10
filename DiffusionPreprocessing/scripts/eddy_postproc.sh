@@ -55,6 +55,12 @@ ${FSLDIR}/bin/immv nodif_brain_mask nodif_brain_mask_warped
 ${FSLDIR}/bin/imrm nodif_brain_unwarped
 ${FSLDIR}/bin/bet data nodif_brain -m -f 0.1
 
+#Remove negative intensity values (caused by spline interpolation) from final data
+${FSLDIR}/bin/fslmaths data -thr 0 -bin mask_pos
+${FSLDIR}/bin/fslmaths data -mas mask_pos data
+${FSLDIR}/bin/imrm mask_pos
+
+
 cd ${curdir}
 mkdir -p ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/nodif_brain_mask_warped ${datadir}/warped
