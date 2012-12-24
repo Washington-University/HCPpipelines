@@ -100,6 +100,11 @@ InputImages=`echo "$2"`
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
 Pos_count=1
 for Image in ${InputImages} ; do
+	if [[ ${Image} =~ ^.*EMPTY$  ]]  ;  
+	then
+		Image=“EMPTY”
+	fi
+	
     if [ ${Image} = ${MissingFileFlag} ];
     then	
         PosVols[${Pos_count}]=0
@@ -118,6 +123,11 @@ InputImages=`echo "$1"`
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
 Neg_count=1
 for Image in ${InputImages} ; do
+	if [[ ${Image} =~ ^.*EMPTY$  ]]  ;  
+	then
+		Image=“EMPTY”
+	fi
+	
     if [ ${Image} = ${MissingFileFlag} ];
     then	
 	NegVols[${Neg_count}]=0
