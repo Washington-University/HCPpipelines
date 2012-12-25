@@ -53,7 +53,11 @@ ${FSLDIR}/bin/applywarp -i data_warped -r nodif_brain -w fullWarp_abs --abs --in
 ${FSLDIR}/bin/immv nodif_brain nodif_brain_warped
 ${FSLDIR}/bin/immv nodif_brain_mask nodif_brain_mask_warped
 ${FSLDIR}/bin/imrm nodif_brain_unwarped
+
+#Remove negative intensity values (caused by spline interpolation) from final data
+${FSLDIR}/bin/fslmaths data -thr 0 data
 ${FSLDIR}/bin/bet data nodif_brain -m -f 0.1
+
 
 cd ${curdir}
 mkdir -p ${datadir}/warped
