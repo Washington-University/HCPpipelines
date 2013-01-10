@@ -82,7 +82,7 @@ fi
 
 fslmaths "$WorkingDirectory"/BothPhases -abs -add 1 -mas "$WorkingDirectory"/Mask -dilD -dilD -dilD -dilD -dilD "$WorkingDirectory"/BothPhases
 
-topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --iout="$WorkingDirectory"/Magnitudes --fout="$WorkingDirectory"/TopupField --dfout="$WorkingDirectory"/WarpField --rbmout="$WorkingDirectory"/MotionMatrix --jacout="$WorkingDirectory"/Jacobian -v 
+${GlobalBinaries}/topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --iout="$WorkingDirectory"/Magnitudes --fout="$WorkingDirectory"/TopupField --dfout="$WorkingDirectory"/WarpField --rbmout="$WorkingDirectory"/MotionMatrix --jacout="$WorkingDirectory"/Jacobian -v 
 
 if [ $UnwarpDir = "x" ] ; then
   VolumeNumber=$(($dimtOne + 1))
