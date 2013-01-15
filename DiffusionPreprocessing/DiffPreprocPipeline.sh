@@ -36,14 +36,16 @@ min(){
 
 Usage() {
     echo ""
-    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@..dataLRN dataRL1@dataRL2@...dataRLN StudyFolder SubjectId EchoSpacing PhaseEncodingDir LocalScriptsDir GlobalDir"
+    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@..dataLRN dataRL1@dataRL2@...dataRLN StudyFolder SubjectId EchoSpacing PhaseEncodingDir LocalScriptsDir GlobalBinaryDir GlobalConfigDir GlobalScriptsDir"
     echo ""
     echo "Input filenames should include absolute paths. If for a LR/RL (AP/PA) pair one of the two files are missing set the entry to EMPTY"
     echo "Working and Output durectory will be {StudyFolder}/{SubjectId}/Diffusion"
     echo "EchoSpacing should be in msecs"
     echo "PhaseEncodingDir: 1 for LR/RL, 2 for AP/PA"
     echo "LocalScriptsDir : Absolute path for local scripts, e.g. ${Pipelines}/DiffusionPreprocessing/scripts"
-    echo "GlobalDir       : Absolute path for global directory of scripts, binaries, conf files, e.g. ${Pipelines}/global" 
+	echo "GlobalBinaryDir : Absolute path for global binaries not part of software release, e.g. ${Pipelines}/global/binaries"
+	echo "GlobalConfigDir : Absolute path for global configuration files, e.g. ${Pipelines}/global/config"
+    echo "GlobalScriptsDir: Absolute path for global directory of scripts, e.g. ${Pipelines}/global/scripts" 
     echo ""
     echo ""
     echo ""
