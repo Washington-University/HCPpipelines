@@ -102,9 +102,9 @@ InputImages=`echo "$2"`
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
 Pos_count=1
 for Image in ${InputImages} ; do
-	if [[ ${Image} =~ ^.*EMPTY$  ]]  ;  
+	if [[ ${Image} =~ ^.*EMPTY.*$  ]]  ;  
 	then
-		Image=“EMPTY”
+		Image=EMPTY
 	fi
 	
     if [ ${Image} = ${MissingFileFlag} ];
@@ -125,9 +125,9 @@ InputImages=`echo "$1"`
 InputImages=`echo ${InputImages} | sed 's/@/ /g'`
 Neg_count=1
 for Image in ${InputImages} ; do
-	if [[ ${Image} =~ ^.*EMPTY$  ]]  ;  
+	if [[ ${Image} =~ ^.*EMPTY.*$  ]]  ;  
 	then
-		Image=“EMPTY”
+		Image=EMPTY
 	fi
 	
     if [ ${Image} = ${MissingFileFlag} ];
