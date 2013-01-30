@@ -56,13 +56,6 @@ fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$regimg"2T1w_restor
 
 applywarp --interp=nn -i "$InputBrainMask" -r "$WorkingDirectory"/"$regimg" --premat=$OutputInvTransform -o "$OutputBrainMask"
 
-##FA FLIRT 6 dof
-regimg="data_FA"
-dtifit -k "$DiffusionInput" -m "$OutputBrainMask" -b "$WorkingDirectory"/../data/bvals -r "$WorkingDirectory"/../data/bvecs -o "$WorkingDirectory"/data
-flirt -dof 6 -in "$WorkingDirectory"/"$regimg" -ref "$WorkingDirectory"/"$T1wBrainImageFile" -omat "$WorkingDirectory"/"$regimg"2T1w.mat
-applywarp --interp=spline -i "$WorkingDirectory"/nodif -r "$WorkingDirectory"/"$T1wBrainImageFile" --premat="$WorkingDirectory"/"$regimg"2T1w.mat -o "$WorkingDirectory"/"$regimg"2T1w
-fslmaths "$WorkingDirectory"/"$regimg"2T1w -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore
-
-fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$regimg"2T1w_restore.nii.gz -sqrt "$QAImage"_"$regimg".nii.gz
+fslmaths "$DiffusionInput" -mas "$OutputBrainMask" "$DiffusionInput"
 
 echo " END: DiffusionToStructural"
