@@ -1,71 +1,245 @@
 #!/bin/bash 
 set -e
 
-echo -e "\n START: T2wToT1wDistortionCorrectionAndReg"
+# Requirements for this script
+#  installed versions of: FSL5.0.1 or later, gradunwarp python package (from MGH)
+#  environment: FSLDIR and PATH for gradient_unwarp.py
 
+################################################ SUPPORT FUNCTIONS ##################################################
 
-WorkingDirectory="$1"
-T1wImage="$2"
-T1wImageBrain="$3"
-T2wImage="$4"
-T2wImageBrain="$5"
-MagnitudeInputName="$6"
-PhaseInputName="$7"
-TE="$8"
-T1wSampleSpacing="$9"
-T2wSampleSpacing="${10}"
-UnwarpDir="${11}"
-OutputT1wImage="${12}"
-OutputT1wImageBrain="${13}"
-OutputT1wTransform="${14}"
-OutputT2wImage="${15}"
-OutputT2wTransform="${16}"
-GlobalScripts="${17}"
-GradientDistortionCoeffs="${18}"
+Usage() {
+  echo "`basename $0`: Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
+  echo " "
+  echo "Usage: `basename $0` [--workingdir=<working directory>]"
+  echo "            --t1=<input T1w image>"
+  echo "            --t1brain=<input T1w brain-extracted image>"
+  echo "            --t2=<input T2w image>"
+  echo "            --t2brain=<input T2w brain-extracted image>"
+  echo "            --fmapmag=<input fieldmap magnitude image>"
+  echo "            --fmapphase=<input fieldmap phase images (single 4D image containing 2x3D volumes)>"
+  echo "            --echodiff=<echo time difference for fieldmap images (in milliseconds)>"
+  echo "            --t1sampspacing=<sample spacing (readout direction) of T1w image - in seconds>"
+  echo "            --t2sampspacing=<sample spacing (readout direction) of T2w image - in seconds>"
+  echo "            --unwarpdir=<direction of distortion according to voxel axes (post reorient2std)>"
+  echo "            --ot1=<output corrected T1w image>"
+  echo "            --ot1brain=<output corrected, brain-extracted T1w image>"
+  echo "            --ot1warp=<output warpfield for distortion correction of T1w image>"
+  echo "            --ot2=<output corrected T2w image>"
+  echo "            --ot2brain=<output corrected, brain-extracted T2w image>"
+  echo "            --ot2warp=<output warpfield for distortion correction of T2w image>"
+  echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
+}
 
-T1wImageBrainFile=`basename "$T1wImageBrain"`
-T1wImageFile=`basename "$T1wImage"`
-T2wImageBrainFile=`basename "$T2wImageBrain"`
-T2wImageFile=`basename "$T2wImage"`
+# function for parsing options
+getopt1() {
+    sopt="$1"
+    shift 1
+    for fn in $@ ; do
+	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+	    echo $fn | sed "s/^${sopt}=//"
+	    return 0
+	fi
+    done
+}
 
-cd "$WorkingDirectory"
+defaultopt() {
+    echo $1
+}
 
-if [ ! -e "$WorkingDirectory"/FieldMap ] ; then
-  mkdir "$WorkingDirectory"/FieldMap
+################################################### OUTPUT FILES #####################################################
+
+# For distortion correction:
+#
+# Output files (in $WD): Magnitude  Magnitude_brain  Phase  FieldMap
+#                        Magnitude_brain_warppedT1w  Magnitude_brain_warppedT1w2${TXwImageBrainBasename}
+#                        fieldmap2${T1wImageBrainBasename}.mat   FieldMap2${T1wImageBrainBasename}
+#                        FieldMap2${T1wImageBrainBasename}_ShiftMap  
+#                        FieldMap2${T1wImageBrainBasename}_Warp ${T1wImageBasename}  ${T1wImageBrainBasename}
+#        Plus the versions with T1w -> T2w
+#
+# Output files (not in $WD):  ${OutputT1wTransform}   ${OutputT1wImage}  ${OutputT1wImageBrain}
+#        Note that these outputs are actually copies of the last three entries in the $WD list
+#
+#
+# For registration:
+#
+# Output images (in $WD/T2w2T1w):  sqrtT1wbyT2w  T2w_reg.mat  T2w_reg_init.mat
+#                                  T2w_dc_reg  (the warp field)
+#                                  T2w_reg     (the warped image)
+# Output images (not in $WD):  ${OutputT2wTransform}   ${OutputT2wImage}
+#        Note that these outputs are copies of the last two images (respectively) from the T2w2T1w subdirectory
+
+################################################## OPTION PARSING #####################################################
+
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
+# check for correct options
+if [ $# -lt 17 ] ; then Usage; exit 1; fi
+
+# parse arguments
+WD=`getopt1 "--workingdir" $@`  # "$1"
+T1wImage=`getopt1 "--t1" $@`  # "$2"
+T1wImageBrain=`getopt1 "--t1brain" $@`  # "$3"
+T2wImage=`getopt1 "--t2" $@`  # "$4"
+T2wImageBrain=`getopt1 "--t2brain" $@`  # "$5"
+MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$6"
+PhaseInputName=`getopt1 "--fmapphase" $@`  # "$7"
+TE=`getopt1 "--echodiff" $@`  # "$8"
+T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  # "$9"
+T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  # "${10}"
+UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${11}"
+OutputT1wImage=`getopt1 "--ot1" $@`  # "${12}"
+OutputT1wImageBrain=`getopt1 "--ot1brain" $@`  # "${13}"
+OutputT1wTransform=`getopt1 "--ot1warp" $@`  # "${14}"
+OutputT2wImage=`getopt1 "--ot2" $@`  # "${15}"
+OutputT2wTransform=`getopt1 "--ot2warp" $@`  # "${16}"
+#GlobalScripts=`getopt1 "--globalscripts" $@`  # "${17}"
+GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${18}"
+
+# default parameters
+GlobalScripts=${HCPPIPEDIR}/global/scripts
+WD=`defaultopt $WD .`
+
+T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
+T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
+T2wImage=`${FSLDIR}/bin/remove_ext $T2wImage`
+T2wImageBrain=`${FSLDIR}/bin/remove_ext $T2wImageBrain`
+
+T1wImageBrainBasename=`basename "$T1wImageBrain"`
+T1wImageBasename=`basename "$T1wImage"`
+T2wImageBrainBasename=`basename "$T2wImageBrain"`
+T2wImageBasename=`basename "$T2wImage"`
+
+Modalities="T1w T2w"
+UsingT2=true
+if [ X$T2wImageBasename = X ] ; then
+    Modalities="T1w"   # This is the minimum that must be run
+    UsingT2=false
 fi
 
-echo -e "\n\n\n"$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts""
+echo " "
+echo " START: T2wToT1wDistortionCorrectionAndReg"
 
-"$GlobalScripts"/FieldMapPreprocessingAll.sh "$WorkingDirectory"/FieldMap "$MagnitudeInputName" "$PhaseInputName" "$TE" "$WorkingDirectory"/Magnitude "$WorkingDirectory"/Magnitude_brain "$WorkingDirectory"/Phase "$WorkingDirectory"/FieldMap "$GradientDistortionCoeffs" "$GlobalScripts" 
+mkdir -p $WD
+mkdir -p ${WD}/FieldMap
 
-fugue -v -i "$WorkingDirectory"/Magnitude_brain.nii.gz --icorr --unwarpdir="$UnwarpDir" --dwell=$T1wSampleSpacing --loadfmap="$WorkingDirectory"/FieldMap.nii.gz -w "$WorkingDirectory"/Magnitude_brain_warppedT1w
-flirt -dof 6 -in "$WorkingDirectory"/Magnitude_brain_warppedT1w -ref "$T1wImageBrain" -out "$WorkingDirectory"/Magnitude_brain_warppedT1w2"$T1wImageBrainFile" -omat "$WorkingDirectory"/fieldmap2"$T1wImageBrainFile".mat 
-flirt -in "$WorkingDirectory"/FieldMap.nii.gz -ref "$T1wImageBrain" -applyxfm -init "$WorkingDirectory"/fieldmap2"$T1wImageBrainFile".mat -out "$WorkingDirectory"/FieldMap2"$T1wImageBrainFile" 
-fugue --loadfmap="$WorkingDirectory"/FieldMap2"$T1wImageBrainFile" --dwell="$T1wSampleSpacing" --saveshift="$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_ShiftMap.nii.gz
-convertwarp --ref="$T1wImageBrain" --shiftmap="$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_ShiftMap.nii.gz --shiftdir="$UnwarpDir" --out="$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_Warp.nii.gz
-applywarp --interp=spline -i "$T1wImage" -r "$T1wImage" -w "$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_Warp.nii.gz -o "$T1wImageFile"
-applywarp --interp=nn -i "$T1wImageBrain" -r "$T1wImageBrain" -w "$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_Warp.nii.gz -o "$T1wImageBrainFile"
-fslmaths "$T1wImageFile" -mas "$T1wImageBrainFile" "$T1wImageBrainFile"
-cp "$WorkingDirectory"/FieldMap2"$T1wImageBrainFile"_Warp.nii.gz "$OutputT1wTransform".nii.gz
-cp "$T1wImageFile".nii.gz "$OutputT1wImage".nii.gz
-cp "$T1wImageBrainFile".nii.gz "$OutputT1wImageBrain".nii.gz
+# Record the input options in a log file
+echo "$0 $@" >> $WD/log.txt
+echo "PWD = `pwd`" >> $WD/log.txt
+echo "date: `date`" >> $WD/log.txt
+echo " " >> $WD/log.txt
 
-fugue -v -i "$WorkingDirectory"/Magnitude_brain.nii.gz --icorr --unwarpdir="$UnwarpDir" --dwell=$T2wSampleSpacing --loadfmap="$WorkingDirectory"/FieldMap.nii.gz -w "$WorkingDirectory"/Magnitude_brain_warppedT2w
-flirt -dof 6 -in "$WorkingDirectory"/Magnitude_brain_warppedT2w -ref "$T2wImageBrain" -out "$WorkingDirectory"/Magnitude_brain_warppedT2w2"$T2wImageBrainFile" -omat "$WorkingDirectory"/fieldmap2"$T2wImageBrainFile".mat 
-flirt -in "$WorkingDirectory"/FieldMap.nii.gz -ref "$T2wImageBrain" -applyxfm -init "$WorkingDirectory"/fieldmap2"$T2wImageBrainFile".mat -out "$WorkingDirectory"/FieldMap2"$T2wImageBrainFile" 
-fugue --loadfmap="$WorkingDirectory"/FieldMap2"$T2wImageBrainFile" --dwell="$T2wSampleSpacing" --saveshift="$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_ShiftMap.nii.gz
-convertwarp --ref="$T2wImageBrain" --shiftmap="$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_ShiftMap.nii.gz --shiftdir="$UnwarpDir" --out="$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_Warp.nii.gz
-applywarp --interp=spline -i "$T2wImage" -r "$T2wImage" -w "$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_Warp.nii.gz -o "$T2wImageFile"
-applywarp --interp=nn -i "$T2wImageBrain" -r "$T2wImageBrain" -w "$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_Warp.nii.gz -o "$T2wImageBrainFile"
-fslmaths "$T2wImageFile" -mas "$T2wImageBrainFile" "$T2wImageBrainFile"
 
-mkdir -p T2w2T1w
-"$GlobalScripts"/epi_reg.sh "$T2wImageBrainFile" "$T1wImageFile" "$T1wImageBrainFile" T2w2T1w/T2w_reg
-convertwarp --ref="$T1wImage" --warp1="$WorkingDirectory"/FieldMap2"$T2wImageBrainFile"_Warp.nii.gz --postmat="$WorkingDirectory"/T2w2T1w/T2w_reg.mat -o T2w2T1w/T2w_dc_reg
-applywarp --interp=spline --in="$T2wImage" --ref="$T1wImage" --warp=T2w2T1w/T2w_dc_reg --out=T2w2T1w/T2w_reg
-fslmaths T2w2T1w/T2w_reg.nii.gz -add 1 T2w2T1w/T2w_reg.nii.gz -odt float
-cp T2w2T1w/T2w_dc_reg.nii.gz "$OutputT2wTransform".nii.gz
-cp T2w2T1w/T2w_reg.nii.gz "$OutputT2wImage".nii.gz
+########################################## DO WORK ########################################## 
 
-echo -e "\n END: T2wToT1wDistortionCorrectionAndReg"
+### Create fieldmaps (and apply gradient non-linearity distortion correction)
+echo " "
+echo " "
+echo " "
+#echo ${GlobalScripts}/FieldMapPreprocessingAll.sh ${WD}/FieldMap ${MagnitudeInputName} ${PhaseInputName} ${TE} ${WD}/Magnitude ${WD}/Magnitude_brain ${WD}/Phase ${WD}/FieldMap ${GradientDistortionCoeffs} ${GlobalScripts}
+
+${GlobalScripts}/FieldMapPreprocessingAll.sh \
+    --workingdir=${WD}/FieldMap \
+    --fmapmag=${MagnitudeInputName} \
+    --fmapphase=${PhaseInputName} \
+    --echodiff=${TE} \
+    --ofmapmag=${WD}/Magnitude \
+    --ofmapmagbrain=${WD}/Magnitude_brain \
+    --ophase=${WD}/Phase \
+    --ofmap=${WD}/FieldMap \
+    --gdcoeffs=${GradientDistortionCoeffs}
+    #${GlobalScripts} 
+
+
+### LOOP over available modalities ###
+
+for TXw in $Modalities ; do
+    # set up required variables
+    if [ $TXw = T1w ] ; then
+	TXwImage=$T1wImage
+	TXwImageBrain=$T1wImageBrain
+	TXwSampleSpacing=$T1wSampleSpacing
+	TXwImageBasename=$T1wImageBasename
+	TXwImageBrainBasename=$T1wImageBrainBasename
+    else
+	TXwImage=$T2wImage
+	TXwImageBrain=$T2wImageBrain
+	TXwSampleSpacing=$T2wSampleSpacing
+	TXwImageBasename=$T2wImageBasename
+	TXwImageBrainBasename=$T2wImageBrainBasename
+    fi
+
+    # Forward warp the fieldmap magnitude and register to TXw image (transform phase image too)
+    # MJ QUERY: Is --icorr really safe here?  The distortions will be pretty minor though, so it probably does little...
+    ${FSLDIR}/bin/fugue -v -i ${WD}/Magnitude_brain.nii.gz --icorr --unwarpdir=${UnwarpDir} --dwell=$TXwSampleSpacing --loadfmap=${WD}/FieldMap.nii.gz -w ${WD}/Magnitude_brain_warpped${TXw}
+
+    ${FSLDIR}/bin/flirt -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBrainBasename} -omat ${WD}/fieldmap2${TXwImageBrainBasename}.mat 
+    ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImageBrain} -applyxfm -init ${WD}/fieldmap2${TXwImageBrainBasename}.mat -out ${WD}/FieldMap2${TXwImageBrainBasename} 
+    
+    # Convert to shift map then to warp field and unwarp the TXw
+    ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${TXwImageBrainBasename} --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap2${TXwImageBrainBasename}_ShiftMap.nii.gz    
+    ${FSLDIR}/bin/convertwarp --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBrainBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz    
+    ${FSLDIR}/bin/applywarp --interp=spline -i ${TXwImage} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasename}
+    
+    # Make a brain image (transform to make a mask, then apply it)
+    ${FSLDIR}/bin/applywarp --interp=nn -i ${TXwImageBrain} -r ${TXwImageBrain} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBrainBasename}
+    
+    ${FSLDIR}/bin/fslmaths ${WD}/${TXwImageBasename} -mas ${WD}/${TXwImageBrainBasename} ${WD}/${TXwImageBrainBasename}
+    
+    # Copy files to specified destinations
+    if [ $TXw = T1w ] ; then 
+       ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBrainBasename}_Warp ${OutputT1wTransform}
+       ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasename} ${OutputT1wImage}
+       ${FSLDIR}/bin/imcp ${WD}/${TXwImageBrainBasename} ${OutputT1wImageBrain}
+    fi
+    
+done
+
+### END LOOP over modalities ###
+
+
+### Now do T2w to T1w registration
+if [ $UsingT2 = true ] ; then
+    mkdir -p ${WD}/T2w2T1w
+    
+    # Main registration: between corrected T2w and corrected T1w
+    # MJ QUERY: Change to FSL5.0.1 version?  Will this need correction for SE fieldmaps?
+    ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
+    
+    # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
+    ${FSLDIR}/bin/convertwarp --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBrainBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
+    
+    ${FSLDIR}/bin/applywarp --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
+    
+    # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
+    ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
+
+    # QA image
+    ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
+    
+    # Copy files to specified destinations
+    ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
+    ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
+fi
+
+echo " "
+echo " END: T2wToT1wDistortionCorrectionAndReg"
+echo " END: `date`" >> $WD/log.txt
+
+########################################## QA STUFF ########################################## 
+
+if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
+echo "cd `pwd`" >> $WD/qa.txt
+if [ $UsingT2 = true ] ; then
+    echo "# View registration result of corrected T2w to corrected T1w image: showing both images + sqrt(T1w*T2w)" >> $WD/qa.txt
+    echo "fslview ${OutputT1wImage} ${OutputT2wImage} ${WD}/T2w2T1w/sqrtT1wbyT2w" >> $WD/qa.txt
+fi
+echo "# Compare pre- and post-distortion correction for T1w" >> $WD/qa.txt
+echo "fslview ${T1wImage} ${OutputT1wImage}" >> $WD/qa.txt
+if [ $UsingT2 = true ] ; then
+    echo "# Compare pre- and post-distortion correction for T2w" >> $WD/qa.txt
+    echo "fslview ${T2wImage} ${WD}/${T2wImageBasename}" >> $WD/qa.txt
+fi
+
+##############################################################################################
 

@@ -10,6 +10,8 @@ WarpField=$6
 GlobalScripts=$7
 Caret5_Command="${8}"
 
+# The cd below means ALL FILENAMES MUST BE ABSOLUTE (OUTPUT ONES MAY BE RELATIVE TO WD)
+
 cd $Path
 Rand="$RANDOM"
 $Caret5_Command -file-convert -format-convert ASCII $SurfaceInput
@@ -25,3 +27,4 @@ cat coords_nonlin"$Rand".txt | head -$Var > coords_nonlinII"$Rand".txt
 $Caret5_Command -file-convert -format-convert XML_BASE64_GZIP $SurfaceInput
 $Caret5_Command -file-convert -format-convert XML_BASE64_GZIP $SurfaceOutput
 rm header"$Rand".txt coords"$Rand".txt coords_nonlin"$Rand".txt coords_nonlinII"$Rand".txt 
+

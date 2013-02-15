@@ -1,23 +1,127 @@
 #!/bin/bash 
 set -e
-echo -e "\n START: IntensityNormalization"
 
-#Option to apply biasfield to fMRI
+# Intensity normalisation, and bias field correction, and optional Jacobian modulation, applied to fMRI images (all inputs must be in fMRI space)
 
-InputfMRI="$1"
-BiasField="$2"
-Jacobian="$3"
-BrainMask="$4"
-OutputfMRI="$5"
-ScoutInput="$6"
-ScoutOutput="$7"
+#  This code is released to the public domain.
+#
+#  Matt Glasser, Washington University in St Louis
+#  Mark Jenkinson, FMRIB Centre, University of Oxford
+#  2011-2012
+#
+#  Neither Washington Univeristy in St Louis, the FMRIB Centre, the
+#  University of Oxford, nor any of their employees imply any warranty
+#  of usefulness of this software for any purpose, and do not assume
+#  any liability for damages, incidental or otherwise, caused by any
+#  use of this document.
 
-###DISABLE JACOBIAN MODULATION###
-#fslmaths "$InputfMRI" -div "$BiasField" -mul "$Jacobian" -mas "$BrainMask" -ing 10000 "$OutputfMRI" -odt float
-fslmaths "$InputfMRI" -div "$BiasField" -mas "$BrainMask" -ing 10000 "$OutputfMRI" -odt float
-#fslmaths "$ScoutInput" -div "$BiasField" -mul "$Jacobian" -mas "$BrainMask" -ing 10000 "$ScoutOutput" -odt float
-fslmaths "$ScoutInput" -div "$BiasField" -mas "$BrainMask" -ing 10000 "$ScoutOutput" -odt float
-###DISABLE JACOBIAN MODULATION###
+################################################ REQUIREMENTS ##################################################
+
+# Requirements for this script
+#  installed versions of: FSL5.0.1 or higher
+#  environment: FSLDIR
+
+################################################ SUPPORT FUNCTIONS ##################################################
+
+Usage() {
+  echo "`basename $0`: "
+  echo " "
+  echo "Usage: `basename $0` --infmri=<input fmri data>"
+  echo "             --biasfield=<bias field, already registered to fmri data>"
+  echo "             --jacobian=<jacobian image, already registered to fmri data>"
+  echo "             --brainmask=<brain mask in fmri space>"
+  echo "             --ofmri=<output basename for fmri data>"
+  echo "             [--inscout=<input name for scout image (pre-sat EPI)>]"
+  echo "             [--oscout=<output name for normalized scout image>]"
+  echo "             [--usejacobian=<apply jacobian modulation: true/false ; default=false>]"
+  echo "             [--workingdir=<working dir>]"
+}
+
+# function for parsing options
+getopt1() {
+    sopt="$1"
+    shift 1
+    for fn in $@ ; do
+	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+	    echo $fn | sed "s/^${sopt}=//"
+	    # if [ ] ; then Usage ; echo " " ; echo "Error:: option ${sopt} requires an argument"; exit 1 ; end
+	    return 0
+	fi
+    done
+}
+
+defaultopt() {
+    echo $1
+}
+
+################################################### OUTPUT FILES #####################################################
+
+# ${OutputfMRI}  (compulsory)
+# ${ScoutOutput}  (optional)
+
+################################################## OPTION PARSING #####################################################
+
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
+# check for correct options
+if [ $# -lt 4 ] ; then Usage; exit 1; fi
+
+# parse arguments
+InputfMRI=`getopt1 "--infmri" $@`  # "$1"
+BiasField=`getopt1 "--biasfield" $@`  # "$2"
+Jacobian=`getopt1 "--jacobian" $@`  # "$3"
+BrainMask=`getopt1 "--brainmask" $@`  # "$4"
+OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
+ScoutInput=`getopt1 "--inscout" $@`  # "$6"
+ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
+JacobianModulation=`getopt1 "--usejacobian" $@`  # 
+
+# default parameters
+OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
+WD=`defaultopt $WD ${OutputfMRI}.wdir`
+JacobianModulation=`defaultopt $JacobianModulation false`
+
+jacobiancom=""
+if [ $JacobianModulation = true ] ; then
+  jacobiancom="-mul $Jacobian"
+fi
+
+# sanity checking
+if [ X${ScoutInput} != X ] ; then 
+    if [ X${ScoutOutput} = X ] ; then
+	echo "Must supply an output name for the normalised scout image"
+    fi
+fi
+
+echo " "
+echo " START: IntensityNormalization"
+
+mkdir -p $WD
+
+# Record the input options in a log file
+echo "$0 $@" >> $WD/log.txt
+echo "PWD = `pwd`" >> $WD/log.txt
+echo "date: `date`" >> $WD/log.txt
+echo " " >> $WD/log.txt
 
 
+########################################## DO WORK ########################################## 
+
+# Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
+${FSLDIR}/bin/fslmaths ${InputfMRI} -div ${BiasField} $jacobiancom -mas ${BrainMask} -ing 10000 ${OutputfMRI} -odt float
+if [ X${ScoutInput} != X ] ; then
+    ${FSLDIR}/bin/fslmaths ${ScoutInput} -div ${BiasField} $jacobiancom -mas ${BrainMask} -ing 10000 ${ScoutOutput} -odt float
+fi
+
+echo " "
 echo "END: IntensityNormalization"
+echo " END: `date`" >> $WD/log.txt
+
+########################################## QA STUFF ########################################## 
+
+if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
+echo "cd `pwd`" >> $WD/qa.txt
+echo "# Check that the fMRI and Scout images look OK and that the mean intensity across the timeseries is about 10000" >> $WD/qa.txt
+echo "fslview ${ScoutOutput} ${OutputfMRI}" >> $WD/qa.txt
+
+##############################################################################################

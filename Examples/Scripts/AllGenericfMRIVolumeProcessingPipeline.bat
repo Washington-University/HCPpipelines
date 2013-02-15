@@ -1,7 +1,26 @@
 Subjlist="792564"
-GitRepo="/media/2TBB/Connectome_Project/Pipelines"
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
+#GitRepo=`$FSLDIR/bin/fsl_abspath $PWD/../..`
+GitRepo=${HCPPIPEDIR}
+StudyFolder=${HCPPIPEDIR}/Examples/792564_fmrivol
+#GitRepo="/media/2TBB/Connectome_Project/Pipelines"
+#StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
 
+# Requirements for this script
+#  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET5DIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+# Log the originating call
+echo "$@"
+
+if [ X$SGE_ROOT != X ] ; then
+    QUEUE="-q long.q"
+fi
+
+PRINTCOM=""
+#PRINTCOM="echo"
+#QUEUE="-q veryshort.q"
+
+######################################### DO WORK ##########################################
 
 Tasklist="EMOTION1_RL EMOTION2_LR"
 PhaseEncodinglist="x x-"
@@ -32,7 +51,7 @@ for Subject in $Subjlist ; do
     DwellTime="0.00058" #from ConnectomeDB
     TE="2.46" #0.00246 for 3T, 0.00102 for 7T 
     UnwarpDir="$UnwarpDir" #U min empirical 
-    FinalFcMRIResolution="2"
+    FinalFMRIResolution="2"
     PipelineScripts="${GitRepo}/fMRIVolume/scripts"
     GlobalScripts="${GitRepo}/global/scripts"
     DistortionCorrection="TOPUP" #FIELDMAP or TOPUP
@@ -43,11 +62,35 @@ for Subject in $Subjlist ; do
     cd $DIR
 
     if [ -e "$StudyFolder"/"$Subject"/"$fMRIFolder"/"$InputNameOffMRI" ] ; then
-      fsl_sub -q long.q ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries
-      echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries"
-      sleep 1
+	${FSLDIR}/bin/fsl_sub $QUEUE \
+	    ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
+	    --path=$StudyFolder \
+	    --subject=$Subject \
+	    --fmridir=$fMRIFolder \
+	    --fmapdir=$FieldMapImageFolder \
+	    --scoutdir=$ScoutFolder \
+	    --fmriinname=$InputNameOffMRI \
+	    --fmrioutname=$OutputNameOffMRI \
+	    --fmapmag=$MagnitudeInputName \
+	    --fmapphase=$PhaseInputName \
+	    --scoutin=$ScoutInputName \
+	    --echospacing=$DwellTime \
+	    --echodiff=$TE \
+	    --unwarpdir=$UnwarpDir \
+	    --fmrires=$FinalFMRIResolution \
+	    --dcmethod=$DistortionCorrection \
+	    --gdcoeffs=$GradientDistortionCoeffs \
+	    --fnirtconfig=$FNIRTConfig \
+	    --topupconfig=$TopUpConfig \
+	    --printcom=$PRINTCOM
+	    #$PipelineScripts \
+	    #$GlobalScripts \
+	    #$GlobalBinaries
+	
+      #echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries"
+	sleep 1
     else
-      echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
+	echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
     fi
     i=`echo "$i + 1" | bc`
   done

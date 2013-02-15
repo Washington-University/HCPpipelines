@@ -75,6 +75,7 @@
 # V5 2008_03_19 MJ: major modifications to do sanity checking and work with both  VARIAN and OCMR data - first supported version in FMRIB
 #
 
+
 usage() {
  echo "Usage: `basename $0` <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)> [--nocheck]"
  echo " "
@@ -93,7 +94,7 @@ bet_check() {
   imroot=$1
   nvox=`$FSLDIR/bin/fslstats ${imroot} -v | awk '{ print $1 }'`;
   nvoxnz=`$FSLDIR/bin/fslstats ${imroot} -V | awk '{ print $1 }'`;
-  if [ `echo $nvoxnz / $nvox \> 0.90 | bc -l` -eq 1 ] ; then
+  if [ X`echo "if ( $nvoxnz / $nvox > 0.90 ) { 1 }" | bc -l` = X1 ] ; then
       echo "Magntiude (abs) image should be brain extracted"
       echo "Please run BET on image ${imroot} before using it here"
       exit 2
@@ -150,10 +151,10 @@ varian_process() {
       range=`echo $rmax - $rmin | bc -l`;
       nrange=`echo $range / 6.28 | bc -l`;
       range_ok=yes;
-      if [ `echo "$nrange < 0.9" | bc -l` -eq 1 ] ; then
+      if [ X`echo "if ( $nrange < 0.9 ) { 1 }" | bc -l` = X1 ] ; then
 	  range_ok=no;
       fi
-      if [ `echo "$nrange > 1.1" | bc -l` -eq 1 ] ; then
+      if [ X`echo "if ( $nrange > 1.1 ) { 1 }" | bc -l` = X1 ] ; then
 	  range_ok=no;
       fi
       if [ $range_ok = no ] ; then
@@ -204,14 +205,14 @@ siemens_process() {
       rmax=`echo $rr | awk '{ print $2 }'`;
       range=`echo $rmax - $rmin | bc -l`;
       nrange=`echo $range / 4096 | bc -l`;
-      if [ `echo "$nrange < 2.1" | bc -l` -eq 1 ] ; then
-	  if [ `echo "$nrange > 1.9" | bc -l` -eq 1 ] ; then
+      if [ X`echo "if ( $nrange < 2.1 ) { 1 }" | bc -l` = X1 ] ; then
+	  if [ X`echo "if ( $nrange > 1.9) { 1 }" | bc -l` = X1 ] ; then
 	      # MRIcron range is typically twice that of dicom2nifti
 	      newphaseroot=${tmpnm}_tmp_phase
 	      $FSLDIR/bin/fslmaths ${phaseroot} -div 2 ${newphaseroot}
 	  fi
       fi
-      if [ `echo "$nrange < 0.9" | bc -l` -eq 1 ] ; then
+      if [ X`echo "if ( $nrange < 0.9 ) { 1 }" | bc -l` = X1 ] ; then
 	  echo "Phase image values do not have expected range"
 	  echo "Expecting at least 90% of 0 to 4096, but found $rmin to $rmax"
 	  echo "Please re-scale or find correct image, or force executation of this script with --nocheck"
@@ -289,8 +290,8 @@ fi
 
 if [ $sanitycheck = yes ] ; then
     badval=false;
-    if [ `echo "$dTE < 0.1" | bc -l` -eq 1 ] ; then badval=true; fi
-    if [ `echo "$dTE > 10.0" | bc -l` -eq 1 ] ; then badval=true; fi
+    if [ X`echo "if ( $dTE < 0.1 ) { 1 }" | bc -l` = X1 ] ; then badval=true; fi
+    if [ X`echo "if ( $dTE > 10.0 ) { 1 }" | bc -l` = X1 ] ; then badval=true; fi
     if [ $badval = true ] ; then
 	echo "Unlikely difference in TE found: dTE = $dTE milliseconds"
 	echo "Expecting values between 0.1 and 10.0 milliseconds"
@@ -326,9 +327,9 @@ samesize=true;
 if [ $nz -ne $pnz ] ; then samesize=false; fi
 if [ $ny -ne $pny ] ; then samesize=false; fi
 if [ $nx -ne $pnx ] ; then samesize=false; fi
-if [ `echo $dz != $pdz | bc -l` -eq 1 ] ; then samesize=false; fi
-if [ `echo $dy != $pdy | bc -l` -eq 1 ] ; then samesize=false; fi
-if [ `echo $dx != $pdx | bc -l` -eq 1 ] ; then samesize=false; fi
+if [ X`echo "if ( $dz != $pdz ) { 1 }" | bc -l` = X1 ] ; then samesize=false; fi
+if [ X`echo "if ( $dy != $pdy ) { 1 }" | bc -l` = X1 ] ; then samesize=false; fi
+if [ X`echo "if ( $dx != $pdx ) { 1 }" | bc -l` = X1 ] ; then samesize=false; fi
 if [ $samesize = false ] ; then
     echo "Phase and Magnitude images must have the same number of voxels and voxel dimensions";
     echo "Current dimensions are:"
