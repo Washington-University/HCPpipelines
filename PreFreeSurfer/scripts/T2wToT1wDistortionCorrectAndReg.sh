@@ -97,7 +97,7 @@ OutputT2wTransform=`getopt1 "--ot2warp" $@`  # "${16}"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${18}"
 
 # default parameters
-GlobalScripts=${HCPPIPEDIR}/global/scripts
+GlobalScripts=${HCPPIPEDIR_Global}
 WD=`defaultopt $WD .`
 
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`

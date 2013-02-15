@@ -3,7 +3,7 @@ set -e
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1+ , HCP Pipeline
-#  environment: FSLDIR, HCPPIPEDIR
+#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -59,8 +59,8 @@ FNIRTConfig=`getopt1 "--fnirtconfig" $@` # "$9"
 
 # default parameters
 WD=`defaultopt $WD .`
-Reference=`defaultopt $Reference ${HCPPIPEDIR}/global/templates/MNI152_T1_0.7mm`
-ReferenceMask=`defaultopt $ReferenceMask ${HCPPIPEDIR}/global/templates/MNI152_T1_0.7mm_brain_mask`  # dilate to be conservative with final brain mask
+Reference=`defaultopt $Reference ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm`
+ReferenceMask=`defaultopt $ReferenceMask ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain_mask`  # dilate to be conservative with final brain mask
 Reference2mm=`defaultopt $Reference2mm $FSLDIR/data/standard/MNI152_T1_2mm`
 Reference2mmMask=`defaultopt $Reference2mmMask $FSLDIR/data/standard/MNI152_T1_2mm_brain_mask_dil`  # dilate to be conservative with final brain mask
 FNIRTConfig=`defaultopt $FNIRTConfig $FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf`
