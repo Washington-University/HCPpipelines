@@ -1,50 +1,143 @@
 #!/bin/bash 
 set -e
 
-echo -e "\n START: Topup Field Map Generation and Gradient Unwarping"
+# Requirements for this script
+#  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
+#  environment: FSLDIR and PATH for gradient_unwarp.py
 
-WorkingDirectory="$1"
-PhaseEncodeOne="$2" #SCRIPT REQUIRES LR/X-/-1 VOLUME FIRST (SAME IS TRUE OF AP/PA)
-PhaseEncodeTwo="$3" #SCRIPT REQUIRES RL/X/1 VOLUME SECOND (SAME IS TRUE OF AP/PA)
-ScoutInputName="$4"
-DwellTime="$5"
-UnwarpDir="$6"
-DistortionCorrectionWarpFieldOutput="$7"
-JacobianOutput="$8"
-GradientDistortionCoeffs="$9"
-GlobalScripts="${10}"
-TopupConfig="${11}"
-GlobalBinaries="${12}"
+################################################ SUPPORT FUNCTIONS ##################################################
 
-cp $PhaseEncodeOne "$WorkingDirectory"/PhaseOne.nii.gz
-cp $PhaseEncodeTwo "$WorkingDirectory"/PhaseTwo.nii.gz
-cp $ScoutInputName.nii.gz "$WorkingDirectory"/SBRef.nii.gz
+Usage() {
+  echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"
+  echo " "
+  echo "Usage: `basename $0` [--workingdir=<working directory>]"
+  echo "            --phaseone=<first set of SE EPI images: with -x PE direction (LR)>"
+  echo "            --phasetwo=<second set of SE EPI images: with x PE direction (RL)>"
+  echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
+  echo "            --echospacing=<effective echo spacing of EPI>"
+  echo "            --unwarpdir=<PE direction for unwarping: x/y/z/-x/-y/-z>"
+  echo "            --owarp=<output warpfield image: scout to distortion corrected SE EPI>"
+  echo "            --ojacobian=<output Jacobian image>"
+  echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
+  echo "             [--topupconfig=<topup config file>]"
+  echo " "
+  echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
+}
 
+# function for parsing options
+getopt1() {
+    sopt="$1"
+    shift 1
+    for fn in $@ ; do
+	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+	    echo $fn | sed "s/^${sopt}=//"
+	    return 0
+	fi
+    done
+}
+
+defaultopt() {
+    echo $1
+}
+
+################################################### OUTPUT FILES #####################################################
+
+# Output images (in $WD): 
+#          BothPhases      (input to topup - combines both pe direction data, plus masking)
+#          SBRef2PhaseOne_gdc.mat SBRef2PhaseOne_gdc   (linear registration result)
+#          PhaseOne_gdc  PhaseTwo_gdc
+#          PhaseOne_gdc_dc  PhaseOne_gdc_dc_jac  PhaseTwo_gdc_dc  PhaseTwo_gdc_dc_jac
+#          SBRef_dc   SBRef_dc_jac
+#          WarpField  Jacobian
+# Output images (not in $WD): 
+#          ${DistortionCorrectionWarpFieldOutput}  ${JacobianOutput}
+
+################################################## OPTION PARSING #####################################################
+
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
+# check for correct options
+if [ $# -lt 8 ] ; then Usage; exit 1; fi
+
+# parse arguments
+WD=`getopt1 "--workingdir" $@`  # "$1"
+PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT REQUIRES LR/X-/-1 VOLUME FIRST (SAME IS TRUE OF AP/PA)
+PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT REQUIRES RL/X/1 VOLUME SECOND (SAME IS TRUE OF AP/PA)
+ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
+DwellTime=`getopt1 "--echospacing" $@`  # "$5"
+UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
+DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
+JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
+GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
+#GlobalScripts=`getopt1 "--globalscripts" $@`  # "${10}"
+TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
+#GlobalBinaries=`getopt1 "--globalbin" $@`  # "${12}"
+
+GlobalScripts=${HCPPIPEDIR}/global/scripts
+GlobalBinaries=${HCPPIPEDIR}/global/binaries
+
+# default parameters
+DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
+WD=`defaultopt $WD ${DistortionCorrectionWarpFieldOutput}.wdir`
+
+echo " "
+echo " START: Topup Field Map Generation and Gradient Unwarping"
+
+mkdir -p $WD
+
+# Record the input options in a log file
+echo "$0 $@" >> $WD/log.txt
+echo "PWD = `pwd`" >> $WD/log.txt
+echo "date: `date`" >> $WD/log.txt
+echo " " >> $WD/log.txtecho " "
+
+########################################## DO WORK ########################################## 
+
+# PhaseOne and PhaseTwo are sets of SE EPI images with opposite phase encodes
+${FSLDIR}/bin/imcp $PhaseEncodeOne ${WD}/PhaseOne.nii.gz
+${FSLDIR}/bin/imcp $PhaseEncodeTwo ${WD}/PhaseTwo.nii.gz
+${FSLDIR}/bin/imcp $ScoutInputName.nii.gz ${WD}/SBRef.nii.gz
+
+# Apply gradient non-linearity distortion correction to input images (SE pair)
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
-  "$GlobalScripts"/GradientDistortionUnwarp.sh "$WorkingDirectory" "$GradientDistortionCoeffs" "$WorkingDirectory"/PhaseOne "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseOne_gdc_warp
-  "$GlobalScripts"/GradientDistortionUnwarp.sh "$WorkingDirectory" "$GradientDistortionCoeffs" "$WorkingDirectory"/PhaseTwo "$WorkingDirectory"/PhaseTwo_gdc "$WorkingDirectory"/PhaseTwo_gdc_warp
+  ${GlobalScripts}/GradientDistortionUnwarp.sh \
+      --workingdir=${WD} \
+      --coeffs=${GradientDistortionCoeffs} \
+      --in=${WD}/PhaseOne \
+      --out=${WD}/PhaseOne_gdc \
+      --owarp=${WD}/PhaseOne_gdc_warp
+  ${GlobalScripts}/GradientDistortionUnwarp.sh \
+      --workingdir=${WD} \
+      --coeffs=${GradientDistortionCoeffs} \
+      --in=${WD}/PhaseTwo \
+      --out=${WD}/PhaseTwo_gdc \
+      --owarp=${WD}/PhaseTwo_gdc_warp
 fi
 
-fslmaths "$WorkingDirectory"/PhaseOne -abs -bin -dilD "$WorkingDirectory"/PhaseOne_mask
-applywarp --interp=nn -i "$WorkingDirectory"/PhaseOne_mask -r "$WorkingDirectory"/PhaseOne_mask -w "$WorkingDirectory"/PhaseOne_gdc_warp -o "$WorkingDirectory"/PhaseOne_mask_gdc
-fslmaths "$WorkingDirectory"/PhaseTwo -abs -bin -dilD "$WorkingDirectory"/PhaseTwo_mask
-applywarp --interp=nn -i "$WorkingDirectory"/PhaseTwo_mask -r "$WorkingDirectory"/PhaseTwo_mask -w "$WorkingDirectory"/PhaseTwo_gdc_warp -o "$WorkingDirectory"/PhaseTwo_mask_gdc
+# Make a dilated mask in the distortion corrected space
+${FSLDIR}/bin/fslmaths ${WD}/PhaseOne -abs -bin -dilD ${WD}/PhaseOne_mask
+${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/PhaseOne_mask -r ${WD}/PhaseOne_mask -w ${WD}/PhaseOne_gdc_warp -o ${WD}/PhaseOne_mask_gdc
+${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo -abs -bin -dilD ${WD}/PhaseTwo_mask
+${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/PhaseTwo_mask -r ${WD}/PhaseTwo_mask -w ${WD}/PhaseTwo_gdc_warp -o ${WD}/PhaseTwo_mask_gdc
 
-fslmaths "$WorkingDirectory"/PhaseOne_mask_gdc -mas "$WorkingDirectory"/PhaseTwo_mask_gdc -ero -bin "$WorkingDirectory"/Mask
+# Make a conservative (eroded) intersection of the two masks
+${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -ero -bin ${WD}/Mask
+# Merge both sets of images
+${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
 
-fslmerge -t "$WorkingDirectory"/BothPhases "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseTwo_gdc
-
-txtfname="$WorkingDirectory"/acqparams.txt
+# Set up text files with all necessary parameters
+txtfname=${WD}/acqparams.txt
 if [ -e $txtfname ] ; then
   rm $txtfname
 fi
 
-dimtOne=`fslval "$WorkingDirectory"/PhaseOne dim4`
-dimtTwo=`fslval "$WorkingDirectory"/PhaseTwo dim4`
+dimtOne=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim4`
+dimtTwo=`${FSLDIR}/bin/fslval ${WD}/PhaseTwo dim4`
 
-
+# Calculate the readout time and populate the parameter file appropriately
+# X direction phase encode
 if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
-  dimx=`fslval "$WorkingDirectory"/PhaseOne dim1`
+  dimx=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
   nPEsteps=$(($dimx - 1))
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
   ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
@@ -53,16 +146,17 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
   while [ $i -le $dimtOne ] ; do
     echo "-1 0 0 $ro_time" >> $txtfname
     ShiftOne="x-"
-    i=`echo "$i +1" | bc`
+    i=`echo "$i + 1" | bc`
   done
   i=1
   while [ $i -le $dimtTwo ] ; do
     echo "1 0 0 $ro_time" >> $txtfname
     ShiftTwo="x"
-    i=`echo "$i +1" | bc`
+    i=`echo "$i + 1" | bc`
   done
+# Y direction phase encode
 elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
-  dimy=`fslval "$WorkingDirectory"/PhaseOne dim2`
+  dimy=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
   nPEsteps=$(($dimy - 1))
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
   ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
@@ -70,79 +164,87 @@ elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
   while [ $i -le $dimtOne ] ; do
     echo "0 -1 0 $ro_time" >> $txtfname
     ShiftOne="y-"
-    i=`echo "$i +1" | bc`
+    i=`echo "$i + 1" | bc`
   done
   i=1
   while [ $i -le $dimtTwo ] ; do
     echo "0 1 0 $ro_time" >> $txtfname
     ShiftTwo="y"
-    i=`echo "$i +1" | bc`
+    i=`echo "$i + 1" | bc`
   done
 fi
 
-fslmaths "$WorkingDirectory"/BothPhases -abs -add 1 -mas "$WorkingDirectory"/Mask -dilD -dilD -dilD -dilD -dilD "$WorkingDirectory"/BothPhases
+# Extrapolate the existing values beyond the mask (adding 1 just to avoid smoothing inside the mask)
+${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
-${GlobalBinaries}/topup --imain="$WorkingDirectory"/BothPhases --datain=$txtfname --config="$TopupConfig" --out="$WorkingDirectory"/Coefficents --iout="$WorkingDirectory"/Magnitudes --fout="$WorkingDirectory"/TopupField --dfout="$WorkingDirectory"/WarpField --rbmout="$WorkingDirectory"/MotionMatrix --jacout="$WorkingDirectory"/Jacobian -v 
+# RUN TOPUP
+# MJ QUERY : Can we replace this with the FSL5.0.1 version of topup?
+${GlobalBinaries}/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
+# UNWARP DIR = x
 if [ $UnwarpDir = "x" ] ; then
+  # select the first volume from PhaseTwo
   VolumeNumber=$(($dimtOne + 1))
-  flirt -dof 6 -interp spline -in "$WorkingDirectory"/SBRef.nii.gz -ref "$WorkingDirectory"/PhaseTwo_gdc -omat "$WorkingDirectory"/SBRef2PhaseTwo_gdc.mat -out "$WorkingDirectory"/SBRef2PhaseTwo_gdc
-  convert_xfm -omat "$WorkingDirectory"/SBRef2WarpField.mat -concat "$WorkingDirectory"/MotionMatrix_`zeropad $VolumeNumber 2`.mat "$WorkingDirectory"/SBRef2PhaseTwo_gdc.mat
-  convertwarp -r "$WorkingDirectory"/PhaseTwo_gdc --premat="$WorkingDirectory"/SBRef2WarpField.mat --warp1="$WorkingDirectory"/WarpField_`zeropad $VolumeNumber 2` --out="$WorkingDirectory"/WarpField.nii.gz
-  cp "$WorkingDirectory"/Jacobian_`zeropad $VolumeNumber 2`.nii.gz "$WorkingDirectory"/Jacobian.nii.gz
+  vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
+  # register scout to SE input (PhaseTwo) + combine motion and distortion correction
+  ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseTwo_gdc -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc
+  ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseTwo_gdc.mat
+  ${FSLDIR}/bin/convertwarp -r ${WD}/PhaseTwo_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
+  ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
+  SBRefPhase=Two
+# UNWARP DIR = -x
 elif [[ $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
+  # select the first volume from PhaseOne
   VolumeNumber=$((0 + 1))
-  flirt -dof 6 -interp spline -in "$WorkingDirectory"/SBRef.nii.gz -ref "$WorkingDirectory"/PhaseOne_gdc -omat "$WorkingDirectory"/SBRef2PhaseOne_gdc.mat -out "$WorkingDirectory"/SBRef2PhaseOne_gdc
-  convert_xfm -omat "$WorkingDirectory"/SBRef2WarpField.mat -concat "$WorkingDirectory"/MotionMatrix_`zeropad $VolumeNumber 2`.mat "$WorkingDirectory"/SBRef2PhaseOne_gdc.mat
-  convertwarp -r "$WorkingDirectory"/PhaseOne_gdc --premat="$WorkingDirectory"/SBRef2WarpField.mat --warp1="$WorkingDirectory"/WarpField_`zeropad $VolumeNumber 2` --out="$WorkingDirectory"/WarpField.nii.gz
-  cp "$WorkingDirectory"/Jacobian_`zeropad $VolumeNumber 2`.nii.gz "$WorkingDirectory"/Jacobian.nii.gz
+  vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
+  # register scout to SE input (PhaseOne) + combine motion and distortion correction
+  ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseOne_gdc -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc
+  ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat
+  ${FSLDIR}/bin/convertwarp -r ${WD}/PhaseOne_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
+  ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
+  SBRefPhase=One
 fi
 
+# PhaseTwo (first vol) - warp and Jacobian modulate to get distortion corrected output
 VolumeNumber=$(($dimtOne + 1))
-applywarp --interp=spline -i "$WorkingDirectory"/PhaseTwo_gdc -r "$WorkingDirectory"/PhaseTwo_gdc --premat="$WorkingDirectory"/MotionMatrix_`zeropad $VolumeNumber 2`.mat -w "$WorkingDirectory"/WarpField_`zeropad $VolumeNumber 2` -o "$WorkingDirectory"/PhaseTwo_gdc_dc
-fslmaths "$WorkingDirectory"/PhaseTwo_gdc_dc -mul "$WorkingDirectory"/Jacobian_`zeropad $VolumeNumber 2` "$WorkingDirectory"/PhaseTwo_gdc_dc_jac
+  vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
+${FSLDIR}/bin/applywarp --interp=spline -i ${WD}/PhaseTwo_gdc -r ${WD}/PhaseTwo_gdc --premat=${WD}/MotionMatrix_${vnum}.mat -w ${WD}/WarpField_${vnum} -o ${WD}/PhaseTwo_gdc_dc
+${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo_gdc_dc -mul ${WD}/Jacobian_${vnum} ${WD}/PhaseTwo_gdc_dc_jac
+# PhaseOne (first vol) - warp and Jacobian modulate to get distortion corrected output
 VolumeNumber=$((0 + 1))
-applywarp --interp=spline -i "$WorkingDirectory"/PhaseOne_gdc -r "$WorkingDirectory"/PhaseOne_gdc --premat="$WorkingDirectory"/MotionMatrix_`zeropad $VolumeNumber 2`.mat -w "$WorkingDirectory"/WarpField_`zeropad $VolumeNumber 2` -o "$WorkingDirectory"/PhaseOne_gdc_dc
-fslmaths "$WorkingDirectory"/PhaseOne_gdc_dc -mul "$WorkingDirectory"/Jacobian_`zeropad $VolumeNumber 2` "$WorkingDirectory"/PhaseOne_gdc_dc_jac
+  vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
+${FSLDIR}/bin/applywarp --interp=spline -i ${WD}/PhaseOne_gdc -r ${WD}/PhaseOne_gdc --premat=${WD}/MotionMatrix_${vnum}.mat -w ${WD}/WarpField_${vnum} -o ${WD}/PhaseOne_gdc_dc
+${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_gdc_dc -mul ${WD}/Jacobian_${vnum} ${WD}/PhaseOne_gdc_dc_jac
+
+# Scout - warp and Jacobian modulate to get distortion corrected output
+${FSLDIR}/bin/applywarp --interp=spline -i ${WD}/SBRef.nii.gz -r ${WD}/SBRef.nii.gz -w ${WD}/WarpField.nii.gz -o ${WD}/SBRef_dc.nii.gz
+${FSLDIR}/bin/fslmaths ${WD}/SBRef_dc.nii.gz -mul ${WD}/Jacobian.nii.gz ${WD}/SBRef_dc_jac.nii.gz
+
+# copy images to specified outputs
+${FSLDIR}/bin/imcp ${WD}/WarpField.nii.gz ${DistortionCorrectionWarpFieldOutput}.nii.gz
+${FSLDIR}/bin/imcp ${WD}/Jacobian.nii.gz ${JacobianOutput}.nii.gz
+
+echo " "
+echo " END: Topup Field Map Generation and Gradient Unwarping"
+echo " END: `date`" >> $WD/log.txt
+
+########################################## QA STUFF ########################################## 
+
+if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
+echo "cd `pwd`" >> $WD/qa.txt
+echo "# Inspect results of various corrections (phase one)" >> $WD/qa.txt
+echo "fslview ${WD}/PhaseOne ${WD}/PhaseOne_gdc ${WD}/PhaseOne_gdc_dc ${WD}/PhaseOne_gdc_dc_jac" >> $WD/qa.txt
+echo "# Inspect results of various corrections (phase two)" >> $WD/qa.txt
+echo "fslview ${WD}/PhaseTwo ${WD}/PhaseTwo_gdc ${WD}/PhaseTwo_gdc_dc ${WD}/PhaseTwo_gdc_dc_jac" >> $WD/qa.txt
+echo "# Check linear registration of Scout to SE EPI" >> $WD/qa.txt
+echo "fslview ${WD}/Phase${SBRefPhase}_gdc ${WD}/SBRef2Phase${SBRefPhase}_gdc" >> $WD/qa.txt
+echo "# Inspect results of various corrections to scout" >> $WD/qa.txt
+echo "fslview ${WD}/SBRef ${WD}/SBRef_dc ${WD}/SBRef_dc_jac" >> $WD/qa.txt
+echo "# Visual check of warpfield and Jacobian" >> $WD/qa.txt
+echo "fslview ${DistortionCorrectionWarpFieldOutput} ${JacobianOutput}" >> $WD/qa.txt
 
 
-applywarp --interp=spline -i "$WorkingDirectory"/SBRef.nii.gz -r "$WorkingDirectory"/SBRef.nii.gz -w "$WorkingDirectory"/WarpField.nii.gz -o "$WorkingDirectory"/SBRef_dc.nii.gz
-fslmaths "$WorkingDirectory"/SBRef_dc.nii.gz -mul "$WorkingDirectory"/Jacobian.nii.gz "$WorkingDirectory"/SBRef_dc_jac.nii.gz
-
-  #For first phase encoding direction given to topup the rigid body registration between the field and the spin echo image is the identity
-  #For the second phase encoding direction given to topup the rigid body registration to one input spin echo volume is given by one of registration matricies, the SBRef needs to be registered to this same spin echo image
-  #The SBRef images of each phase encoding direction need to be registered to the spin echo images (1st and 4th)
-  #Apply topup warpfield to SBRef in FNIRT warpfield format (--dfout= one field per image that was given to topup do not include rigid body transforms)
+##############################################################################################
 
 
-#cp "$WorkingDirectory"/Magnitudes.nii.gz "$WorkingDirectory"/Magnitudes_TopupOut.nii.gz
-
-#fslmaths "$WorkingDirectory"/TopupField -mul 6.283 "$WorkingDirectory"/FieldMap.nii.gz
-
-#fugue --loadfmap="$WorkingDirectory"/FieldMap.nii.gz --dwell=${DwellTime} --saveshift="$WorkingDirectory"/FieldMap_ShiftMap.nii.gz
-#convertwarp --ref="$WorkingDirectory"/FieldMap.nii.gz --shiftmap="$WorkingDirectory"/FieldMap_ShiftMap.nii.gz --shiftdir="$ShiftOne" --out="$WorkingDirectory"/FieldMap_Warp_"$ShiftOne".nii.gz
-#convertwarp --ref="$WorkingDirectory"/FieldMap.nii.gz --shiftmap="$WorkingDirectory"/FieldMap_ShiftMap.nii.gz --shiftdir="$ShiftTwo" --out="$WorkingDirectory"/FieldMap_Warp_"$ShiftTwo".nii.gz
-
-#applywarp --interp=spline -i "$WorkingDirectory"/PhaseOne_gdc.nii.gz -r "$WorkingDirectory"/PhaseOne_gdc.nii.gz -w "$WorkingDirectory"/FieldMap_Warp_"$ShiftOne".nii.gz -o "$WorkingDirectory"/PhaseOne_gdc_dc.nii.gz
-#applywarp --interp=spline -i "$WorkingDirectory"/PhaseTwo_gdc.nii.gz -r "$WorkingDirectory"/PhaseTwo_gdc.nii.gz -w "$WorkingDirectory"/FieldMap_Warp_"$ShiftTwo".nii.gz -o "$WorkingDirectory"/PhaseTwo_gdc_dc.nii.gz
-
-#fslmerge -t "$WorkingDirectory"/Magnitudes.nii.gz "$WorkingDirectory"/PhaseOne_gdc_dc.nii.gz "$WorkingDirectory"/PhaseTwo_gdc_dc.nii.gz
-
-#dimt=`fslval "$WorkingDirectory"/PhaseOne_gdc dim4`
-#dimt=$(($dimt + 1))
-#${GlobalBinaries}/applytopup --interp=spline --imain="$WorkingDirectory"/PhaseOne_gdc,"$WorkingDirectory"/PhaseTwo_gdc --datain=$txtfname --inindex=1,$dimt --topup="$WorkingDirectory"/Coefficents --out="$WorkingDirectory"/Magnitudes
-
-#fslmaths "$WorkingDirectory"/Magnitudes -Tmean "$WorkingDirectory"/Magnitude.nii.gz
-#bet "$WorkingDirectory"/Magnitude.nii.gz "$WorkingDirectory"/Magnitude_brain.nii.gz -f .3 -m #Brain extract the magnitude image
-
-
-#cp "$WorkingDirectory"/Magnitude.nii.gz "$MagnitudeOutput".nii.gz
-#cp "$WorkingDirectory"/Magnitude_brain.nii.gz "$MagnitudeBrainOutput".nii.gz
-#cp "$WorkingDirectory"/TopupField.nii.gz "$TopUpFieldOutput".nii.gz
-#cp "$WorkingDirectory"/FieldMap.nii.gz "$FieldMapOutput".nii.gz
-
-cp "$WorkingDirectory"/WarpField.nii.gz "$DistortionCorrectionWarpFieldOutput".nii.gz
-cp "$WorkingDirectory"/Jacobian.nii.gz "$JacobianOutput".nii.gz
-
-echo -e "\n END: Topup Field Map Generation and Gradient Unwarping"
 

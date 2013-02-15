@@ -48,6 +48,7 @@ ${FSLDIR}/bin/imrm ${datadir}/nodif_warped
 
 #This produces unwarped images in diffusion space. Remove or keep it for debugging?
 echo "Correcting for gradient nonlinearities"
+
 ${FSLDIR}/bin/applywarp -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp_abs --abs --interp=spline -o ${datadir}/data
 
 #Remove negative intensity values (caused by spline interpolation) from final data
@@ -57,7 +58,7 @@ ${FSLDIR}/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
 #Keep the original warped data and warp fields
 mkdir -p ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
-${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
+
 echo -e "\n END: eddy_postproc"
 

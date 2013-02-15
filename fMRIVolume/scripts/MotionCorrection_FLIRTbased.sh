@@ -1,6 +1,8 @@
 #!/bin/bash 
 set -e
-echo -e "\n START: MotionCorrection_FLIRTBased"
+
+echo " "
+echo " START: MotionCorrection_FLIRTBased"
 
 WorkingDirectory="$1"
 InputfMRI="$2"
@@ -9,53 +11,62 @@ OutputfMRI="$4"
 OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
-PipelineScripts="$8"
-GlobalScripts="$9"
+#PipelineScripts="$8"
+#GlobalScripts="$9"
 
-OutputfMRIFile=`basename "$OutputfMRI"`
+OutputfMRIBasename=`basename ${OutputfMRI}`
 
-#Do motion correction
-"$GlobalScripts"/mcflirt_acc.sh "$InputfMRI" "$WorkingDirectory"/"$OutputfMRIFile" "$Scout"
-mv -f "$WorkingDirectory"/"$OutputfMRIFile"/mc.par "${WorkingDirectory}/${OutputfMRIFile}.par"
-if [ ! -e $OutputMotionMatrixFolder ] ; then
-  mkdir $OutputMotionMatrixFolder
-else 
+PipelineScripts=${HCPPIPEDIR}/fMRIVolume/scripts
+GlobalScripts=${HCPPIPEDIR}/global/scripts
+
+
+
+
+# Do motion correction
+${GlobalScripts}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
+
+# Move output files about
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par
+if [ -e $OutputMotionMatrixFolder ] ; then
   rm -r $OutputMotionMatrixFolder
-  mkdir $OutputMotionMatrixFolder
 fi
-mv -f "$WorkingDirectory"/"$OutputfMRIFile"/* $OutputMotionMatrixFolder
-mv -f "$WorkingDirectory"/"$OutputfMRIFile".nii.gz "$OutputfMRI".nii.gz
+mkdir $OutputMotionMatrixFolder
+
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}/* ${OutputMotionMatrixFolder}
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${OutputfMRI}.nii.gz
+
+# Change names of all matrices in OutputMotionMatrixFolder
 DIR=`pwd`
 if [ -e $OutputMotionMatrixFolder ] ; then
   cd $OutputMotionMatrixFolder
   Matrices=`ls`
   for Matrix in $Matrices ; do
-    MatrixNumber=`basename "$Matrix" | cut -d "_" -f 2`
-    mv $Matrix `echo "$OutputMotionMatrixNamePrefix""$MatrixNumber" | cut -d "." -f 1`
+    MatrixNumber=`basename ${Matrix} | cut -d "_" -f 2`
+    mv $Matrix `echo ${OutputMotionMatrixNamePrefix}${MatrixNumber} | cut -d "." -f 1`
   done
   cd $DIR
 fi
 
-#Make 4dfp style motion parameter and derivative regressors for timeseries
-#Take the temporal derivative in column $1 of input $2 and output it as $3
-#Vectorized Matlab: d=[a(2)-a(1);(a(3:end)-a(1:end-2))/2;a(end)-a(end-1)]
-#Bash version of above algorithm
+# Make 4dfp style motion parameter and derivative regressors for timeseries
+# Take the temporal derivative in column $1 of input $2 and output it as $3
+# Vectorized Matlab: d=[a(2)-a(1);(a(3:end)-a(1:end-2))/2;a(end)-a(end-1)]
+# Bash version of above algorithm
 function Derive {
   i="$1"
   in="$2"
   out="$3"
   Var=`cat "$in" | sed s/"  "/" "/g | cut -d " " -f $i`
   Length=`echo $Var | wc -w`
-  length=$(($Length - 1))
+  length1=$(($Length - 1))
   TCS=($Var)
   random=$RANDOM
   j=0
-  while [ $j -le $length ] ; do
+  while [ $j -le $length1 ] ; do
     if [ $j -eq 0 ] ; then
       Forward=`echo ${TCS[$(($j+1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Back=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "$Forward - $Back" | bc -l`
-    elif [ $j -eq $length ] ; then
+    elif [ $j -eq $length1 ] ; then
       Forward=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "$Forward - $Back" | bc -l`
@@ -73,8 +84,9 @@ function Derive {
   rm $random
 }
 
-in="${WorkingDirectory}/${OutputfMRIFile}.par"
-out="$OutputMotionRegressors".txt
+# Run the Derive function to generate appropriate regressors from the par file
+in=${WorkingDirectory}/${OutputfMRIBasename}.par
+out=${OutputMotionRegressors}.txt
 cat $in | sed s/"  "/" "/g > $out
 i=1
 while [ $i -le 6 ] ; do
@@ -85,7 +97,6 @@ done
 cat ${out} | awk '{for(i=1;i<=NF;i++)printf("%10.6f ",$i);printf("\n")}' > ${out}_
 mv ${out}_ $out
 
-
-awk -f "$GlobalScripts"/mtrendout.awk $out > "$OutputMotionRegressors"_dt.txt
+awk -f ${GlobalScripts}/mtrendout.awk $out > ${OutputMotionRegressors}_dt.txt
 
 echo "   END: MotionCorrection_FLIRTBased"
