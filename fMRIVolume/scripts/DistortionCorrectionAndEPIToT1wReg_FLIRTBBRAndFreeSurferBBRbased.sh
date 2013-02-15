@@ -120,10 +120,10 @@ T1wBrainImageFile=`basename $T1wBrainImage`
 # default parameters
 RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
 WD=`defaultopt $WD ${RegOutput}.wdir`
-GlobalScripts=${HCPPIPEDIR}/global/scripts
-GlobalBinaries=${HCPPIPEDIR}/global/binaries
+GlobalScripts=${HCPPIPEDIR_Global}
+GlobalBinaries=${HCPPIPEDIR_Bin}
 FNIRTConfig=`defaultopt $FNIRTConfig "NONE"`   # NONE = turn off z-blip corrections!
-TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR}/global/config/b02b0.cnf`
+TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
 UseJacobian=false
 
 echo " "

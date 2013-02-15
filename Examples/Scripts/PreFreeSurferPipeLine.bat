@@ -1,8 +1,7 @@
 Subjlist="792564"
+# Need to call SetUpHCPPipeline.sh (to set up appropriate paths)
 GitRepo=${HCPPIPEDIR}
 StudyFolder=${HCPPIPEDIR}/Examples
-#GitRepo="/media/2TBB/Connectome_Project/Pipelines"
-#StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)

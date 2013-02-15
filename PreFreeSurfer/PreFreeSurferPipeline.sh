@@ -3,7 +3,7 @@ set -e
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET5DIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , PATH (for gradient_unwarp.py)
 
 # make pipeline engine happy...
 if [ $# -eq 1 ] ; then
@@ -100,11 +100,9 @@ AvgrdcSTRING=`getopt1 "--avgrdcmethod" $@`  # "${26}" #Averaging and readout dis
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${27}" #Config for topup or "NONE" if not used
 RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
-# Paths for scripts etc
-PipelineScripts=${HCPPIPEDIR}/PreFreeSurfer/scripts
-GlobalScripts=${HCPPIPEDIR}/global/scripts
-#PipelineScripts=`pwd`/scripts
-#CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
+# Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
+PipelineScripts=${HCPPIPEDIR_PreFS}
+GlobalScripts=${HCPPIPEDIR_Global}
 
 # Naming Conventions
 T1wImage="T1w"

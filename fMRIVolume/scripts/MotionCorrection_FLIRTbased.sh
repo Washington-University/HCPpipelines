@@ -16,8 +16,8 @@ OutputMotionMatrixNamePrefix="$7"
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
-PipelineScripts=${HCPPIPEDIR}/fMRIVolume/scripts
-GlobalScripts=${HCPPIPEDIR}/global/scripts
+PipelineScripts=${HCPPIPEDIR_fMRIVol}
+GlobalScripts=${HCPPIPEDIR_Global}
 
 
 

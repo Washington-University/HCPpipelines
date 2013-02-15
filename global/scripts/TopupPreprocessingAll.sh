@@ -3,7 +3,7 @@ set -e
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
-#  environment: FSLDIR and PATH for gradient_unwarp.py
+#  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin and PATH for gradient_unwarp.py)
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -73,8 +73,8 @@ GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
 #GlobalBinaries=`getopt1 "--globalbin" $@`  # "${12}"
 
-GlobalScripts=${HCPPIPEDIR}/global/scripts
-GlobalBinaries=${HCPPIPEDIR}/global/binaries
+GlobalScripts=${HCPPIPEDIR_Global}
+GlobalBinaries=${HCPPIPEDIR_Bin}
 
 # default parameters
 DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
