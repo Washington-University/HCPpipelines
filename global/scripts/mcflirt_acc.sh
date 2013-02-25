@@ -42,11 +42,14 @@ fi
 pi=$(echo "scale=10; 4*a(1)" | bc -l)
 outputFile=`basename ${output}`
 fslsplit $input ${output}_tmp
+${FSLDIR}/bin/fslmaths ${output}_tmp0000 -mul 0 -add 1 ${output}_allones
 for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
     echo processing $i
     echo processing $i >> ${output}.ecclog
     ii=`basename $i | sed s/${outputFile}_tmp/MAT_/g`
     ${FSLDIR}/bin/flirt -in $i -ref $ref -nosearch -dof 6 -o $i -paddingsize 1 -omat ${output}/${ii}.mat >> ${output}.ecclog
+    maskname=`echo $i | sed 's/_tmp/_mask/'`
+    ${FSLDIR}/bin/flirt -in ${output}_allones -ref $ref -o $maskname -paddingsize 1 -setbackground 0 -init ${output}/${ii}.mat -applyxfm -noresampblur 
     mm=`avscale --allparams ${output}/${ii}.mat | grep "Translations" | awk '{print $5 " " $6 " " $7}'`
     mmx=`echo $mm | cut -d " " -f 1`
     mmy=`echo $mm | cut -d " " -f 2`
@@ -62,8 +65,10 @@ for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
 done
 
 ${FSLDIR}/bin/fslmerge -tr $output `${FSLDIR}/bin/imglob ${output}_tmp????.*` $TR
+${FSLDIR}/bin/fslmerge -tr ${output}_mask `${FSLDIR}/bin/imglob ${output}_mask????.*` $TR
+${FSLDIR}/bin/fslmaths ${output}_mask -Tmean -mul `$FSLDIR/bin/fslval ${output}_mask dim4` ${output}_mask
 
-/bin/rm ${output}_tmp????.*
+/bin/rm ${output}_tmp????.* ${output}_mask????.* ${output}_allones.*
 
 
 
