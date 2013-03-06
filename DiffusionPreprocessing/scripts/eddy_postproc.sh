@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-echo -e "\n START: postproc"
+echo -e "\n START: eddy_postproc"
 
 #Hard-Coded filename. Flag from eddy to indicate that the jac method has been used for resampling
 EddyJacFlag="JacobianResampling" 
@@ -33,39 +33,31 @@ datadir=${workingdir}/data
      #rm ${eddydir}/Neg.bv*
 #fi
 
-$FSLDIR/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
+${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
+$FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
 
-echo "Computing gradient coil tensor"
-curdir=`pwd`
-cd ${datadir}
-gradient_unwarp.py nodif_brain.nii.gz nodif_brain_unwarped.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n
-${FSLDIR}/bin/convertwarp --ref=fullWarp_abs --warp1=fullWarp_abs.nii.gz --relout --out=fullWarp
-${binarydir}/calc_grad_perc_dev --fullwarp=fullWarp -o grad_dev
-${FSLDIR}/bin/fslmerge -t grad_dev grad_dev_x grad_dev_y grad_dev_z
-${FSLDIR}/bin/fslmaths grad_dev -div 100 grad_dev 
-${FSLDIR}/bin/imrm grad_dev_?
+echo "Computing gradient coil tensor to correct for gradient nonlinearities"
+cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
+gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n
+${FSLDIR}/bin/convertwarp --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
+${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
+${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
+${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
+${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
+${FSLDIR}/bin/imrm ${datadir}/nodif_warped
 
-
-#In the future, we want this applywarp to be part of eddy and avoid second resampling step.
+#This produces unwarped images in diffusion space. Remove or keep it for debugging?
 echo "Correcting for gradient nonlinearities"
-${FSLDIR}/bin/immv data data_warped
-${FSLDIR}/bin/applywarp -i data_warped -r nodif_brain -w fullWarp_abs --abs --interp=spline -o data
-${FSLDIR}/bin/immv nodif_brain nodif_brain_warped
-${FSLDIR}/bin/immv nodif_brain_mask nodif_brain_mask_warped
-${FSLDIR}/bin/imrm nodif_brain_unwarped
+${FSLDIR}/bin/applywarp -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp_abs --abs --interp=spline -o ${datadir}/data
 
 #Remove negative intensity values (caused by spline interpolation) from final data
-${FSLDIR}/bin/fslmaths data -thr 0 data
-${FSLDIR}/bin/bet data nodif_brain -m -f 0.1
+${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
+${FSLDIR}/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
 
-
-cd ${curdir}
+#Keep the original warped data and warp fields
 mkdir -p ${datadir}/warped
-${FSLDIR}/bin/immv ${datadir}/nodif_brain_mask_warped ${datadir}/warped
-${FSLDIR}/bin/immv ${datadir}/nodif_brain_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${datadir}/warped
 ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
-
-echo -e "\n END: postproc"
+echo -e "\n END: eddy_postproc"
 
