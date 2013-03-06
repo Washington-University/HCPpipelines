@@ -43,8 +43,8 @@ Usage() {
     echo "EchoSpacing should be in msecs"
     echo "PhaseEncodingDir: 1 for LR/RL, 2 for AP/PA"
     echo "LocalScriptsDir : Absolute path for local scripts, e.g. ${Pipelines}/DiffusionPreprocessing/scripts"
-	echo "GlobalBinaryDir : Absolute path for global binaries not part of software release, e.g. ${Pipelines}/global/binaries"
-	echo "GlobalConfigDir : Absolute path for global configuration files, e.g. ${Pipelines}/global/config"
+    echo "GlobalBinaryDir : Absolute path for global binaries not part of software release, e.g. ${Pipelines}/global/binaries"
+    echo "GlobalConfigDir : Absolute path for global configuration files, e.g. ${Pipelines}/global/config"
     echo "GlobalScriptsDir: Absolute path for global directory of scripts, e.g. ${Pipelines}/global/scripts" 
     echo ""
     echo ""
@@ -76,11 +76,14 @@ if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
     exit 1
 fi
  
-outdir=${StudyFolder}/$4/Diffusion
+outdir=${StudyFolder}/${Subject}/Diffusion
+outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
 if [ -d ${outdir} ]; then
     rm -rf ${outdir}
 fi
 mkdir -p ${outdir}
+mkdir -p ${outdirT1w}
+
 echo OutputDir is ${outdir}
 mkdir ${outdir}/rawdata
 mkdir ${outdir}/topup
@@ -191,43 +194,30 @@ echo "Running Eddy PostProcessing"
 ${scriptsdir}/eddy_postproc.sh ${outdir} ${binarydir} ${configdir}
 
 #Naming Conventions
+T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
 T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
-T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
-AtlasSpaceFolder="${StudyFolder}/${Subject}/MNINonLinear"
 BiasField="BiasField_acpc_dc"
 FreeSurferBrainMask="brainmask_fs"
 RegOutput="Scout2T1w"
-AtlasTransform="acpc_dc2standard"
 QAImage="T1wMulEPI"
-xfmsFolder="xfms"
-OutputTransform="diff2str.mat"
-OutputInvTransform="str2diff.mat"
-OutputAtlasTransform="diff2standard"
-OutputInvAtlasTransform="standard2diff"
-OutputBrainMask="nodif_brain_mask"
+
 
 echo "Running Diffusion to Structural Registration"
 ${scriptsdir}/DiffusionToStructural.sh \
-${outdir}/reg \
-${outdir}/data/data.nii.gz \
+"${outdir}"/reg \
+"${outdir}"/data \
+"${outdirT1w}" \
 "$T1wFolder"/"$T1wImage" \
 "$T1wFolder"/"$T1wRestoreImage" \
 "$T1wFolder"/"$T1wRestoreImageBrain" \
-"$AtlasSpaceFolder"/"$xfmsFolder"/"$AtlasTransform" \
-"$T1wFolder"/xfms/"$OutputTransform" \
-"$T1wFolder"/xfms/"$OutputInvTransform" \
-"$AtlasSpaceFolder"/"$xfmsFolder"/"$OutputAtlasTransform" \
-"$AtlasSpaceFolder"/"$xfmsFolder"/"$OutputInvAtlasTransform" \
 "$T1wFolder"/"$BiasField" \
 "$T1wFolder" \
 "$Subject" \
 "${outdir}"/reg/"$RegOutput" \
 "${outdir}"/reg/"$QAImage" \
 "$T1wFolder"/"$FreeSurferBrainMask" \
-"${outdir}"/data/"$OutputBrainMask" \
-${globalscriptsdir} 
-
-
+${globalscriptsdir} \
+${binarydir}
 
