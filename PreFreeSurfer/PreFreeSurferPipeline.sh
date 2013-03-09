@@ -100,9 +100,12 @@ AvgrdcSTRING=`getopt1 "--avgrdcmethod" $@`  # "${26}" #Averaging and readout dis
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${27}" #Config for topup or "NONE" if not used
 RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
+echo "$StudyFolder $Subject"
+
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 PipelineScripts=${HCPPIPEDIR_PreFS}
 GlobalScripts=${HCPPIPEDIR_Global}
+TemplatesDir=${HCPPIPEDIR_Templates}
 
 # Naming Conventions
 T1wImage="T1w"
@@ -116,11 +119,14 @@ T1wFolder=${StudyFolder}/${Subject}/${T1wFolder}
 T2wFolder=${StudyFolder}/${Subject}/${T2wFolder} 
 AtlasSpaceFolder=${StudyFolder}/${Subject}/${AtlasSpaceFolder}
 
+echo "$T1wFolder $T2wFolder $AtlasSpaceFolder"
+
 # Unpack List of Images
 T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g'`
 T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
 
 if [ ! -e ${T1wFolder}/xfms ] ; then
+  echo "mkdir -p ${T1wFolder}/xfms/"
   mkdir -p ${T1wFolder}/xfms/
 fi
 
@@ -166,6 +172,7 @@ for TXw in ${Modalities} ; do
 	i=1
 	for Image in $TXwInputImages ; do
 	    wdir=${TXwFolder}/${TXwImage}${i}_GradientDistortionUnwarp
+		echo "mkdir -p $wdir"
 	    mkdir -p $wdir
 	    ${RUN} ${FSLDIR}/bin/imcp $Image ${wdir}/${TXwImage}${i}
 	    ${RUN} ${GlobalScripts}/GradientDistortionUnwarp.sh \
@@ -197,7 +204,7 @@ for TXw in ${Modalities} ; do
 	    ${RUN} ${PipelineScripts}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
 	else
 	    echo "PERFORMING SIMPLE AVERAGING"
-	    ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+	    ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TemplatesDir}/${TXwTemplate} -m ${TemplatesDir}/${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
 	fi
     else
 	echo "ONLY ONE AVERAGE FOUND: COPYING"
@@ -210,7 +217,7 @@ for TXw in ${Modalities} ; do
     ${RUN} ${PipelineScripts}/ACPCAlignment.sh \
 	--workingdir=${TXwFolder}/ACPCAlignment \
 	--in=${TXwFolder}/${TXwImage} \
-	--ref=${TXwTemplate} \
+	--ref=${TemplatesDir}/${TXwTemplate} \
 	--out=${TXwFolder}/${TXwImage}_acpc \
 	--omat=${TXwFolder}/xfms/acpc.mat \
 	--brainsize=${BrainSize}
@@ -221,10 +228,10 @@ for TXw in ${Modalities} ; do
     ${RUN} ${PipelineScripts}/BrainExtraction_FNIRTbased.sh \
 	--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
 	--in=${TXwFolder}/${TXwImage}_acpc \
-	--ref=${TXwTemplate} \
-	--refmask=${TemplateMask} \
-	--ref2mm=${TXwTemplate2mm} \
-	--ref2mmmask=${Template2mmMask} \
+	--ref=${TemplatesDir}/${TXwTemplate} \
+	--refmask=${TemplatesDir}/${TemplateMask} \
+	--ref2mm=${TemplatesDir}/${TXwTemplate2mm} \
+	--ref2mmmask=${TemplatesDir}/${Template2mmMask} \
 	--outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
 	--outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
 	--fnirtconfig=${FNIRTConfig}
@@ -311,11 +318,11 @@ ${RUN} ${PipelineScripts}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --t2=${T1wFolder}/${T2wImage}_acpc_dc \
     --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
     --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-    --ref=${T1wTemplate} \
-    --refbrain=${T1wTemplateBrain} \
-    --refmask=${TemplateMask} \
-    --ref2mm=${T1wTemplate2mm} \
-    --ref2mmmask=${Template2mmMask} \
+    --ref=${TemplatesDir}/${T1wTemplate} \
+    --refbrain=${TemplatesDir}/${T1wTemplateBrain} \
+    --refmask=${TemplatesDir}/${TemplateMask} \
+    --ref2mm=${TemplatesDir}/${T1wTemplate2mm} \
+    --ref2mmmask=${TemplatesDir}/${Template2mmMask} \
     --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
     --oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
     --ot1=${AtlasSpaceFolder}/${T1wImage} \

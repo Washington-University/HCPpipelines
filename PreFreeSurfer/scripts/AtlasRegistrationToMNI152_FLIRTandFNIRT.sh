@@ -93,9 +93,9 @@ FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${21}"
 
 # default parameters
 WD=`defaultopt $WD .`
-Reference2mm=`defaultopt $Reference2mm ${FSLDIR}/data/standard/MNI152_T1_2mm`
-Reference2mmMask=`defaultopt $Reference2mmMask ${FSLDIR}/data/standard/MNI152_T1_2mm_brain_mask_dil`
-FNIRTConfig=`defaultopt $FNIRTConfig ${FSLDIR}/etc/flirtsch/T1_2_MNI152_2mm.cnf`
+Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
+Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`
+FNIRTConfig=`defaultopt $FNIRTConfig ${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf`
 
 
 T1wRestoreBasename=`remove_ext $T1wRestore`;
