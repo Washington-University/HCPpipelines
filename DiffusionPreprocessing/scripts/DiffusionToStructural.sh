@@ -67,7 +67,7 @@ ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
 #Now register the grad_dev tensor 
-${GlobalBinaries}/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_1.25 -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline
+${GlobalBinaries}/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_1.25 -t "$WorkingDirectory"/diff2str.mat --interp=spline
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 
 echo " END: DiffusionToStructural"
