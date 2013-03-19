@@ -18,16 +18,16 @@ BrainOrdinatesResolution="${12}"
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
 if [ ! -e "$ROIFolder"/wmparc."$FinalfMRIResolution".nii.gz ] ; then
-  applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$AtlasSpaceFolder"/"$T1wImageFile""$FinalfMRIResolution" -o "$ROIFolder"/wmparc."$FinalfMRIResolution"
+  applywarp --rel --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$AtlasSpaceFolder"/"$T1wImageFile""$FinalfMRIResolution" -o "$ROIFolder"/wmparc."$FinalfMRIResolution"
 fi
 
 if [ ! -e "$ROIFolder"/Atlas_wmparc."$BrainOrdinatesResolution".nii.gz ] ; then
   if [ `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l` -eq 1 ] ; then 
-    applywarp --interp=nn -i "$AtlasParcellation" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$ROIFolder"/Atlas_wmparc."$BrainOrdinatesResolution"
+    applywarp --rel --interp=nn -i "$AtlasParcellation" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$ROIFolder"/Atlas_wmparc."$BrainOrdinatesResolution"
   else
     flirt -interp spline -in "$AtlasSpaceFolder"/"$T1wImageFile" -ref "$AtlasSpaceFolder"/"$T1wImageFile" -applyisoxfm "$BrainOrdinatesResolution" -out "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution"
-    applywarp --interp=spline -i "$AtlasSpaceFolder"/"$T1wImageFile" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution"
-    applywarp --interp=nn -i "$AtlasParcellation" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$ROIFolder"/Atlas_wmparc."$BrainOrdinatesResolution"
+    applywarp --rel --interp=spline -i "$AtlasSpaceFolder"/"$T1wImageFile" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution"
+    applywarp --rel --interp=nn -i "$AtlasParcellation" -r "$AtlasSpaceFolder"/"$T1wImageFile""$BrainOrdinatesResolution" -o "$ROIFolder"/Atlas_wmparc."$BrainOrdinatesResolution"
   fi
 fi
 

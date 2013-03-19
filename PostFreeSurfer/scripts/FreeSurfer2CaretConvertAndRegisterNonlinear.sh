@@ -61,13 +61,13 @@ echo $Matrix
 
 #Create FreeSurfer Brain Mask
 mri_convert -rt nearest -rl "$T1wFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "$T1wFolder"/wmparc_1mm.nii.gz
-applywarp --interp=nn -i "$T1wFolder"/wmparc_1mm.nii.gz -r "$FinalTemplateSpace" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/wmparc.nii.gz
-applywarp --interp=nn -i "$T1wFolder"/wmparc_1mm.nii.gz -r "$FinalTemplateSpace" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/wmparc.nii.gz
+applywarp --rel --interp=nn -i "$T1wFolder"/wmparc_1mm.nii.gz -r "$FinalTemplateSpace" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/wmparc.nii.gz
+applywarp --rel --interp=nn -i "$T1wFolder"/wmparc_1mm.nii.gz -r "$FinalTemplateSpace" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/wmparc.nii.gz
 fslmaths "$T1wFolder"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero -mul 255 "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
 $Caret5_Command -volume-fill-holes "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
 fslmaths "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -bin "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
-applywarp --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$FinalTemplateSpace" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
-applywarp --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$FinalTemplateSpace" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz
+applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$FinalTemplateSpace" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
+applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$FinalTemplateSpace" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz
 
 
 #Loop through left and right hemispheres

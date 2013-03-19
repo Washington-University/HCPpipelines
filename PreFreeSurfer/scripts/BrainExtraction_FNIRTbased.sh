@@ -88,11 +88,11 @@ ${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat
 
 # Overwrite the image output from FNIRT with a spline interpolated version
 # MJ QUERY: add --interp=spline to fnirt call and avoid the applywarp call altogether?
-${FSLDIR}/bin/applywarp --interp=spline --in="$Input" --ref="$Reference" -w "$WD"/str2standard.nii.gz --out="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz
+${FSLDIR}/bin/applywarp --rel --interp=spline --in="$Input" --ref="$Reference" -w "$WD"/str2standard.nii.gz --out="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz
 
 # Invert warp and transform dilated brain mask back into native space, and use it to mask input image
 ${FSLDIR}/bin/invwarp --ref="$Input" -w "$WD"/str2standard.nii.gz -o "$WD"/standard2str.nii.gz
-${FSLDIR}/bin/applywarp --interp=nn --in="$ReferenceMask" --ref="$Input" -w "$WD"/standard2str.nii.gz -o "$OutputBrainMask"
+${FSLDIR}/bin/applywarp --rel --interp=nn --in="$ReferenceMask" --ref="$Input" -w "$WD"/standard2str.nii.gz -o "$OutputBrainMask"
 ${FSLDIR}/bin/fslmaths "$Input" -mas "$OutputBrainMask" "$OutputBrainExtractedImage"
 
 echo " "

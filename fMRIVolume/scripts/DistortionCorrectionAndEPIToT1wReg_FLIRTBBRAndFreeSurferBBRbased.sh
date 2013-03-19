@@ -160,8 +160,11 @@ if [ $DistortionCorrection = "FIELDMAP" ] ; then
       --gdcoeffs=${GradientDistortionCoeffs}
   # register scout to T1w image using fieldmap
   ${FSLDIR}/bin/epi_reg --epi=${ScoutInputName} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+  # convert epi_reg warpfield from abs to rel convention (NB: this is the current convention for epi_reg but it may change in the future, or take an option)
+  ${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}_undistorted_warp ${WD}/${ScoutInputFile}_undistorted_warp_abs
+  ${FSLDIR}/bin/convertwarp --relout --abs -r ${WD}/${ScoutInputFile}_undistorted_warp_abs -w ${WD}/${ScoutInputFile}_undistorted_warp_abs -o ${WD}/${ScoutInputFile}_undistorted_warp
   # create spline interpolated output for scout to T1w + apply bias field correction
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp.nii.gz -o ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp.nii.gz -o ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz
   ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz -div ${BiasField} ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz
   ${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz
   ###Jacobian Volume FAKED for Regular Fieldmaps (all ones) ###
@@ -189,7 +192,7 @@ elif [ $DistortionCorrection = "TOPUP" ] ; then
 #      ${GlobalBinaries}
 
   # create a spline interpolated image of scout (distortion corrected in same space)
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
   # apply Jacobian correction to scout image (optional)
   if [ $UseJacobian = true ] ; then
       ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted -mul ${WD}/Jacobian.nii.gz ${WD}/${ScoutInputFile}_undistorted
@@ -197,9 +200,9 @@ elif [ $DistortionCorrection = "TOPUP" ] ; then
   # register undistorted scout image to T1w
   ${FSLDIR}/bin/epi_reg --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted
   # generate combined warpfields and spline interpolated images + apply bias field correction
-  ${FSLDIR}/bin/convertwarp -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/${ScoutInputFile}_undistorted_warp
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/Jacobian2T1w.nii.gz
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp -o ${WD}/${ScoutInputFile}_undistorted
+  ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/${ScoutInputFile}_undistorted_warp
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/Jacobian2T1w.nii.gz
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp -o ${WD}/${ScoutInputFile}_undistorted
   # apply Jacobian correction to scout image (optional)
   if [ $UseJacobian = true ] ; then
       ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz 
@@ -215,7 +218,7 @@ fi
 #Robust way to get ${WD}/Magnitude_brain
 #${FSLDIR}/bin/epi_reg --epi=${WD}/Magnitude --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/Magnitude2str
 #${FSLDIR}/bin/convert_xfm -omat ${WD}/str2Magnitude.mat -inverse ${WD}/Magnitude2str.mat
-#${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Magnitude --premat=${WD}/str2Magnitude.mat -o ${WD}/Magnitude_brain
+#${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Magnitude --premat=${WD}/str2Magnitude.mat -o ${WD}/Magnitude_brain
 #${FSLDIR}/bin/fslmaths ${WD}/Magnitude -mas ${WD}/Magnitude_brain ${WD}/Magnitude_brain
 
 
@@ -225,9 +228,9 @@ export SUBJECTS_DIR
 ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz
 # Create FSL-style matrix and then combine with existing warp fields
 ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/fMRI2str.mat
-${FSLDIR}/bin/convertwarp --warp1=${WD}/${ScoutInputFile}_undistorted_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str.mat --out=${WD}/fMRI2str.nii.gz
+${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}_undistorted_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str.mat --out=${WD}/fMRI2str.nii.gz
 # Create warped image with spline interpolation, bias correction and (optional) Jacobian modulation
-${FSLDIR}/bin/applywarp --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w
+${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w
 if [ $UseJacobian = true ] ; then
     ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w
 else
@@ -249,8 +252,8 @@ if [ ${FNIRTConfig} != "NONE" ] ; then
   # main fnirt call for non-linear registration of scout (already "undistorted") to the subject's T2w scan
   ${FSLDIR}/bin/fnirt --in=${WD}/${ScoutInputFile}_undistorted2T1w --ref=${T2wRestoreImage} --inmask=${WD}/inmask.nii.gz --refmask=${WD}/refmask.nii.gz --applyinmask=1 --applyrefmask=1 --config=${FNIRTConfig} --iout=${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz --fout=${WD}/${ScoutInputFile}_undistorted2T1w_zblip_warp.nii.gz
   # make combined warpfield, do spline interpolation, bias field correction and Jacobian modulation (optional)
-  ${FSLDIR}/bin/convertwarp --ref=${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz --warp1=${WD}/fMRI2str.nii.gz --warp2=${WD}/${ScoutInputFile}_undistorted2T1w_zblip_warp.nii.gz --out=${WD}/fMRI_zblip2str.nii.gz
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI_zblip2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
+  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz --warp1=${WD}/fMRI2str.nii.gz --warp2=${WD}/${ScoutInputFile}_undistorted2T1w_zblip_warp.nii.gz --out=${WD}/fMRI_zblip2str.nii.gz
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI_zblip2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
   if [ $UseJacobian = true ] ; then  # Jacobian modulation
       ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
   else # Jacobian

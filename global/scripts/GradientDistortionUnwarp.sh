@@ -89,8 +89,8 @@ gradient_unwarp.py ${BaseName}_vol1.nii.gz trilinear.nii.gz siemens -g $InputCoe
 cd $ORIGDIR
 
 # Now create an appropriate warpfield output (relative convention) and apply it to all timepoints
-${FSLDIR}/bin/convertwarp --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform
-${FSLDIR}/bin/applywarp --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
+${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform
+${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
 echo " "
 echo " END: GradientDistortionUnwarp"
@@ -103,7 +103,7 @@ echo "cd `pwd`" >> $WD/qa.txt
 echo "# Check that the image output of gradient_unwarp.py is the same as from applywarp" >> $WD/qa.txt
 echo "fslview $WD/trilinear $OutputFile" >> $WD/qa.txt
 echo "# Optional (further) checking - results from fslstats should be very close to zero" >> $WD/qa.txt
-echo "applywarp --interp=trilinear -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $WD/qa_aw_tri" >> $WD/qa.txt
+echo "applywarp --rel --interp=trilinear -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $WD/qa_aw_tri" >> $WD/qa.txt
 echo "fslmaths $WD/qa_aw_tri -sub $WD/trilinear $WD/diff_tri" >> $WD/qa.txt
 echo "fslstats $WD/diff_tri -a -P 100 -M" >> $WD/qa.txt
 
