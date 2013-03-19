@@ -129,20 +129,20 @@ else
   ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}${FinalfMRIResolution}
     ResampRefIm=${WD}/${T1wImageFile}${FinalfMRIResolution} 
 fi
-  ${FSLDIR}/bin/applywarp --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}${FinalfMRIResolution}
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}${FinalfMRIResolution}
 
 # Create brain masks in this space from the FreeSurfer output (changing resolution)
-${FSLDIR}/bin/applywarp --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${WD}/${T1wImageFile}${FinalfMRIResolution} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz
+${FSLDIR}/bin/applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${WD}/${T1wImageFile}${FinalfMRIResolution} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/${T1wImageFile}${FinalfMRIResolution} -mas ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz
 
 # Create versions of the biasfield (changing resolution)
 # MJ QUERY : Do we want spline interpolation of the bias field?!  Surely trilinear would be better here to avoid ringing in case any small discontinuities snuck through
-${FSLDIR}/bin/applywarp --interp=spline -i ${BiasField} -r ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
+${FSLDIR}/bin/applywarp --rel --interp=spline -i ${BiasField} -r ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 
 # Downsample warpfield (fMRI to standard) to increase speed 
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision
-${FSLDIR}/bin/convertwarp --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --out=${OutputTransform}
+${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --out=${OutputTransform}
 
 # Copy warped T1w images and masks into the AtlasSpaceFolder
 #  NB: as this only needs to be done once (not per task) it uses a "lock" file 
@@ -164,9 +164,9 @@ FrameMergeSTRING=""
 k=0
 while [ $k -lt $NumFrames ] ; do
   vnum=`${FSLDIR}/bin/zeropad $k 4`
-  ${FSLDIR}/bin/convertwarp --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
-  ${FSLDIR}/bin/convertwarp --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --warp1=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz --warp2=${OutputTransform} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
-  ${FSLDIR}/bin/applywarp --interp=spline --in=${WD}/prevols/vol${vnum}.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --out=${WD}/postvols/vol${k}.nii.gz
+  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
+  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --warp1=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz --warp2=${OutputTransform} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
+  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${WD}/prevols/vol${vnum}.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --out=${WD}/postvols/vol${k}.nii.gz
   FrameMergeSTRING="${FrameMergeSTRING}${WD}/postvols/vol${k}.nii.gz " 
   k=`echo "$k + 1" | bc`
 done
@@ -174,10 +174,10 @@ done
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
-${FSLDIR}/bin/convertwarp --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
-${FSLDIR}/bin/applywarp --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}${FinalfMRIResolution} -o ${ScoutOutput}
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
+${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}${FinalfMRIResolution} -o ${ScoutOutput}
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
-${FSLDIR}/bin/applywarp --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 
 echo " "
 echo "END: OneStepResampling"

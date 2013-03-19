@@ -36,6 +36,7 @@ datadir=${workingdir}/data
 ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
 $FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
 
+
 echo "Computing gradient coil tensor to correct for gradient nonlinearities"
 cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
 gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n

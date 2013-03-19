@@ -178,11 +178,11 @@ for TXw in $Modalities ; do
     
     # Convert to shift map then to warp field and unwarp the TXw
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${TXwImageBrainBasename} --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap2${TXwImageBrainBasename}_ShiftMap.nii.gz    
-    ${FSLDIR}/bin/convertwarp --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBrainBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz    
-    ${FSLDIR}/bin/applywarp --interp=spline -i ${TXwImage} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasename}
+    ${FSLDIR}/bin/convertwarp --relout --rel --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBrainBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz    
+    ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${TXwImage} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasename}
     
     # Make a brain image (transform to make a mask, then apply it)
-    ${FSLDIR}/bin/applywarp --interp=nn -i ${TXwImageBrain} -r ${TXwImageBrain} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBrainBasename}
+    ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${TXwImageBrain} -r ${TXwImageBrain} -w ${WD}/FieldMap2${TXwImageBrainBasename}_Warp.nii.gz -o ${WD}/${TXwImageBrainBasename}
     
     ${FSLDIR}/bin/fslmaths ${WD}/${TXwImageBasename} -mas ${WD}/${TXwImageBrainBasename} ${WD}/${TXwImageBrainBasename}
     
@@ -207,9 +207,9 @@ if [ $UsingT2 = true ] ; then
     ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
     
     # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
-    ${FSLDIR}/bin/convertwarp --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBrainBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
+    ${FSLDIR}/bin/convertwarp --relout --rel --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBrainBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
     
-    ${FSLDIR}/bin/applywarp --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
     
     # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
     ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float

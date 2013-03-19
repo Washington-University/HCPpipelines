@@ -90,7 +90,7 @@ ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2std.mat -concat "$WD"/roi2std.mat "$W
 ${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 
 # Create a resampled image (ACPC aligned) using spline interpolation
-${FSLDIR}/bin/applywarp --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
 echo " "
 echo " END: ACPCAlignment"

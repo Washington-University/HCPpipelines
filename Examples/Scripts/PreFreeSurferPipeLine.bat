@@ -1,5 +1,6 @@
 Subjlist="792564"
 # Need to call SetUpHCPPipeline.sh (to set up appropriate paths)
+. SOMEPATH/SetUpHCPPipeline.sh
 GitRepo=${HCPPIPEDIR}
 StudyFolder=${HCPPIPEDIR}/Examples
 
