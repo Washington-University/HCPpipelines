@@ -1,0 +1,13 @@
+792564_3T_tfMRI_EMOTION_unproc.zip
+
+Sat Mar 9 21:51:39 CST 2013
+Structural Pipeline v1.0
+Functional Pipeline v1.0
+Execution 1
+
+These data were generated and made available by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657), which is funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research and by the McDonnell Center for Systems Neuroscience at Washington University.
+
+For additional information on how to acknowledge HCP and cite HCP publications if you have used data provided by the WU-Minn HCP consortium, see http://www.humanconnectome.org/citations.
+
+As a reminder, users of these datasets must comply with the Data Use Terms that were agreed upon when receiving these data.
+

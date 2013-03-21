@@ -1,12 +1,15 @@
-Subjlist="792564"
-# Need to call SetUpHCPPipeline.sh (to set up appropriate paths)
-. SOMEPATH/SetUpHCPPipeline.sh
-GitRepo=${HCPPIPEDIR}
-StudyFolder=${HCPPIPEDIR}/Examples
+#!/bin/bash 
+
+Subjlist="792564" #Space delimited list of subject IDs
+StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Location of Subject folders (named by subjectID)
+EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET5DIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+#Set up pipeline environment variables and software
+. ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"
@@ -22,15 +25,24 @@ PRINTCOM=""
 
 ########################################## INPUTS ########################################## 
 
-# NB: Scripts called by this script do NOT assume anything about the form of the input names or paths, so the only place requiring modification of input names is this script
+#Scripts called by this script do NOT assume anything about the form of the input names or paths.
+#This batch script assumes the HCP raw data naming convention, e.g.
 
-# ${StudyFolder}/${Subject}/T1w/${Subject}_${Session}_T1w_MPR1${Suffix}.nii.gz
-# ${StudyFolder}/${Subject}/T1w/${Subject}_${Session}_T1w_MPR2${Suffix}.nii.gz
-#  e.g. in the Example : 792564_strc_T1w_MPR1.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_T1w_MPR1.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR2/${Subject}_3T_T1w_MPR2.nii.gz
 
-# ${StudyFolder}/${Subject}/T2w/${Subject}_${Session}_T2w_SPC1${Suffix}.nii.gz
-# ${StudyFolder}/${Subject}/T2w/${Subject}_${Session}_T2w_SPC2${Suffix}.nii.gz
-#  e.g. in the Example : 792564_strc_T2w_SPC1.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC1/${Subject}_3T_T2w_SPC1.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC2/${Subject}_3T_T2w_SPC2.nii.gz
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz
+
+#Change Scan Settings: FieldMap Delta TE, Sample Spacings, and $UnwarpDir to match your images
+#These are set to match the HCP Protocol by default
+
+#If using gradient distortion correction, use the coefficents from your scanner
+#The HCP gradient distortion coefficents are only available through Siemens
+#Gradient distortion in standard scanners like the Trio is much less than for the HCP Skyra.
 
 
 ######################################### DO WORK ##########################################
@@ -38,42 +50,53 @@ PRINTCOM=""
 
 for Subject in $Subjlist ; do
   echo $Subject
-  #Input Variables
-  TemplateFolder="${GitRepo}/global/templates" #Template Path
-  ConfigFolder="${GitRepo}/global/config" #Config Path
-  Subject="$Subject" #SubjectID
-  Session=`ls ${StudyFolder}/${Subject}/T1w | grep T1w_MPR1 | grep nii.gz | sed s@${Subject}_@@g | sed s/_T1w_MPR1//g | sed s/.nii.gz//g | cut -d "_" -f 1`
-  if [ -z `ls ${StudyFolder}/${Subject}/T1w | grep T1w_MPR1.nii.gz` ] ; then
-    Suffix=`ls ${StudyFolder}/${Subject}/T1w | grep T1w_MPR1 | grep nii.gz | sed s@${Subject}_@@g | sed s/_T1w_MPR1//g | sed s/.nii.gz//g | cut -d "_" -f 2`
-    Suffix=`echo "_${Suffix}"`
-  else
-    Suffix=""
-  fi
-  T1wInputImages="${StudyFolder}/${Subject}/T1w/${Subject}_${Session}_T1w_MPR1${Suffix}.nii.gz@${StudyFolder}/${Subject}/T1w/${Subject}_${Session}_T1w_MPR2${Suffix}.nii.gz" #T1w1@T1w2@etc..
-  T2wInputImages="${StudyFolder}/${Subject}/T2w/${Subject}_${Session}_T2w_SPC1${Suffix}.nii.gz@${StudyFolder}/${Subject}/T2w/${Subject}_${Session}_T2w_SPC2${Suffix}.nii.gz" #T1w1@T1w2@etc..
-  T1wTemplate="${TemplateFolder}/MNI152_T1_0.7mm.nii.gz" #MNI0.7mm template
-  T1wTemplateBrain="${TemplateFolder}/MNI152_T1_0.7mm_brain.nii.gz" #Brain extracted MNI0.7mm template
-  T1wTemplate2mm="${TemplateFolder}/MNI152_T1_2mm.nii.gz" #MNI2mm template
-  T2wTemplate="${TemplateFolder}/MNI152_T2_0.7mm.nii.gz" #MNI0.7mm T2wTemplate
-  T2wTemplateBrain="${TemplateFolder}/MNI152_T2_0.7mm_brain.nii.gz" #Brain extracted MNI0.7mm T2wTemplate
-  T2wTemplate2mm="${TemplateFolder}/MNI152_T2_2mm.nii.gz" #MNI2mm T2wTemplate
-  TemplateMask="${TemplateFolder}/MNI152_T1_0.7mm_brain_mask.nii.gz" #Brain mask MNI0.7mm template
-  Template2mmMask="${TemplateFolder}/MNI152_T1_2mm_brain_mask_dil.nii.gz" #MNI2mm template
-  BrainSize="150" #BrainSize in mm
-  FNIRTConfig="${FSLDIR}/etc/flirtsch/T1_2_MNI152_2mm.cnf" #FNIRT 2mm T1w Config
-  FieldMapImageFolder="${StudyFolder}/${Subject}/FieldMap_${Session}" #Get session from SubjectID or "NONE" if not used
-  MagnitudeInputName="${Subject}_${Session}_FieldMap_Magnitude.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
-  PhaseInputName="${Subject}_${Session}_FieldMap_Phase.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
+  
+  #Input Images
+  #Detect Number of T1w Images
+  numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep T1w_MPR | wc -l`
+  T1wInputImages=""
+  i=1
+  while [ $i -le $numT1ws ] ; do
+    T1wInputImages=`echo "${T1wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR${i}/${Subject}_3T_T1w_MPR${i}.nii.gz@"`
+    i=$(($i+1))
+  done
+  
+  #Detect Number of T2w Images
+  numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep T2w_SPC | wc -l`
+  T2wInputImages=""
+  i=1
+  while [ $i -le $numT2ws ] ; do
+    T2wInputImages=`echo "${T2wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC${i}/${Subject}_3T_T2w_SPC${i}.nii.gz@"`
+    i=$(($i+1))
+  done
+  MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
+  PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
+
+  #Templates
+  T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz" #MNI0.7mm template
+  T1wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain.nii.gz" #Brain extracted MNI0.7mm template
+  T1wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz" #MNI2mm template
+  T2wTemplate="${HCPPIPEDIR_Templates}/MNI152_T2_0.7mm.nii.gz" #MNI0.7mm T2wTemplate
+  T2wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T2_0.7mm_brain.nii.gz" #Brain extracted MNI0.7mm T2wTemplate
+  T2wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T2_2mm.nii.gz" #MNI2mm T2wTemplate
+  TemplateMask="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain_mask.nii.gz" #Brain mask MNI0.7mm template
+  Template2mmMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz" #MNI2mm template
+
+  #Scan Settings
   TE="2.46" #delta TE in ms for field map or "NONE" if not used
   T1wSampleSpacing="0.0000074" #DICOM field (0019,1018) in s or "NONE" if not used
   T2wSampleSpacing="0.0000021" #DICOM field (0019,1018) in s or "NONE" if not used
   UnwarpDir="z" #z appears to be best or "NONE" if not used
-  GradientDistortionCoeffs="${ConfigFolder}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
+  GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
+
+  #Config Settings
+  BrainSize="150" #BrainSize in mm, 150 for humans
+  FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf" #FNIRT 2mm T1w Config
   AvgrdcSTRING="FIELDMAP" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = average and distortion correct at the same time with topup/applytopup only works for 2 images currently
   TopupConfig="NONE" #Config for topup or "NONE" if not used
 
   ${FSLDIR}/bin/fsl_sub ${QUEUE} \
-     ${GitRepo}/PreFreeSurfer/PreFreeSurferPipeline.sh \
+     ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
       --path="$StudyFolder" \
       --subject="$Subject" \
       --t1="$T1wInputImages" \
@@ -88,7 +111,6 @@ for Subject in $Subjlist ; do
       --template2mmmask="$Template2mmMask" \
       --brainsize="$BrainSize" \
       --fnirtconfig="$FNIRTConfig" \
-      --fmapdir="$FieldMapImageFolder" \
       --fmapmag="$MagnitudeInputName" \
       --fmapphase="$PhaseInputName" \
       --echospacing="$TE" \
@@ -99,12 +121,35 @@ for Subject in $Subjlist ; do
       --avgrdcmethod="$AvgrdcSTRING" \
       --topupconfig="$TopupConfig" \
       --printcom=$PRINTCOM
-#      --path="$PipelineScripts" \
-#      --path="$Caret5_Command" \
-#      --path="$GlobalScripts" \
+      
+  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
-  # The following line could be used (if sourced and not echoed) to set the positional parameters: $1 $2 $3 ...
+  echo "set -- --path=${StudyFolder} \
+      --subject=${Subject} \
+      --t1=${T1wInputImages} \
+      --t2=${T2wInputImages} \
+      --t1template=${T1wTemplate} \
+      --t1templatebrain=${T1wTemplateBrain} \
+      --t1template2mm=${T1wTemplate2mm} \
+      --t2template=${T2wTemplate} \
+      --t2templatebrain=${T2wTemplateBrain} \
+      --t2template2mm=${T2wTemplate2mm} \
+      --templatemask=${TemplateMask} \
+      --template2mmmask=${Template2mmMask} \
+      --brainsize=${BrainSize} \
+      --fnirtconfig=${FNIRTConfig} \
+      --fmapmag=${MagnitudeInputName} \
+      --fmapphase=${PhaseInputName} \
+      --echospacing=${TE} \
+      --t1samplespacing=${T1wSampleSpacing} \
+      --t2samplespacing=${T2wSampleSpacing} \
+      --unwarpdir=${UnwarpDir} \
+      --gdcoeffs=${GradientDistortionCoeffs} \
+      --avgrdcmethod=${AvgrdcSTRING} \
+      --topupconfig=${TopupConfig} \
+      --printcom=${PRINTCOM}"
 
-  #echo "set -- $StudyFolder $Subject $T1wInputImages $T2wInputImages $T1wTemplate $T1wTemplateBrain $T1wTemplate2mm $T2wTemplate $T2wTemplateBrain $T2wTemplate2mm $TemplateMask $Template2mmMask $BrainSize $FNIRTConfig $FieldMapImageFolder $MagnitudeInputName $PhaseInputName $TE $T1wSampleSpacing $T2wSampleSpacing $UnwarpDir $PipelineScripts $Caret5_Command $GlobalScripts $GradientDistortionCoeffs $AvgrdcSTRING $TopupConfig"
+  echo ". ${EnvironmentScript}"
+
 done
 

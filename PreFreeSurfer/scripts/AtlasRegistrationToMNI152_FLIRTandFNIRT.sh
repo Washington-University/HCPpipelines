@@ -109,10 +109,10 @@ echo " START: AtlasRegistration to MNI152"
 mkdir -p $WD
 
 # Record the input options in a log file
-echo "$0 $@" >> $WD/log.txt
-echo "PWD = `pwd`" >> $WD/log.txt
-echo "date: `date`" >> $WD/log.txt
-echo " " >> $WD/log.txt
+echo "$0 $@" >> $WD/xfms/log.txt
+echo "PWD = `pwd`" >> $WD/xfms/log.txt
+echo "date: `date`" >> $WD/xfms/log.txt
+echo " " >> $WD/xfms/log.txt
 
 ########################################## DO WORK ########################################## 
 
@@ -121,7 +121,8 @@ ${FSLDIR}/bin/flirt -interp spline -dof 12 -in ${T1wRestoreBrain} -ref ${Referen
 
 ${FSLDIR}/bin/fnirt --in=${T1wRestore} --ref=${Reference2mm} --aff=${WD}/xfms/acpc2MNILinear.mat --refmask=${Reference2mmMask} --fout=${OutputTransform} --jout=${WD}/xfms/NonlinearRegJacobians.nii.gz --refout=${WD}/xfms/IntensityModulatedT1.nii.gz --iout=${WD}/xfms/2mmReg.nii.gz --logout=${WD}/xfms/NonlinearReg.txt --intout=${WD}/xfms/NonlinearIntensities.nii.gz --cout=${WD}/xfms/NonlinearReg.nii.gz --config=${FNIRTConfig}
 
-${FSLDIR}/bin/invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${T1wRestore}
+# Input and reference spaces are the same, using 2mm reference to save time
+${FSLDIR}/bin/invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${Reference2mm}
 
 # T1w set of warped outputs (brain/whole-head + restored/orig)
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImage}
@@ -137,14 +138,14 @@ ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrai
 
 echo " "
 echo " END: AtlasRegistration to MNI152"
-echo " END: `date`" >> $WD/log.txt
+echo " END: `date`" >> $WD/xfms/log.txt
 
 ########################################## QA STUFF ########################################## 
 
-if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
-echo "cd `pwd`" >> $WD/qa.txt
-echo "# Check quality of alignment with MNI image" >> $WD/qa.txt
-echo "fslview ${Reference} ${OutputT1wImageRestore}" >> $WD/qa.txt
-echo "fslview ${Reference} ${OutputT2wImageRestore}" >> $WD/qa.txt
+if [ -e $WD/xfms/qa.txt ] ; then rm -f $WD/xfms/qa.txt ; fi
+echo "cd `pwd`" >> $WD/xfms/qa.txt
+echo "# Check quality of alignment with MNI image" >> $WD/xfms/qa.txt
+echo "fslview ${Reference} ${OutputT1wImageRestore}" >> $WD/xfms/qa.txt
+echo "fslview ${Reference} ${OutputT2wImageRestore}" >> $WD/xfms/qa.txt
 
 ##############################################################################################

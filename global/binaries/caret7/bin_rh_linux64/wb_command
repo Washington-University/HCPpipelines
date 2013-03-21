@@ -1,0 +1,17 @@
+#!/bin/sh
+
+#
+# Point to the actual application executable
+#
+directory=`dirname "$0"`
+
+if [ -z "$LD_LIBRARY_PATH" ]; then
+export LD_LIBRARY_PATH="$directory/../libs_rh_linux64"
+else
+export LD_LIBRARY_PATH="$directory/../libs_rh_linux64:$LD_LIBRARY_PATH"
+fi
+
+echo "$LD_LIBRARY_PATH"
+
+"$directory"/../exe_rh_linux64/wb_command "$@"
+
