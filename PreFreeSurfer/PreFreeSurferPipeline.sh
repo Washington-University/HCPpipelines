@@ -85,16 +85,12 @@ TemplateMask=`getopt1 "--templatemask" $@`  # "${11}" #Brain mask MNI Template
 Template2mmMask=`getopt1 "--template2mmmask" $@`  # "${12}" #Brain mask MNI2mm Template 
 BrainSize=`getopt1 "--brainsize" $@`  # "${13}" #StandardFOV mask for averaging structurals
 FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${14}" #FNIRT 2mm T1w Config
-FieldMapImageFolder=`getopt1 "--fmapdir" $@`  # "${15}" #Get session from SubjectID
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "${16}" #Expects 4D magitude volume with two 3D timepoints
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "${17}" #Expects 3D phase difference volume
 TE=`getopt1 "--echospacing" $@`  # "${18}" #delta TE for field map
 T1wSampleSpacing=`getopt1 "--t1samplespacing" $@`  # "${19}" #DICOM field (0019,1018)
 T2wSampleSpacing=`getopt1 "--t2samplespacing" $@`  # "${20}" #DICOM field (0019,1018) 
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${21}" #z appears to be best
-#PipelineScripts=`getopt1 "--path" $@`  # "${22}" #Location where the pipeline modules are
-#Caret5_Command=`getopt1 "--path" $@`  # "${23}" #Location of Caret5 caret_command
-#GlobalScripts=`getopt1 "--path" $@`  # "${24}" #Location where the global pipeline modules are
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${25}" #Select correct coeffs for scanner or "NONE" to turn off
 AvgrdcSTRING=`getopt1 "--avgrdcmethod" $@`  # "${26}" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = average and distortion correct at the same time with topup/applytopup only works for 2 images currently
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${27}" #Config for topup or "NONE" if not used
@@ -105,7 +101,6 @@ echo "$StudyFolder $Subject"
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 PipelineScripts=${HCPPIPEDIR_PreFS}
 GlobalScripts=${HCPPIPEDIR_Global}
-TemplatesDir=${HCPPIPEDIR_Templates}
 
 # Naming Conventions
 T1wImage="T1w"
@@ -131,10 +126,12 @@ if [ ! -e ${T1wFolder}/xfms ] ; then
 fi
 
 if [ ! -e ${T2wFolder}/xfms ] ; then
+  echo "mkdir -p ${T2wFolder}/xfms/"
   mkdir -p ${T2wFolder}/xfms/
 fi
 
 if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
+  echo "mkdir -p ${AtlasSpaceFolder}/xfms/"
   mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
@@ -146,7 +143,6 @@ echo "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 ######## LOOP over the same processing for T1w and T2w (just with different names) ########
 
 Modalities="T1w T2w"
-if [ `echo $T2wInputImages | wc -w` -le 0 ] ; then Modalities="T1w" ; fi
 
 for TXw in ${Modalities} ; do
     # set up appropriate input variables
@@ -174,7 +170,7 @@ for TXw in ${Modalities} ; do
 	    wdir=${TXwFolder}/${TXwImage}${i}_GradientDistortionUnwarp
 		echo "mkdir -p $wdir"
 	    mkdir -p $wdir
-	    ${RUN} ${FSLDIR}/bin/imcp $Image ${wdir}/${TXwImage}${i}
+	    ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${wdir}/${TXwImage}${i} #Make sure input axes are oriented the same as the templates 
 	    ${RUN} ${GlobalScripts}/GradientDistortionUnwarp.sh \
 		--workingdir=${wdir} \
 		--coeffs=$GradientDistortionCoeffs \
@@ -204,7 +200,7 @@ for TXw in ${Modalities} ; do
 	    ${RUN} ${PipelineScripts}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
 	else
 	    echo "PERFORMING SIMPLE AVERAGING"
-	    ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TemplatesDir}/${TXwTemplate} -m ${TemplatesDir}/${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+	    ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
 	fi
     else
 	echo "ONLY ONE AVERAGE FOUND: COPYING"
@@ -217,7 +213,7 @@ for TXw in ${Modalities} ; do
     ${RUN} ${PipelineScripts}/ACPCAlignment.sh \
 	--workingdir=${TXwFolder}/ACPCAlignment \
 	--in=${TXwFolder}/${TXwImage} \
-	--ref=${TemplatesDir}/${TXwTemplate} \
+	--ref=${TXwTemplate} \
 	--out=${TXwFolder}/${TXwImage}_acpc \
 	--omat=${TXwFolder}/xfms/acpc.mat \
 	--brainsize=${BrainSize}
@@ -228,10 +224,10 @@ for TXw in ${Modalities} ; do
     ${RUN} ${PipelineScripts}/BrainExtraction_FNIRTbased.sh \
 	--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
 	--in=${TXwFolder}/${TXwImage}_acpc \
-	--ref=${TemplatesDir}/${TXwTemplate} \
-	--refmask=${TemplatesDir}/${TemplateMask} \
-	--ref2mm=${TemplatesDir}/${TXwTemplate2mm} \
-	--ref2mmmask=${TemplatesDir}/${Template2mmMask} \
+	--ref=${TXwTemplate} \
+	--refmask=${TemplateMask} \
+	--ref2mm=${TXwTemplate2mm} \
+	--ref2mmmask=${Template2mmMask} \
 	--outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
 	--outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
 	--fnirtconfig=${FNIRTConfig}
@@ -258,8 +254,8 @@ if [ ${AvgrdcSTRING} = "FIELDMAP" ] ; then
       --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
       --t2=${T2wFolder}/${T2wImage}_acpc \
       --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
-      --fmapmag=${FieldMapImageFolder}/${MagnitudeInputName} \
-      --fmapphase=${FieldMapImageFolder}/${PhaseInputName} \
+      --fmapmag=${MagnitudeInputName} \
+      --fmapphase=${PhaseInputName} \
       --echodiff=${TE} \
       --t1sampspacing=${T1wSampleSpacing} \
       --t2sampspacing=${T2wSampleSpacing} \
@@ -270,7 +266,6 @@ if [ ${AvgrdcSTRING} = "FIELDMAP" ] ; then
       --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
       --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
       --gdcoeffs=${GradientDistortionCoeffs}
-#     --globalscripts=${GlobalScripts} \
 else
     wdir=${T2wFolder}/T2wToT1wReg
   if [ -e ${wdir} ] ; then
@@ -293,11 +288,9 @@ fi
 
 
 #### Bias Field Correction: Calculate bias field using square root of the product of T1w and T2w iamges.  ####
-# MG: Remove some additional non-brain tissue before dilating and smoothing bias field according to sigma
-# MJ QUERY: What is the above comment about?
 mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w 
 ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT1w.sh \
-    --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
+   set -- --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
     --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
     --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
     --T2im=${T1wFolder}/${T2wImage}_acpc_dc \
@@ -318,11 +311,11 @@ ${RUN} ${PipelineScripts}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --t2=${T1wFolder}/${T2wImage}_acpc_dc \
     --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
     --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-    --ref=${TemplatesDir}/${T1wTemplate} \
-    --refbrain=${TemplatesDir}/${T1wTemplateBrain} \
-    --refmask=${TemplatesDir}/${TemplateMask} \
-    --ref2mm=${TemplatesDir}/${T1wTemplate2mm} \
-    --ref2mmmask=${TemplatesDir}/${Template2mmMask} \
+    --ref=${T1wTemplate} \
+    --refbrain=${T1wTemplateBrain} \
+    --refmask=${TemplateMask} \
+    --ref2mm=${T1wTemplate2mm} \
+    --ref2mmmask=${Template2mmMask} \
     --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
     --oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
     --ot1=${AtlasSpaceFolder}/${T1wImage} \

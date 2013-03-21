@@ -16,7 +16,6 @@ Usage() {
   echo "            --echodiff=<echo time difference for fieldmap images (in milliseconds)>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
   echo "            --ofmapmagbrain=<output distortion-corrected brain-extracted fieldmap magnitude image>"
-  echo "            --ophase=<output distortion corrected fieldmap phase image>"
   echo "            --ofmap=<output distortion corrected fieldmap image (rad/s)>"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
 }
@@ -42,9 +41,8 @@ defaultopt() {
 
 # Output images (in $WD): Magnitude  Magnitude_brain Magnitude_brain_mask FieldMap  
 #         Plus the following is gradient distortion correction is run:
-#                         Magnitude_gdc Magnitude_gdc_warp  Magnitude_brain_gdc  Magnitude_brain_gdc_warp  
-#                         Phase_gdc  Phase_gdc_warp  FieldMap_gdc  FieldMap_gdc_warp
-# Output images (not in $WD):  ${MagnitudeOutput}  ${MagnitudeBrainOutput}  ${PhaseOutput}  ${FieldMapOutput}
+#                         Magnitude_gdc Magnitude_gdc_warp  Magnitude_brain_gdc FieldMap_gdc  
+# Output images (not in $WD):  ${MagnitudeOutput}  ${MagnitudeBrainOutput}  ${FieldMapOutput}
 
 ################################################## OPTION PARSING #####################################################
 
@@ -60,7 +58,6 @@ PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
 TE=`getopt1 "--echodiff" $@`  # "$4"
 MagnitudeOutput=`getopt1 "--ofmapmag" $@`  # "$5"
 MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`  # "$6"
-PhaseOutput=`getopt1 "--ophase" $@`  # "$7"
 FieldMapOutput=`getopt1 "--ofmap" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 #GlobalScripts="${10}"
@@ -83,11 +80,10 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
-${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude.nii.gz
-# MJ QUERY: Change the BET parameter below to make it more conservative for the fieldmap processing?
-${FSLDIR}/bin/bet ${WD}/Magnitude.nii.gz ${WD}/Magnitude_brain.nii.gz -f 0.35 -m #Brain extract the magnitude image
-cp ${PhaseInputName} ${WD}/Phase.nii.gz
-${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase.nii.gz ${WD}/Magnitude_brain.nii.gz ${WD}/FieldMap.nii.gz ${TE}
+${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
+${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${TE}
 
 echo "DONE: fmrib_prepare_fieldmap.sh"
 
@@ -98,37 +94,19 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
       --in=${WD}/Magnitude \
       --out=${WD}/Magnitude_gdc \
       --owarp=${WD}/Magnitude_gdc_warp
-  ${GlobalScripts}/GradientDistortionUnwarp.sh \
-      --workingdir=${WD} \
-      --coeffs=${GradientDistortionCoeffs} \
-      --in=${WD}/Magnitude_brain \
-      --out=${WD}/Magnitude_brain_gdc \
-      --owarp=${WD}/Magnitude_brain_gdc_warp
-  ${GlobalScripts}/GradientDistortionUnwarp.sh \
-      --workingdir=${WD} \
-      --coeffs=${GradientDistortionCoeffs} \
-      --in=${WD}/Phase \
-      --out=${WD}/Phase_gdc \
-      --owarp=${WD}/Phase_gdc_warp
-  ${GlobalScripts}/GradientDistortionUnwarp.sh \
-      --workingdir=${WD} \
-      --coeffs=${GradientDistortionCoeffs} \
-      --in=${WD}/FieldMap \
-      --out=${WD}/FieldMap_gdc \
-      --owarp=${WD}/FieldMap_gdc_warp
-
-  # MJ QUERY: This lower bound (the lower robust range) is quite low, so this could potentially be an over-large mask.  Why not change to the standard FSL threshold of 0.1*(robust range) + robust min  ?   And why erode and dilate?!?  Is this to fill holes?
-  Lower=`${FSLDIR}/bin/fslstats ${WD}/Magnitude_brain.nii.gz -r | cut -d " " -f 1`
-  ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain_gdc.nii.gz -thr $Lower -ero -dilF ${WD}/Magnitude_brain_gdc.nii.gz
+      
+  ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/Magnitude_gdc_warp -o ${WD}/Magnitude_brain_gdc
+  ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_gdc -mas ${WD}/Magnitude_brain_gdc ${WD}/Magnitude_brain_gdc
+  ${FSLDIR}/bin/fslmaths ${WD}/FieldMap -dilM -dilM -dilM ${WD}/FieldMap_dil
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap_dil -r ${WD}/FieldMap_dil -w ${WD}/Magnitude_gdc_warp -o ${WD}/FieldMap_gdc
+  ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_gdc -mas ${WD}/Magnitude_brain_gdc ${WD}/FieldMap_gdc
 
   ${FSLDIR}/bin/imcp ${WD}/Magnitude_gdc ${MagnitudeOutput}
   ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain_gdc ${MagnitudeBrainOutput}
-  ${FSLDIR}/bin/imcp ${WD}/Phase_gdc ${PhaseOutput}
   cp ${WD}/FieldMap_gdc.nii.gz ${FieldMapOutput}.nii.gz
 else
   ${FSLDIR}/bin/imcp ${WD}/Magnitude ${MagnitudeOutput}
   ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain ${MagnitudeBrainOutput}
-  ${FSLDIR}/bin/imcp ${WD}/Phase ${PhaseOutput}
   cp ${WD}/FieldMap.nii.gz ${FieldMapOutput}.nii.gz
 fi
 
