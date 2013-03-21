@@ -6,7 +6,6 @@ SubjectID="$1"
 SubjectDIR="$2"
 T1wImage="$3" #T1w FreeSurfer Input (Full Resolution)
 T2wImage="$4" #T2w FreeSurfer Input (Full Resolution)
-PipelineBinaries="$5"
 
 export SUBJECTS_DIR="$SubjectDIR"
 
@@ -52,22 +51,12 @@ echo "numpoints 2" >> $SubjectDIR/$SubjectID/scripts/control.hires.dat
 echo "useRealRAS 1" >> $SubjectDIR/$SubjectID/scripts/control.hires.dat
 
 # do intensity normalization on the hires volume using the white surface (use locations that 
-# are >= 2mm from the boundary of the white and in the interior and are not outliers, like
-# the ventricles). Note that this *requires* at least one control point be put in by the user.
-# This is fixable but I haven't gotten a chance to yet.
-#"$PipelineComponents"/mri_normalize -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 2 -surface $SubjectDIR/$s/surf/$hemi.white.hires identity.nofile $hires    ${hires:r}.norm.mgz
-#dim=`fslval $hires pixdim3`
-#dim=`echo "scale=2; $var / 1" | bc -l`
-
-"$PipelineBinaries"/mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 1 -surface "$surfdir"/lh.white.hires identity.nofile -surface "$surfdir"/rh.white.hires identity.nofile $mridir/T1w_hires.masked.mgz $mridir/T1w_hires.masked.norm.mgz
+mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 1 -surface "$surfdir"/lh.white.hires identity.nofile -surface "$surfdir"/rh.white.hires identity.nofile $mridir/T1w_hires.masked.mgz $mridir/T1w_hires.masked.norm.mgz
 
 
 #deform the surfaces
-"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID lh
-"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID rh
-
-#"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires_mm0.5 -orig white.deformed -filled filled.hires_mm0.5 -wm wm.hires_mm0.5 -sdir $SubjectDIR -T1 T1w_hires.masked.norm_mm0.5 -orig_white white.deformed -output .deformedII -w 0 $SubjectID lh
-#"$PipelineBinaries"/mris_make_surfaces -noaparc -aseg aseg.hires_mm0.5 -orig white.deformed -filled filled.hires_mm0.5 -wm wm.hires_mm0.5 -sdir $SubjectDIR -T1 T1w_hires.masked.norm_mm0.5 -orig_white white.deformed -output .deformedII -w 0 $SubjectID rh
+mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID lh
+mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1w_hires.masked.norm -orig_white white.hires -output .deformed -w 0 $SubjectID rh
 
 
 #Fine Tune T2w to T1w Registration
@@ -85,7 +74,7 @@ echo "round" >> "$mridir"/transforms/eye.dat
 if [ ! -e "$mridir"/transforms/T2wtoT1w.mat ] ; then
   bbregister --s "$SubjectID" --mov "$T2wImage" --surf white.deformed --init-reg "$mridir"/transforms/eye.dat --t2 --reg "$mridir"/transforms/T2wtoT1w.dat --o "$mridir"/T2w_hires.nii.gz
   tkregister2 --noedit --reg "$mridir"/transforms/T2wtoT1w.dat --mov "$T2wImage" --targ "$mridir"/T1w_hires.nii.gz --fslregout "$mridir"/transforms/T2wtoT1w.mat
-  applywarp --rel --interp=spline -i "$T2wImage" -r "$mridir"/T1w_hires.nii.gz --premat="$mridir"/transforms/T2wtoT1w.mat -o "$mridir"/T2w_hires.nii.gz
+  applywarp --interp=spline -i "$T2wImage" -r "$mridir"/T1w_hires.nii.gz --premat="$mridir"/transforms/T2wtoT1w.mat -o "$mridir"/T2w_hires.nii.gz
   fslmaths "$mridir"/T2w_hires.nii.gz -abs -add 1 "$mridir"/T2w_hires.nii.gz
   fslmaths "$mridir"/T1w_hires.nii.gz -mul "$mridir"/T2w_hires.nii.gz -sqrt "$mridir"/T1wMulT2w_hires.nii.gz
 else
@@ -93,15 +82,6 @@ else
   echo "T2w to T1w Registration Will Not Be Done Again"
   echo "Verify that "$T2wImage" has not been fine tuned and then remove "$mridir"/transforms/T2wtoT1w.mat"
 fi
-
-#fslmaths "$mridir"/T1w_hires.nii.gz -div "$mridir"/T2w_hires.nii.gz "$mridir"/T1wDivT2w_hires.nii.gz
-
-#mri_mask "$mridir"/T1wDivT2w_hires.nii.gz $mridir/brain.hires.mgz $mridir/T1wDivT2w_hires.masked.mgz
-#"$PipelineComponents"/mri_normalize -erode 1 -f $SubjectDIR/$SubjectID/scripts/control.hires.dat -min_dist 0$dim -surface "$surfdir"/lh.white.deformed identity.nofile -surface "$surfdir"/rh.white.deformed identity.nofile $mridir/T1wDivT2w_hires.masked.mgz $mridir/T1wDivT2w_hires.masked.norm.mgz
-
-#"$PipelineComponents"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1wDivT2w_hires.masked.norm -orig_white white.deformed -output .deformedII -w 0 $SubjectID lh
-#"$PipelineComponents"/mris_make_surfaces -noaparc -aseg aseg.hires -orig white.hires -filled filled.hires -wm wm.hires -sdir $SubjectDIR -T1 T1wDivT2w_hires.masked.norm -orig_white white.deformed -output .deformedII -w 0 $SubjectID rh
-
 
 tkregister2 --mov $mridir/orig.mgz --targ "$mridir"/T1w_hires.nii.gz --noedit --regheader --reg $regII
 mri_surf2surf --s $SubjectID --sval-xyz white.deformed --reg $regII $mridir/orig.mgz --tval-xyz --tval white --hemi lh
