@@ -37,7 +37,6 @@ for Subject in $Subjlist ; do
   T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
-function Comment {
   ${FSLDIR}/bin/fsl_sub ${QUEUE} \
      ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh \
       --subject="$Subject" \
@@ -46,7 +45,7 @@ function Comment {
       --t1brain="$T1wImageBrain" \
       --t2="$T2wImage" \
       --printcom=$PRINTCOM
-}      
+      
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
   echo "set -- --subject="$Subject" \

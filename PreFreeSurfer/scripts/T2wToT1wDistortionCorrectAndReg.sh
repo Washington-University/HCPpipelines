@@ -183,7 +183,7 @@ for TXw in $Modalities ; do
     
     # Copy files to specified destinations
     if [ $TXw = T1w ] ; then 
-       ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBrainBasename}_Warp ${OutputT1wTransform}
+       ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBasename}_Warp ${OutputT1wTransform}
        ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasename} ${OutputT1wImage}
        ${FSLDIR}/bin/imcp ${WD}/${TXwImageBrainBasename} ${OutputT1wImageBrain}
     fi
