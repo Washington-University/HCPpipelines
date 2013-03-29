@@ -45,6 +45,7 @@ SubjectDIR=`getopt1 "--subjectDIR" $@` #Location to Put FreeSurfer Subject's Fol
 T1wImage=`getopt1 "--t1" $@` #T1w FreeSurfer Input (Full Resolution)
 T1wImageBrain=`getopt1 "--t1brain" $@` 
 T2wImage=`getopt1 "--t2" $@` #T2w FreeSurfer Input (Full Resolution)
+
 T1wImageFile=`remove_ext $T1wImage`;
 T1wImageBrainFile=`remove_ext $T1wImageBrain`;
 
