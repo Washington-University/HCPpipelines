@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="true"
+       xsi:noNamespaceSchemaLocation="true"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexRight]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Caret-Version]]></Name>
+         <Value><![CDATA[5.65]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Date]]></Name>
+         <Value><![CDATA[2012-11-13T05:40:22]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{e3d82af6-38dd-4115-9a0b-ff874545cc6e}]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[comment]]></Name>
+         <Value><![CDATA[Deformed from: CCNMD_MyelinMapping.R.Atlas_Cortex_ROI.164k_fs_LR.func.gii
+Deformed with: 164k_fs_LR232k_fs_LR.R.deform_map
+
+Appended File: /media/2TBB/MyelinMapping_Project/CommonFiles/FS_LR/fsaverage.L+R.MedialWall.164k_fs_LR.metric
+Deformed from: fsaverage.L.ProbabilisticArchitectonic.164k_fs_L.metric
+Deformed with: fsaverage.L.registered-to-fs_LR.164k_fs_LR.deform_map
+Appended File: /Users/vanessen/BRAIN_MAP_DATA/PALS_B12_HUMAN/FREESURFER-to-PALS/FREESURFER_AVG-to-PALS/FS_AVERAGE/FS_LR/fsaverage.R.ProbabilisticArchitectonic.164k_fs_LR.metric
+Deformed from: fsaverage.R.ProbabilisticArchitectonic.164k_fs_R.metric
+Deformed with: fsaverage.R.registered-to-fs_LR.164k_fs_LR.deform_map]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[encoding]]></Name>
+         <Value><![CDATA[XML_BASE64_GZIP]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NONE"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Description]]></Name>
+         <Value><![CDATA[Multiplied -1.0 by Atlas_Cortex_ROI
+Deformed with: 164k_fs_LR232k_fs_LR.R.deform_map]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[deformed_Atlas_Cortex_ROI]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{ee75ce91-2bc7-4415-8c13-69d60a3f4da4}]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[column-color-mapping]]></Name>
+         <Value><![CDATA[-1.0 1.0]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[column-threshold]]></Name>
+         <Value><![CDATA[0.0 0.0]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt3Utu4zAQRVHtLFvz0nsaBHZbH1L1ijqDMwgCsy6VwKIQIN6218/20fb6/L1vr+vqzH47qb6+Cde8er+zrlN1n33t21N128j9VHc9eS/2UK9zv27Ne3uTm7t2JramNyb3pZ4rEs+iaWf+pJ6Ulm8dd/RUN1TO3zt79PyKuUdmjph7dN6VmWdmnZl3ds6RWbNnzFx/1tpX1v209tU1/649cr1RawFrq7hPA8CTdL1f/r7Xd9lDt3PK/85Waf1dzoQdzrHpjcnPBKltic9Sac94ST0pLVc6RrVUN1ydf6WhanbF3BEzj8ztNmvPvDvmzJ4xc/1Za3dYc+R6KevAN1fv/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPBE2+uYytmVrQBddH//6/we3vke1LW9e3d1x2rXuGNrdUfnxuS+1LbkruqG1J6UloSOhIancc0BuNO7+86786u/EQAAAAAAAAAAAAAAAAAAAAAAAAA8T9f/L9f9/+at8llBK3z2UffPcOrc37Vdc3bv3c1XW+9qHtU5s3Vk49/ed1+n9O1pT2zb83tR3QRAf7PvJ3eeQZLXnXFeTFtr1HNG1evPvvbM65zjzrnzOZRrVv3Zrbiv1fa0yn5Weg9cYR/d99C5f5X26pYnNFd3rNha3bBCIwAAAAAAAAAAAAAAAAAAsKp/+88MUQ==</Data>
+</DataArray>
+</GIFTI>
