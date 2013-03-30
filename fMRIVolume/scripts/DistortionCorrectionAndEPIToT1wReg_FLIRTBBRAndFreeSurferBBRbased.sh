@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 and FreeSurfer 5.1 or later versions
+#  installed versions of: FSL5.0.2 and FreeSurfer 5.2 or later versions
 #  environment: FSLDIR, FREESURFER_HOME + others
 
 ################################################ SUPPORT FUNCTIONS ##################################################
@@ -17,6 +17,8 @@ Usage() {
   echo "             --t1brain=<input bias-corrected, brain-extracted T1-weighted image>"
   echo "             --fmapmag=<input fieldmap magnitude image>"
   echo "             --fmapphase=<input fieldmap phase image>"
+  echo "             --SEPhaseNeg=<input spin echo negative phase encoding image>"
+  echo "             --SEPhasePos=<input spin echo positive phase encoding image>"
   echo "             --echodiff=<difference of echo times for fieldmap, in milliseconds>"
   echo "             --echospacing=<effective echo spacing of fMRI image, in seconds>"
   echo "             --unwarpdir=<unwarping direction: x/y/z/-x/-y/-z>"
@@ -26,8 +28,6 @@ Usage() {
   echo "             --freesurferfolder=<directory of FreeSurfer folder>"
   echo "             --freesurfersubjectid=<FreeSurfer Subject ID>"
   echo "             --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
-  echo "             --t2restore=<input bias-corrected T2-weighted image>"
-  echo "             [--fnirtconfig=<FNIRT config file>]"
   echo "             [--qaimage=<output name for QA image>]"
   echo "             --method=<method used for distortion correction: FIELDMAP or TOPUP>"
   echo "             [--topupconfig=<topup config file>]"
@@ -68,11 +68,6 @@ defaultopt() {
 #      fMRI2str.mat  fMRI2str
 #      ${ScoutInputFile}_undistorted2T1w  
 #
-#    Fnirt (z-blip correction) only:  
-#      fMRI_zblip2str
-#      ${ScoutInputFile}_undistorted2T1w_zblip
-#      ${ScoutInputFile}_undistorted2T1w_zblip_warp
-#
 # Outputs (not in $WD):
 #
 #       ${RegOutput}  ${OutputTransform}  ${JacobianOut}  ${QAImage}
@@ -89,13 +84,14 @@ if [ $# -lt 21 ] ; then Usage; exit 1; fi
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
 ScoutInputName=`getopt1 "--scoutin" $@`  # "$2"
-# MJ QUERY: Is the T1wImage necessary if we have a restored version?!?
 T1wImage=`getopt1 "--t1" $@`  # "$3"
 T1wRestoreImage=`getopt1 "--t1restore" $@`  # "$4"
 T1wBrainImage=`getopt1 "--t1brain" $@`  # "$5"
+SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  # "$7"
+SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  # "$5"
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$6"
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "$7"
-TE=`getopt1 "--echodiff" $@`  # "$8"
+deltaTE=`getopt1 "--echodiff" $@`  # "$8"
 DwellTime=`getopt1 "--echospacing" $@`  # "$9"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${10}"
 OutputTransform=`getopt1 "--owarp" $@`  # "${11}"
@@ -103,15 +99,11 @@ BiasField=`getopt1 "--biasfield" $@`  # "${12}"
 RegOutput=`getopt1 "--oregim" $@`  # "${13}"
 FreeSurferSubjectFolder=`getopt1 "--freesurferfolder" $@`  # "${14}"
 FreeSurferSubjectID=`getopt1 "--freesurfersubjectid" $@`  # "${15}"
-#GlobalScripts=`getopt1 "--globalscripts" $@`  # "${16}"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${17}"
-T2wRestoreImage=`getopt1 "--t2restore" $@`  # "${18}"
-FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${19}"
 QAImage=`getopt1 "--qaimage" $@`  # "${20}"
 DistortionCorrection=`getopt1 "--method" $@`  # "${21}"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${22}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${23}"
-#GlobalBinaries=`getopt1 "--globalbinaries" $@`  # "${24}"
 
 ScoutInputFile=`basename $ScoutInputName`
 T1wBrainImageFile=`basename $T1wBrainImage`
@@ -122,7 +114,6 @@ RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
 WD=`defaultopt $WD ${RegOutput}.wdir`
 GlobalScripts=${HCPPIPEDIR_Global}
 GlobalBinaries=${HCPPIPEDIR_Bin}
-FNIRTConfig=`defaultopt $FNIRTConfig "NONE"`   # NONE = turn off z-blip corrections!
 TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
 UseJacobian=false
 
@@ -152,10 +143,9 @@ if [ $DistortionCorrection = "FIELDMAP" ] ; then
       --workingdir=${WD}/FieldMap \
       --fmapmag=${MagnitudeInputName} \
       --fmapphase=${PhaseInputName} \
-      --echodiff=${TE} \
+      --echodiff=${deltaTE} \
       --ofmapmag=${WD}/Magnitude \
       --ofmapmagbrain=${WD}/Magnitude_brain \
-      --ophase=${WD}/Phase \
       --ofmap=${WD}/FieldMap \
       --gdcoeffs=${GradientDistortionCoeffs}
   # register scout to T1w image using fieldmap
@@ -172,15 +162,12 @@ if [ $DistortionCorrection = "FIELDMAP" ] ; then
     
 ###### TOPUP VERSION (SE FIELDMAPS) ######
 elif [ $DistortionCorrection = "TOPUP" ] ; then
-  # MJ QUERY : Why is the following command commented out?
-  #PhaseEncodeOne is MagnitudeInputName, PhaseEncodeTwo is PhaseInputName
-  #${GlobalScripts}/TopupPreprocessingAll.sh ${WD}/FieldMap ${MagnitudeInputName} ${PhaseInputName} ${DwellTime} ${UnwarpDir} ${WD}/Magnitude ${WD}/Magnitude_brain ${WD}/TopupField ${WD}/FieldMap ${GradientDistortionCoeffs} ${GlobalScripts} ${TopupConfig}
   # Use topup to distortion correct the scout scans
   #    using a blip-reversed SE pair "fieldmap" sequence
   ${GlobalScripts}/TopupPreprocessingAll.sh \
       --workingdir=${WD}/FieldMap \
-      --phaseone=${MagnitudeInputName} \
-      --phasetwo=${PhaseInputName} \
+      --phaseone=${SpinEchoPhaseEncodeNegative} \
+      --phasetwo=${SpinEchoPhaseEncodePositive} \
       --scoutin=${ScoutInputName} \
       --echospacing=${DwellTime} \
       --unwarpdir=${UnwarpDir} \
@@ -188,8 +175,6 @@ elif [ $DistortionCorrection = "TOPUP" ] ; then
       --ojacobian=${WD}/Jacobian \
       --gdcoeffs=${GradientDistortionCoeffs} \
       --topupconfig=${TopupConfig}
-#      ${GlobalScripts} \
-#      ${GlobalBinaries}
 
   # create a spline interpolated image of scout (distortion corrected in same space)
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
@@ -214,13 +199,6 @@ else
   exit
 fi
 
-# MJ QUERY : Why is this commented out now?
-#Robust way to get ${WD}/Magnitude_brain
-#${FSLDIR}/bin/epi_reg --epi=${WD}/Magnitude --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/Magnitude2str
-#${FSLDIR}/bin/convert_xfm -omat ${WD}/str2Magnitude.mat -inverse ${WD}/Magnitude2str.mat
-#${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Magnitude --premat=${WD}/str2Magnitude.mat -o ${WD}/Magnitude_brain
-#${FSLDIR}/bin/fslmaths ${WD}/Magnitude -mas ${WD}/Magnitude_brain ${WD}/Magnitude_brain
-
 
 ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
 SUBJECTS_DIR=${FreeSurferSubjectFolder}
@@ -238,35 +216,9 @@ else
 fi
 
 
-# Perform z-blip distortion correction via non-linear registration if an appropriate FNIRT configuration is provided  (ideally this should not be necessary as reconstruction/fieldmap-correction should already correct for this, but it was initially found that the traditional fieldmaps failed to adequately cope with this - possibly an interaction with the strong gradient non-linearities)
-if [ ${FNIRTConfig} != "NONE" ] ; then
-  # Generate mask from current scout image (in T1w space)
-  #     based on threshold = mean - 1.0*std
-  Mean=`${FSLDIR}/bin/fslstats ${WD}/${ScoutInputFile}_undistorted2T1w -k ${T1wBrainImage}.nii.gz -M`
-  Std=`${FSLDIR}/bin/fslstats ${WD}/${ScoutInputFile}_undistorted2T1w -k ${T1wBrainImage}.nii.gz -S`
-  Lower=`echo ${Mean - $Std} | bc -l`
-  ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w -thr $Lower -bin ${WD}/inmask.nii.gz
-  ${FSLDIR}/bin/fslmaths ${T1wBrainImage}.nii.gz -bin ${WD}/refmask.nii.gz
-  ${FSLDIR}/bin/fslmaths ${WD}/inmask.nii.gz -mas ${WD}/refmask.nii.gz ${WD}/inmask.nii.gz
-  ${FSLDIR}/bin/fslmaths ${WD}/refmask.nii.gz -mas ${WD}/inmask.nii.gz ${WD}/refmask.nii.gz
-  # main fnirt call for non-linear registration of scout (already "undistorted") to the subject's T2w scan
-  ${FSLDIR}/bin/fnirt --in=${WD}/${ScoutInputFile}_undistorted2T1w --ref=${T2wRestoreImage} --inmask=${WD}/inmask.nii.gz --refmask=${WD}/refmask.nii.gz --applyinmask=1 --applyrefmask=1 --config=${FNIRTConfig} --iout=${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz --fout=${WD}/${ScoutInputFile}_undistorted2T1w_zblip_warp.nii.gz
-  # make combined warpfield, do spline interpolation, bias field correction and Jacobian modulation (optional)
-  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz --warp1=${WD}/fMRI2str.nii.gz --warp2=${WD}/${ScoutInputFile}_undistorted2T1w_zblip_warp.nii.gz --out=${WD}/fMRI_zblip2str.nii.gz
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI_zblip2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
-  if [ $UseJacobian = true ] ; then  # Jacobian modulation
-      ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
-  else # Jacobian
-      ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz -div ${BiasField} ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz
-  fi  # Jacobian
-  cp ${WD}/${ScoutInputFile}_undistorted2T1w_zblip.nii.gz ${RegOutput}.nii.gz
-  cp ${WD}/fMRI_zblip2str.nii.gz ${OutputTransform}.nii.gz
-else
-  # Copy files to specified outputs if not doing z-blip non-linear correction
-  cp ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz ${RegOutput}.nii.gz
-  cp ${WD}/fMRI2str.nii.gz ${OutputTransform}.nii.gz
-  cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz
-fi
+cp ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz ${RegOutput}.nii.gz
+cp ${WD}/fMRI2str.nii.gz ${OutputTransform}.nii.gz
+cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz
 
 
 # QA image (sqrt of EPI * T1w)
@@ -285,9 +237,5 @@ echo "fslview ${T1wRestoreImage} ${RegOutput} ${QAImage}" >> $WD/qa.txt
 echo "# Check undistortion of the scout image" >> $WD/qa.txt
 echo "fslview `dirname ${ScoutInputName}`/GradientDistortionUnwarp/Scout ${WD}/${ScoutInputFile}_undistorted" >> $WD/qa.txt
 
-if [ ${FNIRTConfig} != "NONE" ] ; then
-    echo "# Check (optional) z-blip correction output" >> $WD/qa.txt
-    echo "fslview ${WD}/${ScoutInputFile}_undistorted2T1w ${WD}/${ScoutInputFile}_undistorted2T1w_zblip" >> $WD/qa.txt
-fi
 ##############################################################################################
 
