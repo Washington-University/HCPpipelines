@@ -108,9 +108,9 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
-${FSLDIR}/bin/fslmaths ${InputfMRI} -div ${BiasField} $jacobiancom -mas ${BrainMask} -ing 10000 ${OutputfMRI} -odt float
+${FSLDIR}/bin/fslmaths ${InputfMRI} -div ${BiasField} $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-    ${FSLDIR}/bin/fslmaths ${ScoutInput} -div ${BiasField} $jacobiancom -mas ${BrainMask} -ing 10000 ${ScoutOutput} -odt float
+    ${FSLDIR}/bin/fslmaths ${ScoutInput} -div ${BiasField} $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -ing 10000 ${ScoutOutput} -odt float
 fi
 
 echo " "

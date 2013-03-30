@@ -1,11 +1,15 @@
-Subjlist="792564"
-# Need to call SetUpHCPPipeline.sh (to set up appropriate paths)
-GitRepo=${HCPPIPEDIR}
-StudyFolder=${HCPPIPEDIR}/Examples
+#!/bin/bash 
+
+Subjlist="792564" #Space delimited list of subject IDs
+StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Location of Subject folders (named by subjectID)
+EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET5DIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+#Set up pipeline environment variables and software
+. ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"
@@ -18,79 +22,102 @@ PRINTCOM=""
 #PRINTCOM="echo"
 #QUEUE="-q veryshort.q"
 
+########################################## INPUTS ########################################## 
+
+#Scripts called by this script do NOT assume anything about the form of the input names or paths.
+#This batch script assumes the HCP raw data naming convention, e.g. for tfMRI_EMOTION_LR and tfMRI_EMOTION_RL:
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_LR/${Subject}_3T_tfMRI_EMOTION_LR.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_LR/${Subject}_3T_tfMRI_EMOTION_LR_SBRef.nii.gz
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_RL/${Subject}_3T_tfMRI_EMOTION_RL.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_RL/${Subject}_3T_tfMRI_EMOTION_RL_SBRef.nii.gz
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_LR/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_LR/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_RL/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_RL/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz
+
+#Change Scan Settings: Dwelltime, FieldMap Delta TE (if using), and $PhaseEncodinglist to match your images
+#These are set to match the HCP Protocol by default
+
+#If using gradient distortion correction, use the coefficents from your scanner
+#The HCP gradient distortion coefficents are only available through Siemens
+#Gradient distortion in standard scanners like the Trio is much less than for the HCP Skyra.
+
+#To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match the phase encoding
+#direction of the EPI scan, and you must have used the correct images in SpinEchoPhaseEncodeNegative and Positive
+#variables.  If the distortion is twice as bad as in the original images, flip either the order of the spin echo
+#images or reverse the phase encoding list flag.  The pipeline expects you to have used the same phase encoding
+#axis in the fMRI data as in the spin echo field map data (x/-x or y/-y).  
+
 ######################################### DO WORK ##########################################
 
-Tasklist="EMOTION1_RL EMOTION2_LR"
+Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
 PhaseEncodinglist="x x-"
 
-#set -xv
 for Subject in $Subjlist ; do
   i=1
-  for Task in $Tasklist ; do
+  for fMRIName in $Tasklist ; do
     UnwarpDir=`echo $PhaseEncodinglist | cut -d " " -f $i`
-    if [ -z `echo $Task | grep REST` ] ; then
-      Type="tfMRI"
-    else
-      Type="rfMRI"
-    fi
-    DIR=`pwd`
-    cd "$StudyFolder"/"$Subject"
-    length=`ls . | grep BOLD_${Task}_fnc | sed 's/_/ /g' | wc -w`
-    Session=`ls . | grep BOLD_${Task}_fnc | cut -d "_" -f "$length"`
-    SubjectStem=`echo $Subject | cut -d "_" -f 1`
-    fMRIFolder="BOLD_${Task}_${Session}"
-    FieldMapImageFolder="SpinEchoFieldMap1_${Session}" #Either Standard Field Map or Folder with Both Spin Echo Images In it
-    ScoutFolder="BOLD_${Task}_SBRef_${Session}"
-    InputNameOffMRI="${SubjectStem}_${Session}_BOLD_${Task}.nii.gz"
-    OutputNameOffMRI="${Type}_`echo ${Task} | cut -d "_" -f 1`"
-    MagnitudeInputName="${SubjectStem}_${Session}_BOLD_LR_SB_SE.nii.gz" #Expects 4D Magnitude volume with two 3D timepoints or First Spin Echo Phase Encoding Direction LR
-    PhaseInputName="${SubjectStem}_${Session}_BOLD_RL_SB_SE.nii.gz" #Expects a 3D Phase volume or Second Spin Echo Plase Encoding Direction RL
-    ScoutInputName="${SubjectStem}_${Session}_BOLD_${Task}_SBRef.nii.gz" #Can be set to NONE, to fake, but this is not recommended
-    DwellTime="0.00058" #from ConnectomeDB
-    TE="2.46" #0.00246 for 3T, 0.00102 for 7T 
-    UnwarpDir="$UnwarpDir" #U min empirical 
-    FinalFMRIResolution="2"
-    PipelineScripts="${GitRepo}/fMRIVolume/scripts"
-    GlobalScripts="${GitRepo}/global/scripts"
-    DistortionCorrection="TOPUP" #FIELDMAP or TOPUP
-    GradientDistortionCoeffs="${GitRepo}/global/config/coeff_SC72C_Skyra.grad"
-    FNIRTConfig="NONE" #Put a FNIRT config to use approximate zblip distortion correction otherwise NONE to turn that off
-    TopUpConfig="${GitRepo}/global/config/b02b0.cnf" #Put a Topup Config if DistortionCorrection="TOPUP" is set
-    GlobalBinaries="${GitRepo}/global/binaries"
+    fMRITimeSeries="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}.nii.gz"
+    fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz" #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
+    DwellTime="0.00058" #Echo Spacing or Dwelltime of fMRI image
+    DistortionCorrection="TOPUP" #FIELDMAP or TOPUP, distortion correction is required for accurate processing
+    SpinEchoPhaseEncodeNegative="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data), set to NONE if using regular FIELDMAP
+    SpinEchoPhaseEncodePositive="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data), set to NONE if using regular FIELDMAP
+    MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D timepoints, set to NONE if using TOPUP
+    PhaseInputName="NONE" #Expects a 3D Phase volume, set to NONE if using TOPUP
+    DeltaTE="NONE" #2.46ms for 3T, 1.02ms for 7T, set to NONE if using TOPUP
+    FinalFMRIResolution="2" #Target final resolution of fMRI data. 2mm is recommended.  
+    GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Gradient distortion correction coefficents, set to NONE to turn off
+    TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
     cd $DIR
 
-    if [ -e "$StudyFolder"/"$Subject"/"$fMRIFolder"/"$InputNameOffMRI" ] ; then
-	${FSLDIR}/bin/fsl_sub $QUEUE \
-	    ${GitRepo}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
-	    --path=$StudyFolder \
-	    --subject=$Subject \
-	    --fmridir=$fMRIFolder \
-	    --fmapdir=$FieldMapImageFolder \
-	    --scoutdir=$ScoutFolder \
-	    --fmriinname=$InputNameOffMRI \
-	    --fmrioutname=$OutputNameOffMRI \
-	    --fmapmag=$MagnitudeInputName \
-	    --fmapphase=$PhaseInputName \
-	    --scoutin=$ScoutInputName \
-	    --echospacing=$DwellTime \
-	    --echodiff=$TE \
-	    --unwarpdir=$UnwarpDir \
-	    --fmrires=$FinalFMRIResolution \
-	    --dcmethod=$DistortionCorrection \
-	    --gdcoeffs=$GradientDistortionCoeffs \
-	    --fnirtconfig=$FNIRTConfig \
-	    --topupconfig=$TopUpConfig \
-	    --printcom=$PRINTCOM
-	    #$PipelineScripts \
-	    #$GlobalScripts \
-	    #$GlobalBinaries
+    ${FSLDIR}/bin/fsl_sub $QUEUE \
+      ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
+      --path=$StudyFolder \
+      --subject=$Subject \
+      --fmriname=$fMRIName \
+      --fmritcs=$fMRITimeSeries \
+      --fmriscout=$fMRISBRef \
+      --SEPhaseNeg=$SpinEchoPhaseEncodeNegative \
+      --SEPhasePos=$SpinEchoPhaseEncodePositive \
+      --fmapmag=$MagnitudeInputName \
+      --fmapphase=$PhaseInputName \
+      --echospacing=$DwellTime \
+      --echodiff=$DeltaTE \
+      --unwarpdir=$UnwarpDir \
+      --fmrires=$FinalFMRIResolution \
+      --dcmethod=$DistortionCorrection \
+      --gdcoeffs=$GradientDistortionCoeffs \
+      --topupconfig=$TopUpConfig \
+      --printcom=$PRINTCOM
+
+  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+  echo "set -- --path=$StudyFolder \
+      --subject=$Subject \
+      --fmriname=$fMRIName \
+      --fmritcs=$fMRITimeSeries \
+      --fmriscout=$fMRISBRef \
+      --SEPhaseNeg=$SpinEchoPhaseEncodeNegative \
+      --SEPhasePos=$SpinEchoPhaseEncodePositive \
+      --fmapmag=$MagnitudeInputName \
+      --fmapphase=$PhaseInputName \
+      --echospacing=$DwellTime \
+      --echodiff=$DeltaTE \
+      --unwarpdir=$UnwarpDir \
+      --fmrires=$FinalFMRIResolution \
+      --dcmethod=$DistortionCorrection \
+      --gdcoeffs=$GradientDistortionCoeffs \
+      --topupconfig=$TopUpConfig \
+      --printcom=$PRINTCOM"
+
+  echo ". ${EnvironmentScript}"
 	
-      #echo "set -- $StudyFolder $Subject $fMRIFolder $FieldMapImageFolder $ScoutFolder $InputNameOffMRI $OutputNameOffMRI $MagnitudeInputName $PhaseInputName $ScoutInputName $DwellTime $TE $UnwarpDir $FinalFcMRIResolution $PipelineScripts $GlobalScripts $DistortionCorrection $GradientDistortionCoeffs $FNIRTConfig $TopUpConfig $GlobalBinaries"
-	sleep 1
-    else
-	echo "fMRI Run ""$StudyFolder""/""$Subject""/""$fMRIFolder""/""$InputNameOffMRI"" Not Found"
-    fi
-    i=`echo "$i + 1" | bc`
+    i=$(($i+1))
   done
 done
 
