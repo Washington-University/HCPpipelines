@@ -40,7 +40,7 @@ $FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
 echo "Computing gradient coil tensor to correct for gradient nonlinearities"
 cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
 gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n
-${FSLDIR}/bin/convertwarp --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
+${FSLDIR}/bin/convertwarp --abs --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
 ${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
 ${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
 ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
@@ -50,7 +50,7 @@ ${FSLDIR}/bin/imrm ${datadir}/nodif_warped
 #This produces unwarped images in diffusion space. Remove or keep it for debugging?
 echo "Correcting for gradient nonlinearities"
 
-${FSLDIR}/bin/applywarp -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp_abs --abs --interp=spline -o ${datadir}/data
+${FSLDIR}/bin/applywarp --rel -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp --interp=spline -o ${datadir}/data
 
 #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
