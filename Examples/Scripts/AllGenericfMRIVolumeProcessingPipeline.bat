@@ -73,7 +73,6 @@ for Subject in $Subjlist ; do
     FinalFMRIResolution="2" #Target final resolution of fMRI data. 2mm is recommended.  
     GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Gradient distortion correction coefficents, set to NONE to turn off
     TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
-    cd $DIR
 
     ${FSLDIR}/bin/fsl_sub $QUEUE \
       ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
