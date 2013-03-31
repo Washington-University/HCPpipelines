@@ -1,37 +1,65 @@
-Subjlist="792564"
-GitRepo="/media/2TBB/Connectome_Project/Pipelines"
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
+#!/bin/bash 
+
+Subjlist="792564" #Space delimited list of subject IDs
+StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Location of Subject folders (named by subjectID)
+EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+# Requirements for this script
+#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+#Set up pipeline environment variables and software
+. ${EnvironmentScript}
+
+# Log the originating call
+echo "$@"
+
+if [ X$SGE_ROOT != X ] ; then
+    QUEUE="-q long.q"
+fi
+
+PRINTCOM=""
+#PRINTCOM="echo"
+#QUEUE="-q veryshort.q"
+
+########################################## INPUTS ########################################## 
+
+#Scripts called by this script do assume they run on the outputs of the FreeSurfer Pipeline
+
+######################################### DO WORK ##########################################
 
 
-Tasklist="EMOTION1 EMOTION2"
+Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
 
 for Subject in $Subjlist ; do
-  for Task in $Tasklist ; do
-    if [ -z `echo $Task | grep REST` ] ; then
-      Type="tfMRI"
-    else
-      Type="rfMRI"
-    fi
-    Subject="$Subject"
-    OutputNameOffMRI="${Type}_${Task}"
-    DownSampleNameI="32"
-    FinalfMRIResolution="2"
-    SmoothingFWHM="2"
-    Caret5_Command="${GitRepo}/global/binaries/caret5/caret_command" #Location of Caret5 caret_command
-    Caret7_Command="${GitRepo}/global/binaries/caret7/bin_linux64/wb_command"
-    PipelineScripts="${GitRepo}/fMRISurface/scripts"
-    AtlasParcellation="${GitRepo}/global/templates/standard_mesh_atlases/CCNMD_MyelinMapping_Avgwmparc.nii.gz"
-    AtlasSurfaceROIs="${GitRepo}/global/templates/standard_mesh_atlases/fs_L/CCNMD_MyelinMapping.L.Atlas_Cortex_ROI.164k_fs_LR.func.gii@${GitRepo}/global/templates/standard_mesh_atlases/fs_R/CCNMD_MyelinMapping.R.Atlas_Cortex_ROI.164k_fs_LR.func.gii" #delimit left and right files with @
-    BrainOrdinatesResolution="2" #Could be the same as FinalfRMIResolution something different, which will call a different module for subcortical processing
-    SubcorticalBrainOrdinatesLabels="${GitRepo}/global/config/FreeSurferSubcorticalLabelTableLut.txt"
-    
-    if [ -e "$StudyFolder"/"$Subject"/MNINonLinear/Results/"$OutputNameOffMRI"/"$OutputNameOffMRI".nii.gz ] ; then
-      fsl_sub -q long.q ${GitRepo}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh $StudyFolder $Subject $OutputNameOffMRI $DownSampleNameI $FinalfMRIResolution $SmoothingFWHM $Caret5_Command $Caret7_Command $PipelineScripts $AtlasParcellation $AtlasSurfaceROIs $BrainOrdinatesResolution $SubcorticalBrainOrdinatesLabels
-      echo "set -- $StudyFolder $Subject $OutputNameOffMRI $DownSampleNameI $FinalfMRIResolution $SmoothingFWHM $Caret5_Command $Caret7_Command $PipelineScripts $AtlasParcellation $AtlasSurfaceROIs $BrainOrdinatesResolution $SubcorticalBrainOrdinatesLabels"
-      sleep 1
-    else
-      echo "fMRI Run ""$OutputNameOffMRI"" Not Found"
-    fi      
-  done
+  for fMRIName in $Tasklist ; do
+    LowResMesh="32" #Needs to match what is in PostFreeSurfer
+    FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
+    SmoothingFWHM="2" #Recommended to be roughly the voxel size
+    GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. Could be the same as FinalfRMIResolution something different, which will call a different module for subcortical processing
+
+    ${FSLDIR}/bin/fsl_sub $QUEUE \
+      ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
+      --path=$StudyFolder \
+      --subject=$Subject \
+      --fmriname=$fMRIName \
+      --lowresmesh=$LowResMesh \
+      --fmrires=$FinalfMRIResolution \
+      --smoothingFWHM=$SmoothingFWHM \
+      --grayordinatesres=$GrayordinatesResolution 
+
+  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+      echo "set -- --path=$StudyFolder \
+      --subject=$Subject \
+      --fmriname=$fMRIName \
+      --lowresmesh=$LowResMesh \
+      --fmrires=$FinalfMRIResolution \
+      --smoothingFWHM=$SmoothingFWHM \
+      --grayordinatesres=$GrayordinatesResolution"
+
+      echo ". ${EnvironmentScript}"
+            
+   done
 done
 

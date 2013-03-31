@@ -11,19 +11,13 @@ OutputfMRI="$4"
 OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
-#PipelineScripts="$8"
-#GlobalScripts="$9"
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
-
-PipelineScripts=${HCPPIPEDIR_fMRIVol}
-GlobalScripts=${HCPPIPEDIR_Global}
-
 
 
 
 # Do motion correction
-${GlobalScripts}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
+${HCPPIPEDIR_Global}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
 
 # Move output files about
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par
@@ -48,10 +42,58 @@ if [ -e $OutputMotionMatrixFolder ] ; then
 fi
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries
-# Take the temporal derivative in column $1 of input $2 and output it as $3
-# Vectorized Matlab: d=[a(2)-a(1);(a(3:end)-a(1:end-2))/2;a(end)-a(end-1)]
+# Take the backwards temporal derivative in column $1 of input $2 and output it as $3
+# Vectorized Matlab: d=[zeros(1,size(a,2));(a(2:end,:)-a(1:end-1,:))];
 # Bash version of above algorithm
-function Derive {
+function DeriveBackwards {
+  i="$1"
+  in="$2"
+  out="$3"
+  Var=`cat "$in" | sed s/"  "/" "/g | cut -d " " -f $i`
+  Length=`echo $Var | wc -w`
+  TCS=($Var)
+  random=$RANDOM
+  j=0
+  while [ $j -lt $Length ] ; do
+    if [ $j -eq 0 ] ; then
+      Answer=`echo "0"`
+    else
+      Forward=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+      Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+      Answer=`echo "scale=10; $Forward - $Back" | bc -l`
+    fi
+    Answer=`echo $Answer | sed s/"^\."/"0."/g | sed s/"^-\."/"-0."/g`
+    echo `printf "%10.6f" $Answer` >> $random
+    j=$(($j + 1))
+  done
+  paste -d " " $out $random > ${out}_
+  mv ${out}_ ${out}
+  rm $random
+}
+
+# Run the Derive function to generate appropriate regressors from the par file
+in=${WorkingDirectory}/${OutputfMRIBasename}.par
+out=${OutputMotionRegressors}.txt
+cat $in | sed s/"  "/" "/g > $out
+i=1
+while [ $i -le 6 ] ; do
+  DeriveBackwards $i $in $out
+  i=`echo "$i + 1" | bc`
+done
+
+cat ${out} | awk '{for(i=1;i<=NF;i++)printf("%10.6f ",$i);printf("\n")}' > ${out}_
+mv ${out}_ $out
+
+awk -f ${HCPPIPEDIR_Global}/mtrendout.awk $out > ${OutputMotionRegressors}_dt.txt
+
+echo "   END: MotionCorrection_FLIRTBased"
+
+# Make 4dfp style motion parameter and derivative regressors for timeseries
+# Take the unbiased temporal derivative in column $1 of input $2 and output it as $3
+# Vectorized Matlab: d=[a(2,:)-a(1,:);(a(3:end,:)-a(1:end-2,:))/2;a(end,:)-a(end-1,:)];
+# Bash version of above algorithm
+# This algorithm was used in Q1 Version 1 of the data, future versions will use DeriveBackwards
+function DeriveUnBiased {
   i="$1"
   in="$2"
   out="$3"
@@ -84,19 +126,3 @@ function Derive {
   rm $random
 }
 
-# Run the Derive function to generate appropriate regressors from the par file
-in=${WorkingDirectory}/${OutputfMRIBasename}.par
-out=${OutputMotionRegressors}.txt
-cat $in | sed s/"  "/" "/g > $out
-i=1
-while [ $i -le 6 ] ; do
-  Derive $i $in $out
-  i=`echo "$i + 1" | bc`
-done
-
-cat ${out} | awk '{for(i=1;i<=NF;i++)printf("%10.6f ",$i);printf("\n")}' > ${out}_
-mv ${out}_ $out
-
-awk -f ${GlobalScripts}/mtrendout.awk $out > ${OutputMotionRegressors}_dt.txt
-
-echo "   END: MotionCorrection_FLIRTBased"

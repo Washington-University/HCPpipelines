@@ -5,13 +5,10 @@ echo -e "\n START: RibbonVolumeToSurfaceMapping"
 WorkingDirectory="$1"
 VolumefMRI="$2"
 Subject="$3"
-NativeFolder="$4"
-DownsampleFolder="$5"
-StructuralVolumeSpace="$6"
-DownSampleNameI="$7"
-Caret5_Command="$8"
-Caret7_Command="$9"
-AtlasSurfaceROI="${10}"
+DownsampleFolder="$4"
+LowResMesh="$5"
+AtlasSpaceNativeFolder="$6"
+T1wNativeFolder="$7"
 
 NeighborhoodSmoothing="5"
 Factor="0.5"
@@ -20,27 +17,19 @@ Factor="0.5"
 LeftGreyRibbonValue="1"
 RightGreyRibbonValue="1"
 
-DIR=`pwd`
-
 for Hemisphere in L R ; do
   if [ $Hemisphere = "L" ] ; then
     GreyRibbonValue="$LeftGreyRibbonValue"
   elif [ $Hemisphere = "R" ] ; then
     GreyRibbonValue="$RightGreyRibbonValue"
   fi    
-  $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$StructuralVolumeSpace".nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz
-  $Caret7_Command -create-signed-distance-volume "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii "$StructuralVolumeSpace".nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz
+  ${CARET7DIR}/wb_command -create-signed-distance-volume "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$VolumefMRI"_SBRef.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz
+  ${CARET7DIR}/wb_command -create-signed-distance-volume "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii "$VolumefMRI"_SBRef.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz -thr 0 -bin -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-  #$Caret5_Command -volume-remove-islands "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
-  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -bin "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz -uthr 0 -abs -bin -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-  #$Caret5_Command -volume-fill-holes "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
-  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -bin "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz -mas "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz -mul 255 "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
-  #$Caret5_Command -volume-remove-islands "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
-  #fslreorient2std "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
   fslmaths "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz -bin -mul $GreyRibbonValue "$WorkingDirectory"/"$Subject"."$Hemisphere".ribbon.nii.gz
   rm "$WorkingDirectory"/"$Subject"."$Hemisphere".white.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".white_thr0.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial.native.nii.gz "$WorkingDirectory"/"$Subject"."$Hemisphere".pial_uthr0.native.nii.gz
 done
@@ -73,60 +62,27 @@ fslmaths "$WorkingDirectory"/mean -bin "$WorkingDirectory"/mask
 fslmaths "$WorkingDirectory"/cov_norm_modulate -thr $Upper -bin -sub "$WorkingDirectory"/mask -mul -1 "$WorkingDirectory"/goodvoxels
 
 for Hemisphere in L R ; do
-  if [ $Hemisphere = "L" ] ; then
-    Structure="CORTEX_LEFT"
-    SurfaceROI=`echo "$AtlasSurfaceROI" | cut -d "@" -f 1`
-  elif [ $Hemisphere = "R" ] ; then
-    Structure="CORTEX_RIGHT"
-    SurfaceROI=`echo "$AtlasSurfaceROI" | cut -d "@" -f 2`
-  fi
-  
-  if [ ! -e "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.shape.gii ] ; then
-    cd "$DownsampleFolder"
-    $Caret5_Command -deformation-map-apply "$DownsampleFolder"/164k_fs_LR2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_NEAREST_NODE "$SurfaceROI" "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.shape.gii
-    cd $DIR
-    $Caret7_Command -set-structure "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.shape.gii "$Structure"
-  fi
-  
-  $Caret7_Command -volume-to-surface-mapping "$WorkingDirectory"/mean.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".mean.native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii -volume-roi "$WorkingDirectory"/goodvoxels.nii.gz
-  $Caret7_Command -metric-dilate "$WorkingDirectory"/"$Hemisphere".mean.native.func.gii "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 10 "$WorkingDirectory"/"$Hemisphere".mean.native.func.gii
-  $Caret7_Command -volume-to-surface-mapping "$WorkingDirectory"/mean.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".mean_all.native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii
-  $Caret7_Command -volume-to-surface-mapping "$WorkingDirectory"/cov.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".cov.native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii -volume-roi "$WorkingDirectory"/goodvoxels.nii.gz
-  $Caret7_Command -metric-dilate "$WorkingDirectory"/"$Hemisphere".cov.native.func.gii "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 10 "$WorkingDirectory"/"$Hemisphere".cov.native.func.gii
-  $Caret7_Command -volume-to-surface-mapping "$WorkingDirectory"/cov.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".cov_all.native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii
-  $Caret7_Command -volume-to-surface-mapping "$WorkingDirectory"/goodvoxels.nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii
+  for Map in mean cov ; do
+    ${CARET7DIR}/wb_command -volume-to-surface-mapping "$WorkingDirectory"/"$Map".nii.gz "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii -ribbon-constrained "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii -volume-roi "$WorkingDirectory"/goodvoxels.nii.gz
+    ${CARET7DIR}/wb_command -metric-dilate "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 10 "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii -nearest
+    ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii
+    ${CARET7DIR}/wb_command -volume-to-surface-mapping "$WorkingDirectory"/"$Map".nii.gz "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere"."$Map"_all.native.func.gii -ribbon-constrained "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii
+    ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere"."$Map"_all.native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii "$WorkingDirectory"/"$Hemisphere"."$Map"_all.native.func.gii
+    ${CARET7DIR}/wb_command -metric-resample "$WorkingDirectory"/"$Hemisphere"."$Map".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$WorkingDirectory"/"$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+    ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$WorkingDirectory"/"$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii
+    ${CARET7DIR}/wb_command -metric-resample "$WorkingDirectory"/"$Hemisphere"."$Map"_all.native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$WorkingDirectory"/"$Hemisphere"."$Map"_all."$LowResMesh"k_fs_LR.func.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+    ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere"."$Map"_all."$LowResMesh"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$WorkingDirectory"/"$Hemisphere"."$Map"_all."$LowResMesh"k_fs_LR.func.gii
+  done
+  ${CARET7DIR}/wb_command -volume-to-surface-mapping "$WorkingDirectory"/goodvoxels.nii.gz "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii -ribbon-constrained "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii
+  ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii
+  ${CARET7DIR}/wb_command -metric-resample "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$WorkingDirectory"/"$Hemisphere".goodvoxels."$LowResMesh"k_fs_LR.func.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+  ${CARET7DIR}/wb_command -metric-mask "$WorkingDirectory"/"$Hemisphere".goodvoxels."$LowResMesh"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$WorkingDirectory"/"$Hemisphere".goodvoxels."$LowResMesh"k_fs_LR.func.gii
 
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$WorkingDirectory"/"$Hemisphere".mean.native.func.gii "$WorkingDirectory"/"$Hemisphere".mean."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -set-structure "$WorkingDirectory"/"$Hemisphere".mean."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$WorkingDirectory"/"$Hemisphere".mean_all.native.func.gii "$WorkingDirectory"/"$Hemisphere".mean_all."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -set-structure "$WorkingDirectory"/"$Hemisphere".mean_all."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$WorkingDirectory"/"$Hemisphere".cov.native.func.gii "$WorkingDirectory"/"$Hemisphere".cov."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -set-structure "$WorkingDirectory"/"$Hemisphere".cov."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$WorkingDirectory"/"$Hemisphere".cov_all.native.func.gii "$WorkingDirectory"/"$Hemisphere".cov_all."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -set-structure "$WorkingDirectory"/"$Hemisphere".cov_all."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$WorkingDirectory"/"$Hemisphere".goodvoxels.native.func.gii "$WorkingDirectory"/"$Hemisphere".goodvoxels."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -set-structure "$WorkingDirectory"/"$Hemisphere".goodvoxels."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-
-  $Caret7_Command -volume-to-surface-mapping "$VolumefMRI".nii.gz "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$VolumefMRI"."$Hemisphere".native.func.gii -ribbon-constrained "$NativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii -volume-roi "$WorkingDirectory"/goodvoxels.nii.gz
-  $Caret7_Command -metric-dilate "$VolumefMRI"."$Hemisphere".native.func.gii "$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 10 "$VolumefMRI"."$Hemisphere".native.func.gii
-  cd "$DownsampleFolder"
-  $Caret5_Command -deformation-map-apply "$DownsampleFolder"/native2"$DownSampleNameI"k_fs_LR."$Hemisphere".deform_map METRIC_AVERAGE_TILE "$VolumefMRI"."$Hemisphere".native.func.gii "$VolumefMRI"."$Hemisphere"."$DownSampleNameI"k_fs_LR.func.gii
-  cd $DIR
-  $Caret7_Command -metric-mask "$VolumefMRI"."$Hemisphere"."$DownSampleNameI"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.shape.gii "$VolumefMRI"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.func.gii
-  $Caret7_Command -set-structure "$VolumefMRI"."$Hemisphere".roi."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  $Caret7_Command -metric-mask "$VolumefMRI"."$Hemisphere"."$DownSampleNameI"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.shape.gii "$VolumefMRI"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.func.gii
-  $Caret7_Command -set-structure "$VolumefMRI"."$Hemisphere".atlasroi."$DownSampleNameI"k_fs_LR.func.gii "$Structure"
-  rm "$VolumefMRI"."$Hemisphere".native.func.gii "$VolumefMRI"."$Hemisphere"."$DownSampleNameI"k_fs_LR.func.gii
+  ${CARET7DIR}/wb_command -volume-to-surface-mapping "$VolumefMRI".nii.gz "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$VolumefMRI"."$Hemisphere".native.func.gii -ribbon-constrained "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".white.native.surf.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".pial.native.surf.gii -volume-roi "$WorkingDirectory"/goodvoxels.nii.gz
+  ${CARET7DIR}/wb_command -metric-dilate "$VolumefMRI"."$Hemisphere".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 10 "$VolumefMRI"."$Hemisphere".native.func.gii -nearest
+  ${CARET7DIR}/wb_command -metric-mask  "$VolumefMRI"."$Hemisphere".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii  "$VolumefMRI"."$Hemisphere".native.func.gii
+  ${CARET7DIR}/wb_command -metric-resample "$VolumefMRI"."$Hemisphere".native.func.gii "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$VolumefMRI"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.func.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceNativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+  ${CARET7DIR}/wb_command -metric-mask "$VolumefMRI"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.func.gii "$DownsampleFolder"/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$VolumefMRI"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.func.gii
 done
 
 echo " END: RibbonVolumeToSurfaceMapping"
