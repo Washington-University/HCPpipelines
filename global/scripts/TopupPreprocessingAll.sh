@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
+#  installed versions of: FSL5.0.2 or higher, gradunwarp python package (from MGH)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin and PATH for gradient_unwarp.py)
 
 ################################################ SUPPORT FUNCTIONS ##################################################
@@ -69,9 +69,7 @@ UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
 DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
 JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
-#GlobalScripts=`getopt1 "--globalscripts" $@`  # "${10}"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
-#GlobalBinaries=`getopt1 "--globalbin" $@`  # "${12}"
 
 GlobalScripts=${HCPPIPEDIR_Global}
 GlobalBinaries=${HCPPIPEDIR_Bin}
@@ -112,18 +110,23 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
       --in=${WD}/PhaseTwo \
       --out=${WD}/PhaseTwo_gdc \
       --owarp=${WD}/PhaseTwo_gdc_warp
+
+  # Make a dilated mask in the distortion corrected space
+  ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne -abs -bin -dilD ${WD}/PhaseOne_mask
+  ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseOne_mask -r ${WD}/PhaseOne_mask -w ${WD}/PhaseOne_gdc_warp -o ${WD}/PhaseOne_mask_gdc
+  ${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo -abs -bin -dilD ${WD}/PhaseTwo_mask
+  ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseTwo_mask -r ${WD}/PhaseTwo_mask -w ${WD}/PhaseTwo_gdc_warp -o ${WD}/PhaseTwo_mask_gdc
+
+  # Make a conservative (eroded) intersection of the two masks
+  ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -ero -bin ${WD}/Mask
+  # Merge both sets of images
+  ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
+else 
+  cp "$WorkingDirectory"/PhaseOne.nii.gz "$WorkingDirectory"/PhaseOne_gdc.nii.gz
+  cp "$WorkingDirectory"/PhaseTwo.nii.gz "$WorkingDirectory"/PhaseTwo_gdc.nii.gz
+  fslmerge -t "$WorkingDirectory"/BothPhases "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseTwo_gdc
 fi
 
-# Make a dilated mask in the distortion corrected space
-${FSLDIR}/bin/fslmaths ${WD}/PhaseOne -abs -bin -dilD ${WD}/PhaseOne_mask
-${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseOne_mask -r ${WD}/PhaseOne_mask -w ${WD}/PhaseOne_gdc_warp -o ${WD}/PhaseOne_mask_gdc
-${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo -abs -bin -dilD ${WD}/PhaseTwo_mask
-${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseTwo_mask -r ${WD}/PhaseTwo_mask -w ${WD}/PhaseTwo_gdc_warp -o ${WD}/PhaseTwo_mask_gdc
-
-# Make a conservative (eroded) intersection of the two masks
-${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -ero -bin ${WD}/Mask
-# Merge both sets of images
-${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
 
 # Set up text files with all necessary parameters
 txtfname=${WD}/acqparams.txt
@@ -178,11 +181,11 @@ fi
 ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # RUN TOPUP
-# MJ QUERY : Can we replace this with the FSL5.0.1 version of topup?
+# Needs FSL 5.0.2+
 ${GlobalBinaries}/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
-# UNWARP DIR = x
-if [ $UnwarpDir = "x" ] ; then
+# UNWARP DIR = x,y
+if [[ $UnwarpDir = "x" || $UnwarpDir = "y" ]] ; then
   # select the first volume from PhaseTwo
   VolumeNumber=$(($dimtOne + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
@@ -192,8 +195,8 @@ if [ $UnwarpDir = "x" ] ; then
   ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseTwo_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
   ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
   SBRefPhase=Two
-# UNWARP DIR = -x
-elif [[ $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
+# UNWARP DIR = -x,-y
+elif [[ $UnwarpDir = "x-" || $UnwarpDir = "-x" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
   # select the first volume from PhaseOne
   VolumeNumber=$((0 + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`

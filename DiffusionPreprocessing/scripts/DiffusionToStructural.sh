@@ -29,8 +29,8 @@ cp "$T1wBrainImage".nii.gz "$WorkingDirectory"/"$T1wBrainImageFile".nii.gz
 
 
 "$GlobalScripts"/epi_reg.sh "$DataDirectory"/"$regimg" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$regimg"2T1w_initII
-${FSLDIR}/bin/applywarp --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
-${FSLDIR}/bin/applywarp --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
 ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
 
 SUBJECTS_DIR="$FreeSurferSubjectFolder"
@@ -41,7 +41,7 @@ tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirec
 ${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
 ${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
 
-${FSLDIR}/bin/applywarp --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage".nii.gz --premat="$WorkingDirectory"/diff2str.mat -o "$WorkingDirectory"/"$regimg"2T1w
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage".nii.gz --premat="$WorkingDirectory"/diff2str.mat -o "$WorkingDirectory"/"$regimg"2T1w
 ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore
 
 #Are the next two scripts needed?
@@ -50,12 +50,12 @@ ${FSLDIR}/bin/fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$regi
 
 #Generate 1.25mm structural space for resampling the diffusion data into
 ${FSLDIR}/bin/flirt -interp spline -in "$T1wRestoreImage" -ref "$T1wRestoreImage" -applyisoxfm 1.25 -out "$T1wRestoreImage"_1.25
-${FSLDIR}/bin/applywarp --interp=spline -i "$T1wRestoreImage" -r "$T1wRestoreImage"_1.25 -o "$T1wRestoreImage"_1.25
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$T1wRestoreImage" -r "$T1wRestoreImage"_1.25 -o "$T1wRestoreImage"_1.25
 
 echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
 #In the future, we want this applywarp to be part of eddy and avoid second resampling step.
-${FSLDIR}/bin/convertwarp --warp1="$DataDirectory"/warped/fullWarp_abs --abs --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_1.25 --out="$WorkingDirectory"/grad_unwarp_diff2str
-${FSLDIR}/bin/applywarp -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_1.25 -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
+${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_1.25 --out="$WorkingDirectory"/grad_unwarp_diff2str
+${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_1.25 -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
 #Generate 1.25mm mask in structural space
 ${FSLDIR}/bin/flirt -interp nearestneighbour -in "$InputBrainMask" -ref "$InputBrainMask" -applyisoxfm 1.25 -out "$T1wOutputDirectory"/nodif_brain_mask
