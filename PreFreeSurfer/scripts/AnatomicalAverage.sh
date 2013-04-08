@@ -36,8 +36,8 @@ crop=yes
 verbose=no
 wdir=
 cleanup=yes
-StandardImage=$FSLDIR/bin/MNI152_T1_2mm.nii.gz
-StandardMask=$FSLDIR/bin/MNI152_T1_2mm_brain_mask_dil.nii.gz
+StandardImage=$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz
+StandardMask=$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz
 
 if [ $# -eq 0 ] ; then Usage; exit 0; fi
 while [ $# -ge 1 ] ; do
