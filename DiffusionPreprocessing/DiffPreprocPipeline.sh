@@ -77,7 +77,7 @@ if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
 fi
  
 outdir=${StudyFolder}/${Subject}/Diffusion
-outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion/data
+outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
 if [ -d ${outdir} ]; then
     rm -rf ${outdir}
 fi
