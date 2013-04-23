@@ -20,3 +20,8 @@ In all example batch scripts, the following variables will need to be modified p
 StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Path to subject's data folder
 
 ${StudyFolder} needs to be changed to the location of the data that will be run.
+
+Also EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+Needs to be edited to reflect where this script is located on your system
+
+
