@@ -11,7 +11,7 @@ LowResMesh="$8"
 FinalfMRIResolution="$9"
 FinalSmoothingFWHM="${10}"
 TemporalFilter="${11}"
-VolumeBasedProcessing="${13}"
+VolumeBasedProcessing="${12}"
 
 #Naming Conventions
 CommonAtlasFolder="${CommonFolder}/MNINonLinear"
