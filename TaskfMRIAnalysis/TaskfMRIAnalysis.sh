@@ -86,8 +86,8 @@ LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
 LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
 
 #Combine Data Across Phase Encoding Directions in the Level Two Analysis
-${PipelineScripts}/TaskfMRILevel2.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $GrayordinatesResolution $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing
-echo "set -- $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $GrayordinatesResolution $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing"
+${PipelineScripts}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing
+echo "set -- $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing"
 
 
 

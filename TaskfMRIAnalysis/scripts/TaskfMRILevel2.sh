@@ -3,23 +3,19 @@ set -e
 
 Subject="$1"
 ResultsFolder="$2"
-ROIsFolder="$3"
-DownSampleFolder="$4"
-LevelOnefMRINames="$5"
-LevelOnefsfNames="$6"
-LevelTwofMRIName="$7"
-LevelTwofsfName="$8"
-LowResMesh="$9"
-GrayordinatesResolution="${10}"
-FinalSmoothingFWHM="${11}"
-TemporalFilter="${12}"
-VolumeBasedProcessing="${13}"
+DownSampleFolder="$3"
+LevelOnefMRINames="$4"
+LevelOnefsfNames="$5"
+LevelTwofMRIName="$6"
+LevelTwofsfName="$7"
+LowResMesh="$8"
+FinalSmoothingFWHM="$9"
+TemporalFilter="${10}"
+VolumeBasedProcessing="${11}"
 
 #Set up some things
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
 LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
-
-CorticalAtlasROIs=`echo $CorticalAtlasROIs | sed 's/@/ /g'`
 
 SmoothingString="_s${FinalSmoothingFWHM}"
 TemporalFilterString="_hp""$TemporalFilter"
