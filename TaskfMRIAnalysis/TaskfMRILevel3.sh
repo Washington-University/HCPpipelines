@@ -8,10 +8,10 @@ LevelThreeDesignTemplate="$5"
 LevelTwofMRIName="$6"
 LevelTwofsfName="$7"
 LowResMesh="$8"
-FinalfMRIResolution="$9"
-FinalSmoothingFWHM="${10}"
-TemporalFilter="${11}"
-VolumeBasedProcessing="${12}"
+FinalSmoothingFWHM="$9"
+TemporalFilter="${10}"
+VolumeBasedProcessing="${11}"
+RegName="${12}"
 
 #Naming Conventions
 CommonAtlasFolder="${CommonFolder}/MNINonLinear"
@@ -21,16 +21,19 @@ CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
 #Set up some things
 Subjlist=`echo $Subjlist | sed 's/@/ /g'`
 
-CorticalAtlasROIs=`echo $CorticalAtlasROIs | sed 's/@/ /g'`
-
 SmoothingString="_s${FinalSmoothingFWHM}"
 TemporalFilterString="_hp""$TemporalFilter"
+if [ ! $RegName = NONE ] ; then 
+  RegString="_${RegName}"
+else
+  RegString=""
+fi
 
 LevelTwoFEATDirSTRING=""
 for Subject in $Subjlist ; do 
   AtlasFolder="${Path}/${Subject}/MNINonLinear"
   ResultsFolder="${AtlasFolder}/Results"
-  LevelTwoFEATDirSTRING="${LevelTwoFEATDirSTRING}${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2.feat "
+  LevelTwoFEATDirSTRING="${LevelTwoFEATDirSTRING}${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}.feat "
   i=$(($i+1))
 done
 NumSecondLevelFolders=`echo ${LevelTwoFEATDirSTRING} | wc -w`
@@ -38,7 +41,7 @@ NumSecondLevelFolders=`echo ${LevelTwoFEATDirSTRING} | wc -w`
 FirstFolder=`echo $LevelTwoFEATDirSTRING | cut -d " " -f 1`
 ContrastNames=`cat ${FirstFolder}/Contrasts.txt`
 NumContrasts=`echo ${ContrastNames} | wc -w`
-LevelThreeFEATDir="${CommonResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level3.feat"
+LevelThreeFEATDir="${CommonResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level3${RegString}.feat"
 if [ -e ${LevelThreeFEATDir} ] ; then
   rm -r ${LevelThreeFEATDir}
   mkdir ${LevelThreeFEATDir}
@@ -87,7 +90,7 @@ for Analysis in ${Analyses} ; do
         LevelTwoFEATDir=`echo ${LevelTwoFEATDirSTRING} | cut -d " " -f $j`
         cp ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/* ${LevelThreeFEATDir}/${Analysis}/${i}/${j}
         cd ${LevelThreeFEATDir}/${Analysis}/${i}/${j}
-        Files=`ls | grep .func.gii | cut -d "." -f 1`
+        Files=`ls | grep .dtseries.nii | cut -d "." -f 1`
         cd $DIR
         for File in $Files ; do
           ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${LevelThreeFEATDir}/${Analysis}/${i}/${j}/${File}.dtseries.nii ${LevelThreeFEATDir}/${Analysis}/${i}/${j}/${File}.nii.gz
@@ -171,8 +174,8 @@ while [ $i -le ${NumContrasts} ] ; do
   Contrast=`echo $ContrastNames | cut -d " " -f $i`
   echo "${GroupAverageName}_${LevelTwofsfName}_level3_${Contrast}${TemporalFilterString}${SmoothingString}" >> ${LevelThreeFEATDir}/Contrasttemp.txt
   echo ${Contrast} >> ${LevelThreeFEATDir}/Contrasts.txt
-  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelThreeFEATDir}/GrayordinatesStats/cope${i}.feat/zstat1.dtseries.nii ROW ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3_${Contrast}${TemporalFilterString}${SmoothingString}.dscalar.nii -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
-  MergeSTRING=`echo "${MergeSTRING}-cifti ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3_${Contrast}${TemporalFilterString}${SmoothingString}.dscalar.nii "`
+  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelThreeFEATDir}/GrayordinatesStats/cope${i}.feat/zstat1.dtseries.nii ROW ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}.dscalar.nii -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
+  MergeSTRING=`echo "${MergeSTRING}-cifti ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}.dscalar.nii "`
   if [ ${VolumeBasedProcessing} = "YES" ] ; then
     echo "OTHER" >> ${LevelThreeFEATDir}/wbtemp.txt
     echo "1 255 255 255 255" >> ${LevelThreeFEATDir}/wbtemp.txt
@@ -186,7 +189,7 @@ while [ $i -le ${NumContrasts} ] ; do
   rm ${LevelThreeFEATDir}/Contrasttemp.txt
   i=$(($i+1))
 done
-${CARET7DIR}/wb_command -cifti-merge ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3${TemporalFilterString}${SmoothingString}.dscalar.nii ${MergeSTRING}
+${CARET7DIR}/wb_command -cifti-merge ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3${TemporalFilterString}${SmoothingString}${RegString}.dscalar.nii ${MergeSTRING}
 if [ ${VolumeBasedProcessing} = "YES" ] ; then
   ${CARET7DIR}/wb_command -cifti-merge ${LevelThreeFEATDir}/${GroupAverageName}_${LevelTwofsfName}_level3vol${TemporalFilterString}${SmoothingString}.dscalar.nii ${VolMergeSTRING}  
 fi
