@@ -144,7 +144,7 @@ for Analysis in ${Analyses} ; do
     Files=`ls | grep .nii.gz | cut -d "." -f 1`
     cd $DIR
     for File in $Files ; do
-      ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${LevelThreeFEATDir}/${Analysis}/${File}.nii.gz ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/pe1.dtseries.nii ${LevelThreeFEATDir}/${Analysis}/${File}.dtseries.nii -reset-timepoints 1 1 
+      ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${LevelThreeFEATDir}/${Analysis}/${File}.nii.gz ${LevelTwoFEATDir}/${Analysis}/cope1.feat/pe1.dtseries.nii ${LevelThreeFEATDir}/${Analysis}/${File}.dtseries.nii -reset-timepoints 1 1 
       rm ${LevelThreeFEATDir}/${Analysis}/${File}.nii.gz
     done
     i=1
