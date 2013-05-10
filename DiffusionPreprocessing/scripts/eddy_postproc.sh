@@ -6,8 +6,10 @@ echo -e "\n START: eddy_postproc"
 EddyJacFlag="JacobianResampling" 
 
 workingdir=$1
-binarydir=$2
-configdir=$3
+GdCoeffs=$2  #Coefficients for gradient nonlinearity distortion correction. If "NONE" this corrections is turned off
+
+binarydir=${HCPPIPEDIR_Bin}
+configdir=${HCPPIPEDIR_Config}
 
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
@@ -33,33 +35,36 @@ datadir=${workingdir}/data
      #rm ${eddydir}/Neg.bv*
 #fi
 
-${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
-$FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
 
-
-echo "Computing gradient coil tensor to correct for gradient nonlinearities"
-cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
-gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${configdir}/coeff_SC72C_Skyra.grad -n
-${FSLDIR}/bin/convertwarp --abs --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
-${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
-${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
-${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
-${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
-${FSLDIR}/bin/imrm ${datadir}/nodif_warped
-
-#This produces unwarped images in diffusion space. Remove or keep it for debugging?
-echo "Correcting for gradient nonlinearities"
-
-${FSLDIR}/bin/applywarp --rel -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp --interp=spline -o ${datadir}/data
+if [ ! ${GdCoeffs} = "NONE" ] ; then
+    ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
+    $FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
+    
+    echo "Computing gradient coil tensor to correct for gradient nonlinearities"
+    cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
+    gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${GdCoeffs} -n
+    ${FSLDIR}/bin/convertwarp --abs --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
+    ${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
+    ${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
+    ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
+    ${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
+    ${FSLDIR}/bin/imrm ${datadir}/nodif_warped
+    
+    #This produces unwarped images in diffusion space. Keep it for debugging
+    echo "Correcting for gradient nonlinearities"
+    ${FSLDIR}/bin/applywarp --rel -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp --interp=spline -o ${datadir}/data
+    ${FSLDIR}/bin/imrm ${datadir}/nodif
+    
+    #Keep the original warped data and warp fields
+    mkdir -p ${datadir}/warped
+    ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
+    ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
+fi
 
 #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
 ${FSLDIR}/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
-
-#Keep the original warped data and warp fields
-mkdir -p ${datadir}/warped
-${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
-${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
+$FSLDIR/bin/fslroi ${datadir}/data ${datadir}/nodif 0 1
 
 echo -e "\n END: eddy_postproc"
 
