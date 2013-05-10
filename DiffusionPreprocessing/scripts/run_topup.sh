@@ -4,8 +4,9 @@ echo -e "\n START: run_topup"
 
 
 workingdir=$1
-binarydir=$2
-configdir=$3
+
+binarydir=${HCPPIPEDIR_Bin}
+configdir=${HCPPIPEDIR_Config}
 #topup_config_file=${FSLDIR}/etc/flirtsch/b02b0.cnf
 topup_config_file=${configdir}/b02b0.cnf
 

@@ -1,30 +1,72 @@
 #!/bin/bash
 set -e
 
-# Preprocessing Pipeline for diffusion MRI. Generates the "data" directory that can be used as input to the fibre orientation estimation script.
+# Preprocessing Pipeline for diffusion MRI. Generates the "data" directory that can be used as input to the fibre orientation estimation scripts.
 # Stamatios Sotiropoulos, Saad Jbabdi, Jesper Andersson, Analysis Group, FMRIB Centre, 2012.
 # Matt Glasser, Washington University, 2012.
  
+# Requirements for this script
+#  installed versions of: FSL5.0.1 or higher, FreeSurfer (version 5 or higher), gradunwarp (python code from MGH)
+#  environment: FSLDIR, FREESURFER_HOME, HCPPIPEDIR_dMRI, HCPPIPEDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin, HCPPIPEDIR_Config, PATH (for gradient_unwarp.py)
 
-#Hard-Coded variables for the pipeline
+# make pipeline engine happy...
+if [ $# -eq 1 ] ; then
+    echo "Version unknown..."
+    exit 0
+fi
+
+
+########################################## Hard-Coded variables for the pipeline #################################
+
 b0dist=45     #Minimum distance in volumes between b0s considered for preprocessing
 b0maxbval=50  #Volumes with a bvalue smaller than that will be considered as b0s
 MissingFileFlag="EMPTY" #String used in the input arguments to indicate that a complete series is missing
 
-make_absolute(){
-    dir=$1;
-    if [ -d ${dir} ]; then
-	OLDWD=`pwd`
-	cd ${dir}
-	dir_all=`pwd`
-	cd $OLDWD
-    else
-	dir_all=${dir}
-    fi
-    echo ${dir_all}
+
+########################################## OUTPUT DIRECTORIES ####################################################
+
+## NB: NO assumption is made about the input paths with respect to the output directories - they can be totally different.  All input are taken directly from the input variables without additions or modifications.
+
+# Output path specifiers:
+#
+# ${StudyFolder} is an input parameter
+# ${Subject} is an input parameter
+
+# Main output directories
+# DiffFolder=${StudyFolder}/${Subject}/Diffusion
+# T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion
+
+# All outputs are within the directory: ${StudyFolder}/${Subject}
+# The full list of output directories are the following
+#    $DiffFolder/rawdata
+#    $DiffFolder/topup    
+#    $DiffFolder/eddy
+#    $DiffFolder/data
+#    $DiffFolder/reg
+#    $T1wDiffFolder
+
+# Also assumes that T1 preprocessing has been carried out with results in ${StudyFolder}/${Subject}/T1w
+
+########################################## SUPPORT FUNCTIONS #####################################################
+
+# function for parsing options
+getopt1() {
+    sopt="$1"
+    shift 1
+    for fn in $@ ; do
+	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+	    echo $fn | sed "s/^${sopt}=//"
+	    return 0
+	fi
+    done
+}
+
+defaultopt() {
+    echo $1
 }
 
 
+# function for finding the min between two numbers
 min(){
   if [ $1 -le $2 ]; then
      echo $1
@@ -35,61 +77,52 @@ min(){
 
 
 Usage() {
-    echo ""
-    echo "Usage: DiffPreprocPipeline dataLR1@dataLR2@..dataLRN dataRL1@dataRL2@...dataRLN StudyFolder SubjectId EchoSpacing PhaseEncodingDir LocalScriptsDir GlobalBinaryDir GlobalConfigDir GlobalScriptsDir"
-    echo ""
-    echo "Input filenames should include absolute paths. If for a LR/RL (AP/PA) pair one of the two files are missing set the entry to EMPTY"
-    echo "Working and Output durectory will be {StudyFolder}/{SubjectId}/Diffusion"
-    echo "EchoSpacing should be in msecs"
-    echo "PhaseEncodingDir: 1 for LR/RL, 2 for AP/PA"
-    echo "LocalScriptsDir : Absolute path for local scripts, e.g. ${Pipelines}/DiffusionPreprocessing/scripts"
-    echo "GlobalBinaryDir : Absolute path for global binaries not part of software release, e.g. ${Pipelines}/global/binaries"
-    echo "GlobalConfigDir : Absolute path for global configuration files, e.g. ${Pipelines}/global/config"
-    echo "GlobalScriptsDir: Absolute path for global directory of scripts, e.g. ${Pipelines}/global/scripts" 
-    echo ""
-    echo ""
-    echo ""
-    exit 1
+  echo "Usage: `basename $0` --posData=<dataRL1@dataRL2@...>"
+  echo "                     --negData=<dataLR1@dataLR2@...>"
+  echo "                     --path=<StudyFolder>"
+  echo "                     --subject=<SubjectID>"
+  echo "                     --echospacing=<Echo Spacing in msecs>"
+  echo "                     --PEdir=<Phase Encoding Direction (1 for LR/RL, 2 for AP/PA>"
+  echo "                     --gdcoeffs=<Coefficients for gradient nonlinearity distortion correction('NONE' to switch off)>"
+  echo "                     --printcom=<'' to run normally, 'echo' to just print and not run commands>"
 }
 
-[ "$1" = "" ] && Usage
-if [ $# -ne 10 ]; then
-    echo "Wrong Number of Arguments!"
-    Usage
-fi
+################################################## OPTION PARSING ###################################################
 
-StudyFolder=`make_absolute $3`
-StudyFolder=`echo ${StudyFolder} | sed 's/\/$/$/g'`
-Subject="$4"
-echospacing=$5
-PEdir=$6
-scriptsdir=$7
-binarydir=$8
-configdir=$9
-globalscriptsdir="${10}"
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
+# check for correct options
+if [ $# -lt 8 ] ; then Usage; exit 1; fi
 
-#ErrorHandling
-if [ ${PEdir} -ne 1 ] && [ ${PEdir} -ne 2 ]; then
-    echo ""
-    echo "Wrong Input Argument! PhaseEncodingDir flag can be 1 or 2."
-    echo ""
-    exit 1
-fi
- 
+# Input Variables
+PosInputImages=`getopt1 "--posData" $@`   # "$1" #dataRL1@dataRL2@...dataRLN
+NegInputImages=`getopt1 "--negData" $@`   # "$2" #dataLR1@dataLR2@...dataLRN
+StudyFolder=`getopt1 "--path" $@`         # "$3" #Path to subject's data folder
+Subject=`getopt1 "--subject" $@`          # "$4" #SubjectID
+echospacing=`getopt1 "--echospacing" $@`  # "$5" #Echo Spacing in msecs
+PEdir=`getopt1 "--PEdir" $@`              # "$6" #1 for LR/RL, 2 for AP/PA
+GdCoeffs=`getopt1 "--gdcoeffs" $@`        # "${7}" #Select correct coeffs for scanner gradient nonlinearities or "NONE" to turn off
+RUN=`getopt1 "--printcom" $@`             # use ="echo" for just printing everything and not running the commands (default is to run)
+
+# Path for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
+scriptsdir=${HCPPIPEDIR_dMRI}
+globalscriptsdir=${HCPPIPEDIR_Global}
+
+# Build Paths 
 outdir=${StudyFolder}/${Subject}/Diffusion
 outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
 if [ -d ${outdir} ]; then
-    rm -rf ${outdir}
+    ${RUN} rm -rf ${outdir}
 fi
-mkdir -p ${outdir}
-mkdir -p ${outdirT1w}
+${RUN} mkdir -p ${outdir}
+${RUN} mkdir -p ${outdirT1w}
 
-echo OutputDir is ${outdir}
-mkdir ${outdir}/rawdata
-mkdir ${outdir}/topup
-mkdir ${outdir}/eddy
-mkdir ${outdir}/data
-mkdir ${outdir}/reg
+echo "OutputDir is ${outdir}"
+${RUN} mkdir ${outdir}/rawdata
+${RUN} mkdir ${outdir}/topup
+${RUN} mkdir ${outdir}/eddy
+${RUN} mkdir ${outdir}/data
+${RUN} mkdir ${outdir}/reg
 
 if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
     basePos="RL"
@@ -99,12 +132,13 @@ elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
     baseNeg="PA"
 fi
 
+
+########################################## DO WORK ###################################################################### 
 echo "Copying raw data"
 #Copy RL/AP images to workingdir
-InputImages=`echo "$2"` 
-InputImages=`echo ${InputImages} | sed 's/@/ /g'`
+PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
 Pos_count=1
-for Image in ${InputImages} ; do
+for Image in ${PosInputImages} ; do
 	if [[ ${Image} =~ ^.*EMPTY.*$  ]]  ;  
 	then
 		Image=EMPTY
@@ -116,18 +150,17 @@ for Image in ${InputImages} ; do
     else
 	PosVols[${Pos_count}]=`${FSLDIR}/bin/fslval ${Image} dim4`
 	absname=`${FSLDIR}/bin/imglob ${Image}`
-	${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
-	cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
-	cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+	${RUN} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+	${RUN} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+	${RUN} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
     fi	
     Pos_count=$((${Pos_count} + 1))
 done
 
 #Copy LR/PA images to workingdir
-InputImages=`echo "$1"` 
-InputImages=`echo ${InputImages} | sed 's/@/ /g'`
+NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
 Neg_count=1
-for Image in ${InputImages} ; do
+for Image in ${NegInputImages} ; do
 	if [[ ${Image} =~ ^.*EMPTY.*$  ]]  ;  
 	then
 		Image=EMPTY
@@ -139,9 +172,9 @@ for Image in ${InputImages} ; do
     else
 	NegVols[${Neg_count}]=`${FSLDIR}/bin/fslval ${Image} dim4`
 	absname=`${FSLDIR}/bin/imglob ${Image}`
-	${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
-	cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
-	cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+	${RUN} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+	${RUN} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+	${RUN} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
     fi	
     Neg_count=$((${Neg_count} + 1))
 done
@@ -159,9 +192,9 @@ fi
 Paired_flag=0
 for (( j=1; j<${Pos_count}; j++ )) ; do
     CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
-    echo ${CorrVols} ${PosVols[${j}]} >> ${outdir}/eddy/Pos_SeriesVolNum.txt
+    ${RUN} echo ${CorrVols} ${PosVols[${j}]} >> ${outdir}/eddy/Pos_SeriesVolNum.txt
     if [ ${PosVols[${j}]} -ne 0 ]; then
-	echo ${CorrVols} >> ${outdir}/rawdata/${basePos}_SeriesCorrespVolNum.txt
+	${RUN} echo ${CorrVols} >> ${outdir}/rawdata/${basePos}_SeriesCorrespVolNum.txt
 	if [ ${CorrVols} -ne 0 ]; then
 	    Paired_flag=1
 	fi
@@ -169,9 +202,9 @@ for (( j=1; j<${Pos_count}; j++ )) ; do
 done
 for (( j=1; j<${Neg_count}; j++ )) ; do
     CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
-    echo ${CorrVols} ${NegVols[${j}]} >> ${outdir}/eddy/Neg_SeriesVolNum.txt
+    ${RUN} echo ${CorrVols} ${NegVols[${j}]} >> ${outdir}/eddy/Neg_SeriesVolNum.txt
     if [ ${NegVols[${j}]} -ne 0 ]; then
-	echo ${CorrVols} >> ${outdir}/rawdata/${baseNeg}_SeriesCorrespVolNum.txt
+	${RUN} echo ${CorrVols} >> ${outdir}/rawdata/${baseNeg}_SeriesCorrespVolNum.txt
     fi	
 done
 
@@ -182,42 +215,46 @@ if [ ${Paired_flag} -eq 0 ]; then
 fi
 
 echo "Running Basic Preprocessing"
-${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
+${RUN} ${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
 echo "Running Topup"
-${scriptsdir}/run_topup.sh ${outdir}/topup ${binarydir} ${configdir}
+${RUN} ${scriptsdir}/run_topup.sh ${outdir}/topup
 
 echo "Running Eddy"
-${scriptsdir}/run_eddy.sh ${outdir}/eddy ${binarydir}
+${RUN} ${scriptsdir}/run_eddy.sh ${outdir}/eddy
+
+GdFlag=0
+if [ ! ${GdCoeffs} = "NONE" ] ; then
+    echo "Gradient nonlinearity distortion correction coefficients found!"
+    GdFlag=1
+fi
 
 echo "Running Eddy PostProcessing"
-${scriptsdir}/eddy_postproc.sh ${outdir} ${binarydir} ${configdir}
+${RUN} ${scriptsdir}/eddy_postproc.sh ${outdir} ${GdCoeffs}
 
 #Naming Conventions
 T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
-T1wImage="T1w_acpc_dc"
-T1wRestoreImage="T1w_acpc_dc_restore"
-T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
-BiasField="BiasField_acpc_dc"
-FreeSurferBrainMask="brainmask_fs"
-RegOutput="Scout2T1w"
-QAImage="T1wMulEPI"
+T1wImage="${T1wFolder}/T1w_acpc_dc"
+T1wRestoreImage="${T1wFolder}/T1w_acpc_dc_restore"
+T1wRestoreImageBrain="${T1wFolder}/T1w_acpc_dc_restore_brain"
+BiasField="${T1wFolder}/BiasField_acpc_dc"
+FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
+RegOutput="${outdir}"/reg/"Scout2T1w"
+QAImage="${outdir}"/reg/"T1wMulEPI"
 
 
 echo "Running Diffusion to Structural Registration"
-${scriptsdir}/DiffusionToStructural.sh \
-"${outdir}"/reg \
-"${outdir}"/data \
-"${outdirT1w}" \
-"$T1wFolder"/"$T1wImage" \
-"$T1wFolder"/"$T1wRestoreImage" \
-"$T1wFolder"/"$T1wRestoreImageBrain" \
-"$T1wFolder"/"$BiasField" \
-"$T1wFolder" \
-"$Subject" \
-"${outdir}"/reg/"$RegOutput" \
-"${outdir}"/reg/"$QAImage" \
-"$T1wFolder"/"$FreeSurferBrainMask" \
-${globalscriptsdir} \
-${binarydir}
-
+${RUN} ${scriptsdir}/DiffusionToStructural.sh \
+  --t1folder="${T1wFolder}" \
+  --subject="${Subject}" \
+  --workingdir="${outdir}/reg" \
+  --datadiffdir="${outdir}/data" \
+  --t1="${T1wImage}" \
+  --t1restore="${T1wRestoreImage}" \
+  --t1restorebrain="${T1wRestoreImageBrain}" \
+  --biasfield="${BiasField}" \
+  --brainmask="${FreeSurferBrainMask}" \
+  --gdflag=${GdFlag} \ 
+  --datadiffT1wdir="${outdirT1w}" \
+  --regoutput="${RegOutput}" \
+  --QAimage="${QAImage}"

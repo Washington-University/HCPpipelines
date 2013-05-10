@@ -3,7 +3,8 @@ set -e
 echo -e "\n START: eddy"
 
 workingdir=$1
-binarydir=$2
+
+binarydir=${HCPPIPEDIR_Bin}
 topupdir=`dirname ${workingdir}`/topup
 
 ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
