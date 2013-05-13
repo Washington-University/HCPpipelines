@@ -254,7 +254,7 @@ ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
   --t1restorebrain="${T1wRestoreImageBrain}" \
   --biasfield="${BiasField}" \
   --brainmask="${FreeSurferBrainMask}" \
-  --gdflag=${GdFlag} \ 
   --datadiffT1wdir="${outdirT1w}" \
   --regoutput="${RegOutput}" \
-  --QAimage="${QAImage}"
+  --QAimage="${QAImage}" \
+  --gdflag=${GdFlag}
