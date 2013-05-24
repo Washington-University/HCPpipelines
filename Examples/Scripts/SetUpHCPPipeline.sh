@@ -14,7 +14,7 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 # All the following variables can be left as is if the structure of the GIT repository is maintained
 export HCPPIPEDIR=/media/2TBB/Connectome_Project/Pipelines
 export CARET7DIR=${HCPPIPEDIR}/global/binaries/caret7/bin_rh_linux64
-export CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
+#export CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
@@ -27,6 +27,7 @@ export HCPPIPEDIR_fMRISurf=${HCPPIPEDIR}/fMRISurface/scripts
 export HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 export HCPPIPEDIR_tfMRI=${HCPPIPEDIR}/tfMRI/scripts
 export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 
