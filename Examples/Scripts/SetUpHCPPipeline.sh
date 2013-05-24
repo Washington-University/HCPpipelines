@@ -14,6 +14,7 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 # All the following variables can be left as is if the structure of the GIT repository is maintained
 export HCPPIPEDIR=/media/2TBB/Connectome_Project/Pipelines
 export CARET7DIR=${HCPPIPEDIR}/global/binaries/caret7/bin_rh_linux64
+export CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
