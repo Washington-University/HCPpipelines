@@ -15,21 +15,24 @@ Subject=$2
 
 WholeBrainTrajectoryLabels=${HCPPIPEDIR_Config}/WholeBrainFreeSurferTrajectoryLabelTableLut.txt
 LeftCerebralTrajectoryLabels=${HCPPIPEDIR_Config}/LeftCerebralFreeSurferTrajectoryLabelTableLut.txt 
-RightCerebralTrajectoryLabels=${HCPPIPEDIR_Config}/RightCerebralFreeSurferTrajectoryLabelTableLut.txt 
+RightCerebralTrajectoryLabels=${HCPPIPEDIR_Config}/RightCerebralFreeSurferTrajectoryLabelTableLut.txt
+FreeSurferLabels=${HCPPIPEDIR_Config}/FreeSurferAllLut.txt
+
 
 T1wDiffusionFolder="${StudyFolder}/${Subject}/T1w/Diffusion"
 DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.3f" ${DiffusionResolution}`
-DownSampleNameI=32
+LowResMesh=32
 
 ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace.sh \
     --path="$StudyFolder" --subject="$Subject" \
     --wholebrainlabels="$WholeBrainTrajectoryLabels" \
     --leftcerebrallabels="$LeftCerebralTrajectoryLabels" \
     --rightcerebrallabels="$RightCerebralTrajectoryLabels" \
-    --diffresol="${DiffusionResolution}"
+    --diffresol="${DiffusionResolution}" \
+    --freesurferlabels="${FreeSurferLabels}
 
-${HCPPIPEDIR_dMRITract}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" downsamplename="${DownSampleNameI}" --diffresol="${DiffusionResolution}"
+${HCPPIPEDIR_dMRITract}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --lowresmesh="${LowResMesh}" --diffresol="${DiffusionResolution}"
 
 
 
