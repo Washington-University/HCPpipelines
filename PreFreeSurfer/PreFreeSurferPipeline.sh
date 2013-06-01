@@ -185,7 +185,7 @@ for TXw in ${Modalities} ; do
 	echo "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
 	i=1
 	for Image in $TXwInputImages ; do
-	    ${RUN} ${FSLDIR}/bin/imcp $Image ${TXwFolder}/${TXwImage}${i}_gdc
+	    ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
 	    OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
 	    i=$(($i+1))
 	done
