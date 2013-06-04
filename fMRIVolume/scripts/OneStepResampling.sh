@@ -19,6 +19,7 @@ Usage() {
   echo "             --fmri2structin=<input fMRI to T1w warp>"
   echo "             --struct2std=<input T1w to MNI warp>"
   echo "             --owarp=<output fMRI to MNI warp>"
+  echo "             --oiwarp=<output MNI to fMRI warp>"
   echo "             --motionmatdir=<input motion correcton matrix directory>"
   echo "             --motionmatprefix=<input motion correcton matrix filename prefix>"
   echo "             --ofmri=<input fMRI 4D image>"
@@ -26,6 +27,7 @@ Usage() {
   echo "             --biasfield=<input biasfield image, in T1w space>"
   echo "             --gdfield=<input warpfield for gradient non-linearity correction>"
   echo "             --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>"
+  echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
   echo "             --jacobianin=<input Jacobian image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
@@ -79,6 +81,7 @@ fMRIFolder=`getopt1 "--fmrifolder" $@`
 fMRIToStructuralInput=`getopt1 "--fmri2structin" $@`  # "$6"
 StructuralToStandard=`getopt1 "--struct2std" $@`  # "$7"
 OutputTransform=`getopt1 "--owarp" $@`  # "$8"
+OutputInvTransform=`getopt1 "--oiwarp" $@`
 MotionMatrixFolder=`getopt1 "--motionmatdir" $@`  # "$9"
 MotionMatrixPrefix=`getopt1 "--motionmatprefix" $@`  # "${10}"
 OutputfMRI=`getopt1 "--ofmri" $@`  # "${11}"
@@ -86,6 +89,7 @@ FreeSurferBrainMask=`getopt1 "--freesurferbrainmask" $@`  # "${12}"
 BiasField=`getopt1 "--biasfield" $@`  # "${13}"
 GradientDistortionField=`getopt1 "--gdfield" $@`  # "${14}"
 ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
+ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
 ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
 JacobianIn=`getopt1 "--jacobianin" $@`  # "${17}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
@@ -138,6 +142,24 @@ ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 
+###Add stuff for RMS###
+invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${ScoutInputgdc}
+applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${ScoutInputgdc} -w ${OutputInvTransform} -o ${ScoutInputgdc}_mask.nii.gz
+if [ -e ${fMRIFolder}/Movement_RelativeRMS.txt ] ; then
+  /bin/rm -v ${fMRIFolder}/Movement_RelativeRMS.txt
+fi
+if [ -e ${fMRIFolder}/Movement_AbsoluteRMS.txt ] ; then
+  /bin/rm -v ${fMRIFolder}/Movement_AbsoluteRMS.txt
+fi
+if [ -e ${fMRIFolder}/Movement_RelativeRMS_mean.txt ] ; then
+  /bin/rm -v ${fMRIFolder}/Movement_RelativeRMS_mean.txt
+fi
+if [ -e ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ] ; then
+  /bin/rm -v ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
+fi
+###Add stuff for RMS###
+
+
 ${FSLDIR}/bin/imcp ${WD}/${T1wImageFile}.${FinalfMRIResolution} ${fMRIFolder}/${T1wImageFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/imcp ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution} ${fMRIFolder}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/imcp ${WD}/${BiasFieldFile}.${FinalfMRIResolution} ${fMRIFolder}/${BiasFieldFile}.${FinalfMRIResolution}
@@ -152,6 +174,15 @@ FrameMergeSTRINGII=""
 k=0
 while [ $k -lt $NumFrames ] ; do
   vnum=`${FSLDIR}/bin/zeropad $k 4`
+  ###Add stuff for RMS###
+  rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
+  if [ $k -eq 0 ] ; then
+    echo "0" >> ${fMRIFolder}/Movement_RelativeRMS.txt
+  else
+    rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
+  fi
+  prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
+  ###Add stuff for RMS###
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz --warp2=${OutputTransform} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
   ${FSLDIR}/bin/fslmaths ${WD}/prevols/vol${vnum}.nii.gz -mul 0 -add 1 ${WD}/prevols/vol${vnum}_mask.nii.gz
@@ -171,6 +202,11 @@ ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRI
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+
+###Add stuff for RMS###
+cat ${fMRIFolder}/Movement_RelativeRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_RelativeRMS_mean.txt
+cat ${fMRIFolder}/Movement_AbsoluteRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
+###Add stuff for RMS###
 
 echo " "
 echo "END: OneStepResampling"
