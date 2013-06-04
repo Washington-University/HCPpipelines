@@ -91,6 +91,7 @@ fMRI2strOutputTransform="${NameOffMRI}2str"
 RegOutput="Scout2T1w"
 AtlasTransform="acpc_dc2standard"
 OutputfMRI2StandardTransform="${NameOffMRI}2standard"
+Standard2OutputfMRITransform="standard2${NameOffMRI}"
 QAImage="T1wMulEPI"
 JacobianOut="Jacobian"
 
@@ -190,6 +191,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
     --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
     --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
+    --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
     --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
     --motionmatprefix=${MotionMatrixPrefix} \
     --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
@@ -197,6 +199,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
     --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
     --scoutin=${fMRIFolder}/${OrigScoutName} \
+    --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
     --jacobianin=${fMRIFolder}/${JacobianOut} \
     --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
@@ -219,4 +222,10 @@ ${RUN} cp -r ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}/${MovementR
 ${RUN} cp -r ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}/${MovementRegressor}_dt.txt
 ${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
 ${RUN} cp -r ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
+###Add stuff for RMS###
+${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}/Movement_RelativeRMS.txt
+${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}/Movement_AbsoluteRMS.txt
+${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}/Movement_RelativeRMS_mean.txt
+${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Movement_AbsoluteRMS_mean.txt
+###Add stuff for RMS###
 
