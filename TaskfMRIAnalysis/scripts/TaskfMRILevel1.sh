@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e 
+set -e
 
 Subject="$1"
 ResultsFolder="$2"
