@@ -10,6 +10,7 @@ GdCoeffs=$2  #Coefficients for gradient nonlinearity distortion correction. If "
 
 binarydir=${HCPPIPEDIR_Bin}
 configdir=${HCPPIPEDIR_Config}
+globalscriptsdir=${HCPPIPEDIR_Global}
 
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
@@ -36,29 +37,24 @@ datadir=${workingdir}/data
 #fi
 
 
-if [ ! ${GdCoeffs} = "NONE" ] ; then
+if [ ! $GdCoeffs = "NONE" ] ; then
+    echo "Correcting for gradient nonlinearities"
     ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
-    $FSLDIR/bin/fslroi ${datadir}/data_warped ${datadir}/nodif_warped 0 1
-    
+    ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${datadir}/data_warped" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
+
     echo "Computing gradient coil tensor to correct for gradient nonlinearities"
-    cd ${datadir} #Warp field output of gradient_unwarp.py is always produced in the current directory
-    gradient_unwarp.py ${datadir}/nodif_warped.nii.gz ${datadir}/nodif.nii.gz siemens -g ${GdCoeffs} -n
-    ${FSLDIR}/bin/convertwarp --abs --ref=${datadir}/fullWarp_abs --warp1=${datadir}/fullWarp_abs --relout --out=${datadir}/fullWarp
     ${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
     ${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
     ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
     ${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
-    ${FSLDIR}/bin/imrm ${datadir}/nodif_warped
-    
-    #This produces unwarped images in diffusion space. Keep it for debugging
-    echo "Correcting for gradient nonlinearities"
-    ${FSLDIR}/bin/applywarp --rel -i ${datadir}/data_warped -r ${datadir}/nodif -w ${datadir}/fullWarp --interp=spline -o ${datadir}/data
-    ${FSLDIR}/bin/imrm ${datadir}/nodif
+    ${FSLDIR}/bin/imrm ${datadir}/trilinear
+    ${FSLDIR}/bin/imrm ${datadir}/data_warped_vol1
     
     #Keep the original warped data and warp fields
     mkdir -p ${datadir}/warped
     ${FSLDIR}/bin/immv ${datadir}/data_warped ${datadir}/warped
     ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
+    ${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${datadir}/warped
 fi
 
 #Remove negative intensity values (caused by spline interpolation) from final data

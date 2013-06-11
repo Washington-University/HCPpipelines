@@ -241,7 +241,8 @@ BiasField="${T1wFolder}/BiasField_acpc_dc"
 FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
 RegOutput="${outdir}"/reg/"Scout2T1w"
 QAImage="${outdir}"/reg/"T1wMulEPI"
-
+DiffRes=`${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1`
+DiffRes=`printf "%0.3f" ${DiffRes}`
 
 echo "Running Diffusion to Structural Registration"
 ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
@@ -257,4 +258,4 @@ ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
   --datadiffT1wdir="${outdirT1w}" \
   --regoutput="${RegOutput}" \
   --QAimage="${QAImage}" \
-  --gdflag=${GdFlag}
+  --gdflag=${GdFlag} --diffresol=${DiffRes}

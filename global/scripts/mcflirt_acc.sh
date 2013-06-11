@@ -50,11 +50,11 @@ for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
     ${FSLDIR}/bin/flirt -in $i -ref $ref -nosearch -dof 6 -o $i -paddingsize 1 -omat ${output}/${ii}.mat >> ${output}.ecclog
     maskname=`echo $i | sed 's/_tmp/_mask/'`
     ${FSLDIR}/bin/flirt -in ${output}_allones -ref $ref -o $maskname -paddingsize 1 -setbackground 0 -init ${output}/${ii}.mat -applyxfm -noresampblur 
-    mm=`avscale --allparams ${output}/${ii}.mat | grep "Translations" | awk '{print $5 " " $6 " " $7}'`
+    mm=`avscale --allparams ${output}/${ii}.mat $ref | grep "Translations" | awk '{print $5 " " $6 " " $7}'`
     mmx=`echo $mm | cut -d " " -f 1`
     mmy=`echo $mm | cut -d " " -f 2`
     mmz=`echo $mm | cut -d " " -f 3`
-    radians=`${FSLDIR}/bin/avscale --allparams ${output}/${ii}.mat | grep "Rotation Angles" | awk '{print $6 " " $7 " " $8}'`
+    radians=`${FSLDIR}/bin/avscale --allparams ${output}/${ii}.mat $ref | grep "Rotation Angles" | awk '{print $6 " " $7 " " $8}'`
     radx=`echo $radians | cut -d " " -f 1`
     degx=`echo "$radx * (180 / $pi)" | bc -l`
     rady=`echo $radians | cut -d " " -f 2`
