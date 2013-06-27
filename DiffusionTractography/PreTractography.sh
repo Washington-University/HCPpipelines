@@ -5,7 +5,7 @@ set -e
 if [ "$2" == "" ];then
     echo ""
     echo "usage: $0 <StudyFolder> <Subject>"
-         "       T1w and MNINonLinear folders are expected within $StudyFolder/$Subject"
+         "       T1w and MNINonLinear folders are expected within <StudyFolder>/<Subject>"
     echo ""
     exit 1
 fi
@@ -30,9 +30,6 @@ ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace.sh \
     --leftcerebrallabels="$LeftCerebralTrajectoryLabels" \
     --rightcerebrallabels="$RightCerebralTrajectoryLabels" \
     --diffresol="${DiffusionResolution}" \
-    --freesurferlabels="${FreeSurferLabels}
+    --freesurferlabels="${FreeSurferLabels}"
 
 ${HCPPIPEDIR_dMRITract}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --lowresmesh="${LowResMesh}" --diffresol="${DiffusionResolution}"
-
-
-
