@@ -125,6 +125,7 @@ else
   cp ${WD}/PhaseOne.nii.gz ${WD}/PhaseOne_gdc.nii.gz
   cp ${WD}/PhaseTwo.nii.gz ${WD}/PhaseTwo_gdc.nii.gz
   fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
+  fslmaths ${WD}/PhaseOne_gdc.nii.gz -mul 0 -add 1 ${WD}/Mask
 fi
 
 
