@@ -122,9 +122,9 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   # Merge both sets of images
   ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
 else 
-  cp "$WorkingDirectory"/PhaseOne.nii.gz "$WorkingDirectory"/PhaseOne_gdc.nii.gz
-  cp "$WorkingDirectory"/PhaseTwo.nii.gz "$WorkingDirectory"/PhaseTwo_gdc.nii.gz
-  fslmerge -t "$WorkingDirectory"/BothPhases "$WorkingDirectory"/PhaseOne_gdc "$WorkingDirectory"/PhaseTwo_gdc
+  cp ${WD}/PhaseOne.nii.gz ${WD}/PhaseOne_gdc.nii.gz
+  cp ${WD}/PhaseTwo.nii.gz ${WD}/PhaseTwo_gdc.nii.gz
+  fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
 fi
 
 
