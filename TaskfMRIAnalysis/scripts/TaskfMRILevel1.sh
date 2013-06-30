@@ -47,7 +47,7 @@ cat ${FEATDir}/temp.fsf | sed s/"set fmri(smooth) \"4\""/"set fmri(smooth) \"${A
 rm ${FEATDir}/temp.fsf
 
 #Change number of timepoints to match timeseries so that template fsf files can be used
-fsfnpts=`cat ${FEATDir}/design.fsf | grep "set fmri(npts)" | cut -d '"' -f 2 | cut -d '"' -f 1`
+fsfnpts=`cat ${FEATDir}/design.fsf | grep "set fmri(npts)" | cut -d " " -f 3 | sed 's/"//g'`
 CIFTInpts=`${CARET7DIR}/wb_command -nifti-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -print-header | grep "^dim\[6\]:" | cut -d " " -f 2`
 if [ $fsfnpts -ne $CIFTInpts ] ; then
   cat ${FEATDir}/design.fsf | sed s/"set fmri(npts) \"${fsfnpts}\""/"set fmri(npts) \"${CIFTInpts}\""/g > ${FEATDir}/temp.fsf
