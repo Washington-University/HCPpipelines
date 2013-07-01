@@ -50,7 +50,7 @@ rm ${FEATDir}/temp.fsf
 fsfnpts=`cat ${FEATDir}/design.fsf | grep "set fmri(npts)" | cut -d " " -f 3 | sed 's/"//g'`
 CIFTInpts=`${CARET7DIR}/wb_command -nifti-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -print-header | grep "^dim\[6\]:" | cut -d " " -f 2`
 if [ $fsfnpts -ne $CIFTInpts ] ; then
-  cat ${FEATDir}/design.fsf | sed s/"set fmri(npts) \"${fsfnpts}\""/"set fmri(npts) \"${CIFTInpts}\""/g > ${FEATDir}/temp.fsf
+  cat ${FEATDir}/design.fsf | sed s/"set fmri(npts) \"\?${fsfnpts}\"\?"/"set fmri(npts) ${CIFTInpts}"/g > ${FEATDir}/temp.fsf
   mv ${FEATDir}/temp.fsf ${FEATDir}/design.fsf
   echo "Short Run! Reseting FSF Number of Timepoints (""${fsfnpts}"") to Match CIFTI (""${CIFTInpts}"")"
 fi
