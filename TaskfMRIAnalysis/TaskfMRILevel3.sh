@@ -67,7 +67,7 @@ for Analysis in ${Analyses} ; do
   mkdir -p ${LevelThreeFEATDir}/${Analysis}
   
   #Copy over level one folders and convert CIFTI to NIFTI if required
-  if [ -e ${FirstFolder}/${Analysis}/cope1.nii.gz ] ; then
+  if [ -e ${FirstFolder}/${Analysis}/cope1.feat/cope1.nii.gz ] ; then
     Grayordinates="NO"
     i=1
     while [ $i -le $NumContrasts ] ; do
@@ -80,7 +80,7 @@ for Analysis in ${Analyses} ; do
       done
       i=$(($i+1))
     done
-  elif [ -e ${FirstFolder}/${Analysis}/cope1.dtseries.nii ] ; then
+  elif [ -e ${FirstFolder}/${Analysis}/cope1.feat/cope1.dtseries.nii ] ; then
     Grayordinates="YES"
     i=1
     while [ $i -le $NumContrasts ] ; do
