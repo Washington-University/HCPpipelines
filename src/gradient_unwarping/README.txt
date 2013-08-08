@@ -29,7 +29,9 @@ Install
 -------
 For convenience both the gradunwarp and nibabel tarballs can be downloaded from
 
+***FOR HCP PIPELINES USE VERSION IN HCP PIPELINES GIT REPO
 https://github.com/downloads/ksubramz/gradunwarp/gradunwarp-2.0_alpha.tar.gz
+FOR HCP PIPELINES USE VERSION IN HCP PIPELINES GIT REPO***
 
 https://github.com/downloads/ksubramz/gradunwarp/nibabel-1.2.0.dev.tar.gz
 
