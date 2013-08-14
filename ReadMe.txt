@@ -1,7 +1,7 @@
 The HCP Pipelines have the following software requirements:
 *OS: 64bit Linux
 
-*FSL 5.0.2 installed and config properly sourced
+*FSL 5.0.4 installed and config properly sourced
 *FreeSurfer 5.2 installed and config properly sourced
 *${HCPPIPEDIR}/src/gradient_unwarping installed with dependancies (source code located in this folder) if using gradient distortion correction
 
