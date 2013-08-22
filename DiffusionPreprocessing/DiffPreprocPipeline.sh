@@ -84,7 +84,7 @@ Usage() {
   echo "                     --echospacing=<Echo Spacing in msecs>"
   echo "                     --PEdir=<Phase Encoding Direction (1 for LR/RL, 2 for AP/PA>"
   echo "                     --gdcoeffs=<Coefficients for gradient nonlinearity distortion correction('NONE' to switch off)>"
-  echo "                     --printcom=<'' to run normally, 'echo' to just print and not run commands>"
+  echo "                     --printcom=<'' to run normally, 'echo' to just print and not run commands, or omit argument to run normally>"
 }
 
 ################################################## OPTION PARSING ###################################################
@@ -92,7 +92,7 @@ Usage() {
 # Just give usage if no arguments specified
 if [ $# -eq 0 ] ; then Usage; exit 0; fi
 # check for correct options
-if [ $# -lt 8 ] ; then Usage; exit 1; fi
+if [ $# -lt 7 ] ; then Usage; exit 1; fi
 
 # Input Variables
 PosInputImages=`getopt1 "--posData" $@`   # "$1" #dataRL1@dataRL2@...dataRLN
@@ -103,6 +103,7 @@ echospacing=`getopt1 "--echospacing" $@`  # "$5" #Echo Spacing in msecs
 PEdir=`getopt1 "--PEdir" $@`              # "$6" #1 for LR/RL, 2 for AP/PA
 GdCoeffs=`getopt1 "--gdcoeffs" $@`        # "${7}" #Select correct coeffs for scanner gradient nonlinearities or "NONE" to turn off
 RUN=`getopt1 "--printcom" $@`             # use ="echo" for just printing everything and not running the commands (default is to run)
+RUN=${RUN:-''}
 
 # Path for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 scriptsdir=${HCPPIPEDIR_dMRI}
