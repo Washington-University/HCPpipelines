@@ -15,7 +15,7 @@ Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
 unset POSIXLY_CORRECT
 
-if [ -n `echo "if ( $BrainOrdinatesResolution == $FinalfMRIResolution ) { 1 }" | bc -l` ] ; then
+if [ 1 -eq `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l` ] ; then
   ${CARET7DIR}/wb_command -volume-parcel-resampling "$VolumefMRI".nii.gz "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
 else
   applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$VolumefMRI".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
