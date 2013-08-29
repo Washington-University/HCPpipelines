@@ -113,7 +113,11 @@ globalscriptsdir=${HCPPIPEDIR_Global}
 outdir=${StudyFolder}/${Subject}/Diffusion
 outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
 if [ -d ${outdir} ]; then
-    ${RUN} rm -rf ${outdir}
+    ${RUN} rm -rf ${outdir}/rawdata
+    ${RUN} rm -rf ${outdir}/topup
+    ${RUN} rm -rf ${outdir}/eddy
+    ${RUN} rm -rf ${outdir}/data
+    ${RUN} rm -rf ${outdir}/reg
 fi
 ${RUN} mkdir -p ${outdir}
 ${RUN} mkdir -p ${outdirT1w}
