@@ -9,6 +9,7 @@ StepSize="$8" #1/4 diffusion resolution recommended
 Curvature="$9" #Inverse cosine of this value is the angle, default 0.2=~78 degrees, 0=90 degrees
 DistanceThreshold="${10}" #Start at zero?
 GlobalBinaries="${11}"
+PD="${12}"
 
 
 #NamingConventions
@@ -36,6 +37,15 @@ Arguments="--nsamples=${NumberOfSamples} --cthr=${Curvature} --steplength=${Step
 #Probtrackx Paths
 Samples="--samples=${BedpostXFolder}/merged"
 
+#PD
+if [ $PD = "YES" ] ; then
+  PDDir="_pd"
+  PDFlag="--pd"
+else
+  PDDir=""
+  PDFlag=""
+fi
+
 if [ ! $HemisphereSTRING = "Whole" ] ; then
   for Hemisphere in $HemisphereSTRING ; do
     if [ $Hemisphere = "L" ] ; then
@@ -56,7 +66,7 @@ if [ ! $HemisphereSTRING = "Whole" ] ; then
     #echo "${DownSampleFolder}/${Subject}.${Hemisphere}.pial.${DownSampleNameI}k_fs_LR.surf.gii" >> ${ROIsFolder}/${Hemisphere}_Trajectory_Matrix3_Stop.txt
     #Stop="--stop=${ROIsFolder}/${Hemisphere}_Trajectory_Matrix3_Stop.txt"
     #Avoid="--avoid=${ROIsFolder}/${trajectory}_invROI_${DiffusionResolution}.nii.gz"
-    DIR="${ResultsFolder}/${Hemisphere}_Trajectory_Matrix3"
+    DIR="${ResultsFolder}/${Hemisphere}_Trajectory_Matrix1${PDDir}_${StepSize}"
     Dir="--dir=${DIR}"
     TargetThree="--target3=${DownSampleFolder}/${Subject}.${Hemisphere}.white.${DownSampleNameI}k_fs_LR.surf.gii"
     TargetFour="--target4=${T1wFolder}/${trajectory}_${DiffusionResolution}.nii.gz"
@@ -64,7 +74,7 @@ if [ ! $HemisphereSTRING = "Whole" ] ; then
     SeedRef="--seedref=${T1wFolder}/${trajectory}_${DiffusionResolution}.nii.gz"
     HemiPaths="${Mask} ${Seed} ${Waypoints} ${Stop} ${Avoid} ${Dir} ${TargetThree} ${TargetFour} ${SeedRef} ${ColMask}"
     
-    probtrackx_args="${Samples} ${HemiPaths} ${Arguments} ${Options}"
+    probtrackx_args="${Samples} ${HemiPaths} ${Arguments} ${Options} ${PDFlag}"
     
     if [ -e $DIR ] ; then
       rm -r $DIR
