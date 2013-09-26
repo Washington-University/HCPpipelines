@@ -8,19 +8,22 @@ for Subject in $Subjlist ; do
   StudyFolder="/media/myelin/brainmappers/Connectome_Project/Macaques" #Path to subject's data folder
   Subject="$Subject"
   DownSampleNameI="32"
-  DiffusionResolution="0.43"
+  DiffusionResolution="0.43" #Set to diffusion voxel resolution
   Caret7_Command="wb_command"
   HemisphereSTRING="L R" #L@R or L or R or Whole
   NumberOfSamples="5000" #1 sample then 2 and calculate total time required per sample
-  StepSize="0.11" #1/4 diffusion resolution recommended
+  #StepSize="0.11" #1/4 diffusion resolution recommended???
+  StepSize="0.43" #1 diffusion resolution recommended???
   Curvature="0" #Inverse cosine of this value is the angle, default 0.2=~78 degrees, 0=90 degrees
   DistanceThreshold="0" #Start at zero?
+  PD="NO" #Set to YES to use --pd flag in probtrackx or NO to not use it
+  PD="YES" #Set to YES to use --pd flag in probtrackx or NO to not use it
 
   GlobalBinariesDir="${GitRepo}/global/binaries"
 
   for Hemisphere in $HemisphereSTRING ; do
-    fsl_sub -q long.q "$GitRepo"/RunMatrix1Tractography.sh "$StudyFolder" "$Subject" "$DownSampleNameI" "$DiffusionResolution" "$Caret7_Command" "$Hemisphere" "$NumberOfSamples" "$StepSize" "$Curvature" "$DistanceThreshold" "$GlobalBinariesDir"
-    echo "set -- $StudyFolder $Subject $DownSampleNameI $DiffusionResolution $Caret7_Command $Hemisphere $NumberOfSamples $StepSize $Curvature $DistanceThreshold $GlobalBinariesDir"
+    fsl_sub -q long.q "$GitRepo"/DiffusionTractography/scripts/RunMatrix1Tractography.sh "$StudyFolder" "$Subject" "$DownSampleNameI" "$DiffusionResolution" "$Caret7_Command" "$Hemisphere" "$NumberOfSamples" "$StepSize" "$Curvature" "$DistanceThreshold" "$GlobalBinariesDir" "$PD"
+    echo "set -- $StudyFolder $Subject $DownSampleNameI $DiffusionResolution $Caret7_Command $Hemisphere $NumberOfSamples $StepSize $Curvature $DistanceThreshold $GlobalBinariesDir $PD"
   done
 done
 
