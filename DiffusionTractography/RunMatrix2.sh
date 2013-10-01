@@ -144,5 +144,5 @@ ptx_merged_id=`fsl_sub -T 420 -R 25000 -j ${ptx_id} -l $ResultsFolder/Mat2_logs 
 ${scriptsdir}/CreateMat2GPUSub.sh $ResultsFolder #Create submission script to the GPU queue
 gpu_id=`qsub $ResultsFolder/Mat2GPUSub.sh -W depend=afterok:${ptx_merged_id} -o $ResultsFolder/Mat2_logs/Mat2GPU.o -e $ResultsFolder/Mat2_logs/Mat2GPU.e`
 
-#(~50 minutes, ~32 GB)
-fsl_sub -T 100 -R 35000 -j ${gpu_id} -l $ResultsFolder/Mat2_logs -N Mat2_conn $scriptsdir/PostProcMatrix2.sh $StudyFolder $Subject $TemplateFolder $Nrepeats
+#(~60 minutes, ~32 GB)
+fsl_sub -T 240 -R 40000 -j ${gpu_id} -l $ResultsFolder/Mat2_logs -N Mat2_conn $scriptsdir/PostProcMatrix2.sh $StudyFolder $Subject $TemplateFolder $Nrepeats
