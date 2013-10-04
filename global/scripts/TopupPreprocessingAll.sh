@@ -178,12 +178,32 @@ elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
   done
 fi
 
+#Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
+numslice=`fslval ${WD}/BothPhases dim3`
+if [ ! $(($numslice % 2)) -eq "0" ] ; then
+  echo "Padding Z by one slice"
+  for Image in ${WD}/BothPhases ${WD}/Mask ; do
+    fslroi ${Image} ${WD}/slice.nii.gz 0 -1 0 -1 0 1 0 -1
+    fslmaths ${WD}/slice.nii.gz -mul 0 ${WD}/slice.nii.gz
+    fslmerge -z ${Image} ${Image} ${WD}/slice.nii.gz
+    rm ${WD}/slice.nii.gz
+  done
+fi
+
 # Extrapolate the existing values beyond the mask (adding 1 just to avoid smoothing inside the mask)
 ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # RUN TOPUP
 # Needs FSL 5.0.2+
 ${GlobalBinaries}/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
+
+#Remove Z slice padding if needed
+if [ ! $(($numslice % 2)) -eq "0" ] ; then
+  echo "Removing Z slice padding"
+  for Image in ${WD}/BothPhases ${WD}/Mask ${WD}/Coefficents_fieldcoef ${WD}/Magnitudes ${WD}/TopupField* ${WD}/WarpField* ${WD}/Jacobian* ; do
+    fslroi ${Image} ${Image} 0 -1 0 -1 0 ${numslice} 0 -1
+  done
+fi
 
 # UNWARP DIR = x,y
 if [[ $UnwarpDir = "x" || $UnwarpDir = "y" ]] ; then
