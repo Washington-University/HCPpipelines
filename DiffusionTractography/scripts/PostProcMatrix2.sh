@@ -38,11 +38,15 @@ if [ -s  $ResultsFolder/merged_matrix2.dot ]; then
     rm -rf ${ResultsFolder}/Mat2_track_????
 fi
 
-#Need to do better for the following, currently requires a 33 GB gifti to be present in the template folder! 
-${Caret7_command} -cifti-convert -from-gifti-ext ${TemplateFolder}/template.dconn.gii ${ResultsFolder}/Conn2.dconn.nii -replace-binary ${ResultsFolder}/Conn2.data -transpose
+#33 GB of memory, ~15 minutes. Generate a template.dconn cifti file
+${Caret7_command} -cifti-correlation ${TemplateFolder}/91282_Greyordinates.dscalar.nii ${ResultsFolder}/template.dconn.nii 
+${Caret7_command} -cifti-convert -to-gifti-ext ${ResultsFolder}/template.dconn.nii ${ResultsFolder}/template.dconn.gii
+
+${Caret7_command} -cifti-convert -from-gifti-ext ${ResultsFolder}/template.dconn.gii ${ResultsFolder}/Conn2.dconn.nii -replace-binary ${ResultsFolder}/Conn2.data -transpose
 if [ -s  $ResultsFolder/Conn2.dconn.nii ]; then
     rm -f ${ResultsFolder}/Conn2.data
     rm -f ${ResultsFolder}/merged_matrix2.dot
+    rm -f ${ResultsFolder}/template.dconn.*
 fi  
 
 gzip $ResultsFolder/Conn2.dconn.nii --fast
