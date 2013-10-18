@@ -16,7 +16,6 @@ RegName="${12}"
 #Naming Conventions
 CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 CommonResultsFolder="${CommonAtlasFolder}/Results"
-CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
 
 #Set up some things
 Subjlist=`echo $Subjlist | sed 's/@/ /g'`
