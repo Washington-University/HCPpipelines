@@ -5,8 +5,8 @@ StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Loc
 EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
-#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  installed versions of: FSL5.0.5 or higher 
+#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
 
 #Set up pipeline environment variables and software
 . ${EnvironmentScript}
@@ -20,16 +20,11 @@ fi
 
 PRINTCOM=""
 #PRINTCOM="echo"
-#QUEUE="-q veryshort.q"
+QUEUE="-q veryshort.q"
 
 ########################################## INPUTS ########################################## 
 
 #Scripts called by this script do assume they run on the results of the HCP minimal preprocesing pipelines from Q2
-
-#To use with Q1 data, the following files need to be copied:
-#	${HCPPIPEDIR_Templates}/91282_Greyordinates/Atlas_ROIs.2.nii.gz  -->  ${StudyFolder}/${Subject}/MNINonLinear/ROIs/Atlas_ROIs.2.nii.gz
-#	${HCPPIPEDIR_Templates}/91282_Greyordinates/L.atlasroi.32k_fs_LR.shape.gii  -->  ${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR32k/${Subject}.L.atlasroi.32k_fs_LR.shape.gii
-#	${HCPPIPEDIR_Templates}/91282_Greyordinates/R.atlasroi.32k_fs_LR.shape.gii  -->  ${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR32k/${Subject}.R.atlasroi.32k_fs_LR.shape.gii
 
 ######################################### DO WORK ##########################################
 
@@ -44,7 +39,7 @@ GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline out
 OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
 Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI
-VolumeBasedProcessing="YES" #YES or NO. Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster and more accurate processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
+VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 
 for FinalSmoothingFWHM in $SmoothingList ; do
   i=1
