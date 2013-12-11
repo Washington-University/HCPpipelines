@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="true"
+       xsi:noNamespaceSchemaLocation="true"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Caret-Version]]></Name>
+         <Value><![CDATA[5.64]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Date]]></Name>
+         <Value><![CDATA[2011-12-30T15:20:59]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{4614275e-ee26-426d-a12c-0347179ef743}]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[comment]]></Name>
+         <Value><![CDATA[
+Appended File: /media/2TBB/MyelinMapping_Project/CommonFiles/FS_LR/fsaverage.L+R.MedialWall.164k_fs_LR.metric
+Deformed from: fsaverage.L.ProbabilisticArchitectonic.164k_fs_L.metric
+Deformed with: fsaverage.L.registered-to-fs_LR.164k_fs_LR.deform_map
+Appended File: /Users/vanessen/BRAIN_MAP_DATA/PALS_B12_HUMAN/FREESURFER-to-PALS/FREESURFER_AVG-to-PALS/FS_AVERAGE/FS_LR/fsaverage.R.ProbabilisticArchitectonic.164k_fs_LR.metric
+Deformed from: fsaverage.R.ProbabilisticArchitectonic.164k_fs_R.metric
+Deformed with: fsaverage.R.registered-to-fs_LR.164k_fs_LR.deform_map]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[encoding]]></Name>
+         <Value><![CDATA[XML_BASE64_GZIP]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NONE"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="163842"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Description]]></Name>
+         <Value><![CDATA[Multiplied -1.0 by Atlas_Cortex_ROI]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Atlas_Cortex_ROI]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{75dd580c-28b9-4aff-b96a-2b3e5ebf0b26}]]></Value>
+      </MD>
+   </MetaData>
+   <Data>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</Data>
+</DataArray>
+</GIFTI>
