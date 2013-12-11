@@ -54,7 +54,8 @@ regimg="nodif"
 ${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
 
 #b0 FLIRT BBR and bbregister to T1w
-"$GlobalScripts"/epi_reg.sh "$DataDirectory"/"$regimg" "$T1wImage" "$WorkingDirectory"/"$T1wBrainImageFile" "$WorkingDirectory"/"$regimg"2T1w_initII
+${FSLDIR}/bin/epi_reg --epi="$DataDirectory"/"$regimg" --t1="$T1wImage" --t1brain="$WorkingDirectory"/"$T1wBrainImageFile" --out="$WorkingDirectory"/"$regimg"2T1w_initII
+
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
 ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
