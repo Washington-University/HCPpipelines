@@ -129,7 +129,7 @@ class Unwarper(object):
         halfvox = np.zeros((4, 4))
         halfvox[0, 3] = m_rcs2lai[0, 0] / 2.0
         halfvox[1, 3] = m_rcs2lai[1, 1] / 2.0
-        m_rcs2lai = m_rcs2lai + halfvox
+        #m_rcs2lai = m_rcs2lai + halfvox
 
         # extract rotational and scaling parts of the transformation matrix
         # ignore the translation part
