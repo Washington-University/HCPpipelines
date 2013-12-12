@@ -2,8 +2,8 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5.2 or higher) ,
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  installed versions of: FSL5.0.5 or higher , FreeSurfer (version 5.2 or higher) ,
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR 
 
 # make pipeline engine happy...
 if [ $# -eq 1 ] ; then
