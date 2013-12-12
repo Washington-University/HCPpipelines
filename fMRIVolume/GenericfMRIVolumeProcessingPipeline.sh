@@ -57,7 +57,7 @@ DwellTime=`getopt1 "--echospacing" $@`  # "${11}"
 deltaTE=`getopt1 "--echodiff" $@`  # "${12}"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${13}"
 FinalfMRIResolution=`getopt1 "--fmrires" $@`  # "${14}"
-DistortionCorrection=`getopt1 "--dcmethod" $@`  # "${17}" #FIELDMAP or TOPUP (not functional currently)
+DistortionCorrection=`getopt1 "--dcmethod" $@`  # "${17}" #FIELDMAP or TOPUP
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${18}"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${20}" #NONE if Topup is not being used
 RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
@@ -164,9 +164,9 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
     --fmapmag=${MagnitudeInputName} \
     --fmapphase=${PhaseInputName} \
+    --echodiff=${deltaTE} \
     --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
     --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-    --echodiff=${deltaTE} \
     --echospacing=${DwellTime} \
     --unwarpdir=${UnwarpDir} \
     --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
