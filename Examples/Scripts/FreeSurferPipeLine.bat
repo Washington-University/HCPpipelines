@@ -14,9 +14,9 @@ EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/Set
 # Log the originating call
 echo "$@"
 
-if [ X$SGE_ROOT != X ] ; then
+#if [ X$SGE_ROOT != X ] ; then
     QUEUE="-q long.q"
-fi
+#fi
 
 PRINTCOM=""
 #PRINTCOM="echo"

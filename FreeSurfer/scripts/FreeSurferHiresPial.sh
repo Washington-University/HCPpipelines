@@ -83,7 +83,18 @@ greymean=`fslstats "$mridir"/T1w_hires.norm_ribbon.nii.gz -M`
 fslmaths "$mridir"/ribbon.nii.gz -sub 1 -mul -1 "$mridir"/ribbon_inv.nii.gz
 fslmaths "$mridir"/T1w_hires.norm_ribbon.nii.gz -s $Sigma -div "$mridir"/ribbon_s"$Sigma".nii.gz -div $greymean -mas "$mridir"/ribbon.nii.gz -add "$mridir"/ribbon_inv.nii.gz "$mridir"/T1w_hires.norm_ribbon_myelin.nii.gz
 
-fslmaths "$mridir"/T1w_hires.norm.nii.gz -div "$mridir"/T1w_hires.norm_ribbon_myelin.nii.gz "$mridir"/T1w_hires.greynorm.nii.gz
+fslmaths "$surfdir"/lh.white.nii.gz -uthr 0 -mul -1 -bin "$mridir"/lh.white.nii.gz
+fslmaths "$surfdir"/rh.white.nii.gz -uthr 0 -mul -1 -bin "$mridir"/rh.white.nii.gz
+fslmaths "$mridir"/lh.white.nii.gz -add "$mridir"/rh.white.nii.gz -bin "$mridir"/white.nii.gz
+rm "$mridir"/lh.white.nii.gz "$mridir"/rh.white.nii.gz
+fslmaths "$mridir"/T1w_hires.norm_ribbon_myelin.nii.gz -mas "$mridir"/ribbon.nii.gz -add "$mridir"/white.nii.gz -uthr 1.9 "$mridir"/T1w_hires.norm_grey_myelin.nii.gz
+fslmaths "$mridir"/T1w_hires.norm_grey_myelin.nii.gz -dilM -dilM -dilM -dilM -dilM "$mridir"/T1w_hires.norm_grey_myelin.nii.gz
+fslmaths "$mridir"/T1w_hires.norm_grey_myelin.nii.gz -binv "$mridir"/dilribbon_inv.nii.gz
+fslmaths "$mridir"/T1w_hires.norm_grey_myelin.nii.gz -add "$mridir"/dilribbon_inv.nii.gz "$mridir"/T1w_hires.norm_grey_myelin.nii.gz
+
+fslmaths "$mridir"/T1w_hires.norm.nii.gz -div "$mridir"/T1w_hires.norm_ribbon_myelin.nii.gz "$mridir"/T1w_hires.greynorm_ribbon.nii.gz
+fslmaths "$mridir"/T1w_hires.norm.nii.gz -div "$mridir"/T1w_hires.norm_grey_myelin.nii.gz "$mridir"/T1w_hires.greynorm.nii.gz
+
 mri_convert "$mridir"/T1w_hires.greynorm.nii.gz "$mridir"/T1w_hires.greynorm.mgz
 
 cp $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.one
