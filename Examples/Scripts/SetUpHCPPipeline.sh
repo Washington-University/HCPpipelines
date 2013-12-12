@@ -30,6 +30,7 @@ export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
+export MSMBin=${HCPPIPEDIR}/MSMBinaries
 
 ## WASHU config - as understood by MJ - (different structure from the GIT repository)
 ## Also look at: /nrgpackages/scripts/tools_setup.sh
