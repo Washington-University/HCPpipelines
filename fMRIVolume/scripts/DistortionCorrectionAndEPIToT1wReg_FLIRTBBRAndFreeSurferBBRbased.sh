@@ -17,9 +17,9 @@ Usage() {
   echo "             --t1brain=<input bias-corrected, brain-extracted T1-weighted image>"
   echo "             --fmapmag=<input fieldmap magnitude image>"
   echo "             --fmapphase=<input fieldmap phase image>"
+  echo "             --echodiff=<difference of echo times for fieldmap, in milliseconds>"
   echo "             --SEPhaseNeg=<input spin echo negative phase encoding image>"
   echo "             --SEPhasePos=<input spin echo positive phase encoding image>"
-  echo "             --echodiff=<difference of echo times for fieldmap, in milliseconds>"
   echo "             --echospacing=<effective echo spacing of fMRI image, in seconds>"
   echo "             --unwarpdir=<unwarping direction: x/y/z/-x/-y/-z>"
   echo "             --owarp=<output filename for warp of EPI to T1w>"
@@ -89,10 +89,10 @@ T1wRestoreImage=`getopt1 "--t1restore" $@`  # "$4"
 T1wBrainImage=`getopt1 "--t1brain" $@`  # "$5"
 SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  # "$7"
 SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  # "$5"
+DwellTime=`getopt1 "--echospacing" $@`  # "$9"
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$6"
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "$7"
 deltaTE=`getopt1 "--echodiff" $@`  # "$8"
-DwellTime=`getopt1 "--echospacing" $@`  # "$9"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${10}"
 OutputTransform=`getopt1 "--owarp" $@`  # "${11}"
 BiasField=`getopt1 "--biasfield" $@`  # "${12}"
@@ -148,8 +148,45 @@ if [ $DistortionCorrection = "FIELDMAP" ] ; then
       --ofmapmagbrain=${WD}/Magnitude_brain \
       --ofmap=${WD}/FieldMap \
       --gdcoeffs=${GradientDistortionCoeffs}
-  # register scout to T1w image using fieldmap
-  ${FSLDIR}/bin/epi_reg --epi=${ScoutInputName} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+  cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
+  #Test if Magnitude Brain and T1w Brain Are Similar in Size, if not, assume Magnitude Brain Extraction Failed and Must Be Retried After Removing Bias Field
+  MagnitudeBrainSize=`${FSLDIR}/bin/fslstats ${WD}/Magnitude_brain -V | cut -d " " -f 2`
+  T1wBrainSize=`${FSLDIR}/bin/fslstats ${WD}/${T1wBrainImageFile} -V | cut -d " " -f 2`
+
+  if [[ X`echo "if ( (${MagnitudeBrainSize} / ${T1wBrainSize}) > 1.25 ) {1}" | bc -l` = X1 || X`echo "if ( (${MagnitudeBrainSize} / ${T1wBrainSize}) < 0.75 ) {1}" | bc -l` = X1 ]] ; then
+    ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude.nii.gz -ref ${T1wImage} -omat "$WD"/Mag2T1w.mat -out ${WD}/Magnitude2T1w.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+    ${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Mag.mat -inverse "$WD"/Mag2T1w.mat
+    #${FSLDIR}/bin/applywarp --interp=spline -i ${BiasField} -r ${WD}/Magnitude.nii.gz --premat="$WD"/T1w2Mag.mat -o ${WD}/Magnitude_Bias.nii.gz
+    #mv ${WD}/Magnitude.nii.gz ${WD}/MagnitudeOrig.nii.gz
+    #fslmaths ${WD}/MagnitudeOrig.nii.gz -div ${WD}/Magnitude_Bias.nii.gz ${WD}/Magnitude.nii.gz
+    ${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Magnitude.nii.gz --premat="$WD"/T1w2Mag.mat -o ${WD}/Magnitude_brain_mask.nii.gz    
+    #fslmaths ${WD}/Magnitude_brain_mask.nii.gz -bin -dilD ${WD}/Magnitude_brain_mask.nii.gz
+    #fslmaths ${WD}/Magnitude.nii.gz -mas ${WD}/Magnitude_brain_mask.nii.gz ${WD}/Magnitude_brain.nii.gz
+    #fslmaths ${WD}/${T1wBrainImageFile} -bin ${WD}/${T1wBrainImageFile}_mask
+    #fslmaths ${T1wImage} -mas ${WD}/${T1wBrainImageFile}_mask ${WD}/${T1wBrainImageFile}_norestore_brain
+    #${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain.nii.gz -ref ${WD}/${T1wBrainImageFile}_norestore_brain -init "$WD"/Mag2T1w.mat -omat "$WD"/Mag2T1w.mat -out ${WD}/Magnitude2T1w.nii.gz -nosearch 
+    #${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Mag.mat -inverse "$WD"/Mag2T1w.mat   
+    #${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Magnitude.nii.gz --premat="$WD"/T1w2Mag.mat -o ${WD}/Magnitude_brain_mask.nii.gz    
+    #${FSLDIR}/bin/bet ${WD}/Magnitude.nii.gz ${WD}/Magnitude_brain.nii.gz -f 0.35 -m #Brain extract the magnitude image
+    fslmaths ${WD}/Magnitude_brain_mask.nii.gz -bin ${WD}/Magnitude_brain_mask.nii.gz
+    fslmaths ${WD}/Magnitude.nii.gz -mas ${WD}/Magnitude_brain_mask.nii.gz ${WD}/Magnitude_brain.nii.gz
+
+    ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Scout.nii.gz -ref ${T1wImage} -omat "$WD"/Scout2T1w.mat -out ${WD}/Scout2T1w.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+    ${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Scout.mat -inverse "$WD"/Scout2T1w.mat
+    #${FSLDIR}/bin/applywarp --interp=spline -i ${BiasField} -r ${WD}/Scout.nii.gz --premat="$WD"/T1w2Scout.mat -o ${WD}/Scout_Bias.nii.gz
+    #mv ${WD}/Scout.nii.gz ${WD}/ScoutOrig.nii.gz
+    #fslmaths ${WD}/ScoutOrig.nii.gz -div ${WD}/Scout_Bias.nii.gz ${WD}/Scout.nii.gz
+    ${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Scout.nii.gz --premat="$WD"/T1w2Scout.mat -o ${WD}/Scout_brain_mask.nii.gz    
+    #${FSLDIR}/bin/bet ${WD}/Scout.nii.gz ${WD}/Scout_brain.nii.gz -f 0.35 -m #Brain extract the magnitude image 
+    fslmaths ${WD}/Scout_brain_mask.nii.gz -bin ${WD}/Scout_brain_mask.nii.gz
+    fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
+       
+    # register scout to T1w image using fieldmap
+    ${FSLDIR}/bin/epi_reg --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+  else
+    # register scout to T1w image using fieldmap
+    ${FSLDIR}/bin/epi_reg --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+  fi
   # convert epi_reg warpfield from abs to rel convention (NB: this is the current convention for epi_reg but it may change in the future, or take an option)
   #${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}_undistorted_warp ${WD}/${ScoutInputFile}_undistorted_warp_abs
   #${FSLDIR}/bin/convertwarp --relout --abs -r ${WD}/${ScoutInputFile}_undistorted_warp_abs -w ${WD}/${ScoutInputFile}_undistorted_warp_abs -o ${WD}/${ScoutInputFile}_undistorted_warp
@@ -203,9 +240,69 @@ fi
 ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
 SUBJECTS_DIR=${FreeSurferSubjectFolder}
 export SUBJECTS_DIR
-${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz
-# Create FSL-style matrix and then combine with existing warp fields
-${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/fMRI2str.mat
+#Check to see if FreeSurferNHP.sh was used
+if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
+  #Perform Registration in FreeSurferNHP 1mm Space
+  ScoutImage="${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz"
+  ScoutImageFile="${WD}/${ScoutInputFile}_undistorted2T1w_init"
+
+  res=`fslorient -getsform $ScoutImage | cut -d " " -f 1 | cut -d "-" -f 2`
+  oldsform=`fslorient -getsform $ScoutImage`
+  newsform=""
+  i=1
+  while [ $i -le 12 ] ; do
+    oldelement=`echo $oldsform | cut -d " " -f $i`
+    newelement=`echo "scale=1; $oldelement / $res" | bc -l`
+    newsform=`echo "$newsform""$newelement"" "`
+    if [ $i -eq 4 ] ; then
+      originx="$newelement"
+    fi
+    if [ $i -eq 8 ] ; then
+      originy="$newelement"
+    fi
+    if [ $i -eq 12 ] ; then
+      originz="$newelement"
+    fi
+    i=$(($i+1))
+  done
+  newsform=`echo "$newsform""0 0 0 1" | sed 's/  / /g'`
+
+  cp "$ScoutImage" "$ScoutImageFile"_1mm.nii.gz
+  fslorient -setsform $newsform "$ScoutImageFile"_1mm.nii.gz
+  fslhd -x "$ScoutImageFile"_1mm.nii.gz | sed s/"dx = '${res}'"/"dx = '1'"/g | sed s/"dy = '${res}'"/"dy = '1'"/g | sed s/"dz = '${res}'"/"dz = '1'"/g | fslcreatehd - "$ScoutImageFile"_1mm_head.nii.gz
+  fslmaths "$ScoutImageFile"_1mm_head.nii.gz -add "$ScoutImageFile"_1mm.nii.gz "$ScoutImageFile"_1mm.nii.gz
+  fslorient -copysform2qform "$ScoutImageFile"_1mm.nii.gz
+  rm "$ScoutImageFile"_1mm_head.nii.gz
+  dimex=`fslval "$ScoutImageFile"_1mm dim1`
+  dimey=`fslval "$ScoutImageFile"_1mm dim2`
+  dimez=`fslval "$ScoutImageFile"_1mm dim3`
+  padx=`echo "(256 - $dimex) / 2" | bc`
+  pady=`echo "(256 - $dimey) / 2" | bc`
+  padz=`echo "(256 - $dimez) / 2" | bc`
+  fslcreatehd $padx $dimey $dimez 1 1 1 1 1 0 0 0 16 "$ScoutImageFile"_1mm_padx
+  fslmerge -x "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_padx "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_padx
+  fslcreatehd 256 $pady $dimez 1 1 1 1 1 0 0 0 16 "$ScoutImageFile"_1mm_pady
+  fslmerge -y "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_pady "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_pady
+  fslcreatehd 256 256 $padz 1 1 1 1 1 0 0 0 16 "$ScoutImageFile"_1mm_padz
+  fslmerge -z "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_padz "$ScoutImageFile"_1mm "$ScoutImageFile"_1mm_padz
+  fslorient -setsformcode 1 "$ScoutImageFile"_1mm
+  fslorient -setsform -1 0 0 `echo "$originx + $padx" | bc -l` 0 1 0 `echo "$originy - $pady" | bc -l` 0 0 1 `echo "$originz - $padz" | bc -l` 0 0 0 1 "$ScoutImageFile"_1mm
+  rm "$ScoutImageFile"_1mm_padx.nii.gz "$ScoutImageFile"_1mm_pady.nii.gz "$ScoutImageFile"_1mm_padz.nii.gz
+
+  ${FREESURFER_HOME}/bin/bbregister --s "${FreeSurferSubjectID}_1mm" --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w_1mm.nii.gz
+  tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz --targ ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/T1w_hires.nii.gz --fslregout ${WD}/fMRI2str_1mm.mat
+  applywarp --interp=spline -i ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz -r ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/T1w_hires.nii.gz --premat=${WD}/fMRI2str_1mm.mat -o ${WD}/${ScoutInputFile}_undistorted2T1w_1mm.nii.gz
+
+  convert_xfm -omat ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/temp.mat -concat ${WD}/fMRI2str_1mm.mat ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/real2fs.mat
+  convert_xfm -omat ${WD}/fMRI2str.mat -concat ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/fs2real.mat ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/temp.mat
+  rm ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/temp.mat
+
+else
+  #Run Normally
+  ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz
+  # Create FSL-style matrix and then combine with existing warp fields
+  ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/fMRI2str.mat
+fi
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}_undistorted_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str.mat --out=${WD}/fMRI2str.nii.gz
 # Create warped image with spline interpolation, bias correction and (optional) Jacobian modulation
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w
