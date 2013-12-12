@@ -1,6 +1,5 @@
 #!/bin/bash 
 set -e
-
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or later, gradunwarp python package (from MGH)
 #  environment: FSLDIR and PATH for gradient_unwarp.py
@@ -15,9 +14,13 @@ Usage() {
   echo "            --t1brain=<input T1w brain-extracted image>"
   echo "            --t2=<input T2w image>"
   echo "            --t2brain=<input T2w brain-extracted image>"
-  echo "            --fmapmag=<input fieldmap magnitude image>"
-  echo "            --fmapphase=<input fieldmap phase images (single 4D image containing 2x3D volumes)>"
-  echo "            --echodiff=<echo time difference for fieldmap images (in milliseconds)>"
+  echo "            [--fmapmag=<input fieldmap magnitude image>]"
+  echo "            [--fmapphase=<input fieldmap phase images (single 4D image containing 2x3D volumes)>]"
+  echo "            [--echodiff=<echo time difference for fieldmap images (in milliseconds)>]"
+  echo "            [--SEPhaseNeg=<input spin echo negative phase encoding image>]"
+  echo "            [--SEPhasePos=<input spin echo positive phase encoding image>]"
+  echo "            [--echospacing=<effective echo spacing of fMRI image, in seconds>]"
+  echo "            [--seunwarpdir=<direction of distortion according to voxel axes>]"
   echo "            --t1sampspacing=<sample spacing (readout direction) of T1w image - in seconds>"
   echo "            --t2sampspacing=<sample spacing (readout direction) of T2w image - in seconds>"
   echo "            --unwarpdir=<direction of distortion according to voxel axes (post reorient2std)>"
@@ -27,6 +30,8 @@ Usage() {
   echo "            --ot2=<output corrected T2w image>"
   echo "            --ot2brain=<output corrected, brain-extracted T2w image>"
   echo "            --ot2warp=<output warpfield for distortion correction of T2w image>"
+  echo "            --method=<method used for distortion correction: FIELDMAP or TOPUP>"
+  echo "            [--topupconfig=<topup config file>]"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
 }
 
@@ -85,6 +90,10 @@ T2wImageBrain=`getopt1 "--t2brain" $@`  # "$5"
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$6"
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "$7"
 TE=`getopt1 "--echodiff" $@`  # "$8"
+SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  # "$7"
+SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  # "$5"
+DwellTime=`getopt1 "--echospacing" $@`  # "$9"
+SEUnwarpDir=`getopt1 "--seunwarpdir" $@`  # "${11}"
 T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  # "$9"
 T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  # "${10}"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${11}"
@@ -93,11 +102,11 @@ OutputT1wImageBrain=`getopt1 "--ot1brain" $@`  # "${13}"
 OutputT1wTransform=`getopt1 "--ot1warp" $@`  # "${14}"
 OutputT2wImage=`getopt1 "--ot2" $@`  # "${15}"
 OutputT2wTransform=`getopt1 "--ot2warp" $@`  # "${16}"
-#GlobalScripts=`getopt1 "--globalscripts" $@`  # "${17}"
+DistortionCorrection=`getopt1 "--method" $@`  # "${21}"
+TopupConfig=`getopt1 "--topupconfig" $@`  # "${22}"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${18}"
 
 # default parameters
-GlobalScripts=${HCPPIPEDIR_Global}
 WD=`defaultopt $WD .`
 
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
@@ -127,13 +136,15 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
-### Create fieldmaps (and apply gradient non-linearity distortion correction)
-echo " "
-echo " "
-echo " "
-#echo ${GlobalScripts}/FieldMapPreprocessingAll.sh ${WD}/FieldMap ${MagnitudeInputName} ${PhaseInputName} ${TE} ${WD}/Magnitude ${WD}/Magnitude_brain ${WD}/Phase ${WD}/FieldMap ${GradientDistortionCoeffs} ${GlobalScripts}
+###### FIELDMAP VERSION (GE FIELDMAPS) ######
+if [ $DistortionCorrection = "FIELDMAP" ] ; then
+  ### Create fieldmaps (and apply gradient non-linearity distortion correction)
+  echo " "
+  echo " "
+  echo " "
+  #echo ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh ${WD}/FieldMap ${MagnitudeInputName} ${PhaseInputName} ${TE} ${WD}/Magnitude ${WD}/Magnitude_brain ${WD}/Phase ${WD}/FieldMap ${GradientDistortionCoeffs} ${GlobalScripts}
 
-${GlobalScripts}/FieldMapPreprocessingAll.sh \
+  ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
     --workingdir=${WD}/FieldMap \
     --fmapmag=${MagnitudeInputName} \
     --fmapphase=${PhaseInputName} \
@@ -142,8 +153,29 @@ ${GlobalScripts}/FieldMapPreprocessingAll.sh \
     --ofmapmagbrain=${WD}/Magnitude_brain \
     --ofmap=${WD}/FieldMap \
     --gdcoeffs=${GradientDistortionCoeffs}
-
-
+###### TOPUP VERSION (SE FIELDMAPS) ######
+elif [ $DistortionCorrection = "TOPUP" ] ; then
+  if [[ ${SEUnwarpDir} = "x" || ${SEUnwarpDir} = "y" ]] ; then
+    ScoutInputName="${SpinEchoPhaseEncodePositive}"
+  elif [[ ${SEUnwarpDir} = "-x" || ${SEUnwarpDir} = "-y" || ${SEUnwarpDir} = "x-" || ${SEUnwarpDir} = "y-" ]] ; then
+    ScoutInputName="${SpinEchoPhaseEncodeNegative}"
+  fi
+  # Use topup to distortion correct the scout scans
+  #    using a blip-reversed SE pair "fieldmap" sequence
+  ${HCPPIPEDIR_Global}/TopupPreprocessingAll.sh \
+      --workingdir=${WD}/FieldMap \
+      --phaseone=${SpinEchoPhaseEncodeNegative} \
+      --phasetwo=${SpinEchoPhaseEncodePositive} \
+      --scoutin=${ScoutInputName} \
+      --echospacing=${DwellTime} \
+      --unwarpdir=${SEUnwarpDir} \
+      --ofmapmag=${WD}/Magnitude \
+      --ofmapmagbrain=${WD}/Magnitude_brain \
+      --ofmap=${WD}/FieldMap \
+      --ojacobian=${WD}/Jacobian \
+      --gdcoeffs=${GradientDistortionCoeffs} \
+      --topupconfig=${TopupConfig}
+fi
 
 ### LOOP over available modalities ###
 
@@ -166,11 +198,16 @@ for TXw in $Modalities ; do
     # Forward warp the fieldmap magnitude and register to TXw image (transform phase image too)
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap_ShiftMap${TXw}.nii.gz    
     ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/Magnitude --shiftmap=${WD}/FieldMap_ShiftMap${TXw}.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap_Warp${TXw}.nii.gz    
-    ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
 
-    ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-    ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -out ${WD}/FieldMap2${TXwImageBasename}
+    if [ $DistortionCorrection = "FIELDMAP" ] ; then
+      ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
+      ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+    elif [ $DistortionCorrection = "TOPUP" ] ; then
+      ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
+      ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+    fi
     
+    ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -out ${WD}/FieldMap2${TXwImageBasename}
     
     # Convert to shift map then to warp field and unwarp the TXw
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${TXwImageBasename} --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz    

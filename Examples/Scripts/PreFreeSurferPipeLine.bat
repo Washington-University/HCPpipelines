@@ -72,6 +72,9 @@ for Subject in $Subjlist ; do
   MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
   PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
 
+  SpinEchoPhaseEncodeNegative="NONE" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data), set to NONE if using regular FIELDMAP
+  SpinEchoPhaseEncodePositive="NONE" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data), set to NONE if using regular FIELDMAP
+
   #Templates
   T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz" #MNI0.7mm template
   T1wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain.nii.gz" #Brain extracted MNI0.7mm template
@@ -84,6 +87,8 @@ for Subject in $Subjlist ; do
 
   #Scan Settings
   TE="2.46" #delta TE in ms for field map or "NONE" if not used
+  DwellTime="NONE" #Echo Spacing or Dwelltime of Spin Echo Field Map or "NONE" if not used
+  SEUnwarpDir="NONE" #x or y (minus or not does not matter) "NONE" if not used 
   T1wSampleSpacing="0.0000074" #DICOM field (0019,1018) in s or "NONE" if not used
   T2wSampleSpacing="0.0000021" #DICOM field (0019,1018) in s or "NONE" if not used
   UnwarpDir="z" #z appears to be best or "NONE" if not used
@@ -113,7 +118,11 @@ for Subject in $Subjlist ; do
       --fnirtconfig="$FNIRTConfig" \
       --fmapmag="$MagnitudeInputName" \
       --fmapphase="$PhaseInputName" \
-      --echospacing="$TE" \
+      --echodiff="$TE" \
+      --SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
+      --SEPhasePos="$SpinEchoPhaseEncodePositive" \
+      --echospacing="$DwellTime" \
+      --seunwarpdir="$SEUnwarpDir" \
       --t1samplespacing="$T1wSampleSpacing" \
       --t2samplespacing="$T2wSampleSpacing" \
       --unwarpdir="$UnwarpDir" \
@@ -140,7 +149,11 @@ for Subject in $Subjlist ; do
       --fnirtconfig=${FNIRTConfig} \
       --fmapmag=${MagnitudeInputName} \
       --fmapphase=${PhaseInputName} \
-      --echospacing=${TE} \
+      --echodiff=${TE} \
+      --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+      --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+      --echospacing=${DwellTime} \
+      --seunwarpdir=${SEUnwarpDir} \     
       --t1samplespacing=${T1wSampleSpacing} \
       --t2samplespacing=${T2wSampleSpacing} \
       --unwarpdir=${UnwarpDir} \

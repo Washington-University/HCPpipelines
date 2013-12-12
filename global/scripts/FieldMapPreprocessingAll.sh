@@ -40,7 +40,7 @@ defaultopt() {
 ################################################### OUTPUT FILES #####################################################
 
 # Output images (in $WD): Magnitude  Magnitude_brain Magnitude_brain_mask FieldMap  
-#         Plus the following is gradient distortion correction is run:
+#         Plus the following if gradient distortion correction is run:
 #                         Magnitude_gdc Magnitude_gdc_warp  Magnitude_brain_gdc FieldMap_gdc  
 # Output images (not in $WD):  ${MagnitudeOutput}  ${MagnitudeBrainOutput}  ${FieldMapOutput}
 
@@ -55,7 +55,7 @@ if [ $# -lt 5 ] ; then Usage; exit 1; fi
 WD=`getopt1 "--workingdir" $@` # "$1"
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
-TE=`getopt1 "--echodiff" $@`  # "$4"
+DeltaTE=`getopt1 "--echodiff" $@`  # "$4"
 MagnitudeOutput=`getopt1 "--ofmapmag" $@`  # "$5"
 MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`  # "$6"
 FieldMapOutput=`getopt1 "--ofmap" $@`  # "$8"
@@ -83,9 +83,9 @@ echo " " >> $WD/log.txt
 ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
 ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
 ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
-${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${TE}
+${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
-echo "DONE: fmrib_prepare_fieldmap.sh"
+echo "DONE: fsl_prepare_fieldmap.sh"
 
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   ${GlobalScripts}/GradientDistortionUnwarp.sh \
