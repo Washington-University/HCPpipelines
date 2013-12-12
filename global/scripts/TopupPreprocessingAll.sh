@@ -1,6 +1,6 @@
 #!/bin/bash 
 set -e
-
+set -xv
 # Requirements for this script
 #  installed versions of: FSL5.0.2 or higher, gradunwarp python package (from MGH)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin and PATH for gradient_unwarp.py)
@@ -16,8 +16,11 @@ Usage() {
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
   echo "            --echospacing=<effective echo spacing of EPI>"
   echo "            --unwarpdir=<PE direction for unwarping: x/y/z/-x/-y/-z>"
-  echo "            --owarp=<output warpfield image: scout to distortion corrected SE EPI>"
-  echo "            --ojacobian=<output Jacobian image>"
+  echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
+  echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
+  echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
+  echo "            [--ofmap=<output scaled topup field map image>]"
+  echo "            [--ojacobian=<output Jacobian image>]"
   echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "             [--topupconfig=<topup config file>]"
   echo " "
@@ -57,7 +60,7 @@ defaultopt() {
 # Just give usage if no arguments specified
 if [ $# -eq 0 ] ; then Usage; exit 0; fi
 # check for correct options
-if [ $# -lt 8 ] ; then Usage; exit 1; fi
+if [ $# -lt 7 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
@@ -67,6 +70,9 @@ ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
 DwellTime=`getopt1 "--echospacing" $@`  # "$5"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
 DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
+DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
+DistortionCorrectionMagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`
+DistortionCorrectionFieldOutput=`getopt1 "--ofmap" $@`
 JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
@@ -74,9 +80,9 @@ TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
 GlobalScripts=${HCPPIPEDIR_Global}
 GlobalBinaries=${HCPPIPEDIR_Bin}
 
-# default parameters
-DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
-WD=`defaultopt $WD ${DistortionCorrectionWarpFieldOutput}.wdir`
+# default parameters #Breaks when --owarp becomes optional
+#DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
+#WD=`defaultopt $WD ${DistortionCorrectionWarpFieldOutput}.wdir`
 
 echo " "
 echo " START: Topup Field Map Generation and Gradient Unwarping"
@@ -87,14 +93,14 @@ mkdir -p $WD
 echo "$0 $@" >> $WD/log.txt
 echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
-echo " " >> $WD/log.txtecho " "
+echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
 # PhaseOne and PhaseTwo are sets of SE EPI images with opposite phase encodes
 ${FSLDIR}/bin/imcp $PhaseEncodeOne ${WD}/PhaseOne.nii.gz
 ${FSLDIR}/bin/imcp $PhaseEncodeTwo ${WD}/PhaseTwo.nii.gz
-${FSLDIR}/bin/imcp $ScoutInputName.nii.gz ${WD}/SBRef.nii.gz
+${FSLDIR}/bin/imcp $ScoutInputName ${WD}/SBRef.nii.gz
 
 # Apply gradient non-linearity distortion correction to input images (SE pair)
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
@@ -144,6 +150,7 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
   dimx=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
   nPEsteps=$(($dimx - 1))
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
+  #Note: the above calculation implies full k-space acquisition for SE EPI. In case of partial Fourier/k-space acquisition (though not recommended), $dimx-1 does not equal to nPEsteps. 
   ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   echo "Total readout time is $ro_time secs"
   i=1
@@ -195,7 +202,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM 
 
 # RUN TOPUP
 # Needs FSL 5.0.2+
-${GlobalBinaries}/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
+${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
 if [ ! $(($numslice % 2)) -eq "0" ] ; then
@@ -244,9 +251,27 @@ ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_gdc_dc -mul ${WD}/Jacobian_${vnum} ${WD}/P
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/SBRef.nii.gz -r ${WD}/SBRef.nii.gz -w ${WD}/WarpField.nii.gz -o ${WD}/SBRef_dc.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SBRef_dc.nii.gz -mul ${WD}/Jacobian.nii.gz ${WD}/SBRef_dc_jac.nii.gz
 
+# Calculate Equivalent Field Map
+${FSLDIR}/bin/fslmaths ${WD}/TopupField -mul 6.283 ${WD}/TopupField
+${FSLDIR}/bin/fslmaths ${WD}/Magnitudes.nii.gz -Tmean ${WD}/Magnitude.nii.gz
+${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+
 # copy images to specified outputs
-${FSLDIR}/bin/imcp ${WD}/WarpField.nii.gz ${DistortionCorrectionWarpFieldOutput}.nii.gz
-${FSLDIR}/bin/imcp ${WD}/Jacobian.nii.gz ${JacobianOutput}.nii.gz
+if [ ! -z ${DistortionCorrectionWarpFieldOutput} ] ; then
+  ${FSLDIR}/bin/imcp ${WD}/WarpField.nii.gz ${DistortionCorrectionWarpFieldOutput}.nii.gz
+fi
+if [ ! -z ${JacobianOutput} ] ; then
+  ${FSLDIR}/bin/imcp ${WD}/Jacobian.nii.gz ${JacobianOutput}.nii.gz
+fi
+if [ ! -z ${DistortionCorrectionFieldOutput} ] ; then
+  ${FSLDIR}/bin/imcp ${WD}/TopupField.nii.gz ${DistortionCorrectionFieldOutput}.nii.gz
+fi
+if [ ! -z ${DistortionCorrectionMagnitudeOutput} ] ; then
+  ${FSLDIR}/bin/imcp ${WD}/Magnitude.nii.gz ${DistortionCorrectionMagnitudeOutput}.nii.gz
+fi
+if [ ! -z ${DistortionCorrectionMagnitudeBrainOutput} ] ; then
+  ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain.nii.gz ${DistortionCorrectionMagnitudeBrainOutput}.nii.gz
+fi
 
 echo " "
 echo " END: Topup Field Map Generation and Gradient Unwarping"

@@ -57,11 +57,13 @@ OutputT1wRestoredImage=`getopt1 "--oT1im" $@`  # "$6"
 OutputT1wRestoredBrainImage=`getopt1 "--oT1brain" $@`  # "$7"
 OutputT2wRestoredImage=`getopt1 "--oT2im" $@`  # "$8"
 OutputT2wRestoredBrainImage=`getopt1 "--oT2brain" $@`  # "$9"
+BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$9"
 
 # default parameters
 WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
-BiasFieldSmoothingSigma=5 #Leave this at 5mm for now
+BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
+
 
 echo " "
 echo " START: BiasFieldCorrection"

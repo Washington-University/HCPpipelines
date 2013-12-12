@@ -87,13 +87,18 @@ BrainSize=`getopt1 "--brainsize" $@`  # "${13}" #StandardFOV mask for averaging 
 FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${14}" #FNIRT 2mm T1w Config
 MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "${16}" #Expects 4D magitude volume with two 3D timepoints
 PhaseInputName=`getopt1 "--fmapphase" $@`  # "${17}" #Expects 3D phase difference volume
-TE=`getopt1 "--echospacing" $@`  # "${18}" #delta TE for field map
+TE=`getopt1 "--echodiff" $@`  # "${18}" #delta TE for field map
+SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`
+SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`
+DwellTime=`getopt1 "--echospacing" $@`
+SEUnwarpDir=`getopt1 "--seunwarpdir" $@`
 T1wSampleSpacing=`getopt1 "--t1samplespacing" $@`  # "${19}" #DICOM field (0019,1018)
 T2wSampleSpacing=`getopt1 "--t2samplespacing" $@`  # "${20}" #DICOM field (0019,1018) 
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${21}" #z appears to be best
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${25}" #Select correct coeffs for scanner or "NONE" to turn off
 AvgrdcSTRING=`getopt1 "--avgrdcmethod" $@`  # "${26}" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = average and distortion correct at the same time with topup/applytopup only works for 2 images currently
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${27}" #Config for topup or "NONE" if not used
+BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$9"
 RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 echo "$StudyFolder $Subject"
@@ -195,13 +200,13 @@ for TXw in ${Modalities} ; do
 
     if [ `echo $TXwInputImages | wc -w` -gt 1 ] ; then
 	mkdir -p ${TXwFolder}/Average${TXw}Images
-	if [ ${AvgrdcSTRING} = "TOPUP" ] ; then
-	    echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
-	    ${RUN} ${PipelineScripts}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
-	else
+	#if [ ${AvgrdcSTRING} = "TOPUP" ] ; then
+	#    echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
+	#    ${RUN} ${PipelineScripts}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
+	#else
 	    echo "PERFORMING SIMPLE AVERAGING"
 	    ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
-	fi
+	#fi
     else
 	echo "ONLY ONE AVERAGE FOUND: COPYING"
 	${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
@@ -239,8 +244,8 @@ done
 
 
 #### T2w to T1w Registration and Optional Readout Distortion Correction ####
-if [ ${AvgrdcSTRING} = "FIELDMAP" ] ; then
-  echo "PERFORMING FIELDMAP READOUT DISTORTION CORRECTION"
+if [[ ${AvgrdcSTRING} = "FIELDMAP" || ${AvgrdcSTRING} = "TOPUP" ]] ; then
+  echo "PERFORMING ${AvgrdcSTRING} READOUT DISTORTION CORRECTION"
   wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
   if [ -d ${wdir} ] ; then
       # DO NOT change the following line to "rm -r ${wdir}" because the chances of something going wrong with that are much higher, and rm -r always needs to be treated with the utmost caution
@@ -257,6 +262,10 @@ if [ ${AvgrdcSTRING} = "FIELDMAP" ] ; then
       --fmapmag=${MagnitudeInputName} \
       --fmapphase=${PhaseInputName} \
       --echodiff=${TE} \
+      --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+      --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+      --echospacing=${DwellTime} \
+      --seunwarpdir=${SEUnwarpDir} \
       --t1sampspacing=${T1wSampleSpacing} \
       --t2sampspacing=${T2wSampleSpacing} \
       --unwarpdir=${UnwarpDir} \
@@ -265,6 +274,8 @@ if [ ${AvgrdcSTRING} = "FIELDMAP" ] ; then
       --ot1warp=${T1wFolder}/xfms/${T1wImage}_dc \
       --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
       --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
+      --method=${AvgrdcSTRING} \
+      --topupconfig=${TopupConfig} \
       --gdcoeffs=${GradientDistortionCoeffs}
 else
     wdir=${T2wFolder}/T2wToT1wReg
@@ -288,9 +299,12 @@ fi
 
 
 #### Bias Field Correction: Calculate bias field using square root of the product of T1w and T2w iamges.  ####
+if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+  BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+fi  
 mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w 
 ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT1w.sh \
-   set -- --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
+    --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
     --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
     --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
     --T2im=${T1wFolder}/${T2wImage}_acpc_dc \
@@ -298,8 +312,8 @@ ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT1w.sh \
     --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
     --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
     --oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore \
-    --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain
-
+    --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
+    ${BiasFieldSmoothingSigma}
 
 #### Atlas Registration to MNI152: FLIRT + FNIRT  #Also applies registration to T1w and T2w images ####
 #Consider combining all transforms and recreating files with single resampling steps
