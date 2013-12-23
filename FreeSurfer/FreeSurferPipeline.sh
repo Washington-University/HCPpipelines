@@ -5,12 +5,6 @@ set -e
 #  installed versions of: FSL5.0.5 or higher , FreeSurfer (version 5.2 or higher) ,
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR 
 
-# make pipeline engine happy...
-if [ $# -eq 1 ] ; then
-    echo "Version unknown..."
-    exit 0
-fi
-
 ########################################## PIPELINE OVERVIEW ########################################## 
 
 #TODO
@@ -19,32 +13,45 @@ fi
 
 #TODO
 
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage information To Be Written"
+    exit 1
 }
 
-defaultopt() {
-    echo $1
-}
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "FreeSurferPipeline.sh"
 
 ################################################## OPTION PARSING #####################################################
 
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
+
 # Input Variables
-SubjectID=`getopt1 "--subject" $@` #FreeSurfer Subject ID Name
-SubjectDIR=`getopt1 "--subjectDIR" $@` #Location to Put FreeSurfer Subject's Folder
-T1wImage=`getopt1 "--t1" $@` #T1w FreeSurfer Input (Full Resolution)
-T1wImageBrain=`getopt1 "--t1brain" $@` 
-T2wImage=`getopt1 "--t2" $@` #T2w FreeSurfer Input (Full Resolution)
+SubjectID=`opts_GetOpt1 "--subject" $@` #FreeSurfer Subject ID Name
+SubjectDIR=`opts_GetOpt1 "--subjectDIR" $@` #Location to Put FreeSurfer Subject's Folder
+T1wImage=`opts_GetOpt1 "--t1" $@` #T1w FreeSurfer Input (Full Resolution)
+T1wImageBrain=`opts_GetOpt1 "--t1brain" $@` 
+T2wImage=`opts_GetOpt1 "--t2" $@` #T2w FreeSurfer Input (Full Resolution)
 
 T1wImageFile=`remove_ext $T1wImage`;
 T1wImageBrainFile=`remove_ext $T1wImageBrain`;
@@ -57,6 +64,8 @@ if [ -e "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh ] ; then
 fi
 
 #Make Spline Interpolated Downsample to 1mm
+log_Msg "Make Spline Interpolated Downsample to 1mm"
+
 Mean=`fslstats $T1wImageBrain -M`
 flirt -interp spline -in "$T1wImage" -ref "$T1wImage" -applyisoxfm 1 -out "$T1wImageFile"_1mm.nii.gz
 applywarp --rel --interp=spline -i "$T1wImage" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageFile"_1mm.nii.gz
@@ -64,6 +73,7 @@ applywarp --rel --interp=nn -i "$T1wImageBrain" -r "$T1wImageFile"_1mm.nii.gz --
 fslmaths "$T1wImageFile"_1mm.nii.gz -div $Mean -mul 150 -abs "$T1wImageFile"_1mm.nii.gz
 
 #Initial Recon-all Steps
+log_Msg "Initial Recon-all Steps"
 #-skullstrip of FreeSurfer not reliable for Phase II data because of poor FreeSurfer mri_em_register registrations with Skull on, run registration with PreFreeSurfer masked data and then generate brain mask as usual
 recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -motioncor -talairach -nuintensitycor -normalization
 mri_convert "$T1wImageBrainFile"_1mm.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz --conform
@@ -73,15 +83,20 @@ cp "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz "$SubjectDIR"/"$SubjectID"/
 recon-all -subjid $SubjectID -sd $SubjectDIR -autorecon2 -nosmooth2 -noinflate2 -nocurvstats -nosegstats -openmp 8
 
 #Highres white stuff and Fine Tune T2w to T1w Reg
+log_Msg "High resolution white matter and fine tune T2w to T1w registration"
 "$PipelineScripts"/FreeSurferHiresWhite.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage"
 
 #Intermediate Recon-all Steps
+log_Msg "Intermediate Recon-all Steps"
 recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc 
 
 #Highres pial stuff (this module adjusts the pial surface based on the the T2w image)
+log_Msg "High Resolution pial surface"
 "$PipelineScripts"/FreeSurferHiresPial.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage"
 
 #Final Recon-all Steps
+log_Msg "Final Recon-all Steps"
 recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec 
 
+log_Msg "Completed"
 

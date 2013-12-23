@@ -1,0 +1,27 @@
+#
+# Description:
+# 
+#   sets the name of the tool to use for future logging 
+#
+# Input:
+# 
+#   The first parameter is the name of the tool
+#
+log_SetToolName() {
+    log_toolName="$1"
+}
+
+# Description:
+#
+#   logs a time-stamped, tool-described message to standard output
+#
+# Input:
+#
+#   The parameters are the message to send to standard output
+#
+log_Msg() {
+    msg=$@
+    dateTime=`date`
+    echo $dateTime "-" $log_toolName "-" $msg
+}
+

@@ -9,13 +9,6 @@ set -e
 #  installed versions of: FSL5.0.1 or higher, FreeSurfer (version 5 or higher), gradunwarp (python code from MGH)
 #  environment: FSLDIR, FREESURFER_HOME, HCPPIPEDIR_dMRI, HCPPIPEDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin, HCPPIPEDIR_Config, PATH (for gradient_unwarp.py)
 
-# make pipeline engine happy...
-if [ $# -eq 1 ] ; then
-    echo "Version unknown..."
-    exit 0
-fi
-
-
 ########################################## Hard-Coded variables for the pipeline #################################
 
 b0dist=45     #Minimum distance in volumes between b0s considered for preprocessing
@@ -49,22 +42,27 @@ MissingFileFlag="EMPTY" #String used in the input arguments to indicate that a c
 
 ########################################## SUPPORT FUNCTIONS #####################################################
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage: `basename $0` --posData=<dataRL1@dataRL2@...>"
+    echo "                     --negData=<dataLR1@dataLR2@...>"
+    echo "                     --path=<StudyFolder>"
+    echo "                     --subject=<SubjectID>"
+    echo "                     --echospacing=<Echo Spacing in msecs>"
+    echo "                     --PEdir=<Phase Encoding Direction (1 for LR/RL, 2 for AP/PA>"
+    echo "                     --gdcoeffs=<Coefficients for gradient nonlinearity distortion correction('NONE' to switch off)>"
+    echo "                     --printcom=<'' to run normally, 'echo' to just print and not run commands, or omit argument to run normally>"
+
+    exit 1
 }
 
-defaultopt() {
-    echo $1
-}
-
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "DiffPreprocPipeline.sh"
 
 # function for finding the min between two numbers
 min(){
@@ -75,24 +73,19 @@ min(){
   fi
 }
 
-
-Usage() {
-  echo "Usage: `basename $0` --posData=<dataRL1@dataRL2@...>"
-  echo "                     --negData=<dataLR1@dataLR2@...>"
-  echo "                     --path=<StudyFolder>"
-  echo "                     --subject=<SubjectID>"
-  echo "                     --echospacing=<Echo Spacing in msecs>"
-  echo "                     --PEdir=<Phase Encoding Direction (1 for LR/RL, 2 for AP/PA>"
-  echo "                     --gdcoeffs=<Coefficients for gradient nonlinearity distortion correction('NONE' to switch off)>"
-  echo "                     --printcom=<'' to run normally, 'echo' to just print and not run commands, or omit argument to run normally>"
-}
-
 ################################################## OPTION PARSING ###################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 7 ] ; then Usage; exit 1; fi
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+if opts_CheckForImplicitHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
 
 # Input Variables
 PosInputImages=`getopt1 "--posData" $@`   # "$1" #dataRL1@dataRL2@...dataRLN
@@ -122,7 +115,7 @@ fi
 ${RUN} mkdir -p ${outdir}
 ${RUN} mkdir -p ${outdirT1w}
 
-echo "OutputDir is ${outdir}"
+log_Msg "OutputDir is ${outdir}"
 ${RUN} mkdir ${outdir}/rawdata
 ${RUN} mkdir ${outdir}/topup
 ${RUN} mkdir ${outdir}/eddy
@@ -139,7 +132,7 @@ fi
 
 
 ########################################## DO WORK ###################################################################### 
-echo "Copying raw data"
+log_Msg "Copying raw data"
 #Copy RL/AP images to workingdir
 PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
 Pos_count=1
@@ -185,8 +178,8 @@ for Image in ${NegInputImages} ; do
 done
 
 if [ ${Pos_count} -ne ${Neg_count} ]; then
-    echo "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
-    echo "If the respective file does not exist, use EMPTY in the input arguments."
+    log_Msg "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
+    log_Msg "If the respective file does not exist, use EMPTY in the input arguments."
     exit 1
 fi
 
@@ -194,6 +187,7 @@ fi
 #The file e.g. RL_SeriesCorrespVolNum.txt will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M from RLseries J
 #has corresponding LR pairs. This file is used in basic_preproc to generate topup/eddy indices and extract corresponding b0s for topup.
 #The file e.g. Pos_SeriesVolNum.txt will have as many rows as maximum series pairs (even unmatched pairs). The entry M N in row J indicates that the RLSeries J has its 0-M volumes corresponding to LRSeries J and RLJ has N volumes in total. This file is used in eddy_combine.
+log_Msg "Create two files for each phase encoding direction"
 Paired_flag=0
 for (( j=1; j<${Pos_count}; j++ )) ; do
     CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
@@ -214,27 +208,27 @@ for (( j=1; j<${Neg_count}; j++ )) ; do
 done
 
 if [ ${Paired_flag} -eq 0 ]; then
-    echo "Wrong Input! No pairs of phase encoding directions have been found!"
-    echo "At least one pair is needed!"
+    log_Msg "Wrong Input! No pairs of phase encoding directions have been found!"
+    log_Msg "At least one pair is needed!"
     exit 1
 fi
 
-echo "Running Basic Preprocessing"
+log_Msg "Running Basic Preprocessing"
 ${RUN} ${scriptsdir}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
-echo "Running Topup"
+log_Msg "Running Topup"
 ${RUN} ${scriptsdir}/run_topup.sh ${outdir}/topup
 
-echo "Running Eddy"
+log_Msg "Running Eddy"
 ${RUN} ${scriptsdir}/run_eddy.sh ${outdir}/eddy
 
 GdFlag=0
 if [ ! ${GdCoeffs} = "NONE" ] ; then
-    echo "Gradient nonlinearity distortion correction coefficients found!"
+    log_Msg "Gradient nonlinearity distortion correction coefficients found!"
     GdFlag=1
 fi
 
-echo "Running Eddy PostProcessing"
+log_Msg "Running Eddy PostProcessing"
 ${RUN} ${scriptsdir}/eddy_postproc.sh ${outdir} ${GdCoeffs}
 
 #Naming Conventions
@@ -249,7 +243,7 @@ QAImage="${outdir}"/reg/"T1wMulEPI"
 DiffRes=`${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1`
 DiffRes=`printf "%0.3f" ${DiffRes}`
 
-echo "Running Diffusion to Structural Registration"
+log_Msg "Running Diffusion to Structural Registration"
 ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
   --t1folder="${T1wFolder}" \
   --subject="${Subject}" \
@@ -264,3 +258,7 @@ ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
   --regoutput="${RegOutput}" \
   --QAimage="${QAImage}" \
   --gdflag=${GdFlag} --diffresol=${DiffRes}
+
+log_Msg "Completed"
+
+

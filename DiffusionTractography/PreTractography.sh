@@ -1,35 +1,43 @@
 #!/bin/bash
 set -e
 
+########################################## SUPPORT FUNCTIONS #####################################################
 
-if [ "$2" == "" ];then
-    echo ""
-    echo "usage: $0 <StudyFolder> <Subject> <LowResMesh>"
-         "       T1w and MNINonLinear folders are expected within <StudyFolder>/<Subject>"
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage: PreTractography.sh"
+    echo " --path=<StudyFolder>"
+    echo " --subject=<Subject>"
+    echo " --lowresmesh=<LowResMesh>"
+    echo " "
+    echo "T1w and MNINonLinear folders are expected within <StudyFolder>/<Subject>"
     echo ""
     exit 1
-fi
-
-
-########################################## SUPPORT FUNCTIONS #####################################################
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
 }
 
-defaultopt() {
-    echo $1
-}
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "PreTractography.sh"
 
 
 ################################################## OPTION PARSING ###################################################
+
+opts_ShowVersionIfRequested $@
+
+if [ "$2" == "" ];then
+    show_usage 
+fi
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
+
 # Input Variables
 StudyFolder=`getopt1 "--path" $@`                # "$1" #Path to Generic Study folder
 Subject=`getopt1 "--subject" $@`                 # "$2" #SubjectID
@@ -46,6 +54,7 @@ DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
 StandardResolution="2"
 
+log_Msg "MakeTrajectorySpace"
 ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace.sh \
     --path="$StudyFolder" --subject="$Subject" \
     --wholebrainlabels="$WholeBrainTrajectoryLabels" \
@@ -54,6 +63,7 @@ ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace.sh \
     --diffresol="${DiffusionResolution}" \
     --freesurferlabels="${FreeSurferLabels}"
 
+log_Msg "MakeTrajectorySpace_MNI"
 ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace_MNI.sh \
     --path="$StudyFolder" --subject="$Subject" \
     --wholebrainlabels="$WholeBrainTrajectoryLabels" \
@@ -62,6 +72,10 @@ ${HCPPIPEDIR_dMRITract}/MakeTrajectorySpace_MNI.sh \
     --standresol="${StandardResolution}" \
     --freesurferlabels="${FreeSurferLabels}"
 
+log_Msg "MakeWorkbenchUODFs"
 ${HCPPIPEDIR_dMRITract}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --lowresmesh="${LowResMesh}" --diffresol="${DiffusionResolution}"
 
 # ${HCPPIPEDIR_dMRITract}/PrepareSeeds.sh ${StudyFolder} ${Subject} #This currently creates and calls a Matlab script. Need to Redo in bash or C++
+
+log_Msg "Completed"
+
