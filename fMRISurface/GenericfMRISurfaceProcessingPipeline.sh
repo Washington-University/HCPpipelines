@@ -5,13 +5,6 @@ set -e
 #  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH) 
 #  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
 
-# make pipeline engine happy...
-if [ $# -eq 1 ]
-then
-    echo "Version unknown..."
-    exit 0
-fi
-
 ########################################## PIPELINE OVERVIEW ########################################## 
 
 # TODO
@@ -20,40 +13,48 @@ fi
 
 # TODO
 
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage information To Be Written"
+    exit 1
 }
 
-defaultopt() {
-    echo $1
-}
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "GenericfMRISurfaceProcessingPipeline.sh"
 
 ################################################## OPTION PARSING #####################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
 
 # parse arguments
-Path=`getopt1 "--path" $@`  # "$1"
-Subject=`getopt1 "--subject" $@`  # "$2"
-NameOffMRI=`getopt1 "--fmriname" $@`  # "$6"
-LowResMesh=`getopt1 "--lowresmesh" $@`  # "$6"
-FinalfMRIResolution=`getopt1 "--fmrires" $@`  # "${14}"
-SmoothingFWHM=`getopt1 "--smoothingFWHM" $@`  # "${14}"
-GrayordinatesResolution=`getopt1 "--grayordinatesres" $@`  # "${14}"
-RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
-
-
+Path=`opts_GetOpt1 "--path" $@`  # "$1"
+Subject=`opts_GetOpt1 "--subject" $@`  # "$2"
+NameOffMRI=`opts_GetOpt1 "--fmriname" $@`  # "$6"
+LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`  # "$6"
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  # "${14}"
+SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`  # "${14}"
+GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`  # "${14}"
+RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
@@ -77,15 +78,22 @@ ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
 #Make fMRI Ribbon
 #Noisy Voxel Outlier Exclusion
 #Ribbon-based Volume to Surface mapping and resampling to standard surface
+
+log_Msg "Make fMRI Ribbon"
+log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
 mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
 "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "$T1wFolder"/"$NativeFolder"
 
 #Surface Smoothing
+log_Msg "Surface Smoothing"
 "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
 
 #Subcortical Processing
+log_Msg "Subcortical Processing"
 "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
 
 #Generation of Dense Timeseries
+log_Msg "Generation of Dense Timeseries"
 "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 
+log_Msg "Completed"

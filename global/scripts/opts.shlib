@@ -1,0 +1,108 @@
+#
+# Description:
+# 
+#   parses the input command line for a specified command line option
+#
+# Input:
+# 
+#   The first parameter is the command line option to look for.
+#   The remaining parameters are the full list of command line arguments
+#
+opts_GetOpt1() {
+    sopt="$1"
+    shift 1
+    for fn in $@ ; do
+    if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+        echo $fn | sed "s/^${sopt}=//"
+        return 0
+    fi
+    done
+}
+
+#
+# Description: 
+#
+#   defaultopt is ???
+#
+# TODO - Is this function actually used anywhere?
+#
+opts_DefaultOpt() {
+    echo $1
+}
+
+#
+# Description: 
+#
+#   checks command line arguments for "--version" indicating that 
+#   version information has been requested
+#
+# Input: 
+#
+#   The full list of command line arguments
+#   
+opts_CheckForVersionRequest() {
+    for fn in $@ ; do
+        if [ "$fn" = "--version" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+#
+# Description: 
+#
+#   checks command line arguments for "--help" indicating that 
+#   help has been requested
+#
+# Input: 
+#
+#   The full list of command line arguments
+#   
+opts_CheckForHelpRequest() {
+    for fn in $@ ; do
+        if [ "$fn" = "--help" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 
+# Description:
+# 
+#   checks command line arguments for implicit indication
+#   that help has been requested.  A help request is 
+#   inferred from the tool being invoked with no 
+#   command line arguments
+#
+# Input:
+# 
+#   The full list of command line arguments
+#
+opts_CheckForImplicitHelpRequest() {
+    if [ $# -eq 0 ] ; then
+        return 0
+    fi
+    return 1
+}
+
+#
+# Description:
+#
+#   If the script is invoked with a version information request 
+#   option, report any available version identifying information
+#   for the HCP Pipeline Toiols product (from the version.txt
+#   file in the root product directory) and exit.
+# 
+opts_ShowVersionIfRequested() {
+    if opts_CheckForVersionRequest $@; then
+        if [ -f ${HCPPIPEDIR}/version.txt ]; then
+            cat ${HCPPIPEDIR}/version.txt
+        else
+            echo "HCP Pipeline Tools - Version unknown"
+        fi
+        exit 0
+    fi
+}
+

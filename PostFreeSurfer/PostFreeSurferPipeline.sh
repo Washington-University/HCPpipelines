@@ -5,12 +5,6 @@ set -e
 #  installed versions of: FSL5.0.1 or higher , FreeSurfer (version 5.2 or higher) ,
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
-# make pipeline engine happy...
-if [ $# -eq 1 ] ; then
-    echo "Version unknown..."
-    exit 0
-fi
-
 ########################################## PIPELINE OVERVIEW ########################################## 
 
 #TODO
@@ -19,48 +13,58 @@ fi
 
 #TODO
 
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage information To Be Written"
+    exit 1
 }
 
-defaultopt() {
-    echo $1
-}
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "PostFreeSurferPipeline.sh"
 
 ################################################## OPTION PARSING #####################################################
 
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
+
 # Input Variables
-StudyFolder=`getopt1 "--path" $@`
-Subject=`getopt1 "--subject" $@`
-SurfaceAtlasDIR=`getopt1 "--surfatlasdir" $@`
-GrayordinatesSpaceDIR=`getopt1 "--grayordinatesdir" $@`
-GrayordinatesResolutions=`getopt1 "--grayordinatesres" $@`
-HighResMesh=`getopt1 "--hiresmesh" $@`
-LowResMeshes=`getopt1 "--lowresmesh" $@`
-SubcorticalGrayLabels=`getopt1 "--subcortgraylabels" $@`
-FreeSurferLabels=`getopt1 "--freesurferlabels" $@`
-ReferenceMyelinMaps=`getopt1 "--refmyelinmaps" $@`
-CorrectionSigma=`getopt1 "--mcsigma" $@`
-RegName=`getopt1 "--regname" $@`
+StudyFolder=`opts_GetOpt1 "--path" $@`
+Subject=`opts_GetOpt1 "--subject" $@`
+SurfaceAtlasDIR=`opts_GetOpt1 "--surfatlasdir" $@`
+GrayordinatesSpaceDIR=`opts_GetOpt1 "--grayordinatesdir" $@`
+GrayordinatesResolutions=`opts_GetOpt1 "--grayordinatesres" $@`
+HighResMesh=`opts_GetOpt1 "--hiresmesh" $@`
+LowResMeshes=`opts_GetOpt1 "--lowresmesh" $@`
+SubcorticalGrayLabels=`opts_GetOpt1 "--subcortgraylabels" $@`
+FreeSurferLabels=`opts_GetOpt1 "--freesurferlabels" $@`
+ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
+CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
+RegName=`opts_GetOpt1 "--regname" $@`
 
 # default parameters
 CorrectionSigma=`defaultopt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
 RegName=`defaultopt $RegName FS`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
-
-
-
 
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
@@ -113,13 +117,15 @@ AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
+log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
 "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$T1wRestoreImage" "$T2wRestoreImage" "$SurfaceAtlasDIR" "$HighResMesh" "$LowResMeshes" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$AtlasSpaceT2wImage" "$T1wImageBrainMask" "$FreeSurferLabels" "$GrayordinatesSpaceDIR" "$GrayordinatesResolutions" "$SubcorticalGrayLabels" "$RegName"
 
 #Create FreeSurfer ribbon file at full resolution
+log_Msg "Create FreeSurfer ribbon file at full resolution"
 "$PipelineScripts"/CreateRibbon.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$AtlasSpaceT1wImage" "$T1wRestoreImage" "$FreeSurferLabels"
 
 #Myelin Mapping
+log_Msg "Myelin Mapping"
 "$PipelineScripts"/CreateMyelinMaps.sh "$StudyFolder" "$Subject" "$AtlasSpaceFolder" "$NativeFolder" "$T1wFolder" "$HighResMesh" "$LowResMeshes" "$T1wFolder"/"$OrginalT1wImage" "$T2wFolder"/"$OrginalT2wImage" "$T1wFolder"/"$T1wImageBrainMask" "$T1wFolder"/xfms/"$InitialT1wTransform" "$T1wFolder"/xfms/"$dcT1wTransform" "$T2wFolder"/xfms/"$InitialT2wTransform" "$T1wFolder"/xfms/"$dcT2wTransform" "$T1wFolder"/"$FinalT2wTransform" "$AtlasTransform" "$T1wFolder"/"$BiasField" "$T1wFolder"/"$OutputT1wImage" "$T1wFolder"/"$OutputT1wImageRestore" "$T1wFolder"/"$OutputT1wImageRestoreBrain" "$AtlasSpaceFolder"/"$OutputMNIT1wImage" "$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore" "$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain" "$T1wFolder"/"$OutputT2wImage" "$T1wFolder"/"$OutputT2wImageRestore" "$T1wFolder"/"$OutputT2wImageRestoreBrain" "$AtlasSpaceFolder"/"$OutputMNIT2wImage" "$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore" "$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain" "$T1wFolder"/xfms/"$OutputOrigT1wToT1w" "$T1wFolder"/xfms/"$OutputOrigT1wToStandard" "$T1wFolder"/xfms/"$OutputOrigT2wToT1w" "$T1wFolder"/xfms/"$OutputOrigT2wToStandard" "$AtlasSpaceFolder"/"$BiasFieldOutput" "$AtlasSpaceFolder"/"$T1wImageBrainMask" "$AtlasSpaceFolder"/xfms/"$Jacobian" "$ReferenceMyelinMaps" "$CorrectionSigma" "$RegName" 
 
-
-
+log_Msg "Completed"

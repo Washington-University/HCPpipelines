@@ -5,13 +5,6 @@ set -e
 #  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH) 
 #  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
 
-# make pipeline engine happy...
-if [ $# -eq 1 ]
-then
-    echo "Version unknown..."
-    exit 0
-fi
-
 ########################################## PIPELINE OVERVIEW ########################################## 
 
 # TODO
@@ -20,47 +13,57 @@ fi
 
 # TODO
 
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+show_usage() {
+    echo "Usage information To Be Written"
+    exit 1
 }
 
-defaultopt() {
-    echo $1
-}
+# --------------------------------------------------------------------------------
+#   Establish tool name for logging
+# --------------------------------------------------------------------------------
+log_SetToolName "GenericfMRIVolumeProcessingPipeline.sh"
 
 ################################################## OPTION PARSING #####################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+fi
+
+log_Msg "Parsing Command Line Options"
 
 # parse arguments
-Path=`getopt1 "--path" $@`  # "$1"
-Subject=`getopt1 "--subject" $@`  # "$2"
-NameOffMRI=`getopt1 "--fmriname" $@`  # "$6"
-fMRITimeSeries=`getopt1 "--fmritcs" $@`  # "$3"
-fMRIScout=`getopt1 "--fmriscout" $@`  # "$4"
-SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  # "$7"
-SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  # "$5"
-MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$8" #Expects 4D volume with two 3D timepoints
-PhaseInputName=`getopt1 "--fmapphase" $@`  # "$9"
-DwellTime=`getopt1 "--echospacing" $@`  # "${11}"
-deltaTE=`getopt1 "--echodiff" $@`  # "${12}"
-UnwarpDir=`getopt1 "--unwarpdir" $@`  # "${13}"
-FinalfMRIResolution=`getopt1 "--fmrires" $@`  # "${14}"
-DistortionCorrection=`getopt1 "--dcmethod" $@`  # "${17}" #FIELDMAP or TOPUP
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "${18}"
-TopupConfig=`getopt1 "--topupconfig" $@`  # "${20}" #NONE if Topup is not being used
-RUN=`getopt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+Path=`opts_GetOpt1 "--path" $@`  # "$1"
+Subject=`opts_GetOpt1 "--subject" $@`  # "$2"
+NameOffMRI=`opts_GetOpt1 "--fmriname" $@`  # "$6"
+fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`  # "$3"
+fMRIScout=`opts_GetOpt1 "--fmriscout" $@`  # "$4"
+SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`  # "$7"
+SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`  # "$5"
+MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # "$8" #Expects 4D volume with two 3D timepoints
+PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  # "$9"
+DwellTime=`opts_GetOpt1 "--echospacing" $@`  # "${11}"
+deltaTE=`opts_GetOpt1 "--echodiff" $@`  # "${12}"
+UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  # "${13}"
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  # "${14}"
+DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`  # "${17}" #FIELDMAP or TOPUP
+GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  # "${18}"
+TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # "${20}" #NONE if Topup is not being used
+RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
@@ -104,6 +107,7 @@ ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
 fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 if [ ! -e "$fMRIFolder" ] ; then
+  log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
 fi
 cp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName".nii.gz
@@ -116,7 +120,9 @@ else
 fi
 
 #Gradient Distortion Correction of fMRI
+log_Msg "Gradient Distortion Correction of fMRI"
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
+    log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
     mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
 	--workingdir="$fMRIFolder"/GradientDistortionUnwarp \
@@ -124,7 +130,8 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 	--in="$fMRIFolder"/"$OrigTCSName" \
 	--out="$fMRIFolder"/"$NameOffMRI"_gdc \
 	--owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
-	
+
+    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"	
      mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
      ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
 	 --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
@@ -133,13 +140,14 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 	 --out="$fMRIFolder"/"$ScoutName"_gdc \
 	 --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
 else
-    echo "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
+    log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
     ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc_warp 0 3
     ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp -mul 0 "$fMRIFolder"/"$NameOffMRI"_gdc_warp
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$ScoutName"_gdc
 fi
 
+log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection_FLIRTbased"
 mkdir -p "$fMRIFolder"/MotionCorrection_FLIRTbased
 ${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
     "$fMRIFolder"/MotionCorrection_FLIRTbased \
@@ -151,9 +159,11 @@ ${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
     "$MotionMatrixPrefix" 
 
 #EPI Distortion Correction and EPI to T1w Registration
+log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
   rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 fi
+log_Msg "mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased"
 mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 
 ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
@@ -181,6 +191,8 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --ojacobian=${fMRIFolder}/${JacobianOut} 
     
 #One Step Resampling
+log_Msg "One Step Resampling"
+log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 mkdir -p ${fMRIFolder}/OneStepResampling
 ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --workingdir=${fMRIFolder}/OneStepResampling \
@@ -205,6 +217,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
     
 #Intensity Normalization and Bias Removal
+log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
     --biasfield=${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution} \
@@ -215,6 +228,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
     --usejacobian=false
 
+log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 ${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
@@ -228,4 +242,6 @@ ${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}/Movement_Ab
 ${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}/Movement_RelativeRMS_mean.txt
 ${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Movement_AbsoluteRMS_mean.txt
 ###Add stuff for RMS###
+
+log_Msg "Completed"
 
