@@ -2,13 +2,27 @@
 #
 # Copyright Notice:
 #
-#   Copyright (C) 2013 Washington University in St. Louis
-#   Author(s): Matthew F. Glasser
+#   Copyright (C) 2013-2014 Washington University in St. Louis
+#   Author(s): Matthew F. Glasser, Mark Jenkinson, Timothy B. Brown
 #
 # Product:
 # 
 #   Human Connectome Project (HCP) Pipeline Tools
 #   http://www.humanconnectome.org
+#
+# License:
+#
+#   Human Connectome Project Pipeline Tools = the "Software"
+#   Washington University in St. Louis = WUSTL
+#
+#   The Software remains the property of WUSTL.
+#
+#   The Software is distributed "AS IS" without warranty of any kind, either 
+#   expressed or implied, including, but not limited to, the implied warranties
+#   of merchantability and fitness for a particular purpose.
+#
+#   TODO: Find out what actual license terms are to be applied. Commercial
+#         use allowed? If so, this would likely violate FSL terms.
 #
 # Description: 
 #   
@@ -58,8 +72,6 @@
 #       steps of the PreFreeSurfer pipeline and are also used to carry out 
 #       some steps of other pipelines. 
 #
-#     TODO - verify the above description of HCPPIPEDIR_Global
-#
 #     FSLDIR
 #       Home directory for FSL the FMRIB Software Library from Oxford 
 #       University (http://fsl.fmrib.ox.ac.uk)
@@ -67,7 +79,6 @@
 #   Installed Software:
 #
 #     FSL - Version 5.0.6 or greater 
-#     FreeSurfer - Version 5.3 or greater
 #   
 # Usage:
 # 
@@ -90,57 +101,65 @@
 #   * ${T1wFolder}/AverageT1wImages
 #   * ${T1wFolder}/ACPCAlignment
 #   * ${T1wFolder}/BrainExtraction_FNIRTbased
-#   
+#   * ${T1wFolder}/xfms - transformation matrices and warp fields
+
 #   * ${T2wFolder}/T2w${i}_GradientDistortionUnwarp
 #   * ${T2wFolder}/AverageT1wImages
 #   * ${T2wFolder}/ACPCAlignment
 #   * ${T2wFolder}/BrainExtraction_FNIRTbased
+#   * ${T2wFolder}/xfms - transformation matrices and warp fields
 #   
 #   * ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
 #   * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
 #   
 #   * ${AtlasSpaceFolder}
-#
-#   TODO - Figure out what the below comments (re the xfms directories) mean.
-#
-#   Also exist:
-#    T1w/xfms/
-#    T2w/xfms/
-#    MNINonLinear/xfms/
+#   * ${AtlasSpaceFolder}/xfms
 #
 #   Note that no assumptions are made about the input paths with respect to the
-#   output directories. All specification of full paths to input files is done 
-#   via the command line arguments specified when this script is invoked.
+#   output directories. All specification of input files is done via command
+#   line arguments specified when this script is invoked.
 #
-#   Also note that the output directories T1wFolder and T2wFolder MUST be 
-#   different (otherwise various output files with standard names contained in 
-#   such subdirectories, e.g. full2std.mat, would overwrite each other).  If 
-#   this script is modified, then those two output directories must be kept 
-#   distinct.
+#   Also note that the following output directories are created:
+#
+#   * T1wFolder, which is created by concatenating the following three option
+#     values: --path / --subject / --t1
+#   * T2wFolder, which is created by concatenating the following three option
+#     values: --path / --subject / --t2
+#
+#   These two output directories must be different. Otherwise, various output
+#   files with standard names contained in such subdirectories, e.g. 
+#   full2std.mat, would overwrite each other).  If this script is modified,
+#   then those two output directories must be kept distinct.
 #
 # Output Files:
 #
-#   TODO - Describe output files generated
+#   * T1wFolder Contents:
+#       TODO
 #
-
-# --------------------------------------------------------------------------------
+#   * T2wFolder Contents:
+#       TODO
+#
+#   * AtlasSpaceFolder Contents:
+#       TODO
+#
+# ------------------------------------------------------------------------------
 #  Code Start
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Setup this script such that if any command exits with a non-zero value, the 
 # script itself exits and does not attempt any further processing.
 set -e
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Load Function Libraries
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Usage Description Function
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 show_usage() {
     cat <<EOF
@@ -167,7 +186,7 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --t2template2mm=<file path>    MNI 2mm T2wTemplate
   --templatemask=<file path>     Brain mask MNI Template
   --template2mmmask=<file path>  Brain mask MNI 2mm Template 
-  --brainsize=<size value>       StandardFOV mask for averaging structurals
+  --brainsize=<size value>       Brain size estimate in mm, 150 for humans
   --fnirtconfig=<file path>      FNIRT 2mm T1w Configuration file
   --fmapmag=<file path>          Fieldmap magnitude file
   --fmapphase=<file path>        Fieldmap phase file
@@ -181,12 +200,14 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                  data), set to "NONE" if using regular FIELDMAP
   --echospacing=<dwell time>     Echo Spacing or Dwelltime of Spin Echo Field
                                  Map or "NONE" if not used
-  --seunwarpdir={x, y, NONE}     Unwarp direction, "NONE" if not used
-                                 TODO - diff from unwarpdir?
+  --seunwarpdir={x, y, NONE}     Phase encoding direction of the spin echo 
+                                 field map. (Only applies when using a spin echo
+                                 field map.)
   --t1samplespacing=<seconds>    T1 image sample spacing, "NONE" if not used
   --t2samplespacing=<seconds>    T2 image sample spacing, "NONE" if not used
-  --unwarpdir={x, y, z}          Unwarp direction, z appears to be best 
-                                 TODO - diff from seunwarpdir?
+  --unwarpdir={x, y, z}          Readout direction of the T1w and T2w images
+                                 (Used with either a regular field map or a spin
+                                 echo field map)
   --gdcoeffs=<file path>         File containing gradient distortion 
                                  coefficients, Set to "NONE" to turn off
   --avgrdcmethod={NONE, FIELDMAP, TOPUP}           
@@ -196,9 +217,9 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                           correction
                                  "FIELDMAP" = average any repeats and use field
                                               map for readout correction
-                                 "TOPUP" = average and distortion correct at 
-                                           the same time with topup/applytopup 
-                                           (only works for 2 images currently)
+                                 "TOPUP" = average any repeats and use spin 
+                                           echo field map for readout 
+                                           correction
   --topupconfig=<file path>      Configuration file for topup or "NONE" if not
                                  used
   --bfsigma=<value>              Bias Field Smoothing Sigma (optional)
@@ -206,20 +227,23 @@ EOF
     exit 1
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #   Establish tool name for logging
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 log_SetToolName "PreFreeSurferPipeline.sh"
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Parse Command Line Options
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
     show_usage
 fi
+
+log_Msg "Platform Information Follows: " 
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -252,16 +276,13 @@ AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 
-RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything 
-                               # and not running the commands (default is to run)
+# Use --printcom=echo for just printing everything and not actually
+# running the commands (the default is to actually run the commands)
+RUN=`opts_GetOpt1 "--printcom" $@`
 
 log_Msg "Finished Parsing Command Line Options"
 log_Msg "StudyFolder: $StudyFolder"
 log_Msg "Subject: $Subject"
-
-# Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
-PipelineScripts=${HCPPIPEDIR_PreFS}
-GlobalScripts=${HCPPIPEDIR_Global}
 
 # Naming Conventions
 T1wImage="T1w"
@@ -300,19 +321,19 @@ fi
 
 log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 
-# --------------------------------------------------------------------------------
-#  Do primary work 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Do primary work
+# ------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Loop over the processing for T1w and T2w (just with different names). 
 #  For each modality, perform
-#  - Gradient Nonlinearity Correction (Unless no gradient distortion coefficients
-#    are available
+#  - Gradient Nonlinearity Correction (Unless no gradient distortion 
+#    coefficients are available
 #  - Average same modality images (if more than one is available)
 #  - Rigidly align images to 0.7mm MNI Template to create native volume space
 #  - Perform Brain Extraction(FNIRT-based Masking)
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 Modalities="T1w T2w"
 
@@ -348,7 +369,7 @@ for TXw in ${Modalities} ; do
             # Make sure input axes are oriented the same as the templates
             ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${wdir}/${TXwImage}${i}  
 
-            ${RUN} ${GlobalScripts}/GradientDistortionUnwarp.sh \
+            ${RUN} ${HCPPIPEDIR_Global}/GradientDistortionUnwarp.sh \
                 --workingdir=${wdir} \
                 --coeffs=$GradientDistortionCoeffs \
                 --in=${wdir}/${TXwImage}${i} \
@@ -378,10 +399,10 @@ for TXw in ${Modalities} ; do
         mkdir -p ${TXwFolder}/Average${TXw}Images
         # if [ ${AvgrdcSTRING} = "TOPUP" ] ; then
         #     echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
-        #     ${RUN} ${PipelineScripts}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
+        #     ${RUN} ${HCPPIPEDIR_PreFS}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
         # else
 	    log_Msg "PERFORMING SIMPLE AVERAGING"
-        ${RUN} ${PipelineScripts}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
         # fi
     else
         log_Msg "Not Averaging ${TXw} Images"
@@ -393,7 +414,7 @@ for TXw in ${Modalities} ; do
     log_Msg "Aligning ${TXw} image to 0.7mm MNI ${TXw}Template to create native volume space"
     log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
     mkdir -p ${TXwFolder}/ACPCAlignment
-    ${RUN} ${PipelineScripts}/ACPCAlignment.sh \
+    ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
         --workingdir=${TXwFolder}/ACPCAlignment \
         --in=${TXwFolder}/${TXwImage} \
         --ref=${TXwTemplate} \
@@ -405,7 +426,7 @@ for TXw in ${Modalities} ; do
     log_Msg "Performing Brain Extraction using FNIRT-based Masking"
     log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
     mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
-    ${RUN} ${PipelineScripts}/BrainExtraction_FNIRTbased.sh \
+    ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
         --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
         --in=${TXwFolder}/${TXwImage}_acpc \
         --ref=${TXwTemplate} \
@@ -420,9 +441,9 @@ done
 
 # End of looping over modalities (T1w and T2w)
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  T2w to T1w Registration and Optional Readout Distortion Correction 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if [[ ${AvgrdcSTRING} = "FIELDMAP" || ${AvgrdcSTRING} = "TOPUP" ]] ; then
     log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
@@ -437,7 +458,7 @@ if [[ ${AvgrdcSTRING} = "FIELDMAP" || ${AvgrdcSTRING} = "TOPUP" ]] ; then
     log_Msg "mkdir -p ${wdir}"
     mkdir -p ${wdir}
 
-    ${RUN} ${PipelineScripts}/T2wToT1wDistortionCorrectAndReg.sh \
+    ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
         --workingdir=${wdir} \
         --t1=${T1wFolder}/${T1wImage}_acpc \
         --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
@@ -474,7 +495,7 @@ else
     log_Msg "mkdir -p ${wdir}"
     mkdir -p ${wdir}
 
-    ${RUN} ${PipelineScripts}/T2wToT1wReg.sh \
+    ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wReg.sh \
         ${wdir} \
         ${T1wFolder}/${T1wImage}_acpc \
         ${T1wFolder}/${T1wImage}_acpc_brain \
@@ -487,10 +508,10 @@ else
         ${T1wFolder}/xfms/${T2wImage}_reg_dc
 fi
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Bias Field Correction: Calculate bias field using square root of the product 
 #  of T1w and T2w iamges.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 log_Msg "Performing Bias Field Correction"
 if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
@@ -500,7 +521,7 @@ fi
 log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w" 
 mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w 
 
-${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT1w.sh \
+${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
     --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
     --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
     --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
@@ -512,16 +533,14 @@ ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT1w.sh \
     --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
     ${BiasFieldSmoothingSigma}
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT  
 #  Also applies registration to T1w and T2w images 
-# --------------------------------------------------------------------------------
-# TODO - Consider combining all transforms and recreating files with single 
-#        resampling steps
+# ------------------------------------------------------------------------------
 
 log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
 
-${RUN} ${PipelineScripts}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
+${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --workingdir=${AtlasSpaceFolder} \
     --t1=${T1wFolder}/${T1wImage}_acpc_dc \
     --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
