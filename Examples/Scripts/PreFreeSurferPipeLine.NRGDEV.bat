@@ -1,77 +1,258 @@
 #!/bin/bash 
+#
+# Copyright Notice:
+#
+#   Copyright (C) 2013-2014 WAshington University in St. Louis
+#   Author(s): Matthew F. Glasser, Timothy B. Brown
+#
+# Product:
+#
+#   Human Connectome Project (HCP) Pipeline Tools
+#   http://www.humanconnectome.org
+#
+# Description:
+# 
+#   This script, PreFreeSurferPipeLine.NRGDEV.bat, is an example of a wrapper 
+#   for invoking the PreFreeSurferPipeline.sh script to execute the first
+#   of 3 sub-parts of the Structural Preprocessing phase of the HCP Minimal
+#   Preprocessing Pipelines. It is sometimes referred to as the 
+#   "PreFreeSurferPipeline wrapper script".
+#
+#   This script:
+#
+#   1. Sets up variables to determine where input files will be found
+#      and what subjects to process
+#   2. Sets up the environment necessary for running the 
+#      PreFreeSurferPipeline.sh script (sets environment variables) 
+#   3. Sets up variables that determine where various input files are to 
+#      be found and what options to use in invoking PreFreeSurferPipeline.sh
+#   4. Invokes PreFreeSurferPipeline.sh with the configured variables passed
+#      as command line parameters. This invocation takes the form of 
+#      submitting the PreFreeSurferPipeline.sh script using the fsl_sub 
+#      command.  fsl_sub is part of FSL (see below) and is used to submit
+#      the job to a queuing system (e.g. Sun/Oracle Grid Engine or Torque).
+#
+# Prerequisites:
+#
+#   Environment Variables:
+#
+#     HCPPIPEDIR
+#       The "home" directory for the version of the HCP Pipeline Tools product
+#       being used. E.g. /nrgpackages/tools.release/hcp-pipeline-toosl-V3.0GA
+#
+#   Installed Software:
+#
+#     FSL - FMRIB's Software Library (http://www.fmrib.ox.ac.uk/fsl)
+#           Version 5.0.6 or greater
+# 
+#   Image Files:
+#
+#     At least one T1 weighted image and one T2 weighted image are required
+#     for the PreFreeSurferPipeline.sh script to work. Thus they are required
+#     for this script to work also.
+#
+# Notes:
+#
+#   * The fsl_sub tool that is provided as part of FSL submits the job 
+#     to a cluster using the Sun/Oracle Grid Engine. If it cannot find 
+#     a local cluster to which to submit the job, it simply runs the 
+#     submitted command directly.
+#
+#   * To submit the job using Torque, a modified version of fsl_sub must
+#     be used.  
+#
+#   TODO: Verify that the above statement about submitting the job via Torque
+#         is true.  Determine what modifications are necessary to the fsl_sub
+#         tool.
+#
+# Usage:
+#
+#   This script has no command line options/arguments. It is intended to 
+#   simply be executed with a command like:
+#
+#   $ ./PreFreeSurferPipeLine.NRGDEV.bat
+#
+#   To alter the list of subjects, the folder/directory in which the subject
+#   files are to be found, or the location of the script which sets up the
+#   necessary environment variables, edit this script directly.
+#  
 
-Subjlist="792564" #Space delimited list of subject IDs
-#StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Location of Subject folders (named by subjectID)
+# ------------------------------------------------------------------------------
+#  Load Function Libraries
+# ------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib   # Logging related functions
+source $HCPPIPEDIR/global/scripts/utils.shlib # Utility functions
+
+# ------------------------------------------------------------------------------
+#  Establish tool name for logging
+# ------------------------------------------------------------------------------
+ 
+log_SetToolName "PreFreeSurferPipeLine.NRGDEV.bat"
+
+# ------------------------------------------------------------------------------
+#  Setup Environment
+# ------------------------------------------------------------------------------
+
+# Establish the folder/directory in which all subject folders 
+# will be found.
+
+#StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" 
 StudyFolder="/home/NRG/tbrown01/projects/Pipelines/Examples"
 
-#EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-EnvironmentScript="/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.NRGDEV.sh"
+# Establish the list of subject IDs to process
+#
+# SubjList is a space delimited list of subject IDs
+#
+# This script assumes that for each subject ID, there will be a directory 
+# named with the subject ID in the StudyFolder.
+Subjlist="792564"
 
-# Requirements for this script
-#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+# Establish the location of the "Environment Script".
+# The "Environment script sets up all the environment variables 
+# needed to run the PreFreeSurferPipeline.sh script.
 
-#Set up pipeline environment variables and software
+#EnvironmentScript=\
+#"/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" 
+EnvironmentScript=\
+"/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.NRGDEV.sh"
+
+# Source the environment script to set up pipeline environment variables and 
+# software
+log_Msg "Sourcing environment script: $@"
 . ${EnvironmentScript}
 
-# Log the originating call
-echo "$@"
-
-if [ X$SGE_ROOT != X ] ; then
+# If the SGE_ROOT variable is not null, then we use that as an indication
+# that the job (running the PreFreeSurferPipeline.sh script) will be 
+# submitted to a cluster via a job control system like SGE. 
+#
+# In that case (SGE_ROOT variable is not null), we set the -q option for the
+# fsl_sub command to indicate that the job will take more than 4 hours and 
+# less than 24 hours.
+#
+# See the usage information for fsl_sub to learn about other queue 
+# options (e.g. veryshort.q, short.q, etc.)
+if [ -n "$SGE_ROOT" ]; then
     QUEUE="-q long.q"
 fi
 
+# If the PRINTCOM variable is set to "echo", then the --printcom=echo 
+# option is passed to the invocation of the PreFreeSurferPipeline.sh script.
+# The --printcom=echo option causes PreFreeSurferPipeline.sh to simply
+# echo the significant commands that it would run instead of actually
+# executing those commands. This can be useful for understanding and 
+# debugging purposes.
 PRINTCOM=""
 #PRINTCOM="echo"
-#QUEUE="-q veryshort.q"
+
+# ------------------------------------------------------------------------------
+#  Input files for PreFreeSurferPipeline.sh
+# ------------------------------------------------------------------------------
+
+# The PreFreeSurferPipeline.sh script does not assume any particular directory
+# structure for locating the input files. Instead, paths to all input files are
+# fully specified by various command line options passed to the 
+# PreFreeSurferPipeline.sh script.
+#
+# _This_ wrapper script assumes that input files to be specified to the 
+# PreFreeSurferPipeline.sh will be found by following a particular directory
+# and file naming convention.
+#
+# It assumes the following HCP data naming convention under the
+# ${StudyFolder}/${Subject} directory:
+#
+#   The form of the file names for the T1-weighted image files is assumed
+#   to be:
+#
+#     unprocessed/3T/T1w_MPR1/${Subject}_3T_T1w_MPR<scanNo>.nii.gz
+#
+#   where <scanNo> is the sequence number for the T1w image (e.g. 1, 2, 3,...)
+#
+#   The form of the file names for the T2-weighted image files is assumed
+#   to be:
+#
+#     unprocessed/3T/T2w_SPC1/${Subject}_3T_T2w_SPC<scanNo>.nii.gz
+#
+#   where <scanNo> is the sequence number for the T2w image (e.g. 1, 2, 3,...)
+#
+# In each image directory, whether it be for a T1w or T2w scan, we expect to
+# find supplemental files that provide additional information about the scan.
+# Two of these supplemental files give us information about magnetic field
+# inhomogeneity during the scan. An undistorted MRI image requires that the
+# magnetic field inside the scanner be homogeneous (except for the gradients
+# necessary for spatial encoding.) However, the magnetic field in a scanner
+# will not actually be homogeneous. Some inhomogeneity is introduced by
+# simply have an object (e.g. the head) in the magnetic field. Corrections
+# for this inhomogeneity are done using two fieldmap files in (NIFTI) image
+# file format.
+#
+# One of these fieldmap files (the Magnitude fieldmap file) contains an image
+# of the brain that can be used for registration to other images and for
+# definition of brain and non-brain tissues.
+#
+# The form of the name of the Magnitude fieldmap file is assumed to be:
+#
+#   unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz
+#
 
 
-########################################## INPUTS ########################################## 
-
-#Scripts called by this script do NOT assume anything about the form of the input names or paths.
-#This batch script assumes the HCP raw data naming convention, e.g.
-
-#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_T1w_MPR1.nii.gz
-#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR2/${Subject}_3T_T1w_MPR2.nii.gz
-
-#	${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC1/${Subject}_3T_T2w_SPC1.nii.gz
-#	${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC2/${Subject}_3T_T2w_SPC2.nii.gz
-
-#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz
-#	${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz
-
-#Change Scan Settings: FieldMap Delta TE, Sample Spacings, and $UnwarpDir to match your images
-#These are set to match the HCP Protocol by default
-
-#If using gradient distortion correction, use the coefficents from your scanner
-#The HCP gradient distortion coefficents are only available through Siemens
-#Gradient distortion in standard scanners like the Trio is much less than for the HCP Skyra.
+            ici
 
 
-######################################### DO WORK ##########################################
 
+#   unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz
+
+# ------------------------------------------------------------------------------
+#  Other configurable settings
+# ------------------------------------------------------------------------------
+
+# Change Scan Settings: FieldMap Delta TE, Sample Spacings, and $UnwarpDir to
+# match your images. These are set to match the HCP Protocol by default.
+#
+# If using gradient distortion correction, use the coefficents from your 
+# scanner. The HCP gradient distortion coefficents are only available through
+# Siemens. Gradient distortion in standard scanners like the Trio is much less
+# than for the HCP Skyra.
+
+# ------------------------------------------------------------------------------
+#  Do primary work
+# ------------------------------------------------------------------------------
 
 for Subject in $Subjlist ; do
-  echo $Subject
+  log_Msg "Processing subject:" $Subject
   
   #Input Images
-  #Detect Number of T1w Images
+
+  # Detect Number of T1w Images
   numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep T1w_MPR | wc -l`
+  log_Msg "Detected number of T1w images: "${numT1ws}
+
+  # Build @ separated list of T1w images to process
   T1wInputImages=""
   i=1
   while [ $i -le $numT1ws ] ; do
     T1wInputImages=`echo "${T1wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR${i}/${Subject}_3T_T1w_MPR${i}.nii.gz@"`
     i=$(($i+1))
   done
-  
-  #Detect Number of T2w Images
+
+  # Detect Number of T2w Images
   numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep T2w_SPC | wc -l`
+  log_Msg "Detected number of T2w images: "${numT2ws}
+
+  # Build @ separated list of T2w images to process
   T2wInputImages=""
   i=1
   while [ $i -le $numT2ws ] ; do
     T2wInputImages=`echo "${T2wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC${i}/${Subject}_3T_T2w_SPC${i}.nii.gz@"`
     i=$(($i+1))
   done
+  
+
+  
+    
+      
+          
+  
   MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
   PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
 
@@ -168,4 +349,6 @@ for Subject in $Subjlist ; do
   echo ". ${EnvironmentScript}"
 
 done
+
+log_Msg "Completed"
 

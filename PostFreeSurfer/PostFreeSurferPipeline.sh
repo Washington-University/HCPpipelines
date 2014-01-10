@@ -61,8 +61,8 @@ CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 
 # default parameters
-CorrectionSigma=`defaultopt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
-RegName=`defaultopt $RegName FS`
+CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
+RegName=`opts_DefaultOpt $RegName FS`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
