@@ -241,7 +241,7 @@ FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
 RegOutput="${outdir}"/reg/"Scout2T1w"
 QAImage="${outdir}"/reg/"T1wMulEPI"
 DiffRes=`${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1`
-DiffRes=`printf "%0.3f" ${DiffRes}`
+DiffRes=`printf "%0.2f" ${DiffRes}`
 
 log_Msg "Running Diffusion to Structural Registration"
 ${RUN} ${scriptsdir}/DiffusionToStructural.sh \
