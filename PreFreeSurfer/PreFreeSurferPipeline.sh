@@ -61,7 +61,7 @@
 #
 #     HCPPIPEDIR 
 #       The "home" directory for the version of the HCP Pipeline Tools product 
-#       being used. E.g. /nrgpackages/tools.release/HCP_Pipeline_Tools_V3.0GA
+#       being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-V3.0GA
 #   
 #     HCPPIPEDIR_PreFS
 #       Location of PreFreeSurfer sub-scripts that are used to carry out some 
@@ -78,8 +78,14 @@
 #
 #   Installed Software:
 #
-#     FSL - Version 5.0.6 or greater 
-#   
+#     FSL - FMRIB's Software Library (http://www.fmrib.ox.ac.uk/fsl)
+#           Version 5.0.6 or greater 
+#
+#   Image Files:
+#
+#     At least one T1 weighted image and one T2 weighted image are required
+#     for this script to work.
+#
 # Usage:
 # 
 #   See the usage function below.
@@ -228,7 +234,7 @@ EOF
 }
 
 # ------------------------------------------------------------------------------
-#   Establish tool name for logging
+#  Establish tool name for logging
 # ------------------------------------------------------------------------------
 log_SetToolName "PreFreeSurferPipeline.sh"
 
