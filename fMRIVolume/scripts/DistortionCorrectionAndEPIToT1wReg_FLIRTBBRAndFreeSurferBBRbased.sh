@@ -113,7 +113,6 @@ T1wBrainImageFile=`basename $T1wBrainImage`
 RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
 WD=`defaultopt $WD ${RegOutput}.wdir`
 GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
 UseJacobian=false
 

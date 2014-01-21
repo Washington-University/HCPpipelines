@@ -58,8 +58,6 @@ RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything a
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
-GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 
 #Naming Conventions
 AtlasSpaceFolder="MNINonLinear"

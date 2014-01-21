@@ -10,7 +10,7 @@ configdir=${HCPPIPEDIR_Config}
 #topup_config_file=${FSLDIR}/etc/flirtsch/b02b0.cnf
 topup_config_file=${configdir}/b02b0.cnf
 
-${binarydir}/topup --imain=${workingdir}/Pos_Neg_b0 --datain=${workingdir}/acqparams.txt --config=${topup_config_file} --out=${workingdir}/topup_Pos_Neg_b0 -v
+${FSLDIR}/bin/topup --imain=${workingdir}/Pos_Neg_b0 --datain=${workingdir}/acqparams.txt --config=${topup_config_file} --out=${workingdir}/topup_Pos_Neg_b0 -v
 
 dimt=`${FSLDIR}/bin/fslval ${workingdir}/Pos_b0 dim4`
 dimt=$((${dimt} + 1))
