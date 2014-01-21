@@ -63,8 +63,6 @@ VolumeBasedProcessing=`opts_GetOpt1 "--vba" $@`
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_tfMRIAnalysis}
-# GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
 LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`

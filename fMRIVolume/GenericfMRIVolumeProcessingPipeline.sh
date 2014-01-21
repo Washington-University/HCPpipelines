@@ -68,7 +68,6 @@ RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything a
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
 GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 
 #Naming Conventions
 T1wImage="T1w_acpc_dc"

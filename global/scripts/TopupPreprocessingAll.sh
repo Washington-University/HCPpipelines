@@ -78,7 +78,6 @@ GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
 
 GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 
 # default parameters #Breaks when --owarp becomes optional
 #DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
