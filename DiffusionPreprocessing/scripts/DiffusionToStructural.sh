@@ -46,7 +46,6 @@ echo $T1wOutputDirectory
 
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 GlobalScripts=${HCPPIPEDIR_Global}
-GlobalBinaries=${HCPPIPEDIR_Bin}
 
 T1wBrainImageFile=`basename $T1wBrainImage`
 regimg="nodif"
@@ -95,7 +94,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Now register the grad_dev tensor 
-    ${GlobalBinaries}/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
+    ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 else
 #Register diffusion data to T1w space without considering gradient nonlinearities

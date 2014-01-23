@@ -8,7 +8,6 @@ EddyJacFlag="JacobianResampling"
 workingdir=$1
 GdCoeffs=$2  #Coefficients for gradient nonlinearity distortion correction. If "NONE" this corrections is turned off
 
-binarydir=${HCPPIPEDIR_Bin}
 configdir=${HCPPIPEDIR_Config}
 globalscriptsdir=${HCPPIPEDIR_Global}
 
@@ -43,7 +42,7 @@ if [ ! $GdCoeffs = "NONE" ] ; then
     ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${datadir}/data_warped" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
 
     echo "Computing gradient coil tensor to correct for gradient nonlinearities"
-    ${binarydir}/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
+    ${FSLDIR}/bin/calc_grad_perc_dev --fullwarp=${datadir}/fullWarp -o ${datadir}/grad_dev
     ${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
     ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
     ${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
