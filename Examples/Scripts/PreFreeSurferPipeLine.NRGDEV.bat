@@ -2,7 +2,7 @@
 #
 # Copyright Notice:
 #
-#   Copyright (C) 2013-2014 WAshington University in St. Louis
+#   Copyright (C) 2013-2014 Washington University in St. Louis
 #   Author(s): Matthew F. Glasser, Timothy B. Brown
 #
 # Product:
@@ -15,7 +15,7 @@
 #   This script, PreFreeSurferPipeLine.NRGDEV.bat, is an example of a wrapper 
 #   for invoking the PreFreeSurferPipeline.sh script to execute the first
 #   of 3 sub-parts of the Structural Preprocessing phase of the HCP Minimal
-#   Preprocessing Pipelines. It is sometimes referred to as the 
+#   Preprocessing Pipelines. It is sometimes referred to as a 
 #   "PreFreeSurferPipeline wrapper script".
 #
 #   This script:
@@ -38,7 +38,7 @@
 #
 #     HCPPIPEDIR
 #       The "home" directory for the version of the HCP Pipeline Tools product
-#       being used. E.g. /nrgpackages/tools.release/hcp-pipeline-toosl-V3.0GA
+#       being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-v3.0
 #
 #   Installed Software:
 #
@@ -77,22 +77,21 @@
 #   necessary environment variables, edit this script directly.
 #  
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Load Function Libraries
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 source $HCPPIPEDIR/global/scripts/log.shlib   # Logging related functions
-source $HCPPIPEDIR/global/scripts/utils.shlib # Utility functions
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Establish tool name for logging
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
  
 log_SetToolName "PreFreeSurferPipeLine.NRGDEV.bat"
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Setup Environment
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Establish the folder/directory in which all subject folders 
 # will be found.
@@ -100,17 +99,14 @@ log_SetToolName "PreFreeSurferPipeLine.NRGDEV.bat"
 #StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" 
 StudyFolder="/home/NRG/tbrown01/projects/Pipelines/Examples"
 
-# Establish the list of subject IDs to process
-#
-# SubjList is a space delimited list of subject IDs
-#
-# This script assumes that for each subject ID, there will be a directory 
-# named with the subject ID in the StudyFolder.
+# Establish the list of subject IDs to process. SubjList is a space delimited
+# list of subject IDs. This script assumes that for each subject ID, there will
+# be a directory named with the subject ID in the StudyFolder.
 Subjlist="792564"
 
-# Establish the location of the "Environment Script".
-# The "Environment script sets up all the environment variables 
-# needed to run the PreFreeSurferPipeline.sh script.
+# Establish the location of the "Environment Script". The "Environment Script"
+# sets up all the environment variables needed to run the 
+# PreFreeSurferPipeline.sh script.
 
 #EnvironmentScript=\
 #"/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" 
@@ -119,7 +115,7 @@ EnvironmentScript=\
 
 # Source the environment script to set up pipeline environment variables and 
 # software
-log_Msg "Sourcing environment script: $@"
+log_Msg "Sourcing environment script: ${EnvironmentScript}"
 . ${EnvironmentScript}
 
 # If the SGE_ROOT variable is not null, then we use that as an indication
@@ -130,24 +126,23 @@ log_Msg "Sourcing environment script: $@"
 # fsl_sub command to indicate that the job will take more than 4 hours and 
 # less than 24 hours.
 #
-# See the usage information for fsl_sub to learn about other queue 
-# options (e.g. veryshort.q, short.q, etc.)
+# See the usage information for fsl_sub to learn about other queue options 
+# (e.g. veryshort.q, short.q, etc.)
 if [ -n "$SGE_ROOT" ]; then
     QUEUE="-q long.q"
 fi
 
-# If the PRINTCOM variable is set to "echo", then the --printcom=echo 
-# option is passed to the invocation of the PreFreeSurferPipeline.sh script.
-# The --printcom=echo option causes PreFreeSurferPipeline.sh to simply
-# echo the significant commands that it would run instead of actually
-# executing those commands. This can be useful for understanding and 
-# debugging purposes.
+# If the PRINTCOM variable is set to "echo", then the --printcom=echo option 
+# is passed to the invocation of the PreFreeSurferPipeline.sh script. The 
+# --printcom=echo option causes PreFreeSurferPipeline.sh to simply echo the
+# significant commands that it would run instead of actually executing those
+# commands. This can be useful for understanding and debugging purposes.
 PRINTCOM=""
 #PRINTCOM="echo"
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Input files for PreFreeSurferPipeline.sh
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # The PreFreeSurferPipeline.sh script does not assume any particular directory
 # structure for locating the input files. Instead, paths to all input files are
@@ -196,15 +191,13 @@ PRINTCOM=""
 #
 
 
-            ici
-
-
+# TODO:
 
 #   unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Other configurable settings
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Change Scan Settings: FieldMap Delta TE, Sample Spacings, and $UnwarpDir to
 # match your images. These are set to match the HCP Protocol by default.
@@ -214,9 +207,9 @@ PRINTCOM=""
 # Siemens. Gradient distortion in standard scanners like the Trio is much less
 # than for the HCP Skyra.
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Do primary work
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 for Subject in $Subjlist ; do
   log_Msg "Processing subject:" $Subject
@@ -247,11 +240,6 @@ for Subject in $Subjlist ; do
     i=$(($i+1))
   done
   
-
-  
-    
-      
-          
   
   MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Magnitude.nii.gz" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
   PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz" #Expects 3D phase difference volume or "NONE" if not used
