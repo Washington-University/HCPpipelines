@@ -42,6 +42,13 @@ MissingFileFlag="EMPTY" #String used in the input arguments to indicate that a c
 
 ########################################## SUPPORT FUNCTIONS #####################################################
 
+# ------------------------------------------------------------------------------
+#  Load Function Libraries
+# ------------------------------------------------------------------------------
+
+source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
@@ -88,14 +95,14 @@ fi
 log_Msg "Parsing Command Line Options"
 
 # Input Variables
-PosInputImages=`getopt1 "--posData" $@`   # "$1" #dataRL1@dataRL2@...dataRLN
-NegInputImages=`getopt1 "--negData" $@`   # "$2" #dataLR1@dataLR2@...dataLRN
-StudyFolder=`getopt1 "--path" $@`         # "$3" #Path to subject's data folder
-Subject=`getopt1 "--subject" $@`          # "$4" #SubjectID
-echospacing=`getopt1 "--echospacing" $@`  # "$5" #Echo Spacing in msecs
-PEdir=`getopt1 "--PEdir" $@`              # "$6" #1 for LR/RL, 2 for AP/PA
-GdCoeffs=`getopt1 "--gdcoeffs" $@`        # "${7}" #Select correct coeffs for scanner gradient nonlinearities or "NONE" to turn off
-RUN=`getopt1 "--printcom" $@`             # use ="echo" for just printing everything and not running the commands (default is to run)
+PosInputImages=`opts_GetOpt1 "--posData" $@`   # "$1" #dataRL1@dataRL2@...dataRLN
+NegInputImages=`opts_GetOpt1 "--negData" $@`   # "$2" #dataLR1@dataLR2@...dataLRN
+StudyFolder=`opts_GetOpt1 "--path" $@`         # "$3" #Path to subject's data folder
+Subject=`opts_GetOpt1 "--subject" $@`          # "$4" #SubjectID
+echospacing=`opts_GetOpt1 "--echospacing" $@`  # "$5" #Echo Spacing in msecs
+PEdir=`opts_GetOpt1 "--PEdir" $@`              # "$6" #1 for LR/RL, 2 for AP/PA
+GdCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`        # "${7}" #Select correct coeffs for scanner gradient nonlinearities or "NONE" to turn off
+RUN=`opts_GetOpt1 "--printcom" $@`             # use ="echo" for just printing everything and not running the commands (default is to run)
 RUN=${RUN:-''}
 
 # Path for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
