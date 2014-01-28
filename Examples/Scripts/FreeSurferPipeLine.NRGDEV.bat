@@ -58,7 +58,7 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
 #  Establish tool name for logging
 # -----------------------------------------------------------------------------
 
-log_SetToolName "FreeSurferPipeline.NRGDEV.bat"
+log_SetToolName "FreeSurferPipeLine.NRGDEV.bat"
 
 # -----------------------------------------------------------------------------
 #  Setup Environment
