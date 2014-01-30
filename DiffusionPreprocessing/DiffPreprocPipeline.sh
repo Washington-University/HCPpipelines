@@ -14,7 +14,10 @@ set -e
 b0dist=45     #Minimum distance in volumes between b0s considered for preprocessing
 b0maxbval=50  #Volumes with a bvalue smaller than that will be considered as b0s
 MissingFileFlag="EMPTY" #String used in the input arguments to indicate that a complete series is missing
-
+CombineDataFlag=1  #If JAC resampling has been used in eddy, decide what to do with the output file
+                   #2 for including in the ouput all volumes uncombined (i.e. output file of eddy)
+                   #1 for including in the ouput and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
+                   #0 As 1, but also include uncombined single volumes"
 
 ########################################## OUTPUT DIRECTORIES ####################################################
 
@@ -236,7 +239,7 @@ if [ ! ${GdCoeffs} = "NONE" ] ; then
 fi
 
 log_Msg "Running Eddy PostProcessing"
-${RUN} ${scriptsdir}/eddy_postproc.sh ${outdir} ${GdCoeffs}
+${RUN} ${scriptsdir}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag}
 
 #Naming Conventions
 T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
