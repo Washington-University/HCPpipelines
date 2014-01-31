@@ -137,14 +137,51 @@ for File in $FilesII ; do
   rm ${FEATDir}/GrayordinatesStats/${File}.nii.gz
 done
 
-###Standard Volume-based Processsing###
+###Standard Volume-based Processing###
 if [ $VolumeBasedProcessing = "YES" ] ; then
 
+  #Dilate volume
+  SBRefDilation_InputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz
+  SBRefDilation_OutputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.dilM.nii.gz
+  fslmaths ${SBRefDilation_InputFilePath} -dilM ${SBRefDilation_OutputFilePath}
+  
+  ImageDilation_InputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz
+  ImageDilation_OutputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.dilM.nii.gz
+  fslmaths ${ImageDilation_InputFilePath} -dilM ${ImageDilation_OuputFilePath}
+  
   #Add volume smoothing
   FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz -bin -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_weight -odt float
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz -kernel gauss ${FinalSmoothingSigma} -fmean -div ${FEATDir}/mask_weight -mas ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -odt float
   
+  # The input to volume smoothing for the SBRef is the dilated version of the SBRef created above
+  SBRefSmoothing_InputFilePath=${SBRefDilation_OutputFilePath}
+
+  # The output of volume smoothing for the SBref is the mask_weight file in the ${FEATDir}
+  SBRefSmoothing_OutputFilePath=${FEATDir}/mask_weight
+
+  # Perform smoothing on the SBRef
+  fslmaths ${SBRefSmoothing_InputFilePath} -bin -kernel gauss ${FinalSmoothingSigma} \
+    -fmean ${SBRefSmoothing_OutputFilePath} -odt float
+
+  # The input to volume smoothing for the actual image (non-SBRef) is the dilated version
+  # of that image created above
+  ImageSmoothing_InputFilePath=${ImageDilation_OutputFilePath}
+
+  # The output of volume smoothing for the actual image (non-SBRef) is in the ${FEATDir}
+  # and has the $SmoothingString appended to the name
+  ImageSmoothing_OutputFilePath=${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz
+
+  # Part of smoothing the image is to divide it by the smoothed SBRef 
+  ImageSmoothing_DivFile=${SBRefSmoothing_OutputFilePath}
+
+  # Part of smoothing is to mask with the dilated SBRef
+  ImageSmoothing_MaskFile=${SBRefDilation_OutputFilePath}
+
+  # Perform smoothing on the image
+  fslmaths ${ImageSmoothing_InputFilePath} -kernel gauss ${FinalSmoothingSigma} \
+    -fmean -div ${ImageSmoothing_DivFile} \
+    -mas ${ImageSmoothing_MaskFile} \
+    ${ImageSmoothing_OutputFilePath} -odt float
+
   #Add temporal filtering
   fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
 
