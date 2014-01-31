@@ -82,6 +82,13 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$T1wRestoreImage" -r "$T1wRest
 ${FSLDIR}/bin/flirt -interp nearestneighbour -in "$InputBrainMask" -ref "$InputBrainMask" -applyisoxfm ${DiffRes} -out "$T1wOutputDirectory"/nodif_brain_mask
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask -kernel 3D -dilM "$T1wOutputDirectory"/nodif_brain_mask
 
+DilationsNum=6 #Dilated mask for masking the final data and grad_dev
+${FSLDIR}/bin/imcp "$T1wOutputDirectory"/nodif_brain_mask "$T1wOutputDirectory"/nodif_brain_mask_temp
+for (( j=0; j<${DilationsNum}; j++ ))
+do
+    ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_temp -kernel 3D -dilM "$T1wOutputDirectory"/nodif_brain_mask_temp
+done
+
 #Rotate bvecs from diffusion to structural space
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
@@ -89,20 +96,19 @@ cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
-    #In the future, we want this applywarp to be part of eddy and avoid second resampling step.
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Now register the grad_dev tensor 
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
-    ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
+    ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 else
-#Register diffusion data to T1w space without considering gradient nonlinearities
+    #Register diffusion data to T1w space without considering gradient nonlinearities
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/data -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
 fi
 
-${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask "$T1wOutputDirectory"/data  #Mask-out data outside the brain 
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/data  #Mask-out data outside the brain 
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (caused by spline interpolation) from final data
-
+${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
 
 echo " END: DiffusionToStructural"
