@@ -140,47 +140,69 @@ done
 ###Standard Volume-based Processing###
 if [ $VolumeBasedProcessing = "YES" ] ; then
 
-  #Dilate volume
-  SBRefDilation_InputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz
-  SBRefDilation_OutputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.dilM.nii.gz
-  fslmaths ${SBRefDilation_InputFilePath} -dilM ${SBRefDilation_OutputFilePath}
+  # Dilate volume
+  #
+  # For some subjects, FreeSurfer-derived brain masks (applied to the time 
+  # series data in IntensityNormalization.sh as part of 
+  # GenericfMRIVolumeProcessingPipeline.sh) do not extend to the edge of brain
+  # in the MNI152 space template. This is due to the limitations of volume-based
+  # registration. So, to avoid a lack of coverage in a group analysis around the
+  # penumbra of cortex, here we add a single dilation step to the input prior to
+  # creating the Level1 maps.
+  #
+  # Ideally, we would condition this dilation on the resolution of the fMRI 
+  # data.  Empirically, a single round of dilation gives very good group 
+  # coverage of MNI brain for the 2 mm resolution of HCP fMRI data. So a single
+  #  dilation is what we use here.
+  #
+  # Note that for many subjects, this dilation will result in signal extending
+  # BEYOND the limits of brain in the MNI152 template.  However, that is easily
+  # fixed by masking with the MNI space brain template mask if so desired.
+
+  # Dilate the SBRef
+  SBRefDilationInputFile=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz
+  SBRefDilationOutputFile=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef_dilM.nii.gz
+  fslmaths ${SBRefDilationInputFile} -dilM ${SBRefDilationOutputFile}
   
-  ImageDilation_InputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz
-  ImageDilation_OutputFilePath=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.dilM.nii.gz
-  fslmaths ${ImageDilation_InputFilePath} -dilM ${ImageDilation_OuputFilePath}
+  # Dilate the actual BOLD time-series image
+  ImageDilationInputFile=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz
+  ImageDilationOutputFile=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_dilM.nii.gz
+  fslmaths ${ImageDilationInputFile} -dilM ${ImageDilationOutputFile}
   
-  #Add volume smoothing
+  # Add volume smoothing
   FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
   
-  # The input to volume smoothing for the SBRef is the dilated version of the SBRef created above
-  SBRefSmoothing_InputFilePath=${SBRefDilation_OutputFilePath}
+  # The input to volume smoothing for the SBRef is the dilated version of the
+  # SBRef created above. The output of volume smoothing for the SBRef is the
+  # mask_weight file in the ${FEATDir}
+  SBRefSmoothingInputFile=${SBRefDilationOutputFile}
+  SBRefSmoothingOutputFile=${FEATDir}/mask_weight
 
-  # The output of volume smoothing for the SBref is the mask_weight file in the ${FEATDir}
-  SBRefSmoothing_OutputFilePath=${FEATDir}/mask_weight
+  # Perform smoothing on a binarized SBRef (SBRef implicitly defines the mask
+  # via its non-zero voxels; we smooth that mask which then functions as a 
+  # divisor for edge-constrained smoothing).
+  fslmaths ${SBRefSmoothingInputFile} -bin -kernel gauss ${FinalSmoothingSigma} \
+    -fmean ${SBRefSmoothingOutputFile} -odt float
 
-  # Perform smoothing on the SBRef
-  fslmaths ${SBRefSmoothing_InputFilePath} -bin -kernel gauss ${FinalSmoothingSigma} \
-    -fmean ${SBRefSmoothing_OutputFilePath} -odt float
+  # The input to volume smoothing for the actual BOLD time-series is the
+  # dilated version from above. The output of volume smoothing for the 
+  # actual BOLD time-series is in the ${FEATDir} and has the $SmoothingString
+  # appended to the name.
+  ImageSmoothingInputFile=${ImageDilationOutputFile}
+  ImageSmoothingOutputFile=${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz
 
-  # The input to volume smoothing for the actual image (non-SBRef) is the dilated version
-  # of that image created above
-  ImageSmoothing_InputFilePath=${ImageDilation_OutputFilePath}
+  # Part of smoothing the image is to divide it by the mask weight file and
+  # to mask with the dilated SBRef.
+  ImageSmoothingDivFile=${SBRefSmoothing_OutputFilePath}
+  ImageSmoothingMaskFile=${SBRefDilationOutputFile}
 
-  # The output of volume smoothing for the actual image (non-SBRef) is in the ${FEATDir}
-  # and has the $SmoothingString appended to the name
-  ImageSmoothing_OutputFilePath=${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz
-
-  # Part of smoothing the image is to divide it by the smoothed SBRef 
-  ImageSmoothing_DivFile=${SBRefSmoothing_OutputFilePath}
-
-  # Part of smoothing is to mask with the dilated SBRef
-  ImageSmoothing_MaskFile=${SBRefDilation_OutputFilePath}
-
-  # Perform smoothing on the image
-  fslmaths ${ImageSmoothing_InputFilePath} -kernel gauss ${FinalSmoothingSigma} \
-    -fmean -div ${ImageSmoothing_DivFile} \
-    -mas ${ImageSmoothing_MaskFile} \
-    ${ImageSmoothing_OutputFilePath} -odt float
+  # Perform smoothing on the BOLD time series
+  fslmaths \
+    ${ImageSmoothingInputFile} \
+    -kernel gauss ${FinalSmoothingSigma} \
+    -fmean -div ${ImageSmoothingDivFile} \
+    -mas ${ImageSmoothingMaskFile} \
+    ${ImageSmoothingOutputFile} -odt float
 
   #Add temporal filtering
   fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
