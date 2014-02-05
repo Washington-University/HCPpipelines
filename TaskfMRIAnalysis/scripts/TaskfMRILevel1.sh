@@ -140,10 +140,16 @@ done
 ###Standard Volume-based Processing###
 if [ $VolumeBasedProcessing = "YES" ] ; then
 
-  #Add volume smoothing
+  #Add edge-constrained volume smoothing
   FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz -bin -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_weight -odt float
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz -kernel gauss ${FinalSmoothingSigma} -fmean -div ${FEATDir}/mask_weight -mas ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -odt float
+  InputfMRI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}
+  InputSBRef=${InputfMRI}_SBRef
+  OrigMask="mask_orig"
+  fslmaths ${InputSBRef} -bin ${FEATDir}/${OrigMask}
+  fslmaths ${FEATDir}/${OrigMask} -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_weight -odt float
+  fslmaths ${InputfMRI} -kernel gauss ${FinalSmoothingSigma} -fmean \
+    -div ${FEATDir}/mask_weight -mas ${FEATDir}/${OrigMask} \
+    ${FEATDir}/${LevelOnefMRIName}"$SmoothingString" -odt float
 
   #Add volume dilation
   #
@@ -152,26 +158,59 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   # GenericfMRIVolumeProcessingPipeline.sh) do not extend to the edge of brain
   # in the MNI152 space template. This is due to the limitations of volume-based
   # registration. So, to avoid a lack of coverage in a group analysis around the
-  # penumbra of cortex, here we add a single dilation step to the input prior to
+  # penumbra of cortex, we will add a single dilation step to the input prior to
   # creating the Level1 maps.
   #
   # Ideally, we would condition this dilation on the resolution of the fMRI 
   # data.  Empirically, a single round of dilation gives very good group 
   # coverage of MNI brain for the 2 mm resolution of HCP fMRI data. So a single
-  # dilation is what we use here.
+  # dilation is what we use below.
   #
   # Note that for many subjects, this dilation will result in signal extending
   # BEYOND the limits of brain in the MNI152 template.  However, that is easily
   # fixed by masking with the MNI space brain template mask if so desired.
+  #
+  # The specific implementation involves:
+  # a) Edge-constrained spatial smoothing on the input fMRI time series (and masking
+  #    that back to the original mask).  This step was completed above.
+  # b) Spatial dilation of the input fMRI time series, followed by edge constrained smoothing
+  # c) Adding the voxels from (b) that are NOT part of (a) into (a).
+  #
+  # The motivation for this implementation is that:
+  # 1) Identical voxel-wise results are obtained within the original mask.  So, users
+  #    that desire the original ("tight") FreeSurfer-defined brain mask (which is
+  #    implicitly represented as the non-zero voxels in the InputSBRef volume) can
+  #    mask back to that if they chose, with NO impact on the voxel-wise results.
+  # 2) A simpler possible approach of just dilating the result of step (a) results in 
+  #    an unnatural pattern of dark/light/dark intensities at the edge of brain,
+  #    whereas the combination of steps (b) and (c) yields a more natural looking 
+  #    transition of intensities in the added voxels.
 
-  # Dilate the smoothed BOLD time series image
   DilationString="_dilM"
-  fslmaths \
-    ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz \
-    -dilM ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"${DilationString}.nii.gz
 
-  #Add temporal filtering
-  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"${DilationString}.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
+  # Dilate the original BOLD time series, then do (edge-constrained) smoothing
+  fslmaths ${FEATDir}/${OrigMask} -dilM -bin ${FEATDir}/mask${DilationString}
+  fslmaths ${FEATDir}/mask${DilationString} \
+    -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask${DilationString}_weight -odt float
+  fslmaths ${InputfMRI} -dilM -kernel gauss ${FinalSmoothingSigma} -fmean \
+    -div ${FEATDir}/mask${DilationString}_weight -mas ${FEATDir}/mask${DilationString} \
+    ${FEATDir}/${LevelOnefMRIName}${DilationString}"$SmoothingString".nii.gz -odt float
+
+  # Take just the additional "rim" voxels from the dilated then smoothed time series, and add them
+  # into the smoothed time series (that didn't have any dilation)
+  DilationString2="${DilationString}rim"
+  SmoothedDilatedResultFile=${FEATDir}/${LevelOnefMRIName}"$SmoothingString"${DilationString2}
+  fslmaths ${FEATDir}/${OrigMask} -binv ${FEATDir}/${OrigMask}_inv
+  fslmaths ${FEATDir}/${LevelOnefMRIName}${DilationString}"$SmoothingString" \
+    -mas ${FEATDir}/${OrigMask}_inv \
+    -add ${FEATDir}/${LevelOnefMRIName}"$SmoothingString" \
+    ${SmoothedDilatedResultFile}
+    
+  #Add temporal filtering to the output from above
+  # (Here, we drop the "DilationString" from the output file name, so as to avoid breaking
+  # any downstream scripts).
+  fslmaths ${SmoothedDilatedResultFile} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 \
+    ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
 
   #Run film_gls on subcortical volume data
   ${FSLDIR}/bin/film_gls --rn=${FEATDir}/StandardVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --thr=1000
