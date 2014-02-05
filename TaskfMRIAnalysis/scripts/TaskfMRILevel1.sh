@@ -137,16 +137,41 @@ for File in $FilesII ; do
   rm ${FEATDir}/GrayordinatesStats/${File}.nii.gz
 done
 
-###Standard Volume-based Processsing###
+###Standard Volume-based Processing###
 if [ $VolumeBasedProcessing = "YES" ] ; then
 
   #Add volume smoothing
   FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
   fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz -bin -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_weight -odt float
   fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz -kernel gauss ${FinalSmoothingSigma} -fmean -div ${FEATDir}/mask_weight -mas ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -odt float
-  
+
+  #Add volume dilation
+  #
+  # For some subjects, FreeSurfer-derived brain masks (applied to the time 
+  # series data in IntensityNormalization.sh as part of 
+  # GenericfMRIVolumeProcessingPipeline.sh) do not extend to the edge of brain
+  # in the MNI152 space template. This is due to the limitations of volume-based
+  # registration. So, to avoid a lack of coverage in a group analysis around the
+  # penumbra of cortex, here we add a single dilation step to the input prior to
+  # creating the Level1 maps.
+  #
+  # Ideally, we would condition this dilation on the resolution of the fMRI 
+  # data.  Empirically, a single round of dilation gives very good group 
+  # coverage of MNI brain for the 2 mm resolution of HCP fMRI data. So a single
+  # dilation is what we use here.
+  #
+  # Note that for many subjects, this dilation will result in signal extending
+  # BEYOND the limits of brain in the MNI152 template.  However, that is easily
+  # fixed by masking with the MNI space brain template mask if so desired.
+
+  # Dilate the smoothed BOLD time series image
+  DilationString="_dilM"
+  fslmaths \
+    ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz \
+    -dilM ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"${DilationString}.nii.gz
+
   #Add temporal filtering
-  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
+  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"${DilationString}.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
 
   #Run film_gls on subcortical volume data
   ${FSLDIR}/bin/film_gls --rn=${FEATDir}/StandardVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --thr=1000
@@ -154,6 +179,5 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   #Run contrast_mgr on subcortical volume data
   contrast_mgr -f ${DesignfContrasts} ${FEATDir}/StandardVolumeStats "$DesignContrasts"
 fi
-
 
 
