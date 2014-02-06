@@ -96,7 +96,7 @@ log_Msg "High Resolution pial surface"
 
 #Final Recon-all Steps
 log_Msg "Final Recon-all Steps"
-recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec 
+recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec 
 
 log_Msg "Completed"
 
