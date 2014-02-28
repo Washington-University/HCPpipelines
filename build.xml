@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<project name="Pipelines" basedir=".">
+  <property environment="env"/>
+  <target 
+     name="createHtmlReadMe"
+     description="Create the project's ReadMe.html file">
+    
+    <exec executable="markdown2" output="ReadMe.html" failonerror="true">
+      <arg line="ReadMe.md"/>
+    </exec>
+    
+  </target>
+</project>
