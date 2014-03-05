@@ -230,7 +230,7 @@ log_Msg "Running Topup"
 ${RUN} ${scriptsdir}/run_topup.sh ${outdir}/topup
 
 log_Msg "Running Eddy"
-${RUN} ${scriptsdir}/run_eddy.sh ${outdir}/eddy
+${RUN} ${scriptsdir}/run_eddy.sh -g -w ${outdir}/eddy
 
 GdFlag=0
 if [ ! ${GdCoeffs} = "NONE" ] ; then
