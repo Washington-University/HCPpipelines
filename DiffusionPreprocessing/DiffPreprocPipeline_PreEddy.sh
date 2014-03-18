@@ -2,12 +2,12 @@
 #~ND~FORMAT~MARKDOWN~
 #~ND~START~
 #
-# # DiffPreprocPipeline.sh
+# # DiffPreprocPipeline_PreEddy.sh
 #
 # ## Copyright Notice
 #
 # Copyright (C) 2012-2014 The Human Connectome Project
-#
+# 
 # * Washington University in St. Louis
 # * University of Minnesota
 # * Oxford University
@@ -18,7 +18,7 @@
 # * Saad Jbabdi, FMRIB Analysis Group, Oxford University
 # * Jesper Andersson, FMRIB Analysis Group, Oxford University
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
-# * Timothy B. Brown, Neuroinfomatics Research Group, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
 #
 # ## Product
 #
@@ -36,16 +36,20 @@
 # Find out what actual license terms are to be applied. Commercial use allowed? 
 # If so, this would likely violate FSL terms.
 #
-# ## Description 
-#   
-# This script, DiffPreprocPiepline.sh, implements the Diffusion MRI Preprocessing 
-# Pipeline described in [Glasser et al. 2013][GlasserEtAl]. It generates the 
-# "data" directory that can be used as input to the fibre orientation estimation 
-# scripts.
-# 
-# ## Prerequisite Installed Software
+# ## Description
 #
-# * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later
+# This script, DiffPreprocPipeline_PreEddy.sh, implements the first part of the 
+# Preprocessing Pipeline for diffusion MRI describe in [Glasser et al. 2013][GlasserEtAl].
+# The entire Preprocessing Pipeline for diffusion MRI is split into pre-eddy, eddy,
+# and post-eddy scripts so that the running of eddy processing can be submitted 
+# to a cluster scheduler to take advantage of running on a set of GPUs without forcing
+# the entire diffusion preprocessing to occur on a GPU enabled system.  This particular
+# script implements the pre-eddy part of the diffusion preprocessing.
+#
+# ## Prerequisite Installed Software for the Diffusion Preprocessing Pipeline
+#
+# * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later.
+#                FSL's environment setup script must also be sourced
 #
 # * [FreeSurfer][FreeSurfer] - Version 5.2 or greater
 #
@@ -56,38 +60,8 @@
 #
 # ## Prerequisite Environment Variables
 #
-# See output of usage function: e.g. $./DiffPreprocPipeline.sh --help
-
-
-
-
-########################################## OUTPUT DIRECTORIES ####################################################
-
-## NB: NO assumption is made about the input paths with respect to the output directories - they can be totally different.  All input are taken directly from the input variables without additions or modifications.
-
-# Output path specifiers:
-#
-# ${StudyFolder} is an input parameter
-# ${Subject} is an input parameter
-
-# Main output directories
-# DiffFolder=${StudyFolder}/${Subject}/Diffusion
-# T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion
-
-# All outputs are within the directory: ${StudyFolder}/${Subject}
-# The full list of output directories are the following
-#    $DiffFolder/rawdata
-#    $DiffFolder/topup    
-#    $DiffFolder/eddy
-#    $DiffFolder/data
-#    $DiffFolder/reg
-#    $T1wDiffFolder
-
-# Also assumes that T1 preprocessing has been carried out with results in ${StudyFolder}/${Subject}/T1w
-
-########################################## SUPPORT FUNCTIONS #####################################################
-
-#
+# See output of usage function: e.g. $ ./DiffPreprocPipeline_PreEddy.sh --help
+# 
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 # [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
@@ -105,14 +79,14 @@ set -e
 source ${HCPPIPEDIR}/global/scripts/log.shlib     # log_ functions
 source ${HCPPIPEDIR}/global/scripts/version.shlib # version_ functions
 
-#
-# Function Descripton
+# 
+# Function Description
 #  Show usage information for this script
 #
 usage() {
     local scriptName=$(basename ${0})
     echo ""
-    echo "  Perform the steps of the HCP Diffusion Preprocessing Pipeline"
+    echo "  Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
     echo ""
     echo "  Usage: ${scriptName} <options>"
     echo ""
@@ -141,10 +115,6 @@ usage() {
     echo ""
     echo "    --echospacing=<echo-spacing>"
     echo "    : Echo spacing in msecs"
-    echo ""
-    echo "    --gdcoeffs=<path-to-gradients-coefficients-file>"
-    echo "    : path to file containing coefficients that describe spatial variations"
-    echo "      of the scanner gradients. Use --gdcoeffs=NONE if not available"
     echo ""
     echo "    [--printcom=<print-command>]"
     echo "    : Use the specified <print-command> to echo or otherwise output the commands"
@@ -176,14 +146,6 @@ usage() {
     echo ""
     echo "      The home directory for FSL"
     echo ""
-    echo "    FREESURFER_HOME"
-    echo ""
-    echo "      Home directory for FreeSurfer"
-    echo ""
-    echo "    PATH"
-    echo ""
-    echo "      Must be set to find HCP Customized version of gradient_unwarp.py"
-    echo ""
 }
 
 #
@@ -197,15 +159,13 @@ usage() {
 #  ${PosInputImages} - @ symbol separated list of data with positive phase encoding direction
 #  ${NegInputImages} - @ symbol separated lsit of data with negative phase encoding direction 
 #  ${echospacing}    - echo spacing in msecs
-#  ${GdCoeffs}       - Path to file containing coefficients that describe spatial variations
-#                      of the scanner gradients. Use NONE if not available.
 #  ${runcmd}         - Set to a user specifed command to use if user has requested
 #                      that commands be echo'd (or printed) instead of actually executed.
 #                      Otherwise, set to empty string.
 #
 get_options() {
     local arguments=($@)
-    
+	
     # initialize global output variables
     unset StudyFolder
     unset Subject
@@ -213,7 +173,6 @@ get_options() {
     unset PosInputImages
     unset NegInputImages
     unset echospacing
-    unset GdCoeffs
     runcmd=""
 
     # parse arguments
@@ -255,10 +214,6 @@ get_options() {
                 ;;
             --echospacing=*)
                 echospacing=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --gdcoeffs=*)
-                GdCoeffs=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
             --printcom=*)
@@ -310,12 +265,6 @@ get_options() {
         exit 1
     fi
 
-    if [ -z ${GdCoeffs} ]; then
-        usage
-        echo "ERROR: <path-to-gradients-coefficients-file> not specified"
-        exit 1
-    fi
-
     # report options
     echo "-- Specified Command-Line Options - Start --"
     echo "StudyFolder: ${StudyFolder}"
@@ -324,62 +273,71 @@ get_options() {
     echo "PosInputImages: ${PosInputImages}"
     echo "NegInputImages: ${NegInputImages}"
     echo "echospacing: ${echospacing}"
-    echo "GdCoeffs: ${GdCoeffs}"
     echo "runcmd: ${runcmd}"
     echo "-- Specified Command-Line Options - End --"
 }
 
-# # 
-# # Function Description
-# #  Validate necessary environment variables
-# #
-# validate_environment_vars() {
-#     # validate
-#     if [ -z ${HCPPIPEDIR_dMRI} ]; then
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
-#         exit 1
-#     fi
+# 
+# Function Description
+#  Validate necessary environment variables
+#
+validate_environment_vars() {
+    # validate
+    if [ -z ${HCPPIPEDIR_dMRI} ]; then
+        usage
+        echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PreEddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_PreEddy.sh not found"
-#         exit 1
-#     fi
+    if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ]; then 
+        usage
+        echo "ERROR: HCPPIPEDIR_dMRI/basic_preproc.sh not found"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_Eddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_Eddy.sh not found"
-#         exit 1
-#     fi
+    if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ]; then 
+        usage
+        echo "ERROR: HCPPIPEDIR_dMRI/run_topup.sh not found"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PostEddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_PostEddy.sh not found"
-#         exit 1
-#     fi
+    if [ -z ${FSLDIR} ]; then
+        usage
+        echo "ERROR: FSLDIR environment variable not set"
+        exit 1
+    fi
 
-#     if [ -z ${FSLDIR} ]; then
-#         usage
-#         echo "ERROR: FSLDIR environment variable not set"
-#         exit 1
-#     fi
+    # report
+    echo "-- Environment Variables Used - Start --"
+    echo "HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
+    echo "FSLDIR: ${FSLDIR}"
+    echo "-- Environment Variables Used - End --"
+}
 
-#     # report
-#     echo "-- Environment Variables Used - Start --"
-#     echo "HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
-#     echo "FSLDIR: ${FSLDIR}"
-#     echo "-- Environment Variables Used - End --"
-# }
-
-
-
+#
+# Function Description
+#  find the min between two numbers
+#
+min() {
+    if [ $1 -le $2 ]; then
+        echo $1
+    else
+        echo $2
+    fi
+}
 
 #
 # Function Description
 #  Main processing of script
 #
+#  Gets user specified command line options, runs Pre-Eddy steps of Diffusion Preprocessing
+#
 main() {
+    # Hard-Coded variables for the pipeline
+    MissingFileFlag="EMPTY"  # String used in the input arguments to indicate that a complete series is missing
+    b0dist=45                # Minimum distance in volums between b0s considered for preprocessing
+    b0maxbval=50             # Volumes with a bvalue smaller than that will be considered as b0s
+
     # Get Command Line Options
     # 
     # Global Variables Set
@@ -389,8 +347,6 @@ main() {
     #  ${PosInputImages} - @ symbol separated list of data with positive phase encoding direction
     #  ${NegInputImages} - @ symbol separated lsit of data with negative phase encoding direction 
     #  ${echospacing}    - echo spacing in msecs
-    #  ${GdCoeffs}       - Path to file containing coefficients that describe spatial variations
-    #                      of the scanner gradients. Use NONE if not available.
     #  ${runcmd}         - Set to a user specifed command to use if user has requested
     #                      that commands be echo'd (or printed) instead of actually executed.
     #                      Otherwise, set to empty string.
@@ -400,30 +356,141 @@ main() {
     validate_environment_vars
 
     # Establish tool name for logging
-    log_SetToolName "DiffPreprocPipeline.sh"
+    log_SetToolName "DiffPreprocPipeline_PreEddy.sh"
 
-    log_Msg "Invoking Pre-Eddy Steps"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PreEddy.sh \
-        --path=${StudyFolder} \
-        --subject=${Subject} \
-        --PEdir=${PEdir} \
-        --posData=${PosInputImages} \
-        --negData=${NegInputImages} \
-        --echospacing=${echospacing} \
-        --printcom="${runcmd}"
+    # Establish output directory paths
+    outdir=${StudyFolder}/${Subject}/Diffusion
+    outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
+
+    # Delete any existing output sub-directories
+    if [ -d ${outdir} ]; then
+        ${runcmd} rm -rf ${outdir}/rawdata
+        ${runcmd} rm -rf ${outdir}/topup
+        ${runcmd} rm -rf ${outdir}/eddy
+        ${runcmd} rm -rf ${outdir}/data
+        ${runcmd} rm -rf ${outdir}/reg
+    fi
+
+    # Make sure output directories exist
+    ${runcmd} mkdir -p ${outdir}
+    ${runcmd} mkdir -p ${outdirT1w}
+
+    log_Msg "outdir: ${outdir}"
+    ${runcmd} mkdir ${outdir}/rawdata
+    ${runcmd} mkdir ${outdir}/topup
+    ${runcmd} mkdir ${outdir}/eddy
+    ${runcmd} mkdir ${outdir}/data
+    ${runcmd} mkdir ${outdir}/reg
+
+    if [ ${PEdir} -eq 1 ]; then     # RL/LR phase encoding
+        basePos="RL"
+        baseNeg="LR"
+    elif [ ${PEdir} -eq 2 ]; then   # AP/PA phase encoding
+        basePos="AP"
+        baseNeg="PA"
+    else
+        log_Msg "ERROR: Invalid Phase Encoding Directory (PEdir} specified: ${PEdir}"
+        exit 1
+    fi
+
+    log_Msg "basePos: ${basePos}"
+    log_Msg "baseNeg: ${baseNeg}"
+
+    # copy positive raw data
+    log_Msg "Copying positive raw data to working directory"
+    PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
+    log_Msg "PosInputImages: ${PosInputImages}"
+
+    Pos_count=1
+    for Image in ${PosInputImages}; do
+	if [[ ${Image} =~ ^.*EMPTY.*$  ]]; then
+	    Image=EMPTY
+	fi
+	
+        if [ ${Image} = ${MissingFileFlag} ]; then	
+            PosVols[${Pos_count}]=0
+        else
+	    PosVols[${Pos_count}]=`${FSLDIR}/bin/fslval ${Image} dim4`
+	    absname=`${FSLDIR}/bin/imglob ${Image}`
+	    ${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+	    ${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+	    ${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+        fi	
+        Pos_count=$((${Pos_count} + 1))
+    done
+
+    # copy negative raw data
+    log_Msg "Copying negative raw data  to working directory"
+    NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
+    log_Msg "NegInputImages: ${NegInputImages}"
+
+    Neg_count=1
+    for Image in ${NegInputImages} ; do
+	if [[ ${Image} =~ ^.*EMPTY.*$  ]]; then
+	    Image=EMPTY
+	fi
+	
+        if [ ${Image} = ${MissingFileFlag} ]; then
+	    NegVols[${Neg_count}]=0
+        else
+	    NegVols[${Neg_count}]=`${FSLDIR}/bin/fslval ${Image} dim4`
+	    absname=`${FSLDIR}/bin/imglob ${Image}`
+	    ${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+	    ${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+	    ${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+        fi	
+        Neg_count=$((${Neg_count} + 1))
+    done
+
+    # verify positive and negative datasets are provided in pairs
     
-    log_Msg "Invoking Eddy Step"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_Eddy.sh \
-        --path=${StudyFolder} \
-        --subject=${Subject} \
-        --printcom="${runcmd}"
+    if [ ${Pos_count} -ne ${Neg_count} ]; then
+        log_Msg "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
+        log_Msg "If the respective file does not exist, use EMPTY in the input arguments."
+        exit 1
+    fi
 
-    log_Msg "Invoking Post-Eddy Steps"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PostEddy.sh \
-        --path=${StudyFolder} \
-        --subject=${Subject} \
-        --gdcoeffs=${GdCoeffs} \
-        --printcom="${runcmd}"
+    # Create two files for each phase encoding direction, that for each series contain the number of 
+    # corresponding volumes and the number of actual volumes. The file e.g. RL_SeriesCorrespVolNum.txt
+    # will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M 
+    # from RLseries J has corresponding LR pairs. This file is used in basic_preproc to generate 
+    # topup/eddy indices and extract corresponding b0s for topup. The file e.g. Pos_SeriesVolNum.txt 
+    # will have as many rows as maximum series pairs (even unmatched pairs). The entry M N in row J 
+    # indicates that the RLSeries J has its 0-M volumes corresponding to LRSeries J and RLJ has N 
+    # volumes in total. This file is used in eddy_combine.
+    log_Msg "Create two files for each phase encoding direction"
+
+    Paired_flag=0
+    for (( j=1; j<${Pos_count}; j++ )); do
+        CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
+        ${runcmd} echo ${CorrVols} ${PosVols[${j}]} >> ${outdir}/eddy/Pos_SeriesVolNum.txt
+        if [ ${PosVols[${j}]} -ne 0 ]; then
+	    ${runcmd} echo ${CorrVols} >> ${outdir}/rawdata/${basePos}_SeriesCorrespVolNum.txt
+	    if [ ${CorrVols} -ne 0 ]; then
+	        Paired_flag=1
+	    fi
+        fi	
+    done
+
+    for (( j=1; j<${Neg_count}; j++ )) ; do
+        CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
+        ${runcmd} echo ${CorrVols} ${NegVols[${j}]} >> ${outdir}/eddy/Neg_SeriesVolNum.txt
+        if [ ${NegVols[${j}]} -ne 0 ]; then
+	    ${runcmd} echo ${CorrVols} >> ${outdir}/rawdata/${baseNeg}_SeriesCorrespVolNum.txt
+        fi	
+    done
+
+    if [ ${Paired_flag} -eq 0 ]; then
+        log_Msg "Wrong Input! No pairs of phase encoding directions have been found!"
+        log_Msg "At least one pair is needed!"
+        exit 1
+    fi
+
+    log_Msg "Running Basic Preprocessing"
+    ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
+
+    log_Msg "Running Topup"
+    ${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
 
     log_Msg "Completed"
     exit 0
@@ -433,4 +500,3 @@ main() {
 # Invoke the main function to get things started
 #
 main $@
-

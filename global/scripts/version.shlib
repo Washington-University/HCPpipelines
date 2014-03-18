@@ -1,0 +1,25 @@
+#
+# Function Description
+#  Show product version information
+#
+# Example Call
+#  version_show $@
+#
+version_show() {
+    local scriptName=$(basename ${0})
+    local tool
+    local version
+
+    if [ -f ${HCPPIPEDIR}/product.txt ]; then
+        tool=`cat ${HCPPIPEDIR}/product.txt`
+    else
+        tool="Tool Unknown"
+    fi
+
+    if [ -f ${HCPPIPEDIR}/version.txt ]; then
+        version=`cat ${HCPPIPEDIR}/version.txt`
+    else
+        version="Version unknown"
+    fi
+    echo "${scriptName} - ${tool} - ${version}"
+}

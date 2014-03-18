@@ -1,153 +1,156 @@
 #!/bin/bash 
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
 #
-# Copyright Notice:
+# # PreFreeSurferPipeline.sh
 #
-#   Copyright (C) 2013-2014 Washington University in St. Louis
-#   Author(s): Matthew F. Glasser, Mark Jenkinson, Timothy B. Brown
+# ## Copyright Notice
 #
-# Product:
+# Copyright (C) 2013-2014 The Human Connectome Project
 # 
-#   Human Connectome Project (HCP) Pipeline Tools
-#   http://www.humanconnectome.org
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
 #
-# License:
+# ## Author(s)
+# 
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Mark Jenkinson, FMRIB Centre, Oxford University
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
 #
-#   Human Connectome Project Pipeline Tools = the "Software"
-#   Washington University in St. Louis = WUSTL
+# ## Product
 #
-#   The Software remains the property of WUSTL.
+# [Human Connectome Project][HCP] (HCP) Pipeline Tools 
 #
-#   The Software is distributed "AS IS" without warranty of any kind, either 
-#   expressed or implied, including, but not limited to, the implied warranties
-#   of merchantability and fitness for a particular purpose.
+# ## License
 #
-#   TODO: Find out what actual license terms are to be applied. Commercial
-#         use allowed? If so, this would likely violate FSL terms.
+# * Human Connectome Project Pipeline Tools = the "Software"
+# * The Software is distributed "AS IS" without warranty of any kind, either 
+# * expressed or implied, including, but not limited to, the implied warranties
+# * of merchantability and fitness for a particular purpose.
 #
-# Description: 
+# ### TODO
+#
+# Find out what actual license terms are to be applied. Commercial use allowed? 
+# If so, this would likely violate FSL terms.
+#
+# ## Description 
 #   
-#   This script, PreFreeSurferPipeline.sh, is the first of 3 sub-parts of the 
-#   Structural Preprocessing phase of the Human Connectome Project (HCP) 
-#   Minimal Preprocessing Pipelines.
+# This script, PreFreeSurferPipeline.sh, is the first of 3 sub-parts of the 
+# Structural Preprocessing phase of the [HCP][HCP] Minimal Preprocessing Pipelines.
 #
-#   See: Glasser MF, Sotiropoulos SN, Wilson JA, Coalson TS, Fischl B, 
-#        Andersson JL, Xu J, Jbabdi S, Webster M. Polimeni JR, Van Essen DC, 
-#        Jenkinson M. "The minimal preprocessing pipelines for the Human 
-#        Connectome Project" _Neuroimage_ 80 (2013) 105-124.
+# See [Glasser et al. 2013][GlasserEtAl].
 #
-#   This script implements the PreFreeSurfer Pipeline referred to in that 
-#   publication.
+# This script implements the PreFreeSurfer Pipeline referred to in that publication.
 #
-#   The primary purposes of the PreFreeSurfer Pipeline are:
+# The primary purposes of the PreFreeSurfer Pipeline are:
 #
-#     1. To average any image repeats (i.e. multiple T1w or T2w images 
-#        available)
-#     2. To create a native, undistorted structural volume space for the 
-#        subject
-#        - Subject images in this native space will be distortion corrected
-#          for gradient and b0 distortions and rigidly aligned to the axes 
-#          of the MNI space. "Native, undistorted structural volume space" 
-#          is sometimes shortened to the "subject's native space" or simply
-#          "native space".
-#     3. To provide an initial robust brain extraction
-#     4. To align the T1w and T2w structural images (register them to the 
-#        native space)
-#     5. To perform bias field correction
-#     6. To register the subject's native space to the MNI space 
+# 1. To average any image repeats (i.e. multiple T1w or T2w images available)
+# 2. To create a native, undistorted structural volume space for the subject
+#    * Subject images in this native space will be distortion corrected
+#      for gradient and b0 distortions and rigidly aligned to the axes 
+#      of the MNI space. "Native, undistorted structural volume space" 
+#      is sometimes shortened to the "subject's native space" or simply
+#      "native space".
+# 3. To provide an initial robust brain extraction
+# 4. To align the T1w and T2w structural images (register them to the native space)
+# 5. To perform bias field correction
+# 6. To register the subject's native space to the MNI space 
 #
-# Prerequisites:
+# ## Prerequisites:
 # 
-#   Environment Variables:
+# ### Installed Software
 #
-#     HCPPIPEDIR 
-#       The "home" directory for the version of the HCP Pipeline Tools product 
-#       being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-V3.0GA
+# * [FSL][FSL] - FMRIB's Software Library Version 5.0.6 or later 
+#
+# ### Environment Variables
+#
+# * HCPPIPEDIR
+# 
+#   The "home" directory for the version of the HCP Pipeline Tools product 
+#   being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-V3.0
 #   
-#     HCPPIPEDIR_PreFS
-#       Location of PreFreeSurfer sub-scripts that are used to carry out some 
-#       of steps of the PreFreeSurfer pipeline
+# * HCPPIPEDIR_PreFS
+#   
+#   Location of PreFreeSurfer sub-scripts that are used to carry out some of 
+#   steps of the PreFreeSurfer pipeline
 #
-#     HCPPIPEDIR_Global
-#       Location of shared sub-scripts that are used to carry out some of the 
-#       steps of the PreFreeSurfer pipeline and are also used to carry out 
-#       some steps of other pipelines. 
+# * HCPPIPEDIR_Global
 #
-#     FSLDIR
-#       Home directory for FSL the FMRIB Software Library from Oxford 
-#       University (http://fsl.fmrib.ox.ac.uk)
+#   Location of shared sub-scripts that are used to carry out some of the
+#   steps of the PreFreeSurfer pipeline and are also used to carry out 
+#   some steps of other pipelines. 
 #
-#   Installed Software:
+# * FSLDIR
 #
-#     FSL - FMRIB's Software Library (http://www.fmrib.ox.ac.uk/fsl)
-#           Version 5.0.6 or greater 
+#   Home directory for [FSL][FSL] the FMRIB Software Library from Oxford 
+#   University
 #
-#   Image Files:
+# ### Image Files
 #
-#     At least one T1 weighted image and one T2 weighted image are required
-#     for this script to work.
+# At least one T1 weighted image and one T2 weighted image are required
+# for this script to work.
 #
-# Usage:
+# ### Output Directories
+#
+# Command line arguments are used to specify the StudyFolder (--path) and 
+# the Subject (--subject).  All outputs are generated within the tree rooted
+# at ${StudyFolder}/${Subject}.  The main output directories are:
+#
+# * The T1wFolder: ${StudyFolder}/${Subject}/T1w
+# * The T2wFolder: ${StudyFolder}/${Subject}/T2w
+# * The AtlasSpaceFolder: ${StudyFolder}/${Subject}/MNINonLinear
 # 
-#   See the usage function below.
+# All outputs are generated in directories at or below these three main 
+# output directories.  The full list of output directories is:
 #
-# Output Directories:
+# * ${T1wFolder}/T1w${i}_GradientDistortionUnwarp
+# * ${T1wFolder}/AverageT1wImages
+# * ${T1wFolder}/ACPCAlignment
+# * ${T1wFolder}/BrainExtraction_FNIRTbased
+# * ${T1wFolder}/xfms - transformation matrices and warp fields
 #
-#   Command line arguments are used to specify the StudyFolder (--path) and 
-#   the Subject (--subject).  All outputs are generated within the tree rooted
-#   at ${StudyFolder}/${Subject}.  The main output directories are:
+# * ${T2wFolder}/T2w${i}_GradientDistortionUnwarp
+# * ${T2wFolder}/AverageT1wImages
+# * ${T2wFolder}/ACPCAlignment
+# * ${T2wFolder}/BrainExtraction_FNIRTbased
+# * ${T2wFolder}/xfms - transformation matrices and warp fields
+#   
+# * ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+# * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+#   
+# * ${AtlasSpaceFolder}
+# * ${AtlasSpaceFolder}/xfms
 #
-#   * The T1wFolder: ${StudyFolder}/${Subject}/T1w
-#   * The T2wFolder: ${StudyFolder}/${Subject}/T2w
-#   * The AtlasSpaceFolder: ${StudyFolder}/${Subject}/MNINonLinear
-# 
-#   All outputs are generated in directories at or below these three main 
-#   output directories.  The full list of output directories is:
+# Note that no assumptions are made about the input paths with respect to the
+# output directories. All specification of input files is done via command
+# line arguments specified when this script is invoked.
 #
-#   * ${T1wFolder}/T1w${i}_GradientDistortionUnwarp
-#   * ${T1wFolder}/AverageT1wImages
-#   * ${T1wFolder}/ACPCAlignment
-#   * ${T1wFolder}/BrainExtraction_FNIRTbased
-#   * ${T1wFolder}/xfms - transformation matrices and warp fields
+# Also note that the following output directories are created:
+#
+# * T1wFolder, which is created by concatenating the following three option
+#   values: --path / --subject / --t1
+# * T2wFolder, which is created by concatenating the following three option
+#   values: --path / --subject / --t2
+#
+# These two output directories must be different. Otherwise, various output
+# files with standard names contained in such subdirectories, e.g. 
+# full2std.mat, would overwrite each other).  If this script is modified,
+# then those two output directories must be kept distinct.
+#
+# ### Output Files
+#
+# * T1wFolder Contents: TODO
+# * T2wFolder Contents: TODO
+# * AtlasSpaceFolder Contents: TODO
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+# [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
+# [FSL]: http://fsl.fmrib.ox.ac.uk
+#
+#~ND~END~
 
-#   * ${T2wFolder}/T2w${i}_GradientDistortionUnwarp
-#   * ${T2wFolder}/AverageT1wImages
-#   * ${T2wFolder}/ACPCAlignment
-#   * ${T2wFolder}/BrainExtraction_FNIRTbased
-#   * ${T2wFolder}/xfms - transformation matrices and warp fields
-#   
-#   * ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-#   * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
-#   
-#   * ${AtlasSpaceFolder}
-#   * ${AtlasSpaceFolder}/xfms
-#
-#   Note that no assumptions are made about the input paths with respect to the
-#   output directories. All specification of input files is done via command
-#   line arguments specified when this script is invoked.
-#
-#   Also note that the following output directories are created:
-#
-#   * T1wFolder, which is created by concatenating the following three option
-#     values: --path / --subject / --t1
-#   * T2wFolder, which is created by concatenating the following three option
-#     values: --path / --subject / --t2
-#
-#   These two output directories must be different. Otherwise, various output
-#   files with standard names contained in such subdirectories, e.g. 
-#   full2std.mat, would overwrite each other).  If this script is modified,
-#   then those two output directories must be kept distinct.
-#
-# Output Files:
-#
-#   * T1wFolder Contents:
-#       TODO
-#
-#   * T2wFolder Contents:
-#       TODO
-#
-#   * AtlasSpaceFolder Contents:
-#       TODO
-#
 # ------------------------------------------------------------------------------
 #  Code Start
 # ------------------------------------------------------------------------------
