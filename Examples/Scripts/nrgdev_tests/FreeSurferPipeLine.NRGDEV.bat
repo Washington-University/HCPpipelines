@@ -82,7 +82,7 @@ Subjlist="792564"
 #EnvironmentScript=\
 #"/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 EnvironmentScript=\
-"/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.NRGDEV.sh"
+"/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/nrgdev_tests/SetUpHCPPipeline.NRGDEV.sh"
 
 # Source the environment script to setup pipeline environment variables and 
 # software
