@@ -142,6 +142,7 @@ usage() {
 #                   Otherwise, set to empty string.
 #  
 get_options() {
+    local scriptName=$(basename ${0})
     local arguments=($@)
 
     # initialize global output variables
@@ -200,11 +201,11 @@ get_options() {
     fi
 
     # report options
-    echo "-- Specified Command-Line Options - Start --"
-    echo "StudyFolder: ${StudyFolder}"
-    echo "Subject: ${Subject}"
-    echo "runcmd: ${runcmd}"
-    echo "-- Specified Command-Line Options - End --"
+    echo "-- ${scriptName}: Specified Command-Line Options - Start --"
+    echo "   StudyFolder: ${StudyFolder}"
+    echo "   Subject: ${Subject}"
+    echo "   runcmd: ${runcmd}"
+    echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
 #
@@ -212,6 +213,7 @@ get_options() {
 #  Validate necessary environment variables
 #
 validate_environment_vars() {
+    local scriptName=$(basename ${0})
     # validate
     if [ -z ${HCPPIPEDIR_dMRI} ]; then
         usage
@@ -226,9 +228,9 @@ validate_environment_vars() {
     fi
 
     # report
-    echo "-- Environment Variables Used - Start --"
-    echo "HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
-    echo "-- Environment Variables Used - End --"
+    echo "-- ${scriptName}: Environment Variables Used - Start --"
+    echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
+    echo "-- ${scriptName}: Environment Variables Used - End --"
 }
 
 #
@@ -249,7 +251,7 @@ main() {
     get_options $@
 
     # Validate environment variables
-    validate_environment_vars
+    validate_environment_vars $@
 
     # Establish tool name for logging 
     log_SetToolName "DiffPreprocPipeline_Eddy.sh"

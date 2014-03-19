@@ -17,7 +17,7 @@ Subjlist="792564" #Space delimited list of subject IDs
 StudyFolder="/home/NRG/tbrown01/projects/Pipelines/Examples"
 
 #EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-EnvironmentScript="/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.NRGDEV.sh"
+EnvironmentScript="/home/NRG/tbrown01/projects/Pipelines/Examples/Scripts/nrgdev_tests/SetUpHCPPipeline.NRGDEV.sh"
 
 # Requirements for this script
 #  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)

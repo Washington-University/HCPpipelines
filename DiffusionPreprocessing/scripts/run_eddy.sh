@@ -88,6 +88,7 @@ usage() {
 #  ${workingdir}    - User specified working directory
 #
 get_options() {
+    local scriptName=$(basename ${0})
     local arguments=($@)
 
     # global output variables
@@ -135,10 +136,10 @@ get_options() {
     fi
 
     # report options
-    echo "-- Specified Command-Line Options - Start --"
-    echo "workingdir: ${workingdir}"
-    echo "useGpuVersion: ${useGpuVersion}"
-    echo "-- Specified Command-Line Options - End --"
+    echo "-- ${scriptName}: Specified Command-Line Options - Start --"
+    echo "   workingdir: ${workingdir}"
+    echo "   useGpuVersion: ${useGpuVersion}"
+    echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
 #
@@ -146,6 +147,7 @@ get_options() {
 #  Validate necessary environment variables
 #
 validate_environment_vars() {
+    local scriptName=$(basename ${0})
     # validate
     if [ -z ${FSLDIR} ]; then
         usage
@@ -154,9 +156,9 @@ validate_environment_vars() {
     fi
 
     # report
-    echo "-- Environment Variables Used - Start --"
-    echo "FSLDIR: ${FSLDIR}"
-    echo "-- Environment Variables Used - End --"
+    echo "-- ${scriptName}: Environment Variables Used - Start --"
+    echo "   FSLDIR: ${FSLDIR}"
+    echo "-- ${scriptName}: Environment Variables Used - End --"
 }
 
 # 
@@ -175,7 +177,7 @@ main() {
     get_options $@
 
     # Validate environment variables
-    validate_environment_vars
+    validate_environment_vars $@
 
     # Establish tool name for logging
     log_SetToolName "run_eddy.sh"
