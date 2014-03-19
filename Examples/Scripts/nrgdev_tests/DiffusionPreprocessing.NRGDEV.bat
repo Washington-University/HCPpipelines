@@ -42,10 +42,12 @@ for Subject in $Subjlist ; do
  echo "Subject: ${Subject}"
   #Input Variables
   SubjectID="$Subject" #Subject ID Name
-  RawDataDir="$StudyFolder/$SubjectID/$Diffusion" #Folder where unprocessed diffusion data are
-  PosData="${RawDataDir}/RL_data1@${RawDataDir}/RL_data2@${RawDataDir}/RL_data3" #Data with positive Phase encoding direction. Up to N>=1 series (here N=3), separated by @
-  NegData="${RawDataDir}/LR_data1@${RawDataDir}/LR_data2@${RawDataDir}/LR_data3" #Data with negative Phase encoding direction. Up to N>=1 series (here N=3), separated by @
-                                                                                 #If corresponding series is missing (e.g. 2 RL series and 1 LR) use EMPTY.
+  RawDataDir="$StudyFolder/$SubjectID/Diffusion" #Folder where unprocessed diffusion data are
+  # Data with positive Phase encoding direction. Up to N>=1 series (here N=3), separated by @
+  PosData="${RawDataDir}/${Subject}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${Subject}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${Subject}_3T_DWI_dir97_RL.nii.gz"
+  # Data with negative Phase encoding direction. Up to N>=1 series (here N=3), separated by @
+  # If corresponding series is missing (e.g. 2 RL series and 1 LR) use EMPTY.
+  NegData="${RawDataDir}/${Subject}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${Subject}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${Subject}_3T_DWI_dir97_LR.nii.gz"
   
   ${FSLDIR}/bin/fsl_sub ${QUEUE} \
      ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \

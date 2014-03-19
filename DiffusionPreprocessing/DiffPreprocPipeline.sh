@@ -204,6 +204,7 @@ usage() {
 #                      Otherwise, set to empty string.
 #
 get_options() {
+    local scriptName=$(basename ${0})
     local arguments=($@)
     
     # initialize global output variables
@@ -317,63 +318,61 @@ get_options() {
     fi
 
     # report options
-    echo "-- Specified Command-Line Options - Start --"
-    echo "StudyFolder: ${StudyFolder}"
-    echo "Subject: ${Subject}"
-    echo "PEdir: ${PEdir}"
-    echo "PosInputImages: ${PosInputImages}"
-    echo "NegInputImages: ${NegInputImages}"
-    echo "echospacing: ${echospacing}"
-    echo "GdCoeffs: ${GdCoeffs}"
-    echo "runcmd: ${runcmd}"
-    echo "-- Specified Command-Line Options - End --"
+    echo "-- ${scriptName}: Specified Command-Line Options - Start --"
+    echo "   StudyFolder: ${StudyFolder}"
+    echo "   Subject: ${Subject}"
+    echo "   PEdir: ${PEdir}"
+    echo "   PosInputImages: ${PosInputImages}"
+    echo "   NegInputImages: ${NegInputImages}"
+    echo "   echospacing: ${echospacing}"
+    echo "   GdCoeffs: ${GdCoeffs}"
+    echo "   runcmd: ${runcmd}"
+    echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
-# # 
-# # Function Description
-# #  Validate necessary environment variables
-# #
-# validate_environment_vars() {
-#     # validate
-#     if [ -z ${HCPPIPEDIR_dMRI} ]; then
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
-#         exit 1
-#     fi
+# 
+# Function Description
+#  Validate necessary environment variables
+#
+validate_environment_vars() {
+    local scriptName=$(basename ${0})
+    # validate
+    if [ -z ${HCPPIPEDIR_dMRI} ]; then
+        usage
+        echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PreEddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_PreEddy.sh not found"
-#         exit 1
-#     fi
+    if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]; then 
+        usage
+        echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_Eddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_Eddy.sh not found"
-#         exit 1
-#     fi
+    if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]; then 
+        usage
+        echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
+        exit 1
+    fi
 
-#     if [ ! -e ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PostEddy.sh ]; then 
-#         usage
-#         echo "ERROR: HCPPIPEDIR_dMRI/DiffPreprocPipeline_PostEddy.sh not found"
-#         exit 1
-#     fi
+    if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]; then 
+        usage
+        echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
+        exit 1
+    fi
 
-#     if [ -z ${FSLDIR} ]; then
-#         usage
-#         echo "ERROR: FSLDIR environment variable not set"
-#         exit 1
-#     fi
+    if [ -z ${FSLDIR} ]; then
+        usage
+        echo "ERROR: FSLDIR environment variable not set"
+        exit 1
+    fi
 
-#     # report
-#     echo "-- Environment Variables Used - Start --"
-#     echo "HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
-#     echo "FSLDIR: ${FSLDIR}"
-#     echo "-- Environment Variables Used - End --"
-# }
-
-
-
+    # report
+    echo "-- ${scriptName}: Environment Variables Used - Start --"
+    echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
+    echo "   FSLDIR: ${FSLDIR}"
+    echo "-- ${scriptName}: Environment Variables Used - End --"
+}
 
 #
 # Function Description
@@ -397,13 +396,13 @@ main() {
     get_options $@
 
     # Validate environment variables
-    validate_environment_vars
+    validate_environment_vars $@
 
     # Establish tool name for logging
     log_SetToolName "DiffPreprocPipeline.sh"
 
     log_Msg "Invoking Pre-Eddy Steps"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PreEddy.sh \
+    ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh \
         --path=${StudyFolder} \
         --subject=${Subject} \
         --PEdir=${PEdir} \
@@ -413,13 +412,13 @@ main() {
         --printcom="${runcmd}"
     
     log_Msg "Invoking Eddy Step"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_Eddy.sh \
+    ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh \
         --path=${StudyFolder} \
         --subject=${Subject} \
         --printcom="${runcmd}"
 
     log_Msg "Invoking Post-Eddy Steps"
-    ${HCPPIPEDIR_dMRI}/DiffPreprocPipeline_PostEddy.sh \
+    ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh \
         --path=${StudyFolder} \
         --subject=${Subject} \
         --gdcoeffs=${GdCoeffs} \
