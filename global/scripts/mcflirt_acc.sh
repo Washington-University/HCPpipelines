@@ -61,7 +61,9 @@ for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
     degy=`echo "$rady * (180 / $pi)" | bc -l`
     radz=`echo $radians | cut -d " " -f 3`
     degz=`echo "$radz * (180 / $pi)" | bc -l`
-    echo `printf "%10.6f" $mmx``printf "%10.6f" $mmy``printf "%10.6f" $mmz``printf "%10.6f" $degx``printf "%10.6f" $degy``printf "%10.6f" $degz` >> ${output}/mc.par
+    # The "%.6f" formatting specifier allows the numeric value to be as wide as it needs to be to accomodate the number
+    # Then we mandate (include) a single space as a delimiter between values.
+    echo `printf "%.6f" $mmx` `printf "%.6f" $mmy` `printf "%.6f" $mmz` `printf "%.6f" $degx` `printf "%.6f" $degy` `printf "%.6f" $degz` >> ${output}/mc.par
 done
 
 ${FSLDIR}/bin/fslmerge -tr $output `${FSLDIR}/bin/imglob ${output}_tmp????.*` $TR
