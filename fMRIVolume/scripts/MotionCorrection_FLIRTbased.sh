@@ -49,19 +49,34 @@ function DeriveBackwards {
   i="$1"
   in="$2"
   out="$3"
+  # Var becomes a string of values from column $i in $in. Single space separated
   Var=`cat "$in" | sed s/"  "/" "/g | cut -d " " -f $i`
   Length=`echo $Var | wc -w`
+  # TCS becomes an array of the values from column $i in $in (derived from Var)
   TCS=($Var)
+  # random is a random file name for temporary output
   random=$RANDOM
+
+  # Cycle through our array of values from column $i
   j=0
   while [ $j -lt $Length ] ; do
     if [ $j -eq 0 ] ; then
+      # Backward derivative of first volume is set to 0
       Answer=`echo "0"`
     else
+      # Compute the backward derivative of non-first volumes
+
+      # Format numeric value (convert scientific notation to decimal) jth row of ith column
+      # in $in (mcpar)
       Forward=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+    
+      # Similarly format numeric value for previous row (j-1)
       Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+
+      # Compute backward derivative as current minus previous
       Answer=`echo "scale=10; $Forward - $Back" | bc -l`
     fi
+    # 0 prefix the resulting number
     Answer=`echo $Answer | sed s/"^\."/"0."/g | sed s/"^-\."/"-0."/g`
     echo `printf "%10.6f" $Answer` >> $random
     j=$(($j + 1))
@@ -104,15 +119,15 @@ function DeriveUnBiased {
   random=$RANDOM
   j=0
   while [ $j -le $length1 ] ; do
-    if [ $j -eq 0 ] ; then
+    if [ $j -eq 0 ] ; then # This is the forward derivative for the first row
       Forward=`echo ${TCS[$(($j+1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Back=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "$Forward - $Back" | bc -l`
-    elif [ $j -eq $length1 ] ; then
+    elif [ $j -eq $length1 ] ; then # This is the backward derivative for the last row
       Forward=`echo ${TCS[$j]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "$Forward - $Back" | bc -l`
-    else
+    else # This is the center derivative for all other rows.
       Forward=`echo ${TCS[$(($j+1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Back=`echo ${TCS[$(($j-1))]} | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
       Answer=`echo "scale=10; ( $Forward - $Back ) / 2" | bc -l`
