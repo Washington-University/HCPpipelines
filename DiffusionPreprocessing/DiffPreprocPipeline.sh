@@ -335,7 +335,7 @@ get_options() {
 #  Validate necessary environment variables
 #
 validate_environment_vars() {
-    local scriptName=$(basename ${0})
+    local scriptName=$(basename ${0}) 
     # validate
     if [ -z ${HCPPIPEDIR_dMRI} ]; then
         usage
