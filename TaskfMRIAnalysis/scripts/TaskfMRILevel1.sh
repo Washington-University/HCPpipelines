@@ -16,7 +16,8 @@ TemporalFilter="${12}"
 VolumeBasedProcessing="${13}"
 
 
-TR_vol=`${CARET7DIR}/wb_command -nifti-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -print-xml | grep TimeStep= | tr " " "\n" | grep TimeStep= | cut -d '"' -f 2`
+TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval`
+
 
 #Only do the additional smoothing required to hit the target final smoothing for CIFTI
 AdditionalSmoothingFWHM=`echo "sqrt(( $FinalSmoothingFWHM ^ 2 ) - ( $OriginalSmoothingFWHM ^ 2 ))" | bc -l`
