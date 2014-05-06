@@ -11,7 +11,5 @@ else
 export LD_LIBRARY_PATH="$directory/../libs_rh_linux64:$LD_LIBRARY_PATH"
 fi
 
-echo "$LD_LIBRARY_PATH"
-
 "$directory"/../exe_rh_linux64/wb_command "$@"
 
