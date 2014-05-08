@@ -16,7 +16,7 @@ TemporalFilter="${12}"
 VolumeBasedProcessing="${13}"
 
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts.log.shlib  # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 
 # Establish tool name for logging
 log_SetToolName "TaskfMRILevel1.sh"
