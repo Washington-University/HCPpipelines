@@ -77,6 +77,7 @@ DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 log_Msg "Run Level One Analysis for Both Phase Encoding Directions"
 i=1
 for LevelOnefMRIName in $LevelOnefMRINames ; do
+  log_Msg "LevelOnefMRIName: ${LevelONefMRIName}"
   LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $i`
   ${PipelineScripts}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing 
   echo "set -- $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing"

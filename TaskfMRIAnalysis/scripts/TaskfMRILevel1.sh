@@ -20,9 +20,11 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 
 # Establish tool name for logging
 log_SetToolName "TaskfMRILevel1.sh"
+log_Msg "Use wb_command to calculate TR_vol"
+log_Msg "Command: ${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval"
 
 TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval`
-
+log_Msg "TR_vol: ${TR_vol}"
 
 #Only do the additional smoothing required to hit the target final smoothing for CIFTI
 log_Msg "Only do the additional smoothing required to hit the target final smoothing for CIFTI"
