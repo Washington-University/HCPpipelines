@@ -15,11 +15,17 @@ FinalSmoothingFWHM="${11}"
 TemporalFilter="${12}"
 VolumeBasedProcessing="${13}"
 
+# Load Function Libraries
+source ${HCPPIPEDIR}/global/scripts.log.shlib  # Logging related functions
+
+# Establish tool name for logging
+log_SetToolName "TaskfMRILevel1.sh"
 
 TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval`
 
 
 #Only do the additional smoothing required to hit the target final smoothing for CIFTI
+log_Msg "Only do the additional smoothing required to hit the target final smoothing for CIFTI"
 AdditionalSmoothingFWHM=`echo "sqrt(( $FinalSmoothingFWHM ^ 2 ) - ( $OriginalSmoothingFWHM ^ 2 ))" | bc -l`
 
 AdditionalSigma=`echo "$AdditionalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
@@ -44,12 +50,17 @@ else
 fi
 
 #Change smoothing to be equal to additional smoothing in FSF file and change output directory to match total smoothing and highpass
+log_Msg "Change smoothing to be equal to additional smoothing in FSF file and change output directory to match total smoothing and highpass"
 cat ${FEATDir}/temp.fsf | sed s/"set fmri(smooth) \"4\""/"set fmri(smooth) \"${AdditionalSmoothingFWHM}\""/g | sed s/_hp200_s4/${TemporalFilterString}${SmoothingString}/g > ${FEATDir}/design.fsf
 rm ${FEATDir}/temp.fsf
 
 #Change number of timepoints to match timeseries so that template fsf files can be used
+log_Msg "Change number of timepoints to match timeseries so that template fsf files can be used"
 fsfnpts=`cat ${FEATDir}/design.fsf | grep "set fmri(npts)" | cut -d " " -f 3 | sed 's/"//g'`
+
+log_Msg "CARET7DIR: ${CARET7DIR}"
 CIFTInpts=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
+log_Msg "CIFTInpts: ${CIFTInpts}"
 if [ $fsfnpts -ne $CIFTInpts ] ; then
   cat ${FEATDir}/design.fsf | sed s/"set fmri(npts) \"\?${fsfnpts}\"\?"/"set fmri(npts) ${CIFTInpts}"/g > ${FEATDir}/temp.fsf
   mv ${FEATDir}/temp.fsf ${FEATDir}/design.fsf
@@ -57,6 +68,7 @@ if [ $fsfnpts -ne $CIFTInpts ] ; then
 fi
 
 #Create design files, model confounds if desired
+log_Msg "Create design files, model confounds if desired"
 DIR=`pwd`
 cd ${FEATDir}
 if [ $Confound = "NONE" ] ; then
@@ -73,6 +85,7 @@ DesignfContrasts=${FEATDir}/design.fts
 
 ###Grayordinates Processing###
 #Add any additional smoothing
+log_Msg "Grayordinates Processing - Add any additional smoothing"
 if [ ! $FinalSmoothingFWHM -eq $OriginalSmoothingFWHM ] ; then
   ${CARET7DIR}/wb_command -cifti-smoothing ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii ${AdditionalSigma} ${AdditionalSigma} COLUMN ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii -left-surface "$DownSampleFolder"/"$Subject".L.midthickness."$LowResMesh"k_fs_LR.surf.gii -right-surface "$DownSampleFolder"/"$Subject".R.midthickness."$LowResMesh"k_fs_LR.surf.gii
 else
@@ -80,20 +93,24 @@ else
 fi
 
 #Add temporal filtering
+log_Msg "Add temporal filtering"
 ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
 fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
 ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii 
 rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
 
 #Split into surface and volume
+log_Msg "Split into surface and volume"
 ${CARET7DIR}/wb_command -cifti-separate-all ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii -volume ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz -left ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.L."$LowResMesh"k_fs_LR.func.gii -right ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.R."$LowResMesh"k_fs_LR.func.gii
 
-###Subcortical Volume Processsing###
+###Subcortical Volume Processing###
 #Run film_gls on subcortical volume data
+log_Msg "Subcortical Volume Processing - run film_gls on subcortical volume data"
 ${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --thr=1 --mode=volumetric
 rm ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
 
 ###Cortical Surface Processing###
+log_Msg "Cortical Surface Processing"
 for Hemisphere in L R ; do
   #Prepare for film_gls  
   ${CARET7DIR}/wb_command -metric-dilate ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii "$DownSampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii 50 ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi_dil."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii -nearest
@@ -106,6 +123,7 @@ done
 
 ###Grayordinates Processing###
 #Merge Surface and Subcortical Gray into Grayordinates
+log_Msg "Grayordinates Processing - Merge Surface and Subcortical Gray into Grayordinates"
 mkdir ${FEATDir}/GrayordinatesStats
 cat ${FEATDir}/SubcorticalVolumeStats/dof > ${FEATDir}/GrayordinatesStats/dof
 cat ${FEATDir}/SubcorticalVolumeStats/logfile > ${FEATDir}/GrayordinatesStats/logfile
@@ -120,11 +138,14 @@ done
 rm -r ${FEATDir}/SubcorticalVolumeStats ${FEATDir}/L_SurfaceStats ${FEATDir}/R_SurfaceStats
 
 #Run contrast_mgr on grayordinates data
+log_Msg "run contrast_mgr on grayordinates data"
 cd ${FEATDir}/GrayordinatesStats
 Files=`ls | grep .dtseries.nii | cut -d "." -f 1`
 cd $DIR
 for File in $Files ; do
+  log_Msg "File: ${File} from Files"
   ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${FEATDir}/GrayordinatesStats/${File}.dtseries.nii ${FEATDir}/GrayordinatesStats/${File}.nii.gz
+  log_Msg "wb_command -cifti-convert -to-nifti: return status: $?"
 done
 contrast_mgr -f ${DesignfContrasts} ${FEATDir}/GrayordinatesStats "$DesignContrasts"
 cd ${FEATDir}/GrayordinatesStats
@@ -132,16 +153,22 @@ FilesII=`ls | grep .nii.gz | cut -d "." -f 1`
 cd $DIR
 for File in $FilesII ; do
   echo $File
+  log_Msg "File: ${File} from FilesII"
   if [ -z "$(echo $Files | grep $File)" ] ; then 
+    log_Msg "About to wb_command -cifti-convert -from-nifti"
+    log_Msg "Command: ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${FEATDir}/GrayordinatesStats/${File}.nii.gz ${FEATDir}/GrayordinatesStats/pe1.dtseries.nii ${FEATDir}/GrayordinatesStats/${File}.dtseries.nii"
     ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${FEATDir}/GrayordinatesStats/${File}.nii.gz ${FEATDir}/GrayordinatesStats/pe1.dtseries.nii ${FEATDir}/GrayordinatesStats/${File}.dtseries.nii
+    log_Msg "wb_command -cifti-convert -from-nifti: return status: $?"
   fi
   rm ${FEATDir}/GrayordinatesStats/${File}.nii.gz
 done
 
 ###Standard Volume-based Processing###
+log_Msg "Standard Volume-based Processing"
 if [ $VolumeBasedProcessing = "YES" ] ; then
 
   #Add edge-constrained volume smoothing
+  log_Msg "Add edge-constrained volume smoothing"
   FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
   InputfMRI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}
   InputSBRef=${InputfMRI}_SBRef
@@ -186,6 +213,7 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   #    an unnatural pattern of dark/light/dark intensities at the edge of brain,
   #    whereas the combination of steps (b) and (c) yields a more natural looking 
   #    transition of intensities in the added voxels.
+  log_Msg "Add volume dilation"
 
   DilationString="_dilM"
 
@@ -220,4 +248,4 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   contrast_mgr -f ${DesignfContrasts} ${FEATDir}/StandardVolumeStats "$DesignContrasts"
 fi
 
-
+log_Msg "Complete"
