@@ -124,11 +124,38 @@ for Analysis in ${Analyses} ; do
     done
     fslmerge -t ${LevelTwoFEATDir}/${Analysis}/cope${i}.nii.gz $COPEMERGE
     fslmerge -t ${LevelTwoFEATDir}/${Analysis}/varcope${i}.nii.gz $VARCOPEMERGE
+
     log_Msg "About to use flameo"
     which flameo
-    log_Msg "Command: flameo --verbose --cope=${LevelTwoFEATDir}/${Analysis}/cope${i}.nii.gz --vc=${LevelTwoFEATDir}/${Analysis}/varcope${i}.nii.gz --dvc=${LevelTwoFEATDir}/${Analysis}/dof.nii.gz --mask=${LevelTwoFEATDir}/${Analysis}/mask.nii.gz --ld=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat --dm=${LevelTwoFEATDir}/design.mat --cs=${LevelTwoFEATDir}/design.grp --tc=${LevelTwoFEATDir}/design.con --runmode=fe"
-    flameo --verbose --cope=${LevelTwoFEATDir}/${Analysis}/cope${i}.nii.gz --vc=${LevelTwoFEATDir}/${Analysis}/varcope${i}.nii.gz --dvc=${LevelTwoFEATDir}/${Analysis}/dof.nii.gz --mask=${LevelTwoFEATDir}/${Analysis}/mask.nii.gz --ld=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat --dm=${LevelTwoFEATDir}/design.mat --cs=${LevelTwoFEATDir}/design.grp --tc=${LevelTwoFEATDir}/design.con --runmode=fe
+    curdir=`pwd`
+    cd ${LevelTwoFEATDir}
+
+    log_Msg "Command: flameo --verbose \\"
+    log_Msg "  --cope=${Analysis}/cope${i}.nii.gz \\"
+    log_Msg "  --vc=${Analysis}/varcope${i}.nii.gz \\"
+    log_Msg "  --dvc=${Analysis}/dof.nii.gz \\"
+    log_Msg "  --mask=${Analysis}/mask.nii.gz \\"
+    log_Msg "  --ld=${Analysis}/cope${i}.feat \\"
+    log_Msg "  --dm=design.mat \\"
+    log_Msg "  --cs=design.grp \\"
+    log_Msg "  --tc=design.con \\"
+    log_Msg "  --runmode=fe"
+
+    flameo --verbose \
+      --cope=${Analysis}/cope${i}.nii.gz \
+      --vc=${Analysis}/varcope${i}.nii.gz \
+      --dvc=${Analysis}/dof.nii.gz \
+      --mask=${Analysis}/mask.nii.gz \
+      --ld=${Analysis}/cope${i}.feat \
+      --dm=design.mat \
+      --cs=design.grp \
+      --tc=design.con \
+      --runmode=fe
+
     log_Msg "Successfully completed flameo"
+
+    cd ${curdir}
+
     i=$(($i+1))
   done
 
