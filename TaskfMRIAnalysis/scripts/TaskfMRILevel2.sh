@@ -63,7 +63,10 @@ if [ ${VolumeBasedProcessing} = "YES" ] ; then
 else
   Analyses="GrayordinatesStats"
 fi
+
+log_Msg "Analyses: ${Analyses}"
 for Analysis in ${Analyses} ; do
+  log_Msg "Analysis: ${Analysis}}"
   log_Msg "About to mkdir -p ${LevelTwoFEATDir}/${Analysis}"
   mkdir -p ${LevelTwoFEATDir}/${Analysis}
   
@@ -156,6 +159,7 @@ for Analysis in ${Analyses} ; do
 
     cd ${curdir}
 
+    log_Msg "Incrementing contrast number"
     i=$(($i+1))
   done
 
