@@ -54,7 +54,23 @@ LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`  # "$6"
 FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  # "${14}"
 SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`  # "${14}"
 GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`  # "${14}"
+RegName=`opts_GetOpt1 "--regname" $@`
+
+if [ "${RegName}" = "" ]; then
+    RegName="FS"
+fi
+
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+
+log_Msg "Path: ${Path}"
+log_Msg "Subject: ${Subject}"
+log_Msg "NameOffMRI: ${NameOffMRI}"
+log_Msg "LowResMesh: ${LowResMesh}"
+log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
+log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
+log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
+log_Msg "RegName: ${RegName}"
+log_Msg "RUN: ${RUN}"
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
@@ -80,7 +96,7 @@ ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
 log_Msg "Make fMRI Ribbon"
 log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
 mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-"$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "$T1wFolder"/"$NativeFolder"
+"$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
 
 #Surface Smoothing
 log_Msg "Surface Smoothing"
