@@ -1,5 +1,18 @@
 # HCP Pipeline Tools Version History
 
+## v3.3.1
+
+* v3.3 included version of wb_command with bugs in the following sub-commands
+  * -volume-warpfiled-resample
+  * -volume-affine-resample
+  * -cifti-resample
+  * -surface-apply-affine
+  * -surface-apply-warpfield
+  * -convert-affine
+  * -convert-warpfield
+* This version replaces that wb_command with a build 
+  (commit date: 2014-05-15 19:41:22 -0500) for which that bug is fixed
+
 ## v3.1RC5
 
 * Changes to handle change in CIFTI file field name from "TimeStep" to "SeriesStep"  
