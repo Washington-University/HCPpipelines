@@ -46,7 +46,8 @@ for Subject in $Subjlist ; do
       --lowresmesh=$LowResMesh \
       --fmrires=$FinalfMRIResolution \
       --smoothingFWHM=$SmoothingFWHM \
-      --grayordinatesres=$GrayordinatesResolution 
+      --grayordinatesres=$GrayordinatesResolution \
+      --regname="MSMSulc"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -56,7 +57,8 @@ for Subject in $Subjlist ; do
       --lowresmesh=$LowResMesh \
       --fmrires=$FinalfMRIResolution \
       --smoothingFWHM=$SmoothingFWHM \
-      --grayordinatesres=$GrayordinatesResolution"
+      --grayordinatesres=$GrayordinatesResolution \
+      --regname=\"MSMSulc\""
 
       echo ". ${EnvironmentScript}"
             
