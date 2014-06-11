@@ -178,6 +178,9 @@ def get_siemens_grad(gfile):
     # allegra is slightly different
     if gfile.startswith('coef_AC44'):
         coef_array_sz = 15
+    # 7TAS with SC72CD gradients has many higher order terms, assuming the grad file name as SC72CD_coeff.grad
+    if gfile.startswith('SC72CD'):
+        coef_array_sz = 27
     ax = np.zeros((coef_array_sz, coef_array_sz))
     ay = np.zeros((coef_array_sz, coef_array_sz))
     az = np.zeros((coef_array_sz, coef_array_sz))
