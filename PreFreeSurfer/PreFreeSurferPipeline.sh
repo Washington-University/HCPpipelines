@@ -289,9 +289,39 @@ BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 # running the commands (the default is to actually run the commands)
 RUN=`opts_GetOpt1 "--printcom" $@`
 
+# ------------------------------------------------------------------------------
+#  Show Command Line Options
+# ------------------------------------------------------------------------------
+
 log_Msg "Finished Parsing Command Line Options"
-log_Msg "StudyFolder: $StudyFolder"
-log_Msg "Subject: $Subject"
+log_Msg "StudyFolder: ${StudyFolder}"
+log_Msg "Subject: ${Subject}"
+log_Msg "T1wInputImages: ${T1wInputImages}"
+log_Msg "T2wInputImages: ${T2wInputImages}"
+log_Msg "T1wTemplate: ${T1wTemplate}"
+log_Msg "T1wTemplateBrain: ${T1wTemplateBrain}"
+log_Msg "T1wTemplate2mm: ${T1wTemplate2mm}"
+log_Msg "T2wTemplate: ${T2wTemplate}"
+log_Msg "T2wTemplateBrain: ${T2wTemplateBrain}"
+log_Msg "T2wTemplate2mm: ${T2wTemplate2mm}"
+log_Msg "TemplateMask: ${TemplateMask}"
+log_Msg "Template2mmMask: ${Template2mmMask}"
+log_Msg "BrainSize: ${BrainSize}"
+log_Msg "FNIRTConfig: ${FNIRTConfig}"
+log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
+log_Msg "PhaseInputName: ${PhaseInputName}"
+log_Msg "TE: ${TE}"
+log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
+log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
+log_Msg "DwellTime: ${DwellTime}"
+log_Msg "SEUnwarpDir: ${SEUnwarpDir}"
+log_Msg "T1wSampleSpacing: ${T1wSampleSpacing}"
+log_Msg "T2wSampleSpacing: ${T2wSampleSpacing}"
+log_Msg "UnwarpDir: ${UnwarpDir}"
+log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
+log_Msg "AvgrdcSTRING: ${AvgrdcSTRING}"
+log_Msg "TopupConfig: ${TopupConfig}"
+log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
 
 # Naming Conventions
 T1wImage="T1w"
