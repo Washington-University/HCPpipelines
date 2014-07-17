@@ -2,7 +2,6 @@
 set -e
 echo -e "\n START: MakeWorkbenchUODFs"
 
-
 ########################################## SUPPORT FUNCTIONS #####################################################
 # function for parsing options
 getopt1() {
@@ -28,7 +27,7 @@ Subject=`getopt1 "--subject" $@`                 # "$2" #SubjectID
 LowResMesh=`getopt1 "--lowresmesh" $@`  # "$3" #DownSampled number of CIFTI vertices
 DiffusionResolution=`getopt1 "--diffresol" $@`   # "$4" #Diffusion Resolution in mm
 
-Caret7_Command=${CARET7DIR}/wb_command
+Caret7_Command="${CARET7DIR}/wb_command"
 
 #NamingConventions and Paths
 trajectory="Whole_Brain_Trajectory"
