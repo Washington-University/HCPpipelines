@@ -2,7 +2,6 @@
 set -e
 echo -e "\n START: MakeTrajectorySpace"
 
-
 ########################################## SUPPORT FUNCTIONS #####################################################
 # function for parsing options
 getopt1() {
@@ -30,7 +29,7 @@ LeftCerebralTrajectoryLabels=`getopt1 "--leftcerebrallabels" $@`
 RightCerebralTrajectoryLabels=`getopt1 "--rightcerebrallabels" $@`
 FreeSurferLabels=`getopt1 "--freesurferlabels" $@`
 
-Caret7_Command=${CARET7DIR}/wb_command
+Caret7_Command="${CARET7DIR}/wb_command"
 
 #NamingConventions
 T1wFolder="T1w"
@@ -66,7 +65,7 @@ fi
 #Inputs: Ribbon Volume at DiffusionResolution
 
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i "$T1wFolder"/wmparc.nii.gz -r "$T1wFolder"/"$T1wImage"_"$DiffusionResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$wmparc"_"$DiffusionResolution"
-${Caret7_Command} -volume-label-import "$T1wFolder"/"$wmparc"_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$T1wFolder"/"$wmparc"_"$DiffusionResolution".nii.gz -drop-unused-labels
+${Caret7_Command} -volume-label-import "$T1wFolder"/"$wmparc"_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$T1wFolder"/"$wmparc"_"$DiffusionResolution".nii.gz 
 
 LeftGreyRibbonValue="3"
 LeftWhiteMaskValue="2"
@@ -98,7 +97,7 @@ done
 
 ${FSLDIR}/bin/fslmaths "$T1wFolder"/"$NativeFolder"/"$Subject".L.ribbon.nii.gz -add "$T1wFolder"/"$NativeFolder"/"$Subject".R.ribbon.nii.gz "$T1wFolder"/ribbon_"$DiffusionResolution".nii.gz
 rm "$T1wFolder"/"$NativeFolder"/"$Subject".L.ribbon.nii.gz "$T1wFolder"/"$NativeFolder"/"$Subject".R.ribbon.nii.gz
-${Caret7_Command} -volume-label-import "$T1wFolder"/ribbon_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$T1wFolder"/ribbon_"$DiffusionResolution".nii.gz -drop-unused-labels
+${Caret7_Command} -volume-label-import "$T1wFolder"/ribbon_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$T1wFolder"/ribbon_"$DiffusionResolution".nii.gz 
 
 ${FSLDIR}/bin/fslmaths "$T1wFolder"/"$ribbon"_"$DiffusionResolution" -sub "$T1wFolder"/"$ribbon"_"$DiffusionResolution" "$ROIsFolder"/temp/trajectory
 ${FSLDIR}/bin/fslmaths "$ROIsFolder"/temp/trajectory -mul 1 "$ROIsFolder"/temp/delete_mask.nii.gz
