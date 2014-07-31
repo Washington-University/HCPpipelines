@@ -1,6 +1,6 @@
-# HCP Pipeline Tools 
+# HCP Pipelines 
 
-The HCP Pipeline Tools product is a set tools (primarily, but not exclusively,
+The HCP Pipelines product is a set tools (primarily, but not exclusively,
 shell scripts) for processing MRI images for the [Human Connectome Project][HCP]. 
 Among other things, these tools implement the Minimal Preprocessing Pipeline 
 (MPP) described in [Glasser et al. 2013][GlasserEtAl]
@@ -63,7 +63,7 @@ The HCP Pipelines Tools have the following software requirements:
    * `EnvironmentScript` needs to be changed to the location of your 
      setup script (your modified version of `SetUpHCPPipeline.sh`
 
-<!--- References -->
+<!-- References -->
 
 [HCP]: http://www.humanconnectome.org
 [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
