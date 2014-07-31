@@ -1,41 +1,57 @@
 #!/bin/bash
 #~ND~FORMAT~MARKDOWN~
 #~ND~START~
-#
+# 
 # # run_eddy.sh
+# 
+# ## Copyright Notice
 #
+# Copyright (C) 2012-2014 The Human Connectome Project
+# 
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+# 
 # ## Author(s)
-#
-#  Stamatios Sotiropoulos - Analysis Group, FMRIB Centre
-#  Saad Jbabdi - Analysis Group, FMRIB Center
-#  Jesper Andersson - Analysis Group, FMRIB Center
-#  Matthew F. Glasser - Anatomy and Neurobiology, Washington University in St. Louis
-#  Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+# 
+# * Stamatios Sotiropoulos - Analysis Group, FMRIB Centre
+# * Saad Jbabdi - Analysis Group, FMRIB Center
+# * Jesper Andersson - Analysis Group, FMRIB Center
+# * Matthew F. Glasser - Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
 #
 # ## Product
 #
-# [Human Connectome Project][HCP] (HCP) Pipeline Tools
+# [Human Connectome Project][HCP] (HCP) Pipelines
 #
+# ## License
+# 
+# HCP Pipelines = "The Software"
+#  
+# The Software is distributed *AS IS* without warranty of any kind, either 
+# expressed or implied, including, but not limited to, the implied warranties
+# of merchantability and fitness for a particular purpose.
+# 
 # ## Description
-#
+# 
 # This script runs FSL's eddy command as part of the Human Connectome Project's
 # Diffusion Preprocessing 
 # 
 # ## Prerequisite Installed Software
-#
+# 
 # * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later.
-#
+# 
+#   FSL's environment setup script must also be sourced
+# 
 # ## Prerequisite Environment Variables
-#
-# See output of usage function: e.g. $ ./run_eddy.sh --help
-#
+# 
+# See output of usage function: e.g. <code>$ ./run_eddy.sh --help</code>
+# 
 # <!-- References -->
+# 
 # [HCP]: http://www.humanconnectome.org
-# [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
 # [FSL]: http://fsl.fmrib.ox.ac.uk
-# [FreeSurfer]: http://freesurfer.net
-# [gradunwarp]: https://github.com/ksubramz/gradunwarp.git
-#
+# 
 #~ND~END~
 
 # Load Function Libraries

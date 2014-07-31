@@ -3,98 +3,97 @@
 #~ND~START~
 #
 # # DiffPreprocPipeline.sh
-#
+# 
 # ## Copyright Notice
 #
 # Copyright (C) 2012-2014 The Human Connectome Project
-#
+# 
 # * Washington University in St. Louis
 # * University of Minnesota
 # * Oxford University
-#
+# 
 # ## Author(s)
-#
+# 
 # * Stamatios Sotiropoulos, FMRIB Analysis Group, Oxford University
 # * Saad Jbabdi, FMRIB Analysis Group, Oxford University
 # * Jesper Andersson, FMRIB Analysis Group, Oxford University
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
 # * Timothy B. Brown, Neuroinfomatics Research Group, Washington University in St. Louis
-#
-# ## Product
-#
-# [Human Connectome Project][HCP] (HCP) Pipeline Tools
-#
-# ## License
-#
-# * Human Connectome Project Pipeline Tools = the "Software"
-# * This Software is distributed "AS IS" without warranty of any kind, either 
-# * expressed or implied, including, but not limited to, the implied warranties
-# * of merchantability and fitness for a particular purpose.
-#
-# ### TODO
-#
-# Find out what actual license terms are to be applied. Commercial use allowed? 
-# If so, this would likely violate FSL terms.
-#
-# ## Description 
-#   
-# This script, DiffPreprocPiepline.sh, implements the Diffusion MRI Preprocessing 
-# Pipeline described in [Glasser et al. 2013][GlasserEtAl]. It generates the 
-# "data" directory that can be used as input to the fibre orientation estimation 
-# scripts.
 # 
+# ## Product
+# 
+# [Human Connectome Project][HCP] (HCP) Pipelines
+# 
+# ## License
+# 
+# HCP Pipelines = "The Software"
+#  
+# The Software is distributed *AS IS* without warranty of any kind, either 
+# expressed or implied, including, but not limited to, the implied warranties
+# of merchantability and fitness for a particular purpose.
+# 
+# ## Description 
+#    
+# This script, <code>DiffPreprocPipeline.sh</code>, implements the Diffusion 
+# MRI Preprocessing Pipeline described in [Glasser et al. 2013][GlasserEtAl]. 
+# It generates the "data" directory that can be used as input to the fibre 
+# orientation estimation scripts.
+#  
 # ## Prerequisite Installed Software
-#
+# 
 # * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later
 #
+#   FSL's environment setup script must also be sourced
+#
 # * [FreeSurfer][FreeSurfer] - Version 5.2 or greater
-#
-# * gradunwarp - HCP customized version of [gradunwarp][gradunwarp]. The HCP customized 
-#   version of gradunwarp is in the src/gradient_unwarping directory in this 
-#   distribution.  _It must be installed separately with its prerequisites and the 
-#   PATH environment variable must be setup so that gradient_unwarp.py is found_. 
-#
+# 
+# * [HCP-gradunwarp][HCP-gradunwarp] - Version 1.0.0 
+# 
+#   HCP-gradunwarp is a Python/Numpy package used to unwarp volumes distorted 
+#   due to gradient field inhomogeneities. It is a customized version of
+#   [gradunwarp][gradunwarp].
+# 
 # ## Prerequisite Environment Variables
-#
-# See output of usage function: e.g. $./DiffPreprocPipeline.sh --help
-
-
-
-
-########################################## OUTPUT DIRECTORIES ####################################################
-
-## NB: NO assumption is made about the input paths with respect to the output directories - they can be totally different.  All input are taken directly from the input variables without additions or modifications.
-
-# Output path specifiers:
-#
-# ${StudyFolder} is an input parameter
-# ${Subject} is an input parameter
-
+# 
+# See output of usage function: e.g. <code>$ ./DiffPreprocPipeline.sh --help</code>
+# 
+# ## Output Directories
+# 
+# *NB: NO assumption is made about the input paths with respect to the output directories - they can be totally different.
+# All inputs are taken directly from the input variables without additions or modifications.*
+# 
+# Output path specifiers
+# 
+# * <code>${StudyFolder}</code> is an input parameter
+# * <code>${Subject}</code> is an input parameter
+# 
 # Main output directories
-# DiffFolder=${StudyFolder}/${Subject}/Diffusion
-# T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion
-
-# All outputs are within the directory: ${StudyFolder}/${Subject}
+# 
+# * <code>DiffFolder=${StudyFolder}/${Subject}/Diffusion</code>
+# * <code>T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion</code>
+# 
+# All outputs are within the directory: <code>${StudyFolder}/${Subject}</code>
+# 
 # The full list of output directories are the following
-#    $DiffFolder/rawdata
-#    $DiffFolder/topup    
-#    $DiffFolder/eddy
-#    $DiffFolder/data
-#    $DiffFolder/reg
-#    $T1wDiffFolder
-
-# Also assumes that T1 preprocessing has been carried out with results in ${StudyFolder}/${Subject}/T1w
-
-########################################## SUPPORT FUNCTIONS #####################################################
-
-#
+# 
+# * <code>$DiffFolder/rawdata</code>
+# * <code>$DiffFolder/topup</code>
+# * <code>$DiffFolder/eddy</code>
+# * <code>$DiffFolder/data</code>
+# * <code>$DiffFolder/reg</code>
+# * <code>$T1wDiffFolder</code>
+# 
+# Also assumes that T1 preprocessing has been carried out with results in <code>${StudyFolder}/${Subject}/T1w</code>
+# 
 # <!-- References -->
+# 
 # [HCP]: http://www.humanconnectome.org
 # [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
 # [FSL]: http://fsl.fmrib.ox.ac.uk
 # [FreeSurfer]: http://freesurfer.net
-# [gradunwarp]: https://github.com/ksubramz/gradunwarp.git
-#
+# [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
+# [gradunwarp]: https://github.com/ksubramz/gradunwarp
+# 
 #~ND~END~
 
 # Setup this script such that if any command exits with a non-zero value, the 

@@ -1,74 +1,75 @@
 #!/bin/bash
 #~ND~FORMAT~MARKDOWN~
 #~ND~START~
-#
+# 
 # # DiffPreprocPipeline_Eddy.sh
-#
+# 
 # ## Copyright Notice
-#
+# 
 # Copyright (C) 2012-2014 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
 # * Oxford University
-#
+# 
 # ## Author(s)
-#
+# 
 # * Stamatios Sotiropoulos, FMRIB Analysis Group, Oxford University
 # * Saad Jbabdi, FMRIB Analysis Group, Oxford University
 # * Jesper Andersson, FMRIB Analysis Group, Oxford University
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
 # * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
-#
+# 
 # ## Product
-#
-# [Human Connectome Project][HCP] (HCP) Pipeline Tools
-#
+# 
+# [Human Connectome Project][HCP] (HCP) Pipelines
+# 
 # ## License
-#
-# * Human Connectome Project Pipeline Tools = the "Software"
-# * This Software is distributed "AS IS" without warranty of any kind, either 
-# * expressed or implied, including, but not limited to, the implied warranties
-# * of merchantability and fitness for a particular purpose.
-#
-# ### TODO
-#
-# Find out what actual license terms are to be applied. Commercial use allowed? 
-# If so, this would likely violate FSL terms.
-#
+# 
+# HCP Pipelines = "The "Software"
+# 
+# This Software is distributed *AS IS* without warranty of any kind, either 
+# expressed or implied, including, but not limited to, the implied warranties
+# of merchantability and fitness for a particular purpose.
+# 
 # ## Description
+# 
+# This script, <code>DiffPreprocPipeline_Eddy.sh</code>, implements the second 
+# part of the Preprocessing Pipeline for diffusion MRI describe in 
+# [Glasser et al. 2013][GlasserEtAl]. The entire Preprocessing Pipeline for 
+# diffusion MRI is split into pre-eddy, eddy, and post-eddy scripts so that 
+# the running of eddy processing can be submitted to a cluster scheduler to 
+# take advantage of running on a set of GPUs without forcing the entire diffusion
+# preprocessing to occur on a GPU enabled system.  This particular script 
+# implements the eddy part of the diffusion preprocessing.
+# 
+# ## Prerequisite Installed Software (for the entire Diffusion Preprocessing Pipeline)
+# 
+# * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later
 #
-# This script, DiffPreprocPipeline_Eddy.sh, implements the second part of the 
-# Preprocessing Pipeline for diffusion MRI describe in [Glasser et al. 2013][GlasserEtAl].
-# The entire Preprocessing Pipeline for diffusion MRI is split into pre-eddy, eddy,
-# and post-eddy scripts so that the running of eddy processing can be submitted 
-# to a cluster scheduler to take advantage of running on a set of GPUs without forcing
-# the entire diffusion preprocessing to occur on a GPU enabled system.  This particular
-# script implements the eddy part of the diffusion preprocessing.
-#
-# ## Prerequisite Installed Software for the Diffusion Preprocessing Pipeline
-#
-# * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later.
-#                FSL's environment setup script must also be sourced
+#   FSL's environment setup script must also be sourced
 #
 # * [FreeSurfer][FreeSurfer] - Version 5.2 or greater
-#
-# * gradunwarp - HCP customized version of [gradunwarp][gradunwarp]. The HCP customized 
-#   version of gradunwarp is in the src/gradient_unwarping directory in this 
-#   distribution.  _It must be installed separately with its prerequisites and the 
-#   PATH environment variable must be setup so that gradient_unwarp.py is found_. 
-#
+# 
+# * [HCP-gradunwarp][HCP-gradunwarp] - Version 1.0.0 
+# 
+#   HCP-gradunwarp is a Python/Numpy package used to unwarp volumes distorted 
+#   due to gradient field inhomogeneities. It is a customized version of
+#   [gradunwarp][gradunwarp].
+# 
 # ## Prerequisite Environment Variables
-#
-# See output of usage function: e.g. $ ./DiffPreprocPipeline_Eddy.sh --help
+# 
+# See output of usage function: e.g. <code>$ ./DiffPreprocPipeline_Eddy.sh --help</code>
 # 
 # <!-- References -->
+# 
 # [HCP]: http://www.humanconnectome.org
 # [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
 # [FSL]: http://fsl.fmrib.ox.ac.uk
 # [FreeSurfer]: http://freesurfer.net
-# [gradunwarp]: https://github.com/ksubramz/gradunwarp.git
-#
+# [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
+# [gradunwarp]: https://github.com/ksubramz/gradunwarp
+# 
 #~ND~END~
 
 # Setup this script such that if any command exits with a non-zero value, the 
