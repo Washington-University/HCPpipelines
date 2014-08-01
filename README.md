@@ -63,6 +63,14 @@ The HCP Pipelines Tools have the following software requirements:
    * `EnvironmentScript` needs to be changed to the location of your 
      setup script (your modified version of `SetUpHCPPipeline.sh`
 
+
+## Still have questions?
+
+Please start out by reviewing the [FAQ][FAQ]
+
+
+
+
 <!-- References -->
 
 [HCP]: http://www.humanconnectome.org
@@ -70,3 +78,4 @@ The HCP Pipelines Tools have the following software requirements:
 [FSL]: http://fsl.fmrib.ox.ac.uk
 [FreeSurfer]: http://freesurfer.net
 [5.3.0-HCP]: ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
+[FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
