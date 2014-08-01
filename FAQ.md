@@ -147,7 +147,7 @@ FreeSurfer-based alignment in that there is substantially less surface distortio
 and slightly better alignment of cortical areas across subjects (Robinson et al., Neuroimage, 2014).
 We hope the MSM algorithm will be released soon.
 
-## <a id="Q13">13. What is next for the HCP Pipelines?</a>
+## 13. What is next for the HCP Pipelines?
 
 The HCP Pipelines provide a framework for substantially improved spatial localization
 of MRI data, particularly across subjects and studies. That said, further substantial 
