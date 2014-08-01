@@ -1,22 +1,22 @@
 # HCP Pipelines Frequently Asked Questions
 
-1. [Why were the HCP Pipelines generated?](#Q1)
-2. [What are CIFTI files and the Grayordinates standard space?](#Q2)
-3. [What MRI data do I need to use the HCP Pipelines?](#Q3)
-4. [Why are field maps required?](#Q4)
-5. [What if I dont have a field map in my previously acquired data?](#Q5)
-6. [Why is a 3D T2w or 3D FLAIR required?](#Q6)
-7. [Can I use the HCP Pipelines to reprocess the HCP data?](#Q7)
-8. [What is gradient nonlinearity correction?](#Q8)
-9. [What if I want to process non-human primate (NHP) data with the HCP Pipelines?](#Q9)
-10. [What if I want to process pediatric data using HCP Pipelines?](#Q10)
-11. [What if I want to process 7T data with the HCP Pipelines?](#Q11)
-12. [What is the status of MultiModal Surface Matching (MSM)?](#Q12)
+1. [Why were the HCP Pipelines generated?](#1-why-were-the-hcp-pipelines-generated)
+2. [What are CIFTI files and the Grayordinates standard space?](#2-what-are-cifti-files-and-the-grayordinates-standard-space)
+3. [What MRI data do I need to use the HCP Pipelines?](#3-what-mri-data-do-i-need-to-use-the-hcp-pipelines)
+4. [Why are field maps required?](#4-why-are-field-maps-required)
+5. [What if I dont have a field map in my previously acquired data?](#5-what-if-i-dont-have-a-field-map-in-my-previously-acquired-data)
+6. [Why is a 3D T2w or 3D FLAIR required?](#6-why-is-a-3d-t2w-or-3d-flair-required)
+7. [Can I use the HCP Pipelines to reprocess the HCP data?](#7-can-i-use-the-hcp-pipelines-to-reprocess-the-hcp-data)
+8. [What is gradient nonlinearity correction?](#8-what-is-gradient-nonlinearity-correction)
+9. [What if I want to process non-human primate (NHP) data with the HCP Pipelines?](#9-what-if-i-want-to-process-non-human-primate-nhp-data-with-the-hcp-pipelines)
+10. [What if I want to process pediatric data using HCP Pipelines?](#10-what-if-i-want-to-process-pediatric-data-using-hcp-pipelines)
+11. [What if I want to process 7T data with the HCP Pipelines?](#11-what-if-i-want-to-process-7t-data-with-the-hcp-pipelines)
+12. [What is the status of MultiModal Surface Matching (MSM)?](#12-what-is-the-status-of-multimodal-surface-matching-msm)
 13. [What is next for the HCP Pipelines?](#13-what-is-next-for-the-hcp-pipelines)
-14. [How do I learn more about the HCP Pipelines and cite them?](#Q14)
-15. [I have a question not listed here about the HCP Pipelines, where do I ask it?](#Q15)
+14. [How do I learn more about the HCP Pipelines and cite them?](#14-how-do-i-learn-more-about-the-hcp-pipelines-and-cite-them)
+15. [I have a question not listed here about the HCP Pipelines, where do I ask it?](#15-i-have-a-question-not-listed-here-about-the-hcp-pipelines-where-do-i-ask-it)
 
-## <a id="Q1">1. Why were the HCP Pipelines generated?</a>
+## 1. Why were the HCP Pipelines generated?
 
 The HCP Pipelines reflect a concerted effort to improve the spatial accuracy of MRI 
 data preprocessing so that the HCP Consortium and HCP Users can take full advantage
@@ -27,7 +27,7 @@ This resulted in the development of the CIFTI Grayordinates standard space, whic
 brings the advantages of surface-based cortical analyses into a whole-brain analysis 
 framework.  
 
-## <a id="Q2">2. What are CIFTI files and the Grayordinates standard space?</a>
+## 2. What are CIFTI files and the Grayordinates standard space?
 
 An overarching purpose of CIFTI files is to allow spatial models of MRI data to 
 better match the anatomical structures of the brain. The sheet-like cerebral cortex
@@ -42,7 +42,7 @@ more precise analyses of brain MRI data, the grayordinates space markedly reduce
 the data storage, computational, and memory requirements for high spatial and 
 temporal resolution data, by only storing the minimum data of interest.  
 
-## <a id="Q3">3. What MRI data do I need to use the HCP Pipelines?</a>
+## 3. What MRI data do I need to use the HCP Pipelines?
 
 * For structural analysis, one needs a high-resolution 3D (<=1mm) T1w image 
   and either a high-resolution 3D (<=1mm) T2w image or a high-resolution 3D 
@@ -69,20 +69,20 @@ temporal resolution data, by only storing the minimum data of interest.
 * For the Siemens HCP 3T Connectome scanner, we found the 32-channel head coil 
   and higher maximum gradient strength to be very helpful.
 
-## <a id="Q4">4. Why are field maps required?</a>
+## 4. Why are field maps required?
 
 Because the HCP pipelines aim to improve spatial accuracy and localization,
 any distortions present in the images need to be corrected. Accurate 
 registration of EPI fMRI or diffusion data to the structural scans requires
 correction for geometric distortion in the EPI scans.
 
-## <a id="Q5">5. What if I don't have a field map in my previously acquired data?</a>
+## 5. What if I don't have a field map in my previously acquired data?
 
 It may be possible to attain much of the distortion correction using a group
 average field map (e.g., from a different set of subjects), and this capability 
 may become available in a future pipelines release.
 
-## <a id="Q6">6. Why is a 3D T2w or 3D FLAIR required?</a>
+## 6. Why is a 3D T2w or 3D FLAIR required?
 
 These images are used for bias field correction, improvements in 
 FreeSurfer-generated pial surfaces, and generation of cortical myelin maps.
@@ -92,7 +92,7 @@ maps are quite helpful for localizing some cortical areas, even on an
 individual subject basis.  (Glasser & Van Essen, J Neuroscience, 2011; 
 Van Essen & Glasser, Neuroimage, 2013).
 
-## <a id="Q7">7. Can I use the HCP Pipelines to reprocess the HCP data?</a>
+## 7. Can I use the HCP Pipelines to reprocess the HCP data?
 
 Yes, if you get the gradient nonlinearity correction coefficients from Siemens.
 The gradient unwarping code is available at 
@@ -105,7 +105,7 @@ The gradient field nonlinearity coefficients for the Connectome Skyra are consid
 by Siemens to be proprietary information. To request access to these coefficients, 
 please contact your Siemens collaboration manager or email [Dingxin Wang][dingxin-email].
 
-## <a id="Q8">8. What is gradient nonlinearity correction?</a>
+## 8. What is gradient nonlinearity correction?
 
 MRI scanners use gradients in the magnetic field to define the space of the image.
 These gradients are intended to be linear (i.e. have a constant slope). In practice
@@ -117,13 +117,13 @@ regular commercial scanners, the gradient nonlinearity correction can be ignored
 it is probably better to do the correction. For Siemens scanners, the gradient 
 coefficents are available on the scanner (<code>C:\MedCom\MriSiteData\GradientCoil\coeff.grad</code>).
 
-## <a id="Q9">9. What if I want to process non-human primate (NHP) data with the HCP Pipelines?</a>
+## 9. What if I want to process non-human primate (NHP) data with the HCP Pipelines?
 
 We hope to release the FreeSurferNHP pipeline, along with monkey and chimpanzee 
 anatomical templates, in the future.  The image acquisition requirements are the 
 same as for humans, except that spatial resolution should be higher, if possible.
 
-## <a id="Q10">10. What if I want to process pediatric data using HCP Pipelines?</a>
+## 10. What if I want to process pediatric data using HCP Pipelines?
 
 At younger ages, children's heads are different enough from adults' heads to make
 the initial alignment stages of the HCP Pipelines less robust when using adult volume 
@@ -131,7 +131,7 @@ templates. It may be necessary to make age-specific templates for children under
 certain age. Once the initial alignments are robustly achieved, the HCP Pipelines 
 will perform similarly to adults (assuming typical T1w contrast is present).
 
-## <a id="Q11">11. What if I want to process 7T data with the HCP Pipelines?</a>
+## 11. What if I want to process 7T data with the HCP Pipelines?
 
 Currently it is necessary to acquire the structural data on a 3T scanner (mainly because
 of SAR limitations on 7T scanners, making the T2w or FLAIR scans hard to acquire).
@@ -139,7 +139,7 @@ Then fMRI or diffusion data can be acquired on the 7T scanner. Gradient distorti
 is required if combining 3T and 7T data. Additionally, there may be further pipeline 
 modifications directed at combining 3T and 7T data in the same subjects.  
 
-## <a id="Q12">12. What is the status of MultiModal Surface Matching (MSM)?</a>
+## 12. What is the status of MultiModal Surface Matching (MSM)?
 
 The current release of the HCP data uses MSMSulc for surface alignment, but MSM 
 has not yet been publicly released. MSMSulc offers improvements over standard 
@@ -157,14 +157,14 @@ to release another MSM-based pipeline for areal-feature-based registration (usin
 maps and resting state networks) together with HCP data aligned with this pipeline in 
 the future.  
  
-## <a id="Q14">14. How do I learn more about the HCP Pipelines and cite them?</a>
+## 14. How do I learn more about the HCP Pipelines and cite them?
 
 Glasser MF, Sotiropoulos SN, Wilson JA, Coalson TS, Fischl B, Andersson JL, Xu J, Jbabdi S,
 Webster M, Polimeni JR, Van Essen DC, Jenkinson M, WU-Minn HCP Consortium. The minimal
 preprocessing pipelines for the Human Connectome Project. <i>Neuroimage</i>. 2013 Oct 15;80:105-24. 
 PubMed PMID: [23668970][GlasserEtAl]; PubMed Central PMCID: PMC3720813.
 
-## <a id="Q15">15. I have a question not listed here about the HCP Pipelines, where do I ask it?</a>
+## 15. I have a question not listed here about the HCP Pipelines, where do I ask it?
 
 Subscribe to the HCP-Users email list at 
 [http://humanconnectome.org/contact/#subscribe](http://humanconnectome.org/contact/#subscribe), 
