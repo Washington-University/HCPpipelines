@@ -12,7 +12,7 @@
 10. [What if I want to process pediatric data using HCP Pipelines?](#Q10)
 11. [What if I want to process 7T data with the HCP Pipelines?](#Q11)
 12. [What is the status of MultiModal Surface Matching (MSM)?](#Q12)
-13. [What is next for the HCP Pipelines?](#Q13)
+13. [What is next for the HCP Pipelines?](#13-what-is-next-for-the-hcp-pipelines)
 14. [How do I learn more about the HCP Pipelines and cite them?](#Q14)
 15. [I have a question not listed here about the HCP Pipelines, where do I ask it?](#Q15)
 
@@ -107,7 +107,7 @@ please contact your Siemens collaboration manager or email [Dingxin Wang][dingxi
 
 ## <a id="Q8">8. What is gradient nonlinearity correction?</a>
 
-MRI scanners use gradients in the magnetic field to define the space of the image.  
+MRI scanners use gradients in the magnetic field to define the space of the image.
 These gradients are intended to be linear (i.e. have a constant slope). In practice
 this is not attainable, resulting in spatial distortions. The HCP 3T Connectome 
 scanner has greater distortions than do more standard scanners because of design 
