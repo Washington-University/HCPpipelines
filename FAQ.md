@@ -16,7 +16,9 @@
 14. [How do I learn more about the HCP Pipelines and cite them?](#14-how-do-i-learn-more-about-the-hcp-pipelines-and-cite-them)
 15. [I have a question not listed here about the HCP Pipelines, where do I ask it?](#15-i-have-a-question-not-listed-here-about-the-hcp-pipelines-where-do-i-ask-it)
 
+<a id="1-why-were-the-hcp-pipelines-generated">
 ## 1. Why were the HCP Pipelines generated?
+</a>
 
 The HCP Pipelines reflect a concerted effort to improve the spatial accuracy of MRI 
 data preprocessing so that the HCP Consortium and HCP Users can take full advantage
@@ -147,7 +149,11 @@ FreeSurfer-based alignment in that there is substantially less surface distortio
 and slightly better alignment of cortical areas across subjects (Robinson et al., Neuroimage, 2014).
 We hope the MSM algorithm will be released soon.
 
+
+
+<a id="13-what-is-next-for-the-hcp-pipelines">
 ## 13. What is next for the HCP Pipelines?
+</a>
 
 The HCP Pipelines provide a framework for substantially improved spatial localization
 of MRI data, particularly across subjects and studies. That said, further substantial 
