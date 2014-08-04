@@ -26,11 +26,7 @@
 # 
 # ## License
 # 
-# HCP Pipelines = "The Software"
-# 
-# The Software is distributed *AS IS* without warranty of any kind, either 
-# expressed or implied, including, but not limited to, the implied warranties
-# of merchantability and fitness for a particular purpose.
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENCE.md) file
 # 
 # ## Description
 # 

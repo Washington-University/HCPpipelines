@@ -26,15 +26,7 @@
 #
 # ## License
 #
-# * Human Connectome Project Pipeline Tools = the "Software"
-# * This Software is distributed "AS IS" without warranty of any kind, either 
-# * expressed or implied, including, but not limited to, the implied warranties
-# * of merchantability and fitness for a particular purpose.
-#
-# ### TODO
-#
-# Find out what actual license terms are to be applied. Commercial use allowed? 
-# If so, this would likely violate FSL terms.
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENCE.md) file
 #
 # ## Description
 #

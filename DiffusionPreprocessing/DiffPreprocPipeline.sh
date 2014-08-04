@@ -25,12 +25,8 @@
 # [Human Connectome Project][HCP] (HCP) Pipelines
 # 
 # ## License
-# 
-# HCP Pipelines = "The Software"
-#  
-# The Software is distributed *AS IS* without warranty of any kind, either 
-# expressed or implied, including, but not limited to, the implied warranties
-# of merchantability and fitness for a particular purpose.
+#
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENCE.md) file
 # 
 # ## Description 
 #    
@@ -88,6 +84,7 @@
 # [FSL]: http://fsl.fmrib.ox.ac.uk
 # [FreeSurfer]: http://freesurfer.net
 # [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
+# [license]: https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md
 # 
 #~ND~END~
 
