@@ -45,16 +45,14 @@
 # 
 # ## Prerequisite Installed Software for the Diffusion Preprocessing Pipeline
 # 
-# * [FSL][FSL] - FMRIB's Software Library - Version 5.0.6 or later.
-#                FSL's environment setup script must also be sourced
+# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6 or later)
+#
+#   FSL's environment setup script must also be sourced
 # 
-# * [FreeSurfer][FreeSurfer] - Version 5.2 or greater
+# * [FreeSurfer][FreeSurfer] (version 5.3.0-HCP or later)
 # 
-# * gradunwarp - HCP customized version of [gradunwarp][gradunwarp]. The HCP customized 
-#   version of gradunwarp is in the src/gradient_unwarping directory in this 
-#   distribution.  _It must be installed separately with its prerequisites and the 
-#   PATH environment variable must be setup so that gradient_unwarp.py is found_. 
-# 
+# * [HCP-gradunwarp][HCP-gradunwarp] (HCP version 1.0.0)
+#
 # ## Prerequisite Environment Variables
 # 
 # See output of usage function: e.g. <code>$ ./DiffPreprocPipeline_PostEddy.sh --help</code>
@@ -66,7 +64,6 @@
 # [FSL]: http://fsl.fmrib.ox.ac.uk
 # [FreeSurfer]: http://freesurfer.net
 # [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
-# [gradunwarp]: https://github.com/ksubramz/gradunwarp.git
 # 
 #~ND~END~
 

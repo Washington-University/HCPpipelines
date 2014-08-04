@@ -29,11 +29,6 @@
 # * expressed or implied, including, but not limited to, the implied warranties
 # * of merchantability and fitness for a particular purpose.
 #
-# ### TODO
-#
-# Find out what actual license terms are to be applied. Commercial use allowed? 
-# If so, this would likely violate FSL terms.
-#
 # ## Description 
 #   
 # This script, PreFreeSurferPipeline.sh, is the first of 3 sub-parts of the 
@@ -61,7 +56,7 @@
 # 
 # ### Installed Software
 #
-# * [FSL][FSL] - FMRIB's Software Library Version 5.0.6 or later 
+# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6 or later) 
 #
 # ### Environment Variables
 #

@@ -2,7 +2,7 @@
 set -e
 set -xv
 # Requirements for this script
-#  installed versions of: FSL5.0.2 or higher, gradunwarp python package (from MGH)
+#  installed versions of: FSL (version 5.0.6 or later), HCP-gradunwarp (version 1.0.0)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin and PATH for gradient_unwarp.py)
 
 ################################################ SUPPORT FUNCTIONS ##################################################
@@ -200,7 +200,7 @@ fi
 ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # RUN TOPUP
-# Needs FSL 5.0.2+
+# Needs FSL (version 5.0.6 or later)
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed

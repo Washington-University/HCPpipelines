@@ -5,7 +5,7 @@ StudyFolder="/media/myelin/brainmappers/Connectome_Project/Macaques" #Location o
 EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
-#  installed versions of: FSL5.0.2 or higher , FreeSurfer (version 5.2 or higher) , gradunwarp (python code from MGH)
+#  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later), gradunwarp (HCP version 1.0.0)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 #Set up pipeline environment variables and software

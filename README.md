@@ -14,16 +14,15 @@ The HCP Pipelines Tools have the following software requirements:
 1. A 64-bit Linux Operating System
 
 2. The [FMRIB Software Library][FSL] (a.k.a. [FSL][FSL]) version 
-   5.0.6 or greater installed and config properly sourced
+   5.0.6 or later installed and configuration file properly sourced
 
-3. [FreeSurfer] [FreeSurfer] version [5.3.0-HCP] [5.3.0-HCP] installed and
-   the configuration script properly sourced
+3. [FreeSurfer][FreeSurfer] [version 5.3.0-HCP][FreeSurfer-hcp-version] 
 
 4. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
 
 ### Notes on Gradient Nonlinearity Correction (a.k.a. Gradient Distortion Correction)
 
-   * The HCP version of gradunwarp has its own set of 
+   * As is true of the other prerequisite pieces of software, the HCP version of gradunwarp has its own set of 
      prerequisites. See the HCP gradunwarp [README](https://github.com/Washington-University/gradunwarp/blob/master/README.md) 
      file for those prerequisites.  
 
@@ -57,7 +56,7 @@ The HCP Pipelines Tools have the following software requirements:
      up should identify the version of FSL you are running in its title bar.
 
    * Sometimes FSL is installed without the separate documentation package, it is 
-     likely worth the extra effort to install the FSL documentation package.
+     most likely worth the extra effort to install the FSL documentation package.
 
    * 
 
@@ -125,6 +124,6 @@ Please start out by reviewing the [FAQ][FAQ]
 [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
 [FSL]: http://fsl.fmrib.ox.ac.uk
 [FreeSurfer]: http://freesurfer.net
-[5.3.0-HCP]: ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
+[FreeSurfer-hcp-version]: ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
 [FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
 [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases

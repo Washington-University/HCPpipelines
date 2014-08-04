@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
+#  installed versions of: FSL (version 5.0.6 or later), HCP-gradunwarp (HCP version 1.0.0)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global and PATH for gradient_unwarp.py)
 
 ################################################ SUPPORT FUNCTIONS ##################################################

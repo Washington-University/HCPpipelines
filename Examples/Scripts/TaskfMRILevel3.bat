@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL5.0.5 or higher
+#  installed versions of: FSL (version 5.0.6 or later)
 #  environment: FSLDIR , HCPPIPEDIR , CARET7DIR
 
 ### Set up pipeline environment variables and software ###

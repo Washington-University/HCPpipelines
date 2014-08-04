@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1+ , HCP Pipeline
+#  installed versions of: FSL (version 5.0.6 or later)
 #  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
 
 ################################################ SUPPORT FUNCTIONS ##################################################

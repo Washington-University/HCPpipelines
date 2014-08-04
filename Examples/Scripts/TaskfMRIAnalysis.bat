@@ -5,7 +5,7 @@ StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Loc
 EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
-#  installed versions of: FSL5.0.5 or higher 
+#  installed versions of: FSL (version 5.0.6 or later)
 #  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
 
 #Set up pipeline environment variables and software
