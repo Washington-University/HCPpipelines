@@ -20,14 +20,11 @@
 #
 # ## Product
 #
-# [Human Connectome Project][HCP] (HCP) Pipeline Tools 
+# [Human Connectome Project][HCP] (HCP) Pipelines 
 #
 # ## License
 #
-# * Human Connectome Project Pipeline Tools = the "Software"
-# * The Software is distributed "AS IS" without warranty of any kind, either 
-# * expressed or implied, including, but not limited to, the implied warranties
-# * of merchantability and fitness for a particular purpose.
+# See the LICENSE.md file that is part of this project
 #
 # ## Description 
 #   

@@ -111,7 +111,7 @@ Van Essen & Glasser, Neuroimage, 2013).
 Yes, if you get the gradient nonlinearity correction coefficients from Siemens.
 The gradient unwarping code is available at 
 [https://github.com/Washington-University/gradunwarp/releases](https://github.com/Washington-University/gradunwarp/releases). 
-The gradient unwarping code used by the HCP Pipelines is an HCP customized 
+The gradient unwarping code used by the HCP Pipelines is an HCP-customized 
 version of the gradient unwarping code available at
 [https://github.com/ksubramz/gradunwarp](https://github.com/ksubramz/gradunwarp) [(Jovicich et al., 2006)][JovicichEtAl].
 
