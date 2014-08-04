@@ -5,17 +5,65 @@ shell scripts) for processing MRI images for the [Human Connectome Project][HCP]
 Among other things, these tools implement the Minimal Preprocessing Pipeline 
 (MPP) described in [Glasser et al. 2013][GlasserEtAl]
 
+<a id="prerequisites">
 ## Prerequisites
+</a>
 
 The HCP Pipelines Tools have the following software requirements:
 
 1. A 64-bit Linux Operating System
+
 2. The [FMRIB Software Library][FSL] (a.k.a. [FSL][FSL]) version 
    5.0.6 or greater installed and config properly sourced
-3. [FreeSurfer] [FreeSurfer] version [5.3.0-HCP] [5.3.0-HCP] installed and 
-   config properly sourced
-4. ${HCPPIPEDIR}/src/gradient_unwarping installed with dependancies (source
-   code located in this folder) if using gradient distortion correction
+
+3. [FreeSurfer] [FreeSurfer] version [5.3.0-HCP] [5.3.0-HCP] installed and
+   the configuration script properly sourced
+
+4. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
+
+### Notes on Gradient Nonlinearity Correction (a.k.a. Gradient Distortion Correction)
+
+   * The HCP version of gradunwarp has its own set of 
+     prerequisites. See the HCP gradunwarp [README](https://github.com/Washington-University/gradunwarp/blob/master/README.md) 
+     file for those prerequisites.  
+
+   * In order to run HCP gradunwarp, you will need a gradient coefficients file to 
+     use as an input to the gradient distortion correction process.  Please
+     see questions 7 and 8 in the [HCP Pipelines FAQ](https://github.com/Washington-University/Pipelines/blob/master/FAQ.md) 
+     for further information about gradient nonlinearity correction and obtaining a
+     gradient coefficients file.
+
+   * The HCP Pipelines scripts expect to be able to find the main module of the 
+     gradunwarp tool (gradient_unwarp.py) within a directory specified in the 
+     <code>PATH</code> environment variable.  
+
+   * A number of the example scripts that serve as templates for running types of 
+     pipeline processing, assume that you have placed the gradient coefficients file 
+     in the standard configuration directory for your installation of HCP Pipelines.
+     This standard configuration directory is usually the global/config subdirectory
+     within your HCP Pipelines installation directory.
+
+   * If you are not planning on performing gradient nonlinearity correction, you will not 
+     need the HCP gradunwarp software or the gradient coefficients files, but you will need
+     to make sure that you run the pipelines with flags set to indicate that you do not want
+     gradient nonlinearity correction to be done.
+
+## Installation
+
+1. Install the listed [prerequisites](#prerequisites) first.
+
+   * Once you have installed FSL, verify that you have a recent enough version of FSL
+     by simply running the <code>$ fsl</code> command. The FSL window that shows
+     up should identify the version of FSL you are running in its title bar.
+
+   * Sometimes FSL is installed without the separate documentation package, it is 
+     likely worth the extra effort to install the FSL documentation package.
+
+   * 
+
+
+
+*
 
 ## Notes
 
@@ -79,3 +127,4 @@ Please start out by reviewing the [FAQ][FAQ]
 [FreeSurfer]: http://freesurfer.net
 [5.3.0-HCP]: ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
 [FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
+[HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
