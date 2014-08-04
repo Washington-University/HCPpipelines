@@ -2,11 +2,11 @@
 
 ## License
 
-Human Connectome Project [(HCP)][HCP] [Pipelines][Pipelines] = THIS SOFTWARE
+Human Connectome Project [Pipelines][Pipelines] = THIS SOFTWARE
 
 Copyright (c) 2011-2014 [The Human Connectome Project][HCP]
 
-Redistribution and use in source in binary forms, with or without modification,
+Redistribution and use in source and binary forms, with or without modification,
 is permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, 
@@ -18,7 +18,7 @@ is permitted provided that the following conditions are met:
 
 * The names of Washington University in St. Louis, the University of Minnesota,
   Oxford University, the Human Connectome Project, or any contributors
-  to this software may be used to endorse or promote products derived
+  to this software may *not* be used to endorse or promote products derived
   from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
