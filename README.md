@@ -51,14 +51,32 @@ The HCP Pipelines Tools have the following software requirements:
 
 1. Install the listed [prerequisites](#prerequisites) first.
 
-   * Once you have installed FSL, verify that you have a recent enough version of FSL
-     by simply running the <code>$ fsl</code> command. The FSL window that shows
-     up should identify the version of FSL you are running in its title bar.
+   * Ubuntu Installation Notes for FSL
 
-   * Sometimes FSL is installed without the separate documentation package, it is 
-     most likely worth the extra effort to install the FSL documentation package.
+     * Once you have installed FSL, verify that you have a recent enough version of FSL
+       by simply running the <code>$ fsl</code> command. The FSL window that shows
+       up should identify the version of FSL you are running in its title bar.  
 
-   * 
+     * Sometimes FSL is installed without the separate documentation package, it is 
+       most likely worth the extra effort to install the FSL documentation package.
+
+   * Ubuntu Installation Notes for FreeSurfer
+
+     * For Linux, FreeSurfer is distributed in gzipped tarballs for CentOS 4 and CentOS 6.
+
+     * The instructions [here](http://simnibs.de/installation/installfsandfsl) provide
+       guidance for installing FreeSurfer on Ubuntu.  If following the instructions
+       there, be sure to download version 5.3.0-HCP of FreeSurfer and not version
+       5.1.0 as those instructions indicate.
+
+     * Ubuntu (at least starting with version 12.04 and running through version 14.04 LTS
+       is missing a library that is used by some parts of FreeSurfer.  To install
+       that library enter <code>$ sudo apt-get install libjpeg62</code>.
+
+
+
+
+
 
 
 
