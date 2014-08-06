@@ -53,7 +53,7 @@ The HCP Pipelines Tools have the following software requirements:
 
 3. The HCP Pipelines scripts expect to be able to find the main module of the 
    gradunwarp tool (gradient_unwarp.py) within a directory specified in the 
-   <code>PATH</code> environment variable.  
+   `PATH` environment variable.  
 
 4. A number of the example scripts that serve as templates for running types of 
    pipeline processing, assume that you have placed the gradient coefficients file 
@@ -77,7 +77,7 @@ The HCP Pipelines Tools have the following software requirements:
    * Ubuntu Installation Notes for FSL
 
      * Once you have installed FSL, verify that you have a recent enough version of FSL
-       by simply running the <code>$ fsl</code> command. The FSL window that shows
+       by simply running the `$ fsl` command. The FSL window that shows
        up should identify the version of FSL you are running in its title bar.  
 
      * Sometimes FSL is installed without the separate documentation package, it is 
@@ -94,7 +94,7 @@ The HCP Pipelines Tools have the following software requirements:
 
      * Ubuntu (at least starting with version 12.04 and running through version 14.04 LTS
        is missing a library that is used by some parts of FreeSurfer.  To install
-       that library enter <code>$ sudo apt-get install libjpeg62</code>.
+       that library enter `$ sudo apt-get install libjpeg62`.
 
 2. Download the necessary compressed tar file (.tar.gz) for the 
    [HCP Pipelines release][HCP-pipelines-release].
@@ -102,47 +102,31 @@ The HCP Pipelines Tools have the following software requirements:
 3. Move the compressed tar file that you download to the directory in which you want
    the HCP Pipelines to be installed.
    
-   <pre>
-   <code>
-   $ mv Pipelines-3.3.1.tar.gz ~/projects
-   </code>
-   </pre>
+        $ mv Pipelines-3.3.1.tar.gz ~/projects
 
 4. Extract the data from the compressed tar file, e.g.
 
-   <pre>
-   <code>
-   $ cd ~/projects
-   $ tar xvf Pipelines-3.3.1.tar.gz
-   </code>
-   </pre>
+        $ cd ~/projects
+        $ tar xvf Pipelines-3.3.1.tar.gz
 
 5. This will create a directory containing the HCP Pipelines, e.g.
 
-   <pre>
-   <code>
-   $ cd ~/projects/Pipelines-3.3.1
-   $ ls 
-   DiffusionPreprocessing/  fMRIVolume/      PreFreeSurfer/     VersionHistory.md*
-   DiffusionTractography/   FreeSurfer/      product.txt        version.txt
-   Examples/                global/          README.md*
-   FAQ.md                   LICENSE.md*      TaskfMRIAnalysis/
-   fMRISurface/             PostFreeSurfer/  tfMRI/
-   $
-   </code>
-   </pre>
+        $ cd ~/projects/Pipelines-3.3.1
+        $ ls 
+        DiffusionPreprocessing/  fMRIVolume/      PreFreeSurfer/     VersionHistory.md*
+        DiffusionTractography/   FreeSurfer/      product.txt        version.txt
+        Examples/                global/          README.md*
+        FAQ.md                   LICENSE.md*      TaskfMRIAnalysis/
+        fMRISurface/             PostFreeSurfer/  tfMRI/
+        $
 
 6. This newly created directory is your *HCP Pipelines Directory*.  Add a 
    statement to your login configuration files setting the `HCPPIPEDIR` 
    environment variable to contain the path to your *HCP Pipelines Directory*, e.g.
-
-   <pre>
-   <code>
-   $ cd
-   $ cp .bash_profile .bash_profile.before_hcp_pipelines_install
-   $ echo "export HCPPIPEDIR=$HOME/projects/Pipelines-3.3.1" >> ~/.bash_profile
-   </code>
-   </pre>
+            
+        $ cd
+        $ cp .bash_profile .bash_profile.before_hcp_pipelines_install
+        $ echo "export HCPPIPEDIR=$HOME/projects/Pipelines-3.3.1" >> ~/.bash_profile
 
    **NB:** There are two greater than signs (`>>`) before the `~/.bash_profile`.
    This causes a new statement creating the `HCPPIPEDIR` environment variable
@@ -210,7 +194,7 @@ Pre-FreeSurfer processing.  This shell script is named:
 edit that script file to run the example data through the 
 Pre-FreeSurfer processing.
 
-*`StudyFolder`*
+*StudyFolder*
 
 The setting of the `StudyFolder` variable at the top of this script
 should be verified or edited.  This variable should contain the path to a 
@@ -221,16 +205,12 @@ As distributed, this variable is set with the assumption that you have
 extracted the sample data into a directory named `projects/Pipelines_ExampleData`
 within your login or "home" directory.
 
-<blockquote>
-<code>
-StudyFolder="${HOME}/projects/Pipelines_ExampleData"
-</code>
-</blockquote>
+       StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 
 You should either verify that your example data is extracted to that
 location or modify the variable setting accordingly.
 
-*`Subjlist`*
+*Subjlist*
 
 The setting of the `Subjlist` variable, which comes immediately
 after the setting of the `StudyFolder` variable, should also be 
@@ -242,11 +222,7 @@ As distributed, this variable is set with the assumption that you will
 run the processing only for the single example subject, which has a
 subject ID of `100307`.  
 
-<blockquote>
-<code>
-Subjlist="100307"
-</code>
-</blockquote>
+       Subjlist="100307"
 
 Using this value in conjunction with the value of the `StudyFolder` variable,
 the script will look for a directory named `100307` within the directory 
@@ -256,7 +232,7 @@ find the data it is to process.
 You should either verify that your example data is in that location
 or modify the variable setting accordingly.
 
-*`EnvironmentScript`*
+*EnvironmentScript*
 
 The `EnvironmentScript` variable should contain the path to a 
 script that sets up the rest of the environment variables that 
@@ -272,7 +248,7 @@ example environment setup provided in the
 You may need to update the setting of the `EnvironmentScript` 
 variable to reflect where you have installed the HCP Pipelines.
 
-*`GradientDistortionCoeffs`*
+*GradientDistortionCoeffs*
 
 Further down in the script, the `GradientDistortionCoeffs` variable
 is set.  This variable should be set to contain either the path to 
@@ -284,11 +260,7 @@ As distributed, the script assumes that the coefficients file is
 available, is named `coeff_SC72C_Skyra.grad`, and has been placed 
 in the standard HCP Pipelines configuration directory.
 
-<blockquote>
-<code>
-GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
-</code>
-</blockquote>
+        GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
 
 You will need to update the setting of this variable if you have
 a gradient coefficients file to use that is placed elsewhere.  If you 
@@ -296,11 +268,7 @@ intend to skip the gradient distortion correction (e.g. if you have
 downloaded sample data that is already gradient distortion corrected,
 you will need to set this variable to `NONE`.
 
-<blockquote>
-<code>
-GradientDistortionCoeffs="NONE"
-</code>
-</blockquote>
+        GradientDistortionCoeffs="NONE"
 
 *`HCPPIPEDIR` and the `SetUpHCPPipeline.sh` script*
 
@@ -349,80 +317,60 @@ Once you have made any necessary edits as described above,
 the Pre-FreeSurfer processing can be invoked by commands
 similar to:
 
-<blockquote>
-<code>
-$ cd ~/projects/Pipelines/Examples/Scripts
-$ ./PreFreeSurferPipelineBatch.sh
-This script must be SOURCED to correctly setup the environment 
-prior to running any of the other HCP scripts contained here
+        $ cd ~/projects/Pipelines/Examples/Scripts
+        $ ./PreFreeSurferPipelineBatch.sh
+        This script must be SOURCED to correctly setup the environment 
+        prior to running any of the other HCP scripts contained here
 
-100307
-Found 1 T1w Images for subject 100307
-Found 1 T2w Images for subject 100307
-About to use fls_sub to queue or run PreFreeSurferPipeline.sh
-</code>
-</blockquote>
+        100307
+        Found 1 T1w Images for subject 100307
+        Found 1 T2w Images for subject 100307
+        About to use fls_sub to queue or run PreFreeSurferPipeline.sh
 
-After reporting The `PreFreeSurferPipelineBatch.sh` script uses the FSL
-command `fsl_sub` to submit the processing job which ultimately runs
-the `PreFreeSurferPipeline.sh` pipeline script.
+After reporting the number of T1w and T2w images found, the 
+`PreFreeSurferPipelineBatch.sh` script uses the FSL command `fsl_sub` 
+to submit a processing job which ultimately runs the `PreFreeSurferPipeline.sh` 
+pipeline script.
 
-If your system is configured to run jobs on an Oracle Grid Engine cluster 
+If your system is configured to run jobs via an Oracle Grid Engine cluster 
 (previously known as Sun Grid Engine (SGE) cluster), then `fsl_sub` will 
 submit a job to run the `PreFreeSurferPipeline.sh` script on the
-cluster. Otherwise, `fsl_sub` will run the script directly on the 
-system from which you launched the example script.
+cluster and then return you to your system prompt.  You can check on the
+status of your running cluster job using the `qstat` command. See the
+documentation of the `qstat` command for further information.  
 
-In either case, the standard output (stdout) and standard error (stderr) 
-output from the running of `PreFreeSurferPipeline.sh` will be sent to 
-files instead of being send directly back to your terminal.  This 
-could leave you with the impression that "nothing is happening".
-To follow the progress of the processing you will need to find 
-the associated standard output file and view its contents.
+The standard output (stdout) and standard error (stderr) for the job
+submitted to the cluster will be redirected to files in the directory
+from which you invoked the batch script. Those files will be named
+`PreFreeSurferPipeline.sh.o<job-id>` and 
+`PreFreeSurferPipeline.sh.e<job-id>` respectively, where
+`<job-id>` is the cluster job ID. You can monitor the progress
+of the processing with a command like:
 
-If you do not have your system configured to submit jobs to a
-grid engine (cluster), the standard out and standard error files
-will be found in the directory you were in when issuing the 
-`./PreFreeSurferPipelineBatch.sh` command.  They will be 
-named `PreFreeSurferPipeline.sh.o<process-id>` and 
-`PreFreeSurferPipeline.sh.e<process-id>` respectively, where
-<process-id> is an operating system assigned unique process
-ID for the running job.
+        $ tail -f PreFreeSurferPipeline.sh.o1434030
 
-For example, if you might see two files named:
+where 1434030 is the cluster job ID.
 
-<blockquote>
-<code>
-PreFreeSurferPipeline.sh.e14201
-PreFreeSurferPipeline.sh.o14201
-</code>
-</blockquote>
+If your system is not configured to run jobs via an Oracle Grid Engine
+cluster, `fsl_sub` will run the `PreFreeSurferPipeline.sh` script
+directly on the system from which you launched the batch script.
+Your invocation of the batch script will appear to reach a point
+at which "nothing is happening."  However, the `PreFreeSurferPipeline.sh`
+script will be launched in a separate process and the 
+standard output (stdout) and standard error (stderr) will have
+been redirected to files in the directory from which you invoked
+the batch script.  The files will be named 
+`PreFreeSurferPipeline.sh.o<process-id>` and 
+`PreFreeSurferPipeline.sh.e<process-id>' respectively, where
+`<process-id>` is the operating system assigned unique process
+ID for the running process.
 
-in the directory from which you launched the `PreFreeSurferPipelineBatch.sh` 
-script.  To watch the progress of processing you could then issue a command
-like:
-
-<blockquote>
-<code>
-$ tail -f PreFreeSurferPipeline.sh.o14201
-</code>
-</blockquote>
+A similar `tail` command to the one above will allow you to monitor
+the progress of the processing.
 
 Keep in mind that depending upon your processor speed and whether or not 
 you are performing gradient distortion correction, the Pre-FreeSurfer
-phase of processing can take up to several hours.
-
-
-
-
-
-submit if SGE...
-
-otherwise simply run
-
-
-
-
+phase of processing can take several hours.
 
 -----
 
