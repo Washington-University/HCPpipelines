@@ -12,7 +12,7 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 
 # Set up specific environment variables for the HCP Pipeline
 # All the following variables can be left as is if the structure of the GIT repository is maintained
-export HCPPIPEDIR=/media/2TBB/Connectome_Project/Pipelines
+export HCPPIPEDIR=${HOME}/projects/Pipelines
 export CARET7DIR=${HCPPIPEDIR}/global/binaries/caret7/bin_rh_linux64
 #export CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
 
@@ -43,8 +43,7 @@ export MSMBin=${HCPPIPEDIR}/MSMBinaries
 #FREESURFER_HOME=/nrgpackages/tools/freesurfer5
 #. ${FREESURFER_HOME}/SetUpFreeSurfer.sh
 
-#NRG_SCRIPTS=/nrgpackages/scripts
-#. ${NRG_SCRIPTS}/epd-python_setup.sh
+#NRG_SCRIPTS=/nrgpackages/scripts#. ${NRG_SCRIPTS}/epd-python_setup.sh
 
 #export HCPPIPEDIR=/home/NRG/jwilso01/dev/Pipelines
 #export HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
