@@ -13,8 +13,8 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 * [Notes on gradient nonlinearity correction](#notes-on-gradient-nonlinearity-correction)
 * [Installation](#installation)
 * [Getting example data](#getting-example-data)
-* [Running the HCP Pipelines on example data](#running-pipelines-on-example-data)
-* [Still have questions](#still-have-questions)
+* [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data)
+* [I still have questions](#i-still-have-questions)
 
 -----
 
@@ -36,32 +36,35 @@ The HCP Pipelines Tools have the following software requirements:
 -----
 
 <a id="notes-on-gradient-nonlinearity-correction">
-## Notes on gradient nonlinearity correction (a.k.a. gradient distortion correction, a.k.a. GDC)
+## Notes on gradient nonlinearity correction
 </a>
 
-1. As is true of the other prerequisite pieces of software, the HCP version of 
+1. Gradient Nonlinearity Correct is sometimes also referred to as Gradient Distortion Correction
+   or GDC
+
+2. As is true of the other prerequisite pieces of software, the HCP version of 
    gradunwarp has its own set of prerequisites. See the HCP gradunwarp 
    [README](https://github.com/Washington-University/gradunwarp/blob/master/README.md) 
    file for those prerequisites.  
 
-2. In order to run HCP gradunwarp, you will need a gradient coefficients file to 
+3. In order to run HCP gradunwarp, you will need a gradient coefficients file to 
    use as an input to the gradient distortion correction process.  Please
    see questions 7 and 8 in the 
    [HCP Pipelines FAQ](https://github.com/Washington-University/Pipelines/blob/master/FAQ.md) 
    for further information about gradient nonlinearity correction and obtaining a
    gradient coefficients file.
 
-3. The HCP Pipelines scripts expect to be able to find the main module of the 
+4. The HCP Pipelines scripts expect to be able to find the main module of the 
    gradunwarp tool (gradient_unwarp.py) within a directory specified in the 
    <code>PATH</code> environment variable.  
 
-4. A number of the example scripts that serve as templates for running types of 
+5. A number of the example scripts that serve as templates for running types of 
    pipeline processing, assume that you have placed the gradient coefficients file 
    in the standard configuration directory for your installation of HCP Pipelines.
    This standard configuration directory is usually the global/config subdirectory
    within your HCP Pipelines installation directory.
 
-5. If you are not planning on performing gradient nonlinearity correction, you will 
+6. If you are not planning on performing gradient nonlinearity correction, you will 
    not need the HCP gradunwarp software or the gradient coefficients files, but you 
    will need to make sure that you run the pipelines with flags set to indicate that 
    you do not want gradient nonlinearity correction to be done.
@@ -190,7 +193,7 @@ elsewhere.
 
 -----
 
-<a id="running-pipelines-on-example-data">
+<a id="running-the-hcp-pipelines-on-example-data">
 ## Running the HCP Pipelines on example data
 </a>
 
@@ -426,8 +429,8 @@ otherwise simply run
 
 -----
 
-<a id="still-have-questions">
-## Still have questions?
+<a id="i-still-have-questions">
+## I still have questions
 </a>
 
 Please review the [FAQ][FAQ]
