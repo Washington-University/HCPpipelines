@@ -405,7 +405,15 @@ like:
 <blockquote>
 <code>
 $ tail -f PreFreeSurferPipeline.sh.o14201
+</code>
 </blockquote>
+
+Keep in mind that depending upon your processor speed and whether or not 
+you are performing gradient distortion correction, the Pre-FreeSurfer
+phase of processing can take up to several hours.
+
+
+
 
 
 submit if SGE...
