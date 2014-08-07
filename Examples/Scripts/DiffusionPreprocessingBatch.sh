@@ -1,11 +1,11 @@
 #!/bin/bash 
 
-Subjlist="100307 103414" #Space delimited list of subject IDs
-StudyFolder="/vols/Data/HCP/TestStudyFolder" #Location of Subject folders (named by subjectID)
-EnvironmentScript="/vols/Data/HCP/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+Subjlist="100307" #Space delimited list of subject IDs
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
 EchoSpacing=0.78 #EPI Echo Spacing for data (in msec)
 PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
-Gdcoeffs="/vols/Data/HCP/Pipelines/global/config/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later) , gradunwarp (HCP version 1.0.0)
@@ -13,6 +13,8 @@ Gdcoeffs="/vols/Data/HCP/Pipelines/global/config/coeff_SC72C_Skyra.grad" #Coeffi
 
 #Set up pipeline environment variables and software
 . ${EnvironmentScript}
+
+Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
 
 # Log the originating call
 echo "$@"
