@@ -102,7 +102,7 @@ for Subject in $Subjlist ; do
   AvgrdcSTRING="FIELDMAP" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = average and distortion correct at the same time with topup/applytopup only works for 2 images currently
   TopupConfig="NONE" #Config for topup or "NONE" if not used
 
-  echo "About to use fsl_sub to queue or run PreFreeSurferPipeline.sh"
+  echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
 
   ${FSLDIR}/bin/fsl_sub ${QUEUE} \
      ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
@@ -135,8 +135,6 @@ for Subject in $Subjlist ; do
       --topupconfig="$TopupConfig" \
       --printcom=$PRINTCOM
       
-  echo "PreFreeSurferPipeline.sh job queued or run"
-
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
   echo "set -- --path=${StudyFolder} \

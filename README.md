@@ -31,6 +31,10 @@ The HCP Pipelines Tools have the following software requirements:
 
 3. [FreeSurfer][FreeSurfer] [version 5.3.0-HCP][FreeSurfer-hcp-version] 
 
+   **NB: You *must* create and install a license file for FreeSurfer by
+   visiting and submitting the 
+   [FreeSurfer registration form](https://surfer.nmr.mgh.harvard.edu/registration.html).**
+
 4. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
 
 -----
@@ -188,12 +192,12 @@ FreeSurfer processing, and Post-FreeSurfer processing).  These 3 steps should
 be excuted in the order specified, and each of these 3 parts is implemented
 as a separate `bash` script.
 
-*Pre-FreeSurfer processing*
+#### Pre-FreeSurfer processing
 
 In the `${HCPPIPEDIR}/Examples/Scripts` directory, you will find 
 a shell script for running a batch of subject data through the 
-Pre-FreeSurfer processing.  This shell script is named:
-`PreFreeSurferPipelineBatch.sh`. You should review and possibly 
+Pre-FreeSurfer part of structural preprocessing. This shell script is 
+named: `PreFreeSurferPipelineBatch.sh`. You should review and possibly 
 edit that script file to run the example data through the 
 Pre-FreeSurfer processing.
 
@@ -314,10 +318,8 @@ and sourcing the FreeSurfer setup script are provided
 but commented out in the `SetUpHCPPipeline.sh` script
 prior to setting `HCPPIPEDIR`.
 
-*Running the Pre-FreeSurfer processing*
-
 Once you have made any necessary edits as described above,
-the Pre-FreeSurfer processing can be invoked by commands
+Pre-FreeSurfer processing can be invoked by commands
 similar to:
 
         $ cd ~/projects/Pipelines/Examples/Scripts
@@ -328,7 +330,7 @@ similar to:
         100307
         Found 1 T1w Images for subject 100307
         Found 1 T2w Images for subject 100307
-        About to use fls_sub to queue or run PreFreeSurferPipeline.sh
+        About to use fsl_sub to queue or run /home/user/projects/Pipelines/PreFreeSurfer/PreFreeSurferPipeline.sh
 
 After reporting the number of T1w and T2w images found, the 
 `PreFreeSurferPipelineBatch.sh` script uses the FSL command `fsl_sub` 
@@ -374,6 +376,73 @@ the progress of the processing.
 Keep in mind that depending upon your processor speed and whether or not 
 you are performing gradient distortion correction, the Pre-FreeSurfer
 phase of processing can take several hours.
+
+#### FreeSurfer processing
+
+In the `${HCPPIPEDIR}/Examples/Scripts` directory, you will find
+a shell script for running a batch of subject data through the 
+FreeSurfer part of structural preprocessing. This shell script is
+named: `FreeSurferPipelineBatch.sh`. You should review and possibly
+edit that script file to run the example data through the 
+FreeSurfer processing.
+
+The `StudyFolder`, `Subjlist`, and `EnvironmentScript` variables
+are set at the top of the script and should be verified and edited
+as indicated above in the discussion of Pre-FreeSurfer processing.
+
+Your environment script (`SetUpHCPPipeline.sh`) will need to have
+the same environment variables set as for the Pre-FreeSurfer 
+processing.
+
+Once you have made any necessary edits as described above
+and the Pre-FreeSurfer processing has completed, then invoking 
+FreeSurfer processing is quite similar to invoking Pre-FreeSurfer 
+processing.  The command will be similar to:
+
+        $ cd ~/projects/Pipelines/Examples/Scripts
+	$ ./FreeSurferPipelineBatch.sh
+        This script must be SOURCED to correctly setup the environment 
+        prior to running any of the other HCP scripts contained here
+
+	100307
+	About to use fsl_sub to queue or run /home/user/projects/Pipelines/FreeSurfer/FreeSurferPipeline.sh
+
+As above, the `fsl_sub` command will either start a new process on the current 
+system or submit a job to an Oracle Grid Engine cluster.  Also as above, you can 
+monitor the progress by viewing the generated standard output and standard error 
+files.
+
+#### Post-FreeSurfer processing
+
+In the `${HCPPIPEDIR}/Examples/Scripts' directory, you will find
+a shell script for running a batch of subject data through the 
+Post-FreeSurfer part of structural preprocessing. This shell script
+is named: `PostFreeSurferPipelineBatch.sh`. This script follows
+the same pattern as the batch scripts to run Pre-FreeSurfer and
+FreeSurfer processing do.  That is, you will need to verify/edit
+the `StudyFolder`, `Subjlist`, and `EnvironmentScript` variables
+that are set at the top of the script, and your environment 
+script (`SetUpHCPPipeline.sh`) will need to set environment variables
+appropriately.
+
+Once those things are taken care of and FreeSurfer processing 
+is completed, commands like the following can be issued:
+
+        $ cd ~/projects/Pipelines/Examples/Scripts
+        $ ./PostFreeSurferPipelineBatch.sh
+	This script must be SOURCED to correctly setup the environment
+	prior to running any of the other HCP scripts contained here
+
+	100307
+	About to use fsl_sub to queue or run /home/user/projects/Pipelines/PostFreeSurfer/PostFreeSurferPipeline.sh
+
+The `fsl_sub` command used in the batch script will behave as described 
+above and monitoring the progress of the run can be done as described
+above.
+
+
+
+
 
 -----
 
