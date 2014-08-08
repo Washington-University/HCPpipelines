@@ -425,6 +425,30 @@ that are set at the top of the script, and your environment
 script (`SetUpHCPPipeline.sh`) will need to set environment variables
 appropriately.
 
+There is an additional variable in the `PostFreeSurferPipelineBatch.sh`
+script that needs to be considered.  The `RegName` variable tells
+the pipeline whether to use MSMSulc for surface alignment.  (See
+the [FAQ][FAQ] for further information about MSMSulc.) As distributed,
+the `PostFreeSurferPipelineBatch.sh` script assumes that you do *not*
+have access to the `msm` binary to use for surface alignment. Therefore,
+the `RegName` variable is set to `"FS"`.  
+
+If you *do* have access to the `msm` binary and wish to use it, you 
+can change this variable's value to `"MSMSulc"`.  If you do so, then 
+your environment script (e.g. `SetUpHCPPipeline.sh`) will need to set 
+an additional environment variable which is used by the pipeline 
+scripts to locate the `msm` binary.  That environment variable is
+`MSMBin` and it is set in the distributed example `SetUpHCPPipeline.sh` 
+file as follows:
+
+        export MSMBin=${HCPPIPEDIR}/MSMBinaries
+
+You will need to either place your `msm` executable binary file 
+in the `${HCPPIPEDIR}/MSMBinaries` directory or modify the
+value given to the `MSMBin` environment variable so that it
+contains the path to the directory in which you have placed
+your copy of the `msm` executable.
+
 Once those things are taken care of and FreeSurfer processing 
 is completed, commands like the following can be issued:
 
