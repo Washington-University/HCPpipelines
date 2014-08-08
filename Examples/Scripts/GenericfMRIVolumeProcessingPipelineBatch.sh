@@ -58,8 +58,11 @@ Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
 PhaseEncodinglist="x x-"
 
 for Subject in $Subjlist ; do
+  echo $Subject
+
   i=1
   for fMRIName in $Tasklist ; do
+    echo "  ${fMRIName}"
     UnwarpDir=`echo $PhaseEncodinglist | cut -d " " -f $i`
     fMRITimeSeries="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}.nii.gz"
     fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz" #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
@@ -73,6 +76,8 @@ for Subject in $Subjlist ; do
     FinalFMRIResolution="2" #Target final resolution of fMRI data. 2mm is recommended.  Use 2.0 or 1.0 to avoid standard FSL templates
     GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Gradient distortion correction coefficents, set to NONE to turn off
     TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
+
+    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
 
     ${FSLDIR}/bin/fsl_sub $QUEUE \
       ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
