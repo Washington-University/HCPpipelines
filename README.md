@@ -29,7 +29,8 @@ The HCP Pipelines Tools have the following software requirements:
 2. The [FMRIB Software Library][FSL] (a.k.a. [FSL][FSL]) version 
    5.0.6 or later installed and configuration file properly sourced
 
-3. [FreeSurfer][FreeSurfer] [version 5.3.0-HCP][FreeSurfer-hcp-version] 
+3. [FreeSurfer][FreeSurfer] version 5.3.0-HCP available at 
+   [ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP](ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP)
 
    **NB: You *must* create and install a license file for FreeSurfer by
    visiting and submitting the 
@@ -557,7 +558,7 @@ Please review the [FAQ][FAQ].
 [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
 [FSL]: http://fsl.fmrib.ox.ac.uk
 [FreeSurfer]: http://freesurfer.net
-[FreeSurfer-hcp-version]: ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
+[FreeSurfer-hcp-version]: http://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
 [FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
 [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
 [HCP-pipelines-release]: https://github.com/Washington-University/Pipelines/releases
