@@ -477,8 +477,8 @@ set at the top of the batch script need to be verified or edited as above.
 
 Like the `PreFreeSurferPipelineBatch.sh` script, the `DiffusionPreprocessingBatch.sh`
 also needs a variable set to the path to the gradient coefficients files. In 
-the `DiffusionPreprocessingBatch.sh` script that variable is `Gdcoeffs`.  
-If you intend to skip the gradient distortion correction part of diffusion
+the `DiffusionPreprocessingBatch.sh` script that variable is `Gdcoeffs`. If 
+you intend to skip the gradient distortion correction part of diffusion 
 preprocessing, then you should set this variable to a value of "NONE".
 
 ### Functional Preprocessing
@@ -537,6 +537,9 @@ HCP EMOTION tasks (`tfMRI_EMOTION_RL` and `tfMRI_EMOTION_LR`).  As
 above in the volume based functional preprocessing, you can add other 
 tasks to the list in the `Tasklist` variable including other 
 actual tasks or the Resting State "tasks".
+
+Like the Post-FreeSurfer pipeline, you will also need to set
+the `RegName` variable to either `MSMSulc` or `FS`.  
 
 -----
 
