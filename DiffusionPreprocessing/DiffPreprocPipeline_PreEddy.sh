@@ -46,7 +46,7 @@
 #
 # * [FreeSurfer][FreeSurfer] (version 5.3.0-HCP or later)
 #
-# * [HCP-gradunwarp][HCP-gradunwarp] - (HCP version 1.0.0)
+# * [HCP-gradunwarp][HCP-gradunwarp] - (HCP version 1.0.2)
 #
 # ## Prerequisite Environment Variables
 #

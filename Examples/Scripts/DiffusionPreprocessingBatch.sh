@@ -8,7 +8,7 @@ EchoSpacing=0.78 #EPI Echo Spacing for data (in msec)
 PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later) , gradunwarp (HCP version 1.0.0)
+#  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later) , gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 #Set up pipeline environment variables and software
