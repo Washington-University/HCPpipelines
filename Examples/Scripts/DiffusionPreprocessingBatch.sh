@@ -36,6 +36,8 @@ PRINTCOM=""
 ######################################### DO WORK ##########################################
 
 for Subject in $Subjlist ; do
+  echo $Subject
+
   #Input Variables
   SubjectID="$Subject" #Subject ID Name
   RawDataDir="$StudyFolder/$SubjectID/$Diffusion" #Folder where unprocessed diffusion data are
@@ -46,6 +48,8 @@ for Subject in $Subjlist ; do
   # Data with negative Phase encoding direction. Up to N>=1 series (here N=3), separated by @
   # If corresponding series is missing (e.g. 2 RL series and 1 LR) use EMPTY.
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
+
+  echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
   
   ${FSLDIR}/bin/fsl_sub ${QUEUE} \
      ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
