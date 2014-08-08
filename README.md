@@ -112,7 +112,7 @@ The HCP Pipelines Tools have the following software requirements:
    
         $ mv Pipelines-3.3.1.tar.gz ~/projects
 
-4. Extract the data from the compressed tar file, e.g.
+4. Extract the files from the compressed tar file, e.g.
 
         $ cd ~/projects
         $ tar xvf Pipelines-3.3.1.tar.gz
@@ -165,15 +165,16 @@ If you already have (or will be obtaining) the gradient coefficients file
 for the Connectome Skyra scanner used to collect the sample data and want 
 to run the pipelines including the steps which perform gradient distortion 
 correction, you can download a zip file containing example data 
-[here](link needs to be added). In that case, you will need to place the 
-obtained gradient coefficients file (`coeff_SC72C_Skyra.grad`) in the 
-`global/config` directory within your HCP Pipelines Directory.
+[here](https://db.humanconnectome.org/app/action/ChooseDownloadResources?project=HCP_Resources&resource=SampleData&filePath=HcpPipelinesExampleDataNonGDC.zip).
+In that case, you will need to place the obtained gradient coefficients 
+file (`coeff_SC72C_Skyra.grad`) in the `global/config` directory within 
+your HCP Pipelines Directory.
 
 If you do not have and are not planning to obtain the gradient coefficients 
 file for the Connectome Skyra scanner used to collect the sample data and 
 want to run the pipelines on files on which gradient distortion correction
 has already been performed, you should should download a zip file containing 
-example data [here](link needs to be added).
+example data [here](https://db.humanconnectome.org/app/action/ChooseDownloadResources?project=HCP_Resources&resource=SampleData&filePath=HcpPipelinesExampleDataGDC.zip).
 
 The remainder of these instructions assume you have extracted the example data
 into the directory `~/projects/Pipelines_ExampleData`.  You will need to 
