@@ -32,11 +32,18 @@ PRINTCOM=""
 Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
 
 for Subject in $Subjlist ; do
+  echo $Subject
+
   for fMRIName in $Tasklist ; do
+    echo "  ${fMRIName}"
     LowResMesh="32" #Needs to match what is in PostFreeSurfer
     FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
     SmoothingFWHM="2" #Recommended to be roughly the voxel size
     GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. Could be the same as FinalfRMIResolution something different, which will call a different module for subcortical processing
+    # RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
+    RegName="FS"
+
+    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
 
     ${FSLDIR}/bin/fsl_sub $QUEUE \
       ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
@@ -47,7 +54,7 @@ for Subject in $Subjlist ; do
       --fmrires=$FinalfMRIResolution \
       --smoothingFWHM=$SmoothingFWHM \
       --grayordinatesres=$GrayordinatesResolution \
-      --regname="MSMSulc"
+      --regname=$RegName
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -58,7 +65,7 @@ for Subject in $Subjlist ; do
       --fmrires=$FinalfMRIResolution \
       --smoothingFWHM=$SmoothingFWHM \
       --grayordinatesres=$GrayordinatesResolution \
-      --regname=\"MSMSulc\""
+      --regname=$RegName
 
       echo ". ${EnvironmentScript}"
             
