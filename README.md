@@ -553,7 +553,7 @@ Functional Preprocessing is complete) using FMRIB group's
 ICA-based Xnoiseifer - FIX ([ICA FIX](http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FIX)).
 
 The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz) 
-includes the file `hcp_fix` file which is a wrapper script for running 
+includes the `hcp_fix` file which is a wrapper script for running 
 ICA FIX on data that has been run through the HCP Structural and Functional 
 Preprocessing.
 
