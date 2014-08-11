@@ -490,9 +490,11 @@ Preprocessing. So Functional Preprocessing should not be attempted on
 data sets for which Structural Preprocessing is not yet complete.
 
 Functional Preprocessing is divided into 2 parts: Generic fMRI Volume 
-Preprocessing and Generic fMRI Surface Preprocessing.  These 2 parts
-must be run in order: Generic fMRI Volume Preprocessing followed by
-Generic fMRI Surface Ppreprocessing.
+Preprocessing and Generic fMRI Surface Preprocessing.  Generic fMRI
+Surface Preprocessing depends upon output produced by the Generic
+fMRI Volume Preprocessing.  So fMRI Surface Preprocessing should not 
+be attempted on data sets for which fMRI Volume Preprocessing is 
+not yet complete.
 
 As is true of the other types of preprocessing discussed above, there
 are example scripts for running each of the two types of Functional Preprocessing.
