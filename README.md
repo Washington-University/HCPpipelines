@@ -548,14 +548,16 @@ the `RegName` variable to either `MSMSulc` or `FS`.
 ## The ICA FIX pipeline
 </a>
 
-Resting state fMRI (rfMRI) data can be further processed (after 
+In the HCP, resting state fMRI (rfMRI) data is further processed (after 
 Functional Preprocessing is complete) using FMRIB group's 
 ICA-based Xnoiseifer - FIX ([ICA FIX](http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FIX)).
+This processing regressess out motion timeseries and artifact ICA components (ICA
+run using Melodic and components classified using FIX): ([Salimi-Khorshidi et al 2014](http://www.ncbi.nlm.nih.gov/pubmed/24389422))
 
 The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz) 
 includes the `hcp_fix` file which is a wrapper script for running 
 ICA FIX on data that has been run through the HCP Structural and Functional 
-Preprocessing.
+Preprocessing.  The hcp_fix script is run with a high-pass filter of 2000 seconds.  
 
 -----
 
