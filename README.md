@@ -14,6 +14,7 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 * [Installation](#installation)
 * [Getting example data](#getting-example-data)
 * [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data)
+* [The ICA FIX pipeline](#the-ica-fix-pipeline)
 * [I still have questions](#i-still-have-questions)
 
 -----
@@ -540,6 +541,21 @@ actual tasks or the Resting State "tasks".
 
 Like the Post-FreeSurfer pipeline, you will also need to set
 the `RegName` variable to either `MSMSulc` or `FS`.  
+
+-----
+
+<a id="the-ica-fix-pipeline">
+## The ICA FIX pipeline
+</a>
+
+Resting state fMRI (rfMRI) data can be further processed (after 
+Functional Preprocessing is complete) using FMRIB group's 
+ICA-based Xnoiseifer - FIX ([ICA FIX](http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FIX)).
+
+The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz) 
+includes the file `hcp_fix` file which is a wrapper script for running 
+ICA FIX on data that has been run through the HCP Structural and Functional 
+Preprocessing.
 
 -----
 
