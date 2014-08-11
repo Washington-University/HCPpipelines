@@ -110,7 +110,8 @@ for Subject in $Subjlist ; do
   #Other Config Settings
   BrainSize="150" #BrainSize in mm, 150 for humans
   FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf" #FNIRT 2mm T1w Config
-  GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
+  # GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
+  GradientDistortionCoeffs="NONE" # Set to NONE to skip gradient distortion correction
 
   echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
 

@@ -64,16 +64,14 @@ The HCP Pipelines Tools have the following software requirements:
    gradunwarp tool (gradient_unwarp.py) within a directory specified in the 
    `PATH` environment variable.  
 
-5. A number of the example scripts that serve as templates for running types of 
-   pipeline processing, assume that you have placed the gradient coefficients file 
-   in the standard configuration directory for your installation of HCP Pipelines.
-   This standard configuration directory is usually the global/config subdirectory
-   within your HCP Pipelines installation directory.
-
-6. If you are not planning on performing gradient nonlinearity correction, you will 
-   not need the HCP gradunwarp software or the gradient coefficients files, but you 
-   will need to make sure that you run the pipelines with flags set to indicate that 
-   you do not want gradient nonlinearity correction to be done.
+5. As distributed, the examples scripts that serve as templates for running
+   various types of pipeline processing are set to *not* run gradient 
+   distortion correction.  Commented out portions of those scripts illustrate
+   how to change the variable settings to perform gradient distortion correction.
+   These commented out portions assume that you have placed the gradient 
+   coefficients file in the standard configuration directory for your
+   installation of HCP Pipelines (the `global/config` directory within 
+   your HCP Pipelines installation directory.
 
 -----
 
@@ -121,37 +119,21 @@ The HCP Pipelines Tools have the following software requirements:
 5. This will create a directory containing the HCP Pipelines, e.g.
 
         $ cd ~/projects/Pipelines-3.3.1
-        $ ls 
-        DiffusionPreprocessing/  fMRIVolume/      PreFreeSurfer/     VersionHistory.md*
-        DiffusionTractography/   FreeSurfer/      product.txt        version.txt
-        Examples/                global/          README.md*
-        FAQ.md                   LICENSE.md*      TaskfMRIAnalysis/
-        fMRISurface/             PostFreeSurfer/  tfMRI/
+        $ ls -F
+        DiffusionPreprocessing/  fMRIVolume/      PostFreeSurfer/  TaskfMRIAnalysis/
+        Examples/                FreeSurfer/      PreFreeSurfer/   tfMRI/
+        FAQ.md                   global/          product.txt      VersionHistory.md*
+        fMRISurface/             LICENSE.md*      README.md        version.txt
         $
 
-6. This newly created directory is your *HCP Pipelines Directory*.  Add a 
-   statement to your login configuration files setting the `HCPPIPEDIR` 
-   environment variable to contain the path to your *HCP Pipelines Directory*, e.g.
-            
-        $ cd
-        $ cp .bash_profile .bash_profile.before_hcp_pipelines_install
-        $ echo "export HCPPIPEDIR=$HOME/projects/Pipelines-3.3.1" >> ~/.bash_profile
-
-   **NB:** There are two greater than signs (`>>`) before the `~/.bash_profile`.
-   This causes a new statement creating the `HCPPIPEDIR` environment variable
-   to be added to the end of your `.bash_profile` file.  If you accidentally 
-   use only one greater than sign (`>`) you will completely overwrite the
-   configuration file with a new configuration file that does nothing but
-   set the environment variable for the HCP Pipelines.
-
-   Of course, if you use a different command line shell than `bash`, you
-   will need to change the appropriate login configuration file for your
-   chosen shell and use a command to set the environment variable that is
-   appropriate for that shell.
+6. This newly created directory is your *HCP Pipelines Directory*.  
 
    In this documentation, in documentation within the script files themselves,
    and elsewhere, we will use the terminology *HCP Pipelines Directory* 
    interchangably with `HCPPIPEDIR`, `$HCPPIPEDIR`, or `${HCPPIPEDIR}`.
+
+   More specifically, `$HCPPIPEDIR` and `${HCPPIPEDIR}` refer to an environment 
+   variable that will be set to contain the path to your *HCP Pipelines Directory*.
 
 -----
 
@@ -245,8 +227,8 @@ or modify the variable setting accordingly.
 *EnvironmentScript*
 
 The `EnvironmentScript` variable should contain the path to a 
-script that sets up the rest of the environment variables that 
-are necessary for running the Pipeline scripts.  
+script that sets up the environment variables that are necessary 
+for running the Pipeline scripts.  
 
 As distributed, this variable is set with the assumption that you
 have installed the HCP Pipelines in the directory 
@@ -263,22 +245,15 @@ variable to reflect where you have installed the HCP Pipelines.
 Further down in the script, the `GradientDistortionCoeffs` variable
 is set.  This variable should be set to contain either the path to 
 the gradient coefficients file to be used for gradient distortion 
-correction, or it should be set to the value `NONE` to skip over the 
-gradient distortion correction step.
+correction or the value `NONE` to skip over the gradient distortion
+correction step.
 
-As distributed, the script assumes that the coefficients file is 
-available, is named `coeff_SC72C_Skyra.grad`, and has been placed 
-in the standard HCP Pipelines configuration directory.
-
-        GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
+As distributed, the script sets the variable to skip the gradient 
+distortion correction step. 
 
 You will need to update the setting of this variable if you have
-a gradient coefficients file to use that is placed elsewhere.  If you 
-intend to skip the gradient distortion correction (e.g. if you have
-downloaded sample data that is already gradient distortion corrected,
-you will need to set this variable to `NONE`.
-
-        GradientDistortionCoeffs="NONE"
+a gradient coefficients file to use and want to perform the
+gradient distortion correction
 
 *`HCPPIPEDIR` and the `SetUpHCPPipeline.sh` script*
 
@@ -291,13 +266,7 @@ variables that will be needed by various pipeline scripts.
 All of the environment variables set in the `SetUpHCPPipeline.sh`
 script (with the exception of the `HCPPIPEDIR` environment variable
 itself) are set relative to the `HCPPIPEDIR`
-environment variable.  Even if you have set the 
-`HCPPIPEDIR` environment variable in your login configuration
-file as instructed above, it is advisable to set the value
-correctly in the `SetUpHCPPipeline.sh` file.  Depending upon
-how you launch the a pipeline, the value for `HCPPIPEDIR` 
-that you set in your login configuration file may not 
-take effect for a particular run of the pipeline.
+environment variable.
 
 As distributed, the setting of the `HCPPIPEDIR` environment 
 variable assumes that you have installed the HCP Pipelines
@@ -306,7 +275,7 @@ need to change this to reflect your actual installation
 directory.  
 
 As distributed, the `SetUpHCPPipeline.sh` script assumes 
-that you have 
+that you have: 
 
 * properly installed FSL
 * set the FSLDIR environment variable
@@ -341,7 +310,7 @@ to submit a processing job which ultimately runs the `PreFreeSurferPipeline.sh`
 pipeline script.
 
 If your system is configured to run jobs via an Oracle Grid Engine cluster 
-(previously known as Sun Grid Engine (SGE) cluster), then `fsl_sub` will 
+(previously known as a Sun Grid Engine (SGE) cluster), then `fsl_sub` will 
 submit a job to run the `PreFreeSurferPipeline.sh` script on the
 cluster and then return you to your system prompt.  You can check on the
 status of your running cluster job using the `qstat` command. See the
@@ -479,10 +448,13 @@ Preprocessing.  The `StudyFolder`, `Subjlist`, and `EnvironmentScript` variables
 set at the top of the batch script need to be verified or edited as above.
 
 Like the `PreFreeSurferPipelineBatch.sh` script, the `DiffusionPreprocessingBatch.sh`
-also needs a variable set to the path to the gradient coefficients files. In 
-the `DiffusionPreprocessingBatch.sh` script that variable is `Gdcoeffs`. If 
-you intend to skip the gradient distortion correction part of diffusion 
-preprocessing, then you should set this variable to a value of "NONE".
+also needs a variable set to the path to the gradient coefficients file or `NONE`
+if gradient distortion correction is to be skipped. In the `DiffusionPreprocessingBatch.sh` 
+script that variable is `Gdcoeffs`. As distributed, this example script is setup
+with the assumption that you will skip gradient distortion correction.  If you have
+a gradient coefficients file available and would like to perform gradient distortion
+corrrection, you will need to update the `Gdcoeffs` variable to contain the path
+to your gradient coefficients file.
 
 ### Functional Preprocessing
 
@@ -498,7 +470,8 @@ be attempted on data sets for which fMRI Volume Preprocessing is
 not yet complete.
 
 As is true of the other types of preprocessing discussed above, there
-are example scripts for running each of the two types of Functional Preprocessing.
+are example scripts for running each of the two types of Functional 
+Preprocessing.
 
 #### Generic fMRI Volume Preprocessing
 
@@ -507,8 +480,8 @@ point for running volumetric functional preprocessing.  Like the sample
 scripts mentioned above, you will need to verify or edit the `StudyFolder`,
 `Subjlist`, and `EnvironmentScript` variables defined at the top of the
 batch processing script.  Additionally, you will need to verify or 
-edit the `GradientDistortionCoeffs` variable (again using "NONE" if
-gradient distortion correction is not to be done.)
+edit the `GradientDistortionCoeffs` variable. As distributed, this
+value is set to "NONE" to skip gradient distortion correction.
 
 In addition to these variable modifications, you should check or edit
 the contents of the `Tasklist` variable.  This variable holds a space
@@ -549,7 +522,7 @@ the `RegName` variable to either `MSMSulc` or `FS`.
 </a>
 
 Resting state fMRI (rfMRI) data can be further processed (after 
-Functional Preprocessing is complete) using FMRIB group's 
+Functional Preprocessing is complete) using the FMRIB group's 
 ICA-based Xnoiseifer - FIX ([ICA FIX](http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FIX)).
 
 The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz) 

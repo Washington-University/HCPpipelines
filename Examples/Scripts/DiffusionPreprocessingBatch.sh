@@ -65,7 +65,8 @@ for Subject in $Subjlist ; do
   PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
   #Config Settings
-  Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
+  # Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
+  Gdcoeffs="NONE" # Set to NONE to skip gradient distortion correction
 
   echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
   
