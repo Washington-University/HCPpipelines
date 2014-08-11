@@ -4,9 +4,6 @@ StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folder
 Subjlist="100307" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
-EchoSpacing=0.78 #EPI Echo Spacing for data (in msec)
-PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
-
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later) , gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
@@ -14,24 +11,38 @@ PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 #Set up pipeline environment variables and software
 . ${EnvironmentScript}
 
-Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
-
-Diffusion="unprocessed/3T/Diffusion"
-
 # Log the originating call
 echo "$@"
 
 #Assume that submission nodes have OPENMP enabled (needed for eddy - at least 8 cores suggested for HCP data)
-if [ X$SGE_ROOT != X ] ; then
+#if [ X$SGE_ROOT != X ] ; then
     QUEUE="-q verylong.q"
-fi
+#fi
 
 PRINTCOM=""
 
 
 ########################################## INPUTS ########################################## 
 
-#Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline
+#Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline,
+#which is a prerequisite for this pipeline
+
+#Scripts called by this script do NOT assume anything about the form of the input names or paths.
+#This batch script assumes the HCP raw data naming convention, e.g.
+
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir95_RL.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir96_RL.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir97_RL.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir95_LR.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir96_LR.nii.gz
+#	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir97_LR.nii.gz
+
+#Change Scan Settings: Echo Spacing and PEDir to match your images
+#These are set to match the HCP Protocol by default
+
+#If using gradient distortion correction, use the coefficents from your scanner
+#The HCP gradient distortion coefficents are only available through Siemens
+#Gradient distortion in standard scanners like the Trio is much less than for the HCP Skyra.
 
 ######################################### DO WORK ##########################################
 
@@ -40,14 +51,21 @@ for Subject in $Subjlist ; do
 
   #Input Variables
   SubjectID="$Subject" #Subject ID Name
-  RawDataDir="$StudyFolder/$SubjectID/$Diffusion" #Folder where unprocessed diffusion data are
+  RawDataDir="$StudyFolder/$SubjectID/unprocessed/3T/Diffusion" #Folder where unprocessed diffusion data are
 
-  # Data with positive Phase encoding direction. Up to N>=1 series (here N=3), separated by @
+  # Data with positive Phase encoding direction. Up to N>=1 series (here N=3), separated by @. (LR in HCP data, AP in 7T HCP data)
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
 
-  # Data with negative Phase encoding direction. Up to N>=1 series (here N=3), separated by @
+  # Data with negative Phase encoding direction. Up to N>=1 series (here N=3), separated by @. (RL in HCP data, PA in 7T HCP data)
   # If corresponding series is missing (e.g. 2 RL series and 1 LR) use EMPTY.
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
+
+  #Scan Setings
+  EchoSpacing=0.78 #Echo Spacing or Dwelltime of dMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.
+  PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
+
+  #Config Settings
+  Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
 
   echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
   

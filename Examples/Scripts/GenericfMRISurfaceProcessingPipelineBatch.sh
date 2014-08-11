@@ -14,9 +14,9 @@ EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.
 # Log the originating call
 echo "$@"
 
-if [ X$SGE_ROOT != X ] ; then
+#if [ X$SGE_ROOT != X ] ; then
     QUEUE="-q long.q"
-fi
+#fi
 
 PRINTCOM=""
 #PRINTCOM="echo"
@@ -36,10 +36,10 @@ for Subject in $Subjlist ; do
 
   for fMRIName in $Tasklist ; do
     echo "  ${fMRIName}"
-    LowResMesh="32" #Needs to match what is in PostFreeSurfer
-    FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
-    SmoothingFWHM="2" #Recommended to be roughly the voxel size
-    GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. Could be the same as FinalfRMIResolution something different, which will call a different module for subcortical processing
+    LowResMesh="32" #Needs to match what is in PostFreeSurfer, 32 is on average 2mm spacing between the vertices on the midthickness
+    FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
+    SmoothingFWHM="2" #Recommended to be roughly the grayordinates spacing, i.e 2mm on HCP data 
+    GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. 2mm gives the HCP standard grayordinates space with 91282 grayordinates.  Can be different from the FinalfMRIResolution (e.g. in the case of HCP 7T data at 1.6mm)
     # RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
     RegName="FS"
 
