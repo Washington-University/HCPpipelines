@@ -490,13 +490,9 @@ Preprocessing. So Functional Preprocessing should not be attempted on
 data sets for which Structural Preprocessing is not yet complete.
 
 Functional Preprocessing is divided into 2 parts: Generic fMRI Volume 
-Preprocessing and Generic fMRI Surface Preprocessing.  Unlike Structural
-Preprocessing, in which the 3 parts (Pre-FreeSurfer, FreeSurfer,
-and Post-FreeSurfer) have a defined order in which they must run 
-(i.e. the parts of Structural Preprocessing are *order dependent*), 
-the order of running volumetric versus surface-based Functional Preprocessing
-is irrelevant (i.e. the parts of Functional Preprocessing are 
-*order independent*).
+Preprocessing and Generic fMRI Surface Preprocessing.  These 2 parts
+must be run in order: Generic fMRI Volume Preprocessing followed by
+Generic fMRI Surface Ppreprocessing.
 
 As is true of the other types of preprocessing discussed above, there
 are example scripts for running each of the two types of Functional Preprocessing.
