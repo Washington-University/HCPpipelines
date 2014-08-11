@@ -246,7 +246,7 @@ main() {
         fi
     fi
 
-    log_Msg "Completed"
+    log_Msg "Completed with return value: ${eddyReturnValue}"
     exit ${eddyReturnValue}
 }
 
