@@ -412,7 +412,7 @@ main() {
     done
 
     # copy negative raw data
-    log_Msg "Copying negative raw data  to working directory"
+    log_Msg "Copying negative raw data to working directory"
     NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
     log_Msg "NegInputImages: ${NegInputImages}"
 
