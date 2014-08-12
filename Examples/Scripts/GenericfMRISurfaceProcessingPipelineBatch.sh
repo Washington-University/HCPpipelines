@@ -65,7 +65,7 @@ for Subject in $Subjlist ; do
       --fmrires=$FinalfMRIResolution \
       --smoothingFWHM=$SmoothingFWHM \
       --grayordinatesres=$GrayordinatesResolution \
-      --regname=$RegName
+      --regname=$RegName"
 
       echo ". ${EnvironmentScript}"
             
