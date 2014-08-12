@@ -596,6 +596,11 @@ job scheduler, we generally request the following resource limits.
     range.
   * Walltime requirements can be as high as 36 hours.
 
+* Task fMRI Analysis
+  * Walltime limits on Task fMRI Analysis are generally set to 24 hours with 
+    the actual expected walltimes to run about from 4-12 hours.
+  * Memory limits are set at 12 GB.
+
 The walltime limits in particular are only useful if you have some idea of the
 capabilities of the computer node on which the jobs were run. For information 
 about the configuration of the cluster nodes used to come up with the above 
