@@ -517,13 +517,34 @@ actual tasks or the Resting State "tasks".
 Like the Post-FreeSurfer pipeline, you will also need to set
 the `RegName` variable to either `MSMSulc` or `FS`.  
 
+### Task Analysis Processing
+
+Task fMRI (tfMRI) data can be further processed (after Functional
+Preprocessing is complete) using the `TaskfMRIAnalysisBatch.sh` 
+script.  The `TaskfMRIAnalysisBatch.sh` script runs Level 1 and 
+Level 2 Task fMRI Analysis.  As has been the case with the other 
+sample scripts, you will need to verify or edit the `StudyFolder`, 
+`Subjlist`, and `EnvironmentScript` variables defined at the top 
+of this batch processing script.
+
+In addition to these variable modifications, you should check or edit
+the contents of the `LevelOneTasksList`, `LevelOneFSFsList`, `LevelTwoTaskList`,
+and `LevelTwoFSFList` variables.  As distributed, these variables are c
+configured to perform Level 1 task analysis only on the RL and LR conditions
+for the EMOTION task and Level 2 task analysis on the combined results of 
+the RL and LR Level 1 analysis for the EMOTION task.  You can add other
+conditions for Level 1 and Level 2 analysis by altering the settings of
+these variables.  Please be aware that changing these settings will 
+alter the types of analysis that are done for *all* subjects listed
+in the `Sublist` variable.
+
 -----
 
 <a id="the-ica-fix-pipeline">
 ## The ICA FIX pipeline
 </a>
 
-In the HCP, resting state fMRI (rfMRI) data is further processed (after 
+Resting state fMRI (rfMRI) data can be further processed (after 
 Functional Preprocessing is complete) using the FMRIB group's 
 ICA-based Xnoiseifer - FIX ([ICA FIX](http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FIX)).
 This processing regressess out motion timeseries and artifact ICA components (ICA

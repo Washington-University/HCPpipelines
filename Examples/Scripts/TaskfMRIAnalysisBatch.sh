@@ -1,8 +1,8 @@
 #!/bin/bash 
 
-Subjlist="792564" #Space delimited list of subject IDs
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/TestStudyFolder" #Location of Subject folders (named by subjectID)
-EnvironmentScript="/media/2TBB/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+Subjlist="100307" #Space delimited list of subject IDs
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later)
@@ -42,13 +42,20 @@ TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task f
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 
 for FinalSmoothingFWHM in $SmoothingList ; do
+  echo $FinalSmoothingFWHM
+
   i=1
   for LevelTwoTask in $LevelTwoTaskList ; do
+    echo "  ${LevelTwoTask}"
+
     LevelOneTasks=`echo $LevelOneTasksList | cut -d " " -f $i`
     LevelOneFSFs=`echo $LevelOneFSFsList | cut -d " " -f $i`
     LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
     LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
     for Subject in $Subjlist ; do
+      echo "    ${Subject}"
+
+      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
 
       ${FSLDIR}/bin/fsl_sub ${QUEUE} \
         ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
