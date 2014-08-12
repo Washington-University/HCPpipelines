@@ -31,7 +31,7 @@ ${FSLDIR}/bin/imrm ${workingdir}/Neg_b0*
 echo "Running BET on the hifi b0"
 ${FSLDIR}/bin/bet ${workingdir}/hifib0 ${workingdir}/nodif_brain -m -f 0.2
 
-if [ ! -f ${workingdir}/nodif_brain ]; then
+if [ ! -f ${workingdir}/nodif_brain.nii.gz ]; then
     echo "run_topup.sh -- ERROR -- ${FSLDIR}/bin/bet failed to generate ${workingdir}/nodif_brain.nii.gz"
     # Need to add mechanism whereby scripts that invoke this script (run_topup.sh)
     # check for a return code to determine success or failure
