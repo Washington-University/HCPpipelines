@@ -619,7 +619,7 @@ in the stderr file (e.g. `DiffPreprocPipeline.sh.e<process-id>`) that indicates 
 your process was `Killed`, it is worth noting that many versions of Linux have a process
 referred to as the *Out of Memory Killer* or *OOM Killer*.  When a system running an 
 OOM Killer gets critically low on memory, the OOM Killer starts killing processes by 
-sending them a `-9' signal.  This type of process killing immediately stops the process
+sending them a `-9` signal.  This type of process killing immediately stops the process
 from running, frees up any memory that process is using, and causes the return value 
 from the killed process to be `137`.  (By convention, this return value is 128 plus 
 the signal number, which is 9. Thus a return value of 128+9=137.)
