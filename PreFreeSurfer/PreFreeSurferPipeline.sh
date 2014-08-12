@@ -428,11 +428,7 @@ for TXw in ${Modalities} ; do
         log_Msg "Averaging ${TXw} Images"
         log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
         mkdir -p ${TXwFolder}/Average${TXw}Images
-        # if [ ${AvgrdcSTRING} = "TOPUP" ] ; then
-        #     echo "PERFORMING TOPUP READOUT DISTORTION CORRECTION AND AVERAGING"
-        #     ${RUN} ${HCPPIPEDIR_PreFS}/TopupDistortionCorrectAndAverage.sh ${TXwFolder}/Average${TXw}Images "${OutputTXwImageSTRING}" ${TXwFolder}/${TXwImage} ${TopupConfig}
-        # else
-	    log_Msg "PERFORMING SIMPLE AVERAGING"
+	log_Msg "PERFORMING SIMPLE AVERAGING"
         ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
         # fi
     else
