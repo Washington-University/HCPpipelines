@@ -15,6 +15,8 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 * [Getting example data](#getting-example-data)
 * [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data)
 * [The ICA FIX pipeline](#the-ica-fix-pipeline)
+* [A note about resource requirements](#a-note-about-resource-requirements)
+* [Hint for detected Out of Memory conditions](#hint-for-detecting-out-of-memory-conditions)
 * [I still have questions](#i-still-have-questions)
 
 -----
@@ -531,6 +533,99 @@ The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz)
 includes the `hcp_fix` file which is a wrapper script for running 
 ICA FIX on data that has been run through the HCP Structural and Functional 
 Preprocessing.  The hcp_fix script is run with a high-pass filter of 2000 seconds.  
+
+-----
+
+<a id="a-note-about-resource-requirements">
+## A note about resource requirements
+</a>
+
+The memory and processing time requirements for running the HCP Pipelines scripts is 
+relatively high. To provide an reference point, when the HCP runs these scripts to 
+process data by submitting them to a cluster managed by a Portable Batch System (PBS) 
+job scheduler, we generally request the following resource limits.
+
+* Structural Preprocessing (Pre-Freesurfer, FreeSurfer, and Post-FreeSurfer combined) 
+  * Walltime
+    * Structural Preprocessing usually finishes within 24 hours
+    * We set the walltime limit to 24-48 hours and infrequently have to adjust it up to 96 hours
+  * Memory
+    * We expect Structural Preprocessing to have maximum memory requirements in the range of
+      12 GB. But infrequently we have to adjust the memory limit up to 24 GB.
+
+* Functional Preprocessing (Volume and Surface based preprocessing combined)
+  * Time and memory requirements vary depending on the length of the fMRI scanning session
+  * In our protocol, resting state functional scans (rfMRI) are longer duration than task 
+    functional scans (tfMRI) and therefore have higher time and memory requirements.
+  * Jobs processing resting state functional MRI (rfMRI) scans usually have walltime 
+    limits in the range of 36-48 hrs and memory limits in the 20-24 GB range.
+  * Jobs processing task functional MRI (tfMRI) scans may have resource limits that vary
+    based on the task's duration, but generally are walltime limited to 24 hours and 
+    memory limited to 12 GB.  
+  * Often tfMRI preprocessing takes in the neighborhood of 4 hours and 
+    rfMRI preprocessing takes in the neighborhood of 10 hours.
+
+* Diffusion Preprocessing 
+  * Time and memory requirements for Diffusion preprocessing will depend upon
+    whether you are running the `eddy` portion of Diffusion preprocessing using
+    the Graphics Processing Unit (GPU) enabled version of the `eddy` binary 
+    that is part of FSL. (The FMRIB group at Oxford University recommends using
+    the GPU-enabled version of `eddy` whenever possible.)
+  * Memory requirements for Diffusion preprocessing are generally in the 24-50 GB
+    range.
+  * Walltime requirements can be as high as 36 hours.
+
+The walltime limits in particular are only useful if you have some idea of the
+capabilities of the computer node on which the jobs were run. For information 
+about the configuration of the cluster nodes used to come up with the above 
+limits/requirements, see the description of the equipment available at the 
+Washington University Center for High Performance Computing 
+([CHPC](http://chpc.wustl.edu)) [hardware resources](http://chpc.wustl.edu/hardware.html).
+
+-----
+
+<a id="hint-for-detecting-out-of-memory-conditions">
+## Hint for detecting Out of Memory conditions
+</a>
+
+If one of your preprocessing jobs ends in a seemingly inexplicable way with a message 
+in the stderr file (e.g. `DiffPreprocPipeline.sh.e<process-id>`) that indicates that
+your process was `Killed`, it is worth noting that many versions of Linux have a process
+referred to as the *Out of Memory Killer* or *OOM Killer*.  When a system running an 
+OOM Killer gets critically low on memory, the OOM Killer starts killing processes by 
+sending them a `-9' signal.  This type of process killing immediately stops the process
+from running, frees up any memory that process is using, and causes the return value 
+from the killed process to be `137`.  (By convention, this return value is 128 plus 
+the signal number, which is 9. Thus a return value of 128+9=137.)
+
+For example, if the `eddy` executable used in Diffusion preprocessing attempts to 
+allocate more memory than is available, it may be killed by the OOM Killer and return 
+a status code of 137. In that case, there may be a line in the stderr that looks
+similar to:
+
+        /home/tbb/projects/Pipelines/DiffusionPreprocessing/scripts/run_eddy.sh: line 182: 39455 Killed  ...*further info here*...
+
+and a line in the stdout that looks similar to:
+
+        Sat Aug 9 21:20:21 CDT 2014 - run_eddy.sh - Completed with return value: 137
+
+Lines such as these are a good hint that you are having problems with not having
+enough memory. Out of memory conditions and the subsequent killing of jobs
+by the OOM Killer can be confirmed by looking in the file where the OOM Killer
+logs its activities (`/var/log/kern.log` on Ubuntu systems, `/var/log/messages*` 
+on some other systems).  
+
+Searching those log files for the word `Killed` may help find the log message
+indicating that your process was killed by the OOM Killer.  Messages within
+these log files will often tell you how much memory was allocated by the 
+process just before it was killed.
+
+Note that within the HCP Pipeline scripts, not all invocations of binaries or 
+other scripts print messages to stderr or stdout indicating their return 
+status codes. The above example is from a case in which the return status
+code is reported. So while this hint is intended to be helpful, it should
+not be assumed that all out of memory conditions can be discovered by 
+searching the stdout and stderr files for return status codes of 137.
 
 -----
 
