@@ -33,7 +33,7 @@ LevelOneFSFsList="tfMRI_EMOTION_RL@tfMRI_EMOTION_LR" #Delimit runs with @ and ta
 LevelTwoTaskList="tfMRI_EMOTION" #Space delimited list
 LevelTwoFSFList="tfMRI_EMOTION" #Space delimited list
 
-SmoothingList="4" #Space delimited list for setting different final smoothings.  2mm is no more smoothing (above minimal preprocessing pipelines grayordinates smoothing).  Smoothing is added onto minimal preprocessing smoothing to reach desired amount
+SmoothingList="2" #Space delimited list for setting different final smoothings.  2mm is no more smoothing (above minimal preprocessing pipelines grayordinates smoothing).  Smoothing is added onto minimal preprocessing smoothing to reach desired amount
 LowResMesh="32" #32 if using HCP minimal preprocessing pipeline outputs
 GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline outputs
 OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
