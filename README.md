@@ -570,7 +570,7 @@ There is a script in the `${HCPPIPEDIR}/Examples/FsfGeneration/scripts` director
 of time points from an image file and set the correct `Total volumes` value in the .fsf file 
 for a specified task.  
 
-Example invocations of the `generate_level1_fsf.sh` script would looks like:
+Example invocations of the `generate_level1_fsf.sh` script would look like:
 
         $ cd ${HCPPIPEDIR}/Examples/FsfGeneration/scripts
 
