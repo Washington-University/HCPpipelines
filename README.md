@@ -538,6 +538,66 @@ these variables.  Please be aware that changing these settings will
 alter the types of analysis that are done for *all* subjects listed
 in the `Sublist` variable.
 
+#### FEAT setup files for Level 1 Task Analysis 
+
+Level 1 Task Analysis requires FEAT setup files (FSF files) for each 
+direction of the functional task.  
+
+For example, to perform Level 1 Task Analysis for the `tfMRI_EMOTION_RL` 
+and `tfMRI_EMOTION_LR` tasks for subject `100307`, the following FEAT setup 
+files must exist before running the Task Analysis pipeline:
+
+* `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION_LR/tfMRI_EMOTION_LR_hp200_s4_level1.fsf`
+* `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION_RL/tfMRI_EMOTION_RL_hp200_s4_level1.fsf`
+
+Templates for these files can be found in the `${HCPPIPEDIR}/Examples/FsfGeneration/templates` 
+directory.  The number of time points entry in the template for each
+functional task must match the actual number of time points in the corresponding scan.
+
+An entry in the `tfMRI_EMOTION_LR_hp200_s4_level1.fsf` file might look like:
+
+        # Total volumes
+        set fmri(npts) 176
+
+The `176` value must match the number of volumes (number of time points) in the 
+corresponding `tfMRI_EMOTION_LR.nii.gz` scan file.  After you have copied the appropriate 
+template for a scan to the indicated location in the `MNINonLinear/Results/<task>` directory, 
+you *may* have to edit the .fsf file to make sure the value that it has for `Total volumes` 
+matches the number of time points in the corresponding scan file.
+
+There is a script in the `${HCPPIPEDIR}/Examples/FsfGeneration/scripts` directory named 
+`generate_level1_fsf.sh` which can be either studied or used directly to retrieve the number
+of time points from an image file and set the correct `Total volumes` value in the .fsf file 
+for a specified task.  
+
+Example invocations of the `generate_level1_fsf.sh` script would looks like:
+
+        $ cd ${HCPPIPEDIR}/Examples/FsfGeneration/scripts
+
+        $ ./generate_level1_fsf.sh --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+            --subject=100307 --taskname=tfMRI_EMOTION_RL --templatedir=../templates \
+            --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_RL
+
+
+        $ ./generate_level1_fsf.sh --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+            --subject=100307 --taskname=tfMRI_EMOTION_LR --templatedir=../templates \
+            --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_LR
+
+#### FEAT setup file for Level 2 Task Analysis 
+
+Level 2 Task Analysis requires a FEAT setup file also. For example, to perform 
+Level 2 Task Analysis for the `tfMRI_EMOTION` task for subject `100307` (combination 
+data from `tfMRI_EMOTION_RL` and `tfMRI_EMOTION_LR`, the following FEAT setup file
+must exist before running the Task Analysis pipeline:
+
+* `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION/tfMRI_EMOTION_hp200_s4_level2.fsf`
+
+The template file named `tfMRI_EMOTION_hp200_s4_level2.fsf` in the 
+`${HCPPIPEDIR}/Examples/FsfGeneration/templates` directory can be copied, unchanged 
+to the appropriate location before running the Task Analysis pipeline.  You will likely 
+have to create the level 2 results directory, e.g. `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION`
+before you can copy the template into that directory.
+
 -----
 
 <a id="the-ica-fix-pipeline">
