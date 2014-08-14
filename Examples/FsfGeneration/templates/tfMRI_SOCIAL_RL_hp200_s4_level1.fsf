@@ -311,7 +311,7 @@ set fmri(tempfilt_yn1) 1
 set fmri(deriv_yn1) 1
 
 # Custom EV file (EV 1)
-set fmri(custom1) "../EVs/rnd.txt"
+set fmri(custom1) "../../../../unprocessed/3T/tfMRI_SOCIAL_RL/LINKED_DATA/EPRIME/EVs/rnd.txt"
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0
@@ -354,7 +354,7 @@ set fmri(tempfilt_yn2) 1
 set fmri(deriv_yn2) 1
 
 # Custom EV file (EV 2)
-set fmri(custom2) "../EVs/mental.txt"
+set fmri(custom2) "../../../../unprocessed/3T/tfMRI_SOCIAL_RL/LINKED_DATA/EPRIME/EVs/mental.txt"
 
 # Orthogonalise EV 2 wrt EV 0
 set fmri(ortho2.0) 0
