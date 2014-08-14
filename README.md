@@ -624,7 +624,7 @@ Typical invocations of the `copy_evs_into_results.sh` script would look like:
 
 This must be done for every directory of every task for which you want to perform task analysis.
 
-#### FEAT setup file for Level 2 Task Analysis 
+#### Preparing to do Level 2 Task Analysis 
 
 Level 2 Task Analysis requires a FEAT setup file also. For example, to perform 
 Level 2 Task Analysis for the `tfMRI_EMOTION` task for subject `100307` (combination 
