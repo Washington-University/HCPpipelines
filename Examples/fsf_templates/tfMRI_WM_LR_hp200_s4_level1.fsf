@@ -315,7 +315,7 @@ set fmri(tempfilt_yn1) 1
 set fmri(deriv_yn1) 1
 
 # Custom EV file (EV 1)
-set fmri(custom1) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/2bk_body.txt"
+set fmri(custom1) "../EVs/2bk_body.txt"
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0
@@ -376,7 +376,7 @@ set fmri(tempfilt_yn2) 1
 set fmri(deriv_yn2) 1
 
 # Custom EV file (EV 2)
-set fmri(custom2) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/2bk_faces.txt"
+set fmri(custom2) "../EVs/2bk_faces.txt"
 
 # Orthogonalise EV 2 wrt EV 0
 set fmri(ortho2.0) 0
@@ -437,7 +437,7 @@ set fmri(tempfilt_yn3) 1
 set fmri(deriv_yn3) 1
 
 # Custom EV file (EV 3)
-set fmri(custom3) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/2bk_places.txt"
+set fmri(custom3) "../EVs/2bk_places.txt"
 
 # Orthogonalise EV 3 wrt EV 0
 set fmri(ortho3.0) 0
@@ -498,7 +498,7 @@ set fmri(tempfilt_yn4) 1
 set fmri(deriv_yn4) 1
 
 # Custom EV file (EV 4)
-set fmri(custom4) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/2bk_tools.txt"
+set fmri(custom4) "../EVs/2bk_tools.txt"
 
 # Orthogonalise EV 4 wrt EV 0
 set fmri(ortho4.0) 0
@@ -559,7 +559,7 @@ set fmri(tempfilt_yn5) 1
 set fmri(deriv_yn5) 1
 
 # Custom EV file (EV 5)
-set fmri(custom5) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/0bk_body.txt"
+set fmri(custom5) "../EVs/0bk_body.txt"
 
 # Orthogonalise EV 5 wrt EV 0
 set fmri(ortho5.0) 0
@@ -620,7 +620,7 @@ set fmri(tempfilt_yn6) 1
 set fmri(deriv_yn6) 1
 
 # Custom EV file (EV 6)
-set fmri(custom6) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/0bk_faces.txt"
+set fmri(custom6) "../EVs/0bk_faces.txt"
 
 # Orthogonalise EV 6 wrt EV 0
 set fmri(ortho6.0) 0
@@ -681,7 +681,7 @@ set fmri(tempfilt_yn7) 1
 set fmri(deriv_yn7) 1
 
 # Custom EV file (EV 7)
-set fmri(custom7) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/0bk_places.txt"
+set fmri(custom7) "../EVs/0bk_places.txt"
 
 # Orthogonalise EV 7 wrt EV 0
 set fmri(ortho7.0) 0
@@ -742,7 +742,7 @@ set fmri(tempfilt_yn8) 1
 set fmri(deriv_yn8) 1
 
 # Custom EV file (EV 8)
-set fmri(custom8) "../../../../unprocessed/3T/tfMRI_WM_LR/LINKED_DATA/EPRIME/EVs/0bk_tools.txt"
+set fmri(custom8) "../EVs/0bk_tools.txt"
 
 # Orthogonalise EV 8 wrt EV 0
 set fmri(ortho8.0) 0

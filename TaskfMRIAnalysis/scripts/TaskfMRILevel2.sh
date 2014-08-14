@@ -66,13 +66,15 @@ fi
 
 log_Msg "Analyses: ${Analyses}"
 for Analysis in ${Analyses} ; do
-  log_Msg "Analysis: ${Analysis}}"
+  log_Msg "Analysis: ${Analysis}"
   log_Msg "About to mkdir -p ${LevelTwoFEATDir}/${Analysis}"
   mkdir -p ${LevelTwoFEATDir}/${Analysis}
   
   #Copy over level one folders and convert CIFTI to NIFTI if required
   log_Msg "Copy over level one folders and convert CIFTI to NIFTI if required"
+  log_Msg "FirstFolder: ${FirstFolder}"
   if [ -e ${FirstFolder}/${Analysis}/cope1.nii.gz ] ; then
+    log_Msg "Found cope1.nii.gz"
     Grayordinates="NO"
     i=1
     for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
@@ -81,6 +83,7 @@ for Analysis in ${Analyses} ; do
       i=$(($i+1))
     done
   elif [ -e ${FirstFolder}/${Analysis}/cope1.dtseries.nii ] ; then
+    log_Msg "Found cope1.dtseries.nii"
     Grayordinates="YES"
     i=1
     for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
@@ -104,9 +107,12 @@ for Analysis in ${Analyses} ; do
   MERGESTRING=""
   i=1
   while [ $i -le ${NumFirstLevelFolders} ] ; do
+    log_Msg "i: ${i}"
     dof=`cat ${LevelTwoFEATDir}/${Analysis}/${i}/dof`
+    log_Msg "dof: ${dof}"
     fslmaths ${LevelTwoFEATDir}/${Analysis}/${i}/res4d.nii.gz -Tstd -bin -mul $dof ${LevelTwoFEATDir}/${Analysis}/${i}/dofmask.nii.gz
     MERGESTRING=`echo "${MERGESTRING}${LevelTwoFEATDir}/${Analysis}/${i}/dofmask.nii.gz "`
+    log_Msg "MERGESTRING: ${MERGESTRING}"
     i=$(($i+1))
   done
   fslmerge -t ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz $MERGESTRING

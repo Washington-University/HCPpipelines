@@ -311,7 +311,7 @@ set fmri(tempfilt_yn1) 1
 set fmri(deriv_yn1) 1
 
 # Custom EV file (EV 1)
-set fmri(custom1) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/cue.txt"
+set fmri(custom1) "../EVs/cue.txt"
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0
@@ -366,7 +366,7 @@ set fmri(tempfilt_yn2) 1
 set fmri(deriv_yn2) 1
 
 # Custom EV file (EV 2)
-set fmri(custom2) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/lf.txt"
+set fmri(custom2) "../EVs/lf.txt"
 
 # Orthogonalise EV 2 wrt EV 0
 set fmri(ortho2.0) 0
@@ -421,7 +421,7 @@ set fmri(tempfilt_yn3) 1
 set fmri(deriv_yn3) 1
 
 # Custom EV file (EV 3)
-set fmri(custom3) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/lh.txt"
+set fmri(custom3) "../EVs/lh.txt"
 
 # Orthogonalise EV 3 wrt EV 0
 set fmri(ortho3.0) 0
@@ -476,7 +476,7 @@ set fmri(tempfilt_yn4) 1
 set fmri(deriv_yn4) 1
 
 # Custom EV file (EV 4)
-set fmri(custom4) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/rf.txt"
+set fmri(custom4) "../EVs/rf.txt"
 
 # Orthogonalise EV 4 wrt EV 0
 set fmri(ortho4.0) 0
@@ -531,7 +531,7 @@ set fmri(tempfilt_yn5) 1
 set fmri(deriv_yn5) 1
 
 # Custom EV file (EV 5)
-set fmri(custom5) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/rh.txt"
+set fmri(custom5) "../EVs/rh.txt"
 
 # Orthogonalise EV 5 wrt EV 0
 set fmri(ortho5.0) 0
@@ -586,7 +586,7 @@ set fmri(tempfilt_yn6) 1
 set fmri(deriv_yn6) 1
 
 # Custom EV file (EV 6)
-set fmri(custom6) "../../../../unprocessed/3T/tfMRI_MOTOR_LR/LINKED_DATA/EPRIME/EVs/t.txt"
+set fmri(custom6) "../EVs/t.txt"
 
 # Orthogonalise EV 6 wrt EV 0
 set fmri(ortho6.0) 0

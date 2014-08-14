@@ -33,13 +33,13 @@ set fmri(featwatcher_yn) 0
 set fmri(sscleanup_yn) 0
 
 # Output directory
-set fmri(outputdir) "tfMRI_GAMBLING_LR_hp200_s4"
+set fmri(outputdir) "tfMRI_RELATIONAL_RL_hp200_s4"
 
 # TR(s)
 set fmri(tr) 0.72
 
 # Total volumes
-set fmri(npts) 253
+set fmri(npts) 232
 
 # Delete volumes
 set fmri(ndelete) 0
@@ -274,13 +274,13 @@ set fmri(paradigm_hp) 200
 set fmri(ncopeinputs) 0
 
 # 4D AVW data or FEAT directory (1)
-set feat_files(1) "../tfMRI_GAMBLING_LR.nii.gz"
+set feat_files(1) "../tfMRI_RELATIONAL_RL.nii.gz"
 
 # Add confound EVs text file
 set fmri(confoundevs) 0
 
 # EV 1 title
-set fmri(evtitle1) "PUNISH"
+set fmri(evtitle1) "MATCH"
 
 # Basic waveform shape (EV 1)
 # 0 : Square
@@ -311,7 +311,7 @@ set fmri(tempfilt_yn1) 1
 set fmri(deriv_yn1) 1
 
 # Custom EV file (EV 1)
-set fmri(custom1) "../../../../unprocessed/3T/tfMRI_GAMBLING_LR/LINKED_DATA/EPRIME/EVs/loss.txt"
+set fmri(custom1) "../EVs/match.txt"
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0
@@ -323,7 +323,7 @@ set fmri(ortho1.1) 0
 set fmri(ortho1.2) 0
 
 # EV 2 title
-set fmri(evtitle2) "REWARD"
+set fmri(evtitle2) "REL"
 
 # Basic waveform shape (EV 2)
 # 0 : Square
@@ -354,7 +354,7 @@ set fmri(tempfilt_yn2) 1
 set fmri(deriv_yn2) 1
 
 # Custom EV file (EV 2)
-set fmri(custom2) "../../../../unprocessed/3T/tfMRI_GAMBLING_LR/LINKED_DATA/EPRIME/EVs/win.txt"
+set fmri(custom2) "../EVs/relation.txt"
 
 # Orthogonalise EV 2 wrt EV 0
 set fmri(ortho2.0) 0
@@ -375,7 +375,7 @@ set fmri(con_mode) orig
 set fmri(conpic_real.1) 1
 
 # Title for contrast_real 1
-set fmri(conname_real.1) "PUNISH"
+set fmri(conname_real.1) "MATCH"
 
 # Real contrast_real vector 1 element 1
 set fmri(con_real1.1) 1
@@ -396,7 +396,7 @@ set fmri(ftest_real1.1) 1
 set fmri(conpic_real.2) 1
 
 # Title for contrast_real 2
-set fmri(conname_real.2) "REWARD"
+set fmri(conname_real.2) "REL"
 
 # Real contrast_real vector 2 element 1
 set fmri(con_real2.1) 0
@@ -417,16 +417,16 @@ set fmri(ftest_real1.2) 1
 set fmri(conpic_real.3) 1
 
 # Title for contrast_real 3
-set fmri(conname_real.3) "PUNISH-REWARD"
+set fmri(conname_real.3) "MATCH-REL"
 
 # Real contrast_real vector 3 element 1
-set fmri(con_real3.1) 1
+set fmri(con_real3.1) 1.0
 
 # Real contrast_real vector 3 element 2
 set fmri(con_real3.2) 0
 
 # Real contrast_real vector 3 element 3
-set fmri(con_real3.3) -1
+set fmri(con_real3.3) -1.0
 
 # Real contrast_real vector 3 element 4
 set fmri(con_real3.4) 0
@@ -438,16 +438,16 @@ set fmri(ftest_real1.3) 0
 set fmri(conpic_real.4) 1
 
 # Title for contrast_real 4
-set fmri(conname_real.4) "neg_PUNISH"
+set fmri(conname_real.4) "REL-MATCH"
 
 # Real contrast_real vector 4 element 1
-set fmri(con_real4.1) -1
+set fmri(con_real4.1) -1.0
 
 # Real contrast_real vector 4 element 2
 set fmri(con_real4.2) 0
 
 # Real contrast_real vector 4 element 3
-set fmri(con_real4.3) 0
+set fmri(con_real4.3) 1.0
 
 # Real contrast_real vector 4 element 4
 set fmri(con_real4.4) 0
@@ -459,16 +459,16 @@ set fmri(ftest_real1.4) 0
 set fmri(conpic_real.5) 1
 
 # Title for contrast_real 5
-set fmri(conname_real.5) "neg_REWARD"
+set fmri(conname_real.5) "neg_MATCH"
 
 # Real contrast_real vector 5 element 1
-set fmri(con_real5.1) 0
+set fmri(con_real5.1) -1.0
 
 # Real contrast_real vector 5 element 2
 set fmri(con_real5.2) 0
 
 # Real contrast_real vector 5 element 3
-set fmri(con_real5.3) -1
+set fmri(con_real5.3) 0
 
 # Real contrast_real vector 5 element 4
 set fmri(con_real5.4) 0
@@ -480,16 +480,16 @@ set fmri(ftest_real1.5) 0
 set fmri(conpic_real.6) 1
 
 # Title for contrast_real 6
-set fmri(conname_real.6) "REWARD-PUNISH"
+set fmri(conname_real.6) "neg_REL"
 
 # Real contrast_real vector 6 element 1
-set fmri(con_real6.1) -1
+set fmri(con_real6.1) 0.0
 
 # Real contrast_real vector 6 element 2
 set fmri(con_real6.2) 0
 
 # Real contrast_real vector 6 element 3
-set fmri(con_real6.3) 1
+set fmri(con_real6.3) -1
 
 # Real contrast_real vector 6 element 4
 set fmri(con_real6.4) 0
@@ -501,7 +501,7 @@ set fmri(ftest_real1.6) 0
 set fmri(conpic_orig.1) 1
 
 # Title for contrast_orig 1
-set fmri(conname_orig.1) "PUNISH"
+set fmri(conname_orig.1) "MATCH"
 
 # Real contrast_orig vector 1 element 1
 set fmri(con_orig1.1) 1
@@ -516,7 +516,7 @@ set fmri(ftest_orig1.1) 1
 set fmri(conpic_orig.2) 1
 
 # Title for contrast_orig 2
-set fmri(conname_orig.2) "REWARD"
+set fmri(conname_orig.2) "REL"
 
 # Real contrast_orig vector 2 element 1
 set fmri(con_orig2.1) 0
@@ -531,13 +531,13 @@ set fmri(ftest_orig1.2) 1
 set fmri(conpic_orig.3) 1
 
 # Title for contrast_orig 3
-set fmri(conname_orig.3) "PUNISH-REWARD"
+set fmri(conname_orig.3) "MATCH-REL"
 
 # Real contrast_orig vector 3 element 1
-set fmri(con_orig3.1) 1
+set fmri(con_orig3.1) 1.0
 
 # Real contrast_orig vector 3 element 2
-set fmri(con_orig3.2) -1
+set fmri(con_orig3.2) -1.0
 
 # F-test 1 element 3
 set fmri(ftest_orig1.3) 0
@@ -546,13 +546,13 @@ set fmri(ftest_orig1.3) 0
 set fmri(conpic_orig.4) 1
 
 # Title for contrast_orig 4
-set fmri(conname_orig.4) "neg_PUNISH"
+set fmri(conname_orig.4) "REL-MATCH"
 
 # Real contrast_orig vector 4 element 1
-set fmri(con_orig4.1) -1
+set fmri(con_orig4.1) -1.0
 
 # Real contrast_orig vector 4 element 2
-set fmri(con_orig4.2) 0
+set fmri(con_orig4.2) 1.0
 
 # F-test 1 element 4
 set fmri(ftest_orig1.4) 0
@@ -561,13 +561,13 @@ set fmri(ftest_orig1.4) 0
 set fmri(conpic_orig.5) 1
 
 # Title for contrast_orig 5
-set fmri(conname_orig.5) "neg_REWARD"
+set fmri(conname_orig.5) "neg_MATCH"
 
 # Real contrast_orig vector 5 element 1
-set fmri(con_orig5.1) 0
+set fmri(con_orig5.1) -1.0
 
 # Real contrast_orig vector 5 element 2
-set fmri(con_orig5.2) -1
+set fmri(con_orig5.2) 0
 
 # F-test 1 element 5
 set fmri(ftest_orig1.5) 0
@@ -576,13 +576,13 @@ set fmri(ftest_orig1.5) 0
 set fmri(conpic_orig.6) 1
 
 # Title for contrast_orig 6
-set fmri(conname_orig.6) "REWARD-PUNISH"
+set fmri(conname_orig.6) "neg_REL"
 
 # Real contrast_orig vector 6 element 1
-set fmri(con_orig6.1) -1
+set fmri(con_orig6.1) 0.0
 
 # Real contrast_orig vector 6 element 2
-set fmri(con_orig6.2) 1
+set fmri(con_orig6.2) -1
 
 # F-test 1 element 6
 set fmri(ftest_orig1.6) 0

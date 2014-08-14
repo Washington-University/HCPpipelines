@@ -33,7 +33,7 @@ set fmri(featwatcher_yn) 0
 set fmri(sscleanup_yn) 0
 
 # Output directory
-set fmri(outputdir) "tfMRI_SOCIAL_RL_hp200_s4"
+set fmri(outputdir) "tfMRI_SOCIAL_LR_hp200_s4"
 
 # TR(s)
 set fmri(tr) 0.72
@@ -274,7 +274,7 @@ set fmri(paradigm_hp) 200
 set fmri(ncopeinputs) 0
 
 # 4D AVW data or FEAT directory (1)
-set feat_files(1) "../tfMRI_SOCIAL_RL.nii.gz"
+set feat_files(1) "../tfMRI_SOCIAL_LR.nii.gz"
 
 # Add confound EVs text file
 set fmri(confoundevs) 0
@@ -311,7 +311,7 @@ set fmri(tempfilt_yn1) 1
 set fmri(deriv_yn1) 1
 
 # Custom EV file (EV 1)
-set fmri(custom1) "../../../../unprocessed/3T/tfMRI_SOCIAL_RL/LINKED_DATA/EPRIME/EVs/rnd.txt"
+set fmri(custom1) "../EVs/rnd.txt"
 
 # Orthogonalise EV 1 wrt EV 0
 set fmri(ortho1.0) 0
@@ -354,7 +354,7 @@ set fmri(tempfilt_yn2) 1
 set fmri(deriv_yn2) 1
 
 # Custom EV file (EV 2)
-set fmri(custom2) "../../../../unprocessed/3T/tfMRI_SOCIAL_RL/LINKED_DATA/EPRIME/EVs/mental.txt"
+set fmri(custom2) "../EVs/mental.txt"
 
 # Orthogonalise EV 2 wrt EV 0
 set fmri(ortho2.0) 0

@@ -538,7 +538,7 @@ these variables.  Please be aware that changing these settings will
 alter the types of analysis that are done for *all* subjects listed
 in the `Sublist` variable.
 
-#### FEAT setup files for Level 1 Task Analysis 
+#### Preparing to do Level 1 Task Analysis 
 
 Level 1 Task Analysis requires FEAT setup files (FSF files) for each 
 direction of the functional task.  
@@ -550,8 +550,8 @@ files must exist before running the Task Analysis pipeline:
 * `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION_LR/tfMRI_EMOTION_LR_hp200_s4_level1.fsf`
 * `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION_RL/tfMRI_EMOTION_RL_hp200_s4_level1.fsf`
 
-Templates for these files can be found in the `${HCPPIPEDIR}/Examples/FsfGeneration/templates` 
-directory.  The number of time points entry in the template for each
+Templates for these files can be found in the `${HCPPIPEDIR}/Examples/fsf_templates` 
+directory.  The *number of time points* entry in the template for each
 functional task must match the actual number of time points in the corresponding scan.
 
 An entry in the `tfMRI_EMOTION_LR_hp200_s4_level1.fsf` file might look like:
@@ -565,23 +565,52 @@ template for a scan to the indicated location in the `MNINonLinear/Results/<task
 you *may* have to edit the .fsf file to make sure the value that it has for `Total volumes` 
 matches the number of time points in the corresponding scan file.
 
-There is a script in the `${HCPPIPEDIR}/Examples/FsfGeneration/scripts` directory named 
-`generate_level1_fsf.sh` which can be either studied or used directly to retrieve the number
-of time points from an image file and set the correct `Total volumes` value in the .fsf file 
-for a specified task.  
+There is a script in the `${HCPPIPEDIR}/Examples/Scripts` directory named `generate_level1_fsf.sh` 
+which can be either studied or used directly to retrieve the number of time points from an image
+file and set the correct `Total volumes` value in the .fsf file for a specified task.  
 
-Example invocations of the `generate_level1_fsf.sh` script would look like:
+Typical invocations of the `generate_level1_fsf.sh` script would look like:
 
-        $ cd ${HCPPIPEDIR}/Examples/FsfGeneration/scripts
+        $ cd ${HCPPIPEDIR}/Examples/Scripts
 
-        $ ./generate_level1_fsf.sh --studyfolder=${HOME}/projects/Pipelines_ExampleData \
-            --subject=100307 --taskname=tfMRI_EMOTION_RL --templatedir=../templates \
-            --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_RL
+        $ ./generate_level1_fsf.sh \
+        >   --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+        >   --subject=100307 --taskname=tfMRI_EMOTION_RL --templatedir=../fsf_templates \
+        >   --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_RL
 
+        $ ./generate_level1_fsf.sh \
+        >   --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+        >   --subject=100307 --taskname=tfMRI_EMOTION_LR --templatedir=../fsf_templates \
+        >   --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_LR
 
-        $ ./generate_level1_fsf.sh --studyfolder=${HOME}/projects/Pipelines_ExampleData \
-            --subject=100307 --taskname=tfMRI_EMOTION_LR --templatedir=../templates \
-            --outdir=${HOME}/projects/Pipelines_ExampleData/100307/MNINonLinear/Results/tfMRI_EMOTION_LR
+This must be done for every direction of every task for which you want to perform task analysis.
+
+Level 1 Task Analysis also requires that E-Prime EV files be available in the 
+`MNINonLinear/Results` subdirectory for the each task on which Level 1 Task Analysis is to occur.
+These EV files are available in the example unprocessed data, but are not in the 
+`MNINonLinear/Results` directory because that directory is created as part of Functional 
+Preprocesing. Since Functional Preprocessing must be completed before Task Analysis
+can be performed, the `MNINonLinear/Results` folder should exist prior to Task Analysis.
+
+There is a script in the `${HCPPIPEDIR}/Examples/Scripts` directory named `copy_evs_into_results.sh`.
+This script can be used to copy the necessary E-Prime EV files for a task into the
+appropriate place in the `MNINonLinear/Results` directory.
+
+Typical invocations of the `copy_evs_into_results.sh` script would look like:
+
+        $ cd ${HCPPIPEDIR}/Examples/Scripts
+
+        $ ./copy_evs_into_results.sh \
+	>   --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+	>   --subject=100307 \
+        >   --taskname=tfMRI_EMOTION_RL
+
+        $ ./copy_evs_into_results.sh \
+	>   --studyfolder=${HOME}/projects/Pipelines_ExampleData \
+	>   --subject=100307 \
+        >   --taskname=tfMRI_EMOTION_LR
+
+This must be done for every directory of every task for which you want to perform task analysis.
 
 #### FEAT setup file for Level 2 Task Analysis 
 
@@ -596,7 +625,8 @@ The template file named `tfMRI_EMOTION_hp200_s4_level2.fsf` in the
 `${HCPPIPEDIR}/Examples/FsfGeneration/templates` directory can be copied, unchanged 
 to the appropriate location before running the Task Analysis pipeline.  You will likely 
 have to create the level 2 results directory, e.g. `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION`
-before you can copy the template into that directory.
+(Notice that this directory name does not end with `_LR` or `_RL`) before you can copy the template 
+into that directory.
 
 -----
 
