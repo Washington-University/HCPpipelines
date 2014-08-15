@@ -69,7 +69,7 @@ BaseName=`${FSLDIR}/bin/remove_ext $Input`;
 BaseName=`basename $BaseName`;
 
 echo " "
-echo " START: BrainExtrtaction_FNIRT"
+echo " START: BrainExtraction_FNIRT"
 
 mkdir -p $WD
 
@@ -96,7 +96,7 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn --in="$ReferenceMask" --ref="$Input" -
 ${FSLDIR}/bin/fslmaths "$Input" -mas "$OutputBrainMask" "$OutputBrainExtractedImage"
 
 echo " "
-echo " END: BrainExtrtaction_FNIRT"
+echo " END: BrainExtraction_FNIRT"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 
