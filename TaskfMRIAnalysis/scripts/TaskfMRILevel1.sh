@@ -103,18 +103,44 @@ rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingStri
 
 #Split into surface and volume
 log_Msg "Split into surface and volume"
-${CARET7DIR}/wb_command -cifti-separate-all ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii -volume ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz -left ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.L."$LowResMesh"k_fs_LR.func.gii -right ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.R."$LowResMesh"k_fs_LR.func.gii
+
+dtseries_name=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii
+volume_name=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
+left_name=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.L."$LowResMesh"k_fs_LR.func.gii
+right_name=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.R."$LowResMesh"k_fs_LR.func.gii
+
+log_Msg "Command for splitting into surface and volume follows"
+log_Msg ${CARET7DIR}/wb_command -cifti-separate-all ${dtseries_name} -volume ${volume_name} -left ${left_name} -right ${right_name}
+
+${CARET7DIR}/wb_command -cifti-separate-all ${dtseries_name} -volume ${volume_name} -left ${left_name} -right ${right_name}
+
+# Verify file creation
+if [ ! -f ${volume_name} ] ; then
+    log_Msg "Volume file not created: ${volume_name}"
+fi
+
+if [ ! -f ${left_name} ] ; then
+    log_Msg "Left surface file not created: ${left_name}"
+fi
+
+if [ ! -f ${right_name} ] ; then
+    log_Msg "Right surface file not created: ${right_name}"
+fi
 
 ###Subcortical Volume Processing###
 #Run film_gls on subcortical volume data
 log_Msg "Subcortical Volume Processing - run film_gls on subcortical volume data"
-log_Msg "FEATDir: ${FEATDir}"
-log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"
-log_Msg "TemporalFilterString: ${TemporalFilterString}"
-log_Msg "SmoothingString: ${SmoothingString}"
-log_Msg "DesignMatrix: ${DesignMatrix}"
-${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --thr=1 --mode=volumetric
-rm -v ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
+
+log_Msg "Command to run film_gls on subcortical volume data follows"
+log_Msg ${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${volume_name} --pd="$DesignMatrix" --thr=1 --mode=volumetric
+
+${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${volume_name} --pd="$DesignMatrix" --thr=1 --mode=volumetric 2>&1
+
+log_Msg "Not removing subcortical volume file"
+#log_Msg "Remove subcortical volume file"
+#rm -v ${volume_name}
+
+if false ; then
 
 ###Cortical Surface Processing###
 log_Msg "Cortical Surface Processing"
@@ -255,4 +281,5 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   contrast_mgr -f ${DesignfContrasts} ${FEATDir}/StandardVolumeStats "$DesignContrasts"
 fi
 
+fi
 log_Msg "Complete"

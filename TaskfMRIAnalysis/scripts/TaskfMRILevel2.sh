@@ -19,6 +19,8 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 # Establish tool name for logging
 log_SetToolName "TaskfMRILevel2.sh"
 
+if false ; then
+
 #Set up some things
 log_Msg "Set up some things"
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
@@ -235,4 +237,5 @@ if [ ${VolumeBasedProcessing} = "YES" ] ; then
   ${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol${TemporalFilterString}${SmoothingString}.dscalar.nii ${VolMergeSTRING}  
 fi
 
+fi
 log_Msg "Complete"
