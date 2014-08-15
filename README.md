@@ -634,7 +634,7 @@ must exist before running the Task Analysis pipeline:
 * `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION/tfMRI_EMOTION_hp200_s4_level2.fsf`
 
 The template file named `tfMRI_EMOTION_hp200_s4_level2.fsf` in the 
-`${HCPPIPEDIR}/Examples/FsfGeneration/templates` directory can be copied, unchanged 
+`${HCPPIPEDIR}/Examples/fsf_templates` directory can be copied, unchanged 
 to the appropriate location before running the Task Analysis pipeline.  You will likely 
 have to create the level 2 results directory, e.g. `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION`
 (Notice that this directory name does not end with `_LR` or `_RL`) before you can copy the template 
