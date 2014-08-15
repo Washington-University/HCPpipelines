@@ -108,8 +108,13 @@ ${CARET7DIR}/wb_command -cifti-separate-all ${ResultsFolder}/${LevelOnefMRIName}
 ###Subcortical Volume Processing###
 #Run film_gls on subcortical volume data
 log_Msg "Subcortical Volume Processing - run film_gls on subcortical volume data"
+log_Msg "FEATDir: ${FEATDir}"
+log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"
+log_Msg "TemporalFilterString: ${TemporalFilterString}"
+log_Msg "SmoothingString: ${SmoothingString}"
+log_Msg "DesignMatrix: ${DesignMatrix}"
 ${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --thr=1 --mode=volumetric
-rm ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
+rm -v ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
 
 ###Cortical Surface Processing###
 log_Msg "Cortical Surface Processing"
