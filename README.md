@@ -1,6 +1,6 @@
 # HCP Pipelines 
 
-The HCP Pipelines product is a set tools (primarily, but not exclusively,
+The HCP Pipelines product is a set of tools (primarily, but not exclusively,
 shell scripts) for processing MRI images for the [Human Connectome Project][HCP]. 
 Among other things, these tools implement the Minimal Preprocessing Pipeline 
 (MPP) described in [Glasser et al. 2013][GlasserEtAl]
