@@ -21,10 +21,8 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 # Establish tool name for logging
 log_SetToolName "TaskfMRILevel1.sh"
 log_Msg "Use wb_command to calculate TR_vol"
-log_Msg "Command: ${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval"
 
 TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval`
-log_Msg "TR_vol: ${TR_vol}"
 
 #Only do the additional smoothing required to hit the target final smoothing for CIFTI
 log_Msg "Only do the additional smoothing required to hit the target final smoothing for CIFTI"
@@ -96,20 +94,22 @@ fi
 
 #Add temporal filtering
 log_Msg "Add temporal filtering"
-${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
-fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
-${CARET7DIR}/wb_command -cifti-convert -from-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii 
-rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
+dtseries_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString".dtseries.nii
+fake_nifti_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"_FAKENIFTI.nii.gz
+temporal_filter_dtseries_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii 
+
+${CARET7DIR}/wb_command -cifti-convert -to-nifti ${dtseries_file} ${fake_nifti_file}
+fslmaths ${fake_nifti_file} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${fake_nifti_file}
+${CARET7DIR}/wb_command -cifti-convert -from-nifti ${fake_nifti_file} ${dtseries_file} ${temporal_filter_dtseries_file}
+rm ${fake_nifti_file}
 
 #Split into surface and volume
 log_Msg "Split into surface and volume"
+volume_file=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
+left_file=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.L."$LowResMesh"k_fs_LR.func.gii
+right_file=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.R."$LowResMesh"k_fs_LR.func.gii
 
-dtseries_name=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii
-volume_name=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
-left_name=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.L."$LowResMesh"k_fs_LR.func.gii
-right_name=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.atlasroi.R."$LowResMesh"k_fs_LR.func.gii
-
-${CARET7DIR}/wb_command -cifti-separate-all ${dtseries_name} -volume ${volume_name} -left ${left_name} -right ${right_name}
+${CARET7DIR}/wb_command -cifti-separate-all ${temporal_filter_dtseries_file} -volume ${volume_file} -left ${left_file} -right ${right_file}
 
 # Verify file creation
 if [ ! -f ${volume_name} ] ; then
