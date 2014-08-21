@@ -112,26 +112,26 @@ right_file=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingStrin
 ${CARET7DIR}/wb_command -cifti-separate-all ${temporal_filter_dtseries_file} -volume ${volume_file} -left ${left_file} -right ${right_file}
 
 # Verify file creation
-if [ ! -f ${volume_name} ] ; then
-    log_Msg "Volume file not created: ${volume_name}"
+if [ ! -f ${volume_file} ] ; then
+    log_Msg "Volume file not created: ${volume_file}"
 fi
 
-if [ ! -f ${left_name} ] ; then
-    log_Msg "Left surface file not created: ${left_name}"
+if [ ! -f ${left_file} ] ; then
+    log_Msg "Left surface file not created: ${left_file}"
 fi
 
-if [ ! -f ${right_name} ] ; then
-    log_Msg "Right surface file not created: ${right_name}"
+if [ ! -f ${right_file} ] ; then
+    log_Msg "Right surface file not created: ${right_file}"
 fi
 
 ###Subcortical Volume Processing###
 #Run film_gls on subcortical volume data
 log_Msg "Subcortical Volume Processing - run film_gls on subcortical volume data"
 
-${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${volume_name} --pd="$DesignMatrix" --thr=1 --mode=volumetric 2>&1
+${FSLDIR}/bin/film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${volume_file} --pd="$DesignMatrix" --thr=1 --mode=volumetric 2>&1
 
 log_Msg "Remove subcortical volume file"
-rm -v ${volume_name}
+rm -v ${volume_file}
 
 ###Cortical Surface Processing###
 log_Msg "Cortical Surface Processing"
