@@ -1,8 +1,44 @@
 #!/bin/bash 
 
+get_options() {
+    local arguments=($@)
+
+    unset command_line_specified_study_folder
+    unset command_line_specified_subj_list
+
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+
+        case ${argument} in
+            --StudyFolder=*)
+                command_line_specified_study_folder=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
+            --Subjlist=*)
+                command_line_specified_subj_list=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
+        esac
+    done
+}
+
+get_options $@
+
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+if [ -n "${command_line_specified_study_folder}" ]; then
+    StudyFolder="${command_line_specified_study_folder}"
+fi
+
+if [ -n "${command_line_specified_subj_list}" ]; then
+    Subjlist="${command_line_specified_subj_list}"
+fi
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later), FreeSurfer (version 5.3.0-HCP or later) , gradunwarp (HCP version 1.0.2)
