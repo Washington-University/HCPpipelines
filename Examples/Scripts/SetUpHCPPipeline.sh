@@ -14,7 +14,6 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 # All the following variables can be left as is if the structure of the GIT repository is maintained
 export HCPPIPEDIR=${HOME}/projects/Pipelines
 export CARET7DIR=${HCPPIPEDIR}/global/binaries/caret7/bin_rh_linux64
-#export CARET5DIR=${HCPPIPEDIR}/global/binaries/caret5
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
@@ -60,9 +59,8 @@ export MSMBin=${HCPPIPEDIR}/MSMBinaries
 #export HCPPIPEDIR_Config=${HCPPIPETOOLS}/conf
 #export HCPPIPEDIR_Global=${HCPPIPETOOLS}/scripts_v2
 
-#export CARET5DIR=${HCPPIPEDIR_Bin}/caret5
 #export CARET7DIR=${HCPPIPEDIR_Bin}/caret7/bin_linux64
-## may or may not want the above variables from CARET5DIR to HCPPIPEDIR_Global to be setup as above or not
+## may or may not want the above variables to be setup as above
 ##    (if so then the HCPPIPEDIR line needs to go before them)
 ## end of WASHU config
 
