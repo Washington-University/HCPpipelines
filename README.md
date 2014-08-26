@@ -29,12 +29,19 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 ## Prerequisites
 </a>
 
-The HCP Pipelines Tools have the following software requirements:
+The HCP Pipelines have the following software requirements:
 
 1. A 64-bit Linux Operating System
 
 2. The [FMRIB Software Library][FSL] (a.k.a. [FSL][FSL]) version 
-   5.0.6 or later installed and configuration file properly sourced
+   5.0.6 installed and configuration file properly sourced.  
+
+   **NB: This version of the HCP Pipelines requires version 5.0.6 of FSL, not version
+   5.0.6 or greater. This version of the HCP Pipelines is not fully tested with the
+   any version of FSL other than version 5.0.6. Preliminary testing has detected that
+   there is a difference in behavior between version 5.0.6 of FSL and version 5.0.7 
+   of FSL which, while it is an intentional improvement to FSL, is known to cause 
+   the Task Analysis pipeline in particular to fail. 
 
 3. [FreeSurfer][FreeSurfer] version 5.3.0-HCP available at 
    [ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP](ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP)
@@ -43,7 +50,20 @@ The HCP Pipelines Tools have the following software requirements:
    visiting and submitting the 
    [FreeSurfer registration form](https://surfer.nmr.mgh.harvard.edu/registration.html).**
 
-4. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
+4. [Connectome Workbench][Connectome-Workbench]
+
+   A full installation of Connectome Workbench is not currently required.  Only the command line tool 
+   `wb_command`, which is part of Connectome Workbench, is required.  Currently, the setup script
+   used for example runs of the various pipelines is configured with the assumption that the 
+   necessary `wb_command` binary is installed in the `global/binaries/caret7/bin_rh_linux64`
+   subdirectory within the main HCP Pipelines directory.  
+
+   As it is relatively unlikely that users will install Connectome Workbench in that location,
+   you will typically need to change this setting in the setup script.  Instructions for
+   doing so are given below in the 
+   [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data) section.
+
+5. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
 
 -----
 
@@ -196,7 +216,7 @@ Pre-FreeSurfer processing.
 
 *StudyFolder*
 
-The setting of the `StudyFolder` variable at the top of this script
+The setting of the `StudyFolder` variable near the top of this script
 should be verified or edited.  This variable should contain the path to a 
 directory that will contain data for all subjects in subdirectories named 
 for each of the subject IDs.
@@ -241,7 +261,7 @@ for running the Pipeline scripts.
 As distributed, this variable is set with the assumption that you
 have installed the HCP Pipelines in the directory 
 `${HOME}/projects/Pipelines` (i.e. that your HCP Pipelines directory
-is `${HOME}/projects/Pipelines` and that you will use the 
+is `${HOME}/projects/Pipelines`) and that you will use the 
 example environment setup provided in the 
 `Examples/Scripts/SetUpHCPPipeline.sh` script.
 
@@ -297,6 +317,20 @@ FSL configuration script, setting FREESURFER_HOME,
 and sourcing the FreeSurfer setup script are provided
 but commented out in the `SetUpHCPPipeline.sh` script
 prior to setting `HCPPIPEDIR`.
+
+*`CARET7DIR` in the `SetUpHCPPipeline.sh` script*
+
+The `CARET7DIR` variable must provide the path to the directory 
+in which to find the Connectome Workbench `wb_command`.  
+As distributed it is set with the assumption that the necessary
+`wb_command` binary is installed in a `global/binaries/caret7/bin_rh_linux64`
+directory that is part of the HCPPIPEDIR directory structure.
+
+It is very likely that you will need to change the value of the 
+CARET7DIR environment variable to indicate the location of your 
+installed version of the `wb_command`.
+
+*Running the Pre-FreeSurfer processing after editing the setup script*
 
 Once you have made any necessary edits as described above,
 Pre-FreeSurfer processing can be invoked by commands
@@ -775,3 +809,4 @@ Please review the [FAQ][FAQ].
 [FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
 [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
 [HCP-pipelines-release]: https://github.com/Washington-University/Pipelines/releases
+[Connectome-Workbench]: http://www.humanconnectome.org/software/connectome-workbench.html
