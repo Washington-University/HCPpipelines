@@ -99,7 +99,20 @@ fake_nifti_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$
 temporal_filter_dtseries_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString".dtseries.nii 
 
 ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${dtseries_file} ${fake_nifti_file}
+
+which_fslmaths=`which fslmaths`
+fsl_bin_directory=`dirname ${which_fslmaths}`
+fsl_version_file="${fsl_bin_directory}/../etc/fslversion"
+fsl_version=`cat ${fsl_version_file}`
+
+if [ "${fsl_version}" != "5.0.6" ] ; then
+    message="This script, TaskfMRILevel1.sh, assumes fslmaths behavior that is available in version 5.0.6 of FSL. You are using FSL version ${fsl_version}. Please install FSL version 5.0.6 before continuing."
+    log_Msg ${message}
+    echo ${message} 1>&2
+    exit
+fi
 fslmaths ${fake_nifti_file} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${fake_nifti_file}
+
 ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${fake_nifti_file} ${dtseries_file} ${temporal_filter_dtseries_file}
 rm ${fake_nifti_file}
 
