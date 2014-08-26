@@ -1,32 +1,8 @@
 #!/bin/bash 
 
-get_options() {
-    local arguments=($@)
-
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj_list
-
-    local index=0
-    local numArgs=${#arguments[@]}
-    local argument
-
-    while [ ${index} -lt ${numArgs} ]; do
-        argument=${arguments[index]}
-
-        case ${argument} in
-            --StudyFolder=*)
-                command_line_specified_study_folder=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --Subjlist=*)
-                command_line_specified_subj_list=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-        esac
-    done
-}
-
-get_options $@
+curdir=`dirname ${BASH_SOURCE[0]}`
+source ${curdir}/get_batch_options.shlib # get_batch_options function
+get_batch_options $@
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
@@ -91,10 +67,15 @@ for FinalSmoothingFWHM in $SmoothingList ; do
     for Subject in $Subjlist ; do
       echo "    ${Subject}"
 
-      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+      if [ -n "${command_line_specified_run_local}" ] ; then
+          echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+          queuing_command=""
+      else
+          echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+          queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+      fi
 
-      ${FSLDIR}/bin/fsl_sub ${QUEUE} \
-        ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
+      ${queuing_command} ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
         --path=$StudyFolder \
         --subject=$Subject \
         --lvl1tasks=$LevelOneTasks \

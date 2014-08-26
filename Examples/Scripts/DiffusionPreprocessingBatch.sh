@@ -1,32 +1,8 @@
 #!/bin/bash 
 
-get_options() {
-    local arguments=($@)
-
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj_list
-
-    local index=0
-    local numArgs=${#arguments[@]}
-    local argument
-
-    while [ ${index} -lt ${numArgs} ]; do
-        argument=${arguments[index]}
-
-        case ${argument} in
-            --StudyFolder=*)
-                command_line_specified_study_folder=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --Subjlist=*)
-                command_line_specified_subj_list=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-        esac
-    done
-}
-
-get_options $@
+curdir=`dirname ${BASH_SOURCE[0]}`
+source ${curdir}/get_batch_options.shlib # get_batch_options function
+get_batch_options $@
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
@@ -104,10 +80,15 @@ for Subject in $Subjlist ; do
   # Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
   Gdcoeffs="NONE" # Set to NONE to skip gradient distortion correction
 
-  echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
-  
-  ${FSLDIR}/bin/fsl_sub ${QUEUE} \
-     ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
+  if [ -n "${command_line_specified_run_local}" ] ; then
+      echo "About to run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+      queuing_command=""
+  else
+      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+  fi
+
+  ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
       --posData="${PosData}" --negData="${NegData}" \
       --path="${StudyFolder}" --subject="${SubjectID}" \
       --echospacing="${EchoSpacing}" --PEdir=${PEdir} \
