@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6 or later) and FreeSurfer (version 5.3.0-HCP or later)
+#  installed versions of: FSL (version 5.0.6) and FreeSurfer (version 5.3.0-HCP)
 #  environment: FSLDIR, FREESURFER_HOME + others
 
 ################################################ SUPPORT FUNCTIONS ##################################################

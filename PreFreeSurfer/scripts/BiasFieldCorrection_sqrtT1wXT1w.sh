@@ -2,7 +2,7 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6 or later), caret7 (a.k.a. Connectome Workbench) (version??)
+#  installed versions of: FSL (version 5.0.6), caret7 (a.k.a. Connectome Workbench) (version 1.0)
 #  environment: FSLDIR  CARET7DIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################

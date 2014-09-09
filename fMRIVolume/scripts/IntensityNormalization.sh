@@ -18,7 +18,7 @@ set -e
 ################################################ REQUIREMENTS ##################################################
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6 or later)
+#  installed versions of: FSL (version 5.0.6)
 #  environment: FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################

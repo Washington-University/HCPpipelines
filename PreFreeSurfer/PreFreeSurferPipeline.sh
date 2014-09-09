@@ -53,7 +53,7 @@
 # 
 # ### Installed Software
 #
-# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6 or later) 
+# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6) 
 #
 # ### Environment Variables
 #
