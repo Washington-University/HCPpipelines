@@ -41,11 +41,11 @@
 # 
 # ## Prerequisite Installed Software (for the entire Diffusion Preprocessing Pipeline)
 # 
-# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6 or later)
+# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6)
 #
 #   FSL's environment setup script must also be sourced
 #
-# * [FreeSurfer][FreeSurfer] (version 5.3.0-HCP or later)
+# * [FreeSurfer][FreeSurfer] (version 5.3.0-HCP)
 # 
 # * [HCP-gradunwarp][HCP-gradunwarp] - (HCP version 1.0.2)
 # 
