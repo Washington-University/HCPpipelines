@@ -112,6 +112,11 @@ The HCP Pipelines have the following software requirements:
    visiting and submitting the 
    [FreeSurfer registration form](https://surfer.nmr.mgh.harvard.edu/registration.html).**
 
+   **NB: Please note that the version of FreeSurfer used is a special release of FreeSurfer
+   which is not part of the normal release cycle.  The 5.3.0-HCP version of FreeSurfer 
+   contains a slightly different version of the `mris_make_surfaces` program than is part
+   of the standard FreeSurfer 5.3.0 release.**
+
 4. [Connectome Workbench][Connectome-Workbench] version 1.0
 
    The HCP Pipelines scripts use the `wb_command` which is part of the Connectome Workbench.
