@@ -48,12 +48,12 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
    part of an official Connectome Workbench release.
 
    If needed, the Red Hat/CentOS specific version of the `wb_command` binary and it
-   associated libraries used are available in older tagged pre-release versions of this
+   associated libraries used are available in older, tagged, pre-release versions of this
    project.
 
 4. We have begun the process of making the scripts more robust, well-documented, and 
    usable in other environments (other versions of operating systems, other queueing 
-   systems, other versions of prerequisite tools. But that process is not complete.
+   systems, other versions of prerequisite tools, etc.) But that process is not complete.
    Therefore, we cannot guarantee that you will not have to make modifications to the 
    scripts for them to be used successfully in your environment.
 
@@ -115,7 +115,7 @@ The HCP Pipelines have the following software requirements:
    this environment variable are provided below in the 
    [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data) section.
 
-5. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
+5. The [HCP version of gradunwarp][HCP-gradunwarp] version 1.0.2 (if gradient nonlinearity correction is to be done.)
 
 -----
 
@@ -177,7 +177,7 @@ The HCP Pipelines have the following software requirements:
        there, be sure to download version 5.3.0-HCP of FreeSurfer and not version
        5.1.0 as those instructions indicate.
 
-     * Ubuntu (at least starting with version 12.04 and running through version 14.04 LTS
+     * Ubuntu (at least starting with version 12.04 and running through version 14.04 LTS)
        is missing a library that is used by some parts of FreeSurfer.  To install
        that library enter `$ sudo apt-get install libjpeg62`.
 
@@ -372,8 +372,8 @@ prior to setting `HCPPIPEDIR`.
 *`CARET7DIR` in the `SetUpHCPPipeline.sh` script*
 
 The `CARET7DIR` variable must provide the path to the directory 
-in which to find the Connectome Workbench `wb_command`.  
-As distributed, the `CARET7DIR` is set with the assumption that 
+in which to find the Connectome Workbench `wb_command`.  As 
+distributed, the `CARET7DIR` is set with the assumption that 
 the necessary `wb_command` binary is installed in the 
 `${HOME}/workbench/bin_linux64` directory.
 
