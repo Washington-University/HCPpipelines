@@ -30,28 +30,48 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 ## Release notes
 </a>
 
-* The HCP Pipelines scripts are being released in essentially the form that they were 
-  successfully used for processing data provided in the [Human Connectome Project][HCP] 
-  *500 Subjects Data Release*. Some improvements to the documentation have been made 
-  since they were used for that release.
-* We have begun the process of making the scripts more robust, well-documented, and 
-  usable in other environments (other versions of operating systems, other queueing 
-  systems, other versions of prerequisite tools.  But that process is not complete.
-  Therefore, we cannot guarantee that you will not have to make modifications to the 
-  scripts for them to be used successfully in your environment.
-* A significant part of the value of the open source model of software development
-  is the ability to improve software based on source code level feedback from the 
-  community of users. Along those lines, if you find that you do need to make changes
-  to the source code to use the tools successfully, we would welcome feedback and 
-  improvement suggestions. (If you have to change something in the scripts to make
-  them work for you, let us know and we'll evaluate how/if to incorporate those
-  changes into the released product.
-* For the HCP 500 Subjects Data Release, FSL version 5.0.6 was used with these 
-  scripts.  There is a known issue with using FSL 5.0.7 for the Task fMRI Analysis 
-  Pipeline. See the [Prerequisites](#prerequisites) section below for further information.
-* Improvements to the internal documentation of these scripts are planned.
-* Validation tests to ensure that your installation is working correctly with at 
-  least the sample data are also planned but not yet available.  
+1. The HCP Pipelines scripts are being released in essentially the form that they were 
+   successfully used for processing data provided in the [Human Connectome Project][HCP] 
+   *500 Subjects Data Release*. Some improvements to the documentation have been made 
+   since they were used for that release.
+
+2. One known difference between these scripts as they were used for the 
+   *500 Subjects Data Release* and their currently release form is the version of the 
+   `wb_command` from the [Connectome Workbench][Connectome-Workbench] that is used.
+
+   When these scripts were being used for the *500 Subjects Data Release*, Connectome
+   Workbench had not reached its 1.0 release level.  Therefore, we used an earlier,
+   unreleased version of the `wb_command` for processing data for the data release.
+   Distributing that older version of the `wb_command` binary as part of this product
+   is less than ideal because that embedded binary is platform specific and is not
+   part of an actual Connectome Workbench release.
+
+   If needed, the Red Hat/CentOS specific version of the `wb_command` binary and it
+   associated libraries are available in older tagged pre-release versions of this
+   project.
+
+2. We have begun the process of making the scripts more robust, well-documented, and 
+   usable in other environments (other versions of operating systems, other queueing 
+   systems, other versions of prerequisite tools. But that process is not complete.
+   Therefore, we cannot guarantee that you will not have to make modifications to the 
+   scripts for them to be used successfully in your environment.
+
+3. A significant part of the value of the open source model of software development
+   is the ability to improve software based on source code level feedback from the 
+   community of users. Along those lines, if you find that you do need to make changes
+   to the source code to use the tools successfully, we would welcome feedback and 
+   improvement suggestions. (If you have to change something in the scripts to make
+   them work for you, let us know and we'll evaluate how/if to incorporate those
+   changes into the released product.)
+
+4. For the HCP 500 Subjects Data Release, FSL version 5.0.6 was used with these 
+   scripts. There is a known issue with using FSL 5.0.7 for the Task fMRI Analysis 
+   Pipeline. See the [Prerequisites](#prerequisites) section below for further information.
+
+5. Improvements to the internal documentation of these scripts are planned.
+
+6. Validation tests to ensure that your installation is working correctly with at 
+   least the sample data are also planned but not yet available.  
 
 -----
 
