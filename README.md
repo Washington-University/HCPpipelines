@@ -27,7 +27,7 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 -----
 
 <a id="release-notes">
-## Status
+## Release notes
 </a>
 
 * The HCP Pipelines scripts are being released in essentially the form that they were 
