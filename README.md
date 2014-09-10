@@ -65,6 +65,10 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
    them work for you, let us know and we'll evaluate how/if to incorporate those
    changes into the released product.)
 
+   Discussion of HCP Pipeline usage and improvements can be posted to the 
+   hcp-users discussion list. Sign up for hcp-users at 
+   [http://humanconnectome.org/contact/#subscribe](http://humanconnectome.org/contact/#subscribe)
+
 6. For the HCP 500 Subjects Data Release, FSL version 5.0.6 was used with these 
    scripts. There is a known issue with using FSL 5.0.7 for the Task fMRI Analysis 
    Pipeline. See the [Prerequisites](#prerequisites) section below for further information.
