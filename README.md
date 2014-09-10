@@ -32,7 +32,7 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 
 1. The HCP Pipelines scripts are being released in essentially the form that they were 
    successfully used for processing data provided in the [Human Connectome Project][HCP] 
-   *500 Subjects Data Release*. That processing was done using 64-bit CentOS Linux version 4.
+   *500 Subjects Data Release*. That processing was done using 64-bit Red Hat Linux version 5.
 
 2. Some improvements to the documentation have been made since they were used for that release.
 
