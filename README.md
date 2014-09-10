@@ -9,6 +9,7 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 
 ## Table of Contents
 
+* [Release notes](#release-notes)
 * [Prerequisities](#prerequisites)
 * [Notes on gradient nonlinearity correction](#notes-on-gradient-nonlinearity-correction)
 * [Installation](#installation)
@@ -22,6 +23,35 @@ Among other things, these tools implement the Minimal Preprocessing Pipeline
 * [A note about resource requirements](#a-note-about-resource-requirements)
 * [Hint for detected Out of Memory conditions](#hint-for-detecting-out-of-memory-conditions)
 * [I still have questions](#i-still-have-questions)
+
+-----
+
+<a id="release-notes">
+## Status
+</a>
+
+* The HCP Pipelines scripts are being released in essentially the form that they were 
+  successfully used for processing data provided in the [Human Connectome Project][HCP] 
+  *500 Subjects Data Release*. Some improvements to the documentation have been made 
+  since they were used for that release.
+* We have begun the process of making the scripts more robust, well-documented, and 
+  usable in other environments (other versions of operating systems, other queueing 
+  systems, other versions of prerequisite tools.  But that process is not complete.
+  Therefore, we cannot guarantee that you will not have to make modifications to the 
+  scripts for them to be used successfully in your environment.
+* A significant part of the value of the open source model of software development
+  is the ability to improve software based on source code level feedback from the 
+  community of users. Along those lines, if you find that you do need to make changes
+  to the source code to use the tools successfully, we would welcome feedback and 
+  improvement suggestions. (If you have to change something in the scripts to make
+  them work for you, let us know and we'll evaluate how/if to incorporate those
+  changes into the released product.
+* For the HCP 500 Subjects Data Release, FSL version 5.0.6 was used with these 
+  scripts.  There is a known issue with using FSL 5.0.7 for the Task fMRI Analysis 
+  Pipeline. See the [Prerequisites](#prerequisites) section below for further information.
+* Improvements to the internal documentation of these scripts are planned.
+* Validation tests to ensure that your installation is working correctly with at 
+  least the sample data are also planned but not yet available.  
 
 -----
 
@@ -41,7 +71,14 @@ The HCP Pipelines have the following software requirements:
    any version of FSL other than version 5.0.6. Preliminary testing has detected that
    there is a difference in behavior between version 5.0.6 of FSL and version 5.0.7 
    of FSL which, while it is an intentional improvement to FSL, is known to cause 
-   the Task Analysis pipeline in particular to fail. 
+   the Task Analysis pipeline in particular to fail.**
+
+   There is currently a separate branch in this repository named `fsl-5.0.7-changes`.
+   That branch is not yet included in a released version of the code, but it contains 
+   changes to the Task Analysis pipeline that we expect will fix that pipeline 
+   so that it works with version 5.0.7 of FSL. These changes are not fully tested, 
+   but they are available to anyone who wants to run the Task Analysis pipeline
+   and use FSL 5.0.7.
 
 3. [FreeSurfer][FreeSurfer] version 5.3.0-HCP available at 
    [ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP](ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP)
@@ -50,17 +87,11 @@ The HCP Pipelines have the following software requirements:
    visiting and submitting the 
    [FreeSurfer registration form](https://surfer.nmr.mgh.harvard.edu/registration.html).**
 
-4. [Connectome Workbench][Connectome-Workbench]
+4. [Connectome Workbench][Connectome-Workbench] version 1.0
 
-   A full installation of Connectome Workbench is not currently required.  Only the command line tool 
-   `wb_command`, which is part of Connectome Workbench, is required.  Currently, the setup script
-   used for example runs of the various pipelines is configured with the assumption that the 
-   necessary `wb_command` binary is installed in the `global/binaries/caret7/bin_rh_linux64`
-   subdirectory within the main HCP Pipelines directory.  
-
-   As it is relatively unlikely that users will install Connectome Workbench in that location,
-   you will typically need to change this setting in the setup script.  Instructions for
-   doing so are given below in the 
+   The HCP Pipelines scripts use the `wb_command` which is part of the Connectome Workbench.
+   They locate the `wb_command` using an environment variable. Instructions for setting
+   this environment variable are provided below in the 
    [Running the HCP Pipelines on example data](#running-the-hcp-pipelines-on-example-data) section.
 
 5. The [HCP version of gradunwarp][HCP-gradunwarp] (if gradient nonlinearity correction is to be done.)
@@ -107,9 +138,9 @@ The HCP Pipelines have the following software requirements:
 
 1. Install the listed [prerequisites](#prerequisites) first.
 
-   * Ubuntu Installation Notes for FSL
+   * Installation Notes for FSL
 
-     * Once you have installed FSL, verify that you have a recent enough version of FSL
+     * Once you have installed FSL, verify that you have the correct version of FSL
        by simply running the `$ fsl` command. The FSL window that shows
        up should identify the version of FSL you are running in its title bar.  
 
@@ -133,18 +164,18 @@ The HCP Pipelines have the following software requirements:
    [HCP Pipelines release][HCP-pipelines-release].
 
 3. Move the compressed tar file that you download to the directory in which you want
-   the HCP Pipelines to be installed.
+   the HCP Pipelines to be installed, e.g.
    
-        $ mv Pipelines-3.3.1.tar.gz ~/projects
+        $ mv Pipelines-3.4.0.tar.gz ~/projects
 
 4. Extract the files from the compressed tar file, e.g.
 
         $ cd ~/projects
-        $ tar xvf Pipelines-3.3.1.tar.gz
+        $ tar xvf Pipelines-3.4.0.tar.gz
 
 5. This will create a directory containing the HCP Pipelines, e.g.
 
-        $ cd ~/projects/Pipelines-3.3.1
+        $ cd ~/projects/Pipelines-3.4.0
         $ ls -F
         DiffusionPreprocessing/  fMRIVolume/      PostFreeSurfer/  TaskfMRIAnalysis/
         Examples/                FreeSurfer/      PreFreeSurfer/   tfMRI/
@@ -175,6 +206,7 @@ for the Connectome Skyra scanner used to collect the sample data and want
 to run the pipelines including the steps which perform gradient distortion 
 correction, you can download a zip file containing example data 
 [here](https://db.humanconnectome.org/app/action/ChooseDownloadResources?project=HCP_Resources&resource=SampleData&filePath=HcpPipelinesExampleDataNonGDC.zip).
+
 In that case, you will need to place the obtained gradient coefficients 
 file (`coeff_SC72C_Skyra.grad`) in the `global/config` directory within 
 your HCP Pipelines Directory.
@@ -291,10 +323,8 @@ in the `PreFreeSurferPipelineBatch.sh` file (by default the
 does nothing but establish values for all the environment
 variables that will be needed by various pipeline scripts.
 
-All of the environment variables set in the `SetUpHCPPipeline.sh`
-script (with the exception of the `HCPPIPEDIR` environment variable
-itself) are set relative to the `HCPPIPEDIR`
-environment variable.
+Many of the environment variables set in the `SetUpHCPPipeline.sh`
+script are set relative to the `HCPPIPEDIR` environment variable.
 
 As distributed, the setting of the `HCPPIPEDIR` environment 
 variable assumes that you have installed the HCP Pipelines
@@ -322,12 +352,12 @@ prior to setting `HCPPIPEDIR`.
 
 The `CARET7DIR` variable must provide the path to the directory 
 in which to find the Connectome Workbench `wb_command`.  
-As distributed it is set with the assumption that the necessary
-`wb_command` binary is installed in a `global/binaries/caret7/bin_rh_linux64`
-directory that is part of the HCPPIPEDIR directory structure.
+As distributed, the `CARET7DIR` is set with the assumption that 
+the necessary `wb_command` binary is installed in the 
+`${HOME}/workbench/bin_linux64` directory.
 
 It is very likely that you will need to change the value of the 
-CARET7DIR environment variable to indicate the location of your 
+`CARET7DIR` environment variable to indicate the location of your 
 installed version of the `wb_command`.
 
 *Running the Pre-FreeSurfer processing after editing the setup script*
@@ -401,7 +431,7 @@ edit that script file to run the example data through the
 FreeSurfer processing.
 
 The `StudyFolder`, `Subjlist`, and `EnvironmentScript` variables
-are set at the top of the script and should be verified and edited
+are set near the top of the script and should be verified and edited
 as indicated above in the discussion of Pre-FreeSurfer processing.
 
 Your environment script (`SetUpHCPPipeline.sh`) will need to have
@@ -524,7 +554,7 @@ Preprocessing.
 The `GenericfMRIVolumeProcessingPipelineBatch.sh` script is the starting
 point for running volumetric functional preprocessing.  Like the sample
 scripts mentioned above, you will need to verify or edit the `StudyFolder`,
-`Subjlist`, and `EnvironmentScript` variables defined at the top of the
+`Subjlist`, and `EnvironmentScript` variables defined near the top of the
 batch processing script.  Additionally, you will need to verify or 
 edit the `GradientDistortionCoeffs` variable. As distributed, this
 value is set to "NONE" to skip gradient distortion correction.
@@ -547,7 +577,7 @@ The `GenericfMRISurfaceProcessingPipelineBatch.sh` script is the starting
 point for running surface based functional preprocessing.  As has been
 the case with the other sample scripts, you will need to verify or edit 
 the `StudyFolder`, `Subjlist`, and `EnvironmentScript` variables defined 
-at the top of the batch processing script.
+near the top of the batch processing script.
 
 In addition to these variable modifications, you should check or edit
 the contents of the `Tasklist` variable.  This variable holds a space
@@ -575,7 +605,7 @@ of this batch processing script.
 
 In addition to these variable modifications, you should check or edit
 the contents of the `LevelOneTasksList`, `LevelOneFSFsList`, `LevelTwoTaskList`,
-and `LevelTwoFSFList` variables.  As distributed, these variables are c
+and `LevelTwoFSFList` variables.  As distributed, these variables are 
 configured to perform Level 1 task analysis only on the RL and LR conditions
 for the EMOTION task and Level 2 task analysis on the combined results of 
 the RL and LR Level 1 analysis for the EMOTION task.  You can add other
@@ -635,7 +665,7 @@ Level 1 Task Analysis also requires that E-Prime EV files be available in the
 `MNINonLinear/Results` subdirectory for the each task on which Level 1 Task Analysis is to occur.
 These EV files are available in the example unprocessed data, but are not in the 
 `MNINonLinear/Results` directory because that directory is created as part of Functional 
-Preprocesing. Since Functional Preprocessing must be completed before Task Analysis
+Preprocessing. Since Functional Preprocessing must be completed before Task Analysis
 can be performed, the `MNINonLinear/Results` folder should exist prior to Task Analysis.
 
 There is a script in the `${HCPPIPEDIR}/Examples/Scripts` directory named `copy_evs_into_results.sh`.
@@ -662,7 +692,7 @@ This must be done for every directory of every task for which you want to perfor
 
 Level 2 Task Analysis requires a FEAT setup file also. For example, to perform 
 Level 2 Task Analysis for the `tfMRI_EMOTION` task for subject `100307` (combination 
-data from `tfMRI_EMOTION_RL` and `tfMRI_EMOTION_LR`, the following FEAT setup file
+data from `tfMRI_EMOTION_RL` and `tfMRI_EMOTION_LR`) the following FEAT setup file
 must exist before running the Task Analysis pipeline:
 
 * `<StudyFolder>/100307/MNINonLinear/Results/tfMRI_EMOTION/tfMRI_EMOTION_hp200_s4_level2.fsf`
@@ -689,7 +719,7 @@ run using Melodic and components classified using FIX): ([Salimi-Khorshidi et al
 The [downloadable FIX tar file](http://www.fmrib.ox.ac.uk/~steve/ftp/fix.tar.gz) 
 includes the `hcp_fix` file which is a wrapper script for running 
 ICA FIX on data that has been run through the HCP Structural and Functional 
-Preprocessing.  The hcp_fix script is run with a high-pass filter of 2000 seconds.  
+Preprocessing.  The hcp_fix script is run with a high-pass filter of 2000.  
 
 -----
 
@@ -737,12 +767,13 @@ job scheduler, we generally request the following resource limits.
     the actual expected walltimes to run from 4-12 hours per task.
   * Memory limits are set at 12 GB.
 
-The walltime limits in particular are only useful if you have some idea of the
-capabilities of the computer node on which the jobs were run. For information 
-about the configuration of the cluster nodes used to come up with the above 
-limits/requirements, see the description of the equipment available at the 
-Washington University Center for High Performance Computing 
-([CHPC](http://chpc.wustl.edu)) [hardware resources](http://chpc.wustl.edu/hardware.html).
+The limits listed above, in particular the walltime limits listed, are only 
+useful if you have some idea of the capabilities of the computer node on 
+which the jobs were run. For information about the configuration of the 
+cluster nodes used to come up with the above limits/requirements, see the 
+description of the equipment available at the Washington University 
+Center for High Performance Computing ([CHPC](http://chpc.wustl.edu)) 
+[hardware resources](http://chpc.wustl.edu/hardware.html).
 
 -----
 
@@ -765,7 +796,7 @@ allocate more memory than is available, it may be killed by the OOM Killer and r
 a status code of 137. In that case, there may be a line in the stderr that looks
 similar to:
 
-        /home/tbb/projects/Pipelines/DiffusionPreprocessing/scripts/run_eddy.sh: line 182: 39455 Killed  ...*further info here*...
+        /home/username/projects/Pipelines/DiffusionPreprocessing/scripts/run_eddy.sh: line 182: 39455 Killed  ...*further info here*...
 
 and a line in the stdout that looks similar to:
 
