@@ -142,10 +142,8 @@ The HCP Pipelines have the following software requirements:
 
 3. In order to run HCP gradunwarp, you will need a gradient coefficients file to 
    use as an input to the gradient distortion correction process.  Please
-   see questions 7 and 8 in the 
-   [HCP Pipelines FAQ](https://github.com/Washington-University/Pipelines/blob/master/FAQ.md) 
-   for further information about gradient nonlinearity correction and obtaining a
-   gradient coefficients file.
+   see questions 7 and 8 in the [HCP Pipelines FAQ][FAQ] for further information 
+   about gradient nonlinearity correction and obtaining a gradient coefficients file.
 
 4. The HCP Pipelines scripts expect to be able to find the main module of the 
    gradunwarp tool (gradient_unwarp.py) within a directory specified in the 
@@ -867,7 +865,7 @@ Please review the [FAQ][FAQ].
 [FSL]: http://fsl.fmrib.ox.ac.uk
 [FreeSurfer]: http://freesurfer.net
 [FreeSurfer-hcp-version]: http://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/
-[FAQ]: https://github.com/Washington-University/Pipelines/blob/master/FAQ.md
+[FAQ]: https://github.com/Washington-University/Pipelines/wiki/FAQ
 [HCP-gradunwarp]: https://github.com/Washington-University/gradunwarp/releases
 [HCP-pipelines-release]: https://github.com/Washington-University/Pipelines/releases
 [Connectome-Workbench]: http://www.humanconnectome.org/software/connectome-workbench.html
