@@ -72,8 +72,9 @@ temporal resolution data, by only storing the minimum data of interest.
 * Functional and diffusion preprocessing also require the scans needed for 
   structural preprocessing.
 
-* For the Siemens HCP 3T Connectome scanner, we found the 32-channel head coil 
-  and higher maximum gradient strength to be very helpful.
+* For the Siemens HCP 3T [Connectom](#connectom-vs-connectome) scanner, we 
+  found the 32-channel head coil and higher maximum gradient strength to be 
+  very helpful.
 
 <a id="4-why-are-field-maps-required">
 ## 4. Why are field maps required?
@@ -115,7 +116,7 @@ The gradient unwarping code used by the HCP Pipelines is an HCP-customized
 version of the gradient unwarping code available at
 [https://github.com/ksubramz/gradunwarp](https://github.com/ksubramz/gradunwarp) [(Jovicich et al., 2006)][JovicichEtAl].
 
-The gradient field nonlinearity coefficients for the Connectome Skyra are considered
+The gradient field nonlinearity coefficients for the [Connectom](#connectom-vs-connectome) Skyra are considered
 by Siemens to be proprietary information. To request access to these coefficients, 
 please contact your Siemens collaboration manager or email [Dingxin Wang][dingxin-email].
 
@@ -125,13 +126,22 @@ please contact your Siemens collaboration manager or email [Dingxin Wang][dingxi
 
 MRI scanners use gradients in the magnetic field to define the space of the image.
 These gradients are intended to be linear (i.e. have a constant slope). In practice
-this is not attainable, resulting in spatial distortions. The HCP 3T Connectome 
+this is not attainable, resulting in spatial distortions. The HCP 3T [Connectom](#connectom-vs-connectome)
 scanner has greater distortions than do more standard scanners because of design 
-tradeoffs for this customized scanner. If the HCP pipelines are being used with 
-regular commercial scanners, the gradient nonlinearity correction can be ignored 
-(turned off), however if one is interested in comparing data across scanners, 
-it is probably better to do the correction. For Siemens scanners, the gradient 
-coefficents are available on the scanner (<code>C:\MedCom\MriSiteData\GradientCoil\coeff.grad</code>).
+tradeoffs for this customized scanner. 
+
+All scanners have some level of gradient distortion. Therefore, for maximal anatomical
+fidelity and for comparing data across scanners (which will very likely have different
+gradient distortion levels), we encourage researchers to obtain gradient distortion
+coefficients and perform gradient distortion correction (GDC). For Siemens scanners, 
+the gradient coefficients are available on the scanner 
+(<code>C:\MedCom\MriSiteData\GradientCoil\coeff.grad</code>).
+
+Users of the HCP Pipelines may opt not to perform gradient distortion correction.
+For example, if a scanner is used in which the images are collected in a region
+of the magnet bore in which the gradients have very linear performance over 
+the imaging field of view. The HCP Pipelines provide options which can be used
+to turn off gradient distortion correction.
 
 <a id="9-what-if-i-want-to-process-non-human-primate-nhp-data-with-the-hcp-pipelines">
 ## 9. What if I want to process non-human primate (NHP) data with the HCP Pipelines?
@@ -150,6 +160,9 @@ the initial alignment stages of the HCP Pipelines less robust when using adult v
 templates. It may be necessary to make age-specific templates for children under a 
 certain age. Once the initial alignments are robustly achieved, the HCP Pipelines 
 will perform similarly to adults (assuming typical T1w contrast is present).
+
+We are planning to examine the robustness of the current pipelines in 4-6 year
+olds as part of the piloting phase for the LifeSpan project.
 
 <a id="11-what-if-i-want-to-process-7t-data-with-the-hcp-pipelines">
 ## 11. What if I want to process 7T data with the HCP Pipelines?
@@ -199,6 +212,16 @@ PubMed PMID: [23668970][GlasserEtAl]; PubMed Central PMCID: PMC3720813.
 Subscribe to the HCP-Users email list at 
 [http://humanconnectome.org/contact/#subscribe](http://humanconnectome.org/contact/#subscribe), 
 then send a message to the list at [hcp-users@humanconnectome.org](mailto:hcp-users@humanconnectome.org).
+
+<a id="Footnotes">
+## Footnotes
+</a>
+
+<a id="connectom-vs-connectome">
+### Connectom vs Connectome
+</a>
+The use of Connectom when referring to the scanner itself is not a typographical error. Siemens 
+considers the custom 3T scanner used for the Human Connectome Project to be the "Connectom" scanner.
 
 <!-- References -->
 
