@@ -91,6 +91,9 @@ usage() {
     echo "    [--detailed-outlier-stats=True] : produce detailed outlier statistics from eddy after each iteration"
     echo "      Note: This option has no effect if the GPU-enabled version of eddy is not used."
     echo ""
+    echo "    [--replace-outliers=True] : ask eddy to replace any outliers it detects by their expectations"
+    echo "      Note: This option has no effect if the GPU-enabled version of eddy is not used."
+    echo ""
     echo "    --path=<study-path>"
     echo "    : path to subject's data folder"
     echo ""
@@ -132,9 +135,11 @@ usage() {
 # Global Output Variables
 #  ${StudyFolder} - Path to subject's data folder
 #  ${Subject}     - Subject ID
-#  ${DetailedOutlierStats} - If true (and GPU-enabled eddy program is used), then ask
+#  ${DetailedOutlierStats} - If True (and GPU-enabled eddy program is used), then ask
 #                            eddy to produce detailed statistics about outliers after each
 #                            iteration.
+#  ${ReplaceOutliers} - If True (and GPU-enabled eddy program is used), then ask eddy
+#                       to replace any outliers it detects by their expectations
 #  ${runcmd}      - Set to a user specifed command to use if user has requested
 #                   that commands be echo'd (or printed) instead of actually executed.
 #                   Otherwise, set to empty string.
@@ -147,6 +152,7 @@ get_options() {
     unset StudyFolder
     unset Subject
     DetailedOutlierStats="False"
+    ReplaceOutliers="False"
     runcmd=""
 
     # parse arguments
@@ -176,6 +182,10 @@ get_options() {
                 ;;
             --detailed-outlier-stats=*)
                 DetailedOutlierStats=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
+            --replace-outliers=*)
+                ReplaceOutliers=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
             --printcom=*)
@@ -208,6 +218,7 @@ get_options() {
     echo "   StudyFolder: ${StudyFolder}"
     echo "   Subject: ${Subject}"
     echo "   DetailedOutlierStats: ${DetailedOutlierStats}"
+    echo "   ReplaceOutliers: ${ReplaceOutliers}"
     echo "   runcmd: ${runcmd}"
     echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
@@ -249,9 +260,11 @@ main() {
     # Global Variables Set
     #  ${StudyFolder} - Path to subject's data folder
     #  ${Subject}     - Subject ID
-    #  ${DetailedOutlierStats} - If true (and GPU-enabled eddy program is used), then ask
+    #  ${DetailedOutlierStats} - If True (and GPU-enabled eddy program is used), then ask
     #                            eddy to produce detailed statistics about outliers after each
     #                            iteration.
+    #  ${ReplaceOutliers} - If True (and GPU-enabled eddy program is used), then ask eddy
+    #                       to replace any outliers it detects by their expectations
     #  ${runcmd} - Set to a user specifed command to use if user has requested
     #              that commands be echo'd (or printed) instead of actually executed.
     #              Otherwise, set to empty string.
@@ -273,9 +286,16 @@ main() {
         stats_option=""
     fi
 
+    # Determine replace_outliers_option value to pass to run_eddy.sh script
+    if [ "${ReplaceOutliers}" = "True" ]; then
+        replace_outliers_option="--repol"
+    else
+        replace_outliers_option=""
+    fi
+
     log_Msg "Running Eddy"
 
-    ${runcmd} ${HCPPIPEDIR_dMRI}/run_eddy.sh ${stats_option} -g -w ${outdir}/eddy
+    ${runcmd} ${HCPPIPEDIR_dMRI}/run_eddy.sh ${stats_option} ${replace_outliers_option} -g -w ${outdir}/eddy
 
     log_Msg "Completed"
     exit 0

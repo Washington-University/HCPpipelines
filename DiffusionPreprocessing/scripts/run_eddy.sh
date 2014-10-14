@@ -74,7 +74,10 @@ usage() {
     echo ""
     echo "    [-wss] : produce detailed outlier statistics after each iteration by using "
     echo "             the -wss option to a call to eddy.gpu.  Note that this option has "
-    echo "             no effect if the GPU-enabled version of eddy (eddy.gpu) is not used."
+    echo "             no effect unless the GPU-enabled version of eddy (eddy.gpu) is used."
+    echo ""
+    echo "    [--repol] : replace outliers. Note that this option has no effect unless the"
+    echo "                GPU-enabled version of eddy (eddy.gpu) is used."
     echo ""
     echo "    -w <working-dir>           | "
     echo "    -w=<working-dir>           | "
@@ -99,12 +102,14 @@ usage() {
 #  Get the command line options for this script.
 #
 # Global Ouput Variables
-#  ${useGpuVersion}  - Set to "True" if user has requested an attempt to use
-#                      the GPU-enabled version of eddy
-#  ${workingdir}     - User specified working directory
+#  ${useGpuVersion}   - Set to "True" if user has requested an attempt to use
+#                       the GPU-enabled version of eddy
+#  ${workingdir}      - User specified working directory
 #  ${produceDetailedOutlierStats} 
-#                    - Set to "True" if user has requested that the GPU-enabled version
-#                      of eddy, produce detailed statistics about outliers after each iteration
+#                     - Set to "True" if user has requested that the GPU-enabled version
+#                       of eddy produce detailed statistics about outliers after each iteration
+#  ${replaceOutliers} - Set to "True" if user has requested that the GPU-enabled version
+#                       of eddy replace any outliers it detects by their expectations
 #
 get_options() {
     local scriptName=$(basename ${0})
@@ -113,6 +118,7 @@ get_options() {
     # global output variables
     useGpuVersion="False"
     produceDetailedOutlierStats="False"
+    replaceOutliers="False"
     unset workingdir
 
     # parse arguments
@@ -134,6 +140,10 @@ get_options() {
                 ;;
             -wss)
                 produceDetailedOutlierStats="True"
+                index=$(( index + 1 ))
+                ;;
+            --repol)
+                replaceOutliers="True"
                 index=$(( index + 1 ))
                 ;;
             -w | --workingdir)
@@ -164,6 +174,7 @@ get_options() {
     echo "   workingdir: ${workingdir}"
     echo "   useGpuVersion: ${useGpuVersion}"
     echo "   produceDetailedOutlierStats: ${produceDetailedOutlierStats}"
+    echo "   replaceOutliers: ${replaceOutliers}"
     echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -233,16 +244,26 @@ main() {
         eddyExec="${stdEddy}"
     fi
 
+    log_Msg "eddy executable command to use: ${eddyExec}"
+
     # Add option to eddy command for producing detailed outlier stats after each 
-    # iteration if user has requested that option_and_ the GPU-enabled version 
-    # of eddy is to be used.
+    # iteration if user has requested that option _and_ the GPU-enabled version 
+    # of eddy is to be used.  Also add option to eddy command for replacing
+    # outliers if the user has requested that option _and_ the GPU-enabled
+    # version of eddy to to be used.
+    outlierStatsOption=""
+    replaceOutliersOption=""
     if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
         if [ "${produceDetailedOutlierStats}" = "True" ]; then
-            eddyExec="${eddyExec} -wss"
+            outlierStatsOption="-wss"
+        fi
+        if [ "${replaceOutliers}" = "True" ]; then
+            replaceOutliersOption="--repol"
         fi
     fi
 
-    log_Msg "eddy executable to use: ${eddyExec}"
+    log_Msg "outlier statistics option: ${outlierStatsOption}"
+    log_Msg "replace outliers option: ${replaceOutliersOption}"
 
     # Main processing - Run eddy
 
@@ -250,7 +271,7 @@ main() {
 
     ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
 
-    ${eddyExec} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic -v #--resamp=lsr #--session=${workingdir}/series_index.txt
+    ${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic -v #--resamp=lsr #--session=${workingdir}/series_index.txt
     eddyReturnValue=$?
 
     # Another fallback. 
