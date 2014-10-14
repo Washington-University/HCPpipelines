@@ -72,6 +72,10 @@ usage() {
     echo "                    this script \"falls back\" to using the standard"
     echo "                    version of eddy."
     echo ""
+    echo "    [-wss] : produce detailed outlier statistics after each iteration by using "
+    echo "             the -wss option to a call to eddy.gpu.  Note that this option has "
+    echo "             no effect if the GPU-enabled version of eddy (eddy.gpu) is not used."
+    echo ""
     echo "    -w <working-dir>           | "
     echo "    -w=<working-dir>           | "
     echo "    --workingdir <working-dir> | "
@@ -95,9 +99,12 @@ usage() {
 #  Get the command line options for this script.
 #
 # Global Ouput Variables
-#  ${useGpuVersion} - Set to "True" if use has requested an attempt to use
-#                     the GPU-enabled version of eddy
-#  ${workingdir}    - User specified working directory
+#  ${useGpuVersion}  - Set to "True" if user has requested an attempt to use
+#                      the GPU-enabled version of eddy
+#  ${workingdir}     - User specified working directory
+#  ${produceDetailedOutlierStats} 
+#                    - Set to "True" if user has requested that the GPU-enabled version
+#                      of eddy, produce detailed statistics about outliers after each iteration
 #
 get_options() {
     local scriptName=$(basename ${0})
@@ -105,6 +112,7 @@ get_options() {
 
     # global output variables
     useGpuVersion="False"
+    produceDetailedOutlierStats="False"
     unset workingdir
 
     # parse arguments
@@ -122,6 +130,10 @@ get_options() {
                 ;;
             -g | --gpu)
                 useGpuVersion="True"
+                index=$(( index + 1 ))
+                ;;
+            -wss)
+                produceDetailedOutlierStats="True"
                 index=$(( index + 1 ))
                 ;;
             -w | --workingdir)
@@ -151,6 +163,7 @@ get_options() {
     echo "-- ${scriptName}: Specified Command-Line Options - Start --"
     echo "   workingdir: ${workingdir}"
     echo "   useGpuVersion: ${useGpuVersion}"
+    echo "   produceDetailedOutlierStats: ${produceDetailedOutlierStats}"
     echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -218,6 +231,15 @@ main() {
     else
         log_Msg "User did not request GPU-enabled version of eddy"
         eddyExec="${stdEddy}"
+    fi
+
+    # Add option to eddy command for producing detailed outlier stats after each 
+    # iteration if user has requested that option_and_ the GPU-enabled version 
+    # of eddy is to be used.
+    if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
+        if [ "${produceDetailedOutlierStats}" = "True" ]; then
+            eddyExec="${eddyExec} -wss"
+        fi
     fi
 
     log_Msg "eddy executable to use: ${eddyExec}"
