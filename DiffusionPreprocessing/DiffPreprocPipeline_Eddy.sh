@@ -281,7 +281,7 @@ main() {
 
     # Determine stats_option value to pass to run_eddy.sh script
     if [ "${DetailedOutlierStats}" = "True" ]; then
-        stats_option="--wss --very_verbose"
+        stats_option="--wss"
     else
         stats_option=""
     fi

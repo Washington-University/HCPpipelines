@@ -72,9 +72,9 @@ usage() {
     echo "                    this script \"falls back\" to using the standard"
     echo "                    version of eddy."
     echo ""
-    echo "    [-wss] : produce detailed outlier statistics after each iteration by using "
-    echo "             the -wss option to a call to eddy.gpu.  Note that this option has "
-    echo "             no effect unless the GPU-enabled version of eddy (eddy.gpu) is used."
+    echo "    [--wss] : produce detailed outlier statistics after each iteration by using "
+    echo "              the --wss option to a call to eddy.gpu.  Note that this option has "
+    echo "              no effect unless the GPU-enabled version of eddy (eddy.gpu) is used."
     echo ""
     echo "    [--repol] : replace outliers. Note that this option has no effect unless the"
     echo "                GPU-enabled version of eddy (eddy.gpu) is used."
@@ -138,7 +138,7 @@ get_options() {
                 useGpuVersion="True"
                 index=$(( index + 1 ))
                 ;;
-            -wss)
+            --wss)
                 produceDetailedOutlierStats="True"
                 index=$(( index + 1 ))
                 ;;
@@ -255,7 +255,7 @@ main() {
     replaceOutliersOption=""
     if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
         if [ "${produceDetailedOutlierStats}" = "True" ]; then
-            outlierStatsOption="-wss"
+            outlierStatsOption="--wss"
         fi
         if [ "${replaceOutliers}" = "True" ]; then
             replaceOutliersOption="--repol"
@@ -271,7 +271,7 @@ main() {
 
     ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
 
-    ${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic -v #--resamp=lsr #--session=${workingdir}/series_index.txt
+    ${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic --very_verbose #--resamp=lsr #--session=${workingdir}/series_index.txt
     eddyReturnValue=$?
 
     # Another fallback. 
