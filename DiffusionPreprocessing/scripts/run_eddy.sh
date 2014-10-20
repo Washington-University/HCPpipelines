@@ -271,7 +271,10 @@ main() {
 
     ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
 
-    ${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic --very_verbose #--resamp=lsr #--session=${workingdir}/series_index.txt
+    eddy_command="${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic --very_verbose"
+    log_Msg "About to issue the following eddy command: "
+    log_Msg "${eddy_command}"
+    ${eddy_command}
     eddyReturnValue=$?
 
     # Another fallback. 
@@ -284,7 +287,10 @@ main() {
             log_Msg "Tried to run GPU-enabled eddy, ${eddyExec}, as requested."
             log_Msg "That attempt failed with return code: ${eddyReturnValue}"
             log_Msg "Running standard version of eddy, ${stdEddy}, instead."
-            ${stdEddy} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic -v #--resamp=lsr #--session=${workingdir}/series_index.txt
+            eddy_command="${stdEddy} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic -v"
+            log_Msg "About to issue the following eddy command: "
+            log_Msg "${eddy_command}"
+            ${eddy_command}
             eddyReturnValue=$?
         fi
     fi
