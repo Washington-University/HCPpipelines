@@ -271,7 +271,7 @@ main() {
 
     ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
 
-    eddy_command="${eddyExec} ${outlierStatusOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic --very_verbose"
+    eddy_command="${eddyExec} ${outlierStatsOption} ${replaceOutliersOption} --imain=${workingdir}/Pos_Neg --mask=${workingdir}/nodif_brain_mask --index=${workingdir}/index.txt --acqp=${workingdir}/acqparams.txt --bvecs=${workingdir}/Pos_Neg.bvecs --bvals=${workingdir}/Pos_Neg.bvals --fwhm=0 --topup=${topupdir}/topup_Pos_Neg_b0 --out=${workingdir}/eddy_unwarped_images --flm=quadratic --very_verbose"
     log_Msg "About to issue the following eddy command: "
     log_Msg "${eddy_command}"
     ${eddy_command}
