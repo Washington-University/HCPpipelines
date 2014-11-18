@@ -47,22 +47,27 @@ fi
 log_Msg "Parsing Command Line Options"
 
 # parse arguments
-Path=`opts_GetOpt1 "--path" $@`  # "$1"
-Subject=`opts_GetOpt1 "--subject" $@`  # "$2"
-NameOffMRI=`opts_GetOpt1 "--fmriname" $@`  # "$6"
-fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`  # "$3"
-fMRIScout=`opts_GetOpt1 "--fmriscout" $@`  # "$4"
-SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`  # "$7"
-SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`  # "$5"
-MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # "$8" #Expects 4D volume with two 3D timepoints
-PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  # "$9"
-DwellTime=`opts_GetOpt1 "--echospacing" $@`  # "${11}"
-deltaTE=`opts_GetOpt1 "--echodiff" $@`  # "${12}"
-UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  # "${13}"
-FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  # "${14}"
-DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`  # "${17}" #FIELDMAP or TOPUP
-GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  # "${18}"
-TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # "${20}" #NONE if Topup is not being used
+Path=`opts_GetOpt1 "--path" $@`
+Subject=`opts_GetOpt1 "--subject" $@`
+NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
+fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
+fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
+SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
+SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
+MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # Expects 4D volume with two 3D timepoints
+PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  
+GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
+DwellTime=`opts_GetOpt1 "--echospacing" $@`  
+deltaTE=`opts_GetOpt1 "--echodiff" $@`  
+UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
+
+# FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
+# Note: FIELDMAP and SiemensFieldMap are equivalent
+DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
+
+GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 # Setup PATHS
@@ -157,7 +162,7 @@ ${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
     "$fMRIFolder"/"$MotionMatrixFolder" \
     "$MotionMatrixPrefix" 
 
-#EPI Distortion Correction and EPI to T1w Registration
+# EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
   rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
@@ -173,6 +178,7 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
     --fmapmag=${MagnitudeInputName} \
     --fmapphase=${PhaseInputName} \
+    --fmapgeneralelectric=${GEB0InputName} \
     --echodiff=${deltaTE} \
     --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
     --SEPhasePos=${SpinEchoPhaseEncodePositive} \
