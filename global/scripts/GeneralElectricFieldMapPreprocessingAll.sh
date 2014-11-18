@@ -1,23 +1,24 @@
 #!/bin/bash 
+
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
+#  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global and PATH for gradient_unwarp.py)
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {
-  echo "`basename $0`: Script for generating a fieldmap suitable for FSL, and also do gradient non-linearity distortion correction of these"
+  echo "`basename $0`: Script for generating a fieldmap suitable for FSL from General Electric Gradient Echo field map,"
+  echo "               and also do gradient non-linearity distortion correction of these"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working directory>]"
-  echo "            --fmapmag=<input fieldmap magnitude image - can be a 4D containing more than one>"
-  echo "            --fmapphase=<input fieldmap phase image - in radians>"
-  echo "            --echodiff=<echo time difference for fieldmap images (in milliseconds)>"
+  echo "Usage: `basename $0` "
+  echo "            [--workingdir=<working directory>]"
+  echo "            --fmap=<input General Electric fieldmap with fieldmap in deg and magnitude image>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
   echo "            --ofmapmagbrain=<output distortion-corrected brain-extracted fieldmap magnitude image>"
   echo "            --ofmap=<output distortion corrected fieldmap image (rad/s)>"
-  echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
+  echo "            [--gdcoeffs=<input gradient distortion coefficients file>]"
 }
 
 # function for parsing options
@@ -52,15 +53,12 @@ if [ $# -eq 0 ] ; then Usage; exit 0; fi
 if [ $# -lt 5 ] ; then Usage; exit 1; fi
 
 # parse arguments
-WD=`getopt1 "--workingdir" $@` # "$1"
-MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
-PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
-DeltaTE=`getopt1 "--echodiff" $@`  # "$4"
-MagnitudeOutput=`getopt1 "--ofmapmag" $@`  # "$5"
-MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`  # "$6"
-FieldMapOutput=`getopt1 "--ofmap" $@`  # "$8"
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
-#GlobalScripts="${10}"
+WD=`getopt1 "--workingdir" $@`
+GEB0InputName=`getopt1 "--fmap" $@`
+MagnitudeOutput=`getopt1 "--ofmapmag" $@`
+MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`
+FieldMapOutput=`getopt1 "--ofmap" $@`
+GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
 
 # default parameters
 GlobalScripts=${HCPPIPEDIR_Global}
@@ -80,12 +78,13 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
-${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
+mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
+mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
 ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
-${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
 
-echo "DONE: fsl_prepare_fieldmap.sh"
+echo "DONE: preparing General Electric fieldmap"
 
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   ${GlobalScripts}/GradientDistortionUnwarp.sh \

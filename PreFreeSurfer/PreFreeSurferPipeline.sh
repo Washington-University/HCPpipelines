@@ -17,7 +17,9 @@
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
 # * Mark Jenkinson, FMRIB Centre, Oxford University
 # * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
-#
+# * Modifications to support General Electric Gradient Echo field maps for readout distortion correction
+#   are based on example code provided by Gaurav Patel, Columbia University
+# 
 # ## Product
 #
 # [Human Connectome Project][HCP] (HCP) Pipelines 
@@ -151,6 +153,16 @@
 # script itself exits and does not attempt any further processing.
 set -e
 
+# -----------------------------------------------------------------------------------
+#  Constants for specification of Averaging and Readout Distortion Correction Method
+# -----------------------------------------------------------------------------------
+
+NONE_METHOD_OPT="NONE"
+FIELDMAP_METHOD_OPT="FIELDMAP"
+SIEMENS_METHOD_OPT="SiemensFieldMap"
+SPIN_ECHO_METHOD_OPT="TOPUP"
+GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+
 # ------------------------------------------------------------------------------
 #  Load Function Libraries
 # ------------------------------------------------------------------------------
@@ -179,48 +191,67 @@ Usage: PreeFreeSurferPipeline.sh [options]
                        (T1w) structural images for the subject (required)
   --t2=<T2w images>    An @ symbol separated list of full paths to T2-weighted
                        (T2w) structural images for the subject (required)
-  --t1template=<file path>       MNI T1w template
-  --t1templatebrain=<file path>  Brain extracted MNI T1wTemplate
-  --t1template2mm=<file path>    MNI 2mm T1wTemplate
-  --t2template=<file path>       MNI T2w template
-  --t2templatebrain=<file path>  Brain extracted MNI T2wTemplate
-  --t2template2mm=<file path>    MNI 2mm T2wTemplate
-  --templatemask=<file path>     Brain mask MNI Template
-  --template2mmmask=<file path>  Brain mask MNI 2mm Template 
-  --brainsize=<size value>       Brain size estimate in mm, 150 for humans
-  --fnirtconfig=<file path>      FNIRT 2mm T1w Configuration file
-  --fmapmag=<file path>          Fieldmap magnitude file
-  --fmapphase=<file path>        Fieldmap phase file
-  --echodiff=<delta TE>          Delta TE in ms for field map or "NONE" if 
-                                 not used
-  --SEPhaseNeg={LR, RL, NONE}    For spin echo field map volume with a negative
-                                 phase encoding direction (LR in HCP data), set
-                                 to "NONE" if using regular FIELDMAP
-  --SEPhasePos={LR, RL, NONE}    For the spin echo field map volume with a 
-                                 positive phase encoding direction (RL in HCP 
-                                 data), set to "NONE" if using regular FIELDMAP
-  --echospacing=<dwell time>     Echo Spacing or Dwelltime of Spin Echo Field
-                                 Map or "NONE" if not used
-  --seunwarpdir={x, y, NONE}     Phase encoding direction of the spin echo 
-                                 field map. (Only applies when using a spin echo
-                                 field map.)
-  --t1samplespacing=<seconds>    T1 image sample spacing, "NONE" if not used
-  --t2samplespacing=<seconds>    T2 image sample spacing, "NONE" if not used
-  --unwarpdir={x, y, z}          Readout direction of the T1w and T2w images
-                                 (Used with either a regular field map or a spin
-                                 echo field map)
-  --gdcoeffs=<file path>         File containing gradient distortion 
-                                 coefficients, Set to "NONE" to turn off
-  --avgrdcmethod={NONE, FIELDMAP, TOPUP}           
-                                 Averaging and readout distortion correction
-                                 method.
-                                 "NONE" = average any repeats with no readout
-                                          correction
-                                 "FIELDMAP" = average any repeats and use field
-                                              map for readout correction
-                                 "TOPUP" = average any repeats and use spin 
-                                           echo field map for readout 
-                                           correction
+  --t1template=<file path>          MNI T1w template
+  --t1templatebrain=<file path>     Brain extracted MNI T1wTemplate
+  --t1template2mm=<file path>       MNI 2mm T1wTemplate
+  --t2template=<file path>          MNI T2w template
+  --t2templatebrain=<file path>     Brain extracted MNI T2wTemplate
+  --t2template2mm=<file path>       MNI 2mm T2wTemplate
+  --templatemask=<file path>        Brain mask MNI Template
+  --template2mmmask=<file path>     Brain mask MNI 2mm Template 
+  --brainsize=<size value>          Brain size estimate in mm, 150 for humans
+  --fnirtconfig=<file path>         FNIRT 2mm T1w Configuration file
+  --fmapmag=<file path>             Siemens Gradient Echo Fieldmap magnitude file
+  --fmapphase=<file path>           Siemens Gradient Echo Fieldmap phase file
+  --fmapgeneralelectric=<file path> General Electric Gradient Echo Field Map file
+                                    Two volumes in one file
+                                    1. field map in deg
+                                    2. magnitude
+  --echodiff=<delta TE>             Delta TE in ms for field map or "NONE" if 
+                                    not used
+  --SEPhaseNeg={<file path>, NONE}  For spin echo field map, path to volume with 
+                                    a negative phase encoding direction (LR in 
+                                    HCP data), set to "NONE" if not using Spin 
+                                    Echo Field Maps
+  --SEPhasePos={<file path>, NONE}  For spin echo field map, path to volume with 
+                                    a positive phase encoding direction (RL in 
+                                    HCP data), set to "NONE" if not using Spin 
+                                    Echo Field Maps
+  --echospacing=<dwell time>        Echo Spacing or Dwelltime of Spin Echo Field
+                                    Map or "NONE" if not used
+  --seunwarpdir={x, y, NONE}        Phase encoding direction of the spin echo 
+                                    field map. (Only applies when using a spin echo
+                                    field map.)
+  --t1samplespacing=<seconds>       T1 image sample spacing, "NONE" if not used
+  --t2samplespacing=<seconds>       T2 image sample spacing, "NONE" if not used
+  --unwarpdir={x, y, z}             Readout direction of the T1w and T2w images
+                                    (Used with either a gradient echo field map 
+                                     or a spin echo field map)
+  --gdcoeffs=<file path>            File containing gradient distortion 
+                                    coefficients, Set to "NONE" to turn off
+  --avgrdcmethod=<avgrdcmethod>     Averaging and readout distortion correction
+                                    method. See below for supported values.
+
+      "${NONE_METHOD_OPT}"
+         average any repeats with no readout distortion correction
+
+      "${FIELDMAP_METHOD_OPT}" 
+         equivalent to "${SIEMENS_METHOD_OPT}" (see below)
+         SiemensFieldMap is preferred. This option value is maintained for 
+         backward compatibility.
+
+      "${SPIN_ECHO_METHOD_OPT}"    
+         average any repeats and use Spin Echo Field Maps for readout
+         distortion correction
+
+      "${GENERAL_ELECTRIC_METHOD_OPT}" 
+         average any repeats and use General Electric specific Gradient 
+         Echo Field Maps for readout distortion correction
+
+      "${SIEMENS_METHOD_OPT}"
+         average any repeats and use Siemens specific Gradient Echo 
+         Field Maps for readout distortion correction
+
   --topupconfig=<file path>      Configuration file for topup or "NONE" if not
                                  used
   --bfsigma=<value>              Bias Field Smoothing Sigma (optional)
@@ -264,6 +295,7 @@ BrainSize=`opts_GetOpt1 "--brainsize" $@`
 FNIRTConfig=`opts_GetOpt1 "--fnirtconfig" $@`
 MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`
 PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`
+GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 TE=`opts_GetOpt1 "--echodiff" $@`
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
 SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
@@ -302,6 +334,7 @@ log_Msg "BrainSize: ${BrainSize}"
 log_Msg "FNIRTConfig: ${FNIRTConfig}"
 log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
 log_Msg "PhaseInputName: ${PhaseInputName}"
+log_Msg "GEB0InputName: ${GEB0InputName}"
 log_Msg "TE: ${TE}"
 log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
 log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
@@ -360,7 +393,7 @@ log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 #  Loop over the processing for T1w and T2w (just with different names). 
 #  For each modality, perform
 #  - Gradient Nonlinearity Correction (Unless no gradient distortion 
-#    coefficients are available
+#    coefficients are available)
 #  - Average same modality images (if more than one is available)
 #  - Rigidly align images to 0.7mm MNI Template to create native volume space
 #  - Perform Brain Extraction(FNIRT-based Masking)
@@ -428,9 +461,8 @@ for TXw in ${Modalities} ; do
         log_Msg "Averaging ${TXw} Images"
         log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
         mkdir -p ${TXwFolder}/Average${TXw}Images
-	log_Msg "PERFORMING SIMPLE AVERAGING"
+        log_Msg "PERFORMING SIMPLE AVERAGING"
         ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
-        # fi
     else
         log_Msg "Not Averaging ${TXw} Images"
         log_Msg "ONLY ONE AVERAGE FOUND: COPYING"
@@ -472,68 +504,77 @@ done
 #  T2w to T1w Registration and Optional Readout Distortion Correction 
 # ------------------------------------------------------------------------------
 
-if [[ ${AvgrdcSTRING} = "FIELDMAP" || ${AvgrdcSTRING} = "TOPUP" ]] ; then
-    log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
-    wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-    if [ -d ${wdir} ] ; then
-        # DO NOT change the following line to "rm -r ${wdir}" because the 
-        # chances of something going wrong with that are much higher, and 
-        # rm -r always needs to be treated with the utmost caution
-        rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-    fi
+case $AvgrdcSTRING in 
+    
+    ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT})
 
-    log_Msg "mkdir -p ${wdir}"
-    mkdir -p ${wdir}
+        log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
+        wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+        if [ -d ${wdir} ] ; then
+            # DO NOT change the following line to "rm -r ${wdir}" because the 
+            # chances of something going wrong with that are much higher, and 
+            # rm -r always needs to be treated with the utmost caution
+            rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+        fi
 
-    ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
-        --workingdir=${wdir} \
-        --t1=${T1wFolder}/${T1wImage}_acpc \
-        --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
-        --t2=${T2wFolder}/${T2wImage}_acpc \
-        --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
-        --fmapmag=${MagnitudeInputName} \
-        --fmapphase=${PhaseInputName} \
-        --echodiff=${TE} \
-        --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-        --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-        --echospacing=${DwellTime} \
-        --seunwarpdir=${SEUnwarpDir} \
-        --t1sampspacing=${T1wSampleSpacing} \
-        --t2sampspacing=${T2wSampleSpacing} \
-        --unwarpdir=${UnwarpDir} \
-        --ot1=${T1wFolder}/${T1wImage}_acpc_dc \
-        --ot1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
-        --ot1warp=${T1wFolder}/xfms/${T1wImage}_dc \
-        --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
-        --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
-        --method=${AvgrdcSTRING} \
-        --topupconfig=${TopupConfig} \
-        --gdcoeffs=${GradientDistortionCoeffs}
-else
-    log_Msg "NOT PERFORMING READOUT DISTORTION CORRECTION"
-    wdir=${T2wFolder}/T2wToT1wReg
-    if [ -e ${wdir} ] ; then
-        # DO NOT change the following line to "rm -r ${wdir}" because the
-        # chances of something going wrong with that are much higher, and 
-        # rm -r always needs to be treated with the utmost caution
-        rm -r ${T2wFolder}/T2wToT1wReg
-    fi
+        log_Msg "mkdir -p ${wdir}"
+        mkdir -p ${wdir}
 
-    log_Msg "mkdir -p ${wdir}"
-    mkdir -p ${wdir}
+        ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
+            --workingdir=${wdir} \
+            --t1=${T1wFolder}/${T1wImage}_acpc \
+            --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
+            --t2=${T2wFolder}/${T2wImage}_acpc \
+            --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
+            --fmapmag=${MagnitudeInputName} \
+            --fmapphase=${PhaseInputName} \
+            --fmapgeneralelectric=${GEB0InputName} \
+            --echodiff=${TE} \
+            --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+            --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+            --echospacing=${DwellTime} \
+            --seunwarpdir=${SEUnwarpDir} \
+            --t1sampspacing=${T1wSampleSpacing} \
+            --t2sampspacing=${T2wSampleSpacing} \
+            --unwarpdir=${UnwarpDir} \
+            --ot1=${T1wFolder}/${T1wImage}_acpc_dc \
+            --ot1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
+            --ot1warp=${T1wFolder}/xfms/${T1wImage}_dc \
+            --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
+            --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
+            --method=${AvgrdcSTRING} \
+            --topupconfig=${TopupConfig} \
+            --gdcoeffs=${GradientDistortionCoeffs}
 
-    ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wReg.sh \
-        ${wdir} \
-        ${T1wFolder}/${T1wImage}_acpc \
-        ${T1wFolder}/${T1wImage}_acpc_brain \
-        ${T2wFolder}/${T2wImage}_acpc \
-        ${T2wFolder}/${T2wImage}_acpc_brain \
-        ${T1wFolder}/${T1wImage}_acpc_dc \
-        ${T1wFolder}/${T1wImage}_acpc_dc_brain \
-        ${T1wFolder}/xfms/${T1wImage}_dc \
-        ${T1wFolder}/${T2wImage}_acpc_dc \
-        ${T1wFolder}/xfms/${T2wImage}_reg_dc
-fi
+        ;;
+
+    *) 
+
+        log_Msg "NOT PERFORMING READOUT DISTORTION CORRECTION"
+        wdir=${T2wFolder}/T2wToT1wReg
+        if [ -e ${wdir} ] ; then
+            # DO NOT change the following line to "rm -r ${wdir}" because the
+            # chances of something going wrong with that are much higher, and 
+            # rm -r always needs to be treated with the utmost caution
+            rm -r ${T2wFolder}/T2wToT1wReg
+        fi
+
+        log_Msg "mkdir -p ${wdir}"
+        mkdir -p ${wdir}
+
+        ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wReg.sh \
+            ${wdir} \
+            ${T1wFolder}/${T1wImage}_acpc \
+            ${T1wFolder}/${T1wImage}_acpc_brain \
+            ${T2wFolder}/${T2wImage}_acpc \
+            ${T2wFolder}/${T2wImage}_acpc_brain \
+            ${T1wFolder}/${T1wImage}_acpc_dc \
+            ${T1wFolder}/${T1wImage}_acpc_dc_brain \
+            ${T1wFolder}/xfms/${T1wImage}_dc \
+            ${T1wFolder}/${T2wImage}_acpc_dc \
+            ${T1wFolder}/xfms/${T2wImage}_reg_dc
+
+esac
 
 # ------------------------------------------------------------------------------
 #  Bias Field Correction: Calculate bias field using square root of the product 
