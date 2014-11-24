@@ -68,6 +68,10 @@ DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
+
+dof=`opts_GetOpt1 "--dof" $@`
+dof=`opts_DefaultOpt $dof 6`
+
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 # Setup PATHS
@@ -165,7 +169,7 @@ ${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
-  rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+    ${RUN} rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 fi
 log_Msg "mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased"
 mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
@@ -193,7 +197,8 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --qaimage=${fMRIFolder}/${QAImage} \
     --method=${DistortionCorrection} \
     --topupconfig=${TopupConfig} \
-    --ojacobian=${fMRIFolder}/${JacobianOut} 
+    --ojacobian=${fMRIFolder}/${JacobianOut} \
+    --dof=${dof}
     
 #One Step Resampling
 log_Msg "One Step Resampling"
