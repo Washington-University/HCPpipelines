@@ -137,6 +137,10 @@ usage() {
     echo "    : path to file containing coefficients that describe spatial variations"
     echo "      of the scanner gradients. Use --gdcoeffs=NONE if not available"
     echo ""
+    echo "    [--dof=<Degrees of Freedom>]"
+    echo "    : Degrees of Freedom for post eddy registration to structural images"
+    echo "      defaults to 6"
+    echo ""
     echo "    [--printcom=<print-command>]"
     echo "    : Use the specified <print-command> to echo or otherwise output the commands"
     echo "      that would be executed instead of actually running them"
@@ -182,17 +186,35 @@ usage() {
 #  Get the command line options for this script
 #
 # Global Output Variables
-#  ${StudyFolder}    - Path to subject's data folder
-#  ${Subject}        - Subject ID
-#  ${PEdir}          - Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages} - @ symbol separated list of data with positive phase encoding direction
-#  ${NegInputImages} - @ symbol separated lsit of data with negative phase encoding direction 
-#  ${echospacing}    - echo spacing in msecs
-#  ${GdCoeffs}       - Path to file containing coefficients that describe spatial variations
-#                      of the scanner gradients. Use NONE if not available.
-#  ${runcmd}         - Set to a user specifed command to use if user has requested
-#                      that commands be echo'd (or printed) instead of actually executed.
-#                      Otherwise, set to empty string.
+#  ${StudyFolder}
+#    Path to subject's data folder
+#
+#  ${Subject}
+#    Subject ID
+#
+#  ${PEdir}
+#    Phase Encoding Direction, 1=LR/RL, 2=AP/PA
+#
+#  ${PosInputImages}
+#    @ symbol separated list of data with positive phase encoding direction
+#
+#  ${NegInputImages}
+#    @ symbol separated lsit of data with negative phase encoding direction 
+#
+#  ${echospacing}
+#    echo spacing in msecs
+#
+#  ${GdCoeffs}
+#    Path to file containing coefficients that describe spatial variations
+#    of the scanner gradients. Use NONE if not available.
+#
+#  ${DegreesOfFreedom}
+#    Degrees of Freedom for post eddy registration to structural images
+#
+#  ${runcmd}
+#    Set to a user specifed command to use if user has requested that commands
+#    be echo'd (or printed) instead of actually executed.  Otherwise, set to 
+#    empty string.
 #
 get_options() {
     local scriptName=$(basename ${0})
@@ -206,6 +228,7 @@ get_options() {
     unset NegInputImages
     unset echospacing
     unset GdCoeffs
+    DegreesOfFreedom=6
     runcmd=""
 
     # parse arguments
@@ -251,6 +274,10 @@ get_options() {
                 ;;
             --gdcoeffs=*)
                 GdCoeffs=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
+            --dof=*)
+                DegreesOfFreedom=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
             --printcom=*)
@@ -317,6 +344,7 @@ get_options() {
     echo "   NegInputImages: ${NegInputImages}"
     echo "   echospacing: ${echospacing}"
     echo "   GdCoeffs: ${GdCoeffs}"
+    echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
     echo "   runcmd: ${runcmd}"
     echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
@@ -413,6 +441,7 @@ main() {
         --path=${StudyFolder} \
         --subject=${Subject} \
         --gdcoeffs=${GdCoeffs} \
+        --dof=${DegreesOfFreedom} \
         --printcom="${runcmd}"
 
     log_Msg "Completed"
