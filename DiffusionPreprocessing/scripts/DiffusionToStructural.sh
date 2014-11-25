@@ -36,11 +36,15 @@ BiasField=`getopt1 "--biasfield" $@`               # "$8" #Bias_Field_acpc_dc
 InputBrainMask=`getopt1 "--brainmask" $@`          # "$9" #Freesurfer Brain Mask, e.g. brainmask_fs
 GdcorrectionFlag=`getopt1 "--gdflag" $@`           # "$10"#Flag for gradient nonlinearity correction (0/1 for Off/On) 
 DiffRes=`getopt1 "--diffresol" $@`                 # "$11"#Diffusion resolution in mm (assume isotropic)
+dof=`getopt1 "--dof" $@`                           # Degrees of freedom for registration to T1w (defaults to 6)
 
 # Output Variables
 T1wOutputDirectory=`getopt1 "--datadiffT1wdir" $@` # "$12" #Path to T1w space diffusion data (for producing output)
 RegOutput=`getopt1 "--regoutput" $@`               # "$13" #Temporary file for sanity checks 
 QAImage=`getopt1 "--QAimage" $@`                   # "$14" #Temporary file for sanity checks 
+
+# Set default option values
+dof=`defaultopt $dof 6`
 
 echo $T1wOutputDirectory
 
@@ -53,7 +57,7 @@ regimg="nodif"
 ${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
 
 #b0 FLIRT BBR and bbregister to T1w
-${FSLDIR}/bin/epi_reg --epi="$DataDirectory"/"$regimg" --t1="$T1wImage" --t1brain="$WorkingDirectory"/"$T1wBrainImageFile" --out="$WorkingDirectory"/"$regimg"2T1w_initII
+${GlobalScripts}/epi_reg_dof --dof=${dof} --epi="$DataDirectory"/"$regimg" --t1="$T1wImage" --t1brain="$WorkingDirectory"/"$T1wBrainImageFile" --out="$WorkingDirectory"/"$regimg"2T1w_initII
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
