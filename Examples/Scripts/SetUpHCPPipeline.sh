@@ -11,7 +11,7 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 #. ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
-export HCPPIPEDIR=${HOME}/projects/Pipelines
+export HCPPIPEDIR=${HOME}/projects7/Pipelines
 export CARET7DIR=${HOME}/workbench/bin_linux64
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates

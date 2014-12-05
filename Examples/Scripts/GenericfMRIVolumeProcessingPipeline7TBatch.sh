@@ -1,9 +1,9 @@
 #!/bin/bash 
 
-DEFAULT_STUDY_FOLDER="${HOME}/projects/Pipelines_ExampleData"
+DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
 DEFAULT_SUBJ_LIST="102311"
 DEFAULT_RUN_LOCAL="FALSE"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects7/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
 # 
 # Function: get_batch_options
@@ -95,8 +95,8 @@ echo "$@"
 QUEUE="-q long.q"
 
 # Change to PRINTCOM="echo" to just echo commands instead of actually executing them
-#PRINTCOM=""
-PRINTCOM="echo"
+#PRINTCOM="echo"
+PRINTCOM=""
 
 ######################################### DO WORK ##########################################
 
@@ -192,7 +192,7 @@ for Subject in $Subjlist ; do
         # Skipping Gradient Distortion Correction
         GradientDistortionCoeffs="NONE"
 
-        if [ -n "${RunLocal}" ] ; then
+        if [ "${RunLocal}" == "TRUE" ] ; then
             echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
             queuing_command=""
         else
