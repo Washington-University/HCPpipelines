@@ -16,7 +16,7 @@ ResultsFolder="$4"
 echo "${script_name}: ResultsFolder: ${ResultsFolder}"
 
 NameOffMRI="$5"
-echo "${script_name}: NameOffMRI: ${NameOfffMRI}"
+echo "${script_name}: NameOffMRI: ${NameOffMRI}"
 
 SmoothingFWHM="$6"
 echo "${script_name}: SmoothingFWHM: ${SmoothingFWHM}"
@@ -25,7 +25,7 @@ BrainOrdinatesResolution="$7"
 echo "${script_name}: BrainOrdinatesResolution: ${BrainOrdinatesResolution}"
 
 VolumefMRI="${ResultsFolder}/${NameOffMRI}"
-echo "${script_name}: VolumefMRI: ${volumefMRI}"
+echo "${script_name}: VolumefMRI: ${VolumefMRI}"
 
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 echo "${script_name}: Sigma: ${Sigma}"
