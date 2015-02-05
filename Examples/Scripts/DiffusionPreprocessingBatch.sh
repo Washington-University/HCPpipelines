@@ -57,7 +57,8 @@ echo "$@"
 
 #Assume that submission nodes have OPENMP enabled (needed for eddy - at least 8 cores suggested for HCP data)
 #if [ X$SGE_ROOT != X ] ; then
-    QUEUE="-q verylong.q"
+#    QUEUE="-q verylong.q"
+    QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""

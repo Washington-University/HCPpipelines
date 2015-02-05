@@ -56,7 +56,8 @@ fi
 echo "$@"
 
 #if [ X$SGE_ROOT != X ] ; then
-    QUEUE="-q long.q"
+#    QUEUE="-q long.q"
+    QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""

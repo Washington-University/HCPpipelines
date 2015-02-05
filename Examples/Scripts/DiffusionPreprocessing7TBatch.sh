@@ -1,12 +1,13 @@
 #!/bin/bash 
 
-DEFAULT_STUDY_FOLDR="${HOME}/data/7T_Testing"
+DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
 DEFAULT_SUBJ_LIST="102311"
-DEFAULT_RUN_LOCAL="FALSE:
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects7/Pipelines/Examples/Scripts/SetupUpHCPPipeline.sh"
+DEFAULT_RUN_LOCAL="FALSE"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects7/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
 SCAN_STRENGTH_CODE="7T"
 DIRECTIONS="71 72"
+
 #
 # Function: get_batch_options
 # Description:
@@ -94,7 +95,8 @@ get_batch_options $@
 # Log the originating call
 echo "$@"
 
-QUEUE="-q verylong.q"
+#QUEUE="-q verylong.q"
+QUEUE="-q hcp_priority.q"
 
 # Change to PRINTCOM="echo" to just echo commands instead of actually executing them
 #PRINTCOM="echo"
@@ -140,12 +142,12 @@ for Subject in $Subjlist ; do
 	PosData=""
 	NegData=""
 	for DirectionNumber in ${DIRECTIONS} ; do
-		if [ "${PosData}" -ne "" ] ; then
+		if [ "${PosData}" != "" ] ; then
 			PosDataSeparator="@"
 		else
 			PosDataSeparator=""
 		fi
-		if [ "${NegData}" -ne "" ] ; then
+		if [ "${NegData}" != "" ] ; then
 			NegDataSeparator="@"
 		else
 			NegDataSeparator=""
@@ -177,7 +179,7 @@ for Subject in $Subjlist ; do
 	fi
 	
 	${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
-		-posData="${PosData}" \
+		--posData="${PosData}" \
 		--negData="${NegData}" \
 		--path="${StudyFolder}" \
 		--subject="${SubjectID}" \

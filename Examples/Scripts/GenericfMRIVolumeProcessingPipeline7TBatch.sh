@@ -92,7 +92,8 @@ get_batch_options $@
 # Log the originating call
 echo "$@"
 
-QUEUE="-q long.q"
+#QUEUE="-q long.q"
+QUEUE="-q hcp_priority.q"
 
 # Change to PRINTCOM="echo" to just echo commands instead of actually executing them
 #PRINTCOM="echo"
