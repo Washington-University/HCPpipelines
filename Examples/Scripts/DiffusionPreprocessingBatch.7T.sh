@@ -3,7 +3,7 @@
 DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
 DEFAULT_SUBJ_LIST="102311"
 DEFAULT_RUN_LOCAL="FALSE"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects7/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
 SCAN_STRENGTH_CODE="7T"
 DIRECTIONS="71 72"

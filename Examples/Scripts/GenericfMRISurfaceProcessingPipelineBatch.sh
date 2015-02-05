@@ -69,8 +69,23 @@ PRINTCOM=""
 
 ######################################### DO WORK ##########################################
 
-
-Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
+Tasklist=""
+Tasklist="${Tasklist} rfMRI_REST1_RL"
+Tasklist="${Tasklist} rfMRI_REST1_LR"
+Tasklist="${Tasklist} rfMRI_REST2_RL"
+Tasklist="${Tasklist} rfMRI_REST2_LR"
+Tasklist="${Tasklist} tfMRI_EMOTION_RL"
+Tasklist="${Tasklist} tfMRI_EMOTION_LR"
+Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
+Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
+Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
+Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
+Tasklist="${Tasklist} tfMRI_MOTOR_RL"
+Tasklist="${Tasklist} tfMRI_MOTOR_LR"
+Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
+Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
+Tasklist="${Tasklist} tfMRI_WM_RL"
+Tasklist="${Tasklist} tfMRI_WM_LR"
 
 for Subject in $Subjlist ; do
   echo $Subject
