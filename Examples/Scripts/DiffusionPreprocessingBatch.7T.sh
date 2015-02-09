@@ -22,32 +22,32 @@ DIRECTIONS="71 72"
 #
 get_batch_options() {
 	local arguments=($@)
-	
+
 	# Output global variables
 	unset StudyFolder
 	unset Subjlist
 	unset RunLocal
 	unset EnvironmentScript
-	
+
 	# Default values
-	
+
 	# Location of subject folders (named by subject ID)
 	StudyFolder="${DEFAULT_STUDY_FOLDER}"
-	
+
 	# Space delimited list of subject IDs
 	Subjlist="${DEFAULT_SUBJ_LIST}"
-	
+
 	# Whether or not to run locally instead of submitting to a queue
 	RunLocal="${DEFAULT_RUN_LOCAL}"
-	
+
 	# Pipeline environment script
 	EnvironmentScript="${DEFAULT_ENVIRONMENT_SCRIPT}"
-	
+
 	# Parse command line options
 	local index=0
 	local numArgs=${#arguments[@]}
 	local argument
-	
+
 	while [ ${index} -lt ${numArgs} ]; do
 		argument=${arguments[index]}
 		
@@ -130,13 +130,13 @@ echo $SCRIPT_NAME
 ######################################### DO WORK ##########################################
 
 for Subject in $Subjlist ; do
-	
+
 	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
-	
+
 	# Input Variables
 	SubjectID="${Subject}" #Subject ID Name
 	RawDataDir="${StudyFolder}/${SubjectID}/unprocessed/${SCAN_STRENGTH_CODE}/Diffusion" # Folder where unprocessed diffusion data are
-	
+
 	# Data with positive Phase encoding direction. Separated by @. (LR in HCP data, AP in 7T HCP data)
 	# Data with negative Phase encoding direction. Separated by @. (RL in HCP data, PA in 7T HCP data)
 	PosData=""
@@ -152,24 +152,24 @@ for Subject in $Subjlist ; do
 		else
 			NegDataSeparator=""
 		fi
-		
+
 		PosData="${PosData}${PosDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_AP.nii.gz"
 		NegData="${NegData}${NegDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_PA.nii.gz"
 	done
-	
+
 	echo "  ${SCRIPT_NAME}: PosData: ${PosData}"
 	echo "  ${SCRIPT_NAME}: NegData: ${NegData}"
-	
+
 	#Scan Setings
 	EchoSpacing=0.2733285956376756 #Echo Spacing or Dwelltime of dMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.
 	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing}"
 	PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 	echo "  ${SCRIPT_NAME}: PEdir: ${PEdir}"
-	
+
 	#Config Settings
 	# Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
 	Gdcoeffs="NONE" # Set to NONE to skip gradient distortion correction
-	
+
 	if [ "${RunLocal}" == "TRUE" ] ; then
 		echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
 		queuing_command=""
@@ -177,7 +177,7 @@ for Subject in $Subjlist ; do
 		echo "${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
 		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 	fi
-	
+
 	${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
 		--posData="${PosData}" \
 		--negData="${NegData}" \
@@ -186,6 +186,7 @@ for Subject in $Subjlist ; do
 		--echospacing="${EchoSpacing}" \
 		--PEdir=${PEdir} \
 		--gdcoeffs="${Gdcoeffs}" \
+		--b0maxbval=100 \
 		--printcom=$PRINTCOM
-		
+
 done

@@ -84,6 +84,8 @@ Tasklist="${Tasklist} tfMRI_MOTOR_RL"
 Tasklist="${Tasklist} tfMRI_MOTOR_LR"
 Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
 Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
+Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
+Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
 Tasklist="${Tasklist} tfMRI_WM_RL"
 Tasklist="${Tasklist} tfMRI_WM_LR"
 

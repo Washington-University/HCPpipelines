@@ -161,6 +161,12 @@ PhaseEncodinglist="${PhaseEncodinglist} x"
 Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
 PhaseEncodinglist="${PhaseEncodinglist} x-"
 
+Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
 Tasklist="${Tasklist} tfMRI_WM_RL"
 PhaseEncodinglist="${PhaseEncodinglist} x"
 
