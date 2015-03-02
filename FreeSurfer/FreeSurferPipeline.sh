@@ -53,6 +53,62 @@ T1wImage=`opts_GetOpt1 "--t1" $@` #T1w FreeSurfer Input (Full Resolution)
 T1wImageBrain=`opts_GetOpt1 "--t1brain" $@` 
 T2wImage=`opts_GetOpt1 "--t2" $@` #T2w FreeSurfer Input (Full Resolution)
 
+# ------------------------------------------------------------------------------
+#  Show Command Line Options
+# ------------------------------------------------------------------------------
+
+log_Msg "Finished Parsing Command Line Options"
+log_Msg "SubjectID: ${SubjectID}"
+log_Msg "SubjectDIR: ${SubjectDIR}"
+log_Msg "T1wImage: ${T1wImage}"
+log_Msg "T1wImageBrain: ${T1wImageBrain}"
+log_Msg "T2wImage: ${T2wImage}"
+
+# ------------------------------------------------------------------------------
+#  Show Environment Variables
+# ------------------------------------------------------------------------------
+
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_Msg "HCPPIPEDIR_FS: ${HCPPIPEDIR_FS}"
+
+# ------------------------------------------------------------------------------
+#  Identify Tools
+# ------------------------------------------------------------------------------
+
+which_flirt=`which flirt`
+flirt_version=`flirt -version`
+log_Msg "which flirt: ${which_flirt}"
+log_Msg "flirt -version: ${flirt_version}"
+
+which_applywarp=`which applywarp`
+log_Msg "which applywarp: ${which_applywarp}"
+
+which_fslstats=`which fslstats`
+log_Msg "which fslstats: ${which_fslstats}"
+
+which_fslmaths=`which fslmaths`
+log_Msg "which fslmaths: ${which_fslmaths}"
+
+which_recon_all=`which recon-all`
+recon_all_version=`recon-all --version`
+log_Msg "which recon-all: ${which_recon_all}"
+log_Msg "recon-all --version: ${recon_all_version}"
+
+which_mri_convert=`which mri_convert`
+log_Msg "which mri_convert: ${which_mri_convert}"
+
+which_mri_em_register=`which mri_em_register`
+mri_em_register_version=`mri_em_register --version`
+log_Msg "which mri_em_register: ${which_mri_em_register}"
+log_Msg "mri_em_register --version: ${mri_em_register_version}"
+
+which_mri_watershed=`which mri_watershed`
+mri_watershed_version=`mri_watershed --version`
+log_Msg "which mri_watershed: ${which_mri_watershed}"
+log_Msg "mri_watershed --version: ${mri_watershed_version}"
+
+# Start work
+
 T1wImageFile=`remove_ext $T1wImage`;
 T1wImageBrainFile=`remove_ext $T1wImageBrain`;
 
