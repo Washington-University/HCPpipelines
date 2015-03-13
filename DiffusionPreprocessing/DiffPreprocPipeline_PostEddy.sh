@@ -98,6 +98,10 @@ usage() {
     echo "    : path to file containing coefficients that describe spatial variations"
     echo "      of the scanner gradients. Use --gdcoeffs=NONE if not available"
     echo ""
+    echo "    [--dwiname=<DWIName>]"
+    echo "    : name to give DWI output directories"
+    echo "      defaults to Diffusion"
+    echo ""
     echo "    [--dof=<Degrees of Freedom>]"
     echo "    : Degrees of Freedom for registration to structural images"
     echo "      defaults to 6"
@@ -153,6 +157,9 @@ usage() {
 #  ${DegreesOfFreedom}
 #    Degrees of Freedom for registration to structural images
 #
+#  ${DWIName}
+#    Name to give DWI output directories"
+#
 #  ${runcmd}
 #    Set to a user specifed command to use if user has requested that commands
 #    be echo'd (or printed) instead of actually executed.  Otherwise, set to 
@@ -166,6 +173,7 @@ get_options() {
     unset StudyFolder
     unset Subject
     unset GdCoeffs
+    DWIName="Diffusion"
     DegreesOfFreedom=6
     runcmd=""
 
@@ -206,6 +214,10 @@ get_options() {
                 runcmd=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
+            --dwiname=*)
+                DWIName=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
             *)
                 usage
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -232,11 +244,19 @@ get_options() {
         echo "ERROR: <path-to-gradients-coefficients-file> not specified"
         exit 1
     fi
-
+    
+    if [ -z ${DWIName} ]
+    then
+        usage
+        echo "ERROR: <DWIName> not specified"
+        exit 1
+    fi
+    
     # report options
     echo "-- ${scriptName}: Specified Command-Line Options - Start --"
     echo "   StudyFolder: ${StudyFolder}"
     echo "   Subject: ${Subject}"
+    echo "   DWIName: ${DWIName}"
     echo "   GdCoeffs: ${GdCoeffs}"
     echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
     echo "   runcmd: ${runcmd}"
@@ -302,6 +322,7 @@ main() {
     #  ${Subject}     - Subject ID
     #  ${GdCoeffs}    - Path to file containing coefficients that describe spatial variations
     #                   of the scanner gradients. Use NONE if not available.
+    #  ${DWIName}     - Name to give DWI output directories
     #  ${runcmd}      - Set to a user specifed command to use if user has requested
     #                   that commands be echo'd (or printed) instead of actually executed.
     #                   Otherwise, set to empty string.
@@ -314,8 +335,8 @@ main() {
     log_SetToolName "DiffPreprocPipeline_PostEddy.sh"
 
     # Establish output directory paths
-    outdir=${StudyFolder}/${Subject}/Diffusion
-    outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
+    outdir=${StudyFolder}/${Subject}/${DWIName}
+    outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
 
     # Determine whether Gradient Nonlinearity Distortion coefficients are supplied
     GdFlag=0

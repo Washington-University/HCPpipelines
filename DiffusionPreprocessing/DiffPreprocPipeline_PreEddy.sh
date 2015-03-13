@@ -109,6 +109,10 @@ usage() {
 	echo "    --echospacing=<echo-spacing>"
 	echo "    : Echo spacing in msecs"
 	echo ""
+	echo "    [--dwiname=<DWIname>]"
+	echo "    : name to give DWI output directories"
+	echo "      defaults to Diffusion"
+	echo ""
 	echo "    [--b0maxbval=<b0-max-bval>]"
 	echo "    : Volumes with a bvalue smaller than this value will be considered as b0s"
 	echo "      If not specified, defaults to ${DEFAULT_B0_MAX_BVAL}"
@@ -156,6 +160,7 @@ usage() {
 #  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
 #  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction 
 #  ${echospacing}		- echo spacing in msecs
+#  ${DWIName}			- Name to give DWI output directories
 #  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
 #  ${runcmd}			- Set to a user specifed command to use if user has requested
 #						  that commands be echo'd (or printed) instead of actually executed.
@@ -172,6 +177,7 @@ get_options() {
 	unset PosInputImages
 	unset NegInputImages
 	unset echospacing
+	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 
@@ -211,6 +217,10 @@ get_options() {
 				;;
 			--negData=*)
 				NegInputImages=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--dwiname=*)
+				DWIName=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--echospacing=*)
@@ -282,7 +292,14 @@ get_options() {
 		echo "ERROR: <b0-max-bval> not specified"
 		exit 1
 	fi
-
+	
+	if [ -z ${DWIName} ]
+	then
+		usage
+		echo "ERROR: <DWIName> not specified"
+		exit 1
+	fi
+	
 	# report options
 	echo "-- ${scriptName}: Specified Command-Line Options - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
@@ -291,6 +308,7 @@ get_options() {
 	echo "   PosInputImages: ${PosInputImages}"
 	echo "   NegInputImages: ${NegInputImages}"
 	echo "   echospacing: ${echospacing}"
+	echo "   DWIName: ${DWIName}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
@@ -372,6 +390,7 @@ main() {
 	#  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
 	#  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction
 	#  ${echospacing}		- echo spacing in msecs
+	#  ${DWIName}			- Name to give DWI output directories
 	#  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
 	#  ${runcmd}			- Set to a user specifed command to use if user has requested
 	#						  that commands be echo'd (or printed) instead of actually executed.
@@ -385,8 +404,8 @@ main() {
 	log_SetToolName "DiffPreprocPipeline_PreEddy.sh"
 
 	# Establish output directory paths
-	outdir=${StudyFolder}/${Subject}/Diffusion
-	outdirT1w=${StudyFolder}/${Subject}/T1w/Diffusion
+	outdir=${StudyFolder}/${Subject}/${DWIName}
+	outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
 
 	# Delete any existing output sub-directories
 	if [ -d ${outdir} ]

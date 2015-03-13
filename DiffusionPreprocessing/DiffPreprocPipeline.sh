@@ -140,6 +140,10 @@ usage() {
 	echo "    : path to file containing coefficients that describe spatial variations"
 	echo "      of the scanner gradients. Use --gdcoeffs=NONE if not available"
 	echo ""
+	echo "    [--dwiname=<DWIName>]"
+	echo "    : name to give DWI output directories"
+	echo "      defaults to Diffusion"
+	echo ""
 	echo "    [--dof=<Degrees of Freedom>]"
 	echo "    : Degrees of Freedom for post eddy registration to structural images"
 	echo "      defaults to 6"
@@ -201,6 +205,7 @@ usage() {
 #  ${echospacing}		- echo spacing in msecs
 #  ${GdCoeffs}			- Path to file containing coefficients that describe spatial variations
 #						  of the scanner gradients. Use NONE if not available.
+#  ${DWIName}			- Name to give DWI output directories
 #  ${DegreesOfFreedom}	- Degrees of Freedom for post eddy registration to structural images
 #  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
 #  ${runcmd}			- Set to a user specifed command to use if user has requested that commands
@@ -219,6 +224,7 @@ get_options() {
 	unset NegInputImages
 	unset echospacing
 	unset GdCoeffs
+	DWIName="Diffusion"
 	DegreesOfFreedom=6
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
@@ -267,6 +273,10 @@ get_options() {
 				;;
 			--gdcoeffs=*)
 				GdCoeffs=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--dwiname=*)
+				DWIName=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--dof=*)
@@ -345,6 +355,13 @@ get_options() {
 		echo "ERROR: <b0-max-bval> not specified"
 		exit 1
 	fi
+	
+	if [ -z ${DWIName} ]
+	then
+		usage
+		echo "ERROR: <DWIName> not specified"
+		exit 1
+	fi
 
 	# report options
 	echo "-- ${scriptName}: Specified Command-Line Options - Start --"
@@ -355,6 +372,7 @@ get_options() {
 	echo "   NegInputImages: ${NegInputImages}"
 	echo "   echospacing: ${echospacing}"
 	echo "   GdCoeffs: ${GdCoeffs}"
+	echo "   DWIName: ${DWIName}"
 	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
@@ -426,6 +444,7 @@ main() {
 	#  ${echospacing}		- echo spacing in msecs
 	#  ${GdCoeffs}			- Path to file containing coefficients that describe spatial variations
 	#						  of the scanner gradients. Use NONE if not available.
+	#  ${DWIName}			- Name to give DWI output directories
 	#  ${DegreesOfFreedom}	- Degrees of Freedom for post eddy registration to structural images
 	#  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
 	#  ${runcmd}			- Set to a user specifed command to use if user has requested
@@ -443,6 +462,7 @@ main() {
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh \
 		--path=${StudyFolder} \
 		--subject=${Subject} \
+		--dwiname=${DWIName} \
 		--PEdir=${PEdir} \
 		--posData=${PosInputImages} \
 		--negData=${NegInputImages} \
@@ -454,12 +474,14 @@ main() {
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh \
 		--path=${StudyFolder} \
 		--subject=${Subject} \
+		--dwiname=${DWIName} \
 		--printcom="${runcmd}"
 
 	log_Msg "Invoking Post-Eddy Steps"
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh \
 		--path=${StudyFolder} \
 		--subject=${Subject} \
+		--dwiname=${DWIName} \
 		--gdcoeffs=${GdCoeffs} \
 		--dof=${DegreesOfFreedom} \
 		--printcom="${runcmd}"

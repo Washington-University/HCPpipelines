@@ -100,6 +100,10 @@ usage() {
     echo "    --subject=<subject-id>"
     echo "    : Subject ID"
     echo ""
+    echo "    [--dwiname=<DWIName>]"
+    echo "    : name to give DWI output directories"
+    echo "      defaults to Diffusion"
+    echo ""
     echo "    [--printcom=<print-command>]"
     echo "    : Use the specified <print-command> to echo or otherwise output the commands"
     echo "      that would be executed instead of actually running them"
@@ -140,6 +144,7 @@ usage() {
 #                            iteration.
 #  ${ReplaceOutliers} - If True (and GPU-enabled eddy program is used), then ask eddy
 #                       to replace any outliers it detects by their expectations
+#  ${DWIName}         - Name to give DWI output directories
 #  ${runcmd}      - Set to a user specifed command to use if user has requested
 #                   that commands be echo'd (or printed) instead of actually executed.
 #                   Otherwise, set to empty string.
@@ -151,6 +156,7 @@ get_options() {
     # initialize global output variables
     unset StudyFolder
     unset Subject
+    DWIName="Diffusion"
     DetailedOutlierStats="False"
     ReplaceOutliers="False"
     runcmd=""
@@ -192,6 +198,10 @@ get_options() {
                 runcmd=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
+            --dwiname=*)
+                DWIName=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
             *)
                 usage
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -212,11 +222,19 @@ get_options() {
         echo "ERROR: <subject-id> not specified"
         exit 1
     fi
-
+    
+    if [ -z ${DWIName} ]
+    then
+        usage
+        echo "ERROR: <DWIName> not specified"
+        exit 1
+    fi
+    
     # report options
     echo "-- ${scriptName}: Specified Command-Line Options - Start --"
     echo "   StudyFolder: ${StudyFolder}"
     echo "   Subject: ${Subject}"
+    echo "   DWIName: ${DWIName}"
     echo "   DetailedOutlierStats: ${DetailedOutlierStats}"
     echo "   ReplaceOutliers: ${ReplaceOutliers}"
     echo "   runcmd: ${runcmd}"
@@ -265,6 +283,7 @@ main() {
     #                            iteration.
     #  ${ReplaceOutliers} - If True (and GPU-enabled eddy program is used), then ask eddy
     #                       to replace any outliers it detects by their expectations
+    #  ${DWIName}         - Name to give DWI output directories
     #  ${runcmd} - Set to a user specifed command to use if user has requested
     #              that commands be echo'd (or printed) instead of actually executed.
     #              Otherwise, set to empty string.
@@ -277,7 +296,7 @@ main() {
     log_SetToolName "DiffPreprocPipeline_Eddy.sh"
 
     # Establish output directory paths
-    outdir=${StudyFolder}/${Subject}/Diffusion
+    outdir=${StudyFolder}/${Subject}/${DWIName}
 
     # Determine stats_option value to pass to run_eddy.sh script
     if [ "${DetailedOutlierStats}" = "True" ]; then
