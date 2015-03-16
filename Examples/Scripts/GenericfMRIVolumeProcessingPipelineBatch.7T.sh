@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
-DEFAULT_SUBJ_LIST="102311"
+DEFAULT_SUBJ_LIST="132118"
 DEFAULT_RUN_LOCAL="FALSE"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
@@ -17,56 +17,58 @@ DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCP
 #  Default values are used for these variables if the command line options
 #  are not specified.
 #
-get_batch_options() {
-    local arguments=($@)
+get_batch_options()
+{
+	local arguments=($@)
 
-    # Output global variables
-    unset StudyFolder
-    unset Subjlist
-    unset RunLocal
-    unset EnvironmentScript
+	# Output global variables
+	unset StudyFolder
+	unset Subjlist
+	unset RunLocal
+	unset EnvironmentScript
 
-    # Default values
+	# Default values
 
-    # Location of subject folders (named by subject ID)
-    StudyFolder="${DEFAULT_STUDY_FOLDER}"
+	# Location of subject folders (named by subject ID)
+	StudyFolder="${DEFAULT_STUDY_FOLDER}"
 
-    # Space delimited list of subject IDs
-    Subjlist="${DEFAULT_SUBJ_LIST}"
+	# Space delimited list of subject IDs
+	Subjlist="${DEFAULT_SUBJ_LIST}"
 
-    # Whether or not to run locally instead of submitting to a queue
-    RunLocal="${DEFAULT_RUN_LOCAL}"
+	# Whether or not to run locally instead of submitting to a queue
+	RunLocal="${DEFAULT_RUN_LOCAL}"
 
-    # Pipeline environment script
-    EnvironmentScript="${DEFAULT_ENVIRONMENT_SCRIPT}"
+	# Pipeline environment script
+	EnvironmentScript="${DEFAULT_ENVIRONMENT_SCRIPT}"
 
-    # Parse command line options
-    local index=0
-    local numArgs=${#arguments[@]}
-    local argument
+	# Parse command line options
+	local index=0
+	local numArgs=${#arguments[@]}
+	local argument
 
-    while [ ${index} -lt ${numArgs} ]; do
-        argument=${arguments[index]}
-
-        case ${argument} in
-            --StudyFolder=*)
-                StudyFolder=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --Subjlist=*)
-                Subjlist=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --runlocal | --RunLocal)
-                RunLocal="TRUE"
-                index=$(( index + 1 ))
-                ;;
-            --EnvironmentScript=*)
-                EnvironmentScript=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-        esac
-    done
+	while [ ${index} -lt ${numArgs} ]
+	do
+		argument=${arguments[index]}
+		
+		case ${argument} in
+			--StudyFolder=*)
+				StudyFolder=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--Subjlist=*)
+				Subjlist=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--runlocal | --RunLocal)
+				RunLocal="TRUE"
+				index=$(( index + 1 ))
+				;;
+			--EnvironmentScript=*)
+				EnvironmentScript=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+		esac
+	done
 }
 
 # Get command line batch options
@@ -113,115 +115,121 @@ Tasklist="${Tasklist} tfMRI_MOVIE1_AP"
 Tasklist="${Tasklist} tfMRI_MOVIE2_PA"
 Tasklist="${Tasklist} tfMRI_MOVIE3_PA"
 Tasklist="${Tasklist} tfMRI_MOVIE4_AP"
-Tasklist="${Tasklist} tfMRI_RET1_AP"
-Tasklist="${Tasklist} tfMRI_RET2_PA"
-Tasklist="${Tasklist} tfMRI_RET3_AP"
-Tasklist="${Tasklist} tfMRI_RET4_PA"
-Tasklist="${Tasklist} tfMRI_RET5_AP"
-Tasklist="${Tasklist} tfMRI_RET6_PA"
+Tasklist="${Tasklist} tfMRI_RETBAR1_AP"
+Tasklist="${Tasklist} tfMRI_RETBAR2_PA"
+Tasklist="${Tasklist} tfMRI_RETCCW_AP"
+Tasklist="${Tasklist} tfMRI_RETCON_PA"
+Tasklist="${Tasklist} tfMRI_RETCW_PA"
+Tasklist="${Tasklist} tfMRI_RETEXP_AP"
 
-for Subject in $Subjlist ; do
+for Subject in $Subjlist ;
+do
+	
+	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
+	
+	for fMRIName in ${Tasklist}
+	do
+		echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
 
-    echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
-
-    for fMRIName in ${Tasklist} ; do
-        echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
-
-        TaskName=`echo ${fMRIName} | sed 's/_[APLR]\+$//'`
-        echo "  ${SCRIPT_NAME}: TaskName: ${TaskName}"
-
-        len=${#fMRIName}
-        echo "len: $len"
-        start=$(( len - 2 ))
-
-        PhaseEncodingDir=${fMRIName:start:2}
-        echo "PhaseEncodingDir: ${PhaseEncodingDir}"
-
-        case ${PhaseEncodingDir} in 
-            "PA")
-                UnwarpDir="y"
-                ;;
-            "AP")
-                UnwarpDir="y-"
-                ;;
-            "RL")
-                UnwarpDir="x"
-                ;;
-            "LR")
-                UnwarpDir="x-"
-                ;;
-            *)
-                echo "${SCRIPT_NAME}: Unrecognized Phase Encoding Direction: ${PhaseEncodingDir}"
-                exit 1
-        esac
-
-        echo "UnwarpDir: ${UnwarpDir}"
-
-        SubjectUnprocessedRootDir="${StudyFolder}/${Subject}/unprocessed/7T/${fMRIName}"
-
-        fMRITimeSeries="${SubjectUnprocessedRootDir}/${Subject}_7T_${fMRIName}.nii.gz"
-        fMRISBRef="NONE"
-
-        # Echo Spacing or Dwelltime of fMRI image
-        DwellTime="0.00032" 
-
-        # Using Spin Echo Field Maps for Readout Distortion Correction
-        DistortionCorrection="TOPUP"
-
-        # For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data)
-        # Set to NONE if using regular FIELDMAP
-        SpinEchoPhaseEncodeNegative="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_AP.nii.gz"
-
-        # For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data)
-        # Set to NONE if using regular FIELDMAP
-        SpinEchoPhaseEncodePositive="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_PA.nii.gz"
-
-        # Topup configuration file
-        TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
-
-        # Not using Siemens Gradient Echo Field Maps for Readout Distortion Correction
-        MagnitudeInputName="NONE"
-        PhaseInputName="NONE"
-        DeltaTE="NONE"
-
-        # Not using General Electric Gradient Echo Field Maps for Readout Distortion Correction
-        GEB0InputName="NONE"
-
-        FinalFMRIResolution="1.60" 
-        dof_epi2t1=12
-
-        # Skipping Gradient Distortion Correction
-        GradientDistortionCoeffs="NONE"
-
-        if [ "${RunLocal}" == "TRUE" ] ; then
-            echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
-            queuing_command=""
-        else
-            echo "${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
-            queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-        fi
-
-        ${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
-            --path=${StudyFolder} \
-            --subject=${Subject} \
-            --fmriname=${fMRIName} \
-            --fmritcs=${fMRITimeSeries} \
-            --fmriscout=${fMRISBRef} \
-            --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-            --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-            --fmapmag=${MagnitudeInputName} \
-            --fmapphase=${PhaseInputName} \
-            --fmapgeneralelectric=${GEB0InputName} \
-            --echospacing=${DwellTime} \
-            --echodiff=${DeltaTE} \
-            --unwarpdir=${UnwarpDir} \
-            --fmrires=${FinalFMRIResolution} \
-            --dcmethod=${DistortionCorrection} \
-            --gdcoeffs=${GradientDistortionCoeffs} \
-            --topupconfig=${TopUpConfig} \
-            --dof=${dof_epi2t1} \
-            --printcom=${PRINTCOM}
-
-    done
-
+		TaskName=`echo ${fMRIName} | sed 's/_[APLR]\+$//'`
+		echo "  ${SCRIPT_NAME}: TaskName: ${TaskName}"
+		
+		len=${#fMRIName}
+		echo "  ${SCRIPT_NAME}: len: $len"
+		start=$(( len - 2 ))
+		
+		PhaseEncodingDir=${fMRIName:start:2}
+		echo "  ${SCRIPT_NAME}: PhaseEncodingDir: ${PhaseEncodingDir}"
+		
+		case ${PhaseEncodingDir} in
+			"PA")
+				UnwarpDir="y"
+				;;
+			"AP")
+				UnwarpDir="y-"
+				;;
+			"RL")
+				UnwarpDir="x"
+				;;
+			"LR")
+				UnwarpDir="x-"
+				;;
+			*)
+				echo "${SCRIPT_NAME}: Unrecognized Phase Encoding Direction: ${PhaseEncodingDir}"
+				exit 1
+		esac
+		
+		echo "  ${SCRIPT_NAME}: UnwarpDir: ${UnwarpDir}"
+		
+		SubjectUnprocessedRootDir="${StudyFolder}/${Subject}/unprocessed/7T/${fMRIName}"
+		
+		fMRITimeSeries="${SubjectUnprocessedRootDir}/${Subject}_7T_${fMRIName}.nii.gz"
+		fMRISBRef="NONE"
+		
+		# Echo Spacing or Dwelltime of fMRI image
+		DwellTime="0.00032"
+		
+		# Using Spin Echo Field Maps for Readout Distortion Correction
+		DistortionCorrection="TOPUP"
+		
+		# For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data)
+		# Set to NONE if using regular FIELDMAP
+		SpinEchoPhaseEncodeNegative="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_AP.nii.gz"
+		
+		# For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data)
+		# Set to NONE if using regular FIELDMAP
+		SpinEchoPhaseEncodePositive="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_PA.nii.gz"
+		
+		# Topup configuration file
+		TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+		
+		# Not using Siemens Gradient Echo Field Maps for Readout Distortion Correction
+		MagnitudeInputName="NONE"
+		PhaseInputName="NONE"
+		DeltaTE="NONE"
+		
+		# Not using General Electric Gradient Echo Field Maps for Readout Distortion Correction
+		GEB0InputName="NONE"
+		
+		FinalFMRIResolution="1.60"
+		dof_epi2t1=12
+		
+		# Skipping Gradient Distortion Correction
+		GradientDistortionCoeffs="NONE"
+		
+		# Determine output name for the fMRI
+		output_fMRIName="${TaskName}_7T_${PhaseEncodingDir}"
+		echo "  ${SCRIPT_NAME}: output_fMRIName: ${output_fMRIName}"
+		
+		if [ "${RunLocal}" == "TRUE" ]
+		then
+			echo "  ${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+			queuing_command=""
+		else
+			echo "  ${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+			queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+		fi
+		
+		${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
+			--path=${StudyFolder} \
+			--subject=${Subject} \
+			--fmriname=${output_fMRIName} \
+			--fmritcs=${fMRITimeSeries} \
+			--fmriscout=${fMRISBRef} \
+			--SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+			--SEPhasePos=${SpinEchoPhaseEncodePositive} \
+			--fmapmag=${MagnitudeInputName} \
+			--fmapphase=${PhaseInputName} \
+			--fmapgeneralelectric=${GEB0InputName} \
+			--echospacing=${DwellTime} \
+			--echodiff=${DeltaTE} \
+			--unwarpdir=${UnwarpDir} \
+			--fmrires=${FinalFMRIResolution} \
+			--dcmethod=${DistortionCorrection} \
+			--gdcoeffs=${GradientDistortionCoeffs} \
+			--topupconfig=${TopUpConfig} \
+			--dof=${dof_epi2t1} \
+			--printcom=${PRINTCOM}
+	done
+	
 done
