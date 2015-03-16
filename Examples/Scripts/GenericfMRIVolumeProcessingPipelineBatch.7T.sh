@@ -122,7 +122,7 @@ Tasklist="${Tasklist} tfMRI_RETCON_PA"
 Tasklist="${Tasklist} tfMRI_RETCW_PA"
 Tasklist="${Tasklist} tfMRI_RETEXP_AP"
 
-for Subject in $Subjlist ;
+for Subject in $Subjlist
 do
 	
 	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
