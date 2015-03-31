@@ -96,7 +96,7 @@ usage() {
 	echo "    : Subject ID"
 	echo ""
 	echo "    --PEdir=<phase-encoding-dir>"
-	echo "    : phase encoding direction: 1=LR/RL, 2=AP/PA"
+	echo "    : phase encoding direction +/-: 1=RL/LR, 2=PA/AP"
 	echo ""
 	echo "    --posData=<positive-phase-encoding-data>"
 	echo "    : @ symbol separated list of data with positive phase encoding direction"
@@ -156,7 +156,7 @@ usage() {
 # Global Output Variables
 #  ${StudyFolder}		- Path to subject's data folder
 #  ${Subject}			- Subject ID
-#  ${PEdir}				- Phase Encoding Direction, 1=LR/RL, 2=AP/PA
+#  ${PEdir}				- Phase Encoding Direction, 1=RL/LR, 2=PA/AP
 #  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
 #  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction 
 #  ${echospacing}		- echo spacing in msecs
@@ -386,7 +386,7 @@ main() {
 	# Global Variables Set
 	#  ${StudyFolder}		- Path to subject's data folder
 	#  ${Subject}			- Subject ID
-	#  ${PEdir}				- Phase Encoding Direction, 1=LR/RL, 2=AP/PA
+	#  ${PEdir}				- Phase Encoding Direction, 1=RL/LR, 2=PA/AP
 	#  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
 	#  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction
 	#  ${echospacing}		- echo spacing in msecs
@@ -433,9 +433,9 @@ main() {
 		basePos="RL"
 		baseNeg="LR"
 	elif [ ${PEdir} -eq 2 ]
-	then	# AP/PA phase encoding
-		basePos="AP"
-		baseNeg="PA"
+	then	# PA/AP phase encoding
+		basePos="PA"
+		baseNeg="AP"
 	else
 		log_Msg "ERROR: Invalid Phase Encoding Directory (PEdir} specified: ${PEdir}"
 		exit 1

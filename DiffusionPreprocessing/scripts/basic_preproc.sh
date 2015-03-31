@@ -25,9 +25,9 @@ eddydir=${workingdir}/eddy
 if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 	basePos="RL"
 	baseNeg="LR"
-elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
-	basePos="AP"
-	baseNeg="PA"
+elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
+	basePos="PA"
+	baseNeg="AP"
 else
 	echo -e "\n ${scriptName}: ERROR: basic_preproc: Unrecognized PEdir: ${PEdir}"
 fi
@@ -37,7 +37,7 @@ fi
 any=`ls ${rawdir}/${basePos}*.nii* |head -n 1`
 if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 	dimP=`${FSLDIR}/bin/fslval ${any} dim1`
-elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
+elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
 	dimP=`${FSLDIR}/bin/fslval ${any} dim2`
 fi
 nPEsteps=$(($dimP - 1))                         #If GRAPPA is used this needs to include the GRAPPA factor!
