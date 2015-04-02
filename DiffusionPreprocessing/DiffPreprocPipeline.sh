@@ -103,7 +103,8 @@ DEFAULT_B0_MAX_BVAL=50
 # Function Descripton
 #  Show usage information for this script
 #
-usage() {
+usage()
+{
 	local scriptName=$(basename ${0})
 	echo ""
 	echo "  Perform the steps of the HCP Diffusion Preprocessing Pipeline"
@@ -212,10 +213,11 @@ usage() {
 #						  be echo'd (or printed) instead of actually executed.  Otherwise, set to
 #						  empty string.
 #
-get_options() {
+get_options()
+{
 	local scriptName=$(basename ${0})
 	local arguments=($@)
-
+	
 	# initialize global output variables
 	unset StudyFolder
 	unset Subject
@@ -228,16 +230,16 @@ get_options() {
 	DegreesOfFreedom=6
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
-
+	
 	# parse arguments
 	local index=0
 	local numArgs=${#arguments[@]}
 	local argument
-
+	
 	while [ ${index} -lt ${numArgs} ]
 	do
 		argument=${arguments[index]}
-
+		
 		case ${argument} in
 			--help)
 				usage
@@ -298,7 +300,7 @@ get_options() {
 				;;
 		esac
 	done
-
+	
 	# check required parameters
 	if [ -z ${StudyFolder} ]
 	then
@@ -306,42 +308,42 @@ get_options() {
 		echo "ERROR: <study-path> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${Subject} ]
 	then
 		usage
 		echo "ERROR: <subject-id> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${PEdir} ]
 	then
 		usage
 		echo "ERROR: <phase-encoding-dir> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${PosInputImages} ]
 	then
 		usage
 		echo "ERROR: <positive-phase-encoded-data> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${NegInputImages} ]
 	then
 		usage
 		echo "ERROR: <negative-phase-encoded-data> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${echospacing} ]
 	then
 		usage
 		echo "ERROR: <echo-spacing> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${GdCoeffs} ]
 	then
 		usage
@@ -362,7 +364,7 @@ get_options() {
 		echo "ERROR: <DWIName> not specified"
 		exit 1
 	fi
-
+	
 	# report options
 	echo "-- ${scriptName}: Specified Command-Line Options - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
@@ -383,7 +385,8 @@ get_options() {
 # Function Description
 #  Validate necessary environment variables
 #
-validate_environment_vars() {
+validate_environment_vars()
+{
 	local scriptName=$(basename ${0}) 
 	# validate
 	if [ -z ${HCPPIPEDIR_dMRI} ]
@@ -392,35 +395,35 @@ validate_environment_vars() {
 		echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
 		exit 1
 	fi
-
+	
 	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
 		exit 1
 	fi
-
+	
 	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
 		exit 1
 	fi
-
+	
 	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 		exit 1
 	fi
-
+	
 	if [ -z ${FSLDIR} ]
 	then
 		usage
 		echo "ERROR: FSLDIR environment variable not set"
 		exit 1
 	fi
-
+	
 	# report
 	echo "-- ${scriptName}: Environment Variables Used - Start --"
 	echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
@@ -432,32 +435,20 @@ validate_environment_vars() {
 # Function Description
 #  Main processing of script
 #
-main() {
+main()
+{
 	# Get Command Line Options
 	# 
 	# Global Variables Set
-	#  ${StudyFolder}		- Path to subject's data folder
-	#  ${Subject}			- Subject ID  
-	#  ${PEdir}				- Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-	#  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
-	#  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction 
-	#  ${echospacing}		- echo spacing in msecs
-	#  ${GdCoeffs}			- Path to file containing coefficients that describe spatial variations
-	#						  of the scanner gradients. Use NONE if not available.
-	#  ${DWIName}			- Name to give DWI output directories
-	#  ${DegreesOfFreedom}	- Degrees of Freedom for post eddy registration to structural images
-	#  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
-	#  ${runcmd}			- Set to a user specifed command to use if user has requested
-	#						  that commands be echo'd (or printed) instead of actually executed.
-	#						  Otherwise, set to empty string.
+	#  See documentation for get_options function
 	get_options $@
-
+	
 	# Validate environment variables
 	validate_environment_vars $@
-
+	
 	# Establish tool name for logging
 	log_SetToolName "DiffPreprocPipeline.sh"
-
+	
 	log_Msg "Invoking Pre-Eddy Steps"
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh \
 		--path=${StudyFolder} \
@@ -469,14 +460,14 @@ main() {
 		--echospacing=${echospacing} \
 		--b0maxbval=${b0maxbval} \
 		--printcom="${runcmd}"
-
+	
 	log_Msg "Invoking Eddy Step"
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh \
 		--path=${StudyFolder} \
 		--subject=${Subject} \
 		--dwiname=${DWIName} \
 		--printcom="${runcmd}"
-
+	
 	log_Msg "Invoking Post-Eddy Steps"
 	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh \
 		--path=${StudyFolder} \
@@ -485,7 +476,7 @@ main() {
 		--gdcoeffs=${GdCoeffs} \
 		--dof=${DegreesOfFreedom} \
 		--printcom="${runcmd}"
-
+	
 	log_Msg "Completed"
 	exit 0
 }

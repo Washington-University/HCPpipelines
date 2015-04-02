@@ -76,7 +76,8 @@ DEFAULT_B0_MAX_BVAL=50
 # Function Description
 #  Show usage information for this script
 #
-usage() {
+usage()
+{
 	local scriptName=$(basename ${0})
 	echo ""
 	echo "  Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
@@ -166,10 +167,11 @@ usage() {
 #						  that commands be echo'd (or printed) instead of actually executed.
 #						  Otherwise, set to empty string.
 #
-get_options() {
+get_options()
+{
 	local scriptName=$(basename ${0})
 	local arguments=($@)
-
+	
 	# initialize global output variables
 	unset StudyFolder
 	unset Subject
@@ -180,12 +182,12 @@ get_options() {
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
-
+	
 	# parse arguments
 	local index=0
 	local numArgs=${#arguments[@]}
 	local argument
-
+	
 	while [ ${index} -lt ${numArgs} ]
 	do
 		argument=${arguments[index]}
@@ -242,7 +244,7 @@ get_options() {
 				;;
 		esac
 	done
-
+	
 	# check required parameters
 	if [ -z ${StudyFolder} ]
 	then
@@ -250,42 +252,42 @@ get_options() {
 		echo "ERROR: <study-path> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${Subject} ]
 	then
 		usage
 		echo "ERROR: <subject-id> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${PEdir} ]
 	then
 		usage
 		echo "ERROR: <phase-encoding-dir> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${PosInputImages} ]
 	then
 		usage
 		echo "ERROR: <positive-phase-encoded-data> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${NegInputImages} ]
 	then
 		usage
 		echo "ERROR: <negative-phase-encoded-data> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${echospacing} ]
 	then
 		usage
 		echo "ERROR: <echo-spacing> not specified"
 		exit 1
 	fi
-
+	
 	if [ -z ${b0maxbval} ]
 	then
 		usage
@@ -321,35 +323,35 @@ get_options() {
 validate_environment_vars() {
 	local scriptName=$(basename ${0})
 	# validate
-
+	
 	if [ -z ${HCPPIPEDIR_dMRI} ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
 		exit 1
 	fi
-
+	
 	if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR_dMRI/basic_preproc.sh not found"
 		exit 1
 	fi
-
+	
 	if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ]
 	then
 		usage
 		echo "ERROR: HCPPIPEDIR_dMRI/run_topup.sh not found"
 		exit 1
 	fi
-
+	
 	if [ -z ${FSLDIR} ]
 	then
 		usage
 		echo "ERROR: FSLDIR environment variable not set"
 		exit 1
 	fi
-
+	
 	# report
 	echo "-- ${scriptName}: Environment Variables Used - Start --"
 	echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
@@ -361,7 +363,8 @@ validate_environment_vars() {
 # Function Description
 #  find the min between two numbers
 #
-min() {
+min()
+{
 	if [ $1 -le $2 ]
 	then
 		echo $1
@@ -376,11 +379,12 @@ min() {
 #
 #  Gets user specified command line options, runs Pre-Eddy steps of Diffusion Preprocessing
 #
-main() {
+main()
+{
 	# Hard-Coded variables for the pipeline
 	MissingFileFlag="EMPTY"  # String used in the input arguments to indicate that a complete series is missing
 	b0dist=45                # Minimum distance in volums between b0s considered for preprocessing
-
+	
 	# Get Command Line Options
 	#
 	# Global Variables Set
@@ -396,17 +400,17 @@ main() {
 	#						  that commands be echo'd (or printed) instead of actually executed.
 	#						  Otherwise, set to empty string.
 	get_options $@
-
+	
 	# Validate environment variables
 	validate_environment_vars $@
-
+	
 	# Establish tool name for logging
 	log_SetToolName "DiffPreprocPipeline_PreEddy.sh"
-
+	
 	# Establish output directory paths
 	outdir=${StudyFolder}/${Subject}/${DWIName}
 	outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
-
+	
 	# Delete any existing output sub-directories
 	if [ -d ${outdir} ]
 	then
@@ -416,18 +420,18 @@ main() {
 		${runcmd} rm -rf ${outdir}/data
 		${runcmd} rm -rf ${outdir}/reg
 	fi
-
+	
 	# Make sure output directories exist
 	${runcmd} mkdir -p ${outdir}
 	${runcmd} mkdir -p ${outdirT1w}
-
+	
 	log_Msg "outdir: ${outdir}"
 	${runcmd} mkdir ${outdir}/rawdata
 	${runcmd} mkdir ${outdir}/topup
 	${runcmd} mkdir ${outdir}/eddy
 	${runcmd} mkdir ${outdir}/data
 	${runcmd} mkdir ${outdir}/reg
-
+	
 	if [ ${PEdir} -eq 1 ]
 	then	# RL/LR phase encoding
 		basePos="RL"
@@ -440,15 +444,15 @@ main() {
 		log_Msg "ERROR: Invalid Phase Encoding Directory (PEdir} specified: ${PEdir}"
 		exit 1
 	fi
-
+	
 	log_Msg "basePos: ${basePos}"
 	log_Msg "baseNeg: ${baseNeg}"
-
+	
 	# copy positive raw data
 	log_Msg "Copying positive raw data to working directory"
 	PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
 	log_Msg "PosInputImages: ${PosInputImages}"
-
+	
 	Pos_count=1
 	for Image in ${PosInputImages}
 	do
@@ -456,7 +460,7 @@ main() {
 		then
 			Image=EMPTY
 		fi
-
+		
 		if [ ${Image} = ${MissingFileFlag} ]
 		then
 			PosVols[${Pos_count}]=0
@@ -469,12 +473,12 @@ main() {
 		fi
 		Pos_count=$((${Pos_count} + 1))
 	done
-
+	
 	# copy negative raw data
 	log_Msg "Copying negative raw data to working directory"
 	NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
 	log_Msg "NegInputImages: ${NegInputImages}"
-
+	
 	Neg_count=1
 	for Image in ${NegInputImages}
 	do
@@ -482,7 +486,7 @@ main() {
 		then
 			Image=EMPTY
 		fi
-
+		
 		if [ ${Image} = ${MissingFileFlag} ]
 		then
 			NegVols[${Neg_count}]=0
@@ -495,7 +499,7 @@ main() {
 		fi
 		Neg_count=$((${Neg_count} + 1))
 	done
-
+	
 	# verify positive and negative datasets are provided in pairs
 	if [ ${Pos_count} -ne ${Neg_count} ]
 	then
@@ -513,7 +517,7 @@ main() {
 	# indicates that the RLSeries J has its 0-M volumes corresponding to LRSeries J and RLJ has N 
 	# volumes in total. This file is used in eddy_combine.
 	log_Msg "Create two files for each phase encoding direction"
-
+	
 	Paired_flag=0
 	for (( j=1; j<${Pos_count}; j++ ))
 	do
@@ -528,7 +532,7 @@ main() {
 			fi
 		fi
 	done
-
+	
 	for (( j=1; j<${Neg_count}; j++ ))
 	do
 		CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
@@ -538,20 +542,20 @@ main() {
 			${runcmd} echo ${CorrVols} >> ${outdir}/rawdata/${baseNeg}_SeriesCorrespVolNum.txt
 		fi
 	done
-
+	
 	if [ ${Paired_flag} -eq 0 ]
 	then
 		log_Msg "Wrong Input! No pairs of phase encoding directions have been found!"
 		log_Msg "At least one pair is needed!"
 		exit 1
 	fi
-
+	
 	log_Msg "Running Basic Preprocessing"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
-
+	
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
-
+	
 	log_Msg "Completed"
 	exit 0
 }
