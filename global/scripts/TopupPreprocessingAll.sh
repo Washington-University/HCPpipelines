@@ -7,6 +7,12 @@ set -xv
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+
 Usage() {
   echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"
   echo " "
@@ -42,6 +48,12 @@ getopt1() {
 defaultopt() {
     echo $1
 }
+
+# --------------------------------------------------------------------------------
+#  Establish tool name for logging
+# --------------------------------------------------------------------------------
+
+log_SetToolName "TopupPreprocessingAll.sh"
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -83,8 +95,7 @@ GlobalScripts=${HCPPIPEDIR_Global}
 #DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
 #WD=`defaultopt $WD ${DistortionCorrectionWarpFieldOutput}.wdir`
 
-echo " "
-echo " START: Topup Field Map Generation and Gradient Unwarping"
+log_Msg "START: Topup Field Map Generation and Gradient Unwarping"
 
 mkdir -p $WD
 
@@ -151,7 +162,7 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
   #Note: the above calculation implies full k-space acquisition for SE EPI. In case of partial Fourier/k-space acquisition (though not recommended), $dimx-1 does not equal to nPEsteps. 
   ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
-  echo "Total readout time is $ro_time secs"
+  log_Msg "Total readout time is $ro_time secs"
   i=1
   while [ $i -le $dimtOne ] ; do
     echo "-1 0 0 $ro_time" >> $txtfname
@@ -187,7 +198,7 @@ fi
 #Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
 numslice=`fslval ${WD}/BothPhases dim3`
 if [ ! $(($numslice % 2)) -eq "0" ] ; then
-  echo "Padding Z by one slice"
+  log_Msg "Padding Z by one slice"
   for Image in ${WD}/BothPhases ${WD}/Mask ; do
     fslroi ${Image} ${WD}/slice.nii.gz 0 -1 0 -1 0 1 0 -1
     fslmaths ${WD}/slice.nii.gz -mul 0 ${WD}/slice.nii.gz
@@ -205,7 +216,7 @@ ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${Topup
 
 #Remove Z slice padding if needed
 if [ ! $(($numslice % 2)) -eq "0" ] ; then
-  echo "Removing Z slice padding"
+  log_Msg "Removing Z slice padding"
   for Image in ${WD}/BothPhases ${WD}/Mask ${WD}/Coefficents_fieldcoef ${WD}/Magnitudes ${WD}/TopupField* ${WD}/WarpField* ${WD}/Jacobian* ; do
     fslroi ${Image} ${Image} 0 -1 0 -1 0 ${numslice} 0 -1
   done
@@ -272,8 +283,7 @@ if [ ! -z ${DistortionCorrectionMagnitudeBrainOutput} ] ; then
   ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain.nii.gz ${DistortionCorrectionMagnitudeBrainOutput}.nii.gz
 fi
 
-echo " "
-echo " END: Topup Field Map Generation and Gradient Unwarping"
+log_Msg "END: Topup Field Map Generation and Gradient Unwarping"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

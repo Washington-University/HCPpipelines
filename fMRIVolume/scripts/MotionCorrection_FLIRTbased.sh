@@ -1,8 +1,18 @@
 #!/bin/bash 
 set -e
 
-echo " "
-echo " START: MotionCorrection_FLIRTBased"
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+
+# --------------------------------------------------------------------------------
+#  Establish tool name for logging
+# --------------------------------------------------------------------------------
+
+log_SetToolName "MotionCorrection_FLIRTBased.sh"
+log_Msg "START"
 
 WorkingDirectory="$1"
 InputfMRI="$2"
@@ -17,6 +27,7 @@ OutputfMRIBasename=`basename ${OutputfMRI}`
 
 
 # Do motion correction
+log_Msg "Do motion correction"
 ${HCPPIPEDIR_Global}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
 
 # Move output files about
@@ -30,6 +41,7 @@ mv -f ${WorkingDirectory}/${OutputfMRIBasename}/* ${OutputMotionMatrixFolder}
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${OutputfMRI}.nii.gz
 
 # Change names of all matrices in OutputMotionMatrixFolder
+log_Msg "Change names of all matrices in OutputMotionMatrixFolder"
 DIR=`pwd`
 if [ -e $OutputMotionMatrixFolder ] ; then
   cd $OutputMotionMatrixFolder
@@ -87,6 +99,7 @@ function DeriveBackwards {
 }
 
 # Run the Derive function to generate appropriate regressors from the par file
+log_Msg "Run the Derive function to generate appropriate regressors from the par file"
 in=${WorkingDirectory}/${OutputfMRIBasename}.par
 out=${OutputMotionRegressors}.txt
 cat $in | sed s/"  "/" "/g > $out
@@ -101,7 +114,7 @@ mv ${out}_ $out
 
 awk -f ${HCPPIPEDIR_Global}/mtrendout.awk $out > ${OutputMotionRegressors}_dt.txt
 
-echo "   END: MotionCorrection_FLIRTBased"
+log_Msg "END"
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries
 # Take the unbiased temporal derivative in column $1 of input $2 and output it as $3

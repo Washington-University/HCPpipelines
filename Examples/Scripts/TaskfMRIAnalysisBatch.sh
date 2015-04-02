@@ -56,12 +56,12 @@ fi
 echo "$@"
 
 if [ X$SGE_ROOT != X ] ; then
-    QUEUE="-q long.q"
+#    QUEUE="-q long.q"
+    QUEUE="-q hcp_priority.q"
 fi
 
 PRINTCOM=""
 #PRINTCOM="echo"
-QUEUE="-q veryshort.q"
 
 ########################################## INPUTS ########################################## 
 
@@ -69,75 +69,74 @@ QUEUE="-q veryshort.q"
 
 ######################################### DO WORK ##########################################
 
-LevelOneTasksList="tfMRI_EMOTION_RL@tfMRI_EMOTION_LR" #Delimit runs with @ and tasks with space
-LevelOneFSFsList="tfMRI_EMOTION_RL@tfMRI_EMOTION_LR" #Delimit runs with @ and tasks with space
-LevelTwoTaskList="tfMRI_EMOTION" #Space delimited list
-LevelTwoFSFList="tfMRI_EMOTION" #Space delimited list
+TaskNameList=""
+TaskNameList="${TaskNameList} EMOTION"
+TaskNameList="${TaskNameList} GAMBLING"
+TaskNameList="${TaskNameList} LANGUAGE"
+TaskNameList="${TaskNameList} MOTOR"
+TaskNameList="${TaskNameList} RELATIONAL"
+TaskNameList="${TaskNameList} SOCIAL"
+TaskNameList="${TaskNameList} WM"
 
-SmoothingList="2" #Space delimited list for setting different final smoothings.  2mm is no more smoothing (above minimal preprocessing pipelines grayordinates smoothing).  Smoothing is added onto minimal preprocessing smoothing to reach desired amount
-LowResMesh="32" #32 if using HCP minimal preprocessing pipeline outputs
-GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline outputs
-OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
-Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
-TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI
-VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
+for TaskName in ${TaskNameList}
+do
+	LevelOneTasksList="tfMRI_${TaskName}_RL@tfMRI_${TaskName}_LR" #Delimit runs with @ and tasks with space
+	LevelOneFSFsList="tfMRI_${TaskName}_RL@tfMRI_${TaskName}_LR" #Delimit runs with @ and tasks with space
+	LevelTwoTaskList="tfMRI_${TaskName}" #Space delimited list
+	LevelTwoFSFList="tfMRI_${TaskName}" #Space delimited list
 
-for FinalSmoothingFWHM in $SmoothingList ; do
-  echo $FinalSmoothingFWHM
+	SmoothingList="2" #Space delimited list for setting different final smoothings.  2mm is no more smoothing (above minimal preprocessing pipelines grayordinates smoothing).  Smoothing is added onto minimal preprocessing smoothing to reach desired amount
+	LowResMesh="32" #32 if using HCP minimal preprocessing pipeline outputs
+	GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline outputs
+	OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
+	Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
+	TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI
+	VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 
-  i=1
-  for LevelTwoTask in $LevelTwoTaskList ; do
-    echo "  ${LevelTwoTask}"
+	for FinalSmoothingFWHM in $SmoothingList ; do
+		echo $FinalSmoothingFWHM
 
-    LevelOneTasks=`echo $LevelOneTasksList | cut -d " " -f $i`
-    LevelOneFSFs=`echo $LevelOneFSFsList | cut -d " " -f $i`
-    LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
-    LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
-    for Subject in $Subjlist ; do
-      echo "    ${Subject}"
+		i=1
+		for LevelTwoTask in $LevelTwoTaskList ; do
+			echo "  ${LevelTwoTask}"
 
-      if [ -n "${command_line_specified_run_local}" ] ; then
-          echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-          queuing_command=""
-      else
-          echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-          queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-      fi
+			LevelOneTasks=`echo $LevelOneTasksList | cut -d " " -f $i`
+			LevelOneFSFs=`echo $LevelOneFSFsList | cut -d " " -f $i`
+			LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
+			LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
 
-      ${queuing_command} ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
-        --path=$StudyFolder \
-        --subject=$Subject \
-        --lvl1tasks=$LevelOneTasks \
-        --lvl1fsfs=$LevelOneFSFs \
-        --lvl2task=$LevelTwoTask \
-        --lvl2fsf=$LevelTwoFSF \
-        --lowresmesh=$LowResMesh \
-        --grayordinatesres=$GrayOrdinatesResolution \
-        --origsmoothingFWHM=$OriginalSmoothingFWHM \
-        --confound=$Confound \
-        --finalsmoothingFWHM=$FinalSmoothingFWHM \
-        --temporalfilter=$TemporalFilter \
-        --vba=$VolumeBasedProcessing
+			for Subject in $Subjlist ; do
+				echo "    ${Subject}"
 
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+				if [ -n "${command_line_specified_run_local}" ] ; then
+					echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+					queuing_command=""
+				else
+					echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+				fi
 
-        echo "set -- --path=$StudyFolder \
-        --subject=$Subject \
-        --lvl1tasks=$LevelOneTasks \
-        --lvl1fsfs=$LevelOneFSFs \
-        --lvl2task=$LevelTwoTask \
-        --lvl2fsf=$LevelTwoFSF \
-        --lowresmesh=$LowResMesh \
-        --grayordinatesres=$GrayOrdinatesResolution \
-        --origsmoothingFWHM=$OriginalSmoothingFWHM \
-        --confound=$Confound \
-        --finalsmoothingFWHM=$FinalSmoothingFWHM \
-        --temporalfilter=$TemporalFilter \
-        --vba=$VolumeBasedProcessing"
+				${queuing_command} ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
+					--path=$StudyFolder \
+					--subject=$Subject \
+					--lvl1tasks=$LevelOneTasks \
+					--lvl1fsfs=$LevelOneFSFs \
+					--lvl2task=$LevelTwoTask \
+					--lvl2fsf=$LevelTwoFSF \
+					--lowresmesh=$LowResMesh \
+					--grayordinatesres=$GrayOrdinatesResolution \
+					--origsmoothingFWHM=$OriginalSmoothingFWHM \
+					--confound=$Confound \
+					--finalsmoothingFWHM=$FinalSmoothingFWHM \
+					--temporalfilter=$TemporalFilter \
+					--vba=$VolumeBasedProcessing
 
-        echo ". ${EnvironmentScript}"
+			done
 
-    done
-    i=$(($i+1))
-  done
+			i=$(($i+1))
+
+		done
+
+	done
+
 done

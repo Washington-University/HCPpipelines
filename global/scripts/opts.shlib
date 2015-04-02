@@ -22,9 +22,20 @@ opts_GetOpt1() {
 #
 # Description: 
 #
-#   defaultopt is ???
+#   This function is intended to be used to return a default value for a
+#   variable that currently has no value.
 #
-# TODO - Is this function actually used anywhere?
+#   Suppose the variable X currently has no value, then an invocation
+#   of this function like:
+#   
+#    X=`opts_DefaultOpt $X "aDefault"`
+#
+#   will assign the value "aDefault" to X. Thus it assigns a default
+#   value for an unset variable.
+#
+#   If the variable X has any value other than "spaces" set, e.g. 
+#   "hello", then a similar invocation would simply reassign "hello"
+#   to the variable X. Essentially having no effect.
 #
 opts_DefaultOpt() {
     echo $1

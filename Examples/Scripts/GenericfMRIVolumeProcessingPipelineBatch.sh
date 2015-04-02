@@ -56,7 +56,8 @@ fi
 echo "$@"
 
 #if [ X$SGE_ROOT != X ] ; then
-    QUEUE="-q long.q"
+#    QUEUE="-q long.q"
+    QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""
@@ -112,9 +113,80 @@ PRINTCOM=""
 
 ######################################### DO WORK ##########################################
 
-Tasklist="tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
-PhaseEncodinglist="x x-" #x for RL, x- for LR, y for PA, y- for AP
+# The PhaseEncodinglist contains phase encoding direction indicators for each corresponding
+# task in the Tasklist.  Therefore, the Tasklist and the PhaseEncodinglist should have the
+# same number of (space-delimited) elements.
+Tasklist=""
+PhaseEncodinglist=""
 
+Tasklist="${Tasklist} rfMRI_REST1_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} rfMRI_REST1_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} rfMRI_REST2_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} rfMRI_REST2_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_EMOTION_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_EMOTION_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_MOTOR_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_MOTOR_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+Tasklist="${Tasklist} tfMRI_WM_RL"
+PhaseEncodinglist="${PhaseEncodinglist} x"
+
+Tasklist="${Tasklist} tfMRI_WM_LR"
+PhaseEncodinglist="${PhaseEncodinglist} x-"
+
+# Verify that Tasklist and PhaseEncodinglist have the same number of elements
+TaskArray=($Tasklist)
+PhaseEncodingArray=($PhaseEncodinglist)
+
+nTaskArray=${#TaskArray[@]}
+nPhaseEncodingArray=${#PhaseEncodingArray[@]}
+
+if [ "${nTaskArray}" -ne "${nPhaseEncodingArray}" ] ; then
+    echo "Tasklist and PhaseEncodinglist do not have the same number of elements."
+    echo "Exiting without processing"
+    exit 1
+fi
+
+# Start or launch pipeline processing for each subject
 for Subject in $Subjlist ; do
   echo $Subject
 

@@ -5,8 +5,6 @@ set -e
 #  installed versions of: FSL (version 5.0.6) and FreeSurfer (version 5.3.0-HCP)
 #  environment: FSLDIR, FREESURFER_HOME + others
 
-SCRIPT_NAME="DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh"
-
 # ---------------------------------------------------------------------
 #  Constants for specification of Readout Distortion Correction Method
 # ---------------------------------------------------------------------
@@ -17,6 +15,12 @@ GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 
 ################################################ SUPPORT FUNCTIONS ##################################################
+
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source $HCPPIPEDIR_Global/log.shlib # Logging related functions
 
 Usage() {
   echo "`basename $0`: Script to register EPI to T1w, with distortion correction"
@@ -60,7 +64,7 @@ Usage() {
   echo ""
   echo "             [--topupconfig=<topup config file>]"
   echo "             --ojacobian=<output filename for Jacobian image (in T1w space)>"
-
+  echo "             --dof=<degrees of freedom for EPI-T1 FLIRT> (default 6)"
 }
 
 # function for parsing options
@@ -78,6 +82,12 @@ getopt1() {
 defaultopt() {
     echo $1
 }
+
+# --------------------------------------------------------------------------------
+#  Establish tool name for logging
+# --------------------------------------------------------------------------------
+
+log_SetToolName "DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh"
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -132,20 +142,20 @@ QAImage=`getopt1 "--qaimage" $@`
 DistortionCorrection=`getopt1 "--method" $@`
 TopupConfig=`getopt1 "--topupconfig" $@`
 JacobianOut=`getopt1 "--ojacobian" $@`
+dof=`getopt1 "--dof" $@`
 
 ScoutInputFile=`basename $ScoutInputName`
 T1wBrainImageFile=`basename $T1wBrainImage`
 
-
 # default parameters
 RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
 WD=`defaultopt $WD ${RegOutput}.wdir`
+dof=`defaultopt $dof 6`
 GlobalScripts=${HCPPIPEDIR_Global}
 TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
 UseJacobian=false
 
-echo " "
-echo " START: ${SCRIPT_NAME}"
+log_Msg "START"
 
 mkdir -p $WD
 
@@ -198,7 +208,7 @@ case $DistortionCorrection in
                 --gdcoeffs=${GradientDistortionCoeffs}
 
         else
-            echo "${SCRIPT_NAME}: Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"
+            log_Msg "Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"
             exit 1
         fi
 
@@ -238,10 +248,12 @@ case $DistortionCorrection in
             fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
        
             # register scout to T1w image using fieldmap
-            ${FSLDIR}/bin/epi_reg --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+
         else
             # register scout to T1w image using fieldmap
-            ${FSLDIR}/bin/epi_reg --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+
         fi
 
         # convert epi_reg warpfield from abs to rel convention (NB: this is the current convention for epi_reg but it may change in the future, or take an option)
@@ -277,24 +289,31 @@ case $DistortionCorrection in
             --topupconfig=${TopupConfig}
 
         # create a spline interpolated image of scout (distortion corrected in same space)
+        log_Msg "create a spline interpolated image of scout (distortion corrected in same space)"
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
 
         # apply Jacobian correction to scout image (optional)
         if [ $UseJacobian = true ] ; then
+            log_Msg "apply Jacobian correction to scout image"
             ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted -mul ${WD}/Jacobian.nii.gz ${WD}/${ScoutInputFile}_undistorted
         fi
 
         # register undistorted scout image to T1w
-        ${FSLDIR}/bin/epi_reg --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted
+        log_Msg "register undistorted scout image to T1w"
+        ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted
+
         # generate combined warpfields and spline interpolated images + apply bias field correction
+        log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
         ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/${ScoutInputFile}_undistorted_warp
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}_undistorted.mat -o ${WD}/Jacobian2T1w.nii.gz
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp -o ${WD}/${ScoutInputFile}_undistorted
 
         # apply Jacobian correction to scout image (optional)
         if [ $UseJacobian = true ] ; then
+            log_Msg "apply Jacobian correction to scout image"
             ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz 
         else
+            log_Msg "do not apply Jacobian correction to scout image"
             ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted -div ${BiasField} ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz 
         fi
 
@@ -302,7 +321,7 @@ case $DistortionCorrection in
 
     *)
 
-        echo "${SCRIPT_NAME}: UNKNOWN DISTORTION CORRECTION METHOD: ${DistortionCorrection}"
+        log_Msg "UNKNOWN DISTORTION CORRECTION METHOD: ${DistortionCorrection}"
         exit 1
 
 esac
@@ -311,8 +330,11 @@ esac
 SUBJECTS_DIR=${FreeSurferSubjectFolder}
 export SUBJECTS_DIR
 #Check to see if FreeSurferNHP.sh was used
+log_Msg "Check to see if FreeSurferNHP.sh was used"
 if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
   #Perform Registration in FreeSurferNHP 1mm Space
+  log_Msg "${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm exists. FreeSurferNHP.sh was used."
+  log_Msg "Perform Registration in FreeSurferNHP 1mm Space"
   ScoutImage="${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz"
   ScoutImageFile="${WD}/${ScoutInputFile}_undistorted2T1w_init"
 
@@ -359,7 +381,9 @@ if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
   fslorient -setsform -1 0 0 `echo "$originx + $padx" | bc -l` 0 1 0 `echo "$originy - $pady" | bc -l` 0 0 1 `echo "$originz - $padz" | bc -l` 0 0 0 1 "$ScoutImageFile"_1mm
   rm "$ScoutImageFile"_1mm_padx.nii.gz "$ScoutImageFile"_1mm_pady.nii.gz "$ScoutImageFile"_1mm_padz.nii.gz
 
-  ${FREESURFER_HOME}/bin/bbregister --s "${FreeSurferSubjectID}_1mm" --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w_1mm.nii.gz
+  # Use "hidden" bbregister DOF options
+  log_Msg "Use \"hidden\" bbregister DOF options"
+  ${FREESURFER_HOME}/bin/bbregister --s "${FreeSurferSubjectID}_1mm" --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --${dof} --o ${WD}/${ScoutInputFile}_undistorted2T1w_1mm.nii.gz
   tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz --targ ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/T1w_hires.nii.gz --fslregout ${WD}/fMRI2str_1mm.mat
   applywarp --interp=spline -i ${WD}/${ScoutInputFile}_undistorted2T1w_init_1mm.nii.gz -r ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/T1w_hires.nii.gz --premat=${WD}/fMRI2str_1mm.mat -o ${WD}/${ScoutInputFile}_undistorted2T1w_1mm.nii.gz
 
@@ -368,31 +392,49 @@ if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
   rm ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm/mri/transforms/temp.mat
 
 else
-  #Run Normally
-  ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --o ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz
+  log_Msg "${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm does not exist. FreeSurferNHP.sh was not used."
+
+  # Run Normally
+  log_Msg "Run Normally" 
+  # Use "hidden" bbregister DOF options
+  log_Msg "Use \"hidden\" bbregister DOF options"
+  ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --${dof} --o ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz
   # Create FSL-style matrix and then combine with existing warp fields
+  log_Msg "Create FSL-style matrix and then combine with existing warp fields"
   ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/fMRI2str.mat
 fi
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}_undistorted_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str.mat --out=${WD}/fMRI2str.nii.gz
 # Create warped image with spline interpolation, bias correction and (optional) Jacobian modulation
+log_Msg "Create warped image with spline interpolation, bias correction and (optional) Jacobian modulation"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage}.nii.gz -w ${WD}/fMRI2str.nii.gz -o ${WD}/${ScoutInputFile}_undistorted2T1w
 if [ $UseJacobian = true ] ; then
+    log_Msg "applying Jacobian modulation"
     ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w -div ${BiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w
 else
+    log_Msg "not applying Jacobian modulation"
     ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}_undistorted2T1w -div ${BiasField} ${WD}/${ScoutInputFile}_undistorted2T1w
 fi
 
-
+log_Msg "cp ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz ${RegOutput}.nii.gz"
 cp ${WD}/${ScoutInputFile}_undistorted2T1w.nii.gz ${RegOutput}.nii.gz
+
+OutputTransformDir=$(dirname ${OutputTransform})
+if [ ! -e ${OutputTransformDir} ] ; then
+    log_Msg "mkdir -p ${OutputTransformDir}"
+    mkdir -p ${OutputTransformDir}
+fi
+
+log_Msg "cp ${WD}/fMRI2str.nii.gz ${OutputTransform}.nii.gz"
 cp ${WD}/fMRI2str.nii.gz ${OutputTransform}.nii.gz
+
+log_Msg "cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz"
 cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz
 
-
 # QA image (sqrt of EPI * T1w)
+log_Msg "generating QA image (sqrt of EPI * T1w)"
 ${FSLDIR}/bin/fslmaths ${T1wRestoreImage}.nii.gz -mul ${RegOutput}.nii.gz -sqrt ${QAImage}.nii.gz
 
-echo " "
-echo " END: DistortionCorrectionEpiToT1wReg_FLIRTBBRAndFreeSurferBBRBased"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 
