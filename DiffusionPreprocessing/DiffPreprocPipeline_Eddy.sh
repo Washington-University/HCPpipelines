@@ -247,12 +247,12 @@ get_options()
 				nvoxhp=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--sep_offs_move)
-				sep_offs_move="True"
+			--sep_offs_move=*)
+				sep_offs_move=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--rms)
-				rms="True"
+			--rms=*)
+				rms=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--ff=*)
