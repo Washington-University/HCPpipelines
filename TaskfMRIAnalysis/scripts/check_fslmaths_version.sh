@@ -39,7 +39,6 @@ get_fsl_version_based_on_fslmaths()
 		fi
 	fi
 
-	fsl_version="5.0.6a"
 	eval $__functionResultVar="'${fsl_version}'"
 }
 
@@ -86,7 +85,6 @@ determine_old_or_new_fslmaths()
 		else
 			echo "We are working with version 5.0.x"
 			fsl_tertiary_version_number=$(( ${fsl_tertiary_version} ))
-			echo "got a number"
 			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]]
 			then
 				echo "We are working with version 5.0.0 - 5.0.6"
