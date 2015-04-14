@@ -92,48 +92,65 @@ do
 	Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 	TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI
 	VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
+	RegNames="NONE" # Use NONE to use the default surface registration
+	ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
+	ParcellationFileList="NONE" # Absolute path the parcellation dlabel file
 
-	for FinalSmoothingFWHM in $SmoothingList ; do
-		echo $FinalSmoothingFWHM
 
-		i=1
-		for LevelTwoTask in $LevelTwoTaskList ; do
-			echo "  ${LevelTwoTask}"
+	for RegName in ${RegNames} ; do
+		j=1
+		for Parcellation in ${ParcellationList} ; do
+			ParcellationFile=`echo "${ParcellationFileList}" | cut -d " " -f ${j}`
 
-			LevelOneTasks=`echo $LevelOneTasksList | cut -d " " -f $i`
-			LevelOneFSFs=`echo $LevelOneFSFsList | cut -d " " -f $i`
-			LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
-			LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
+			for FinalSmoothingFWHM in $SmoothingList ; do
+				echo $FinalSmoothingFWHM
+				i=1
+				for LevelTwoTask in $LevelTwoTaskList ; do
+					echo "  ${LevelTwoTask}"
 
-			for Subject in $Subjlist ; do
-				echo "    ${Subject}"
+					LevelOneTasks=`echo $LevelOneTasksList | cut -d " " -f $i`
+					LevelOneFSFs=`echo $LevelOneFSFsList | cut -d " " -f $i`
+					LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
+					LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
 
-				if [ -n "${command_line_specified_run_local}" ] ; then
-					echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-					queuing_command=""
-				else
-					echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-				fi
+					for Subject in $Subjlist ; do
+						echo "    ${Subject}"
+						
+						if [ -n "${command_line_specified_run_local}" ] ; then
+						    echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+						    queuing_command=""
+						else
+						    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+						    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+						fi
 
-				${queuing_command} ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
-					--path=$StudyFolder \
-					--subject=$Subject \
-					--lvl1tasks=$LevelOneTasks \
-					--lvl1fsfs=$LevelOneFSFs \
-					--lvl2task=$LevelTwoTask \
-					--lvl2fsf=$LevelTwoFSF \
-					--lowresmesh=$LowResMesh \
-					--grayordinatesres=$GrayOrdinatesResolution \
-					--origsmoothingFWHM=$OriginalSmoothingFWHM \
-					--confound=$Confound \
-					--finalsmoothingFWHM=$FinalSmoothingFWHM \
-					--temporalfilter=$TemporalFilter \
-					--vba=$VolumeBasedProcessing
+						${queuing_command} ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
+						    --path=$StudyFolder \
+						    --subject=$Subject \
+						    --lvl1tasks=$LevelOneTasks \
+						    --lvl1fsfs=$LevelOneFSFs \
+						    --lvl2task=$LevelTwoTask \
+						    --lvl2fsf=$LevelTwoFSF \
+						    --lowresmesh=$LowResMesh \
+						    --grayordinatesres=$GrayOrdinatesResolution \
+						    --origsmoothingFWHM=$OriginalSmoothingFWHM \
+						    --confound=$Confound \
+						    --finalsmoothingFWHM=$FinalSmoothingFWHM \
+						    --temporalfilter=$TemporalFilter \
+						    --vba=$VolumeBasedProcessing \
+						    --regname=$RegName \
+						    --parcellation=$Parcellation \
+						    --parcellationfile=$ParcellationFile
+						
+					done
 
+					i=$(($i+1))
+
+				done
+				
 			done
 
-			i=$(($i+1))
+			j=$(( ${j}+1 ))
 
 		done
 
