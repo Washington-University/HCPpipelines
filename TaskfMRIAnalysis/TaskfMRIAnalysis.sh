@@ -176,41 +176,41 @@ then
 		log_Msg "INFO: V2.0 option: --parcellationfile=${ParcellationFile} ignored"
 	fi
 
-	# ./TaskfMRIAnalysis.v1.0.sh \
-	#     --path=${Path} \
-	#     --subject=${Subject} \
-	#     --lvl1tasks=${LevelOnefMRINames} \
-	#     --lvl1fsfs=${LevelOnefsfNames} \
-	#     --lvl2task=${LevelTwofMRIName} \
-	#     --lvl2fsf=${LevelTwofsfNames} \
-	#     --lowresmesh=${LowResMesh} \
-	#     --grayordinatesres=${GrayordinatesResolution} \
-	#     --origsmoothingFWHM=${OriginalSmoothingFWHM} \
-	#     --confound=${Confound} \
-	#     --finalsmoothingFWHM=${FinalSmoothingFWHM} \
-	#     --temporalfilter=${TemporalFilter} \
-	#     --vba=${VolumeBasedProcessing}
+	./TaskfMRIAnalysis.v1.0.sh \
+	    --path=${Path} \
+	    --subject=${Subject} \
+	    --lvl1tasks=${LevelOnefMRINames} \
+	    --lvl1fsfs=${LevelOnefsfNames} \
+	    --lvl2task=${LevelTwofMRIName} \
+	    --lvl2fsf=${LevelTwofsfNames} \
+	    --lowresmesh=${LowResMesh} \
+	    --grayordinatesres=${GrayordinatesResolution} \
+	    --origsmoothingFWHM=${OriginalSmoothingFWHM} \
+	    --confound=${Confound} \
+	    --finalsmoothingFWHM=${FinalSmoothingFWHM} \
+	    --temporalfilter=${TemporalFilter} \
+	    --vba=${VolumeBasedProcessing}
 
 else
 	log_Msg "INFO: Detected version 5.0.7 or newer of FSL is in use. Invoking v2.0 of Task fMRI Analysis."
 
-	# ./TaskfMRIAnalysis.v2.0.sh \
-	#     --path=${Path} \
-	#     --subject=${Subject} \
-	#     --lvl1tasks=${LevelOnefMRINames} \
-	#     --lvl1fsfs=${LevelOnefsfNames} \
-	#     --lvl2task=${LevelTwofMRIName} \
-	#     --lvl2fsf=${LevelTwofsfNames} \
-	#     --lowresmesh=${LowResMesh} \
-	#     --grayordinatesres=${GrayordinatesResolution} \
-	#     --origsmoothingFWHM=${OriginalSmoothingFWHM} \
-	#     --confound=${Confound} \
-	#     --finalsmoothingFWHM=${FinalSmoothingFWHM} \
-	#     --temporalfilter=${TemporalFilter} \
-	#     --vba=${VolumeBasedProcessing} \
-	#     --regname=${RegName} \
-	#     --parcellation=${Parcellation} \
-	#     --parcellationfile=${ParcellationFile}
+	./TaskfMRIAnalysis.v2.0.sh \
+	    --path=${Path} \
+	    --subject=${Subject} \
+	    --lvl1tasks=${LevelOnefMRINames} \
+	    --lvl1fsfs=${LevelOnefsfNames} \
+	    --lvl2task=${LevelTwofMRIName} \
+	    --lvl2fsf=${LevelTwofsfNames} \
+	    --lowresmesh=${LowResMesh} \
+	    --grayordinatesres=${GrayordinatesResolution} \
+	    --origsmoothingFWHM=${OriginalSmoothingFWHM} \
+	    --confound=${Confound} \
+	    --finalsmoothingFWHM=${FinalSmoothingFWHM} \
+	    --temporalfilter=${TemporalFilter} \
+	    --vba=${VolumeBasedProcessing} \
+	    --regname=${RegName} \
+	    --parcellation=${Parcellation} \
+	    --parcellationfile=${ParcellationFile}
 
 fi
 
