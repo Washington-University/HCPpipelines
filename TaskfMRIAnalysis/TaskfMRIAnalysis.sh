@@ -70,6 +70,11 @@ get_fsl_version()
 	eval $__functionResultVar="'${fsl_version}'"
 }
 
+#
+# NOTE: 
+#   Don't echo anything in this function other than the last echo
+#   that outputs the return value
+#   
 determine_old_or_new_fsl()
 {
 	local fsl_version=${1}
@@ -78,8 +83,6 @@ determine_old_or_new_fsl()
 	local fsl_primary_version
 	local fsl_secondary_version
 	local fsl_tertiary_version
-
-	log_Msg "Working with fsl_version: ${fsl_version}"
 
 	# parse the FSL version information into primary, secondary, and tertiary parts
 	fsl_version_array=(${fsl_version//./ })
