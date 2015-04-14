@@ -1,46 +1,66 @@
 #!/bin/bash
 
-get_fsl_version_based_on_fslmaths()
+get_fsl_version()
 {
-	local which_fslmaths
-	local fsl_bin_directory
 	local fsl_version_file
 	local fsl_version
 	local __functionResultVar=${1}
 
-	# Try to locate the fslversion file based on where fslmaths is found
-	which_fslmaths=`which fslmaths`
-	fsl_bin_directory=`dirname ${which_fslmaths}`
-	fsl_version_file="${fsl_bin_directory}/../etc/fslversion"
+	fsl_version_file="${FSLDIR}/etc/fslversion"
 	
 	if [ -f ${fsl_version_file} ]
 	then
-		# We've found the file containing fsl version information based on the location of fslmaths
 		fsl_version=`cat ${fsl_version_file}`
-		echo "INFO: I've determined that the FSL version in use is: ${fsl_version}"
+		echo "INFO: Determined that the FSL version is use is: ${fsl_version}"
 	else
-		# We couldn't file the fslversion file based on the location of fslmaths.
-		# Let's try looking in a "standard" location
-		if [ -d /usr/share ]
-		then 
-			fsl_version_file=`find /usr/share -name 'fslversion'`
-			if [[ "${fsl_version_file}" == *" "* ]]
-			then
-				echo "ERROR: There is a possibility that there are multiple versions of FSL installed"
-				echo "ERROR: and I cannot tell which one you are using."
-				exit
-			fi
-			fsl_version=`cat ${fsl_version_file}`
-			echo "WARNING: I've determined that the FSL version in use is: ${fsl_version}"
-			echo "WARNING: But I had to do some \"guessing\". So you need to verify that I've determined correctly."
-		else
-			echo "ERROR: I cannot tell which version of FSL you are using."
-			exit
-		fi
+		echo "ERROR: Cannot tell which version of FSL you are using."
+		exit 1
 	fi
 
 	eval $__functionResultVar="'${fsl_version}'"
 }
+
+# get_fsl_version_based_on_fslmaths()
+# {
+# 	local which_fslmaths
+# 	local fsl_bin_directory
+# 	local fsl_version_file
+# 	local fsl_version
+# 	local __functionResultVar=${1}
+
+# 	# Try to locate the fslversion file based on where fslmaths is found
+# 	which_fslmaths=`which fslmaths`
+# 	fsl_bin_directory=`dirname ${which_fslmaths}`
+# 	fsl_version_file="${fsl_bin_directory}/../etc/fslversion"
+	
+# 	if [ -f ${fsl_version_file} ]
+# 	then
+# 		# We've found the file containing fsl version information based on the location of fslmaths
+# 		fsl_version=`cat ${fsl_version_file}`
+# 		echo "INFO: I've determined that the FSL version in use is: ${fsl_version}"
+# 	else
+# 		# We couldn't file the fslversion file based on the location of fslmaths.
+# 		# Let's try looking in a "standard" location
+# 		if [ -d /usr/share ]
+# 		then 
+# 			fsl_version_file=`find /usr/share -name 'fslversion'`
+# 			if [[ "${fsl_version_file}" == *" "* ]]
+# 			then
+# 				echo "ERROR: There is a possibility that there are multiple versions of FSL installed"
+# 				echo "ERROR: and I cannot tell which one you are using."
+# 				exit
+# 			fi
+# 			fsl_version=`cat ${fsl_version_file}`
+# 			echo "WARNING: I've determined that the FSL version in use is: ${fsl_version}"
+# 			echo "WARNING: But I had to do some \"guessing\". So you need to verify that I've determined correctly."
+# 		else
+# 			echo "ERROR: I cannot tell which version of FSL you are using."
+# 			exit
+# 		fi
+# 	fi
+
+# 	eval $__functionResultVar="'${fsl_version}'"
+# }
 
 determine_old_or_new_fslmaths()
 {
@@ -100,7 +120,10 @@ determine_old_or_new_fslmaths()
 }
 
 
-get_fsl_version_based_on_fslmaths fsl_ver
+#get_fsl_version_based_on_fslmaths fsl_ver
+#echo "fsl_ver: ${fsl_ver}"
+
+get_fsl_version fsl_ver
 echo "fsl_ver: ${fsl_ver}"
 
 OLD_OR_NEW_FSLMATHS=$(determine_old_or_new_fslmaths ${fsl_ver})

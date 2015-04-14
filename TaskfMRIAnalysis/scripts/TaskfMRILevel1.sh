@@ -20,107 +20,8 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 
 # Establish tool name for logging
 log_SetToolName "TaskfMRILevel1.sh"
-
-get_fsl_version_based_on_fslmaths()
-{
-	local which_fslmaths
-	local fsl_bin_directory
-	local fsl_version_file
-	local fsl_version
-	local __functionResultVar=${1}
-
-	# Try to locate the fslversion file based on where fslmaths is found
-	which_fslmaths=`which fslmaths`
-	fsl_bin_directory=`dirname ${which_fslmaths}`
-	fsl_version_file="${fsl_bin_directory}/../etc/fslversion"
-	
-	if [ -f ${fsl_version_file} ]
-	then
-		# We've found the file containing fsl version information based on the location of fslmaths
-		fsl_version=`cat ${fsl_version_file}`
-		log_Msg "INFO: I've determined that the FSL version in use is: ${fsl_version}"
-	else
-		# We couldn't file the fslversion file based on the location of fslmaths.
-		# Let's try looking in a "standard" location
-		if [ -d /usr/share ]
-		then 
-			fsl_version_file=`find /usr/share -name 'fslversion'`
-			if [[ "${fsl_version_file}" == *" "* ]]
-			then
-				log_Msg "ERROR: There is a possibility that there are multiple versions of FSL installed"
-				log_Msg "ERROR: and I cannot tell which one you are using."
-				exit 1
-			fi
-			fsl_version=`cat ${fsl_version_file}`
-			log_Msg "WARNING: I've determined that the FSL version in use is: ${fsl_version}"
-			log_Msg "WARNING: But I had to do some \"guessing\". So you need to verify that I've determined correctly."
-		else
-			log_Msg "ERROR: I cannot tell which version of FSL you are using."
-			exit 1
-		fi
-	fi
-
-	eval $__functionResultVar="'${fsl_version}'"
-}
-
-determine_old_or_new_fslmaths()
-{
-	local fsl_version=${1}
-	local old_or_new
-	local fsl_version_array
-	local fsl_primary_version
-	local fsl_secondary_version
-	local fsl_tertiary_version
-
-	log_Msg "Working with fsl_version: ${fsl_version}"
-
-	# parse the FSL version information into primary, secondary, and tertiary parts
-	fsl_version_array=(${fsl_version//./ })
-
-	fsl_primary_version="${fsl_version_array[0]}"
-	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-	log_Msg "fsl_primary_version: ${fsl_primary_version}"
-	
-	fsl_secondary_version="${fsl_version_array[1]}"
-	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-	log_Msg "fsl_secondary_version: ${fsl_secondary_version}"
-	
-	fsl_tertiary_version="${fsl_version_array[2]}"
-	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
-	log_Msg "fsl_tertiary_version: ${fsl_tertiary_version}"
-	
-	if [[ $(( ${fsl_primary_version} )) -lt 5 ]]
-	then
-		log_Msg "We are working with a version prior to 5.0.0"
-		old_or_new="OLD"
-	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]]
-	then
-		log_Msg "We are working with version 6.0.0 or above"
-		old_or_new="NEW"
-	else
-		log_Msg "We are working with version 5.x.x"
-		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]]
-		then
-			log_Msg "We are working with version 5.1.x"
-			old_or_new="NEW"
-		else
-			log_Msg "We are working with version 5.0.x"
-			fsl_tertiary_version_number=$(( ${fsl_tertiary_version} ))
-			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]]
-			then
-				log_Msg "We are working with version 5.0.0 - 5.0.6"
-				old_or_new="OLD"
-			else
-				log_Msg "We are working with version 5.0.7 or above"
-				old_or_new="NEW"
-			fi
-		fi
-	fi
-	
-	echo ${old_or_new}
-}
-
 log_Msg "Use wb_command to calculate TR_vol"
+
 TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas.dtseries.nii -no-map-info -only-step-interval`
 
 #Only do the additional smoothing required to hit the target final smoothing for CIFTI
@@ -199,26 +100,18 @@ temporal_filter_dtseries_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMR
 
 ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${dtseries_file} ${fake_nifti_file}
 
-# Determine the version of FSL that the fslmaths binary that we are using is from
-get_fsl_version_based_on_fslmaths fsl_ver
-log_Msg "FSL version: ${fsl_ver}"
+which_fslmaths=`which fslmaths`
+fsl_bin_directory=`dirname ${which_fslmaths}`
+fsl_version_file="${fsl_bin_directory}/../etc/fslversion"
+fsl_version=`cat ${fsl_version_file}`
 
-# Determine based on that FSL version whether or not fslmaths will have the remove the mean behavior introduced in FSL 5.0.7
-# old_or_new_fslmaths should be set to "OLD" if using an fslmaths version prior to 5.0.7 and be set to "NEW" otherwise.
-old_or_new_fslmaths=$(determine_old_or_new_fslmaths ${fsl_ver})
-log_Msg "Old or new version of fslmaths: ${old_or_new_fslmaths}"
-
-if [ "${old_or_new_fslmaths}" == "OLD" ]
-then
-	fslmaths ${fake_nifti_file} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${fake_nifti_file}
-else
-	temp_mean_file=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_temp_mean.nii.gz
-	fslmaths ${fake_nifti_file} -Tmean ${temp_mean_file}
-	fslmaths ${fake_nifti_file} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${fake_nifti_file_filtered}
-	fslmaths ${fake_nifti_file_filtered} -Tmean -mul -1 -add ${fake_nifti_file_filtered} -add ${temp_mean_file} ${fake_nifti_file_filtered}
-	rm ${fake_nifti_file_filtered}
-	rm ${temp_mean_file}
+if [ "${fsl_version}" != "5.0.6" ] ; then
+    message="This script, TaskfMRILevel1.sh, assumes fslmaths behavior that is available in version 5.0.6 of FSL. You are using FSL version ${fsl_version}. Please install FSL version 5.0.6 before continuing."
+    log_Msg ${message}
+    echo ${message} 1>&2
+    exit
 fi
+fslmaths ${fake_nifti_file} -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 ${fake_nifti_file}
 
 ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${fake_nifti_file} ${dtseries_file} ${temporal_filter_dtseries_file}
 rm ${fake_nifti_file}
