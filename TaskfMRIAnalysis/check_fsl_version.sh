@@ -11,7 +11,7 @@ get_fsl_version()
 	if [ -f ${fsl_version_file} ]
 	then
 		fsl_version=`cat ${fsl_version_file}`
-		echo "INFO: Determined that the FSL version is use is: ${fsl_version}"
+		echo "INFO: Determined that the FSL version in use is: ${fsl_version}"
 	else
 		echo "ERROR: Cannot tell which version of FSL you are using."
 		exit 1
