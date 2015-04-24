@@ -176,7 +176,7 @@ then
 		log_Msg "INFO: V2.0 option: --parcellationfile=${ParcellationFile} ignored"
 	fi
 
-	./TaskfMRIAnalysis.v1.0.sh \
+	${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.v1.0.sh \
 	    --path=${Path} \
 	    --subject=${Subject} \
 	    --lvl1tasks=${LevelOnefMRINames} \
@@ -194,7 +194,7 @@ then
 else
 	log_Msg "INFO: Detected version 5.0.7 or newer of FSL is in use. Invoking v2.0 of Task fMRI Analysis."
 
-	./TaskfMRIAnalysis.v2.0.sh \
+	${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.v2.0.sh \
 	    --path=${Path} \
 	    --subject=${Subject} \
 	    --lvl1tasks=${LevelOnefMRINames} \
