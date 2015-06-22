@@ -68,6 +68,12 @@ get_batch_options() {
 				EnvironmentScript=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
+			*)
+				echo ""
+				echo "ERROR: Unrecognized Option: ${argument}"
+				echo ""
+				exit 1
+				;;
 		esac
 	done
 }
