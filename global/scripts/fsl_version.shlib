@@ -1,0 +1,29 @@
+#
+# Function Description
+#  Get the current version string for FSL
+#
+#  Depends on FSLDIR environment variable
+#
+# Usage Example:
+#  fsl_version_get fsl_ver
+#  log_Msg "FSL version: ${fsl_ver}"
+# 
+fsl_version_get()
+{
+	local fsl_version_file
+	local fsl_version
+	local __functionResultVar=${1}
+
+	fsl_version_file="${FSLDIR}/etc/fslversion"
+
+	if [ -f ${fsl_version_file} ]
+	then
+		fsl_version=`cat ${fsl_version_file}`
+		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
+	else
+		log_Msg "ERROR: Cannot tell which version of FSL you are using."
+		exit 1
+	fi
+
+	eval $__functionResultVar="'${fsl_version}'"
+}

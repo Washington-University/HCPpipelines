@@ -32,9 +32,16 @@
 #
 # ## Prerequisites
 #
+# The necessary input files to this processing come from
+#
+# * Structural Preprocessing
+# * Functional Preprocessing
+#
 # ### Installed Software
 #
-# TBW
+# * Connectome Workbench (TBW - version needed)
+# * FSL (TBW - version needed)
+# * Octave - Open source MATLAB alternative
 #
 # ### Environment Variables
 # 
@@ -42,7 +49,19 @@
 #  
 #   The "home" directory for the HCP Pipeline product.
 #   e.g. /home/tbrown01/projects/Pipelines
+#
+# * FSLDIR
+#
+#   The "home" directory for the FSL installation
+#
+# * CARET7DIR
+#
+#   The executable directory for the Connectome Workbench installation
 # 
+# * OCTAVE_HOME
+# 
+#   The home directory for the Octave installation
+#
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
@@ -62,6 +81,23 @@ g_script_name=`basename ${0}`
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
+
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
+#
+# Function Description:
+#  Document Tool Versions
+#
+show_tool_versions() {
+	# Show wb_command version
+	log_Msg "Showing wb_command version"
+	${CARET7DIR}/wb_command -version
+
+	# Show fsl version
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
+}
 
 # 
 # Function Description:
@@ -294,6 +330,9 @@ main()
 	# See documentation for get_options function for global variables set
 	get_options $@
 
+	# show the versions of tools used
+	show_tool_versions
+
 	# Naming Conventions
 	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
@@ -335,180 +374,353 @@ main()
 
 	Sigma=`echo "$g_smoothing_fwhm / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
-	#
-	# Input File(s):
-	#  -i filename of input image           ${AtlasFolder}/BiasField.nii.gz 
-	#  -r filename for reference image      ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz
-	#  --premat filename for pre-transform  ${FSLDIR}/etc/flirtsch/ident.mat
-	#
-	# Output File(s):
-	#  -o ${ResultsFolder}/BiasField.${g_final_frmi_res}.nii.gz
-	#
+	# ----------------------------------------
+	# Input File(s)
+	# ----------------------------------------
+
+	# input image - Result of Structural Preprocessing
+	inputImage="${AtlasFolder}/BiasField.nii.gz"
+
+	# reference image - Collected File, retrieved from Functional Preprocessing
+	referenceImage="${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz"
+
+	# pre-transform - identity matrix from FSL distribution
+	preTransform="${FSLDIR}/etc/flirtsch/ident.mat"
+
+	# ----------------------------------------
+	# Ouput File(s)
+	# ----------------------------------------
+
+	# newBiasField - newly created file
+	newBiasField="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
 
 	${FSLDIR}/bin/applywarp \
 		--rel \
 		--interp=spline \
-		-i ${AtlasFolder}/BiasField.nii.gz \
-		-r ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz \
-		--premat=${FSLDIR}/etc/flirtsch/ident.mat \
-		-o ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz
+		-i ${inputImage} \
+		-r ${referenceImage} \
+		--premat=${preTransform} \
+		-o ${newBiasField}
+
+	# ----------------------------------------
+	# Input File(s) 
+	# ----------------------------------------
+
+	# input image - Result of previous step
+	inputImage="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+
+	# ----------------------------------------
+	# Output Files(s)
+	# ----------------------------------------
+
+	# output image - same as input - modifies file
+	outputImage="${inputImage}"
 
 	${FSLDIR}/bin/fslmaths \
-		${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz \
-		-thr 0.1 ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz
+		${inputImage} \
+		-thr 0.1 \
+		${outputImage}
 
-	for Hemisphere in L R ; do
-		log_Msg "Map bias field volume to surface using the same approach as when fMRI data are projected to the surface"
+ 	for Hemisphere in L R ; do
 
-		# 
-		# Input File(s):
-		# 
-		# Output File(s):
-		#
-		#
-		volume="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
-		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		ribbonInner="${NativeFolder}/${g_subject}.${Hemisphere}.white.native.surf.gii"
-		ribbonOutter="${NativeFolder}/${g_subject}.${Hemisphere}.pial.native.surf.gii"
-		roiVolume="${ResultsFolder}/RibbonVolumeToSurfaceMapping/goodvoxels.nii.gz"
-		${CARET7DIR}/wb_command \
-			-volume-to-surface-mapping $volume $surface $metricOut \
-			-ribbon-constrained $ribbonInner $ribbonOutter \
-			-volume-roi $roiVolume
+		# --------------------------------------------------------------------------------
+		log_Msg "Working on Hemisphere: ${Hemisphere}"
+ 		log_Msg "Map bias field volume to surface using the same approach as when fMRI"
+		log_Msg " data are projected to the surface"
+		# --------------------------------------------------------------------------------
 
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
 
+		# volume - Result of previous step
+ 		volume="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
 
+		# surface - From Structural Preprocessing
+ 		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
 
-
-
-
-
-	done
-
-
-	
-
-
-}
-
-
-# real_work to be incorporated into main
-
-
-real_work()
-{
-	### Calculate CIFTI version of the bias field (which is removed as part of the fMRI minimal pre-processing)
-	### so that the bias field can be "restored" prior to the variance decomposition
-	### i.e., so that the estimate variance at each grayordinate reflects the scaling of the original data
-	### MG: Note that bias field correction and variance normalization are two incompatible goals
-
-#	Sigma=`echo "$g_smoothing_fwhm / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-
-#	applywarp --rel --interp=spline -i ${AtlasFolder}/BiasField.nii.gz -r ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz
-
-#	fslmaths ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz -thr 0.1 ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz
-	
-	for Hemisphere in L R ; do
-		#Map bias field volume to surface using the same approach as when fMRI data are projected to the surface
-		volume="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
-		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		ribbonInner="${NativeFolder}/${g_subject}.${Hemisphere}.white.native.surf.gii"
-		ribbonOutter="${NativeFolder}/${g_subject}.${Hemisphere}.pial.native.surf.gii"
-		roiVolume="${ResultsFolder}/RibbonVolumeToSurfaceMapping/goodvoxels.nii.gz"
-		#$Caret7_Command -volume-to-surface-mapping $volume $surface $metricOut -ribbon-constrained $ribbonInner $ribbonOutter -volume-roi $roiVolume
-		${CARET7DIR}/wb_command -volume-to-surface-mapping $volume $surface $metricOut -ribbon-constrained $ribbonInner $ribbonOutter -volume-roi $roiVolume
+		# ribbon constraint inner ribbon - From Structural Preprocessing
+ 		ribbonInner="${NativeFolder}/${g_subject}.${Hemisphere}.white.native.surf.gii"
 		
-		#Fill in any small holes with dilation again as is done with fMRI
+		# ribbon constraint outter ribbon - From Structural Preprocessing
+ 		ribbonOutter="${NativeFolder}/${g_subject}.${Hemisphere}.pial.native.surf.gii"
+
+		# ribbon constraint ROI volume - From Functional Preprocessing
+ 		roiVolume="${ResultsFolder}/RibbonVolumeToSurfaceMapping/goodvoxels.nii.gz"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - newly created file
+ 		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
+		
+ 		${CARET7DIR}/wb_command \
+ 			-volume-to-surface-mapping ${volume} ${surface} ${metricOut} \
+ 			-ribbon-constrained ${ribbonInner} ${ribbonOutter} \
+ 			-volume-roi ${roiVolume}
+
+		# --------------------------------------------------------------------------------
+		log_Msg "Fill in any small holes with dilation again as is done with fMRI"
+		# --------------------------------------------------------------------------------
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# metric - From Previous Step
 		metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
+
+		# surface - From Structural Preprocessing
+		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"		
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - same as metric input - modifies file
+		metricOut="${metric}"
+
 		distance="10"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		#$Caret7_Command -metric-dilate $metric $surface $distance $metricOut -nearest
-		${CARET7DIR}/wb_command -metric-dilate $metric $surface $distance $metricOut -nearest
-		
-  		#Mask out the medial wall of dilated file
-		metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		mask="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		#$Caret7_Command -metric-mask $metric $mask $metricOut
-		${CARET7DIR}/wb_command -metric-mask $metric $mask $metricOut
-		
-		#Resample the surface data from the native mesh to the standard mesh
-		metricIn="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-		currentSphere="${NativeFolder}/${g_subject}.${Hemisphere}.sphere.${g_reg_name}.native.surf.gii"
-		newSphere="${DownsampleFolder}/${g_subject}.${Hemisphere}.sphere.${g_low_res_mesh}k_fs_LR.surf.gii"
-		method="ADAP_BARY_AREA"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-		currentArea="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
-		newArea="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
-		roiMetric="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
-		#$Caret7_Command -metric-resample $metricIn $currentSphere $newSphere $method $metricOut -area-surfs $currentArea $newArea -current-roi $roiMetric
-		${CARET7DIR}/wb_command -metric-resample $metricIn $currentSphere $newSphere $method $metricOut -area-surfs $currentArea $newArea -current-roi $roiMetric
-	
-		#Make sure the medial wall is zeros
-		metric="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-		mask="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-		#$Caret7_Command -metric-mask $metric $mask $metricOut
-		${CARET7DIR}/wb_command -metric-mask $metric $mask $metricOut
-	
-		#Smooth the surface bias field the same as the fMRI
-		surface="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
-		metricIn="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-		smoothingKernel="${Sigma}"
-		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-		roiMetric="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
-		#$Caret7_Command -metric-smoothing $surface $metricIn $smoothingKernel $metricOut -roi $roiMetric
-		${CARET7DIR}/wb_command -metric-smoothing $surface $metricIn $smoothingKernel $metricOut -roi $roiMetric
-	done
-  
-	unset POSIXLY_CORRECT
-	if [ 1 -eq `echo "$g_brain_ordinates_res == $g_final_fmri_res" | bc -l` ] ; then
-		#If using the same fMRI and grayordinates space resolution, use the simple algorithm to project bias field into subcortical CIFTI space like fMRI
-		volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
-		currentParcel="${ROIFolder}/ROIs.${g_brain_ordinates_res}.nii.gz"
-		newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
-		kernel="${Sigma}"
-		volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
-		#$Caret7_Command -volume-parcel-resampling $volumeIn $currentParcel $newParcel $kernel $volumeOut -fix-zeros
-		${CARET7DIR}/wb_command -volume-parcel-resampling $volumeIn $currentParcel $newParcel $kernel $volumeOut -fix-zeros
-	else
-		#If using different fMRI and grayordinates space resolutions, use the generic algorithm to project bias field into subcortical CIFTI space like fMRI
-		volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
-		currentParcel="${ResultsFolder}/ROIs.${g_final_fmri_res}.nii.gz"
-		newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
-		kernel="${Sigma}"
-		volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
-		#$Caret7_Command -volume-parcel-resampling-generic $volumeIn $currentParcel $newParcel $kernel $volumeOut -fix-zeros
-		${CARET7DIR}/wb_command -volume-parcel-resampling-generic $volumeIn $currentParcel $newParcel $kernel $volumeOut -fix-zeros
-	fi 
+		${CARET7DIR}/wb_command -metric-dilate ${metric} ${surface} ${distance} ${metricOut} -nearest
 
-	#Create CIFTI file of bias field as was done with fMRI
-	ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
+		# --------------------------------------------------------------------------------
+		log_Msg "Mask out the medial wall of dilated file"
+		# --------------------------------------------------------------------------------
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# metric - From Previous Step
+		metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
+
+		# mask - From Structural Preprocessing
+		mask="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - same as metric input - modifies file
+		metricOut="${metric}"
+
+		${CARET7DIR}/wb_command -metric-mask $metric $mask $metricOut
+
+		# --------------------------------------------------------------------------------
+		log_Msg "Resample the surface data from the native mesh to the standard mesh"
+		# --------------------------------------------------------------------------------
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# metricIn - From Previous Step
+		metricIn="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
+
+		# currentSphere - From Structural Preprocessing
+		currentSphere="${NativeFolder}/${g_subject}.${Hemisphere}.sphere.${g_reg_name}.native.surf.gii"
+
+		# newSphere - From Structural Preprocessing
+		newSphere="${DownsampleFolder}/${g_subject}.${Hemisphere}.sphere.${g_low_res_mesh}k_fs_LR.surf.gii"
+
+		# area-surfs: currentArea - From Structural Preprocessing
+		currentArea="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
+
+		# area-surfs: newArea - From Structural Preprocessing
+		newArea="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
+
+		# current-roi: roiMetric - From Structural Preprocessing
+		roiMetric="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - newly created file
+		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		method="ADAP_BARY_AREA"
+		${CARET7DIR}/wb_command \
+			-metric-resample ${metricIn} ${currentSphere} ${newSphere} ${method} ${metricOut} \
+			-area-surfs ${currentArea} ${newArea} \
+			-current-roi ${roiMetric}
+	
+		# --------------------------------------------------------------------------------
+		log_Msg "Make sure the medial wall is zeros"
+		# --------------------------------------------------------------------------------
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# metric - From Previous Step
+		metric="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		# mask - From Structural Preprocessing
+		mask="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - same as input metric - modifies file
+		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		${CARET7DIR}/wb_command -metric-mask ${metric} ${mask} ${metricOut}
+
+		# --------------------------------------------------------------------------------
+		log_Msg "Smooth the surface bias field the same as the fMRI"
+		# --------------------------------------------------------------------------------
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# surface - From Structural Preprocessing
+		surface="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
+
+		# metricIn - From Previous Step
+		metricIn="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		# roiMetric - roi to smooth within - From Structural Preprocessing
+		roiMetric="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# metricOut - same as input metric - modifies file
+		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		smoothingKernel="${Sigma}"
+		${CARET7DIR}/wb_command \
+			-metric-smoothing ${surface} ${metricIn} ${smoothingKernel} ${metricOut} -roi ${roiMetric}
+
+ 	done
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Project bias field into subcortical CIFTI space"
+	# --------------------------------------------------------------------------------
+	
+	unset POSIXLY_CORRECT
+
+	if [ 1 -eq `echo "$g_brain_ordinates_res == $g_final_fmri_res" | bc -l` ] ; then
+		log_Msg "Using the same fMRI and grayordinates space resolution"
+		log_Msg "Use the simple algorithm to project bias field into subcortical CIFTI space like fMRI"
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# volumeIn - From Functional Preprocessing
+		volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+
+		# currentParcel - From Structural Preprocessing
+		currentParcel="${ROIFolder}/ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		# newParcel - From Structural Preprocessing
+		newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# volumeOut - newly created file
+		volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+		kernel="${Sigma}"
+		${CARET7DIR}/wb_command \
+			-volume-parcel-resampling ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
+			${volumeOut} -fix-zeros
+
+	else
+		log_Msg "Using different fMRI and grayordinates space resolutions"
+		log_Msg "Use the generic algorithm to project bias field into subcortical CIFTI space like fMRI"
+
+		# ----------------------------------------
+		# Input File(s)
+		# ----------------------------------------
+
+		# volumeIn - From Functional Preprocessing
+		volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+
+		# currentParcel - From Structural Preprocessing
+		currentParcel="${ResultsFolder}/ROIs.${g_final_fmri_res}.nii.gz"
+
+		# newParcel - From Structural Preprocessing
+		newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		# ----------------------------------------
+		# Output File(s)
+		# ----------------------------------------
+
+		# volumeOut - newly created file
+		volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+		kernel="${Sigma}"
+		${CARET7DIR}/wb_command \
+			-volume-parcel-resampling-generic ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
+		 	${volumeOut} -fix-zeros
+
+	fi
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Create CIFTI file of bias field as was done with fMRI"
+	# --------------------------------------------------------------------------------
+
+	# ----------------------------------------
+	# Input File(s)
+	# ----------------------------------------
+
+	# volumeData - From Previous Step
 	volumeData="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+	# labelVolume - From Structural Preprocessing
 	labelVolume="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+	# lMetric - Created in loop above
 	lMetric="${ResultsFolder}/BiasField.L.${g_low_res_mesh}k_fs_LR.func.gii"
+
+	# lRoiMetric - From Structural Preprocessing
 	lRoiMetric="${DownsampleFolder}/${g_subject}.L.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+	# rMetric - Created in loop above
 	rMetric="${ResultsFolder}/BiasField.R.${g_low_res_mesh}k_fs_LR.func.gii"
+
+	# rRoiMetric - From Structural Preprocessing
 	rRoiMetric="${DownsampleFolder}/${g_subject}.R.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
-	#$Caret7_Command -cifti-create-dense-scalar $ciftiOut -volume $volumeData $labelVolume -left-metric $lMetric -roi-left $lRoiMetric -right-metric $rMetric -roi-right $rRoiMetric
-	${CARET7DIR}/wb_command -cifti-create-dense-scalar $ciftiOut -volume $volumeData $labelVolume -left-metric $lMetric -roi-left $lRoiMetric -right-metric $rMetric -roi-right $rRoiMetric
+
+	# ----------------------------------------
+	# Output File(s)
+	# ----------------------------------------
+
+	# ciftiOut - newly created file
+	ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
+
+	${CARET7DIR}/wb_command \
+		-cifti-create-dense-scalar ${ciftiOut} \
+		-volume ${volumeData} ${labelVolume} \
+		-left-metric ${lMetric} -roi-left ${lRoiMetric} \
+		-right-metric ${rMetric} -roi-right ${rRoiMetric}
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Final step in creation of CIFTI bias field"
+	# --------------------------------------------------------------------------------
 
 	Mean=`fslstats ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz -k ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz -M`
 
 	#Someone: don't paramaterize this, it messes up Var and -var Var structure somehow
 	#MG: Not sure why unless you tried to change the math expression, question for Tim Coalson
-	#$Caret7_Command -cifti-math "Var / ${Mean}" ${ResultsFolder}/BiasField.dscalar.nii -var Var ${ResultsFolder}/BiasField.dscalar.nii
-	${CARET7DIR}/wb_command -cifti-math "Var / ${Mean}" ${ResultsFolder}/BiasField.dscalar.nii -var Var ${ResultsFolder}/BiasField.dscalar.nii
-
-	### End creation of CIFTI bias field
-
-	### Proceed to run the Matlab script
+	${CARET7DIR}/wb_command -cifti-math "Var / ${Mean}" ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
+		-var Var ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii
+	
+	# --------------------------------------------------------------------------------
+	log_Msg "End creation of CIFTI bias field"
+	# --------------------------------------------------------------------------------
 
 	motionparameters="${ResultsFolder}/Movement_Regressors" #No .txt
-	TR=`$FSLDIR/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
+	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
 	ICAs="${ICAFolder}/melodic_mix"
 	if [ -e ${FIXFolder}/HandNoise.txt ] ; then
 		noise="${FIXFolder}/HandNoise.txt"
@@ -518,10 +730,56 @@ real_work()
 	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
 	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
 
-	matlab -nojvm -nodisplay -nosplash <<M_PROG
-RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');
-M_PROG
-	echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');"
+#	matlab -nojvm -nodisplay -nosplash <<M_PROG
+#RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');
+#M_PROG
+
+	# --------------------------------------------------------------------------------
+	matlab_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
+	log_Msg "Create Matlab script: ${matlab_script_file_name}"
+	# --------------------------------------------------------------------------------
+
+	if [ -e ${matlab_script_file_name} ]; then
+		echo "Removing old ${matlab_script_file_name}"
+		rm -f ${matlab_script_file_name}
+	fi
+
+	# TBD: change these paths to use variables instead of hard coded paths
+	echo "I am in:"
+	pwd
+	touch ${matlab_script_file_name}
+	echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${matlab_script_file_name}
+	echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
+	echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
+	echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${matlab_script_file_name}
+
+	log_Msg "About to execute the following Matlab script"
+
+	# 2015.06.26
+	#
+	# Note that the script being run, usings the save_avw function that is part of FSL.
+	# When Octave runs that function it warns that there is a "possible Matlab-style short-circuit
+	# operator" used "at line 19, column 23". This warning is about a Matlab/Octave if statement
+	# that reads:
+	#
+	#   if ((~isreal(img)) & (vtype~='c')),
+	#
+	# The Octave documentation at:
+	#
+	#   https://www.gnu.org/software/octave/doc/interpreter/Short_002dcircuit-Boolean-Operators.html
+	# 
+	# explaiins that:
+	#
+	#   MATLAB has special behavior that allows the operators '&' and '|' to short-circuit 
+	#   when used in the truth expression for if and while statements. Octave also behaves
+	#   the same way by default, though the use of '&' and '|' in this way is strongly 
+	#   discouraged. Instead, you should use the '&&' and '||' operators that always have
+	#   short-circuit behavior.
+	#
+	# Since Octave behaves the same as MATLAB by default, this warning can be ignored for now.
+
+	cat ${matlab_script_file_name}
+	cat ${matlab_script_file_name} | ${OCTAVE_HOME}/bin/octave
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
@@ -532,32 +790,73 @@ M_PROG
 	i=1
 	for Name in ${Names} ; do
 		if [ ${i} -gt 4 ] ; then
+			log_Msg "Adding ${Name} to ${ResultsFolder}/Names.txt"
 			echo ${Name} >> ${ResultsFolder}/Names.txt
 		fi
 		i=$((${i}+1))
 	done
+	
+	# --------------------------------------------------------------------------------
+	log_Msg "Set map names in CIFTI dscalar"
+	# --------------------------------------------------------------------------------	
 
-	#Set map names in CIFTI dscalar
+	# ----------------------------------------
+	# Input File(s)
+	# ----------------------------------------
+
+	# ciftiIn - Generated by Matlab 
 	ciftiIn="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_stats.dtseries.nii"
-	direction="ROW"
-	ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_stats.dscalar.nii"
+
+	# nameFile - From Previous Step
 	nameFile="${ResultsFolder}/Names.txt"
-	#$Caret7_Command -cifti-convert-to-scalar $ciftiIn $direction $ciftiOut -name-file $nameFile
-	${CARET7DIR}/wb_command -cifti-convert-to-scalar $ciftiIn $direction $ciftiOut -name-file $nameFile
 
-	rm ${ResultsFolder}/Names.txt ${ResultsFolder}/${g_frmi_name}_Atlas${RegString}_stats.dtseries.nii
+	# ----------------------------------------
+	# Output File(s)
+	# ----------------------------------------
 
-	#Set Palette in CIFTI dscalar
-	ciftiIn="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_stats.dscalar.nii"
-	mode="MODE_AUTO_SCALE_PERCENTAGE"
+	# ciftiOut - newly created file
 	ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_stats.dscalar.nii"
-	#$Caret7_Command -cifti-palette $ciftiIn $mode $ciftiOut -pos-percent 4 96 -neg-percent 4 96 -interpolate true -disp-pos true -disp-neg true -disp-zero true -palette-name videen_style
-	${CARET7DIR}/wb_command -cifti-palette $ciftiIn $mode $ciftiOut -pos-percent 4 96 -neg-percent 4 96 -interpolate true -disp-pos true -disp-neg true -disp-zero true -palette-name videen_style
 
-	#Rename files for MSMAll or SingleSubjectConcat script
-	mv ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+	direction="ROW"
+	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ciftiIn} ${direction} ${ciftiOut} -name-file ${nameFile}
+
+	rm ${nameFile}
+	rm ${ciftiIn}
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Set Palette in CIFTI dscalar"
+	# --------------------------------------------------------------------------------
+
+	# ----------------------------------------
+	# Input File(s)
+	# ----------------------------------------
+
+	# ciftiIn - From Previous Step
+	ciftiIn="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_stats.dscalar.nii"
+
+	# ----------------------------------------
+	# Output File(s)
+	# ----------------------------------------
+
+	# ciftiOut - same as input file
+	ciftiOut="${ciftiIn}"
+
+	mode="MODE_AUTO_SCALE_PERCENTAGE"
+	${CARET7DIR}/wb_command -cifti-palette ${ciftiIn} ${mode} ${ciftiOut} \
+		-pos-percent 4 96 -neg-percent 4 96 -interpolate true \
+		-disp-pos true -disp-neg true -disp-zero true \
+		-palette-name videen_style
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
+	# --------------------------------------------------------------------------------
+
+	# TBB: I'm confused as to where the _vn.dscalar.nii file is created
+	mv \
+		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
+		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+
 }
-
 
 # 
 # Invoke the main function to get things started
