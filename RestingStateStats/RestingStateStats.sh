@@ -123,6 +123,10 @@ usage()
 	echo "    --smoothing-fwhm=<smoothing full width at half max>"
 	echo "    --output-proc-string=<output processing string>"
 	echo "   [--dlabel-file=<dlabel file>] defaults to NONE if not specified"
+	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled Matlab)"
+	echo "     0 = Use compiled Matlab"
+	echo "     1 = Use Matlab"
+	echo "     2 = Use Octave"
 	echo ""
 }
 
@@ -143,6 +147,10 @@ usage()
 #  ${g_smoothing_fwhm} - smoothing full width at half maximum
 #  ${g_output_proc_string} - output processing string
 #  ${g_dlabel_file} - label file containing label designations and label color keys
+#  ${g_matlab_run_mode} - indication of how to run Matlab code
+#    0 - Use compiled Matlab
+#    1 - Use Matlab
+#    2 - Use Octave
 #
 get_options()
 {
@@ -160,10 +168,12 @@ get_options()
 	unset g_smoothing_fwhm
 	unset g_output_proc_string
 	unset g_dlabel_file
+	unset g_matlab_run_mode
 
 	# set default values 
 	g_reg_name="NONE"
 	g_dlabel_file="NONE"
+	g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -224,6 +234,10 @@ get_options()
 				;;
 			--dlabel-file=*)
 				g_dlabel_file=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--matlab-run-mode=*)
+				g_matlab_run_mode=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -312,6 +326,24 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_dlabel_file: ${g_dlabel_file}"
+	fi
+
+	if [ -z "${g_matlab_run_mode}" ]; then
+		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${g_matlab_run_mode} in 
+			0)
+				;;
+			1)
+				;;
+			2)
+				;;
+			*)
+				echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -730,56 +762,80 @@ main()
 	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
 	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
 
-#	matlab -nojvm -nodisplay -nosplash <<M_PROG
-#RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');
-#M_PROG
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
+			# TBD: Use environment variables instead of fixed paths
+			matlab_exe="/home/HCPpipeline/pipeline_tools/Pipelines_dev"
+			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
 
-	# --------------------------------------------------------------------------------
-	matlab_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
-	log_Msg "Create Matlab script: ${matlab_script_file_name}"
-	# --------------------------------------------------------------------------------
+			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
 
-	if [ -e ${matlab_script_file_name} ]; then
-		echo "Removing old ${matlab_script_file_name}"
-		rm -f ${matlab_script_file_name}
-	fi
+			matlab_function_arguments="${motionparameters} ${g_high_pass} ${TR} ${ICAs} ${noise} "
+			matlab_function_arguments+="${CARET7DIR}/wb_command ${dtseries} ${bias} \"[]\" ${g_dlabel_file}"
 
-	# TBD: change these paths to use variables instead of hard coded paths
-	echo "I am in:"
-	pwd
-	touch ${matlab_script_file_name}
-	echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${matlab_script_file_name}
-	echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
-	echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-	echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${matlab_script_file_name}
+			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
-	log_Msg "About to execute the following Matlab script"
+			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+			echo "matlab_cmd: ${matlab_cmd}"
 
-	# 2015.06.26
-	#
-	# Note that the script being run, usings the save_avw function that is part of FSL.
-	# When Octave runs that function it warns that there is a "possible Matlab-style short-circuit
-	# operator" used "at line 19, column 23". This warning is about a Matlab/Octave if statement
-	# that reads:
-	#
-	#   if ((~isreal(img)) & (vtype~='c')),
-	#
-	# The Octave documentation at:
-	#
-	#   https://www.gnu.org/software/octave/doc/interpreter/Short_002dcircuit-Boolean-Operators.html
-	# 
-	# explaiins that:
-	#
-	#   MATLAB has special behavior that allows the operators '&' and '|' to short-circuit 
-	#   when used in the truth expression for if and while statements. Octave also behaves
-	#   the same way by default, though the use of '&' and '|' in this way is strongly 
-	#   discouraged. Instead, you should use the '&&' and '||' operators that always have
-	#   short-circuit behavior.
-	#
-	# Since Octave behaves the same as MATLAB by default, this warning can be ignored for now.
+			echo "${matlab_cmd}" | bash
+			echo $?
 
-	cat ${matlab_script_file_name}
-	cat ${matlab_script_file_name} | ${OCTAVE_HOME}/bin/octave
+			;;
+
+		1)
+			# Use Matlab - Untested
+			matlab_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
+			log_Msg "Creating Matlab script: ${matlab_script_file_name}"
+
+			if [ -e ${matlab_script_file_name} ]; then
+				echo "Removing old ${matlab_script_file_name}"
+				rm -f ${matlab_script_file_name}
+			fi
+			
+			# TBD: change these paths to use variables instead of hard coded paths
+			touch ${matlab_script_file_name}
+			echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${matlab_script_file_name}
+			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
+			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${matlab_script_file_name}
+
+			log_Msg "About to execute the following Matlab script"
+
+			cat ${matlab_script_file_name}
+			cat ${matlab_script_file_name} | matlab -nojvm -nodisplay -nosplash
+
+			;;
+
+		2)
+			# Use Octave
+			octave_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
+			log_Msg "Creating Octave script: ${octave_script_file_name}"
+
+			if [ -e ${octave_script_file_name} ]; then
+				echo "Removing old ${octave_script_file_name}"
+				rm -f ${octave_script_file_name}
+			fi
+			
+			# TBD: change these paths to use variables instead of hard coded paths
+			touch ${octave_script_file_name}
+			echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${octave_script_file_name}
+			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
+			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${octave_script_file_name}
+
+			log_Msg "About to execute the following Octave script"
+
+			cat ${octave_script_file_name}
+			cat ${octave_script_file_name} | ${OCTAVE_HOME}/bin/octave
+
+			;;
+
+		*)
+			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
+			exit 1
+	esac
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
