@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbrown01/RestingStateStats" file="/home/tbrown01/RestingStateStats/RestingStateStats.prj" build-checksum="1322051539">
+  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbrown01/RestingStateStats" file="/home/tbrown01/RestingStateStats/RestingStateStats.prj" build-checksum="3293935817">
     <param.project.name>/home/tbrown01/RestingStateStats/RestingStateStats.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>RestingStateStats</param.appname>
@@ -66,6 +66,8 @@
       <file>${PROJECT_ROOT}/ciftisavereset.m</file>
       <file>${PROJECT_ROOT}/demean.m</file>
       <file>${PROJECT_ROOT}/normalise.m</file>
+      <file>/home/tbrown01/fsl_matlab</file>
+      <file>/home/tbrown01/gifti-1.5</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
