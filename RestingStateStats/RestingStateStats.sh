@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015 The Human Connectome Projet
+# Copyright (C) 2015 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -36,12 +36,15 @@
 #
 # * Structural Preprocessing
 # * Functional Preprocessing
+# * ICA FIX processing
 #
 # ### Installed Software
 #
 # * Connectome Workbench (TBW - version needed)
 # * FSL (TBW - version needed)
-# * Octave - Open source MATLAB alternative
+# * Octave - Open source MATLAB alternative 
+#   - Necessary only if Octave is indicated as the Matlab 
+#     run mode
 #
 # ### Environment Variables
 # 
@@ -907,7 +910,6 @@ main()
 	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
 	# --------------------------------------------------------------------------------
 
-	# TBB: I'm confused as to where the _vn.dscalar.nii file is created
 	mv \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
