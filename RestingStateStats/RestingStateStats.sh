@@ -771,8 +771,8 @@ main()
 
 			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
 
-			matlab_function_arguments="${motionparameters} ${g_high_pass} ${TR} ${ICAs} ${noise} "
-			matlab_function_arguments+="${CARET7DIR}/wb_command ${dtseries} ${bias} \"[]\" ${g_dlabel_file}"
+			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
+			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '' '${g_dlabel_file}'"
 
 			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
@@ -799,7 +799,7 @@ main()
 			echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${matlab_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${matlab_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','','${g_dlabel_file}');" >> ${matlab_script_file_name}
 
 			log_Msg "About to execute the following Matlab script"
 
@@ -809,7 +809,7 @@ main()
 			;;
 
 		2)
-			# Use Octave
+			# Use Octave - doesn't seem to work
 			octave_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
 			log_Msg "Creating Octave script: ${octave_script_file_name}"
 
@@ -823,7 +823,7 @@ main()
 			echo "addpath /home/HCPpipeline/pipeline_tools/Pipelines_dev/RestingStateStats " >> ${octave_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}',[],'${g_dlabel_file}');" >> ${octave_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','','${g_dlabel_file}');" >> ${octave_script_file_name}
 
 			log_Msg "About to execute the following Octave script"
 
