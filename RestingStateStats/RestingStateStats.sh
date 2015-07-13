@@ -40,11 +40,14 @@
 #
 # ### Installed Software
 #
-# * Connectome Workbench (TBW - version needed)
-# * FSL (TBW - version needed)
+# * Connectome Workbench (v1.0 or above)
+# * FSL (version 5.0.6 or above)
 # * Octave - Open source MATLAB alternative 
 #   - Necessary only if Octave is indicated as the Matlab 
 #     run mode
+# * Matlab (version R2013a)
+#   - Necessary only if Matlab (non-compiled) is indicated
+#     as the Matlab run mode.
 #
 # ### Environment Variables
 # 
@@ -92,6 +95,10 @@ source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL
 #  Document Tool Versions
 #
 show_tool_versions() {
+	# Show HCP pipelines version
+	log_Msg "Showing HCP Pipelines version"
+	cat ${HCPPIPEDIR}/version.txt
+
 	# Show wb_command version
 	log_Msg "Showing wb_command version"
 	${CARET7DIR}/wb_command -version
