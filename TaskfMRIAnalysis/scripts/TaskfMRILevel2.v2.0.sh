@@ -18,7 +18,7 @@ Parcellation="${13}"
 
 #Set up some things
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
-LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
+LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`
 
 if [ ! ${Parcellation} = "NONE" ] ; then
   ParcellationString="_${Parcellation}"
