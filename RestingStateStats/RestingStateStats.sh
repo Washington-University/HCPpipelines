@@ -128,6 +128,7 @@ usage()
 	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
 	echo "    --subject=<subject ID>"
 	echo "    --fmri-name=<fMRI name>"
+	echo "    --high-pass=<high pass>"
 	echo "   [--reg-name=<registration name> (e.g. NONE or MSMSulc)] defaults to NONE if not specified"
 	echo "    --low-res-mesh=<low resolution mesh size> (in thousands, e.g. 32 --> 32k)"
 	echo "    --final-fmri-res=<final fMRI resolution> (in millimeters)"
