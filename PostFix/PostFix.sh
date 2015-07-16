@@ -33,10 +33,21 @@
 # ## Prerequisites
 #
 # ### Previous Processing
+# 
+# The necessary input files for this processing come from
+#
+# * ICA FIX processing
 #
 # ### Installed Software
 #
+# * Connectome Workbench (v1.0 or above)
+# * FSL (version 5.0.6 or above)
+#
 # ### Environment Variables
+#
+# * HCPPIPEDIR
+# * CARET7DIR
+# * FSLDIR
 #
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
@@ -58,6 +69,8 @@ g_script_name=`basename ${0}`
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
 #
 # Function Description:
 #  Document Tool Versions
@@ -66,6 +79,15 @@ show_tool_versions() {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
 	cat ${HCPPIPEDIR}/version.txt
+
+	# Show wb_command version
+	log_Msg "Showing wb_command version"
+	${CARET7DIR}/wb_command -version
+
+	# Show fsl version
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
 }
 
 # 
@@ -85,6 +107,9 @@ usage()
 	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
 	echo "    --subject=<subject ID>"
 	echo "    --fmri-name=<fMRI name>"
+	echo "    --high-pass=<high pass>"
+	echo "    --template-scene-dual-screen=<template scene file>"
+	echo "    --template-scene-single-screen=<template scene file>"
 	echo ""
 }
 
@@ -97,6 +122,9 @@ usage()
 #  ${g_path_to_stud_folder} - path to folder containing subject data directories
 #  ${g_subject} - subject ID
 #  ${g_fmri_name} - fMRI name
+#  ${g_high_pass} - high pass
+#  ${g_template_scene_dual_screen} - template scene file
+#  ${g_template_scene_single_screen} - template scene file
 #
 get_options()
 {
@@ -106,6 +134,9 @@ get_options()
 	unset g_path_to_study_folder
 	unset g_subject
 	unset g_fmri_name
+	unset g_high_pass
+	unset g_template_scene_dual_screen
+	unset g_template_scene_single_screen
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -134,6 +165,18 @@ get_options()
 				;;
 			--fmri-name=*)
 				g_fmri_name=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--high-pass=*)
+				g_high_pass=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--template-scene-dual-screen=*)
+				g_template_scene_dual_screen=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--template-scene-single-screen=*)
+				g_template_scene_single_screen=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -169,6 +212,27 @@ get_options()
 		log_Msg "g_fmri_name: ${g_fmri_name}"
 	fi
 
+	if [ -z "${g_high_pass}" ]; then
+		echo "ERROR: high pass required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_high_pass: ${g_high_pass}"
+	fi
+
+	if [ -z "${g_template_scene_dual_screen}" ]; then
+		echo "ERROR: template scene dual screen required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_template_scene_dual_screen: ${g_template_scene_dual_screen}"
+	fi
+
+	if [ -z "${g_template_scene_single_screen}" ]; then
+		echo "ERROR: template scene single screen required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_template_scene_single_screen: ${g_template_scene_single_screen}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
@@ -195,6 +259,18 @@ main()
 	ResultsFolder="${AtlasFolder}/Results/${g_fmri_name}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
+	ICAFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica/filtered_func_data.ica"
+	log_Msg "ICAFolder: ${ICAFolder}"
+
+	FIXFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica"
+	log_Msg "FIXFolder: ${FIXFolder}"
+
+	log_Msg "Creating ${ICAFolder}/ICAVolumeSpace.txt file"
+	echo "OTHER" > "${ICAFolder}/ICAVolumeSpace.txt"
+	echo "1 255 255 255 255" >> "${ICAFolder}/ICAVolumeSpace.txt"
+
+	${FSLDIR}/bin/fslmaths ${ICAFolder}/melodic_oIC.nii.gz -Tstd -bin ${ICAFolder}/mask.nii.gz
+
 }
 
 
@@ -205,23 +281,24 @@ main $@
 
 exit
 
-Path="$1"
-Subject="$2"
-rfMRIName="$3"
-GitRepo="$4"
-HighPass="$5"
-Caret7_Command="$6"
-TemplateSceneDualScreen="$7"
-TemplateSceneSingleScreen="$8"
+#TBB Path="$1" # ${g_path_to_study_folder}
+#TBB Subject="$2" # ${g_subject}
+#TBB rfMRIName="$3" # ${g_fmri_name}
+#TBB GitRepo="$4" # not used
+#TBB HighPass="$5" # ${g_high_pass}
+
+#TBB Caret7_Command="$6" # not used
+#TBB TemplateSceneDualScreen="$7" # ${g_template_scene_dual_screen}
+#TBB TemplateSceneSingleScreen="$8" # ${g_template_scene_single_screen}
 
 #Naming Conventions
-AtlasFolder="${Path}/${Subject}/MNINonLinear"
-ResultsFolder="${AtlasFolder}/Results/${rfMRIName}"
-ICAFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica/filtered_func_data.ica"
-FIXFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica"
+#TBB AtlasFolder="${Path}/${Subject}/MNINonLinear"
+#TBB ResultsFolder="${AtlasFolder}/Results/${rfMRIName}"
+#TBB ICAFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica/filtered_func_data.ica"
+#TBB FIXFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica"
 
-echo "OTHER" > "$ICAFolder"/ICAVolumeSpace.txt
-echo "1 255 255 255 255" >> "$ICAFolder"/ICAVolumeSpace.txt
+#TBB echo "OTHER" > "$ICAFolder"/ICAVolumeSpace.txt
+#TBB echo "1 255 255 255 255" >> "$ICAFolder"/ICAVolumeSpace.txt
 
 $FSLDIR/bin/fslmaths "$ICAFolder"/melodic_oIC.nii.gz -Tstd -bin "$ICAFolder"/mask.nii.gz
 $Caret7_Command -volume-label-import "$ICAFolder"/mask.nii.gz "$ICAFolder"/ICAVolumeSpace.txt "$ICAFolder"/mask.nii.gz
