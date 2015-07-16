@@ -119,7 +119,7 @@ usage()
 #  Shows usage information and exits if command line is malformed.
 #
 # Global Output Variables
-#  ${g_path_to_stud_folder} - path to folder containing subject data directories
+#  ${g_path_to_study_folder} - path to folder containing subject data directories
 #  ${g_subject} - subject ID
 #  ${g_fmri_name} - fMRI name
 #  ${g_high_pass} - high pass
@@ -265,11 +265,102 @@ main()
 	FIXFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 
+	# --------------------------------------------------------------------------------
 	log_Msg "Creating ${ICAFolder}/ICAVolumeSpace.txt file"
+	# --------------------------------------------------------------------------------
+
 	echo "OTHER" > "${ICAFolder}/ICAVolumeSpace.txt"
 	echo "1 255 255 255 255" >> "${ICAFolder}/ICAVolumeSpace.txt"
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Creating ${ICAFolder}/mask.nii.gz"
+	# --------------------------------------------------------------------------------
+
 	${FSLDIR}/bin/fslmaths ${ICAFolder}/melodic_oIC.nii.gz -Tstd -bin ${ICAFolder}/mask.nii.gz
+
+	${CARET7DIR}/wb_command -volume-label-import ${ICAFolder}/mask.nii.gz ${ICAFolder}/ICAVolumeSpace.txt ${ICAFolder}/mask.nii.gz
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Creating dense timeseries"
+	# --------------------------------------------------------------------------------
+
+	${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ICAFolder}/melodic_oIC_vol.dtseries.nii -volume ${ICAFolder}/melodic_oIC.nii.gz ${ICAFolder}/mask.nii.gz -timestep 1 -timestart 1
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Set up for prepareICAs Matlab code"
+	# --------------------------------------------------------------------------------
+
+	dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas" #No Extension Here	
+	log_Msg "dtseriesName: ${dtseriesName}"
+
+	ICAs="${ICAFolder}/melodic_mix"
+	log_Msg "ICAs: ${ICAs}"
+
+	ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
+	log_Msg "ICAdtseries: ${ICAdtseries}"
+
+	NoiseICAs="${FIXFolder}/.fix"
+	log_Msg "NoiseICAs: ${NoiseICAs}"
+
+	Noise="${FIXFolder}/Noise.txt"
+	log_Msg "Noise: ${Noise}"
+
+	Signal="${FIXFolder}/Signal.txt"
+	log_Msg "Signal: ${Signal}"
+
+	ComponentList="${FIXFolder}/ComponentList.txt"
+	log_Msg "ComponentList: ${ComponentList}"
+
+	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp2000_clean pixdim4`
+	log_Msg "TR: ${TR}"
+
+	NumTimePoints=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp2000_clean dim4`
+	log_Msg "NumTimePoints: ${NumTimePoints}"
+
+	if [ -e ${ComponentList} ] ; then
+		log_Msg "Removing ComponentList: ${ComponentList}"
+		rm ${ComponentList}
+	fi
+
+	matlab_exe="${HCPPIPEDIR}"
+	matlab_exe+="/PostFix/Compiled_prepareICAs/distrib/run_prepareICAs.sh"
+
+	# TBD: Use environment variable instead of fixed path?
+	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+
+	matlab_function_arguments="'${dtseriesName}' '${ICAs}' '${CARET7DIR}/wb_command' '${ICAdtseries}' '${NoiseICAs}' '${Noise}' "
+	matlab_function_arguments+="'${Signal}' '${ComponentList}' ${g_high_pass} ${TR} "
+
+	matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
+
+	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Run matlab command: ${matlab_cmd}"
+	# --------------------------------------------------------------------------------
+
+	echo "${matlab_cmd}" | bash
+	echo $?
+
+	# --------------------------------------------------------------------------------
+	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
+	# --------------------------------------------------------------------------------
+	${CARET7DIR}/wb_command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 
@@ -300,30 +391,36 @@ exit
 #TBB echo "OTHER" > "$ICAFolder"/ICAVolumeSpace.txt
 #TBB echo "1 255 255 255 255" >> "$ICAFolder"/ICAVolumeSpace.txt
 
-$FSLDIR/bin/fslmaths "$ICAFolder"/melodic_oIC.nii.gz -Tstd -bin "$ICAFolder"/mask.nii.gz
-$Caret7_Command -volume-label-import "$ICAFolder"/mask.nii.gz "$ICAFolder"/ICAVolumeSpace.txt "$ICAFolder"/mask.nii.gz
 
-$Caret7_Command -cifti-create-dense-timeseries "$ICAFolder"/melodic_oIC_vol.dtseries.nii -volume "$ICAFolder"/melodic_oIC.nii.gz "$ICAFolder"/mask.nii.gz -timestep 1 -timestart 1
 
-dtseriesName="${ResultsFolder}/${rfMRIName}_Atlas" #No Extension Here
-ICAs="${ICAFolder}/melodic_mix"
-ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
-NoiseICAs="${FIXFolder}/.fix"
-Noise="${FIXFolder}/Noise.txt"
-Signal="${FIXFolder}/Signal.txt"
-ComponentList="${FIXFolder}/ComponentList.txt"
+#TBB $FSLDIR/bin/fslmaths "$ICAFolder"/melodic_oIC.nii.gz -Tstd -bin "$ICAFolder"/mask.nii.gz
 
-TR=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean pixdim4`
-NumTimePoints=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean dim4`
+#TBB $Caret7_Command -volume-label-import "$ICAFolder"/mask.nii.gz "$ICAFolder"/ICAVolumeSpace.txt "$ICAFolder"/mask.nii.gz
 
-if [ -e ${ComponentList} ] ; then
-  rm ${ComponentList}
-fi
+#TBB $Caret7_Command -cifti-create-dense-timeseries "$ICAFolder"/melodic_oIC_vol.dtseries.nii -volume "$ICAFolder"/melodic_oIC.nii.gz "$ICAFolder"/mask.nii.gz -timestep 1 -timestart 1
 
-matlab <<M_PROG
-prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});
-M_PROG
-echo "prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});"
+#TBB dtseriesName="${ResultsFolder}/${rfMRIName}_Atlas" #No Extension Here
+#TBB ICAs="${ICAFolder}/melodic_mix"
+#TBB ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
+#TBB NoiseICAs="${FIXFolder}/.fix"
+#TBB Noise="${FIXFolder}/Noise.txt"
+#TBB Signal="${FIXFolder}/Signal.txt"
+#TBB ComponentList="${FIXFolder}/ComponentList.txt"
+
+#TBB TR=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean pixdim4`
+#TBB NumTimePoints=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean dim4`
+
+#TBB if [ -e ${ComponentList} ] ; then
+#TBB  rm ${ComponentList}
+#TBB fi
+
+#TBB matlab <<M_PROG
+#TBB prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});
+#TBB M_PROG
+#TBB echo "prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});"
+
+#TBB ici
+
 
 $Caret7_Command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
 #mv "$ICAFolder"/melodic_oIC_vol.dscalar.nii "$ICAFolder"/melodic_oIC_vol.dtseries.nii
