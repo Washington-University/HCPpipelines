@@ -34,7 +34,7 @@
 #
 # ### Previous Processing
 #
-# The necessary input files to this processing come from
+# The necessary input files for this processing come from
 #
 # * Structural Preprocessing
 # * Functional Preprocessing
