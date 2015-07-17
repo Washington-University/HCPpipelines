@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbrown01/RestingStateStats" file="/home/tbrown01/RestingStateStats/RestingStateStats.prj" build-checksum="3293935817">
+  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbrown01/RestingStateStats" file="/home/tbrown01/RestingStateStats/RestingStateStats.prj" build-checksum="2732969339">
     <param.project.name>/home/tbrown01/RestingStateStats/RestingStateStats.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>RestingStateStats</param.appname>
