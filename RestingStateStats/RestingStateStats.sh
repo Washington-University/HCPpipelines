@@ -778,10 +778,10 @@ main()
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
-			# TBD: Use environment variables instead of fixed paths
-			matlab_exe="/home/HCPpipeline/pipeline_tools/Pipelines_dev"
+			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
 
+			# TBD: Use environment variable instead of fixed path?
 			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
 
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
@@ -790,7 +790,10 @@ main()
 			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
 			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-			echo "matlab_cmd: ${matlab_cmd}"
+
+			# --------------------------------------------------------------------------------
+			log_Msg "Run matlab command: ${matlab_cmd}"
+			# --------------------------------------------------------------------------------
 
 			echo "${matlab_cmd}" | bash
 			echo $?
