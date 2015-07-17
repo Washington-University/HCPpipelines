@@ -339,13 +339,13 @@ main()
 	log_Msg "Run matlab command: ${matlab_cmd}"
 	# --------------------------------------------------------------------------------
 
-	echo "${matlab_cmd}" | bash
-	echo $?
+#	echo "${matlab_cmd}" | bash
+#	echo $?
 
 	# --------------------------------------------------------------------------------
-	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
+#	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
 	# --------------------------------------------------------------------------------
-	${CARET7DIR}/wb_command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
+#	${CARET7DIR}/wb_command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
 
 
 
