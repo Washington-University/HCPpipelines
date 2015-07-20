@@ -927,6 +927,11 @@ main()
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Remove unneeded intermediate files"
+	# --------------------------------------------------------------------------------
+
+	find ${ResultsFolder} -type f -name "BiasField*" -print -delete
 }
 
 # 
