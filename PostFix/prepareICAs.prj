@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="prepareICAs" location="/home/tbrown01/PostFix" file="/home/tbrown01/PostFix/prepareICAs.prj" build-checksum="174653983">
+  <configuration target="target.standalone" target-name="Standalone Application" name="prepareICAs" location="/home/tbrown01/PostFix" file="/home/tbrown01/PostFix/prepareICAs.prj" build-checksum="1681711897">
     <param.project.name>/home/tbrown01/PostFix/prepareICAs.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>prepareICAs</param.appname>
@@ -66,6 +66,7 @@
       <file>${PROJECT_ROOT}/ciftiopen.m</file>
       <file>${PROJECT_ROOT}/ciftisave.m</file>
       <file>${PROJECT_ROOT}/ciftisavereset.m</file>
+      <file>/home/tbrown01/gifti-1.5</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
