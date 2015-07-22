@@ -142,7 +142,11 @@ do
 				indcount=$((${indcount} + 1))
 				count3=0
 			fi
-			echo ${indcount} >>${rawdir}/index.txt
+			tmp_ind=${indcount}
+			if [ $[tmp_ind] -eq 0 ]; then
+				tmp_ind=$((${indcount}+1))
+			fi
+			echo ${tmp_ind} >>${rawdir}/index.txt
 			count3=$((${count3} + 1))
 		fi
 		count=$((${count} + 1))
@@ -196,7 +200,11 @@ do
 				indcount=$((${indcount} + 1))
 				count3=0
 			fi
-			echo $((${indcount} + ${Poscount})) >>${rawdir}/index.txt
+			tmp_ind=${indcount}
+			if [ $[tmp_ind] -eq 0 ]; then
+				tmp_ind=$((${indcount}+1))
+			fi
+			echo $((${tmp_ind} + ${Poscount})) >>${rawdir}/index.txt
 			count3=$((${count3} + 1))
 		fi
 		count=$((${count} + 1))
