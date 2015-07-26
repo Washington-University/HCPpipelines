@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # Requirements for this script
@@ -10,7 +10,18 @@ set -e
 Usage() {
   echo "`basename $0`: Tool for bias field correction based on square root of T1w * T2w"
   echo " "
-  echo "Usage: `basename $0` --workingdir=<working directory> --T1im=<input T1 image> --T1brain=<input T1 brain> --T2im=<input T2 image> --obias=<output bias field image> --oT1im=<output corrected T1 image> --oT1brain=<output corrected T1 brain> --oT2im=<output corrected T2 image> --oT2brain=<output corrected T2 brain>"
+  echo "Usage: `basename $0` --workingdir=<working directory>"
+  echo "      --T1im=<input T1 image>"
+  echo "      --T1brain=<input T1 brain>"
+  echo "      --T2im=<input T2 image>"
+  echo "      --T1imest=<input T1 image for estimation only>"
+  echo "      --T2imest=<input T2 image for estimation only>"
+  echo "      --obias=<output bias field image>"
+  echo "      --oT1im=<output corrected T1 image>"
+  echo "      --oT1brain=<output corrected T1 brain>"
+  echo "      --oT2im=<output corrected T2 image>"
+  echo "      --oT2brain=<output corrected T2 brain>"
+  echo "      [--smoothfillnonpos=<TRUE (default), FALSE>]"
 }
 
 # function for parsing options
@@ -31,13 +42,13 @@ defaultopt() {
 
 ################################################### OUTPUT FILES #####################################################
 
-# Output images (in $WD): 
-#      T1wmulT2w  T1wmulT2w_brain  T1wmulT2w_brain_norm  
-#      SmoothNorm_sX  T1wmulT2w_brain_norm_sX  
-#      T1wmulT2w_brain_norm_modulate  T1wmulT2w_brain_norm_modulate_mask  bias_raw   
-# Output images (not in $WD): 
-#      $OutputBiasField 
-#      $OutputT1wRestoredBrainImage $OutputT1wRestoredImage 
+# Output images (in $WD):
+#      T1wmulT2w  T1wmulT2w_brain  T1wmulT2w_brain_norm
+#      SmoothNorm_sX  T1wmulT2w_brain_norm_sX
+#      T1wmulT2w_brain_norm_modulate  T1wmulT2w_brain_norm_modulate_mask  bias_raw
+# Output images (not in $WD):
+#      $OutputBiasField
+#      $OutputT1wRestoredBrainImage $OutputT1wRestoredImage
 #      $OutputT2wRestoredBrainImage $OutputT2wRestoredImage
 
 ################################################## OPTION PARSING #####################################################
@@ -52,21 +63,28 @@ WD=`getopt1 "--workingdir" $@`  # "$1"
 T1wImage=`getopt1 "--T1im" $@`  # "$2"
 T1wImageBrain=`getopt1 "--T1brain" $@`  # "$3"
 T2wImage=`getopt1 "--T2im" $@`  # "$4"
+T1wImageEst=`getopt1 "--T1imest" $@`  # "$2"
+T2wImageEst=`getopt1 "--T2imest" $@`  # "$2"
 OutputBiasField=`getopt1 "--obias" $@`  # "$5"
 OutputT1wRestoredImage=`getopt1 "--oT1im" $@`  # "$6"
 OutputT1wRestoredBrainImage=`getopt1 "--oT1brain" $@`  # "$7"
 OutputT2wRestoredImage=`getopt1 "--oT2im" $@`  # "$8"
 OutputT2wRestoredBrainImage=`getopt1 "--oT2brain" $@`  # "$9"
 BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$9"
+SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$10"
 
 # default parameters
 WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
+SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
 
+# if no special estimation images are supplied, just the standard ones
+[[ -z $T1wImageEst ]] && T1wImageBEst=$T1wImage
+[[ -z $T2wImageEst ]] && T2wImageBEst=$T1wImage
 
 echo " "
-echo " START: BiasFieldCorrection"
+echo " START: BiasFieldCorrection_sqrtT1wXT1w"
 
 mkdir -p $WD
 
@@ -76,10 +94,10 @@ echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 # Form sqrt(T1w*T2w), mask this and normalise by the mean
-${FSLDIR}/bin/fslmaths $T1wImage -mul $T2wImage -abs -sqrt $WD/T1wmulT2w.nii.gz -odt float
+${FSLDIR}/bin/fslmaths $T1wImageEst -mul $T2wImageEst -abs -sqrt $WD/T1wmulT2w.nii.gz -odt float
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w.nii.gz -mas $T1wImageBrain $WD/T1wmulT2w_brain.nii.gz
 meanbrainval=`${FSLDIR}/bin/fslstats $WD/T1wmulT2w_brain.nii.gz -M`
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain.nii.gz -div $meanbrainval $WD/T1wmulT2w_brain_norm.nii.gz
@@ -106,16 +124,20 @@ ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -mas $WD/T1wmulT2w_brain_
 ${FSLDIR}/bin/fslmaths $WD/bias_raw.nii.gz -s $BiasFieldSmoothingSigma $OutputBiasField
 
 # Use bias field output to create corrected images
-${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT1wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField $OutputT1wRestoredImage -odt float
-${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT2wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField $OutputT2wRestoredImage -odt float
+# smooth inter-/extrapolate the non-positive values in the images
+[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=$OutputT1wRestoredImage
+[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=$OutputT2wRestoredImage
+# extract brain
+${FSLDIR}/bin/fslmaths $OutputT1wRestoredImage -mas $T1wImageBrain $OutputT1wRestoredBrainImage -odt float
+${FSLDIR}/bin/fslmaths $OutputT2wRestoredImage -mas $T1wImageBrain $OutputT2wRestoredBrainImage -odt float
 
 echo " "
 echo " END: BiasFieldCorrection"
 echo " END: `date`" >> $WD/log.txt
 
-########################################## QA STUFF ########################################## 
+########################################## QA STUFF ##########################################
 if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt
 echo "# Look at the quality of the bias corrected output (T1w is brain only)" >> $WD/qa.txt
