@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # Requirements for this script
@@ -33,8 +33,8 @@ defaultopt() {
 
 # All except variables starting with $Output are saved in the Working Directory:
 #     roughlin.mat "$BaseName"_to_MNI_roughlin.nii.gz   (flirt outputs)
-#     NonlinearRegJacobians.nii.gz IntensityModulatedT1.nii.gz NonlinearReg.txt NonlinearIntensities.nii.gz 
-#     NonlinearReg.nii.gz (the coefficient version of the warpfield) 
+#     NonlinearRegJacobians.nii.gz IntensityModulatedT1.nii.gz NonlinearReg.txt NonlinearIntensities.nii.gz
+#     NonlinearReg.nii.gz (the coefficient version of the warpfield)
 #     str2standard.nii.gz standard2str.nii.gz   (both warpfields in field format)
 #     "$BaseName"_to_MNI_nonlin.nii.gz   (spline interpolated output)
 #    "$OutputBrainMask" "$OutputBrainExtractedImage"
@@ -49,6 +49,7 @@ if [ $# -lt 4 ] ; then Usage; exit 1; fi
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
 Input=`getopt1 "--in" $@`  # "$2"
+InMask=`getopt1 "--inmask" $@`  # "$3"
 Reference=`getopt1 "--ref" $@` # "$3"
 ReferenceMask=`getopt1 "--refmask" $@` # "$4"
 Reference2mm=`getopt1 "--ref2mm" $@` # "$5"
@@ -79,12 +80,20 @@ echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 
-# Register to 2mm reference image (linear then non-linear)
-${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$Reference2mm" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
-${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
+
+# Use InMask if provided
+if [[ -n $InMask ]] ; then
+  # Register to 2mm reference image (linear then non-linear)
+  ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -inweight "$InMask" -ref "$Reference2mm" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
+  ${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --inmask="$InMask" --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
+else
+  # Register to 2mm reference image (linear then non-linear)
+  ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$Reference2mm" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
+  ${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
+fi
 
 # Overwrite the image output from FNIRT with a spline interpolated highres version
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in="$Input" --ref="$Reference" -w "$WD"/str2standard.nii.gz --out="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz
@@ -99,7 +108,7 @@ echo " "
 echo " END: BrainExtraction_FNIRT"
 echo " END: `date`" >> $WD/log.txt
 
-########################################## QA STUFF ########################################## 
+########################################## QA STUFF ##########################################
 
 if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt
