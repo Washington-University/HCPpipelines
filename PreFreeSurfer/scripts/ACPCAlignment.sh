@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # Requirements for this script
@@ -10,7 +10,15 @@ set -e
 Usage() {
   echo "`basename $0`: Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
   echo " "
-  echo "Usage: `basename $0` --workingdir=<working dir> --in=<input image> --ref=<reference image> --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>]"
+  echo "Usage: `basename $0` --workingdir=<working dir>"
+  echo "      --in=<input image>"
+  echo "      --ref=<reference image>"
+  echo "      --out=<output image>"
+  echo "      --omat=<output matrix>"
+  echo "      [--brainsize=<brainsize>]"
+  echo "      [--inextra=<'@'-delimited list of extra input images>]"
+  echo "      [--outextra=<'@'-delimited list matching inextra>]"
+  echo "      [--smoothfillnonpos=<TRUE (default), FALSE>]"
 }
 
 # function for parsing options
@@ -52,11 +60,27 @@ Reference=`getopt1 "--ref" $@`  # "$3"
 Output=`getopt1 "--out" $@`  # "$4"
 OutputMatrix=`getopt1 "--omat" $@`  # "$5"
 BrainSizeOpt=`getopt1 "--brainsize" $@`  # "$6"
+InputExtraList=`getopt1 "--inextra" $@`  # "$7"
+OutputExtraList=`getopt1 "--outextra" $@`  # "$8"
+SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$9"
+
+# replace all "@" with " " in the extra in/out lists
+InputExtraList="${InputExtraList//@/ }"
+OutputExtraList="${OutputExtraList//@/ }"
+# convert space delimited string to array
+InputExtraList=($InputExtraList)
+OutputExtraList=($OutputExtraList)
+# check that length matches
+if [[ ${#InputExtraList[@]} != ${#OutputExtraList[@]} ]] ; then
+  echo inextra and outextra lists do not match; echo " "; Usage; exit 1
+fi
 
 # default parameters
 Reference=`defaultopt ${Reference} ${FSLDIR}/data/standard/MNI152_T1_1mm`
 Output=`$FSLDIR/bin/remove_ext $Output`
+OutputExtraList=`$FSLDIR/bin/remove_ext $OutputExtraList`
 WD=`defaultopt $WD ${Output}.wdir`
+SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
 
 # make optional arguments truly optional  (as -b without a following argument would crash robustfov)
 if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
@@ -72,7 +96,7 @@ echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 # Crop the FOV
 ${FSLDIR}/bin/robustfov -i "$Input" -m "$WD"/roi2full.mat -r "$WD"/robustroi.nii.gz $BrainSizeOpt
@@ -92,11 +116,21 @@ ${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 # Create a resampled image (ACPC aligned) using spline interpolation
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
+# smooth inter-/extrapolate the non-positive values in the images
+[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in="$Output"
+
+# Optional: apply the same transformation to resample an accompanying image
+for idx in "${!InputExtraList[@]}" ; do
+    ${FSLDIR}/bin/applywarp --rel --interp=spline -i "${InputExtraList[idx]}" -r "$Reference" --premat="$OutputMatrix" -o "${OutputExtraList[idx]}"
+    # smooth inter-/extrapolate the non-positive values in the images
+    [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in="${OutputExtraList[idx]}"
+done
+
 echo " "
 echo " END: ACPCAlignment"
 echo " END: `date`" >> $WD/log.txt
 
-########################################## QA STUFF ########################################## 
+########################################## QA STUFF ##########################################
 
 if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt
