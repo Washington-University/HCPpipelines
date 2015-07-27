@@ -267,7 +267,7 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                  below or exactly at 0. This could happen during
                                  spline interpolation/resampling (the default in
                                  the HCP pipelines).
-  --maskartery={TRUE, FALSE}     Mask arteries or not. This could be beneficial 
+  --maskartery={TRUE, FALSE}     Mask arteries or not. This could be beneficial
                                  for registration and bias field estimation
                                  using 7T T1w images, where arteries are
                                  generally extremely bright.
@@ -619,8 +619,6 @@ done
 # ------------------------------------------------------------------------------
 #  T2w to T1w Registration and Optional Readout Distortion Correction
 # ------------------------------------------------------------------------------
-
-ERROR: DOES NOT YET WORK FOR GENERAL ELECTRIC FIELD MAPS
 
 case $AvgrdcSTRING in
 
