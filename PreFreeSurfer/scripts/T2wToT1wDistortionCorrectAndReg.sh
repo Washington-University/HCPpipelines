@@ -163,7 +163,7 @@ T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
 T2wImage=`${FSLDIR}/bin/remove_ext $T2wImage`
 T2wImageBrain=`${FSLDIR}/bin/remove_ext $T2wImageBrain`
-if [[ UseRegImages = "TRUE" ]] ; then
+if [[ $UseRegImages = "TRUE" ]] ; then
   T1wImageReg=`${FSLDIR}/bin/remove_ext $T1wImageReg`
   T1wImageBrainReg=`${FSLDIR}/bin/remove_ext $T1wImageBrainReg`
   T2wImageReg=`${FSLDIR}/bin/remove_ext $T2wImageReg`
@@ -174,7 +174,7 @@ T1wImageBrainBasename=`basename "$T1wImageBrain"`
 T1wImageBasename=`basename "$T1wImage"`
 T2wImageBrainBasename=`basename "$T2wImageBrain"`
 T2wImageBasename=`basename "$T2wImage"`
-if [[ UseRegImages = "TRUE" ]] ; then
+if [[ $UseRegImages = "TRUE" ]] ; then
   T1wImageBasenameReg=`basename "$T1wImageReg"`
   T1wImageBrainBasenameReg=`basename "$T1wImageBrainReg"`
   T2wImageBasenameReg=`basename "$T2wImageReg"`
@@ -195,7 +195,6 @@ echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
-
 ########################################## DO WORK ##########################################
 
 case $DistortionCorrection in
@@ -207,8 +206,6 @@ case $DistortionCorrection in
         # --------------------------------------
 
         ### Create fieldmaps (and apply gradient non-linearity distortion correction)
-        echo " "
-        echo " "
         echo " "
 
         ${HCPPIPEDIR_Global}/SiemensFieldMapPreprocessingAll.sh \
@@ -230,8 +227,6 @@ case $DistortionCorrection in
         # -----------------------------------------------
 
         ### Create fieldmaps (and apply gradient non-linearity distortion correction)
-        echo " "
-        echo " "
         echo " "
 
         ${HCPPIPEDIR_Global}/GeneralElectricFieldMapPreprocessingAll.sh \
@@ -418,6 +413,14 @@ ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
 ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mas ${OutputT1wImageBrain} ${OutputT2wImageBrain}
+
+# apply the same warping to the T2w registration images
+if [[ $UseRegImages = "TRUE" ]] ; then
+  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImageReg} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${OutputT2wImageReg}
+  ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -add 1 ${OutputT2wImageReg} -odt float
+  [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImageReg}
+  ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -mas ${OutputT1wImageBrain} ${OutputT2wImageBrainReg}
+fi
 
 echo " "
 echo " END: ${SCRIPT_NAME}"
