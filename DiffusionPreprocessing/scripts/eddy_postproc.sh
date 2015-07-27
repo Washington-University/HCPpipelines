@@ -67,8 +67,18 @@ fi
 
 #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
-${FSLDIR}/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
-$FSLDIR/bin/fslroi ${datadir}/data ${datadir}/nodif 0 1
+b0maxbval=100
+mcnt=0
+for i in `cat ${datadir}/bvals`
+do
+	if [ $i -lt ${b0maxbval} ]; then
+		b0idx1=${mcnt}
+		break
+	fi
+	mcnt=$((${mcnt} + 1))
+done
+${FSLDIR}/bin/fslroi ${datadir}/data ${datadir}/nodif ${b0idx1} 1
+${FSLDIR}/bin/bet ${datadir}/nodif ${datadir}/nodif_brain -m -f 0.1
 
 echo -e "\n END: eddy_postproc"
 
