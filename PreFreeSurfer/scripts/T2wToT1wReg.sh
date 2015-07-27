@@ -68,7 +68,7 @@ OutputT2wImageBrain=`getopt1 "--ot2brain" $@`  # "${15}"
 OutputT2wTransform=`getopt1 "--ot2warp" $@`  # "${16}"
 T1wImageReg=`getopt1 "--t1reg" $@`  # "$2"
 T1wImageBrainReg=`getopt1 "--t1brainreg" $@`  # "$3"
-T2wImageReg=`getopt1 "--t2brainreg" $@`  # "$5"
+T2wImageReg=`getopt1 "--t2reg" $@`  # "$5"
 T2wImageBrainReg=`getopt1 "--t2brainreg" $@`  # "$5"
 OutputT1wImageReg=`getopt1 "--ot1reg" $@`  # "${12}"
 OutputT1wImageBrainReg=`getopt1 "--ot1brainreg" $@`  # "${13}"
@@ -80,14 +80,29 @@ SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$23"
 WD=`defaultopt $WD .`
 SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
 
-flg_regimage="FALSE"
-[[ -n $T1wImageReg ]] && [[ -n $T1wImageBrainReg ]] && [[ -n $T2wImageBrainReg ]] && flg_regimage="TRUE"
+UseRegImages="FALSE"
+[[ -n $T1wImageReg ]] && [[ -n $T1wImageBrainReg ]] && [[ -n $T2wImageReg ]] && [[ -n $T2wImageBrainReg ]] && UseRegImages="TRUE"
 
+T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
-T1wImageBrainBasename=`basename "$T1wImageBrain"`
-if [[ $flg_regimage = "TRUE" ]] ; then
+T2wImage=`${FSLDIR}/bin/remove_ext $T2wImage`
+T2wImageBrain=`${FSLDIR}/bin/remove_ext $T2wImageBrain`
+if [[ $UseRegImages = "TRUE" ]] ; then
+  T1wImageReg=`${FSLDIR}/bin/remove_ext $T1wImageReg`
   T1wImageBrainReg=`${FSLDIR}/bin/remove_ext $T1wImageBrainReg`
+  T2wImageReg=`${FSLDIR}/bin/remove_ext $T2wImageReg`
+  T2wImageBrainReg=`${FSLDIR}/bin/remove_ext $T2wImageBrainReg`
+fi
+
+T1wImageBrainBasename=`basename "$T1wImageBrain"`
+T1wImageBasename=`basename "$T1wImage"`
+T2wImageBrainBasename=`basename "$T2wImageBrain"`
+T2wImageBasename=`basename "$T2wImage"`
+if [[ $UseRegImages = "TRUE" ]] ; then
+  T1wImageBasenameReg=`basename "$T1wImageReg"`
   T1wImageBrainBasenameReg=`basename "$T1wImageBrainReg"`
+  T2wImageBasenameReg=`basename "$T2wImageReg"`
+  T2wImageBrainBasenameReg=`basename "$T2wImageBrainReg"`
 fi
 
 echo " "
@@ -105,35 +120,41 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ##########################################
 
 # estimate registration based on original (e.g. T1wImage) or dedicated images (e.g. T1wImageReg)
-if [[ $flg_regimage = "TRUE" ]] ; then
-  ${FSLDIR}/bin/imcp "$T1wImageBrain" "$WD"/"$T1wImageBrainBasename"
-  ${FSLDIR}/bin/imcp "$T1wImageBrainReg" "$WD"/"$T1wImageBrainBasenameReg"
-  ${FSLDIR}/bin/epi_reg --epi="$T2wImageBrainReg" --t1="$T1wImageReg" --t1brain="$WD"/"$T1wImageBrainBasenameReg" --out="$WD"/T2w2T1w
+${FSLDIR}/bin/imcp $T1wImage ${WD}/${T1wImageBasename}
+${FSLDIR}/bin/imcp $T1wImageBrain $WD/$T1wImageBrainBasename
+${FSLDIR}/bin/imcp $T2wImage ${WD}/${T2wImageBasename}
+${FSLDIR}/bin/imcp $T2wImageBrain $WD/$T2wImageBrainBasename
+if [[ $UseRegImages = "TRUE" ]] ; then
+  ${FSLDIR}/bin/imcp $T1wImageReg ${WD}/${T1wImageBasenameReg}
+  ${FSLDIR}/bin/imcp $T1wImageBrainReg $WD/$T1wImageBrainBasenameReg
+  ${FSLDIR}/bin/imcp $T2wImageReg ${WD}/${T2wImageBasenameReg}
+  ${FSLDIR}/bin/imcp $T2wImageBrainReg $WD/$T2wImageBrainBasenameReg
+  ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasenameReg} --t1=${WD}/${T1wImageBasenameReg} --t1brain=${WD}/${T1wImageBrainBasenameReg} --out=${WD}/T2w2T1w/T2w_reg
 else
-  ${FSLDIR}/bin/imcp "$T1wImageBrain" "$WD"/"$T1wImageBrainBasename"
-  ${FSLDIR}/bin/epi_reg --epi="$T2wImageBrain" --t1="$T1wImage" --t1brain="$WD"/"$T1wImageBrainBasename" --out="$WD"/T2w2T1w
+  ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
 fi
 
 # apply the transformation matrix on the original input images
-${FSLDIR}/bin/applywarp --rel --interp=spline --in="$T2wImage" --ref="$T1wImage" --premat="$WD"/T2w2T1w.mat --out="$WD"/T2w2T1w
+${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage} --premat=${WD}/T2w2T1w/T2w_reg.mat --out=${WD}/T2w2T1w/T2w_reg
 
 # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
-${FSLDIR}/bin/fslmaths "$WD"/T2w2T1w -add 1 "$WD"/T2w2T1w -odt float
+${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
 
 # smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in="$WD"/T2w2T1w
+[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/T2w2T1w/T2w_reg
 
 # Boring overhead (including faking a warp field)
-${FSLDIR}/bin/imcp "$T1wImage" "$OutputT1wImage"
-${FSLDIR}/bin/imcp "$T1wImageBrain" "$OutputT1wImageBrain"
-${FSLDIR}/bin/fslmerge -t $OutputT1wTransform "$T1wImage".nii.gz "$T1wImage".nii.gz "$T1wImage".nii.gz
+${FSLDIR}/bin/imcp $T1wImage $OutputT1wImage
+${FSLDIR}/bin/imcp $T1wImageBrain $OutputT1wImageBrain
+${FSLDIR}/bin/fslmerge -t $OutputT1wTransform ${T1wImage}.nii.gz ${T1wImage}.nii.gz ${T1wImage}.nii.gz
 ${FSLDIR}/bin/fslmaths $OutputT1wTransform -mul 0 $OutputT1wTransform
-${FSLDIR}/bin/imcp "$WD"/T2w2T1w "$OutputT2wImage"
-${FSLDIR}/bin/convertwarp --relout --rel -r "$OutputT2wImage".nii.gz -w $OutputT1wTransform --postmat="$WD"/T2w2T1w.mat --out="$OutputT2wTransform"
+${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
+${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mas ${OutputT1wImageBrain} ${OutputT2wImageBrain}
+${FSLDIR}/bin/convertwarp --relout --rel -r ${OutputT2wImage}.nii.gz -w $OutputT1wTransform --postmat=$WD/T2w2T1w/T2w_reg.mat --out=$OutputT2wTransform
 
 # apply the same warping to the registration images
-if [[ $flg_regimage = "TRUE" ]] ; then
-  ${FSLDIR}/bin/applywarp --rel --interp=spline --in="$T2wImageReg" --ref="$OutputT1wImage" --premat="$WD"/T2w2T1w.mat --out="$OutputT2wImageReg"
+if [[ $UseRegImages = "TRUE" ]] ; then
+  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=$T2wImageReg --ref=$OutputT1wImage --premat=$WD/T2w2T1w/T2w_reg.mat --out=$OutputT2wImageReg
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -add 1 ${OutputT2wImageReg} -odt float
   [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImageReg}
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -mas ${OutputT1wImageBrain} ${OutputT2wImageBrainReg}
