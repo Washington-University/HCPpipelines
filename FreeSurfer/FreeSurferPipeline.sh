@@ -1,15 +1,15 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR 
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR
 
-########################################## PIPELINE OVERVIEW ########################################## 
+########################################## PIPELINE OVERVIEW ##########################################
 
 #TODO
 
-########################################## OUTPUT DIRECTORIES ########################################## 
+########################################## OUTPUT DIRECTORIES ##########################################
 
 #TODO
 
@@ -20,7 +20,7 @@ set -e
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
 
-########################################## SUPPORT FUNCTIONS ########################################## 
+########################################## SUPPORT FUNCTIONS ##########################################
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -36,6 +36,11 @@ show_usage() {
 # --------------------------------------------------------------------------------
 log_SetToolName "FreeSurferPipeline.sh"
 
+# running the intial recon-all on fsl_sub gives a strange error: "(standard_in) 2: Error: comparison in expression" So far this doesn't seem to be a critical error.
+# it can probably be solved by unsetting POSIXLY_CORRECT (set by fsl)
+unset POSIXLY_CORRECT
+# or: export POSIXLY_CORRECT=0
+
 ################################################## OPTION PARSING #####################################################
 
 opts_ShowVersionIfRequested $@
@@ -50,7 +55,7 @@ log_Msg "Parsing Command Line Options"
 SubjectID=`opts_GetOpt1 "--subject" $@` #FreeSurfer Subject ID Name
 SubjectDIR=`opts_GetOpt1 "--subjectDIR" $@` #Location to Put FreeSurfer Subject's Folder
 T1wImage=`opts_GetOpt1 "--t1" $@` #T1w FreeSurfer Input (Full Resolution)
-T1wImageBrain=`opts_GetOpt1 "--t1brain" $@` 
+T1wImageBrain=`opts_GetOpt1 "--t1brain" $@`
 T2wImage=`opts_GetOpt1 "--t2" $@` #T2w FreeSurfer Input (Full Resolution)
 
 # ------------------------------------------------------------------------------
@@ -119,14 +124,40 @@ if [ -e "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh ] ; then
   rm "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh
 fi
 
-#Make Spline Interpolated Downsample to 1mm
-log_Msg "Make Spline Interpolated Downsample to 1mm"
+# get voxel dimensions for the T1w image
+voxdim=$(fslinfo $T1wImage | awk '$1 ~ /pixdim[1-3]/ {print $2} ')
+# test if they are high resolution or not
+FlgRes=$(echo $voxdim | awk '{if($1==1 && $2==1 && $3==1) print(1); else if($1>1 || $2>1 || $3>1) print(2); else print(0)}')
 
-Mean=`fslstats $T1wImageBrain -M`
-flirt -interp spline -in "$T1wImage" -ref "$T1wImage" -applyisoxfm 1 -out "$T1wImageFile"_1mm.nii.gz
-applywarp --rel --interp=spline -i "$T1wImage" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageFile"_1mm.nii.gz
-applywarp --rel --interp=nn -i "$T1wImageBrain" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageBrainFile"_1mm.nii.gz
-fslmaths "$T1wImageFile"_1mm.nii.gz -div $Mean -mul 150 -abs "$T1wImageFile"_1mm.nii.gz
+# Downsample, or copy based on voxel dimensions
+if [[ $FlgRes = 0 ]] ; then
+  FlgHiRes="TRUE"
+
+  #Make Spline Interpolated Downsample to 1mm
+  log_Msg "Make Spline Interpolated Downsample to 1mm"
+
+  Mean=`fslstats $T1wImageBrain -M`
+  flirt -interp spline -in "$T1wImage" -ref "$T1wImage" -applyisoxfm 1 -out "$T1wImageFile"_1mm.nii.gz
+  applywarp --rel --interp=spline -i "$T1wImage" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageFile"_1mm.nii.gz
+  applywarp --rel --interp=nn -i "$T1wImageBrain" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageBrainFile"_1mm.nii.gz
+  fslmaths "$T1wImageFile"_1mm.nii.gz -div $Mean -mul 150 -abs "$T1wImageFile"_1mm.nii.gz
+
+else
+  FlgHiRes="FALSE"
+
+  #just copy and rename the files 1mm
+  if [[ $FlgRes = 1 ]]
+    log_Msg "Copying and renaming the 1mm images for scripting conventions"
+  else
+    log_Msg "The T1w images are low-resolution (>1mm isotropic). Renaming them to 1mm for scripting conventions. Results might be poor."
+  fi
+
+  Mean=`fslstats $T1wImageBrain -M`
+  cp "$T1wImage" "$T1wImageFile"_1mm.nii.gz
+  cp "$T1wImageBrain" "$T1wImageBrainFile"_1mm.nii.gz
+  fslmaths "$T1wImageFile"_1mm.nii.gz -div $Mean -mul 150 -abs "$T1wImageFile"_1mm.nii.gz
+
+fi
 
 #Initial Recon-all Steps
 log_Msg "Initial Recon-all Steps"
@@ -134,8 +165,8 @@ log_Msg "Initial Recon-all Steps"
 recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -motioncor -talairach -nuintensitycor -normalization
 mri_convert "$T1wImageBrainFile"_1mm.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz --conform
 mri_em_register -mask "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz $FREESURFER_HOME/average/RB_all_2008-03-26.gca "$SubjectDIR"/"$SubjectID"/mri/transforms/talairach_with_skull.lta
-mri_watershed -T1 -brain_atlas $FREESURFER_HOME/average/RB_all_withskull_2008-03-26.gca "$SubjectDIR"/"$SubjectID"/mri/transforms/talairach_with_skull.lta "$SubjectDIR"/"$SubjectID"/mri/T1.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz 
-cp "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz 
+mri_watershed -T1 -brain_atlas $FREESURFER_HOME/average/RB_all_withskull_2008-03-26.gca "$SubjectDIR"/"$SubjectID"/mri/transforms/talairach_with_skull.lta "$SubjectDIR"/"$SubjectID"/mri/T1.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz
+cp "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz
 
 # Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the number of cores
 # a job will use.  If this environment variable is set, we will use it to determine the number of cores to
@@ -151,20 +182,25 @@ fi
 recon-all -subjid $SubjectID -sd $SubjectDIR -autorecon2 -nosmooth2 -noinflate2 -nocurvstats -nosegstats -openmp ${num_cores}
 
 #Highres white stuff and Fine Tune T2w to T1w Reg
-log_Msg "High resolution white matter and fine tune T2w to T1w registration"
-"$PipelineScripts"/FreeSurferHiresWhite.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage"
+[[ $FlgHiRes = "TRUE" ]] && [[ -n $T2wImage ]] && log_Msg "High resolution white matter and fine tune T2w to T1w registration"
+[[ $FlgHiRes = "TRUE" ]] && [[ -z $T2wImage ]] && log_Msg "High resolution white matter, but no T2w available to register to T1w"
+[[ $FlgHiRes = "FALSE" ]] && [[ -n $T2wImage ]] && log_Msg "No high resolution white matter available, but fine tuning T2w to T1w registration"
+[[ $FlgHiRes = "FALSE" ]] && [[ -z $T2wImage ]] && log_Msg "No high resolution white matter available, nor a T2w to register to T1w"
+"$PipelineScripts"/FreeSurferHiresWhite.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$FlgHiRes"
 
 #Intermediate Recon-all Steps
 log_Msg "Intermediate Recon-all Steps"
-recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc 
+recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc
 
 #Highres pial stuff (this module adjusts the pial surface based on the the T2w image)
-log_Msg "High Resolution pial surface"
-"$PipelineScripts"/FreeSurferHiresPial.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage"
+[[ $FlgHiRes = "TRUE" ]] && [[ -n $T2wImage ]] && log_Msg "High resolution pial surface, using T2w for enhanced contrast"
+[[ $FlgHiRes = "TRUE" ]] && [[ -z $T2wImage ]] && log_Msg "High resolution pial surface, but no T2w available for enhanced contrast"
+[[ $FlgHiRes = "FALSE" ]] && [[ -n $T2wImage ]] && log_Msg "No high resolution pial surface available, using T2w for enhanced contrast"
+[[ $FlgHiRes = "FALSE" ]] && [[ -z $T2wImage ]] && log_Msg "No high resolution pial surface available, nor a T2w for enhanced contrast"
+"$PipelineScripts"/FreeSurferHiresPial.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$FlgHiRes"
 
 #Final Recon-all Steps
 log_Msg "Final Recon-all Steps"
-recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec 
+recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec
 
 log_Msg "Completed"
-
