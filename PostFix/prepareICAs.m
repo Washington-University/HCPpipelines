@@ -1,4 +1,5 @@
-function [ output_args ] = prepareICAs(dtseriesName,ICAs,wbcommand,ICAdtseries,NoiseICAs,Noise,Signal,ComponentList,hp,TR)
+function prepareICAs(dtseriesName,ICAs,wbcommand,ICAdtseries,NoiseICAs,Noise,Signal,ComponentList,hp,TR)
+
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);

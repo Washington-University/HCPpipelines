@@ -343,106 +343,46 @@ main()
 	echo $?
 
 	# --------------------------------------------------------------------------------
-#	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
+	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
 	# --------------------------------------------------------------------------------
-#	${CARET7DIR}/wb_command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
+	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC_vol.dtseries.nii ROW ${ICAFolder}/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC.dscalar.nii"
+	# --------------------------------------------------------------------------------
+	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC.dtseries.nii ROW ${ICAFolder}/melodic_oIC.dscalar.nii -name-file ${ComponentList}
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Create scaler series"
+	# --------------------------------------------------------------------------------
+	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAs} ${ICAs}.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
 
+	# TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
+	FTmixStep=`echo "scale=7 ; 1/(${NumTimePoints}*${TR})" | bc -l`
+	log_Msg "FTmixStep: ${FTmixStep}"
+	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
+	rm ${ComponentList}
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Making dual screen scene"
+	# --------------------------------------------------------------------------------
+	cat ${g_template_scene_dual_screen} | sed s/SubjectID/${g_subject}/g | sed s/fMRIName/${g_fmri_name}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_subject}_${g_fmri_name}_ICA_Classification_dualscreen.scene
 
+	# --------------------------------------------------------------------------------
+	log_Msg "Making single screen scene"
+	# --------------------------------------------------------------------------------
+	cat ${g_template_scene_single_screen} | sed s/SubjectID/${g_subject}/g | sed s/fMRIName/${g_fmri_name}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_subject}_${g_fmri_name}_ICA_Classification_singlescreen.scene
 
+	if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
+		touch ${ResultsFolder}/ReclassifyAsSignal.txt
+	fi
 
-
-
-
-
-
-
-
-
-
+	if [ ! -e ${ResultsFolder}/ReclassifyAsNoise.txt ] ; then
+		touch ${ResultsFolder}/ReclassifyAsNoise.txt
+	fi
 }
-
 
 #
 # Invoke the main function to get things started
 #
 main $@
-
-exit
-
-#TBB Path="$1" # ${g_path_to_study_folder}
-#TBB Subject="$2" # ${g_subject}
-#TBB rfMRIName="$3" # ${g_fmri_name}
-#TBB GitRepo="$4" # not used
-#TBB HighPass="$5" # ${g_high_pass}
-
-#TBB Caret7_Command="$6" # not used
-#TBB TemplateSceneDualScreen="$7" # ${g_template_scene_dual_screen}
-#TBB TemplateSceneSingleScreen="$8" # ${g_template_scene_single_screen}
-
-#Naming Conventions
-#TBB AtlasFolder="${Path}/${Subject}/MNINonLinear"
-#TBB ResultsFolder="${AtlasFolder}/Results/${rfMRIName}"
-#TBB ICAFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica/filtered_func_data.ica"
-#TBB FIXFolder="${ResultsFolder}/${rfMRIName}_hp${HighPass}.ica"
-
-#TBB echo "OTHER" > "$ICAFolder"/ICAVolumeSpace.txt
-#TBB echo "1 255 255 255 255" >> "$ICAFolder"/ICAVolumeSpace.txt
-
-
-
-#TBB $FSLDIR/bin/fslmaths "$ICAFolder"/melodic_oIC.nii.gz -Tstd -bin "$ICAFolder"/mask.nii.gz
-
-#TBB $Caret7_Command -volume-label-import "$ICAFolder"/mask.nii.gz "$ICAFolder"/ICAVolumeSpace.txt "$ICAFolder"/mask.nii.gz
-
-#TBB $Caret7_Command -cifti-create-dense-timeseries "$ICAFolder"/melodic_oIC_vol.dtseries.nii -volume "$ICAFolder"/melodic_oIC.nii.gz "$ICAFolder"/mask.nii.gz -timestep 1 -timestart 1
-
-#TBB dtseriesName="${ResultsFolder}/${rfMRIName}_Atlas" #No Extension Here
-#TBB ICAs="${ICAFolder}/melodic_mix"
-#TBB ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
-#TBB NoiseICAs="${FIXFolder}/.fix"
-#TBB Noise="${FIXFolder}/Noise.txt"
-#TBB Signal="${FIXFolder}/Signal.txt"
-#TBB ComponentList="${FIXFolder}/ComponentList.txt"
-
-#TBB TR=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean pixdim4`
-#TBB NumTimePoints=`$FSLDIR/bin/fslval ${ResultsFolder}/${rfMRIName}_hp2000_clean dim4`
-
-#TBB if [ -e ${ComponentList} ] ; then
-#TBB  rm ${ComponentList}
-#TBB fi
-
-#TBB matlab <<M_PROG
-#TBB prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});
-#TBB M_PROG
-#TBB echo "prepareICAs('${dtseriesName}','${ICAs}','${Caret7_Command}','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPass},${TR});"
-
-#TBB ici
-
-
-$Caret7_Command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC_vol.dtseries.nii ROW "$ICAFolder"/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
-#mv "$ICAFolder"/melodic_oIC_vol.dscalar.nii "$ICAFolder"/melodic_oIC_vol.dtseries.nii
-
-$Caret7_Command -cifti-convert-to-scalar "$ICAFolder"/melodic_oIC.dtseries.nii ROW "$ICAFolder"/melodic_oIC.dscalar.nii -name-file ${ComponentList}
-#mv "$ICAFolder"/melodic_oIC.dscalar.nii "$ICAFolder"/melodic_oIC.dtseries.nii
-
-$Caret7_Command -cifti-create-scalar-series $ICAs $ICAs.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
-
-# TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
-FTmixStep=`echo "scale=7 ; 1/(${NumTimePoints}*${TR})" | bc -l`
-$Caret7_Command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
-rm ${ComponentList}
-
-cat $TemplateSceneDualScreen | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${rfMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${rfMRIName}_ICA_Classification_dualscreen.scene
-cat $TemplateSceneSingleScreen | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${rfMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${rfMRIName}_ICA_Classification_singlescreen.scene
-
-if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
-  touch ${ResultsFolder}/ReclassifyAsSignal.txt
-fi
-
-if [ ! -e ${ResultsFolder}/ReclassifyAsNoise.txt ] ; then
-  touch ${ResultsFolder}/ReclassifyAsNoise.txt
-fi
-
