@@ -146,7 +146,7 @@ else
   FlgHiRes="FALSE"
 
   #just copy and rename the files 1mm
-  if [[ $FlgRes = 1 ]]
+  if [[ $FlgRes = 1 ]] ; then
     log_Msg "Copying and renaming the 1mm images for scripting conventions"
   else
     log_Msg "The T1w images are low-resolution (>1mm isotropic). Renaming them to 1mm for scripting conventions. Results might be poor."
@@ -172,8 +172,7 @@ cp "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz "$SubjectDIR"/"$SubjectID"/
 # a job will use.  If this environment variable is set, we will use it to determine the number of cores to
 # tell recon-all to use.
 
-if [[ -z ${NSLOTS} ]]
-then
+if [[ -z ${NSLOTS} ]] ; then
     num_cores=8
 else
     num_cores="${NSLOTS}"
