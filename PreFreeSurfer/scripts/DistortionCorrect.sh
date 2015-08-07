@@ -243,8 +243,8 @@ esac
 
 
 # Forward warp the fieldmap magnitude and register to T1w image (transform phase image too)
-${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap --dwell=${T1wSampleSpacing} --saveshift=${WD}/FieldMap_ShiftMap${T1w}.nii.gz
-${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/Magnitude --shiftmap=${WD}/FieldMap_ShiftMap${T1w}.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap_Warp${T1w}.nii.gz
+${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap --dwell=${T1wSampleSpacing} --saveshift=${WD}/FieldMap_ShiftMapT1w.nii.gz
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/Magnitude --shiftmap=${WD}/FieldMap_ShiftMapT1w.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap_WarpT1w.nii.gz
 
 # estimate registration based on original (e.g. T1wImage) or dedicated images (e.g. T1wImageReg)
 if [[ $UseRegImages = "TRUE" ]] ; then
@@ -252,16 +252,16 @@ if [[ $UseRegImages = "TRUE" ]] ; then
   case $DistortionCorrection in
 
       ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT})
-          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${T1w}.nii.gz -o ${WD}/Magnitude_warpped${T1w}
-          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${T1w} -ref ${T1wImageReg} -out ${WD}/Magnitude_warpped${T1w}2${T1wImageBasenameReg} -omat ${WD}/Fieldmap2${T1wImageBasenameReg}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-          ${FSLDIR}/bin/imcp ${WD}/Magnitude_warpped${T1w}2${T1wImageBasenameReg} ${WD}/Magnitude_warpped${T1w}2${T1wImageBasename}
+          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_WarpT1w.nii.gz -o ${WD}/Magnitude_warppedT1w
+          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warppedT1w -ref ${T1wImageReg} -out ${WD}/Magnitude_warppedT1w2${T1wImageBasenameReg} -omat ${WD}/Fieldmap2${T1wImageBasenameReg}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          ${FSLDIR}/bin/imcp ${WD}/Magnitude_warppedT1w2${T1wImageBasenameReg} ${WD}/Magnitude_warppedT1w2${T1wImageBasename}
           cp ${WD}/Fieldmap2${T1wImageBasenameReg}.mat ${WD}/Fieldmap2${T1wImageBasename}.mat
           ;;
 
       ${SPIN_ECHO_METHOD_OPT})
-          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${T1w}.nii.gz -o ${WD}/Magnitude_brain_warpped${T1w}
-          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${T1w} -ref ${T1wImageBrainReg} -out ${WD}/Magnitude_brain_warpped${T1w}2${T1wImageBasenameReg} -omat ${WD}/Fieldmap2${T1wImageBasenameReg}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-          ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain_warpped${T1w}2${T1wImageBasenameReg} ${WD}/Magnitude_brain_warpped${T1w}2${T1wImageBasename}
+          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_WarpT1w.nii.gz -o ${WD}/Magnitude_brain_warppedT1w
+          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warppedT1w -ref ${T1wImageBrainReg} -out ${WD}/Magnitude_brain_warppedT1w2${T1wImageBasenameReg} -omat ${WD}/Fieldmap2${T1wImageBasenameReg}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain_warppedT1w2${T1wImageBasenameReg} ${WD}/Magnitude_brain_warppedT1w2${T1wImageBasename}
           cp ${WD}/Fieldmap2${T1wImageBasenameReg}.mat ${WD}/Fieldmap2${T1wImageBasename}.mat
           ;;
 
@@ -276,13 +276,13 @@ else
   case $DistortionCorrection in
 
       ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT})
-          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${T1w}.nii.gz -o ${WD}/Magnitude_warpped${T1w}
-          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${T1w} -ref ${T1wImage} -out ${WD}/Magnitude_warpped${T1w}2${T1wImageBasename} -omat ${WD}/Fieldmap2${T1wImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_WarpT1w.nii.gz -o ${WD}/Magnitude_warppedT1w
+          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warppedT1w -ref ${T1wImage} -out ${WD}/Magnitude_warppedT1w2${T1wImageBasename} -omat ${WD}/Fieldmap2${T1wImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
           ;;
 
       ${SPIN_ECHO_METHOD_OPT})
-          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${T1w}.nii.gz -o ${WD}/Magnitude_brain_warpped${T1w}
-          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${T1w} -ref ${T1wImageBrain} -out ${WD}/Magnitude_brain_warpped${T1w}2${T1wImageBasename} -omat ${WD}/Fieldmap2${T1wImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_WarpT1w.nii.gz -o ${WD}/Magnitude_brain_warppedT1w
+          ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warppedT1w -ref ${T1wImageBrain} -out ${WD}/Magnitude_brain_warppedT1w2${T1wImageBasename} -omat ${WD}/Fieldmap2${T1wImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
           ;;
 
       *)
@@ -308,21 +308,17 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wImageBrain} -r ${T1wImageBrain
 ${FSLDIR}/bin/fslmaths ${WD}/${T1wImageBasename} -mas ${WD}/${T1wImageBrainBasename} ${WD}/${T1wImageBrainBasename}
 
 # Copy files to specified destinations
-if [ $T1w = T1w ] ; then
-   ${FSLDIR}/bin/imcp ${WD}/FieldMap2${T1wImageBasename}_Warp ${OutputT1wTransform}
-   ${FSLDIR}/bin/imcp ${WD}/${T1wImageBasename} ${OutputT1wImage}
-   ${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasename} ${OutputT1wImageBrain}
-fi
+${FSLDIR}/bin/imcp ${WD}/FieldMap2${T1wImageBasename}_Warp ${OutputT1wTransform}
+${FSLDIR}/bin/imcp ${WD}/${T1wImageBasename} ${OutputT1wImage}
+${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasename} ${OutputT1wImageBrain}
 
 # apply the same warping to the registration images
 if [[ $UseRegImages = "TRUE" ]] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImageReg} -r ${T1wImage} -w ${WD}/FieldMap2${T1wImageBasename}_Warp.nii.gz -o ${WD}/${T1wImageBasenameReg}
   [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/${T1wImageBasenameReg}
   ${FSLDIR}/bin/fslmaths ${WD}/${T1wImageBasenameReg} -mas ${WD}/${T1wImageBrainBasename} ${WD}/${T1wImageBrainBasenameReg}
-  if [ $T1w = T1w ] ; then
-    ${FSLDIR}/bin/imcp ${WD}/${T1wImageBasenameReg} ${OutputT1wImageReg}
-    ${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasenameReg} ${OutputT1wImageBrainReg}
-  fi
+  ${FSLDIR}/bin/imcp ${WD}/${T1wImageBasenameReg} ${OutputT1wImageReg}
+  ${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasenameReg} ${OutputT1wImageBrainReg}
 fi
 
 echo " "

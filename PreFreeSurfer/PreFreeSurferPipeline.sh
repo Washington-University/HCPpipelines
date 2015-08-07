@@ -778,14 +778,14 @@ if [[ $MaskArtery = "TRUE" ]] ; then
   if [[ $InitBiasCorr = "TRUE" ]] ; then
     Arg_t1=${T1wFolder}/${T1wImage}_restore_acpc_dc
     Arg_t1brain=${T1wFolder}/${T1wImage}_restore_acpc_dc_brain
-    Arg_t2brain=${T1wFolder}/${T2wImage}_restore_acpc_dc_brain
+    [[ -n $T2wInputImages ]] && Arg_t2brain=${T1wFolder}/${T2wImage}_restore_acpc_dc_brain || Arg_t2brain=""
     Arg_basenamebrain=${T1wImage}_restore_acpc_dc_brain
     Arg_basename=${T1wImage}_restore_acpc_dc
     FWHM="INF"
   else
     Arg_t1=${T1wFolder}/${T1wImage}_acpc_dc
     Arg_t1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain
-    Arg_t2brain=${T1wFolder}/${T2wImage}_acpc_dc_brain
+    [[ -n $T2wInputImages ]] && Arg_t2brain=${T1wFolder}/${T2wImage}_acpc_dc_brain || Arg_t2brain=""
     Arg_basenamebrain=${T1wImage}_acpc_dc_brain
     Arg_basename=${T1wImage}_acpc_dc
     [[ -n $BiasFieldSmoothingSigma ]] && bfsigma_initbiascorr=$BiasFieldSmoothingSigma || bfsigma_initbiascorr=5
