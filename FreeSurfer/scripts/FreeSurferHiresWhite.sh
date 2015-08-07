@@ -127,7 +127,7 @@ else
   cp $SubjectDIR/$SubjectID/surf/lh.curv $SubjectDIR/$SubjectID/surf/lh.curv.deformed
   cp $SubjectDIR/$SubjectID/surf/lh.area  $SubjectDIR/$SubjectID/surf/lh.area.deformed
   cp $SubjectDIR/$SubjectID/label/lh.cortex.label $SubjectDIR/$SubjectID/label/lh.cortex.deformed.label
-  cp $SubjectDIR/$SubjectID/surf/rh.curv.$SubjectDIR/$SubjectID/surf/rh.curv.deformed
+  cp $SubjectDIR/$SubjectID/surf/rh.curv $SubjectDIR/$SubjectID/surf/rh.curv.deformed
   cp $SubjectDIR/$SubjectID/surf/rh.area  $SubjectDIR/$SubjectID/surf/rh.area.deformed
   cp $SubjectDIR/$SubjectID/label/rh.cortex.label $SubjectDIR/$SubjectID/label/rh.cortex.deformed.label
 fi
