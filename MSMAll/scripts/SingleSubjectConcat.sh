@@ -309,7 +309,7 @@ main()
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/Compiled_ssConcat/distrib/run_ssConcat.sh"
+				matlab_exe+="/MSMAll/scripts/Compiled_ssConcat/distrib/run_ssConcat.sh"
 				
 				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
 
