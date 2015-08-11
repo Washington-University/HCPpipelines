@@ -264,6 +264,9 @@ main()
 	# See documentation for get_options function for global variables set
 	get_options $@
 
+	g_fmri_names_list=`echo ${g_fmri_names_list} | sed 's/@/ /g'`
+	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+
 	# Naming Conventions
 	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
