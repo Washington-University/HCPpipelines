@@ -4,6 +4,16 @@ function [ output_args ] = ssConcat(txtfile,wbcommand,outputConcat,VN)
 %ciftiopen.m
 %ciftisave.m
 %demean.m
+
+% edits by T.B.Brown to output debugging information
+
+func_name='ssConcat';
+fprintf('%s - start\n', func_name);
+fprintf('%s - txtfile: %s\n', func_name, txtfile);
+fprintf('%s - wbcommand: %s\n', func_name, wbcommand);
+fprintf('%s - outputConcat: %s\n', func_name, outputConcat);
+fprintf('%s - VN: %s\n', func_name, VN);
+
 fid = fopen(txtfile);
 txtfileArray = textscan(fid,'%s');
 
@@ -11,12 +21,14 @@ txtfileArray = txtfileArray{1,1};
 
 for i=1:length(txtfileArray)
     dtseriesName = txtfileArray{i,1};
+    fprintf('%s - dtseriesName: %s\n', dtseriesName);
     dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
     if strcmp(VN,'YES')
         vn = ciftiopen([dtseriesName '_vn.dscalar.nii'],wbcommand);
         bias = ciftiopen([dtseriesName '_bias.dscalar.nii'],wbcommand);
     end    
     grot=demean(double(dtseries.cdata)')'; 
+    fprintf('%s - i: %d', func_name, i);
     if i == 1
         if strcmp(VN,'YES')
             grot=grot.*repmat(bias.cdata,1,size(grot,2));
@@ -35,6 +47,7 @@ end
 
 BO = dtseries;
 BO.cdata = TCS';
+fprintf('%s - About to ciftisave', func_name);
 ciftisave(BO,outputConcat,wbcommand);
 
 end
