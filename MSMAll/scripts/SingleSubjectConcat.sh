@@ -295,10 +295,17 @@ main()
 			rm ${txtfile}
 		fi
 
+		log_Msg "Showing txtfile: ${txtfile} contents"
+		cat ${txtfile}
+		log_Msg "Done Showing txtfile contents"
+
 		for fMRIName in ${g_fmri_names_list} ; do
 			ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 			log_Msg "ResultsFolder: ${ResultsFolder}"
 			echo "${ResultsFolder}/${fMRIName}${g_fmri_proc_string}" >> ${txtfile}
+			log_Msg "Showing txtfile: ${txtfile} contents"
+			cat ${txtfile}
+			log_Msg "Done Showing txtfile contents"
 		done
 
 		VN=`echo ${g_migp_vars} | cut -d "@" -f 5`

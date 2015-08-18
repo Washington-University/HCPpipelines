@@ -15,11 +15,19 @@ fprintf('%s - outputConcat: %s\n', func_name, outputConcat);
 fprintf('%s - VN: %s\n', func_name, VN);
 
 fid = fopen(txtfile);
+fprintf('%s - open txtfile fid: %d\n', func_name, fid)
+
 txtfileArray = textscan(fid,'%s');
+fprintf('%s - about to print txtfileArray', func_name);
+fprintf('%s\n', txtfileArray);
+fprintf('%s - printed txtfileArray', func_name);
 
 txtfileArray = txtfileArray{1,1};
+fprintf('%s - after txtfileArray conversion', func_name);
+fprintf('%s\n', txtfileArray);
 
 for i=1:length(txtfileArray)
+    fprintf('%s - i: %d\n', func_name, i)
     dtseriesName = txtfileArray{i,1};
     fprintf('%s - dtseriesName: %s\n', dtseriesName);
     dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
