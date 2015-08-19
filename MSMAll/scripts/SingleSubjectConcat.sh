@@ -313,7 +313,7 @@ main()
 
 		mPath="${HCPPIPEDIR}/MSMAll/scripts"
 		log_Msg "mPath: ${mPath}"
-		
+
 		# run matlab ssConcat function 
 		case ${g_matlab_run_mode} in
 			0)
