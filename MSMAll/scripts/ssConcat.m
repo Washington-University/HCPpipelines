@@ -1,4 +1,5 @@
-function [ output_args ] = ssConcat(txtfile,wbcommand,outputConcat,VN)
+function ssConcat(txtfile,wbcommand,outputConcat,VN)
+%function [ output_args ] = ssConcat(txtfile,wbcommand,outputConcat,VN)
 %This code demeans and concatinates timeseries on a single subject and expects to find these
 %functions on the path:
 %ciftiopen.m

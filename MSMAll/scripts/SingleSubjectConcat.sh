@@ -295,6 +295,8 @@ main()
 			rm ${txtfile}
 		fi
 
+		touch ${txtfile}
+
 		log_Msg "Showing txtfile: ${txtfile} contents"
 		cat ${txtfile}
 		log_Msg "Done Showing txtfile contents"
