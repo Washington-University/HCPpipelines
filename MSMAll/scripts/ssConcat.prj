@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="ssConcat" location="/home/tbrown01/ssConcat" file="/home/tbrown01/ssConcat/ssConcat.prj" build-checksum="579794138">
+  <configuration target="target.standalone" target-name="Standalone Application" name="ssConcat" location="/home/tbrown01/ssConcat" file="/home/tbrown01/ssConcat/ssConcat.prj" build-checksum="694535128">
     <param.project.name>/home/tbrown01/ssConcat/ssConcat.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>ssConcat</param.appname>
@@ -64,6 +64,7 @@
       <file>/home/tbrown01/gifti-1.5</file>
       <file>${PROJECT_ROOT}/ciftiopen.m</file>
       <file>${PROJECT_ROOT}/ciftisave.m</file>
+      <file>${PROJECT_ROOT}/demean.m</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
@@ -439,7 +440,7 @@
       <vista>false</vista>
       <linux>true</linux>
       <solaris>false</solaris>
-      <osver>2.6.32-431.20.3.el6.x86_64</osver>
+      <osver>2.6.32-504.23.4.el6.x86_64</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>glnxa64</arch>
