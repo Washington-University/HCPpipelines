@@ -94,10 +94,9 @@ usage()
 	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
 	echo "    --subject=<subject ID>"
 	echo "    --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names"
-
-
-
-
+	echo " "
+	echo "  TBW "
+	echo " "
 	echo ""
 }
 
@@ -115,7 +114,11 @@ usage()
 #                          The dense timeseries files used will be named
 #                          ${fmri_name}_${g_fmri_proc_string}.dtseries.nii
 #                          where ${fmri_name} is each of the fMRIs specified in
-#                          ${g_frmi_names_list}.
+#                          ${g_fmri_names_list}.
+#  ${g_msm_all_templates} - path to directory containing MSM All template files
+#  ${g_output_registration_name} - name to give output registration
+#  ${g_high_res_mesh}
+#  ${g_low_res_mesh}
 #
 get_options()
 {
@@ -127,6 +130,11 @@ get_options()
 	unset g_fmri_names_list
 	unset g_output_fmri_name
 	unset g_fmri_proc_string
+	unset g_msm_all_templates
+	unset g_output_registration_name
+	unset g_high_res_mesh
+	unset g_low_res_mesh
+	unset g_input_registration_name
 
 	# set default values
 
@@ -165,6 +173,26 @@ get_options()
 				;;
 			--fmri-proc-string=*)
 				g_fmri_proc_string=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--msm-all-templates=*)
+				g_msm_all_templates=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--output-registration-name=*)
+				g_output_registration_name=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--high-res-mesh=*)
+				g_high_res_mesh=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--low-res-mesh=*)
+				g_low_res_mesh=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--input-registration-name=*)
+				g_input_registration_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -213,7 +241,40 @@ get_options()
 		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
 	fi
 
+	if [ -z "${g_msm_all_templates}" ]; then
+		echo "ERROR: msm all templates required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_msm_all_templates: ${g_msm_all_templates}"
+	fi
 
+	if [ -z "${g_output_registration_name}" ]; then
+		echo "ERROR: output registration name required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_output_registration_name: ${g_output_registration_name}"
+	fi
+
+	if [ -z "${g_high_res_mesh}" ]; then
+		echo "ERROR: high resolution mesh required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
+	fi
+
+	if [ -z "${g_low_res_mesh}" ]; then
+		echo "ERROR: low resolution mesh required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_low_res_mesh: ${g_low_res_mesh}"
+	fi
+
+	if [ -z "${g_input_registration_name}" ]; then
+		echo "ERROR: input registration name required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_input_registration_name: ${g_input_registration_name}"
+	fi
 
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
@@ -245,7 +306,9 @@ main()
 	# show the versions of tools used
 	show_tool_versions
 
-	# Values of variables determining MIGP usage"
+	InPCARegName="${g_input_registration_name}"
+
+	# Values of variables determining MIGP usage
 	# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
 	# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
 	# 
@@ -268,11 +331,189 @@ main()
 		--migp-vars=${migp_vars} \
 		--output-proc-string=${output_proc_string}
 
+	RSNTemplates="${g_msm_all_templates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
+	log_Msg "RSNTemplates: ${RSNTemplates}"
 
-	exit 1
+	RSNWeights="${g_msm_all_templates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
+	log_Msg "RSNWeights: ${RSNWeights}"
 
+	MyelinMaps="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+	if [ -e "${MyelinMaps}" ]; then
+		log_Msg "MyelinMaps: ${MyelinMaps}"
+	else
+		log_Msg "ERROR: MyelinMaps file: ${MyelinMaps} DOES NOT EXIST - ABORTING"
+		exit 1
+	fi
 
+	TopographicRegressors="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
+	if [ -e "${TopographicRegressors}" ]; then
+		log_Msg "TopographicRegressors: ${TopographicRegressors}"
+	else
+		log_Msg "ERROR: TopographicRegressors file: ${TopographicRegressors} DOES NOT EXIST - ABORTING"
+		exit 1
+	fi
 
+	TopographicMaps="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
+	if [ -e "${TopographicMaps}" ]; then
+		log_Msg "TopographicMaps: ${TopographicMaps}"
+	else
+		log_Msg "ERROR: TopographicMaps file: ${TopographicMaps} DOES NOT EXIST - ABORTING"
+		exit 1
+	fi
+
+	# Value of MSMAllRegsOrig and MSMAllRegs variables are @ symbol separated strings that supply the 
+	# following values in order. MSMAllRegs is the one actually used. MSMAllRegsOrig is just an
+	# intermediate step in building MSMAllRegs. Once MSMAllRegsOrig is populated, the last field
+	# in it (RegConfVars) is replaced with the comma delimited value of the ${RegConfVars} variable.
+	#
+	# ModuleName             = name of script or code used to run registration (e.g. MSMAll.sh)
+	# RegName                = output registration name (e.g. MSMAll_InitalReg") 
+	# RSNTargetFile          = Resting State Network target file
+	# RSNCostWeights         = Resting State Network cost weights (NONE is a valid value)
+	# ArchitectureTargetFile = TBW
+	# TopographyROIFile      = TBW
+	# Iterations             = Specifieds what modalities:
+	#                            C=RSN Connectivity
+	#                            A=Myelin Architecture
+	#                            T=RSN Topography
+	#                          and number is the number of elements delimited by _
+	#                          So CA_CAT means one iteration using RSN Connectivity and Myelin 
+	#                          Architecture, followed by another iteration using RSN Connectivity,
+	#                          Myelin Architecture, and RSN Topography. (TBD - Is the comment correct?)
+	# Method                 = Possible values: DR, DRZ, DRN, WR, WRZ, WRN - (TBD - each meaning?)
+	# UseMIGP                = Possible values: YES or NO (MIGP = MELODIC's Incremental Group Principal 
+	#                          Component Analysis)
+	# ICAdim                 = ICA (Independent Component Analysis) dimension
+	# RegressionParams       = ICA dimensionalilties delimited by _ to use in spatial weighting for WR
+	# VarianceNormalization  = TBW
+	# ReRunIfExists          = Re-run even if output already exists (TBD - Is this correct?)
+	# RegConf                = TBW
+	# RegConfVars            = TBW
+	#                            delimited by ,
+	#                            use NONE to use config file as specified
+	MSMAllRegsOrig=""
+	MSMAllRegsOrig+="MSMAll.sh"                       # ModuleName
+	MSMAllRegsOrig+="@${g_output_registration_name}"  # RegName
+	MSMAllRegsOrig+="@${RSNTemplates}"                # RSNTargetFile 
+	MSMAllRegsOrig+="@${RSNWeights}"                  # RSNCostWeights
+	MSMAllRegsOrig+="@${MyelinMaps}"                  # ArchitectureTargetFile
+	MSMAllRegsOrig+="@${TopographicRegressors}"       # TopographyROIFile
+	MSMAllRegsOrig+="@${TopographicMaps}"             # TopographyTargetFile
+	MSMAllRegsOrig+="@CA_CAT"                         # Iterations
+	MSMAllRegsOrig+="@WRN"                            # Method
+	MSMAllRegsOrig+="@NO"                             # UseMIGP
+	MSMAllRegsOrig+="@40"                             # ICAdim
+	MSMAllRegsOrig+="@7_8_9_10_11_12_13_14_15_16_17_18_19_20_21"  # RegressionParams
+	MSMAllRegsOrig+="@NO"                             # VarianceNormalization
+	MSMAllRegsOrig+="@YES"                            # ReRunIfExists
+	MSMAllRegsOrig+="@${MSMBin}/allparametersVariableMSMOptimiztionAllDRconf" # RegConf
+	MSMAllRegsOrig+="@RegConfVars"                    # RegConfVars
+	log_Msg "MSMAllRegsOrig: ${MSMAllRegsOrig}"
+	log_Msg ""
+
+	RegConfVars=""
+	RegConfVars+="REGNUMBER=1"
+	RegConfVars+=",REGPOWER=3"
+	RegConfVars+=",SCALEPOWER=0"
+	RegConfVars+=",AREALDISTORTION=0"
+	RegConfVars+=",MAXTHETA=0"
+	RegConfVars+=",LAMBDAONE=0.01"
+	RegConfVars+=",LAMBDATWO=0.05"
+	RegConfVars+=",LAMBDATHREE=0.1"
+	log_Msg "RegConfVars: ${RegConfVars}"
+	log_Msg ""
+
+	MSMAllRegs=`echo ${MSMAllRegsOrig} | sed "s/RegConfVars/${RegConfVars}/g"`
+	log_Msg "MSMAllRegs: ${MSMAllRegs}"
+	log_Msg ""
+
+	# Run whatever MSMAll registrations were specified (e.g. when running multiple dimensionalities)
+
+	if [ ! "${MSMAllRegs}" = "NONE" ] ; then
+		
+		MSMAllRegs=`echo ${MSMAllRegs} | sed 's/+/ /g'`		
+		log_Msg "About to enter loop through MSMAll registrations: MSMAllRegs: ${MSMAllRegs}"
+
+		for MSMAllReg in ${MSMAllRegs} ; do
+			log_Msg "MSMAllReg: ${MSMAllReg}"
+			
+			Module=`echo ${MSMAllRegs} | cut -d "@" -f 1`
+			log_Msg "Module: ${Module}"
+
+			RegName=`echo ${MSMAllRegs} | cut -d "@" -f 2`
+			log_Msg "RegName: ${RegName}"
+
+			RSNTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 3`
+			log_Msg "RSNTargetFile: ${RSNTargetFile}"
+
+			RSNCostWeights=`echo ${MSMAllRegs} | cut -d "@" -f 4`
+			log_Msg "RSNCostWeights: ${RSNCostWeights}"
+
+			MyelinTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 5`
+			log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
+
+			TopographyROIFile=`echo ${MSMAllRegs} | cut -d "@" -f 6`
+			log_Msg "TopographyROIFile: ${TopographyROIFile}"
+
+			TopographyTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 7`
+			log_Msg "TopographyTargetFile: ${TopographyTargetFile}"
+
+			Iterations=`echo ${MSMAllRegs} | cut -d "@" -f 8`
+			log_Msg "Iterations: ${Iterations}"
+
+			Method=`echo ${MSMAllRegs} | cut -d "@" -f 9`
+			log_Msg "Method: ${Method}"
+
+			UseMIGP=`echo ${MSMAllRegs} | cut -d "@" -f 10`
+			log_Msg "UseMIGP: ${UseMIGP}"
+
+			ICAdim=`echo ${MSMAllRegs} | cut -d "@" -f 11`
+			log_Msg "ICAdim: ${ICAdim}"
+
+			RegressionParams=`echo ${MSMAllRegs} | cut -d "@" -f 12`
+			log_Msg "RegressionParams: ${RegressionParams}"
+
+			VN=`echo ${MSMAllRegs} | cut -d "@" -f 13`
+			log_Msg "VN: ${VN}"
+
+			ReRun=`echo ${MSMAllRegs} | cut -d "@" -f 14`
+			log_Msg "ReRun: ${ReRun}"
+
+			RegConf=`echo ${MSMAllRegs} | cut -d "@" -f 15`
+			log_Msg "RegConf: ${RegConf}"
+
+			RegConfVars=`echo ${MSMAllRegs} | cut -d "@" -f 16`
+			log_Msg "RegConfVars: ${RegConfVars}"
+
+			${HCPPIPEDIR}/MSMAll/scripts/${Module} \
+				--path=${g_path_to_study_folder} \
+				--subject=${g_subject} \
+				--high-res-mesh=${g_high_res_mesh} \
+				--low-res-mesh=${g_low_res_mesh} \
+				--fmri-names-list=${g_fmri_names_list} \
+				--output-fmri-name=${g_output_fmri_name} \
+				--fmri-proc-string=${g_fmri_proc_string} \
+				--input-pca-registration-name=${InPCARegName} \
+				--input-registration-name=${g_input_registration_name} \
+				--registration-name-stem=${RegName} \
+				--rsn-target-file=${RSNTargetFile} \
+				--rsn-cost-weights=${RSNCostWeights} \
+				--myelin-target-file=${MyelinTargetFile} \
+				--topography-roi-file=${TopographyROIFile} \
+				--topography-target-file=${TopograpyTargetFile} \
+				--iterations=${Iterations} \
+				--method=${Method} \
+				--use-migp=${UseMIGP} \
+				--ica-dim=${ICAdim} \
+				--regression-params=${RegressionParams} \
+				--vn=${VN} \
+				--rerun=${ReRun} \
+				--reg-conf=${RegConf} \
+				--reg-conf-vars="${RegConfVars}"
+			
+			g_input_registration_name=${RegName}
+		done
+	fi
 }
 
 # 

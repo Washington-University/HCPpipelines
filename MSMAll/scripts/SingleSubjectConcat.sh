@@ -387,6 +387,7 @@ main()
 				exit 1
 		esac
 
+		log_Msg "Removing ${txtfile} used as input to ssConcat"
 		rm ${txtfile}
 	fi
 
