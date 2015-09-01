@@ -500,7 +500,7 @@ main()
 				--rsn-cost-weights=${RSNCostWeights} \
 				--myelin-target-file=${MyelinTargetFile} \
 				--topography-roi-file=${TopographyROIFile} \
-				--topography-target-file=${TopograpyTargetFile} \
+				--topography-target-file=${TopographyTargetFile} \
 				--iterations=${Iterations} \
 				--method=${Method} \
 				--use-migp=${UseMIGP} \
