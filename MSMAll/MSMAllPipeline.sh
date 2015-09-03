@@ -331,6 +331,26 @@ main()
 		--migp-vars=${migp_vars} \
 		--output-proc-string=${output_proc_string}
 
+	expected_concatenated_output_file=""
+	expected_concatenated_output_file+="${g_path_to_study_folder}"
+	expected_concatenated_output_file+="/${g_subject}/MNINonLinear/Results"
+	expected_concatenated_output_file+="/${g_output_fmri_name}"
+	expected_concatenated_output_file+="/${g_output_fmri_name}${g_fmri_proc_string}${output_proc_string}"
+	expected_concatenated_output_file+="dtseries.nii"
+
+	log_Msg "SingleSubjectConcat.sh should have created: ${expected_concatenated_output_file}"
+	if [ -e "${expected_concatenated_output_file}" ]; then
+		log_Msg "Existence of expected file confirmed"
+	else
+		log_Msg "Expected file: ${expected_concatenated_output_file} DOES NOT EXIST - Aborting"
+		exit 1
+	fi
+
+	# g_fmri_proc_string now should reflect the name expected by registrations done below
+	# (e.g. MSMAll.sh)
+	g_fmri_proc_string+="${output_proc_string}"
+	log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
+
 	RSNTemplates="${g_msm_all_templates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
 	log_Msg "RSNTemplates: ${RSNTemplates}"
 
