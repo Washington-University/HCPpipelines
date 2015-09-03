@@ -63,9 +63,7 @@
 # ------------------------------------------------------------------------------
 #  Code Start
 # ------------------------------------------------------------------------------
-
-# If any commands exit with non-zero value, this script exits
-set -e
+set -e # If any commands exit with non-zero value, this script exits
 g_script_name=`basename ${0}`
 
 # ------------------------------------------------------------------------------

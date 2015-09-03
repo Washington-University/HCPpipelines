@@ -3,6 +3,7 @@
 # ------------------------------------------------------------------------------
 #  Code Start
 # ------------------------------------------------------------------------------
+set -e # If any command exit with non-zero value, this script exits
 g_script_name=`basename ${0}`
 
 # ------------------------------------------------------------------------------
@@ -501,7 +502,7 @@ main()
 	log_Msg "NumIterations: ${NumIterations}"
 
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
-	log_Msg "CorrectionsSigma: ${CorrectionsSigma}"
+	log_Msg "CorrectionSigma: ${CorrectionSigma}"
 
 	BC="NO"
 	log_Msg "BC: ${BC}"
@@ -520,9 +521,17 @@ main()
 
 		RSNTargetFile=`echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${ICAdim}/g"`
 		log_Msg "RSNTargetFile: ${RSNTargetFile}"
+		if [ ! -e "${RSNTargetFile}" ]; then
+			log_Msg "ERROR: RSNTargetFile does not exist - Aborting"
+			exit 1
+		fi
 		
 		RSNCostWeights=`echo ${RSNCostWeightsOrig} | sed "s/REPLACEDIM/${ICAdim}/g"`
 		log_Msg "RSNCostWeights: ${RSNCostWeights}"
+		if [ ! -e "${RSNCostWeights}" ]; then
+			log_Msg "ERROR: RSNCostWeights does not exist - Aborting"
+			exit 1
+		fi
 
 		cp --verbose ${RSNTargetFile} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii
 		cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
