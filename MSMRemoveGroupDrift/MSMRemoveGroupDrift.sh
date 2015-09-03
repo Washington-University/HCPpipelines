@@ -127,7 +127,7 @@ get_options()
 	fi
 
 	if [ -z "${g_subject_list}" ]; then
-		echo "ERROR: subject ID list ID (--subject-list=) required"
+		echo "ERROR: subject ID list (--subject-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_subject_list: ${g_subject_list}"
