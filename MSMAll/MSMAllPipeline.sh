@@ -336,7 +336,7 @@ main()
 	expected_concatenated_output_file+="/${g_subject}/MNINonLinear/Results"
 	expected_concatenated_output_file+="/${g_output_fmri_name}"
 	expected_concatenated_output_file+="/${g_output_fmri_name}${g_fmri_proc_string}${output_proc_string}"
-	expected_concatenated_output_file+="dtseries.nii"
+	expected_concatenated_output_file+=".dtseries.nii"
 
 	log_Msg "SingleSubjectConcat.sh should have created: ${expected_concatenated_output_file}"
 	if [ -e "${expected_concatenated_output_file}" ]; then
