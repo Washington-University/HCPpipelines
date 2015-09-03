@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="MSMregression" location="/home/tbrown01/MSMregression" file="/home/tbrown01/MSMregression/MSMregression.prj" build-checksum="903843609">
+  <configuration target="target.standalone" target-name="Standalone Application" name="MSMregression" location="/home/tbrown01/MSMregression" file="/home/tbrown01/MSMregression/MSMregression.prj" build-checksum="216995859">
     <param.project.name>/home/tbrown01/MSMregression/MSMregression.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>MSMregression</param.appname>
@@ -64,6 +64,7 @@
       <file>${PROJECT_ROOT}/ciftiopen.m</file>
       <file>${PROJECT_ROOT}/ciftisave.m</file>
       <file>${PROJECT_ROOT}/demean.m</file>
+      <file>/home/tbrown01/gifti-1.5</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
