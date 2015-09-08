@@ -1,27 +1,97 @@
 #
 # Description:
-# 
 #   sets the name of the tool to use for future logging 
 #
 # Input:
-# 
 #   The first parameter is the name of the tool
 #
-log_SetToolName() {
+log_SetToolName() 
+{
     log_toolName="$1"
 }
 
-# Description:
 #
+# Description:
 #   logs a time-stamped, tool-described message to standard output
 #
 # Input:
-#
 #   The parameters are the message to send to standard output
 #
-log_Msg() {
+log_Msg() 
+{
     msg=$@
     dateTime=`date`
     echo $dateTime "-" $log_toolName "-" $msg
 }
 
+#
+# Description:
+#   logs a time-stamped, tool-described error message to standard output 
+#   and aborts the script
+#
+# Input:
+#   The parameters are the message to send to the standard output
+#
+log_Error_Abort() 
+{
+	msg=$@
+	dateTime=`date`
+	echo $dateTime "-" $log_toolName "-" "ERROR:" $msg "--ABORTING--"
+	exit 1
+}
+
+#
+# Description:
+#   Checks that the specified file actually exists.
+#   If it does, then that fact is logged. 
+#   If it doesn't, causes an abort of the processing.
+#
+# Input:
+#   Full path to file that must exist
+#
+log_File_Must_Exist() 
+{
+	file_that_must_exist=${1}
+	if [ -e "${file_that_must_exist}" ]; then
+		log_Msg "File: ${file_that_must_exist} EXISTS"
+	else
+		log_Error_Abort "File: ${file_that_must_exist} DOES NOT EXIST"
+	fi
+}
+
+#
+# Description:
+#   Turn on debugging. Set a flag to indicate debugging messages 
+#   should be logged
+#
+log_Debug_On()
+{
+	log_debugOn="true"
+}
+
+#
+# Description:
+#   Log a debugging message. If debugging is not turned on,
+#   this function logs nothing
+#
+log_Debug_Msg()
+{
+	msg=$@
+	if [ ! -z "${log_debugOn}" ] ; then
+		log_Msg "DEBUG: ${msg}"
+	fi
+}
+
+#
+# Description:
+#   Cat out a specified file only if debugging mode is turned on
+#
+log_Debug_Cat()
+{
+	file_to_cat=$@
+	if [ ! -z "${log_debugOn}" ] ; then
+		log_Msg "DEBUG: Begin contents of file: ${file_to_cat}"
+		cat ${file_to_cat}
+		log_Msg "DEBUG: End contents of file: ${file_to_cat}"
+	fi
+}
