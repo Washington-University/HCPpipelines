@@ -282,38 +282,20 @@ main()
 			log_Msg "NativeFolder: ${NativeFolder}"
 
 			sphere_in="${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii"
-			if [ ! -e "${sphere_in}" ]; then
-				log_Msg "ERROR: File does not exist - sphere_in: ${sphere_in}"
-				exit 1
-			else
-				log_Msg "sphere_in: ${sphere_in}"
-			fi
+			log_File_Must_Exist "${sphere_in}"
 
 			sphere_project_to="${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii"
-			if [ ! -e "${sphere_project_to}" ]; then
-				log_Msg "ERROR: File does not exist - sphere_project_to: ${sphere_project_to}"
-				exit 1
-			else
-				log_Msg "sphere_project_to: ${sphere_project_to}"
-			fi
+			log_File_Must_Exist "${sphere_project_to}"
 
 			sphere_unproject_from="${NativeFolder}/${Subject}.${Hemisphere}.sphere.${TargetRegName}.native.surf.gii"
-			if [ ! -e "${sphere_unproject_from}" ]; then
-				log_Msg "ERROR: File does not exist - sphere_unproject_from: ${sphere_unproject_from}"
-				exit 1
-			else
-				log_Msg "sphere_unproject_from: ${sphere_unproject_from}"
-			fi
+			log_File_Must_Exist "${sphere_unproject_from}"
 
 			sphere_out="${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
 			log_Msg "sphere_out: ${sphere_out}"
 
 			${Caret7_Command} -surface-sphere-project-unproject ${sphere_in} ${sphere_project_to} ${sphere_unproject_from} ${sphere_out}
 
-			if [ ! -e "${sphere_out}" ]; then
-				log_Msg "ERROR: Failed to create - sphere_out: ${sphere_out}"
-				exit 1
-			fi 
+			log_File_Must_Exist "${sphere_out}"
 
 			SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
 			log_Msg "SurfAverageSTRING: ${SurfAverageSTRING}"
