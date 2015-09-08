@@ -634,7 +634,7 @@ main()
 				matlab_function_arguments+=" ${nTPsForSpectra}"
 				matlab_function_arguments+=" '${BC}'"
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.log 2>&1"
+				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.Iteration${i}.log 2>&1"
 
 				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
@@ -706,7 +706,7 @@ main()
 				matlab_function_arguments+=" ${nTPsForSpectra}"
 				matlab_function_arguments+=" '${BC}'"
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.log 2>&1"
+				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
 
 				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
