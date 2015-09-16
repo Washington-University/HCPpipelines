@@ -19,8 +19,8 @@ log_SetToolName()
 #
 log_Msg() 
 {
-    msg=$@
-    dateTime=`date`
+    local msg=$@
+    local dateTime=`date`
     echo $dateTime "-" $log_toolName "-" $msg
 }
 
@@ -34,10 +34,28 @@ log_Msg()
 #
 log_Error_Abort() 
 {
-	msg=$@
-	dateTime=`date`
+	local msg=$@
+	local dateTime=`date`
 	echo $dateTime "-" $log_toolName "-" "ERROR:" $msg "--ABORTING--"
 	exit 1
+}
+
+#
+# Description:
+#   Checks whether the specified file exists.
+#   Logs whether or not the file exists.
+#
+# Input:
+#   Full path to file to check
+#
+log_Does_File_Exist()
+{
+	local file_to_check=${1}
+	if [ -e "${file_to_check}" ]; then
+		log_Msg "File: ${file_to_check} EXISTS"
+	else
+		log_Msg "File: ${file_to_check} DOES NOT EXIST"
+	fi
 }
 
 #
@@ -51,7 +69,7 @@ log_Error_Abort()
 #
 log_File_Must_Exist() 
 {
-	file_that_must_exist=${1}
+	local file_that_must_exist=${1}
 	if [ -e "${file_that_must_exist}" ]; then
 		log_Msg "File: ${file_that_must_exist} EXISTS"
 	else
@@ -76,7 +94,7 @@ log_Debug_On()
 #
 log_Debug_Msg()
 {
-	msg=$@
+	local msg=$@
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: ${msg}"
 	fi
@@ -88,7 +106,7 @@ log_Debug_Msg()
 #
 log_Debug_Cat()
 {
-	file_to_cat=$@
+	local file_to_cat=$@
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: Begin contents of file: ${file_to_cat}"
 		cat ${file_to_cat}
