@@ -299,6 +299,7 @@ main()
 
 			SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
 			log_Msg "SurfAverageSTRING: ${SurfAverageSTRING}"
+			log_Msg "Length of SurfAverageSTRING: ${#SurfAverageSTRING}"
 		done
 
 		${Caret7_Command} -surface-average \
