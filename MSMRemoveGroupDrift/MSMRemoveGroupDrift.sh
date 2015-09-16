@@ -346,24 +346,66 @@ main()
 
 	done
 
-	${Caret7_Command} \
-		-cifti-create-dense-timeseries ${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii \
-		-left-metric ${CommonAtlasFolder}/${GroupAverageName}.L.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii \
-		-roi-left ${CommonAtlasFolder}/${GroupAverageName}.L.atlasroi.${HighResMesh}k_fs_LR.shape.gii \
-		-right-metric ${CommonAtlasFolder}/${GroupAverageName}.R.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii \
-		-roi-right ${CommonAtlasFolder}/${GroupAverageName}.R.atlasroi.${HighResMesh}k_fs_LR.shape.gii
+	# Copy Atlas ROI files
+	for Hemisphere in L R ; do
+		cp --verbose \
+			${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii \
+			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
+	done
 
-	${Caret7_Command} \
-		-cifti-convert-to-scalar ${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii ROW \
-		${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii
+	# ------------------------------
+	#  Create dense timeseries
+	# ------------------------------
+	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
+	left_metric="${CommonAtlasFolder}/${GroupAverageName}.L.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii"
+	roi_left="${CommonAtlasFolder}/${GroupAverageName}.L.atlasroi.${HighResMesh}k_fs_LR.shape.gii"
+	right_metric="${CommonAtlasFolder}/${GroupAverageName}.R.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii"
+	roi_right="${CommonAtlasFolder}/${GroupAverageName}.R.atlasroi.${HighResMesh}k_fs_LR.shape.gii"
 
-	${Caret7_Command} \
-		-set-map-name ${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii 1 \
-		${GroupAverageName}_ArealDistortion_${RegName}
+	log_Msg "About to create ArealDistortion dense timeseries: ${cifti_out}"
 
-	${Caret7_Command} \
-		-cifti-palette ${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii MODE_USER_SCALE \
-		${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii \
+	log_File_Must_Exist "${left_metric}"
+	log_File_Must_Exist "${roi_left}"
+	log_File_Must_Exist "${right_metric}"
+	log_File_Must_Exist "${roi_right}"
+
+	${Caret7_Command} -cifti-create-dense-timeseries ${cifti_out} -left-metric ${left_metric} -roi-left ${roi_left} -right-metric ${right_metric} -roi-right ${roi_right}
+
+	# ------------------------------
+	#  Create dscalar file from dense timeseries
+	# ------------------------------
+ 	cifti_in="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
+ 	direction="ROW"
+ 	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+
+ 	log_Msg "About to create ArealDistortion dscalar file: ${cifti_out}"
+ 	log_File_Must_Exist "${cifti_in}"
+
+ 	${Caret7_Command} -cifti-convert-to-scalar ${cifti_in} ${direction} ${cifti_out}
+
+	# ------------------------------
+	#  Set map name for dscalar file
+	# ------------------------------
+	data_file="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+	index="1"
+	name="${GroupAverageName}_ArealDistortion_${RegName}"
+
+	log_Msg "About to set map name for ArealDistortion dscalar file: ${data_file}"
+	log_File_Must_Exist "${data_file}"
+
+	${Caret7_Command} -set-map-name ${data_file} ${index} ${name}
+
+	# ------------------------------
+	#  Set palette for dscalar file
+	# ------------------------------
+	cifti_in="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+	mode="MODE_USER_SCALE"
+	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+
+	log_Msg "About to set palette for ArealDistortion dscalar file: ${cifti_in}"
+	log_File_Must_Exist "${cifti_in}"
+
+	${Caret7_Command} -cifti-palette ${cifti_in} ${mode} ${cifti_out} \
 		-pos-user 0 1 \
 		-neg-user 0 -1 \
 		-interpolate true \
@@ -372,26 +414,68 @@ main()
 		-disp-neg true \
 		-disp-zero false
 
-	rm ${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii 
+	# ------------------------------
+	#  Remove dense timeseries file
+	# ------------------------------
+	file_to_remove="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
 
-	${Caret7_Command} \
-		-cifti-create-dense-timeseries ${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii \
-		-left-metric ${CommonAtlasFolder}/${GroupAverageName}.L.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii \
-		-roi-left ${CommonAtlasFolder}/${GroupAverageName}.L.atlasroi.${HighResMesh}k_fs_LR.shape.gii \
-		-right-metric ${CommonAtlasFolder}/${GroupAverageName}.R.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii \
-		-roi-right ${CommonAtlasFolder}/${GroupAverageName}.R.atlasroi.${HighResMesh}k_fs_LR.shape.gii
+	log_Msg "About to remove ArealDistortion dense timeseries file: ${file_to_remove}"
+	
+	rm ${file_to_remove}
 
-	${Caret7_Command} \
-		-cifti-convert-to-scalar ${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii ROW \
-		${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii
+	# ------------------------------
+	#  Create dense timeseries
+	# ------------------------------
+	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
+	left_metric="${CommonAtlasFolder}/${GroupAverageName}.L.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii"
+	roi_left="${CommonAtlasFolder}/${GroupAverageName}.L.atlasroi.${HighResMesh}k_fs_LR.shape.gii"
+	right_metric="${CommonAtlasFolder}/${GroupAverageName}.R.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii"
+	roi_right="${CommonAtlasFolder}/${GroupAverageName}.R.atlasroi.${HighResMesh}k_fs_LR.shape.gii"
 
-	${Caret7_Command} \
-		-set-map-name ${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii 1 \
-		${GroupAverageName}_EdgeDistortion_${RegName}
+	log_Msg "About to create EdgeDistortion dense timeseries: ${cifti_out}"
 
-	${Caret7_Command} \
-		-cifti-palette ${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii MODE_USER_SCALE \
-		${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii \
+	log_File_Must_Exist "${left_metric}"
+	log_File_Must_Exist "${roi_left}"
+	log_File_Must_Exist "${right_metric}"
+	log_File_Must_Exist "${roi_right}"
+
+	${Caret7_Command} -cifti-create-dense-timeseries ${cifti_out} -left-metric ${left_metric} -roi-left ${roi_left} -right-metric ${right_metric} -roi-right ${roi_right}
+
+	# ------------------------------
+	#  Create dscalar file from dense timeseries
+	# ------------------------------
+	cifti_in="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
+	direction="ROW"
+	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+
+	log_Msg "About to create EdgeDistortion dscalar file: ${cifti_out}"
+	log_File_Must_Exist "${cifti_in}"
+	
+	${Caret7_Command} -cifti-convert-to-scalar ${cifti_in} ${direction} ${cifti_out}
+
+	# ------------------------------
+	#  Set map name for dscalar file
+	# ------------------------------
+	data_file="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+	index="1"
+	name="${GroupAverageName}_EdgeDistortion_${RegName}"
+
+	log_Msg "About to set map name for EdgeDistortion dscalar file: ${data_file}"
+	log_File_Must_Exist "${data_file}"
+
+	${Caret7_Command} -set-map-name ${data_file} ${index} ${name}
+
+	# ------------------------------
+	#  Set palette for dscalar file
+	# ------------------------------
+	cifti_in="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+	mode="MODE_USER_SCALE"
+	cifti_out="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dscalar.nii"
+
+	log_Msg "About to set palette for EdgeDistortion dscalar file: ${cifti_in}"
+	log_File_Must_Exist "${cifti_in}"
+
+	${Caret7_Command} -cifti-palette ${cifti_in} ${mode} ${cifti_out} \
 		-pos-user 0 1 \
 		-neg-user 0 -1 \
 		-interpolate true \
@@ -400,7 +484,15 @@ main()
 		-disp-neg true \
 		-disp-zero false
 
-	rm ${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii 
+	# ------------------------------
+	#  Remove dense timeseries file
+	# ------------------------------
+	file_to_remove="${CommonAtlasFolder}/${GroupAverageName}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
+
+	log_Msg "About to remove EdgeDistortion dense timeseries file: ${file_to_remove}"
+
+	rm ${file_to_remove}
+
 
 #for Mesh in ${LowResMesh} ; do
 #  Folder=${CommonDownSampleFolder}
