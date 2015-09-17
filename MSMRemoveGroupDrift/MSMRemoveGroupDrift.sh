@@ -297,14 +297,34 @@ main()
 
 			log_File_Must_Exist "${sphere_out}"
 
-			SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
+			# Note: Surface files are specified in the SurfAverageSTRING using relative paths from the ${StudyFolder}. 
+			# This is to save characters to stave off the point at which we've created a command line for the 
+			# -surface-average operation (done right after we exit this loop) that is longer than a command 
+			# line is allowed to be. (Use the command $ getconf ARG_MAX to find out what the maximum command 
+			# line length is.)
+
+			#SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
+			SurfAverageSTRING+=" -surf ${Subject}/MNINonLinear/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
+
 			log_Msg "SurfAverageSTRING: ${SurfAverageSTRING}"
-			log_Msg "Length of SurfAverageSTRING: ${#SurfAverageSTRING}"
+			#log_Msg "Length of SurfAverageSTRING: ${#SurfAverageSTRING}"
 		done
 
-		${Caret7_Command} -surface-average \
-			${CommonAtlasFolder}/${RegName}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii \
-			${SurfAverageSTRING}
+		# Put ourselves "in" the ${StudyFolder} so that we can use relative paths to save characters in the following command
+		pushd ${StudyFolder}
+		surface_average_cmd="${Caret7_Command} -surface-average "
+		surface_average_cmd+="${CommonAtlasFolder}/${RegName}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii "
+		surface_average_cmd+="${SurfAverageSTRING}"
+
+		max_cmd_length=`getconf ARG_MAX`
+		if [ ${#surface_average_cmd} -gt ${max_cmd_length} ] ; then
+			log_Error_Abort "Command will be too long to execute. Command: ${surface_average_cmd}."
+		fi
+
+		${surface_average_cmd}
+
+		# Don't forget to pop back to whatever directory we were previously in.
+		popd
 
 		${Caret7_Command} -surface-modify-sphere \
 			${CommonAtlasFolder}/${RegName}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii \
