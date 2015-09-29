@@ -19,7 +19,7 @@ get_batch_options() {
                 command_line_specified_study_folder=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
-            --Subjlist=*)
+            --SubjList=*)
                 command_line_specified_subj_list=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;

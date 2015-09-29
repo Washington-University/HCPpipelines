@@ -5,6 +5,7 @@ get_batch_options() {
 
     unset command_line_specified_study_folder
     unset command_line_specified_subj_list
+    unset command_line_specified_scanner
     unset command_line_specified_run_local
 
     local index=0
@@ -19,7 +20,7 @@ get_batch_options() {
                 command_line_specified_study_folder=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
-            --Subjlist=*)
+            --SubjList=*)
                 command_line_specified_subj_list=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
