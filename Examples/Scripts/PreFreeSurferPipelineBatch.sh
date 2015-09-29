@@ -46,7 +46,8 @@ get_batch_options $@
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+EnvironmentScript="${BatchFolder}/SetUpHCPPipeline.sh" #Pipeline environment script
 Scanner="3T" # Scanner specific subfolder of unprocessed MR data, usually either 3T or 7T
 
 if [ -n "${command_line_specified_study_folder}" ]; then

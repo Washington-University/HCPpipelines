@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "This script must be SOURCED to correctly setup the environment prior to running any of the other HCP scripts contained here"
+echo "This script is set up to run from FMRIB's Jalapeno"
 
 # Set up FSL (if not already done so in the running environment)
 # Uncomment the following 2 lines (remove the leading #) and correct the FSLDIR setting for your setup
@@ -21,7 +22,11 @@ module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 . ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
-export HCPPIPEDIR=${HOME}/projects/Pipelines
+#export HCPPIPEDIR=${HOME}/projects/Pipelines
+# retrieve the current folder
+ExampleScriptsFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# define the general Pipelines folder
+export HCPPIPEDIR=$(cd "${ExampleScriptsFolder}/../../" && pwd)
 #export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
 export CARET7DIR=/opt/fmrib/bin # When on Jalapeno: source it from the general bin folder to allow wb_command to find other libraries and packages
 
