@@ -19,6 +19,8 @@
 # * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
 # * Modifications to support General Electric Gradient Echo field maps for readout distortion correction
 #   are based on example code provided by Gaurav Patel, Columbia University
+# * Modifications to allow absence of T2w images, to improve bias correction, fix interpolation errors, and mask arteries
+#   are done by Lennart Verhagen as a fork of the GitHub repository called "OxfordStructural"
 #
 # ## Product
 #
@@ -333,7 +335,7 @@ BiasCorr=`opts_GetOpt1 "--biascorr" $@`
 SmoothFillNonPos=`opts_GetOpt1 "--smoothfillnonpos" $@`
 MaskArtery=`opts_GetOpt1 "--maskartery" $@`
 
-# set defaults for non-HCP-standard arguments
+# set defaults for OxfordStructural arguments
 InitBiasCorr=`defaultopt $InitBiasCorr "FALSE"`
 BiasCorr=`defaultopt $BiasCorr "sqrtT1wbyT2w"`
 SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`

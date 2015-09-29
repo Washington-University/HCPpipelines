@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 get_batch_options() {
     local arguments=($@)
@@ -6,6 +6,7 @@ get_batch_options() {
     unset command_line_specified_study_folder
     unset command_line_specified_subj_list
     unset command_line_specified_run_local
+    unset command_line_specified_no_T2w
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -25,6 +26,10 @@ get_batch_options() {
                 ;;
             --runlocal)
                 command_line_specified_run_local="TRUE"
+                index=$(( index + 1 ))
+                ;;
+            --noT2w)
+                command_line_specified_no_T2w="TRUE"
                 index=$(( index + 1 ))
                 ;;
 	    *)
@@ -48,7 +53,16 @@ if [ -n "${command_line_specified_study_folder}" ]; then
 fi
 
 if [ -n "${command_line_specified_subj_list}" ]; then
-    Subjlist="${command_line_specified_subj_list}"
+  # replace all "@" with " "
+  command_line_specified_subj_list="${command_line_specified_subj_list//@/ }"
+  # overwrite default with user specified value
+  Subjlist="${command_line_specified_subj_list}"
+fi
+
+UseT2w="TRUE"
+if [[ ${command_line_specified_no_T2w} = "TRUE" ]] ; then
+    echo "Reqested to run without T2w images."
+    UseT2w="FALSE"
 fi
 
 # Requirements for this script
@@ -62,8 +76,8 @@ fi
 echo "$@"
 
 #if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q long.q"
-    QUEUE="-q hcp_priority.q"
+    QUEUE="-q verylong.q"
+#    QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""
@@ -71,7 +85,7 @@ PRINTCOM=""
 #QUEUE="-q veryshort.q"
 
 
-########################################## INPUTS ########################################## 
+########################################## INPUTS ##########################################
 
 #Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline
 
@@ -86,6 +100,13 @@ for Subject in $Subjlist ; do
   T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+
+  if [[ $UseT2w = "FALSE" ]] ; then
+      T2wImage=""
+  elif [[ ! -r $T2wImage ]] ; then
+      echo "No (readable) T2w image found for subject " $Subject ", continuing without."
+      T2wImage=""
+  fi
 
   if [ -n "${command_line_specified_run_local}" ] ; then
       echo "About to run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
@@ -102,7 +123,7 @@ for Subject in $Subjlist ; do
       --t1brain="$T1wImageBrain" \
       --t2="$T2wImage" \
       --printcom=$PRINTCOM
-      
+
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
   echo "set -- --subject="$Subject" \
@@ -115,4 +136,3 @@ for Subject in $Subjlist ; do
   echo ". ${EnvironmentScript}"
 
 done
-

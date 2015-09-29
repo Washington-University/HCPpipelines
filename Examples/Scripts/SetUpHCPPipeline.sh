@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 echo "This script must be SOURCED to correctly setup the environment prior to running any of the other HCP scripts contained here"
 
@@ -11,14 +11,19 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 # FreeSurfer uses FSL_DIR instead of FSLDIR to determine the FSL version
 export FSL_DIR="${FSLDIR}"
 
+# ensure that the HCP specific version of FreeSurfer is being used
+module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
+# you can revert back using: module swap freesurfer-5.3.0-HCP freesurfer > /dev/null 2>&1 # (don't say a peep)
+
 # Set up FreeSurfer (if not already done so in the running environment)
 # Uncomment the following 2 lines (remove the leading #) and correct the FREESURFER_HOME setting for your setup
 #export FREESURFER_HOME=/usr/local/bin/freesurfer
-#. ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
+. ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
 export HCPPIPEDIR=${HOME}/projects/Pipelines
-export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
+#export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
+export CARET7DIR=/opt/fmrib/bin # When on Jalapeno: source it from the general bin folder to allow wb_command to find other libraries and packages
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
@@ -35,4 +40,3 @@ export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 export MSMBin=${HCPPIPEDIR}/MSMBinaries
-

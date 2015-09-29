@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 get_batch_options() {
     local arguments=($@)
@@ -48,7 +48,10 @@ if [ -n "${command_line_specified_study_folder}" ]; then
 fi
 
 if [ -n "${command_line_specified_subj_list}" ]; then
-    Subjlist="${command_line_specified_subj_list}"
+  # replace all "@" with " "
+  command_line_specified_subj_list="${command_line_specified_subj_list//@/ }"
+  # overwrite default with user specified value
+  Subjlist="${command_line_specified_subj_list}"
 fi
 
 # Requirements for this script
@@ -62,8 +65,8 @@ fi
 echo "$@"
 
 #if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q long.q"
-    QUEUE="-q hcp_priority.q"
+    QUEUE="-q short.q"
+#    QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""
@@ -71,7 +74,7 @@ PRINTCOM=""
 #QUEUE="-q veryshort.q"
 
 
-########################################## INPUTS ########################################## 
+########################################## INPUTS ##########################################
 
 #Scripts called by this script do assume they run on the outputs of the FreeSurfer Pipeline
 
@@ -91,7 +94,7 @@ for Subject in $Subjlist ; do
   FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
   ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
   # RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-  RegName="FS" 
+  RegName="FS"
 
   if [ -n "${command_line_specified_run_local}" ] ; then
       echo "About to run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
@@ -116,7 +119,7 @@ for Subject in $Subjlist ; do
       --printcom=$PRINTCOM
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-  
+
    echo "set -- --path="$StudyFolder" \
       --subject="$Subject" \
       --surfatlasdir="$SurfaceAtlasDIR" \
@@ -129,7 +132,6 @@ for Subject in $Subjlist ; do
       --refmyelinmaps="$ReferenceMyelinMaps" \
       --regname="$RegName" \
       --printcom=$PRINTCOM"
-      
+
    echo ". ${EnvironmentScript}"
 done
-
