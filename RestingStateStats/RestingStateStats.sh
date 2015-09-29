@@ -927,6 +927,10 @@ main()
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
 
+	mv \
+		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
+		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
+
 	# --------------------------------------------------------------------------------
 	log_Msg "Remove unneeded intermediate files"
 	# --------------------------------------------------------------------------------
