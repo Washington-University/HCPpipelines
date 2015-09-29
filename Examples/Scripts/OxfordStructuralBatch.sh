@@ -19,7 +19,8 @@ Scanner="3T"
 Task="RENAME" # "RENAME" "PRE" "FREE" "POST"
 
 # specify the batch scripts folder
-BatchFolder=/vols/username/scripts/Pipelines/Examples/Scripts
+#BatchFolder=/vols/username/scripts/Pipelines/Examples/Scripts
+BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # run the "RENAME" task
 if [[ $Task = "RENAME" ]] ; then
