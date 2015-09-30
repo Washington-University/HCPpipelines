@@ -90,7 +90,7 @@ get_options()
 				g_high_pass=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--reg_name=*)
+			--reg-name=*)
 				g_reg_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
