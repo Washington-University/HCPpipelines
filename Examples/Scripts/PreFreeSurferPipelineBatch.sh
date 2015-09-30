@@ -215,6 +215,7 @@ for Subject in $Subjlist ; do
   fi
 
   if [[ $UseGradEchoFieldmap = "FALSE" ]] ; then
+    AvgrdcSTRING="NONE"
     MagnitudeInputName="NONE"
     PhaseInputName="NONE"
     TE="NONE"
