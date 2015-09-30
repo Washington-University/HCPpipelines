@@ -23,8 +23,11 @@ module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 
 # Set up specific environment variables for the HCP Pipeline
 #export HCPPIPEDIR=${HOME}/projects/Pipelines
-# retrieve the current folder
-ExampleScriptsFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# retrieve the Example/Scripts folder
+# this script will be sourced, so BASH_SOURCE[0] will be empty
+# therefore retrieve the directory of the caller script instead
+ExampleScriptsFolder=$( cd "$( dirname "${BASH_SOURCE[1]}" )" && pwd )
+
 # define the general Pipelines folder
 export HCPPIPEDIR=$(cd "${ExampleScriptsFolder}/../../" && pwd)
 #export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64

@@ -1,7 +1,7 @@
 ########################
 # Study specific files #
 ########################
-*_davidLRM.sh
+RunStructuralBatch_*.sh
 
 
 ###############################

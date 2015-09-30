@@ -1,8 +1,23 @@
-# HCP Pipelines 
+# OxfordStructural fork of the HCP Pipelines
+
+This is a fork of the HCP Pipelines script library (see below). It is
+solely developed for the processing of structural images. Primarily, in
+this fork the presence of T2w images is optional. Other additional features
+are: detection and masking of arteries, improved robust bias correction,
+correction of sinc interpolation errors, improved brain mask definition,
+and several small tweaks. The fork is only tested on the FMRIB Jalapeno
+server in Oxford. The best way to start is by copying and adapting
+Pipelines/Examples/Scripts/RunStructuralBatch.sh to your own needs. It
+might be useful to change the filename to something like
+RunStructuralBatch_studyname.sh (files matching this template will be
+ignored by git). Lennart Verhagen
+
+
+# HCP Pipelines
 
 The HCP Pipelines product is a set of tools (primarily, but not exclusively,
-shell scripts) for processing MRI images for the [Human Connectome Project][HCP]. 
-Among other things, these tools implement the Minimal Preprocessing Pipeline 
+shell scripts) for processing MRI images for the [Human Connectome Project][HCP].
+Among other things, these tools implement the Minimal Preprocessing Pipeline
 (MPP) described in [Glasser et al. 2013][GlasserEtAl]
 
 For further information, please see:
@@ -12,8 +27,8 @@ For further information, please see:
 * The [FAQ][FAQ], and
 * Other documentation in the project [Wiki][wiki]
 
-Discussion of HCP Pipeline usage and improvements can be posted to the 
-hcp-users discussion list. Sign up for hcp-users at 
+Discussion of HCP Pipeline usage and improvements can be posted to the
+hcp-users discussion list. Sign up for hcp-users at
 [http://humanconnectome.org/contact/#subscribe][hcp-users-subscribe]
 
 
