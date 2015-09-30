@@ -202,13 +202,21 @@ for Subject in $Subjlist ; do
   # or "NONE" if not used
   PhaseInputName="${StudyFolder}/${Subject}/unprocessed/${Scanner}/T1w_MPR1/${Subject}_${Scanner}_FieldMap_Phase.nii.gz"
 
+  # Test for the existance of the Gradient Echo Fieldmap images
+  UseGradEchoFieldmap="TRUE"
+  [[ ! -r $MagnitudeInputName ]] || [[ ! -r $PhaseInputName ]] && UseGradEchoFieldmap="FALSE"
+
   # The TE variable should be set to 2.46ms for 3T scanner, 1.02ms for 7T
   # scanner or "NONE" if not using
   if [[ $Scanner = "3T" ]] ; then
     TE="2.46"
   elif [[ $Scanner = "7T" ]] ; then
     TE="1.02"
-  else
+  fi
+
+  if [[ $UseGradEchoFieldmap = "FALSE" ]] ; then
+    MagnitudeInputName="NONE"
+    PhaseInputName="NONE"
     TE="NONE"
   fi
 
@@ -306,6 +314,12 @@ for Subject in $Subjlist ; do
   #T1wSampleSpacing="0.00001627604167"
   #T2wSampleSpacing="0.00000500160051"
   #UnwarpDir="y-" # y- refers to A>>P
+
+  if [[ $UseGradEchoFieldmap = "FALSE" ]] ; then
+    T1wSampleSpacing="NONE"
+    T2wSampleSpacing="NONE"
+    UnwarpDir="NONE"
+  fi
 
   # Config settings of the "Oxford Structural" fork
   InitBiasCorr="TRUE" # perform initial bias correct to improve registration ("TRUE", "FALSE")
