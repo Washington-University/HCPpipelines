@@ -89,9 +89,9 @@ FASTMethod=`defaultopt $FASTMethod "ROBUST"`
 SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
 
 # if no special estimation images are supplied, just the standard ones
-[[ -z $T1wImageEst ]] && T1wImageBEst=$T1wImage
+[[ -z $T1wImageEst ]] && T1wImageEst=$T1wImage
 [[ -z $T1wImageBrainEst ]] && T1wImageBrainEst=$T1wImageBrain
-[[ -z $T2wImageEst ]] && T2wImageBEst=$T1wImage
+[[ -z $T2wImageEst ]] && T2wImageEst=$T1wImage
 [[ -z $T2wImageBrainEst ]] && T2wImageBrainEst=$T1wImageBrain
 
 Modalities="T1w"
