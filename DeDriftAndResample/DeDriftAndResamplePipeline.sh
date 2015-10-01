@@ -642,6 +642,7 @@ main()
 	# ReApply FIX Cleanup
 	log_Msg "ReApply FIX Cleanup"
 	for fMRIName in ${rfMRINames} ; do
+		log_Msg "fMRIName: ${fMRIName}"
 		#${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh ${Caret7_Command} ${GitRepo} ${FixDir} ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ${ConcatRegName} 
 		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName}
 	done
