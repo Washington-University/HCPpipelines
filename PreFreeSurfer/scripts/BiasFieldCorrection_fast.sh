@@ -180,7 +180,7 @@ if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt
 echo "# Look at the quality of the bias corrected output (T1w is brain only)" >> $WD/qa.txt
 echo "fslview $T1wImageBrain $OutputT1wRestoredBrainImage" >> $WD/qa.txt
-[[ $Modalities = "T1w T2w" ]] && echo "fslview $T2wImage $OutputT2wRestoredImage" >> $WD/qa.txt
+if [[ $Modalities = "T1w T2w" ]] ; then echo "fslview $T2wImage $OutputT2wRestoredImage" >> $WD/qa.txt ; fi
 #echo "# Optional debugging (multiplied image + masked + normalised versions)" >> $WD/qa.txt
 #echo "fslview $WD/T1wmulT2w.nii.gz $WD/T1wmulT2w_brain_norm.nii.gz $WD/T1wmulT2w_brain_norm_modulate_mask -l Red -t 0.5" >> $WD/qa.txt
 #echo "# Optional debugging (smoothed version, extrapolated version)" >> $WD/qa.txt
