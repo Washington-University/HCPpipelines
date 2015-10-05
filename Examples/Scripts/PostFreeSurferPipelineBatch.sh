@@ -1,5 +1,4 @@
 #!/bin/bash
-#line to test git commit
 
 get_batch_options() {
     local arguments=($@)
