@@ -90,7 +90,7 @@ get_options()
 				g_high_pass=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--reg_name=*)
+			--reg-name=*)
 				g_reg_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
@@ -229,7 +229,7 @@ main()
 
 	# Use Compiled Matlab
 	local matlab_exe="${HCPPIPEDIR}"
-	matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol.sh"
+	matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
 
 	# TBD: Use environment variable instead of fixed path!
 	local matlab_compiler_runtime="/export/matlab/R2013a/MCR"
