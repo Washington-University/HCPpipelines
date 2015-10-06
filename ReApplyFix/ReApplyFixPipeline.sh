@@ -236,7 +236,7 @@ main()
 
 	local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 	
-	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}_${RegString}.matlab.log 2>&1"
+	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
 
 	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 

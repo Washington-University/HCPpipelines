@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="fix_3_clean_no_vol" location="/home/tbrown01/ReApplyFix" file="/home/tbrown01/ReApplyFix/fix_3_clean_no_vol.prj" build-checksum="3549632429">
+  <configuration target="target.standalone" target-name="Standalone Application" name="fix_3_clean_no_vol" location="/home/tbrown01/ReApplyFix" file="/home/tbrown01/ReApplyFix/fix_3_clean_no_vol.prj" build-checksum="1715923563">
     <param.project.name>/home/tbrown01/ReApplyFix/fix_3_clean_no_vol.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>fix_3_clean_no_vol</param.appname>
@@ -64,6 +64,8 @@
       <file>${PROJECT_ROOT}/ciftiopen.m</file>
       <file>${PROJECT_ROOT}/ciftisave.m</file>
       <file>${PROJECT_ROOT}/ciftisavereset.m</file>
+      <file>${PROJECT_ROOT}/functionmotionconfounds.m</file>
+      <file>${PROJECT_ROOT}/functionnormalise.m</file>
       <file>/home/tbrown01/fsl_matlab</file>
       <file>/home/tbrown01/gifti-1.5</file>
     </fileset.resources>
