@@ -48,3 +48,8 @@ export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 export MSMBin=${HCPPIPEDIR}/MSMBinaries
+
+# FMRIB Jalapeno specific settings
+# no further job branching beyond fsl_sub is allowed on the Jalapeno cluster
+export NSLOTS=1
+export OMP_NUM_THREADS=1

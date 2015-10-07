@@ -159,6 +159,15 @@ else
 
 fi
 
+# Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the number of cores
+# a job will use.  If this environment variable is set, we will use it to determine the number of cores to
+# tell recon-all to use.
+if [[ -z ${NSLOTS} ]] ; then
+    num_cores=8
+else
+    num_cores="${NSLOTS}"
+fi
+
 #Initial Recon-all Steps
 log_Msg "Initial Recon-all Steps"
 #-skullstrip of FreeSurfer not reliable for Phase II data because of poor FreeSurfer mri_em_register registrations with Skull on, run registration with PreFreeSurfer masked data and then generate brain mask as usual
@@ -167,19 +176,9 @@ mri_convert "$T1wImageBrainFile"_1mm.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brain
 mri_em_register -mask "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz $FREESURFER_HOME/average/RB_all_2008-03-26.gca "$SubjectDIR"/"$SubjectID"/mri/transforms/talairach_with_skull.lta
 mri_watershed -T1 -brain_atlas $FREESURFER_HOME/average/RB_all_withskull_2008-03-26.gca "$SubjectDIR"/"$SubjectID"/mri/transforms/talairach_with_skull.lta "$SubjectDIR"/"$SubjectID"/mri/T1.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz
 cp "$SubjectDIR"/"$SubjectID"/mri/brainmask.auto.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz
-
-# Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the number of cores
-# a job will use.  If this environment variable is set, we will use it to determine the number of cores to
-# tell recon-all to use.
-
-if [[ -z ${NSLOTS} ]] ; then
-    num_cores=8
-else
-    num_cores="${NSLOTS}"
-fi
-
 recon-all -subjid $SubjectID -sd $SubjectDIR -autorecon2 -nosmooth2 -noinflate2 -nocurvstats -nosegstats -openmp ${num_cores}
 
+<<"COMMENT_BLOCK"
 #Highres white stuff and Fine Tune T2w to T1w Reg
 [[ $FlgHiRes = "TRUE" ]] && [[ -n $T2wImage ]] && log_Msg "High resolution white matter and fine tune T2w to T1w registration"
 [[ $FlgHiRes = "TRUE" ]] && [[ -z $T2wImage ]] && log_Msg "High resolution white matter, but no T2w available to register to T1w"
@@ -201,5 +200,6 @@ recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphe
 #Final Recon-all Steps
 log_Msg "Final Recon-all Steps"
 recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec
+COMMENT_BLOCK
 
 log_Msg "Completed"

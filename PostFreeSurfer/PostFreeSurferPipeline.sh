@@ -5,6 +5,21 @@ set -e
 #  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.1)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
+# to do:
+
+# limit threads to 1 when on FMRIB jalapeno
+# Please use:
+# export OMP_NUM_THREADS=1
+# and/or
+# -openmp 1
+# if using recon_all, to limit threads to 1.
+
+# the pial surface is now rotated by 90 degrees with respect to the
+# structural (and other surfaces). I have solved this problem before, but
+# somehow that progress was loste (and I can't remember). Needs to be
+# implemented again, most likely in the FreeSurfer pipeline. Maybe it has
+# something to do with the absence of a T2w image?
+
 ########################################## PIPELINE OVERVIEW ##########################################
 
 #TODO
