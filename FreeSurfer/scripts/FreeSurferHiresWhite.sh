@@ -19,10 +19,6 @@ fslmaths "$T1wImage" -abs -add 1 "$mridir"/T1w_hires.nii.gz
 hires="$mridir"/T1w_hires.nii.gz
 
 # generate registration between conformed and hires based on headers
-# FIXME: it seems this registration matrix is not an identity matrix, that
-# could be but one should be very careful that one also applies the inverse
-# transformation after applying the forward transform. And for both white
-# and pial surfaces. Is this the cause of the pial problems?
 tkregister2 --mov "$mridir"/T1w_hires.nii.gz --targ $mridir/orig.mgz --noedit --regheader --reg $reg
 cp $SubjectDIR/$SubjectID/surf/lh.white $SubjectDIR/$SubjectID/surf/lh.sphere.reg
 cp $SubjectDIR/$SubjectID/surf/rh.white $SubjectDIR/$SubjectID/surf/rh.sphere.reg
