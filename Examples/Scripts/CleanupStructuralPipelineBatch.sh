@@ -127,7 +127,7 @@ for Subject in $Subjlist ; do
   echo -n "rm -f ${SubjT1w}/${FSAverageLink}; " >> $TmpFile
   echo -n "rm -f ${SubjT1w}/${FSLHAverageLink}; " >> $TmpFile
   echo -n "rm -f ${SubjT1w}/${FSRHAverageLink}; " >> $TmpFile
-  echo -n "mv -f ${SubjFS}/${statsFolder} ${TmpstatsFolder}/${statsFolder}; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/${statsFolder} ${SubjTmpFS}/${statsFolder}; " >> $TmpFile
   echo -n "rm -rf ${SubjFS}; " >> $TmpFile
   echo -n "mv -f ${SubjTmpFS} ${SubjFS}; " >> $TmpFile
   echo -n "$FSLDIR/bin/imrm ${SubjFiles2Remove}; " >> $TmpFile
