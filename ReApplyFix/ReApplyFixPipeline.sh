@@ -146,7 +146,7 @@ get_options()
 	fi
 }
 
-show_tool_version()
+show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
@@ -166,6 +166,8 @@ main()
 {
 	# Get command line options
 	get_options $@
+
+	show_tool_versions
 
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
