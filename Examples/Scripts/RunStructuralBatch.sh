@@ -16,7 +16,7 @@ SubjList="S01 S02 S03" # "S01 S02 S03 S04"
 Scanner="3T"
 
 # specify the task
-Task="RENAME" # "RENAME" "PRE" "FREE" "POST"
+Task="RENAME" # "RENAME" "PRE" "FREE" "POST" "CLEAN"
 
 # specify the batch scripts folder
 #BatchFolder=/vols/username/scripts/Pipelines/Examples/Scripts
@@ -110,6 +110,14 @@ fi
 # run the "POST-FREESURFER" task
 if [[ $Task = "POST" ]] ; then
   $BatchFolder/PostFreeSurferPipelineBatch.sh \
+  --StudyFolder="$StudyFolder" \
+  --SubjList="$SubjListSafe"
+fi
+
+
+# run the "CLEAN-UP" task
+if [[ $Task = "CLEAN" ]] ; then
+  $BatchFolder/CleanupStructuralPipelineBatch.sh \
   --StudyFolder="$StudyFolder" \
   --SubjList="$SubjListSafe"
 fi
