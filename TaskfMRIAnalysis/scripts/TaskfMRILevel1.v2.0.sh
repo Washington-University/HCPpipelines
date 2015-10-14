@@ -5,6 +5,22 @@ g_script_name=`basename ${0}`
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 
+show_tool_versions()
+{
+	# Show HCP pipelines version
+	log_Msg "Showing HCP Pipelines version"
+	cat ${HCPPIPEDIR}/version.txt
+
+	# Show wb_command version
+	log_Msg "Showing Connectome Workbench (wb_command) version"
+	${CARET7DIR}/wb_command -version
+
+	# Show fsl version
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
+}
+
 Subject="$1"
 log_Msg "Subject: ${Subject}"
 
@@ -52,6 +68,8 @@ log_Msg "Parcellation: ${Parcellation}"
 
 ParcellationFile="${16}"
 log_Msg "ParcellationFile: ${ParcellationFile}" 
+
+show_tool_versions
 
 if [ ! ${Parcellation} = "NONE" ] ; then
   ParcellationString="_${Parcellation}"
