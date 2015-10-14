@@ -5,6 +5,8 @@ g_script_name=`basename ${0}`
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
 show_tool_versions()
 {
 	# Show HCP pipelines version
