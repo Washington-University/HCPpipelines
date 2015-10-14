@@ -327,8 +327,10 @@ for Subject in $Subjlist ; do
   BiasCorr="FAST" # method for actual bias correction (after registration) set to "sqrtT1wbyT2w" for HCP default, or set to "FAST" to use RobustBiasCorr.sh based on fsl_anat and fast
   if [[ $Scanner = "7T" ]] ; then
     MaskArtery="TRUE" # mask arteries in registration and bias correction (important for 7T data) ("TRUE", "FALSE")
+    BiasFieldSmoothingSigma="5"
   else
     MaskArtery="FALSE"
+    BiasFieldSmoothingSigma="8"
   fi
   SmoothFillNonPos="TRUE" # smoothly fill negative and exactly zero values in images (after spline interpolation) ("TRUE", "FALSE")
 
@@ -378,6 +380,7 @@ for Subject in $Subjlist ; do
       --topupconfig="$TopupConfig" \
       --initbiascorr="$InitBiasCorr" \
       --biascorr="$BiasCorr" \
+      --bfsigma="$BiasFieldSmoothingSigma" \
       --maskartery="$MaskArtery" \
       --smoothfillnonpos="$SmoothFillNonPos" \
       --printcom=$PRINTCOM
@@ -414,6 +417,7 @@ for Subject in $Subjlist ; do
       --topupconfig=${TopupConfig} \
       --initbiascorr=${InitBiasCorr} \
       --biascorr=${BiasCorr} \
+      --bfsigma=$BiasFieldSmoothingSigma \
       --maskartery=${MaskArtery} \
       --smoothfillnonpos=${SmoothFillNonPos} \
       --printcom=${PRINTCOM}"

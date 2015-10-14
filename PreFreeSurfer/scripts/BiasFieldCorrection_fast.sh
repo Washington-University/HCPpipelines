@@ -24,7 +24,7 @@ Usage() {
   echo "      --oT1brain=<output corrected T1 brain>"
   echo "      [--oT2im=<output corrected T2 image>]"
   echo "      [--oT2brain=<output corrected T2 brain>]"
-  echo "      [--BiasFieldSmoothingSigma=<sigma of bias field smoothing in mm>]"
+  echo "      [--bfsigma=<sigma of bias field smoothing in mm>]"
   echo "      [--fastmethod={ROBUST,SINGLE}]"
   echo "      [--smoothfillnonpos={TRUE (default), FALSE}]"
 }
