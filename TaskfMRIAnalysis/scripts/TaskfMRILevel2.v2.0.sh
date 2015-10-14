@@ -1,20 +1,48 @@
 #!/bin/bash
 set -e
+g_script_name=`basename ${0}`
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_SetToolName "${g_script_name}"
 
 Subject="$1"
-ResultsFolder="$2"
-DownSampleFolder="$3"
-LevelOnefMRINames="$4"
-LevelOnefsfNames="$5"
-LevelTwofMRIName="$6"
-LevelTwofsfName="$7"
-LowResMesh="$8"
-FinalSmoothingFWHM="$9"
-TemporalFilter="${10}"
-VolumeBasedProcessing="${11}"
-RegName="${12}"
-Parcellation="${13}"
+log_Msg "Subject: ${Subject}"
 
+ResultsFolder="$2"
+log_Msg "ResultsFolder: ${ResultsFolder}"
+
+DownSampleFolder="$3"
+log_Msg "DownSampleFolder: ${DownSampleFolder}"
+
+LevelOnefMRINames="$4"
+log_Msg "LevelOnefMRINames: ${LevelOnefMRINames}"
+
+LevelOnefsfNames="$5"
+log_Msg "LevelOnefsfNames: ${LevelOnefsfNames}"
+
+LevelTwofMRIName="$6"
+log_Msg "LevelTwofMRIName: ${LevelTwofMRIName}"
+
+LevelTwofsfName="$7"
+log_Msg "LevelTwofsfName: ${LevelTwofsfName}"
+
+LowResMesh="$8"
+log_Msg "LowResMesh: ${LowResMesh}"
+
+FinalSmoothingFWHM="$9"
+log_Msg "FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
+
+TemporalFilter="${10}"
+log_Msg "TemporalFilter: ${TemporalFilter}"
+
+VolumeBasedProcessing="${11}"
+log_Msg "VolumeBasedProcessing: ${VolumeBasedProcessing}"
+
+RegName="${12}"
+log_Msg "RegName: ${RegName}"
+
+Parcellation="${13}"
+log_Msg "Parcellation: ${Parcellation}"
 
 #Set up some things
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
@@ -30,14 +58,23 @@ else
   ScalarExtension="dscalar.nii"
 fi
 
+log_Msg "ParcellationString: ${ParcellationString}"
+log_Msg "Extension: ${Extension}"
+log_Msg "ScalarExtension: ${ScalarExtension}"
+
 if [ ! ${RegName} = "NONE" ] ; then
   RegString="_${RegName}"
 else
   RegString=""
 fi
 
+log_Msg "RegString: ${RegString}"
+
 SmoothingString="_s${FinalSmoothingFWHM}"
+log_Msg "SmoothingString: ${SmoothingString}"
+
 TemporalFilterString="_hp""$TemporalFilter"
+log_Msg "TemporalFilterString: ${TemporalFilterString}"
 
 LevelOneFEATDirSTRING=""
 i=1
@@ -62,12 +99,14 @@ fi
 cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf | sed s/_hp200_s4/${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}/g > ${LevelTwoFEATDir}/design.fsf
 
 #Make design files
+log_Msg "Make design files"
 DIR=`pwd`
 cd ${LevelTwoFEATDir}
 feat_model ${LevelTwoFEATDir}/design
 cd $DIR
 
 #Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses
+log_Msg "Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses"
 if [ ${VolumeBasedProcessing} = "YES" ] ; then
   Analyses="GrayordinatesStats StandardVolumeStats"
 elif [ -z ${ParcellationString} ] ; then
@@ -75,10 +114,14 @@ elif [ -z ${ParcellationString} ] ; then
 else
   Analyses="ParcellatedStats"
 fi
+log_Msg "Analyses: ${Analyses}"
+
 for Analysis in ${Analyses} ; do
+  log_Msg "Analysis: ${Analysis}"
   mkdir -p ${LevelTwoFEATDir}/${Analysis}
   
   #Copy over level one folders and convert CIFTI to NIFTI if required
+  log_Msg "Copy over level one folders and convert CIFTI to NIFTI if required"
   if [ -e ${FirstFolder}/${Analysis}/cope1.nii.gz ] ; then
     Grayordinates="NO"
     i=1
@@ -107,6 +150,7 @@ for Analysis in ${Analyses} ; do
   fi
   
   #Create dof and Mask
+  log_Msg "Create dof and Mask"
   MERGESTRING=""
   i=1
   while [ $i -le ${NumFirstLevelFolders} ] ; do
@@ -119,8 +163,11 @@ for Analysis in ${Analyses} ; do
   fslmaths ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz -Tmin -bin ${LevelTwoFEATDir}/${Analysis}/mask.nii.gz
   
   #Merge COPES and VARCOPES and run 2nd level analysis
+  log_Msg "Merge COPES and VARCOPES and run 2nd level analysis"
+  log_Msg "NumContrasts: ${NumContrasts}"
   i=1
   while [ $i -le ${NumContrasts} ] ; do
+	log_Msg "i: ${i}"
     COPEMERGE=""
     VARCOPEMERGE=""
     j=1
@@ -136,6 +183,7 @@ for Analysis in ${Analyses} ; do
   done
 
   #Cleanup Temporary Files
+  log_Msg "Cleanup Temporary Files"
   j=1
   while [ $j -le ${NumFirstLevelFolders} ] ; do
     rm -r ${LevelTwoFEATDir}/${Analysis}/${j}
@@ -143,6 +191,7 @@ for Analysis in ${Analyses} ; do
   done
 
   #Convert Grayordinates NIFTI Files to CIFTI if necessary
+  log_Msg "Convert Grayordinates NIFTI Files to CIFTI if necessary"
   if [ $Grayordinates = "YES" ] ; then
     cd ${LevelTwoFEATDir}/${Analysis}
     Files=`ls | grep .nii.gz | cut -d "." -f 1`
@@ -165,7 +214,8 @@ for Analysis in ${Analyses} ; do
   fi
 done  
 
-#Genereate Files for Viewing
+#Generate Files for Viewing
+log_Msg "Generate Files for Viewing"
 i=1
 MergeSTRING=""
 if [ ${VolumeBasedProcessing} = "YES" ] ; then
