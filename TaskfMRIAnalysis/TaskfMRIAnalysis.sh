@@ -134,22 +134,54 @@ determine_old_or_new_fsl()
 opts_ShowVersionIfRequested $@
 
 log_Msg "Parsing Command Line Options"
+
 Path=`opts_GetOpt1 "--path" $@`
+log_Msg "Path: ${Path}"
+
 Subject=`opts_GetOpt1 "--subject" $@`
+log_Msg "Subject: ${Subject}"
+
 LevelOnefMRINames=`opts_GetOpt1 "--lvl1tasks" $@`
+log_Msg "LevelOnefMRINames: ${LevelOnefMRINames}"
+
 LevelOnefsfNames=`opts_GetOpt1 "--lvl1fsfs" $@`
+log_Msg "LevelOnefsfNames: ${LevelOnefsfNames}"
+
 LevelTwofMRIName=`opts_GetOpt1 "--lvl2task" $@`
+log_Msg "LevelTwofMRIName: ${LevelTwofMRIName}"
+
 LevelTwofsfNames=`opts_GetOpt1 "--lvl2fsf" $@`
+log_Msg "LevelTwofsfNames: ${LevelTwofsfNames}"
+
 LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`
+log_Msg "LowResMesh: ${LowResMesh}"
+
 GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
+log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
+
 OriginalSmoothingFWHM=`opts_GetOpt1 "--origsmoothingFWHM" $@`
+log_Msg "OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
+
 Confound=`opts_GetOpt1 "--confound" $@`
+log_Msg "Confound: ${Confound}"
+
 FinalSmoothingFWHM=`opts_GetOpt1 "--finalsmoothingFWHM" $@`
+log_Msg "FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
+
 TemporalFilter=`opts_GetOpt1 "--temporalfilter" $@`
+log_Msg "TemporalFilter: ${TemporalFilter}"
+
 VolumeBasedProcessing=`opts_GetOpt1 "--vba" $@`
+log_Msg "VolumeBasedProcessing: ${VolumeBasedProcessing}"
+
 RegName=`opts_GetOpt1 "--regname" $@`
+log_Msg "RegName: ${RegName}"
+
 Parcellation=`opts_GetOpt1 "--parcellation" $@`
+log_Msg "Parcellation: ${Parcellation}"
+
 ParcellationFile=`opts_GetOpt1 "--parcellationfile" $@`
+log_Msg "ParcellationFile: ${ParcellationFile}"
 
 # Determine the version of FSL that is in use
 get_fsl_version fsl_ver
