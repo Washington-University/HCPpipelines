@@ -131,11 +131,27 @@ if [[ -n $BrainMask ]] ; then
   # copy and binarise brain mask to working directory and rename
   $FSLbin/fslmaths $BrainMask -bin $WD/${TX}_hpf_brain_mask
   $FSLbin/fslmaths $WD/${TX}_hpf -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain
+  # ensure the mask is conservative by running bet again
+  echo "  ensuring provided brain mask is conservative"
+  $FSLbin/bet $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_strict -m -n -f 0.1
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
 else
   # do conservative brain extraction
-  echo "  extract a brain mask"
-  $FSLbin/bet $WD/${TX}_hpf $WD/${TX}_hpf_brain -m -f 0.1
+  echo "  extracting a conservative brain mask"
+  $FSLbin/bet $WD/${TX}_hpf $WD/${TX}_hpf_brain -m -n -f 0.1
+  $FSLbin/imcp $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
 fi
+
+echo "  removing non-brain tissue from the edge of the mask"
+thr=$($FSLbin/fslstats $WD/${TX}_hpf -k $WD/${TX}_hpf_brain_strict_mask -M)
+thr=$(echo "$thr" | awk '{print $1/2}')
+$FSLbin/fslmaths $WD/${TX}_hpf -thr $thr -mas $WD/${TX}_hpf_brain_strict_mask -bin $WD/${TX}_hpf_brain_strict_mask
+$FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mul -1 -add 1 $WD/${TX}_hpf_brain_inv_mask
+# select only the largest contiguous cluster of low-intensity voxels
+# one could consider to all low-intensity voxels, also for example the ventricles. Then it would probably best to raise --minextent to 1000.
+$FSLbin/cluster --in=$WD/${TX}_hpf_brain_inv_mask --thresh=0.5 --minextent=100 --no_table --oindex=$WD/${TX}_hpf_brain_inv_mask
+thr=$($FSLbin/fslstats $WD/${TX}_hpf_brain_inv_mask -R | awk '{print $2}')
+$FSLbin/fslmaths $WD/${TX}_hpf_brain_inv_mask -thr $thr -bin -dilF -eroF -mul -1 -add 1 -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
 
 # extract the brain from the original image
 $FSLbin/fslmaths $WD/${TX} -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_s20
@@ -198,7 +214,7 @@ if [[ $flg_betrestore = "TRUE" ]] ; then
 fi
 
 # clean up intermediate files
-$FSLbin/imrm $WD/${TX}_s20 $WD/${TX}_hpf $WD/${TX}_hpf_s20 $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask2 $WD/${TX}_hpf2_s20 $WD/${TX}_hpf2_brain $WD/${TX}_fast1_bias $WD/${TX}_fast1_restore $WD/${TX}_fast1_seg $WD/${TX}_initmask_s20 $WD/${TX}_fast2_bias $WD/${TX}_fast2_restore $WD/${TX}_fast2_seg $WD/${TX}_fast3_bias_idxmask $WD/${TX}_fast3_bias_init $WD/${TX}_fast3_bias_vol2 $WD/${TX}_fast3_bias_vol32 $WD/${TX}_fast3_totbias $WD/${TX}_fast3_seg $WD/${TX}_fast3_restore
+$FSLbin/imrm $WD/${TX}_s20 $WD/${TX}_hpf $WD/${TX}_hpf_s20 $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_inv_mask $WD/${TX}_hpf_brain_strict_mask $WD/${TX}_hpf_brain_mask2 $WD/${TX}_hpf2_s20 $WD/${TX}_hpf2_brain $WD/${TX}_fast1_bias $WD/${TX}_fast1_restore $WD/${TX}_fast1_seg $WD/${TX}_initmask_s20 $WD/${TX}_fast2_bias $WD/${TX}_fast2_restore $WD/${TX}_fast2_seg $WD/${TX}_fast3_bias_idxmask $WD/${TX}_fast3_bias_init $WD/${TX}_fast3_bias_vol2 $WD/${TX}_fast3_bias_vol32 $WD/${TX}_fast3_totbias $WD/${TX}_fast3_seg $WD/${TX}_fast3_restore
 
 echo " "
 echo " END: RobustBiasCorr"

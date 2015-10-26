@@ -330,7 +330,8 @@ for Subject in $Subjlist ; do
     BiasFieldSmoothingSigma="5"
   else
     MaskArtery="FALSE"
-    BiasFieldSmoothingSigma="8"
+    #BiasFieldSmoothingSigma="8"
+    BiasFieldSmoothingSigma="5"
   fi
   SmoothFillNonPos="TRUE" # smoothly fill negative and exactly zero values in images (after spline interpolation) ("TRUE", "FALSE")
 
