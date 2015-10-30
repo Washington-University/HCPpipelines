@@ -511,14 +511,25 @@ main()
 				log_Msg "surface_out: ${surface_out}"
 				log_Msg "uncert_metric_out: ${uncert_metric_out}"
 				log_Msg "stddev_metric_out: ${stddev_metric_out}"
+				log_Msg "SurfaceSTRING: ${SurfaceSTRING}"
 				${Caret7_Command} -surface-average ${surface_out} -uncertainty ${uncert_metric_out} -stddev ${stddev_metric_out} ${SurfaceSTRING}
 
 
-				${Caret7_Command} -add-to-spec-file ${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec ${Structure} ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+				spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
+				surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+				log_Msg "Adding surf_file: '${surf_file}' to spec_file: '${spec_file}'"
+				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
+
+				log_Msg "${Caret7_Command} -metric-palette 1"
 				${Caret7_Command} -metric-palette ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_uncertainty.${Mesh}k_fs_LR.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+
+				log_Msg "${Caret7_Command} -metric-palette 2"
 				${Caret7_Command} -metric-palette ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_std.${Mesh}k_fs_LR.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+				
+				log_Msg "Back for another surface"
 			done
 
+			log_Msg "${Caret7_Command} -surface-generate-inflated"
 			${Caret7_Command} -surface-generate-inflated ${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii ${CommonFolder}/${GroupAverageName}.${Hemisphere}.inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii ${CommonFolder}/${GroupAverageName}.${Hemisphere}.very_inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii -iterations-scale ${Scale}
 			${Caret7_Command} -add-to-spec-file ${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec ${Structure} ${CommonFolder}/${GroupAverageName}.${Hemisphere}.inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 			${Caret7_Command} -add-to-spec-file ${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec ${Structure} ${CommonFolder}/${GroupAverageName}.${Hemisphere}.very_inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
