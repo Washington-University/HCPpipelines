@@ -21,9 +21,9 @@ fMRINames="rfMRI_REST1_LR"
 OrigHighPass="2000" #Specified in Sigma
 Caret7_Command="wb_command"
 GitRepo="/media/2TBB/Connectome_Project/Pipelines"
-RegName="MSMRSNOrig3_d26_DR_DeDrift"
-RegName="NONE"
+#RegName="MSMRSNOrig3_d26_DR_DeDrift"
 #RegName="MSMAll_2_d41_WRN_DeDrift"
+RegName="NONE"
 
 LowResMesh="32"
 FinalfMRIResolution="2"
@@ -31,11 +31,56 @@ BrainOrdinatesResolution="2"
 SmoothingFWHM="2"
 OutputProcSTRING="_hp2000_clean"
 dlabelFile="NONE"
+MatlabRunMode="1"
+BCMode="CORRECT" #One of REVERT (revert bias field correction), NONE (don't change biasfield correction), CORRECT (revert original bias field correction and apply new one, requires ??? to be present)
+OutSTRING="stats"
+OutSTRING="stats_bc"
+WM="NONE"
+WM="${GitRepo}/global/config/FreeSurferWMRegLut.txt"
+CSF="NONE"
+CSF="${GitRepo}/global/config/FreeSurferCSFRegLut.txt"
 
-for Subject in ${Subjlist} ; do
-  for fMRIName in ${fMRINames} ; do
-	#                                                    $1            $2        $3            $4              $5              $6          $7              $8                       $9                      $10               $11                $12
-    fsl_sub -q q6.q ${GitRepo}/RestingStateStats.sh ${StudyFolder} ${Subject} ${fMRIName} ${OrigHighPass} ${Caret7_Command} ${RegName} ${LowResMesh} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${SmoothingFWHM} ${OutputProcSTRING} ${dlabelFile}
-    echo "set -- ${StudyFolder} ${Subject} ${fMRIName} ${OrigHighPass} ${Caret7_Command} ${RegName} ${LowResMesh} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${SmoothingFWHM} ${OutputProcSTRING} ${dlabelFile}"
+EnvironmentScript="${GitRepo}/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+# Set up pipeline environment variables and software
+. ${EnvironmentScript}
+
+# Log the originating call
+echo "$@"
+
+if [ X$SGE_ROOT != X ] ; then
+    QUEUE="-q long.q"
+fi
+
+PRINTCOM=""
+#PRINTCOM="echo"
+QUEUE="-q long.q"
+QUEUE="-q q6.q"
+
+#Reversed to prevent collisions
+for fMRIName in ${fMRINames} ; do
+  for Subject in ${Subjlist} ; do
+
+    ${FSLDIR}/bin/fsl_sub ${QUEUE} \
+      ${HCPPIPEDIR}/RestingStateStats/RestingStateStats.sh \
+      --path=${StudyFolder} \
+      --subject=${Subject} \
+      --fmri-name=${fMRIName} \
+      --high-pass=${OrigHighPass} \
+      --reg-name=${RegName} \
+      --low-res-mesh=${LowResMesh} \
+      --final-fmri-res=${FinalfMRIResolution} \
+      --brain-ordinates-res=${BrainOrdinatesResolution} \
+      --smoothing-fwhm=${SmoothingFWHM} \
+      --output-proc-string=${OutputProcSTRING} \
+      --dlabel-file=${dlabelFile} \
+      --matlab-run-mode=${MatlabRunMode} \
+      --bc-mode=${BCMode} \
+      --out-string=${OutSTRING} \
+      --wm=${WM} \
+      --csf=${CSF}
+    
   done
 done
+
+

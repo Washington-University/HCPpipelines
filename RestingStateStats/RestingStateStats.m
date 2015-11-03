@@ -1,6 +1,6 @@
-function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,inputdtseries,bias,outprefix,dlabel)
+function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,inputdtseries,bias,outprefix,dlabel,bcmode,outstring,WM,CSF)
 
-% function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,inputdtseries,bias,outprefix,dlabel)
+% function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,inputdtseries,bias,outprefix,dlabel,bcmode,outstring)
 %
 % Script for decomposing the CIFTI time series variance into 5 different
 % components: high pass filter, motion regressors, structured noise,
@@ -30,7 +30,13 @@ function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,input
 % DLABEL (optional): dense label file (CIFTI), which if provided
 %   results in the generation of parcellated time series (.ptseries.nii
 %   files) after each stage of clean up.
-  
+% BCMODE (optional): REVERT - undoes bias field correction
+%   NONE - does not change bias field correction
+%   File - uses file to apply new bias field correction after reverting old
+% OUTSTRING: normally 'stats'
+% WM: A text file or NONE
+% CSF: A text file or NONE
+
 %% Notes on variable dimensions:
 %    cdata: NgrayOrd x Ntp (e.g., 91282 x 1200)
 %    ICAs: Ntp x Ncomponents
@@ -76,12 +82,16 @@ fprintf('%s - inputdtseries: %s\n', func_name, inputdtseries);
 fprintf('%s - bias: %s\n', func_name, bias);
 fprintf('%s - outprefix: %s\n', func_name, outprefix);
 fprintf('%s - dlabel: %s\n', func_name, dlabel);
+fprintf('%s - bcmode: %s\n', func_name, bcmode);
+fprintf('%s - outstring: %s\n', func_name, outstring);
+fprintf('%s - WM: %s\n', func_name, WM);
+fprintf('%s - CSF: %s\n', func_name, CSF);
 
 % Set some options that aren't included as arguments in the function
 SaveVarianceNormalizationImage = 1; %If non-zero, output map of sqrt(UnstructNoiseVar)
 SaveMGT = 1; %If non-zero, save mean grayordinate time series at each stage
 SaveGrayOrdinateMaps = 1; % Set to non-zero to save a number of grayordinate maps (into a single .dtseries.nii)
-SaveExtraVar = 0;  % Set to non-zero to save some extra maps/stats related to UnstructNoiseMGT* and NoiseMGT*
+SaveExtraVar = 1;  % Set to non-zero to save some extra maps/stats related to UnstructNoiseMGT* and NoiseMGT*
 
 WBC=wbcommand;
 tpDim = 2;  %Time point dimension of CIFTI
@@ -99,17 +109,26 @@ end
 if ~exist('dlabel','var')
   dlabel = [];
 end
-
+% MPH: Other error checking/handling of inputs would be warranted here.
+% e.g., what if OUTSTRING, WM, or CSF arguments are not supplied?
 
 % Read set of FIX classified noise components
 Inoise=load(noiselist);
 
 %%%% Read data, (optionally revert bias field correction) and compute basic stats
 BO=ciftiopen([inputdtseries '.dtseries.nii'],WBC);
+
 % Revert bias field if requested
-if ~isempty(bias)
+if ~strcmp(bcmode,'NONE');
     bias=ciftiopen(bias,WBC);
     BO.cdata=BO.cdata.*repmat(bias.cdata,1,size(BO.cdata,tpDim));
+end
+
+FixVN=0;
+if exist(bcmode,'file')
+    real_bias=ciftiopen(bcmode,WBC);
+    BO.cdata=BO.cdata./repmat(real_bias.cdata,1,size(BO.cdata,tpDim));
+    FixVN=1;
 end
 
 % Compute spatial mean/std, demean each grayordinate
@@ -169,8 +188,47 @@ fprintf('%s - Finished fslmaths filtering of motion confounds\n',func_name);
 %%%%  Read ICA component timeseries
 ICAorig=normalise(load(sprintf(ICAs)));
 
+%%%%  Read WM Timeseries
+if ~strcmp(WM,'NONE')
+    WMtcOrig=demean(load(sprintf(WM)));
+    fprintf('%s - Starting fslmaths filtering of wm tcs \n',func_name);
+    save_avw(reshape(WMtcOrig',size(WMtcOrig,2),1,1,size(WMtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
+    system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));
+    WMtcOrig=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(WMtcOrig,2),size(WMtcOrig,1))');
+    unix(['rm ' outprefix '_fakeNIFTI.nii.gz']);
+    fprintf('%s - Finished fslmaths filtering of wm tcs\n',func_name);
+end
+
+%%%%  Read CSF Timeseries
+if ~strcmp(CSF,'NONE')
+    CSFtcOrig=demean(load(sprintf(CSF)));
+    fprintf('%s - Starting fslmaths filtering of csf tcs \n',func_name);
+    save_avw(reshape(CSFtcOrig',size(CSFtcOrig,2),1,1,size(CSFtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
+    system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));
+    CSFtcOrig=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(CSFtcOrig,2),size(CSFtcOrig,1))');
+    unix(['rm ' outprefix '_fakeNIFTI.nii.gz']);
+    fprintf('%s - Finished fslmaths filtering of csf tcs\n',func_name);
+end
+
 %%%% Aggressively regress out motion parameters from ICA and from data
 ICA = ICAorig - (confounds * (pinv(confounds) * ICAorig));
+if ~strcmp(WM,'NONE')
+    %%%% Aggressively regress out motion parameters from WM
+    WMtc = WMtcOrig - (confounds * (pinv(confounds) * WMtcOrig));
+    %%%% Regress out Noise
+    WMbetaICA = pinv(ICA) * WMtc;
+    WMtcClean = WMtc - (ICA(:,Inoise) * WMbetaICA(Inoise,:));
+    WMtcClean = demean(WMtcClean);
+end
+if ~strcmp(CSF,'NONE')
+    %%%% Aggressively regress out motion parameters from CSF
+    CSFtc = CSFtcOrig - (confounds * (pinv(confounds) * CSFtcOrig));
+    %%%% Regress out Noise
+    CSFbetaICA = pinv(ICA) * CSFtc;
+    CSFtcClean = CSFtc - (ICA(:,Inoise) * CSFbetaICA(Inoise,:));
+    CSFtcClean = demean(CSFtcClean);
+end
+%%%% Aggressively regress out motion parameters from data
 PostMotionTCS = HighPassTCS - (confounds * (pinv(confounds) * HighPassTCS'))';
 [PostMotionMGTRtcs,PostMotionMGT,PostMotionMGTbeta,PostMotionMGTVar,PostMotionMGTrsq] = MGTR(PostMotionTCS);
 MotionVar=var((HighPassTCS - PostMotionTCS),[],tpDim);
@@ -197,10 +255,42 @@ UnstructNoiseVar = var(UnstructNoiseTCS,[],tpDim);
 NoiseTCS = PostMotionTCS - (ICA(:,Isignal) * betaICA(Isignal,:))';  
 [NoiseMGTRtcs,NoiseMGT,NoiseMGTbeta,NoiseMGTVar,NoiseMGTrsq] = MGTR(NoiseTCS);
 
+if ~strcmp(WM,'NONE')
+    betaWM = pinv(WMtcClean) * CleanedTCS';
+    WMCleanedTCS = CleanedTCS - (WMtcClean * betaWM)';
+    [WMCleanedMGTRtcs,WMCleanedMGT,WMCleanedMGTbeta,WMCleanedMGTVar,WMCleanedMGTrsq] = MGTR(WMCleanedTCS);
+    WMVar = var((CleanedTCS - WMCleanedTCS),[],tpDim);
+end
+
+if ~strcmp(CSF,'NONE')
+    betaCSF = pinv(CSFtcClean) * CleanedTCS';
+    CSFCleanedTCS = CleanedTCS - (CSFtcClean * betaCSF)';
+    [CSFCleanedMGTRtcs,CSFCleanedMGT,CSFCleanedMGTbeta,CSFCleanedMGTVar,CSFCleanedMGTrsq] = MGTR(CSFCleanedTCS);
+    CSFVar = var((CleanedTCS - CSFCleanedTCS),[],tpDim);
+end
+
 % Use the preceding to now estimate the structured noise variance and the
 % signal specific variance ("BOLDVar")
-StructNoiseVar = var(NoiseTCS,[],tpDim) - UnstructNoiseVar;
-BOLDVar = var(CleanedTCS,[],tpDim) - UnstructNoiseVar;
+StructNoiseVar = var((NoiseTCS - UnstructNoiseTCS),[],tpDim);
+BOLDVar = var((CleanedTCS - UnstructNoiseTCS),[],tpDim);
+if ~strcmp(WM,'NONE')
+    WMCleanedBOLDVar = var((WMCleanedTCS - UnstructNoiseTCS),[],tpDim);
+end
+if ~strcmp(CSF,'NONE')
+    CSFCleanedBOLDVar = var((CSFCleanedTCS - UnstructNoiseTCS),[],tpDim);
+end
+
+% Generate Plots for the following steps:
+% OrigTCS, HighPassTCS, PostMotionTCS, 
+% CleanedTCS, UnstructNoiseTCS, NoiseTCS
+steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
+    'UnstructNoiseTCS','NoiseTCS'};
+plotgray(OrigTCS,confounds,[outprefix '_' num2str(1) '_' steps{1}])
+plotgray(HighPassTCS,confounds,[outprefix '_' num2str(2) '_' steps{2}])
+plotgray(PostMotionTCS,confounds,[outprefix '_' num2str(3) '_' steps{3}])
+plotgray(CleanedTCS,confounds,[outprefix '_' num2str(4) '_' steps{4}])
+plotgray(UnstructNoiseTCS,confounds,[outprefix '_' num2str(5) '_' steps{5}])
+plotgray(NoiseTCS,confounds,[outprefix '_' num2str(6) '_' steps{6}])
 
 % These variance components are not necessarily strictly orthogonal.  The
 % following variables can be used to assess the degree of overlap.
@@ -227,6 +317,15 @@ MotionMGTVarRatio = makeRatio(PostMotionMGTVar,OrigVar);
 CleanedMGTVarRatio = makeRatio(CleanedMGTVar,OrigVar);
 UnstructNoiseMGTVarRatio = makeRatio(UnstructNoiseMGTVar,OrigVar);
 NoiseMGTVarRatio = makeRatio(NoiseMGTVar,OrigVar);
+CleanedMGTVarVsBOLDVarRatio = makeRatio(CleanedMGTVar,BOLDVar);
+if ~strcmp(WM,'NONE')
+    WMVarVsBOLDVarRatio = makeRatio(WMVar,BOLDVar);
+    WMCleanedMGTVarVsWMCleanedBOLDVarRatio = makeRatio(WMCleanedMGTVar,WMCleanedBOLDVar);    
+end
+if ~strcmp(CSF,'NONE')
+    CSFVarVsBOLDVarRatio = makeRatio(CSFVar,BOLDVar);
+    CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio = makeRatio(CSFCleanedMGTVar,CSFCleanedBOLDVar);    
+end
 
 % Compute summary measures across grayordinates
 meanMEAN = mean(MEAN);
@@ -265,18 +364,40 @@ meanMotionMGTVarRatio = mean(MotionMGTVarRatio);
 meanCleanedMGTVarRatio = mean(CleanedMGTVarRatio);
 meanUnstructNoiseMGTVarRatio = mean(UnstructNoiseMGTVarRatio);
 meanNoiseMGTVarRatio = mean(NoiseMGTVarRatio);
+meanCleanedMGTVarVsBOLDVarRatio=mean(CleanedMGTVarVsBOLDVarRatio);
 meanOrigMGTrsq = mean(OrigMGTrsq);
 meanHighPassMGTrsq = mean(HighPassMGTrsq);
 meanPostMotionMGTrsq = mean(PostMotionMGTrsq);
 meanCleanedMGTrsq = mean(CleanedMGTrsq);
 meanUnstructNoiseMGTrsq = mean(UnstructNoiseMGTrsq);
 meanNoiseMGTrsq = mean(NoiseMGTrsq);
+if ~strcmp(WM,'NONE')
+    meanWMbetaICA = mean(betaWM);
+    meanWMVar = mean(WMVar);
+    meanWMVarVsBOLDVarRatio = mean(WMVarVsBOLDVarRatio);
+    meanWMCleanedBOLDVar = mean(WMCleanedBOLDVar);
+    meanWMCleanedMGTbeta = mean(WMCleanedMGTbeta);
+    meanWMCleanedMGTVar = mean(WMCleanedMGTVar);
+    meanWMCleanedMGTVarVsWMCleanedBOLDVarRatio = mean(WMCleanedMGTVarVsWMCleanedBOLDVarRatio);
+end
+if ~strcmp(CSF,'NONE')
+    meanCSFbetaICA = mean(betaCSF);
+    meanCSFVar = mean(CSFVar);
+    meanCSFVarVsBOLDVarRatio = mean(CSFVarVsBOLDVarRatio);
+    meanCSFCleanedBOLDVar = mean(CSFCleanedBOLDVar);
+    meanCSFCleanedMGTbeta = mean(CSFCleanedMGTbeta);
+    meanCSFCleanedMGTVar = mean(CSFCleanedMGTVar);
+    meanCSFCleanedMGTVarVsCSFCleanedBOLDVarRatio = mean(CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio);
+end
 
 % Save out variance normalization image for MSMALL/SingleSubjectConcat/MIGP
 if SaveVarianceNormalizationImage
   fprintf('%s - Saving variance normalization image [i.e., sqrt(UnstructNoiseVar)]\n',func_name);
   VarianceNormalizationImage=BO;
   VarianceNormalizationImage.cdata=sqrt(UnstructNoiseVar);
+  if FixVN == 1
+    VarianceNormalizationImage.cdata=VarianceNormalizationImage.cdata.*real_bias.cdata;
+  end
   ciftisavereset(VarianceNormalizationImage,[outprefix '_vn.dscalar.nii'],WBC);
 end
 
@@ -284,12 +405,18 @@ end
 if SaveGrayOrdinateMaps
   fprintf('%s - Saving grayordinate maps\n',func_name);
   statscifti = BO;
-  statscifti.cdata = [MEAN STD COV TSNR OrigVar HighPassVar MotionVar StructNoiseVar BOLDVar UnstructNoiseVar TotalSharedVar CNR OrigMGTVar HighPassMGTVar PostMotionMGTVar CleanedMGTVar OrigMGTbeta HighPassMGTbeta PostMotionMGTbeta CleanedMGTbeta HighPassVarRatio MotionVarRatio StructNoiseVarRatio BOLDVarRatio UnstructNoiseVarRatio OrigMGTVarRatio HighPassMGTVarRatio MotionMGTVarRatio CleanedMGTVarRatio OrigMGTrsq HighPassMGTrsq PostMotionMGTrsq CleanedMGTrsq ];
+  statscifti.cdata = [MEAN STD COV TSNR OrigVar HighPassVar MotionVar StructNoiseVar BOLDVar UnstructNoiseVar TotalSharedVar CNR OrigMGTVar HighPassMGTVar PostMotionMGTVar CleanedMGTVar OrigMGTbeta HighPassMGTbeta PostMotionMGTbeta CleanedMGTbeta HighPassVarRatio MotionVarRatio StructNoiseVarRatio BOLDVarRatio UnstructNoiseVarRatio OrigMGTVarRatio HighPassMGTVarRatio MotionMGTVarRatio CleanedMGTVarRatio CleanedMGTVarVsBOLDVarRatio OrigMGTrsq HighPassMGTrsq PostMotionMGTrsq CleanedMGTrsq];
   if SaveExtraVar
     statscifti.cdata = cat(2,statscifti.cdata,[UnstructNoiseMGTbeta UnstructNoiseMGTVar UnstructNoiseMGTVarRatio UnstructNoiseMGTrsq NoiseMGTbeta NoiseMGTVar NoiseMGTVarRatio NoiseMGTrsq]);
   end
-
-  ciftisave(statscifti,[outprefix '_stats.dtseries.nii'],WBC);
+  if ~strcmp(WM,'NONE')
+    statscifti.cdata = cat(2,statscifti.cdata,[betaWM' WMVar WMVarVsBOLDVarRatio WMCleanedBOLDVar WMCleanedMGTbeta WMCleanedMGTVar WMCleanedMGTVarVsWMCleanedBOLDVarRatio]);
+  end
+  if ~strcmp(CSF,'NONE')
+    statscifti.cdata = cat(2,statscifti.cdata,[betaCSF' CSFVar CSFVarVsBOLDVarRatio CSFCleanedBOLDVar CSFCleanedMGTbeta CSFCleanedMGTVar CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio]);
+  end
+  
+  ciftisave(statscifti,[outprefix '_' outstring '.dtseries.nii'],WBC);
 end
 
 % Save out parcellated time series
@@ -333,13 +460,23 @@ end
 % Write out stats file
 % (Make sure to keep varNames in correspondence with the order that
 % variables are written out!)
-varNames = 'TCSName,NumSignal,NumNoise,NumTotal,MEAN,STD,COV,TSNR,OrigVar,HighPassVar,MotionVar,StructNoiseVar,BOLDVar,UnstructNoiseVar,TotalSharedVar,CNR,OrigMGTVar,HighPassMGTVar,PostMotionMGTVar,CleanedMGTVar,OrigMGTbeta,HighPassMGTbeta,PostMotionMGTbeta,CleanedMGTbeta,HighPassVarRatio,MotionVarRatio,StructNoiseVarRatio,BOLDVarRatio,UnstructNoiseVarRatio,OrigMGTVarRatio,HighPassMGTVarRatio,PostMotionMGTVarRatio,CleanedMGTVarRatio,OrigMGTrsq,HighPassMGTrsq,PostMotionMGTrsq,CleanedMGTrsq';
+varNames = 'TCSName,NumSignal,NumNoise,NumTotal,MEAN,STD,COV,TSNR,OrigVar,HighPassVar,MotionVar,StructNoiseVar,BOLDVar,UnstructNoiseVar,TotalSharedVar,CNR,OrigMGTVar,HighPassMGTVar,PostMotionMGTVar,CleanedMGTVar,OrigMGTbeta,HighPassMGTbeta,PostMotionMGTbeta,CleanedMGTbeta,HighPassVarRatio,MotionVarRatio,StructNoiseVarRatio,BOLDVarRatio,UnstructNoiseVarRatio,OrigMGTVarRatio,HighPassMGTVarRatio,PostMotionMGTVarRatio,CleanedMGTVarRatio,CleanedMGTVarVsBOLDVarRatio,OrigMGTrsq,HighPassMGTrsq,PostMotionMGTrsq,CleanedMGTrsq';
 if SaveExtraVar
   extraVarStr = 'UnstructNoiseMGTbeta,UnstructNoiseMGTVar,UnstructNoiseMGTVarRatio,UnstructNoiseMGTrsq,NoiseMGTbeta,NoiseMGTVar,NoiseMGTVarRatio,NoiseMGTrsq';
   varNames = sprintf('%s,%s',varNames,extraVarStr);
 end
 
-fid = fopen([outprefix '_stats.txt'],'w');
+if ~strcmp(WM,'NONE')
+  WMStr = 'WMbeta,WMVar,WMVarVsBOLDVarRatio,WMCleanedBOLDVar,WMCleanedMGTbeta,WMCleanedMGTVar,WMCleanedMGTVarVsWMCleanedBOLDVarRatio';
+  varNames = sprintf('%s,%s',varNames,WMStr);
+end
+
+if ~strcmp(CSF,'NONE')
+  CSFStr = 'CSFbeta,CSFVar,CSFVarVsBOLDVarRatio,CSFCleanedBOLDVar,CSFCleanedMGTbeta,CSFCleanedMGTVar,CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio';
+  varNames = sprintf('%s,%s',varNames,CSFStr);
+end
+
+fid = fopen([outprefix '_' outstring '.txt'],'w');
 fprintf(fid,'%s\n',varNames);
 fprintf(fid,'%s,%d,%d,%d',inputdtseries,length(Isignal),length(Inoise),length(Isignal)+length(Inoise));
 fprintf(fid,',%.2f,%.2f,%.4f,%.2f',meanMEAN,meanSTD,meanCOV,meanTSNR);
@@ -350,10 +487,17 @@ fprintf(fid,',%.3f,%.3f,%.3f,%.3f',meanOrigMGTbeta,meanHighPassMGTbeta,meanPostM
 fprintf(fid,',%.5f,%.5f,%.5f,%.5f',meanHighPassVarRatio,meanMotionVarRatio,meanStructNoiseVarRatio,meanBOLDVarRatio);
 fprintf(fid,',%.5f,%.5f,%.5f',meanUnstructNoiseVarRatio,meanOrigMGTVarRatio,meanHighPassMGTVarRatio);
 fprintf(fid,',%.5f,%.5f',meanMotionMGTVarRatio,meanCleanedMGTVarRatio);
+fprintf(fid,',%.5f',meanCleanedMGTVarVsBOLDVarRatio);
 fprintf(fid,',%.5f,%.5f,%.5f,%.5f',meanOrigMGTrsq,meanHighPassMGTrsq,meanPostMotionMGTrsq,meanCleanedMGTrsq);
 if SaveExtraVar
   fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanUnstructNoiseMGTbeta,meanUnstructNoiseMGTVar,meanUnstructNoiseMGTVarRatio,meanUnstructNoiseMGTrsq);
   fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanNoiseMGTbeta,meanNoiseMGTVar,meanNoiseMGTVarRatio,meanNoiseMGTrsq);
+end
+if ~strcmp(WM,'NONE')
+    fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanWMbetaICA,meanWMVar,meanWMVarVsBOLDVarRatio,meanWMCleanedBOLDVar,meanWMCleanedMGTbeta,meanWMCleanedMGTVar,meanWMCleanedMGTVarVsWMCleanedBOLDVarRatio);
+end
+if ~strcmp(CSF,'NONE')
+    fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanCSFbetaICA,meanCSFVar,meanCSFVarVsBOLDVarRatio,meanCSFCleanedBOLDVar,meanCSFCleanedMGTbeta,meanCSFCleanedMGTVar,meanCSFCleanedMGTVarVsCSFCleanedBOLDVarRatio);
 end
 fprintf(fid,'\n');
 end
@@ -415,3 +559,77 @@ function [] = savePTCS(tcs,dlabelfile,basename,saveString,ptTemplate,wbcommand)
   ciftisave(ptseriesOut,[basename '_' saveString '.ptseries.nii'],wbcommand);
 end
 
+
+%%  PLOTGRAY plots the global signal, DVARS grayordinate plot
+function plotgray(img,mvm,step) 
+% Make a plot in the [fore/back]ground of AD+FD, DVARS+SD (@ stage),
+% Gray(ordinate) plot and tmask across timecourse.
+close all;
+
+% Calculate FD
+FD = sum(abs(cat(2,mvm(:,7:9),(50*pi/180)*mvm(:,10:12))),2);
+
+% Calculate DVARS (RMS of the backward difference
+DV = diff(transpose(img)); % Backward Difference
+DV = rms(DV,2)-median(rms(DV,2)); % RMS (w/ median centering)
+DV = [0;DV]; % Zero-pad to original timepoints
+
+tp = numel(DV);
+fr = transpose(1:tp);
+normimg = transpose(zscore(transpose(img)));
+
+% Basic order of plot: FD+AD, DVARS+SD+mean Gray(ordinate) timecourse and
+% gray(ordinate) graph.
+
+% Close images, and define colormap as "jet" (R2015a and after use
+% "parula")
+figure('Visible','off');
+set(gcf,'Units','points');
+set(gcf,'Position',[3 6 1320 3720]);
+set(gcf,'PaperPosition',[0.25 2.5 17 23]);
+colormap(jet);
+
+% Plot FD trace
+subplot(3,1,1); plot(fr,FD,'r');
+ax = subplot(3,1,1);
+set(ax,'Units','points','YTick',[0 0.5 1],'YTickLabel',...
+    {'0','FD','1'},'Ylim',[0 1],'FontSize',8);
+set(ax,'Position',[60 3420 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+
+% Plot SD+DV traces
+subplot(3,1,2); plot(fr,DV,'b');
+ax = subplot(3,1,2);
+set(ax,'Units','points','YTick',[-20 0 30 80],'YTickLabel',...
+    {'-20','0','DV','80'},'Ylim',[-20 80],'FontSize',8);
+set(ax,'Position',[60 3168 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+
+% set color palette for grayplots
+bone2 = bone(100);
+bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
+bone2 = bone2(bone2mask,:);
+
+% Sub-grayplot the Left/Right/Subcortex (or volume gray ribbon if NIFTI)
+subplot(3,1,3), imagesc(normimg), colormap(bone2);
+ax = subplot(3,1,3);
+set(ax,'Units','points','YTick',size(normimg,1)/2,'YTickLabel',{'GRAY'}...
+    ,'FontSize',8);
+set(ax,'Position',[60 75 tp 2980]);
+set(ax,'XTick',[],'XTickLabel',''); caxis([-2 2]); xlim([1 tp])
+
+XTicks = round(linspace(0,size(img,2),7));
+XTicksPts = XTicks;
+XTicksPts(1) = XTicks(1)+0.5;
+XTicksPts(end) = XTicks(end)-0.5;
+
+for i = 1:numel(XTicks)
+    XTickString{i} = num2str(XTicks(i)); %#ok<AGROW>
+end;
+
+set(ax,'XTick',XTicksPts,'XTickLabel',XTickString,'TickLength',[0 0]);
+
+% Save plot
+
+print([step '_QC_Summary_Plot],'-dpng','-r72'); close;
+end
