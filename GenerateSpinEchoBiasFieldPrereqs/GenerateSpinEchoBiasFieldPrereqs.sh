@@ -9,7 +9,7 @@ log_Debug_On
 usage()
 {
 	echo ""
-	echo "  Generate Spin Echo Bias Fields "
+	echo "  Generate Spin Echo Bias Field Prerequisites "
 	echo ""
 	echo "  Usage: ${g_script_name} - TO BE WRITTEN"
 	echo ""
