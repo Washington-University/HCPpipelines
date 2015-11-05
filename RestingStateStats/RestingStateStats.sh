@@ -1074,6 +1074,13 @@ main()
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
 
 	# --------------------------------------------------------------------------------
+	log_Msg "Move png files out of primary results folder"
+	# --------------------------------------------------------------------------------
+	mkdir -p ${ResultsFolder}/RestingStateStats/${dtseries}
+
+	mv ${ResultsFolder}/*.png ${ResultsFolder}/RestingStateStats/${dtseries}
+
+	# --------------------------------------------------------------------------------
 	log_Msg "Remove unneeded intermediate files"
 	# --------------------------------------------------------------------------------
 

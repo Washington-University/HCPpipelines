@@ -173,6 +173,7 @@ if isempty(ext)
 else
   confounds=load(motionparameters);
 end
+mvm=confounds;
 confounds=confounds(:,1:6); %Be sure to limit to just the first 6 elements
 %%confounds=normalise(confounds(:,std(confounds)>0.000001)); % remove empty columns
 confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
@@ -194,7 +195,7 @@ if ~strcmp(WM,'NONE')
     fprintf('%s - Starting fslmaths filtering of wm tcs \n',func_name);
     save_avw(reshape(WMtcOrig',size(WMtcOrig,2),1,1,size(WMtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
     system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));
-    WMtcOrig=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(WMtcOrig,2),size(WMtcOrig,1))');
+    WMtcHP=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(WMtcOrig,2),size(WMtcOrig,1))');
     unix(['rm ' outprefix '_fakeNIFTI.nii.gz']);
     fprintf('%s - Finished fslmaths filtering of wm tcs\n',func_name);
 end
@@ -205,7 +206,7 @@ if ~strcmp(CSF,'NONE')
     fprintf('%s - Starting fslmaths filtering of csf tcs \n',func_name);
     save_avw(reshape(CSFtcOrig',size(CSFtcOrig,2),1,1,size(CSFtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
     system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));
-    CSFtcOrig=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(CSFtcOrig,2),size(CSFtcOrig,1))');
+    CSFtcHP=demean(reshape(read_avw([outprefix '_fakeNIFTI']),size(CSFtcOrig,2),size(CSFtcOrig,1))');
     unix(['rm ' outprefix '_fakeNIFTI.nii.gz']);
     fprintf('%s - Finished fslmaths filtering of csf tcs\n',func_name);
 end
@@ -214,18 +215,18 @@ end
 ICA = ICAorig - (confounds * (pinv(confounds) * ICAorig));
 if ~strcmp(WM,'NONE')
     %%%% Aggressively regress out motion parameters from WM
-    WMtc = WMtcOrig - (confounds * (pinv(confounds) * WMtcOrig));
+    WMtcPM = WMtcHP - (confounds * (pinv(confounds) * WMtcHP));
     %%%% Regress out Noise
-    WMbetaICA = pinv(ICA) * WMtc;
-    WMtcClean = WMtc - (ICA(:,Inoise) * WMbetaICA(Inoise,:));
+    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMtcClean = WMtcPM - (ICA(:,Inoise) * WMbetaICA(Inoise,:));
     WMtcClean = demean(WMtcClean);
 end
 if ~strcmp(CSF,'NONE')
     %%%% Aggressively regress out motion parameters from CSF
-    CSFtc = CSFtcOrig - (confounds * (pinv(confounds) * CSFtcOrig));
+    CSFtcPM = CSFtcHP - (confounds * (pinv(confounds) * CSFtcHP));
     %%%% Regress out Noise
-    CSFbetaICA = pinv(ICA) * CSFtc;
-    CSFtcClean = CSFtc - (ICA(:,Inoise) * CSFbetaICA(Inoise,:));
+    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFtcClean = CSFtcPM - (ICA(:,Inoise) * CSFbetaICA(Inoise,:));
     CSFtcClean = demean(CSFtcClean);
 end
 %%%% Aggressively regress out motion parameters from data
@@ -250,10 +251,36 @@ UnstructNoiseTCS = PostMotionTCS - (ICA * betaICA)';
 [UnstructNoiseMGTRtcs,UnstructNoiseMGT,UnstructNoiseMGTbeta,UnstructNoiseMGTVar,UnstructNoiseMGTrsq] = MGTR(UnstructNoiseTCS);
 UnstructNoiseVar = var(UnstructNoiseTCS,[],tpDim);
 
+if ~strcmp(WM,'NONE')
+    % Regress out all structured signal
+    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMtcUnstructNoise = WMtcPM - (ICA * WMbetaICA);
+    WMtcUnstructNoise = demean(WMtcUnstructNoise);
+end
+if ~strcmp(CSF,'NONE')
+    % Regress out all structured signal    
+    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFtcUnstructNoise = CSFtcPM - (ICA * CSFbetaICA);
+    CSFtcUnstructNoise = demean(CSFtcUnstructNoise);
+end
+
 % Remove only FIX classified *signal* components, giving a ts that contains both
 % structured and unstructured noise
 NoiseTCS = PostMotionTCS - (ICA(:,Isignal) * betaICA(Isignal,:))';  
 [NoiseMGTRtcs,NoiseMGT,NoiseMGTbeta,NoiseMGTVar,NoiseMGTrsq] = MGTR(NoiseTCS);
+
+if ~strcmp(WM,'NONE')
+    % Regress out all signal
+    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMtcStructNoise = WMtcPM - (ICA(:,Isignal) * WMbetaICA(Isignal,:));
+    WMtcStructNoise = demean(WMtcStructNoise);
+end
+if ~strcmp(CSF,'NONE')
+    % Regress out all signal    
+    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFtcStructNoise = CSFtcPM - (ICA(:,Isignal) * CSFbetaICA(Isignal,:));
+    CSFtcStructNoise = demean(CSFtcStructNoise);
+end
 
 if ~strcmp(WM,'NONE')
     betaWM = pinv(WMtcClean) * CleanedTCS';
@@ -262,11 +289,27 @@ if ~strcmp(WM,'NONE')
     WMVar = var((CleanedTCS - WMCleanedTCS),[],tpDim);
 end
 
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    % Regress out WM from CSF signal   
+    betaCSFWM = pinv(WMtcClean) * CSFtcClean;
+    CSFWM = CSFtcClean - (WMtcClean * betaCSFWM);
+    CSFWM = demean(CSFWM);
+    WMWM=single(zeros(length(CSFWM),1));
+end
+
 if ~strcmp(CSF,'NONE')
     betaCSF = pinv(CSFtcClean) * CleanedTCS';
     CSFCleanedTCS = CleanedTCS - (CSFtcClean * betaCSF)';
     [CSFCleanedMGTRtcs,CSFCleanedMGT,CSFCleanedMGTbeta,CSFCleanedMGTVar,CSFCleanedMGTrsq] = MGTR(CSFCleanedTCS);
     CSFVar = var((CleanedTCS - CSFCleanedTCS),[],tpDim);
+end
+
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    % Regress out CSF from WM signal   
+    betaWMCSF = pinv(CSFtcClean) * WMtcClean;
+    WMCSF = WMtcClean - (CSFtcClean * betaWMCSF);
+    WMCSF = demean(WMCSF);
+    CSFCSF=single(zeros(length(WMCSF),1));
 end
 
 % Use the preceding to now estimate the structured noise variance and the
@@ -280,17 +323,51 @@ if ~strcmp(CSF,'NONE')
     CSFCleanedBOLDVar = var((CSFCleanedTCS - UnstructNoiseTCS),[],tpDim);
 end
 
-% Generate Plots for the following steps:
-% OrigTCS, HighPassTCS, PostMotionTCS, 
-% CleanedTCS, UnstructNoiseTCS, NoiseTCS
-steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
-    'UnstructNoiseTCS','NoiseTCS'};
-plotgray(OrigTCS,confounds,[outprefix '_' num2str(1) '_' steps{1}])
-plotgray(HighPassTCS,confounds,[outprefix '_' num2str(2) '_' steps{2}])
-plotgray(PostMotionTCS,confounds,[outprefix '_' num2str(3) '_' steps{3}])
-plotgray(CleanedTCS,confounds,[outprefix '_' num2str(4) '_' steps{4}])
-plotgray(UnstructNoiseTCS,confounds,[outprefix '_' num2str(5) '_' steps{5}])
-plotgray(NoiseTCS,confounds,[outprefix '_' num2str(6) '_' steps{6}])
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    % Generate Plots for the following steps:
+    % OrigTCS, HighPassTCS, PostMotionTCS, 
+    % CleanedTCS, UnstructNoiseTCS, NoiseTCS
+    steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
+        'UnstructNoiseTCS','WMCleanedTCS','CSFCleanedTCS'};
+    plotgray(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_' num2str(1) '_' steps{1}]); %Original data with unstructured noise
+    plotgray(OrigTCS-UnstructNoiseTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_1-5_' steps{1} '-' steps{5}]); %Original data without unstructured noise
+    plotgray(OrigTCS-HighPassTCS,mvm,OrigMGT-HighPassMGT,WMtcOrig-WMtcHP,CSFtcOrig-CSFtcHP,[outprefix '_1-2_' steps{1} '-' steps{2}]); %Effect of highpass filter
+    plotgray(HighPassTCS-UnstructNoiseTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,[outprefix '_2-5_' steps{2} '-' steps{5}]); %HP without unstructured noise
+    plotgray(HighPassTCS-PostMotionTCS,mvm,HighPassMGT-PostMotionMGT,WMtcHP-WMtcPM,CSFtcHP-CSFtcPM,[outprefix '_2-3_' steps{2} '-' steps{3}]); %Effect of motion regression 
+    plotgray(PostMotionTCS-UnstructNoiseTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,[outprefix '_3-5_' steps{3} '-' steps{5}]); %Motion Regression without unstructured noise
+    plotgray(PostMotionTCS-CleanedTCS,mvm,PostMotionMGT-CleanedMGT,WMtcPM-WMtcClean,CSFtcPM-CSFtcClean,[outprefix '_3-4_' steps{3} '-' steps{4}]); %Effect of structured noise regression 
+    plotgray(CleanedTCS-UnstructNoiseTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_4-5_' steps{4} '-' steps{5}]); %Cleaned data without unstructured noise
+    plotgray(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_' num2str(4) '_' steps{4}]); %Cleaned data with unstructured noise
+    plotgray(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,[outprefix '_' num2str(5) '_' steps{5}]); %Unstructured noise only
+    plotgray(WMCleanedTCS-UnstructNoiseTCS,mvm,WMCleanedMGT,WMWM,CSFWM,[outprefix '_6-5_' steps{6} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgray(CleanedTCS-WMCleanedTCS,mvm,CleanedMGT-WMCleanedMGT,WMtcClean-WMWM,CSFtcClean-CSFWM,[outprefix '_4-6_' steps{4} '-' steps{6}]); %Effect of WM regression
+    plotgray(CSFCleanedTCS-UnstructNoiseTCS,mvm,CSFCleanedMGT,WMCSF,CSFCSF,[outprefix '_7-5_' steps{7} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgray(CleanedTCS-CSFCleanedTCS,mvm,CleanedMGT-CSFCleanedMGT,WMtcClean-WMCSF,CSFtcClean-CSFCSF,[outprefix '_4-7_' steps{4} '-' steps{7}]); %Effect of CSF regression
+end
+
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
+        'UnstructNoiseTCS','NoiseTCS'};
+    % Plot the original TCS, with GS+WM+CSF
+    plotgrayz(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,...
+        [outprefix '_' num2str(1) '_' steps{1}]);
+    % Plot the TCS post Highpass Filter (hp2000)
+    plotgrayz(HighpassTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,...
+        [outprefix '_' num2str(2) '_' steps{2}]);
+    % Plot the hp2000 with 24motion regressed
+    plotgrayz(PostMotionTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,...
+        [outprefix '_' num2str(3) '_' steps{3}]);
+    % Plot the TCS with FIX-ICA regressed
+    plotgrayz(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,...
+        [outprefix '_' num2str(4) '_' steps{4}]);
+    % Plot the Unstructured noise TCS (what is left post FIX)
+    plotgrayz(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,...
+        [outprefix '_' num2str(5) '_' steps{5}]);
+    % Plot the Noise TCS (i.e., if you regress the ICA *signal components* instead
+    % of ICA noise)
+    plotgrayz(NoiseTCS,mvm,NoiseMGT,WMtcStructNoise,CSFtcStructNoise,...
+        [outprefix '_' num2str(6) '_' steps{6}]);
+end
 
 % These variance components are not necessarily strictly orthogonal.  The
 % following variables can be used to assess the degree of overlap.
@@ -457,6 +534,14 @@ if SaveMGT
   dlmwrite([outprefix '_NoiseMGT.txt'],NoiseMGT);
 end
 
+dlmwrite([outprefix '_CleanedMGT.txt'],CleanedMGT);
+if ~strcmp(WM,'NONE')
+    dlmwrite([outprefix '_CleanedWMtc.txt'],WMtcClean);
+end
+if ~strcmp(CSF,'NONE')
+    dlmwrite([outprefix '_CleanedCSFtc.txt'],CSFtcClean);
+end
+
 % Write out stats file
 % (Make sure to keep varNames in correspondence with the order that
 % variables are written out!)
@@ -561,62 +646,79 @@ end
 
 
 %%  PLOTGRAY plots the global signal, DVARS grayordinate plot
-function plotgray(img,mvm,step) 
-% Make a plot in the [fore/back]ground of AD+FD, DVARS+SD (@ stage),
+function plotgray(img,mvm,GS,WM,CSF,step) 
+% Make a plot in the [fore/back]ground of FD, DVARS (@ stage),
 % Gray(ordinate) plot and tmask across timecourse.
-close all;
 
 % Calculate FD
 FD = sum(abs(cat(2,mvm(:,7:9),(50*pi/180)*mvm(:,10:12))),2);
 
 % Calculate DVARS (RMS of the backward difference
 DV = diff(transpose(img)); % Backward Difference
-DV = rms(DV,2)-median(rms(DV,2)); % RMS (w/ median centering)
+MedDV=median(rms(DV,2));
+DV = rms(DV,2)-MedDV; % RMS (w/ median centering)
 DV = [0;DV]; % Zero-pad to original timepoints
 
 tp = numel(DV);
 fr = transpose(1:tp);
-normimg = transpose(zscore(transpose(img)));
+STD=mean(std(img,[],2));
+normimg = transpose(zscore(transpose(img)))*STD; %Use local normalization instead of global normalization to keep different plots comparable
 
-% Basic order of plot: FD+AD, DVARS+SD+mean Gray(ordinate) timecourse and
+CSF=(CSF/std(CSF)) * max([std(GS) std(WM)]); %Make CSF scaling more reasonable
+
+% Basic order of plot: FD, DVARS, MGT+WM+CSF timecourse and
 % gray(ordinate) graph.
 
 % Close images, and define colormap as "jet" (R2015a and after use
 % "parula")
-figure('Visible','off');
+close all;
+figure('Visible','off'); %%%
 set(gcf,'Units','points');
-set(gcf,'Position',[3 6 1320 3720]);
-set(gcf,'PaperPosition',[0.25 2.5 17 23]);
-colormap(jet);
+set(gcf,'Position',[3 6 1464 25+tp+25+216+25+216+25+216+25]);
+set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
+%colormap(jet);
 
 % Plot FD trace
-subplot(3,1,1); plot(fr,FD,'r');
-ax = subplot(3,1,1);
+subplot(4,1,1); plot(fr,FD,'r');
+ax = subplot(4,1,1);
 set(ax,'Units','points','YTick',[0 0.5 1],'YTickLabel',...
-    {'0','FD','1'},'Ylim',[0 1],'FontSize',8);
-set(ax,'Position',[60 3420 tp 216]);
+    {'0','0.5','1'},'Ylim',[0 1],'FontSize',8);
+set(ax,'Position',[60 25+tp+25+216+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String','FD (red)');
 
-% Plot SD+DV traces
-subplot(3,1,2); plot(fr,DV,'b');
-ax = subplot(3,1,2);
+% Plot DV traces
+subplot(4,1,2); plot(fr,DV,'b');
+ax = subplot(4,1,2);
 set(ax,'Units','points','YTick',[-20 0 30 80],'YTickLabel',...
-    {'-20','0','DV','80'},'Ylim',[-20 80],'FontSize',8);
-set(ax,'Position',[60 3168 tp 216]);
+    {'-20','0','30','80'},'Ylim',[-20 80],'FontSize',8);
+set(ax,'Position',[60 25+tp+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String',['DV (blue), Median:' num2str(MedDV)]);
 
+% Plot MGT+WM+CSF traces
+subplot(4,1,3); plot(fr,CSF,'m'); hold on; plot(fr,WM,'c'); plot(fr,GS,'k');
+ax = subplot(4,1,3);
+set(ax,'Units','points','YTick',[-100 -50 0 50 100],'YTickLabel',...
+    {'-100','-50','0','50','100'},'Ylim',[-100 100],'FontSize',8);
+set(ax,'Position',[60 25+tp+25 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)');
+
+%Commented out because it wasn't clear why this was needed vs standard scaling
 % set color palette for grayplots
-bone2 = bone(100);
-bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
-bone2 = bone2(bone2mask,:);
+%bone2 = bone(100);
+%bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
+%bone2 = bone2(bone2mask,:);
+CLIM=[-200 200]; %2% of mean 10000 scaled image intensity variations
 
 % Sub-grayplot the Left/Right/Subcortex (or volume gray ribbon if NIFTI)
-subplot(3,1,3), imagesc(normimg), colormap(bone2);
-ax = subplot(3,1,3);
-set(ax,'Units','points','YTick',size(normimg,1)/2,'YTickLabel',{'GRAY'}...
-    ,'FontSize',8);
-set(ax,'Position',[60 75 tp 2980]);
-set(ax,'XTick',[],'XTickLabel',''); caxis([-2 2]); xlim([1 tp])
+subplot(4,1,4), imagesc(normimg,CLIM), colormap(gray); %colormap(bone2);
+ax = subplot(4,1,4);
+set(ax,'Units','points');
+set(ax,'Position',[60 25 tp+52 tp]); %+52 is offset for color bar
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]); %caxis([-2 2]); 
+set(get(gca,'YLabel'),'String','Grayordinates');
 
 XTicks = round(linspace(0,size(img,2),7));
 XTicksPts = XTicks;
@@ -629,7 +731,111 @@ end;
 
 set(ax,'XTick',XTicksPts,'XTickLabel',XTickString,'TickLength',[0 0]);
 
+%Make "%BOLD" color bar
+colorticks=[(CLIM(1)-(CLIM(2)*0)/4) (CLIM(1)-(CLIM(1)*1)/4) (CLIM(1)-(CLIM(1)*2)/4) (CLIM(1)-(CLIM(1)*3)/4) 0 (CLIM(2)-(CLIM(2)*3)/4) (CLIM(2)-(CLIM(2)*2)/4) (CLIM(2)-(CLIM(2)*1)/4) (CLIM(2)-(CLIM(2)*0)/4)];
+colorticks=(round((colorticks)))/100; %Round z scores to nearest hundreth
+colortickscell={[num2str(colorticks(1)) '%'];[num2str(colorticks(2)) '%'];[num2str(colorticks(3)) '%'];[num2str(colorticks(4)) '%'];[num2str(colorticks(5)) '%'];[num2str(colorticks(6)) '%'];[num2str(colorticks(7)) '%'];[num2str(colorticks(8)) '%'];[num2str(colorticks(9)) '%']};
+colorbar('YTickMode','manual','YTick',colorticks,'YTickLabel',colortickscell,'location','eastoutside','Ylim',[CLIM(1) CLIM(2)],'Units','points','FontSize',8); %Color bar refused to work with anything other than 9 ticks
+
 % Save plot
 
-print([step '_QC_Summary_Plot],'-dpng','-r72'); close;
+print([step '_QC_Summary_Plot'],'-dpng','-r72'); %close; %%%
+end
+
+
+%%  PLOTGRAY plots the global signal, DVARS grayordinate plot
+function plotgrayz(img,mvm,GS,WM,CSF,step) 
+% Make a plot in the [fore/back]ground of FD, DVARS (@ stage),
+% Gray(ordinate) plot and tmask across timecourse.
+
+% Calculate FD
+FD = sum(abs(cat(2,mvm(:,7:9),(50*pi/180)*mvm(:,10:12))),2);
+
+% Calculate DVARS (RMS of the backward difference
+DV = diff(transpose(img)); % Backward Difference
+MedDV=median(rms(DV,2));
+DV = rms(DV,2)-MedDV; % RMS (w/ median centering)
+DV = [0;DV]; % Zero-pad to original timepoints
+
+tp = numel(DV);
+fr = transpose(1:tp);
+STD=mean(std(img,[],2)); %#ok<NASGU>
+normimg = transpose(zscore(transpose(img))); 
+
+CSF=(CSF/std(CSF)) * max([std(GS) std(WM)]); %Make CSF scaling more reasonable
+
+% Basic order of plot: FD, DVARS, MGT+WM+CSF timecourse and
+% gray(ordinate) graph.
+
+% Close images, and define colormap as "jet" (R2015a and after use
+% "parula")
+close all;
+figure('Visible','off'); %%%
+set(gcf,'Units','points');
+set(gcf,'Position',[3 6 1464 25+tp+25+216+25+216+25+216+25]);
+set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
+%colormap(jet);
+
+% Plot FD trace
+subplot(4,1,1); plot(fr,FD,'r');
+ax = subplot(4,1,1);
+set(ax,'Units','points','YTick',[0 0.5 1],'YTickLabel',...
+    {'0','0.5','1'},'Ylim',[0 1],'FontSize',8);
+set(ax,'Position',[60 25+tp+25+216+25+216+25 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String','FD (red)');
+
+% Plot DV traces
+subplot(4,1,2); plot(fr,DV,'b');
+ax = subplot(4,1,2);
+set(ax,'Units','points','YTick',[-20 0 30 80],'YTickLabel',...
+    {'-20','0','30','80'},'Ylim',[-20 80],'FontSize',8);
+set(ax,'Position',[60 25+tp+25+216+25 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String',['DV (blue), Median:' num2str(MedDV)]);
+
+% Plot MGT+WM+CSF traces
+subplot(4,1,3); plot(fr,CSF,'m'); hold on; plot(fr,WM,'c'); plot(fr,GS,'k');
+ax = subplot(4,1,3);
+set(ax,'Units','points','YTick',[-100 -50 0 50 100],'YTickLabel',...
+    {'-100','-50','0','50','100'},'Ylim',[-100 100],'FontSize',8);
+set(ax,'Position',[60 25+tp+25 tp 216]);
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
+set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)');
+
+%Commented out because it wasn't clear why this was needed vs standard scaling
+% set color palette for grayplots
+%bone2 = bone(100);
+%bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
+%bone2 = bone2(bone2mask,:);
+CLIM=[-2 2]; % +/- 2 STD from the mean (per grayordinate)
+
+% Sub-grayplot the Left/Right/Subcortex (or volume gray ribbon if NIFTI)
+subplot(4,1,4), imagesc(normimg,CLIM), colormap(gray); %colormap(bone2);
+ax = subplot(4,1,4);
+set(ax,'Units','points');
+set(ax,'Position',[60 25 tp+52 tp]); %+52 is offset for color bar
+set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]); %caxis([-2 2]); 
+set(get(gca,'YLabel'),'String','Grayordinates');
+
+XTicks = round(linspace(0,size(img,2),7));
+XTicksPts = XTicks;
+XTicksPts(1) = XTicks(1)+0.5;
+XTicksPts(end) = XTicks(end)-0.5;
+
+for i = 1:numel(XTicks)
+    XTickString{i} = num2str(XTicks(i)); %#ok<AGROW>
+end;
+
+set(ax,'XTick',XTicksPts,'XTickLabel',XTickString,'TickLength',[0 0]);
+
+%Make "z-score" color bar
+colorticks=[(CLIM(1)-(CLIM(2)*0)/4) (CLIM(1)-(CLIM(1)*1)/4) (CLIM(1)-(CLIM(1)*2)/4) (CLIM(1)-(CLIM(1)*3)/4) 0 (CLIM(2)-(CLIM(2)*3)/4) (CLIM(2)-(CLIM(2)*2)/4) (CLIM(2)-(CLIM(2)*1)/4) (CLIM(2)-(CLIM(2)*0)/4)];
+colorticksz=colorticks; %Round z scores to nearest hundreth
+colortickszcell={num2str(colorticksz(1));num2str(colorticksz(2));num2str(colorticksz(3));num2str(colorticksz(4));num2str(colorticksz(5));num2str(colorticksz(6));num2str(colorticksz(7));num2str(colorticksz(8));num2str(colorticksz(9))};
+colorbar('YTickMode','manual','YTick',colorticks,'YTickLabel',colortickszcell,'location','eastoutside','Ylim',[CLIM(1) CLIM(2)],'Units','points','FontSize',8); %Color bar refused to work with anything other than 9 ticks
+
+% Save plot
+
+print([step '_QC_Summary_Plot_z'],'-dpng','-r72'); %close; %%%
 end
