@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 # Requirements for this script
@@ -13,7 +13,8 @@ Usage() {
   echo "`basename $0`: Robust bias field correction using 'fast', potentially with 'fslreorient2std' and 'robustfov'"
   echo " "
   echo "Usage: `basename $0` [--workingdir=<working dir>]"
-  echo "      --in=<input image> [--basename=<output base name>]"
+  echo "      --in=<input image>"
+  echo "      [--basename=<output base name>]"
   echo "      [--Type={1:T1 (default), 2:T2}]"
   echo "      [--FWHM=<field smoothness kernel FWHM in mm, default 10>]"
   echo "      [--brainmask=<brain mask image>]"
@@ -28,10 +29,10 @@ getopt1() {
     sopt="$1"
     shift 1
     for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
+    	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+    	    echo $fn | sed "s/^${sopt}=//"
+    	    return 0
+    	fi
     done
 }
 
