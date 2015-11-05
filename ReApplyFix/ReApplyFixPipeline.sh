@@ -146,7 +146,7 @@ get_options()
 	fi
 }
 
-show_tool_version()
+show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
@@ -166,6 +166,8 @@ main()
 {
 	# Get command line options
 	get_options $@
+
+	show_tool_versions
 
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
@@ -236,7 +238,7 @@ main()
 
 	local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 	
-	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}_${RegString}.matlab.log 2>&1"
+	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
 
 	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
