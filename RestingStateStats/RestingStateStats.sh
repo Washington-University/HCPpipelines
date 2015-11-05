@@ -917,6 +917,10 @@ main()
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
 
+	RssFolder="${ResultsFolder}/RestingStateStats"
+	RssPrefix="${RssFolder}/${g_fmri_name}_Atlas${RegString}"
+	mkdir -p ${RssFolder}
+
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
@@ -927,7 +931,7 @@ main()
 			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
 
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
-			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
+			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
 
 			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
@@ -957,7 +961,7 @@ main()
 			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${matlab_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
 
 			log_Msg "About to execute the following Matlab script"
 
@@ -981,7 +985,7 @@ main()
 			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${octave_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${octave_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${octave_script_file_name}
 
 			log_Msg "About to execute the following Octave script"
 
@@ -994,6 +998,11 @@ main()
 			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
 			exit 1
 	esac
+
+	log_Msg "Moving results of Matlab function"
+	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
+	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
+	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
@@ -1027,7 +1036,6 @@ main()
 	# ----------------------------------------
 	# Output File(s)
 	# ----------------------------------------
-
 	# ciftiOut - newly created file
 	ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dscalar.nii"
 
@@ -1072,13 +1080,6 @@ main()
 	mv \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
-
-	# --------------------------------------------------------------------------------
-	log_Msg "Move png files out of primary results folder"
-	# --------------------------------------------------------------------------------
-	mkdir -p ${ResultsFolder}/RestingStateStats/${dtseries}
-
-	mv ${ResultsFolder}/*.png ${ResultsFolder}/RestingStateStats/${dtseries}
 
 	# --------------------------------------------------------------------------------
 	log_Msg "Remove unneeded intermediate files"
