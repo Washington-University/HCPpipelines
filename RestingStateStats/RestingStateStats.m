@@ -189,7 +189,7 @@ fprintf('%s - Finished fslmaths filtering of motion confounds\n',func_name);
 %%%%  Read ICA component timeseries
 ICAorig=normalise(load(sprintf(ICAs)));
 
-%%%%  Read WM Timeseries
+%%%%  Read WM Timeseries and Highpass Filter
 if ~strcmp(WM,'NONE')
     WMtcOrig=demean(load(sprintf(WM)));
     fprintf('%s - Starting fslmaths filtering of wm tcs \n',func_name);
@@ -200,7 +200,7 @@ if ~strcmp(WM,'NONE')
     fprintf('%s - Finished fslmaths filtering of wm tcs\n',func_name);
 end
 
-%%%%  Read CSF Timeseries
+%%%%  Read CSF Timeseries and Highpass Filter
 if ~strcmp(CSF,'NONE')
     CSFtcOrig=demean(load(sprintf(CSF)));
     fprintf('%s - Starting fslmaths filtering of csf tcs \n',func_name);
@@ -251,6 +251,25 @@ UnstructNoiseTCS = PostMotionTCS - (ICA * betaICA)';
 [UnstructNoiseMGTRtcs,UnstructNoiseMGT,UnstructNoiseMGTbeta,UnstructNoiseMGTVar,UnstructNoiseMGTrsq] = MGTR(UnstructNoiseTCS);
 UnstructNoiseVar = var(UnstructNoiseTCS,[],tpDim);
 
+% Remove only FIX classified *signal* components, giving a ts that contains both
+% structured and unstructured noise
+NoiseTCS = PostMotionTCS - (ICA(:,Isignal) * betaICA(Isignal,:))';  
+[NoiseMGTRtcs,NoiseMGT,NoiseMGTbeta,NoiseMGTVar,NoiseMGTrsq] = MGTR(NoiseTCS);
+
+% Use the preceding to now estimate the structured noise variance and the
+% signal specific variance ("BOLDVar")
+StructNoiseTCS = NoiseTCS - UnstructNoiseTCS;
+[StructNoiseMGTRtcs,StructNoiseMGT,StructNoiseMGTbeta,StructNoiseMGTVar,StructNoiseMGTrsq] = MGTR(StructNoiseTCS);
+StructNoiseVar = var(StructNoiseTCS,[],tpDim);
+BOLDVar = var((CleanedTCS - UnstructNoiseTCS),[],tpDim);
+
+% These variance components are not necessarily strictly orthogonal.  The
+% following variables can be used to assess the degree of overlap.
+TotalUnsharedVar = UnstructNoiseVar + StructNoiseVar + BOLDVar + MotionVar + HighPassVar;
+TotalSharedVar = OrigVar - TotalUnsharedVar;
+
+%Create WM and CSF timecourses that correspond to structured and
+%unstructured noise grey plots
 if ~strcmp(WM,'NONE')
     % Regress out all structured signal
     WMbetaICA = pinv(ICA) * WMtcPM;
@@ -263,11 +282,6 @@ if ~strcmp(CSF,'NONE')
     CSFtcUnstructNoise = CSFtcPM - (ICA * CSFbetaICA);
     CSFtcUnstructNoise = demean(CSFtcUnstructNoise);
 end
-
-% Remove only FIX classified *signal* components, giving a ts that contains both
-% structured and unstructured noise
-NoiseTCS = PostMotionTCS - (ICA(:,Isignal) * betaICA(Isignal,:))';  
-[NoiseMGTRtcs,NoiseMGT,NoiseMGTbeta,NoiseMGTVar,NoiseMGTrsq] = MGTR(NoiseTCS);
 
 if ~strcmp(WM,'NONE')
     % Regress out all signal
@@ -282,13 +296,13 @@ if ~strcmp(CSF,'NONE')
     CSFtcStructNoise = demean(CSFtcStructNoise);
 end
 
+%Create data if regressing out cleaned WM timecourse
 if ~strcmp(WM,'NONE')
     betaWM = pinv(WMtcClean) * CleanedTCS';
     WMCleanedTCS = CleanedTCS - (WMtcClean * betaWM)';
     [WMCleanedMGTRtcs,WMCleanedMGT,WMCleanedMGTbeta,WMCleanedMGTVar,WMCleanedMGTrsq] = MGTR(WMCleanedTCS);
     WMVar = var((CleanedTCS - WMCleanedTCS),[],tpDim);
 end
-
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     % Regress out WM from CSF signal   
     betaCSFWM = pinv(WMtcClean) * CSFtcClean;
@@ -297,13 +311,13 @@ if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     WMWM=single(zeros(length(CSFWM),1));
 end
 
+%Create data if regressing out cleaned CSF timecourse
 if ~strcmp(CSF,'NONE')
     betaCSF = pinv(CSFtcClean) * CleanedTCS';
     CSFCleanedTCS = CleanedTCS - (CSFtcClean * betaCSF)';
     [CSFCleanedMGTRtcs,CSFCleanedMGT,CSFCleanedMGTbeta,CSFCleanedMGTVar,CSFCleanedMGTrsq] = MGTR(CSFCleanedTCS);
     CSFVar = var((CleanedTCS - CSFCleanedTCS),[],tpDim);
 end
-
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     % Regress out CSF from WM signal   
     betaWMCSF = pinv(CSFtcClean) * WMtcClean;
@@ -312,67 +326,82 @@ if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     CSFCSF=single(zeros(length(WMCSF),1));
 end
 
-% Use the preceding to now estimate the structured noise variance and the
-% signal specific variance ("BOLDVar")
-StructNoiseVar = var((NoiseTCS - UnstructNoiseTCS),[],tpDim);
-BOLDVar = var((CleanedTCS - UnstructNoiseTCS),[],tpDim);
+%Create data if regressing out cleaned WM and CSF timecourses
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    betaWMCSF = pinv([WMtcClean CSFtcClean]) * CleanedTCS';
+    WMCSFCleanedTCS = CleanedTCS - ([WMtcClean CSFtcClean] * betaWMCSF)';
+    [WMCSFCleanedMGTRtcs,WMCSFCleanedMGT,WMCSFCleanedMGTbeta,WMCSFCleanedMGTVar,WMCSFCleanedMGTrsq] = MGTR(WMCSFCleanedTCS);
+    WMCSFVar = var((CleanedTCS - WMCSFCleanedTCS),[],tpDim);
+end
+
+%Make BOLD Variance if regressing out WM and/or CSF timecourses
 if ~strcmp(WM,'NONE')
     WMCleanedBOLDVar = var((WMCleanedTCS - UnstructNoiseTCS),[],tpDim);
 end
 if ~strcmp(CSF,'NONE')
     CSFCleanedBOLDVar = var((CSFCleanedTCS - UnstructNoiseTCS),[],tpDim);
 end
-
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
-    % Generate Plots for the following steps:
-    % OrigTCS, HighPassTCS, PostMotionTCS, 
-    % CleanedTCS, UnstructNoiseTCS, NoiseTCS
+    WMCSFCleanedBOLDVar = var((WMCSFCleanedTCS - UnstructNoiseTCS),[],tpDim);
+end
+
+% Generate "grayplots" of the various stages and differences between stages using a 
+% scaling in "MR units"
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
-        'UnstructNoiseTCS','WMCleanedTCS','CSFCleanedTCS'};
-    plotgray(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_' num2str(1) '_' steps{1}]); %Original data with unstructured noise
+        'UnstructNoiseTCS','WMCleanedTCS','CSFCleanedTCS','WMCSFCleanedTCS','StructNoiseTCS'};
+    plotgray(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_1_' steps{1}]); %Original data with unstructured noise
     plotgray(OrigTCS-UnstructNoiseTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_1-5_' steps{1} '-' steps{5}]); %Original data without unstructured noise
     plotgray(OrigTCS-HighPassTCS,mvm,OrigMGT-HighPassMGT,WMtcOrig-WMtcHP,CSFtcOrig-CSFtcHP,[outprefix '_1-2_' steps{1} '-' steps{2}]); %Effect of highpass filter
+    plotgray(HighPassTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,[outprefix '_2_' steps{2}]); %HP with unstructured noise
     plotgray(HighPassTCS-UnstructNoiseTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,[outprefix '_2-5_' steps{2} '-' steps{5}]); %HP without unstructured noise
     plotgray(HighPassTCS-PostMotionTCS,mvm,HighPassMGT-PostMotionMGT,WMtcHP-WMtcPM,CSFtcHP-CSFtcPM,[outprefix '_2-3_' steps{2} '-' steps{3}]); %Effect of motion regression 
+    plotgray(PostMotionTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,[outprefix '_3_' steps{3}]); %Motion Regression with unstructured noise
     plotgray(PostMotionTCS-UnstructNoiseTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,[outprefix '_3-5_' steps{3} '-' steps{5}]); %Motion Regression without unstructured noise
     plotgray(PostMotionTCS-CleanedTCS,mvm,PostMotionMGT-CleanedMGT,WMtcPM-WMtcClean,CSFtcPM-CSFtcClean,[outprefix '_3-4_' steps{3} '-' steps{4}]); %Effect of structured noise regression 
+    plotgray(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_4_' steps{4}]); %Cleaned data with unstructured noise
     plotgray(CleanedTCS-UnstructNoiseTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_4-5_' steps{4} '-' steps{5}]); %Cleaned data without unstructured noise
-    plotgray(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_' num2str(4) '_' steps{4}]); %Cleaned data with unstructured noise
-    plotgray(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,[outprefix '_' num2str(5) '_' steps{5}]); %Unstructured noise only
+    plotgray(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,[outprefix '_5_' steps{5}]); %Unstructured noise only
+    plotgray(WMCleanedTCS,mvm,WMCleanedMGT,WMWM,CSFWM,[outprefix '_6_' steps{6}]); %WM regressed data with unstructured noise
     plotgray(WMCleanedTCS-UnstructNoiseTCS,mvm,WMCleanedMGT,WMWM,CSFWM,[outprefix '_6-5_' steps{6} '-' steps{5}]); %WM regressed data without unstructured noise
     plotgray(CleanedTCS-WMCleanedTCS,mvm,CleanedMGT-WMCleanedMGT,WMtcClean-WMWM,CSFtcClean-CSFWM,[outprefix '_4-6_' steps{4} '-' steps{6}]); %Effect of WM regression
+    plotgray(CSFCleanedTCS,mvm,CSFCleanedMGT,WMCSF,CSFCSF,[outprefix '_7_' steps{7}]); %WM regressed data with unstructured noise
     plotgray(CSFCleanedTCS-UnstructNoiseTCS,mvm,CSFCleanedMGT,WMCSF,CSFCSF,[outprefix '_7-5_' steps{7} '-' steps{5}]); %WM regressed data without unstructured noise
     plotgray(CleanedTCS-CSFCleanedTCS,mvm,CleanedMGT-CSFCleanedMGT,WMtcClean-WMCSF,CSFtcClean-CSFCSF,[outprefix '_4-7_' steps{4} '-' steps{7}]); %Effect of CSF regression
+    plotgray(WMCSFCleanedTCS,mvm,WMCSFCleanedMGT,WMWM,CSFCSF,[outprefix '_8_' steps{8}]); %WM regressed data with unstructured noise
+    plotgray(WMCSFCleanedTCS-UnstructNoiseTCS,mvm,WMCSFCleanedMGT,WMWM,CSFCSF,[outprefix '_8-5_' steps{8} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgray(CleanedTCS-WMCSFCleanedTCS,mvm,CleanedMGT-WMCSFCleanedMGT,WMtcClean-WMWM,CSFtcClean-CSFCSF,[outprefix '_4-8_' steps{4} '-' steps{8}]); %Effect of CSF regression
+    plotgray(StructNoiseTCS,mvm,StructNoiseMGT,WMtcStructNoise,CSFtcStructNoise,[outprefix '_9_' steps{9}]); %Structured noise only
 end
 
+% Generate "grayplots" of the various stages and differences between stages using a 
+% scaling in z-score
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     steps = {'OrigTCS','HighPassTCS','PostMotionTCS','CleanedTCS',...
-        'UnstructNoiseTCS','NoiseTCS'};
-    % Plot the original TCS, with GS+WM+CSF
-    plotgrayz(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,...
-        [outprefix '_' num2str(1) '_' steps{1}]);
-    % Plot the TCS post Highpass Filter (hp2000)
-    plotgrayz(HighPassTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,...
-        [outprefix '_' num2str(2) '_' steps{2}]);
-    % Plot the hp2000 with 24motion regressed
-    plotgrayz(PostMotionTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,...
-        [outprefix '_' num2str(3) '_' steps{3}]);
-    % Plot the TCS with FIX-ICA regressed
-    plotgrayz(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,...
-        [outprefix '_' num2str(4) '_' steps{4}]);
-    % Plot the Unstructured noise TCS (what is left post FIX)
-    plotgrayz(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,...
-        [outprefix '_' num2str(5) '_' steps{5}]);
-    % Plot the Noise TCS (i.e., if you regress the ICA *signal components* instead
-    % of ICA noise)
-    plotgrayz(NoiseTCS,mvm,NoiseMGT,WMtcStructNoise,CSFtcStructNoise,...
-        [outprefix '_' num2str(6) '_' steps{6}]);
+        'UnstructNoiseTCS','WMCleanedTCS','CSFCleanedTCS','WMCSFCleanedTCS','StructNoiseTCS'};
+    plotgrayz(OrigTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_1_' steps{1}]); %Original data with unstructured noise
+    plotgrayz(OrigTCS-UnstructNoiseTCS,mvm,OrigMGT,WMtcOrig,CSFtcOrig,[outprefix '_1-5_' steps{1} '-' steps{5}]); %Original data without unstructured noise
+    plotgrayz(OrigTCS-HighPassTCS,mvm,OrigMGT-HighPassMGT,WMtcOrig-WMtcHP,CSFtcOrig-CSFtcHP,[outprefix '_1-2_' steps{1} '-' steps{2}]); %Effect of highpass filter
+    plotgrayz(HighPassTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,[outprefix '_2_' steps{2}]); %HP with unstructured noise
+    plotgrayz(HighPassTCS-UnstructNoiseTCS,mvm,HighPassMGT,WMtcHP,CSFtcHP,[outprefix '_2-5_' steps{2} '-' steps{5}]); %HP without unstructured noise
+    plotgrayz(HighPassTCS-PostMotionTCS,mvm,HighPassMGT-PostMotionMGT,WMtcHP-WMtcPM,CSFtcHP-CSFtcPM,[outprefix '_2-3_' steps{2} '-' steps{3}]); %Effect of motion regression 
+    plotgrayz(PostMotionTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,[outprefix '_3_' steps{3}]); %Motion Regression with unstructured noise
+    plotgrayz(PostMotionTCS-UnstructNoiseTCS,mvm,PostMotionMGT,WMtcPM,CSFtcPM,[outprefix '_3-5_' steps{3} '-' steps{5}]); %Motion Regression without unstructured noise
+    plotgrayz(PostMotionTCS-CleanedTCS,mvm,PostMotionMGT-CleanedMGT,WMtcPM-WMtcClean,CSFtcPM-CSFtcClean,[outprefix '_3-4_' steps{3} '-' steps{4}]); %Effect of structured noise regression 
+    plotgrayz(CleanedTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_4_' steps{4}]); %Cleaned data with unstructured noise
+    plotgrayz(CleanedTCS-UnstructNoiseTCS,mvm,CleanedMGT,WMtcClean,CSFtcClean,[outprefix '_4-5_' steps{4} '-' steps{5}]); %Cleaned data without unstructured noise
+    plotgrayz(UnstructNoiseTCS,mvm,UnstructNoiseMGT,WMtcUnstructNoise,CSFtcUnstructNoise,[outprefix '_5_' steps{5}]); %Unstructured noise only
+    plotgrayz(WMCleanedTCS,mvm,WMCleanedMGT,WMWM,CSFWM,[outprefix '_6_' steps{6}]); %WM regressed data with unstructured noise
+    plotgrayz(WMCleanedTCS-UnstructNoiseTCS,mvm,WMCleanedMGT,WMWM,CSFWM,[outprefix '_6-5_' steps{6} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgrayz(CleanedTCS-WMCleanedTCS,mvm,CleanedMGT-WMCleanedMGT,WMtcClean-WMWM,CSFtcClean-CSFWM,[outprefix '_4-6_' steps{4} '-' steps{6}]); %Effect of WM regression
+    plotgrayz(CSFCleanedTCS,mvm,CSFCleanedMGT,WMCSF,CSFCSF,[outprefix '_7_' steps{7}]); %WM regressed data with unstructured noise
+    plotgrayz(CSFCleanedTCS-UnstructNoiseTCS,mvm,CSFCleanedMGT,WMCSF,CSFCSF,[outprefix '_7-5_' steps{7} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgrayz(CleanedTCS-CSFCleanedTCS,mvm,CleanedMGT-CSFCleanedMGT,WMtcClean-WMCSF,CSFtcClean-CSFCSF,[outprefix '_4-7_' steps{4} '-' steps{7}]); %Effect of CSF regression
+    plotgrayz(WMCSFCleanedTCS,mvm,WMCSFCleanedMGT,WMWM,CSFCSF,[outprefix '_8_' steps{8}]); %WM regressed data with unstructured noise
+    plotgrayz(WMCSFCleanedTCS-UnstructNoiseTCS,mvm,WMCSFCleanedMGT,WMWM,CSFCSF,[outprefix '_8-5_' steps{8} '-' steps{5}]); %WM regressed data without unstructured noise
+    plotgrayz(CleanedTCS-WMCSFCleanedTCS,mvm,CleanedMGT-WMCSFCleanedMGT,WMtcClean-WMWM,CSFtcClean-CSFCSF,[outprefix '_4-8_' steps{4} '-' steps{8}]); %Effect of CSF regression
+    plotgrayz(StructNoiseTCS,mvm,StructNoiseMGT,WMtcStructNoise,CSFtcStructNoise,[outprefix '_9_' steps{9}]); %Structured noise only
 end
-
-% These variance components are not necessarily strictly orthogonal.  The
-% following variables can be used to assess the degree of overlap.
-TotalUnsharedVar = UnstructNoiseVar + StructNoiseVar + BOLDVar + MotionVar + HighPassVar;
-TotalSharedVar = OrigVar - TotalUnsharedVar;
 
 % Compute some grayordinate CIFTI maps of COV and TSNR
 COV = sqrt(UnstructNoiseVar) ./ MEAN;
@@ -402,6 +431,10 @@ end
 if ~strcmp(CSF,'NONE')
     CSFVarVsBOLDVarRatio = makeRatio(CSFVar,BOLDVar);
     CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio = makeRatio(CSFCleanedMGTVar,CSFCleanedBOLDVar);    
+end
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    WMCSFVarVsBOLDVarRatio = makeRatio(WMCSFVar,BOLDVar);
+    WMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio = makeRatio(WMCSFCleanedMGTVar,WMCSFCleanedBOLDVar);    
 end
 
 % Compute summary measures across grayordinates
@@ -466,6 +499,15 @@ if ~strcmp(CSF,'NONE')
     meanCSFCleanedMGTVar = mean(CSFCleanedMGTVar);
     meanCSFCleanedMGTVarVsCSFCleanedBOLDVarRatio = mean(CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio);
 end
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    meanWMCSFbetaICA = mean(betaWMCSF'); %Because there are two entries this has to be transposted
+    meanWMCSFVar = mean(WMCSFVar);
+    meanWMCSFVarVsBOLDVarRatio = mean(WMCSFVarVsBOLDVarRatio);
+    meanWMCSFCleanedBOLDVar = mean(WMCSFCleanedBOLDVar);
+    meanWMCSFCleanedMGTbeta = mean(WMCSFCleanedMGTbeta);
+    meanWMCSFCleanedMGTVar = mean(WMCSFCleanedMGTVar);
+    meanWMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio = mean(WMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio);
+end
 
 % Save out variance normalization image for MSMALL/SingleSubjectConcat/MIGP
 if SaveVarianceNormalizationImage
@@ -492,7 +534,9 @@ if SaveGrayOrdinateMaps
   if ~strcmp(CSF,'NONE')
     statscifti.cdata = cat(2,statscifti.cdata,[betaCSF' CSFVar CSFVarVsBOLDVarRatio CSFCleanedBOLDVar CSFCleanedMGTbeta CSFCleanedMGTVar CSFCleanedMGTVarVsCSFCleanedBOLDVarRatio]);
   end
-  
+  if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    statscifti.cdata = cat(2,statscifti.cdata,[betaWMCSF(1,:)' betaWMCSF(2,:)' WMCSFVar WMCSFVarVsBOLDVarRatio WMCSFCleanedBOLDVar WMCSFCleanedMGTbeta WMCSFCleanedMGTVar WMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio]);  
+  end
   ciftisave(statscifti,[outprefix '_' outstring '.dtseries.nii'],WBC);
 end
 
@@ -561,6 +605,11 @@ if ~strcmp(CSF,'NONE')
   varNames = sprintf('%s,%s',varNames,CSFStr);
 end
 
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+  WMCSFStr = 'WMCSFbetaWM,WMCSFbetaCSF,WMCSFVar,WMCSFVarVsBOLDVarRatio,WMCSFCleanedBOLDVar,WMCSFCleanedMGTbeta,WMCSFCleanedMGTVar,WMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio';
+  varNames = sprintf('%s,%s',varNames,WMCSFStr);
+end    
+    
 fid = fopen([outprefix '_' outstring '.txt'],'w');
 fprintf(fid,'%s\n',varNames);
 fprintf(fid,'%s,%d,%d,%d',inputdtseries,length(Isignal),length(Inoise),length(Isignal)+length(Inoise));
@@ -579,10 +628,13 @@ if SaveExtraVar
   fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanNoiseMGTbeta,meanNoiseMGTVar,meanNoiseMGTVarRatio,meanNoiseMGTrsq);
 end
 if ~strcmp(WM,'NONE')
-    fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanWMbetaICA,meanWMVar,meanWMVarVsBOLDVarRatio,meanWMCleanedBOLDVar,meanWMCleanedMGTbeta,meanWMCleanedMGTVar,meanWMCleanedMGTVarVsWMCleanedBOLDVarRatio);
+    fprintf(fid,',%.3f,%.2f,%.5f,%.2f,%.3f,%.2f,%.5f',meanWMbetaICA,meanWMVar,meanWMVarVsBOLDVarRatio,meanWMCleanedBOLDVar,meanWMCleanedMGTbeta,meanWMCleanedMGTVar,meanWMCleanedMGTVarVsWMCleanedBOLDVarRatio);
 end
 if ~strcmp(CSF,'NONE')
-    fprintf(fid,',%.3f,%.2f,%.5f,%.5f',meanCSFbetaICA,meanCSFVar,meanCSFVarVsBOLDVarRatio,meanCSFCleanedBOLDVar,meanCSFCleanedMGTbeta,meanCSFCleanedMGTVar,meanCSFCleanedMGTVarVsCSFCleanedBOLDVarRatio);
+    fprintf(fid,',%.3f,%.2f,%.5f,%.2f,%.3f,%.2f,%.5f',meanCSFbetaICA,meanCSFVar,meanCSFVarVsBOLDVarRatio,meanCSFCleanedBOLDVar,meanCSFCleanedMGTbeta,meanCSFCleanedMGTVar,meanCSFCleanedMGTVarVsCSFCleanedBOLDVarRatio);
+end
+if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
+    fprintf(fid,',%.3f,%.3f,%.2f,%.5f,%.2f,%.3f,%.2f,%.5f',meanWMCSFbetaICA(1),meanWMCSFbetaICA(2),meanWMCSFVar,meanWMCSFVarVsBOLDVarRatio,meanWMCSFCleanedBOLDVar,meanWMCSFCleanedMGTbeta,meanWMCSFCleanedMGTVar,meanWMCSFCleanedMGTVarVsWMCSFCleanedBOLDVarRatio);
 end
 fprintf(fid,'\n');
 end
@@ -685,7 +737,7 @@ set(ax,'Units','points','YTick',[0 0.5 1],'YTickLabel',...
     {'0','0.5','1'},'Ylim',[0 1],'FontSize',8);
 set(ax,'Position',[60 25+tp+25+216+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String','FD (red)');
+set(get(gca,'YLabel'),'String','FD','FontSize',12);
 
 % Plot DV traces
 subplot(4,1,2); plot(fr,DV,'b');
@@ -694,7 +746,7 @@ set(ax,'Units','points','YTick',[-20 0 30 80],'YTickLabel',...
     {'-20','0','30','80'},'Ylim',[-20 80],'FontSize',8);
 set(ax,'Position',[60 25+tp+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String',['DV (blue), Median:' num2str(MedDV)]);
+set(get(gca,'YLabel'),'String',['DV, Median:' num2str(MedDV,'%.1f')],'FontSize',12);
 
 % Plot MGT+WM+CSF traces
 subplot(4,1,3); plot(fr,CSF,'m'); hold on; plot(fr,WM,'c'); plot(fr,GS,'k');
@@ -703,13 +755,8 @@ set(ax,'Units','points','YTick',[-100 -50 0 50 100],'YTickLabel',...
     {'-100','-50','0','50','100'},'Ylim',[-100 100],'FontSize',8);
 set(ax,'Position',[60 25+tp+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)');
+set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)','FontSize',10);
 
-%Commented out because it wasn't clear why this was needed vs standard scaling
-% set color palette for grayplots
-%bone2 = bone(100);
-%bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
-%bone2 = bone2(bone2mask,:);
 CLIM=[-200 200]; %2% of mean 10000 scaled image intensity variations
 
 % Sub-grayplot the Left/Right/Subcortex (or volume gray ribbon if NIFTI)
@@ -772,7 +819,7 @@ CSF=(CSF/std(CSF)) * max([std(GS) std(WM)]); %Make CSF scaling more reasonable
 close all;
 figure('Visible','off'); %%%
 set(gcf,'Units','points');
-set(gcf,'Position',[3 6 1464 25+tp+25+216+25+216+25+216+25]);
+set(gcf,'Position',[3 6 tp+264 25+tp+25+216+25+216+25+216+25]);
 set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
 %colormap(jet);
 
@@ -783,7 +830,7 @@ set(ax,'Units','points','YTick',[0 0.5 1],'YTickLabel',...
     {'0','0.5','1'},'Ylim',[0 1],'FontSize',8);
 set(ax,'Position',[60 25+tp+25+216+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String','FD (red)');
+set(get(gca,'YLabel'),'String','FD','FontSize',12);
 
 % Plot DV traces
 subplot(4,1,2); plot(fr,DV,'b');
@@ -792,7 +839,7 @@ set(ax,'Units','points','YTick',[-20 0 30 80],'YTickLabel',...
     {'-20','0','30','80'},'Ylim',[-20 80],'FontSize',8);
 set(ax,'Position',[60 25+tp+25+216+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String',['DV (blue), Median:' num2str(MedDV)]);
+set(get(gca,'YLabel'),'String',['DV, Median:' num2str(MedDV,'%.1f')],'FontSize',12);
 
 % Plot MGT+WM+CSF traces
 subplot(4,1,3); plot(fr,CSF,'m'); hold on; plot(fr,WM,'c'); plot(fr,GS,'k');
@@ -801,13 +848,8 @@ set(ax,'Units','points','YTick',[-100 -50 0 50 100],'YTickLabel',...
     {'-100','-50','0','50','100'},'Ylim',[-100 100],'FontSize',8);
 set(ax,'Position',[60 25+tp+25 tp 216]);
 set(ax,'XTick',[],'XTickLabel',''); xlim([1 tp]);
-set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)');
+set(get(gca,'YLabel'),'String','MGT (black), WM (cyan), CSF (magenta)','FontSize',10);
 
-%Commented out because it wasn't clear why this was needed vs standard scaling
-% set color palette for grayplots
-%bone2 = bone(100);
-%bone2mask = logical(repmat([1;0],[size(bone2,1)/2 1]));
-%bone2 = bone2(bone2mask,:);
 CLIM=[-2 2]; % +/- 2 STD from the mean (per grayordinate)
 
 % Sub-grayplot the Left/Right/Subcortex (or volume gray ribbon if NIFTI)
