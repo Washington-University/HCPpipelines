@@ -820,7 +820,7 @@ close all;
 figure('Visible','off'); %%%
 set(gcf,'Units','points');
 set(gcf,'Position',[3 6 tp+264 25+tp+25+216+25+216+25+216+25]);
-set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
+%set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
 %colormap(jet);
 
 % Plot FD trace
