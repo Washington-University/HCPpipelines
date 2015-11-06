@@ -726,8 +726,8 @@ CSF=(CSF/std(CSF)) * max([std(GS) std(WM)]); %Make CSF scaling more reasonable
 close all;
 figure('Visible','off'); %%%
 set(gcf,'Units','points');
-set(gcf,'Position',[3 6 1464 25+tp+25+216+25+216+25+216+25]);
-set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
+set(gcf,'Position',[3 6 tp+264 25+tp+25+216+25+216+25+216+25]);
+set(gcf,'PaperPosition',[0.25 2.5 (tp+264)/72 (25+tp+25+216+25+216+25+216+25)/72]);
 %colormap(jet);
 
 % Plot FD trace
@@ -820,7 +820,7 @@ close all;
 figure('Visible','off'); %%%
 set(gcf,'Units','points');
 set(gcf,'Position',[3 6 tp+264 25+tp+25+216+25+216+25+216+25]);
-%set(gcf,'PaperPosition',[0.25 2.5 20 27.5]);
+set(gcf,'PaperPosition',[0.25 2.5 (tp+264)/72 (25+tp+25+216+25+216+25+216+25)/72]);
 %colormap(jet);
 
 % Plot FD trace
