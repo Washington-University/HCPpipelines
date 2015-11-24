@@ -966,7 +966,7 @@ main()
 			log_Msg "About to execute the following Matlab script"
 
 			cat ${matlab_script_file_name}
-			cat ${matlab_script_file_name} | matlab -nojvm -nodisplay -nosplash
+			cat ${matlab_script_file_name} | matlab -nodisplay -nosplash
 
 			;;
 
