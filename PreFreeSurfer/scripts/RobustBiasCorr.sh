@@ -22,6 +22,7 @@ Usage() {
   echo "      [--fslreorient2std={TRUE, FALSE (default)}]"
   echo "      [--robustfov={TRUE, FALSE (default)}]"
   echo "      [--betrestore={TRUE, FALSE (default)}]"
+  echo "      [--forcestrictbrainmask={TRUE, FALSE (default)}]"
 }
 
 # function for parsing options
@@ -59,6 +60,8 @@ flg_smoothfillnonpos=`getopt1 "--smoothfillnonpos" $@`  # "$7"
 flg_fslreorient2std=`getopt1 "--fslreorient2std" $@`  # "$8"
 flg_robustfov=`getopt1 "--robustfov" $@`  # "$9"
 flg_betrestore=`getopt1 "--betrestore" $@`  # "$10"
+flg_forcestrictbrainmask=`getopt1 "--forcestrictbrainmask" $@`  # "$11"
+flg_ignorecsf=`getopt1 "--ignorecsf" $@`  # "$12"
 
 # default parameters
 FWHM=$(defaultopt $FWHM 10)
@@ -69,6 +72,8 @@ flg_smoothfillnonpos=$(defaultopt $flg_smoothfillnonpos "TRUE")
 flg_fslreorient2std=$(defaultopt $flg_fslreorient2std "FALSE")
 flg_robustfov=$(defaultopt $flg_robustfov "FALSE")
 flg_betrestore=$(defaultopt $flg_betrestore "FALSE")
+flg_forcestrictbrainmask=$(defaultopt $flg_forcestrictbrainmask "TRUE")
+flg_ignorecsf=$(defaultopt $flg_ignorecsf "TRUE")
 
 echo " "
 echo " START: RobustBiasCorr"
@@ -132,10 +137,14 @@ if [[ -n $BrainMask ]] ; then
   # copy and binarise brain mask to working directory and rename
   $FSLbin/fslmaths $BrainMask -bin $WD/${TX}_hpf_brain_mask
   $FSLbin/fslmaths $WD/${TX}_hpf -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain
-  # ensure the mask is conservative by running bet again
-  echo "  ensuring provided brain mask is conservative"
-  $FSLbin/bet $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_strict -m -n -f 0.1
-  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
+  if [[ $flg_forcestrictbrainmask = "TRUE" ]] ; then
+    # ensure the mask is conservative by running bet again
+    echo "  ensuring provided brain mask is conservative"
+    $FSLbin/bet $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_strict -m -n -f 0.1
+    $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
+  else
+    $FSLbin/imcp $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
+  fi
 else
   # do conservative brain extraction
   echo "  extracting a conservative brain mask"
@@ -143,16 +152,20 @@ else
   $FSLbin/imcp $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
 fi
 
-echo "  removing non-brain tissue from the edge of the mask"
-thr=$($FSLbin/fslstats $WD/${TX}_hpf -k $WD/${TX}_hpf_brain_strict_mask -M)
-thr=$(echo "$thr" | awk '{print $1/2}')
-$FSLbin/fslmaths $WD/${TX}_hpf -thr $thr -mas $WD/${TX}_hpf_brain_strict_mask -bin $WD/${TX}_hpf_brain_strict_mask
-$FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mul -1 -add 1 $WD/${TX}_hpf_brain_inv_mask
-# select only the largest contiguous cluster of low-intensity voxels
-# one could consider to all low-intensity voxels, also for example the ventricles. Then it would probably best to raise --minextent to 1000.
-$FSLbin/cluster --in=$WD/${TX}_hpf_brain_inv_mask --thresh=0.5 --minextent=100 --no_table --oindex=$WD/${TX}_hpf_brain_inv_mask
-thr=$($FSLbin/fslstats $WD/${TX}_hpf_brain_inv_mask -R | awk '{print $2}')
-$FSLbin/fslmaths $WD/${TX}_hpf_brain_inv_mask -thr $thr -bin -dilF -eroF -mul -1 -add 1 -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
+if [[ $flg_ignorecsf = "TRUE" ]] ; then
+  echo "  removing non-brain tissue (mostly CSF) from the edge of the mask"
+  thr=$($FSLbin/fslstats $WD/${TX}_hpf -k $WD/${TX}_hpf_brain_strict_mask -M)
+  thr=$(echo "$thr" | awk '{print $1/2}')
+  $FSLbin/fslmaths $WD/${TX}_hpf -thr $thr -mas $WD/${TX}_hpf_brain_strict_mask -bin $WD/${TX}_hpf_brain_strict_mask
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mul -1 -add 1 $WD/${TX}_hpf_brain_inv_mask
+  # select only the largest contiguous cluster of low-intensity voxels
+  # one could consider to remove all low-intensity voxels, also for example the ventricles. Then it would probably best to raise --minextent to 1000.
+  $FSLbin/cluster --in=$WD/${TX}_hpf_brain_inv_mask --thresh=0.5 --minextent=100 --no_table --oindex=$WD/${TX}_hpf_brain_inv_mask
+  thr=$($FSLbin/fslstats $WD/${TX}_hpf_brain_inv_mask -R | awk '{print $2}')
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_inv_mask -thr $thr -bin -dilF -eroF -mul -1 -add 1 -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
+else
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
+fi
 
 # extract the brain from the original image
 $FSLbin/fslmaths $WD/${TX} -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_s20
