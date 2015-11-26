@@ -216,7 +216,15 @@ main()
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
 
 	if [ -f ../${fmri_orig}_Atlas${RegString}.dtseries.nii ] ; then
+		log_Msg "FOUND FILE: ../${fmri_orig}_Atlas${RegString}.dtseries.nii"
+		log_Msg "Performing imln"
 		$FSLDIR/bin/imln ../${fmri_orig}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
+
+		
+		log_Msg "START: Showing linked files"
+		ls -l ../${fmri_orig}_Atlas${RegString}.dtseries.nii
+		ls -l Atlas.dtseries.nii
+		log_Msg "END: Showing linked files"
 	fi
 
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
