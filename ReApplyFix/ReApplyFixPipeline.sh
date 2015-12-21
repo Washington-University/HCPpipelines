@@ -162,12 +162,92 @@ show_tool_versions()
 	log_Msg "FSL version: ${fsl_ver}"
 }
 
+check_fsl_version()
+{
+	local fsl_version
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+	local version_status="OLD"
+
+	# Get FSL version
+	fsl_version_get fsl_version
+
+	# Parse FSL version into primary, secondary, and tertiary parts
+	fsl_version_array=(${fsl_version//./ })
+	
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+
+	fsl_secondary_version="${fsl_version_array[1]}"
+    fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+
+    fsl_tertiary_version="${fsl_version_array[2]}"
+    fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# Determine whether we are using an "OLD" version (5.0.6 or older),
+	# an "UNTESTED" version (5.0.7 or 5.0.8),
+	# or a "NEW" version (5.0.9 or newer)
+	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
+		# e.g. 4.x.x
+		version_status="OLD"
+	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
+		# e.g. 6.x.x
+		version_status="NEW"
+	else
+		# e.g. 5.x.x
+		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
+			# e.g. 5.1.x
+			version_status="NEW"
+		else
+			# e.g. 5.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]] ; then
+				# e.g. 5.0.5 or 5.0.6
+				version_status="OLD"
+			elif [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
+				# e.g. 5.0.7 or 5.0.8
+				version_status="UNTESTED"
+			else
+				# e.g. 5.0.9, 5.0.10 ..
+				version_status="NEW"
+			fi
+
+		fi
+
+	fi
+
+	if [ "${version_status}" == "OLD" ] ; then
+		log_Msg "ERROR: The version of FSL in use (${fsl_version}) is incompatible with this script."
+		log_Msg "ERROR: This script and the Matlab code invoked by it, use a behavior of FSL that was"
+		log_Msg "ERROR: introduced in version 5.0.7 of FSL. You will need to upgrade to at least FSL"
+		log_Msg "ERROR: version 5.0.7 for this script to work correctly. Note, however, that this script"
+		log_Msg "ERROR: has not yet been testing using version 5.0.7 or 5.0.8 of FSL. Therefore, if"
+		log_Msg "ERROR: you use either of those two versions of FSL, you will receive an \"Untested FSL"
+		log_Msg "ERROR: version\" warning. But the script will continue to run."
+		log_Msg "ERROR: Since the current version is guaranteed to give unexpected results, we are"
+		log_Msg "ERROR: aborting this run of: ${g_script_name}"
+		exit 1
+
+	elif [ "${version_status}" == "UNTESTED" ]; then
+		log_Msg "WARNING: The version of FSL in use (${fsl_version}) should work with this script,"
+		log_Msg "WARNING: but is untested.  This script and the Matlab code invoked by it, use a behavior"
+		log_Msg "WARNING: that was introduced in version 5.0.7 of FSL. However, this script has not been"
+		log_Msg "WARNING: tested with any version of FSL older than version 5.0.9. This script should"
+		log_Msg "WARNING: continue to run after this warning. To avoid this warning in the future, upgrade"
+		log_Msg "WARNING: to FSL version 5.0.9 or newer."
+
+	fi
+}
+
 main() 
 {
 	# Get command line options
 	get_options $@
 
 	show_tool_versions
+
+	check_fsl_version
 
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
