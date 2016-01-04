@@ -8,6 +8,11 @@ if (isdeployed)
         TR = str2num(TR)
     end
 end
+
+func_name='functionmotionconfounds';
+fprintf('%s - TR: %d\n', func_name, TR);
+fprintf('%s - hp: %d\n', func_name, hp);
+
 %%%% must have "hp" and "TR" already set before calling this
 
 [grota,grotb]=call_fsl('imtest mc/prefiltered_func_data_mcf_conf_hp');
@@ -30,7 +35,12 @@ else
   end
   if hp>0
     save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),'mc/prefiltered_func_data_mcf_conf','f',[1 1 1 TR]);
-    call_fsl(sprintf('fslmaths mc/prefiltered_func_data_mcf_conf -bptf %f -1 mc/prefiltered_func_data_mcf_conf_hp',0.5*hp/TR));
+
+    %call_fsl(sprintf('fslmaths mc/prefiltered_func_data_mcf_conf -bptf %f -1 mc/prefiltered_func_data_mcf_conf_hp',0.5*hp/TR));
+    cmd_str=sprintf('fslmaths mc/prefiltered_func_data_mcf_conf -bptf %f -1 mc/prefiltered_func_data_mcf_conf_hp',0.5*hp/TR);
+    fprintf('%s - About to execute: %s\n',func_name,cmd_str);
+    system(cmd_str);	
+
     confounds=functionnormalise(reshape(read_avw('mc/prefiltered_func_data_mcf_conf_hp'),size(confounds,2),size(confounds,1))');
   end
 end
