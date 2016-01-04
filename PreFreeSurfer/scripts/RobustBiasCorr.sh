@@ -3,14 +3,14 @@ set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6)
-#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
+#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, $HCPPIPEDIR_PreFS)
 #  give Lennart Verhagen (lennart.verhagen@psy.ox.ac.uk) a coffee or a pint
 
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {
-  echo "`basename $0`: Robust bias field correction using 'fast', potentially with 'fslreorient2std' and 'robustfov'"
+  echo "`basename $0`: Robust bias field correction using 'fast'"
   echo " "
   echo "Usage: `basename $0` [--workingdir=<working dir>]"
   echo "      --in=<input image>"
@@ -23,6 +23,9 @@ Usage() {
   echo "      [--robustfov={TRUE, FALSE (default)}]"
   echo "      [--betrestore={TRUE, FALSE (default)}]"
   echo "      [--forcestrictbrainmask={TRUE, FALSE (default)}]"
+  echo "      [--ignorecsf={TRUE (default), FALSE}]"
+  echo "      [--ignorextrm={TRUE, FALSE (default)}]"
+  echo "      [--hpfinit={TRUE, FALSE} (default is auto-determined)]"
 }
 
 # function for parsing options
@@ -62,6 +65,8 @@ flg_robustfov=`getopt1 "--robustfov" $@`  # "$9"
 flg_betrestore=`getopt1 "--betrestore" $@`  # "$10"
 flg_forcestrictbrainmask=`getopt1 "--forcestrictbrainmask" $@`  # "$11"
 flg_ignorecsf=`getopt1 "--ignorecsf" $@`  # "$12"
+flg_ignorextrm=`getopt1 "--ignorextrm" $@`  # "$13"
+flg_hpfinit=`getopt1 "--hpfinit" $@`  # "$13"
 
 # default parameters
 FWHM=$(defaultopt $FWHM 10)
@@ -74,13 +79,17 @@ flg_robustfov=$(defaultopt $flg_robustfov "FALSE")
 flg_betrestore=$(defaultopt $flg_betrestore "FALSE")
 flg_forcestrictbrainmask=$(defaultopt $flg_forcestrictbrainmask "TRUE")
 flg_ignorecsf=$(defaultopt $flg_ignorecsf "TRUE")
+flg_ignorextrm=$(defaultopt $flg_ignorextrm "FALSE")
 
 echo " "
 echo " START: RobustBiasCorr"
 echo " "
 
+# folder definitions
 FSLbin=$FSLDIR/bin
 mkdir -p $WD
+# if not given, retrieve dir of current script, and assume to be $HCPPIPEDIR_PreFS
+[[ -z $HCPPIPEDIR_PreFS ]] && HCPPIPEDIR_PreFS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Record the input options in a log file
 if [[ -e $WD/log.txt ]] ; then rm -f $WD/log.txt ; fi
@@ -93,6 +102,7 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ##########################################
 
 # copy the input image to the working directory using the base name
+echo "  working on a copy of the original input"
 $FSLbin/imcp $Input $WD/${TX}
 
 # store an original copy if the input image will be processed
@@ -124,47 +134,68 @@ if [[ $flg_robustfov = "TRUE" ]] ; then
   $FSLbin/convert_xfm -omat $WD/${TX}_roi2orig.mat -inverse $WD/${TX}_orig2roi.mat
 fi
 
-echo "  high-pass filtering the whole image"
-# low-pass filter the original image (downsample to smooth, than upsample to retrieve resolution)
-$FSLbin/fslmaths $WD/${TX} -subsamp2 -subsamp2 -subsamp2 -subsamp2 $WD/vol16
-$FSLbin/flirt -in $WD/vol16 -ref $WD/${TX} -out $WD/${TX}_s20 -noresampblur -applyxfm -paddingsize 16
-$FSLbin/imrm $WD/vol16
-# divide original image by its low-pass to retreive high-pass
-$FSLbin/fslmaths $WD/${TX} -div $WD/${TX}_s20 $WD/${TX}_hpf
+# determine if a high-pass is needed for the whole image
+if [[ -z $flg_hpfinit ]] ; then
+  if [[ -z $BrainMask || $flg_forcestrictbrainmask = "TRUE" || $flg_ignorecsf = "TRUE" || $flg_ignorextrm = "TRUE" ]] ; then
+    flg_hpfinit="TRUE"
+  else
+    flg_hpfinit="FALSE"
+  fi
+fi
 
-# copy brain mask or run bet
-if [[ -n $BrainMask ]] ; then
+# if a high-pass is needed for the whole image
+if [[ $flg_hpfinit = "TRUE" ]] ; then
+  echo "  high-pass filtering the whole image"
+  # low-pass filter the original image (downsample to smooth, than upsample to retrieve resolution)
+  $FSLbin/fslmaths $WD/${TX} -subsamp2 -subsamp2 -subsamp2 -subsamp2 $WD/vol16
+  $FSLbin/flirt -in $WD/vol16 -ref $WD/${TX} -out $WD/${TX}_s20 -noresampblur -applyxfm -paddingsize 16
+  $FSLbin/imrm $WD/vol16
+  # divide original image by its low-pass to retreive high-pass
+  $FSLbin/fslmaths $WD/${TX} -div $WD/${TX}_s20 $WD/${TX}_hpf
+else
+  $FSLbin/imcp $WD/${TX} $WD/${TX}_hpf
+fi
+
+# 1) extract the brain, or 2) adjust the provided mask, or 3) just use it
+if [[ -z $BrainMask ]] ; then
+  echo "  extracting a conservative brain mask"
+  # do conservative brain extraction
+  $FSLbin/bet $WD/${TX}_hpf $WD/${TX}_hpf_brain -m -n -f 0.1
+
+elif [[ $flg_forcestrictbrainmask = "TRUE" ]] ; then
+  echo "  ensuring provided brain mask is conservative"
   # copy and binarise brain mask to working directory and rename
   $FSLbin/fslmaths $BrainMask -bin $WD/${TX}_hpf_brain_mask
   $FSLbin/fslmaths $WD/${TX}_hpf -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain
-  if [[ $flg_forcestrictbrainmask = "TRUE" ]] ; then
-    # ensure the mask is conservative by running bet again
-    echo "  ensuring provided brain mask is conservative"
-    $FSLbin/bet $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_strict -m -n -f 0.1
-    $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
-  else
-    $FSLbin/imcp $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
-  fi
+  # ensure the mask is conservative by running bet again
+  $FSLbin/bet $WD/${TX}_hpf_brain $WD/${TX}_hpf_brain_strict -m -n -f 0.1
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
+  $FSLbin/imcp $WD/${TX}_hpf_brain_strict_mask $WD/${TX}_hpf_brain_mask
+
 else
-  # do conservative brain extraction
-  echo "  extracting a conservative brain mask"
-  $FSLbin/bet $WD/${TX}_hpf $WD/${TX}_hpf_brain -m -n -f 0.1
-  $FSLbin/imcp $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_strict_mask
+  # copy and binarise brain mask to working directory and rename
+  $FSLbin/fslmaths $BrainMask -bin $WD/${TX}_hpf_brain_mask
+
 fi
 
+# remove CSF from edge of the mask
 if [[ $flg_ignorecsf = "TRUE" ]] ; then
   echo "  removing non-brain tissue (mostly CSF) from the edge of the mask"
-  thr=$($FSLbin/fslstats $WD/${TX}_hpf -k $WD/${TX}_hpf_brain_strict_mask -M)
+  thr=$($FSLbin/fslstats $WD/${TX}_hpf -k $WD/${TX}_hpf_brain_mask -M)
   thr=$(echo "$thr" | awk '{print $1/2}')
-  $FSLbin/fslmaths $WD/${TX}_hpf -thr $thr -mas $WD/${TX}_hpf_brain_strict_mask -bin $WD/${TX}_hpf_brain_strict_mask
-  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mul -1 -add 1 $WD/${TX}_hpf_brain_inv_mask
+  $FSLbin/fslmaths $WD/${TX}_hpf -thr $thr -mas $WD/${TX}_hpf_brain_mask -bin $WD/${TX}_hpf_brain_strict_mask
+  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -binv $WD/${TX}_hpf_brain_inv_mask
   # select only the largest contiguous cluster of low-intensity voxels
   # one could consider to remove all low-intensity voxels, also for example the ventricles. Then it would probably best to raise --minextent to 1000.
   $FSLbin/cluster --in=$WD/${TX}_hpf_brain_inv_mask --thresh=0.5 --minextent=100 --no_table --oindex=$WD/${TX}_hpf_brain_inv_mask
   thr=$($FSLbin/fslstats $WD/${TX}_hpf_brain_inv_mask -R | awk '{print $2}')
   $FSLbin/fslmaths $WD/${TX}_hpf_brain_inv_mask -thr $thr -bin -dilF -eroF -mul -1 -add 1 -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
-else
-  $FSLbin/fslmaths $WD/${TX}_hpf_brain_strict_mask -mas $WD/${TX}_hpf_brain_mask $WD/${TX}_hpf_brain_mask
+fi
+
+# ignore extreme values outside of robust range
+if [[ $flg_ignorextrm = "TRUE" ]] ; then
+  echo "  ignoring extreme values (both high and low)"
+  $FSLbin/fslmaths $WD/${TX}_hpf -mas $WD/${TX}_hpf_brain_mask -thrP 0 -uthrP 100 -bin $WD/${TX}_hpf_brain_mask
 fi
 
 # extract the brain from the original image
