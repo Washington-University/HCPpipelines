@@ -23,13 +23,15 @@ module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 
 # Set up specific environment variables for the HCP Pipeline
 #export HCPPIPEDIR=${HOME}/projects/Pipelines
-# retrieve the Example/Scripts folder
-# this script will be sourced, so BASH_SOURCE[0] will be empty
-# therefore retrieve the directory of the caller script instead
-ExampleScriptsFolder=$( cd "$( dirname "${BASH_SOURCE[1]}" )" && pwd )
+if [[ -z $HCPPIPEDIR ]] ; then
+  # retrieve the Example/Scripts folder
+  # this script will be sourced, so BASH_SOURCE[0] will be empty
+  # therefore retrieve the directory of the caller script instead
+  ExampleScriptsFolder=$( cd "$( dirname "${BASH_SOURCE[1]}" )" && pwd )
+  # define the general Pipelines folder
+  export HCPPIPEDIR=$(cd "${ExampleScriptsFolder}/../../" && pwd)
+fi
 
-# define the general Pipelines folder
-export HCPPIPEDIR=$(cd "${ExampleScriptsFolder}/../../" && pwd)
 #export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
 export CARET7DIR=/opt/fmrib/bin # When on Jalapeno: source it from the general bin folder to allow wb_command to find other libraries and packages
 
