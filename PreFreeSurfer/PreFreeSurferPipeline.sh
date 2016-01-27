@@ -419,7 +419,7 @@ if [ ! -e ${T1wFolder}/xfms ] ; then
     mkdir -p ${T1wFolder}/xfms/
 fi
 
-if [ ! -e ${T2wFolder}/xfms ] ; then
+if [[ -n $T2wInputImages ]] && [ ! -e ${T2wFolder}/xfms ] ; then
 	log_Msg "mkdir -p ${T2wFolder}/xfms/"
     mkdir -p ${T2wFolder}/xfms/
 fi
@@ -445,7 +445,7 @@ log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 #  - Perform Brain Extraction(FNIRT-based Masking)
 # ------------------------------------------------------------------------------
 
-if [ -n "$T2wInputImages" ]; then
+if [[ -n $T2wInputImages ]] ; then
   Modalities="T1w T2w"
 else
   Modalities="T1w"
@@ -455,7 +455,7 @@ for TXw in ${Modalities} ; do
     log_Msg "Processing Modality: " $TXw
 
     # set up appropriate input variables
-    if [ $TXw = "T1w" ] ; then
+    if [[ $TXw = T1w ]] ; then
         TXwInputImages="${T1wInputImages}"
         TXwFolder=${T1wFolder}
         TXwImage=${T1wImage}
@@ -474,7 +474,7 @@ for TXw in ${Modalities} ; do
 
     # Perform Gradient Nonlinearity Correction
 
-    if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
+    if [[ ! $GradientDistortionCoeffs = "NONE" ]] ; then
         log_Msg "Performing Gradient Nonlinearity Correction"
 
         i=1
@@ -814,7 +814,7 @@ if [[ $MaskArtery = "TRUE" ]] ; then
   --exclmask=${T1wFolder}/RobustSegmentation/${Arg_basenamebrain}_WM \
   --basename=$Arg_basename
 
-  # lesion filling on original non-bias-corrected T1 and T2
+  # smooth filling on original non-bias-corrected T1 and T2
   ${RUN} $HCPPIPEDIR_PreFS/SmoothFill.sh \
   --in=${T1wFolder}/${T1wImage}_acpc_dc \
   --fillmask=${T1wFolder}/ArteryDetection/${Arg_basename}_arterymaskdil \
@@ -870,7 +870,7 @@ else
   # set context dependent arguments
   ExtraArguments=""
   if [[ -n $T2wInputImages ]] ; then
-    ExtraArguments="--T2im=${T1wFolder}/${T2wImage}_acpc_dc --T2imest=${T1wFolder}/${T2wImage}_acpc_dc_arteryfill --oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain"
+    ExtraArguments="--T2im=${T1wFolder}/${T2wImage}_acpc_dc --T2imest=$Arg_T2imest --oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain"
   fi
 
   # estimate the bias field using a robust wrapper around FAST
