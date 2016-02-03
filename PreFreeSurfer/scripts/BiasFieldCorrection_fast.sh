@@ -149,7 +149,7 @@ for TXw in ${Modalities} ; do
     TXwImageBasename=`${FSLDIR}/bin/remove_ext "$TXwImage"`
     TXwImageBasename=`basename "$TXwImageBasename"`
     # do robust bias correction based on the fsl_anat pipeline
-    $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwImageEst} --workingdir=$WD --brainmask=${T1wImageBrain} --basename=${TXwImageBasename} --FWHM=$FWHM --type=$X --smoothfillnonpos=$SmoothFillNonPos --fslreorient2std="FALSE" --robustfov="FALSE" --betrestore="FALSE"
+    $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwImageEst} --workingdir=$WD --brainmask=${T1wImageBrain} --basename=${TXwImageBasename} --FWHM=$FWHM --type=$X --smoothfillnonpos=$SmoothFillNonPos
     ${FSLDIR}/bin/immv $WD/${TXwImageBasename}_bias ${TXwOutputBiasField}
   else
     TXwImageBrainBasename=`${FSLDIR}/bin/remove_ext "$TXwImageBrain"`
