@@ -80,8 +80,8 @@ BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5
 SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
 
 # if no special estimation images are supplied, just the standard ones
-[[ -z $T1wImageEst ]] && T1wImageBEst=$T1wImage
-[[ -z $T2wImageEst ]] && T2wImageBEst=$T1wImage
+[[ -z $T1wImageEst ]] && T1wImageEst=$T1wImage
+[[ -z $T2wImageEst ]] && T2wImageEst=$T1wImage
 
 echo " "
 echo " START: BiasFieldCorrection_sqrtT1wXT1w"
