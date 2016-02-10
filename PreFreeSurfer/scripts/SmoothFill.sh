@@ -68,13 +68,12 @@ BaseOut=$(${FSLDIR}/bin/remove_ext $Output)
 if [[ -n $FillMask ]] ; then
 
   # invert the fill mask
-  ${FSLDIR}/bin/fslmaths $FillMask -bin -mul -1 -add 1 ${BaseIn}_posmask
+  ${FSLDIR}/bin/fslmaths $FillMask -binv ${BaseIn}_posmask
 
 else
 
   # return quickly if all values are higher than zero
-  MinMax=($(fslstats $Input -R))
-  if [[ $(echo | awk -v m=${MinMax[0]} '{if (m>0) print (1);}') = 1 ]] ; then
+  if [[ $(fslstats $Input -R | awk '{if ($1>0) print 1}') == 1 ]] ; then
     [[ $Input != $Output ]] && ${FSLDIR}/bin/imcp $Input $Output
     exit 0
   fi
