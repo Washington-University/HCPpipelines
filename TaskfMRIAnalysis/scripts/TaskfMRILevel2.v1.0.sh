@@ -17,7 +17,7 @@ VolumeBasedProcessing="${11}"
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 
 # Establish tool name for logging
-log_SetToolName "TaskfMRILevel2.sh"
+log_SetToolName "TaskfMRILevel2.v1.0.sh"
 
 #Set up some things
 log_Msg "Set up some things"
@@ -52,8 +52,12 @@ cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf 
 #Make design files
 log_Msg "Make design files"
 DIR=`pwd`
+log_Msg "DIR: ${DIR}"
+log_Msg "LevelTwoFEATDir: ${LevelTwoFEATDir}"
 cd ${LevelTwoFEATDir}
+log_Msg "PWD: ${PWD}"
 feat_model ${LevelTwoFEATDir}/design
+log_Msg "About to return to DIR: ${DIR}"
 cd $DIR
 
 #Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses
