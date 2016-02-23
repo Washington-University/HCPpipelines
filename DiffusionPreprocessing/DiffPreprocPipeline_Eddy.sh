@@ -122,6 +122,15 @@ usage()
 	echo "      that would be executed instead of actually running them"
 	echo "      --printcom=echo is intended for testing purposes"
 	echo ""
+	echo "    [--dont_peas] : pass the --dont_peas (Do NOT perform a post-eddy alignment of shells) option"
+	echo "                    to eddy invocation"
+	echo ""
+	echo "    [--fwhm=<value>] : --fwhm value to pass to eddy"
+	echo "                       If unspecified, defaults to --fwhm=0"
+	echo ""
+	echo "    [--resamp=<value>] : --resamp value to pass to eddy"
+	echo "                         If unspecified, no --resamp option is passed to eddy"
+	echo ""
 	echo "  Return code:"
 	echo ""
 	echo "    0 if help was not requested, all parameters were properly formed, and processing succeeded"
@@ -200,6 +209,9 @@ get_options()
 	sep_offs_move="False"
 	rms="False"
 	ff_val=""
+	dont_peas=""
+	fwhm_value="0"
+	resamp_value=""
 	
 	# parse arguments
 	local index=0
@@ -259,6 +271,18 @@ get_options()
 				ff_val=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
+			--dont_peas)
+				dont_peas="--dont_peas"
+				index=$(( index + 1 ))
+				;;
+			--fwhm=*)
+				fwhm_value=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--resamp=*)
+				resamp_value=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
 			*)
 				usage
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -301,6 +325,9 @@ get_options()
 	echo "   sep_offs_move: ${sep_offs_move}"
 	echo "   rms: ${rms}"
 	echo "   ff_val: ${ff_val}"
+	echo "   dont_peas: ${dont_peas}"
+	echo "   fwhm_value: ${fwhm_value}"
+	echo "   resamp_value: ${resamp_value}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -415,6 +442,17 @@ main()
 	run_eddy_cmd+="${ff_option} "
 	run_eddy_cmd+="-g "
 	run_eddy_cmd+="-w ${outdir}/eddy "
+
+
+	if [ ! -z "${dont_peas}" ] ; then
+		run_eddy_cmd+="--dont_peas "
+	fi
+
+	run_eddy_cmd+="--fwhm=${fwhm_value}"
+
+	if [ ! -z "${resamp_value}" ] ; then
+		run_eddy_cmd+="--resamp=${resamp_value}"
+	fi
 	
 	log_Msg "About to issue the following command to invoke the run_eddy.sh script"
 	log_Msg "${run_eddy_cmd}"

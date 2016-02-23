@@ -68,38 +68,47 @@ usage()
 	echo "    [-h | --help] : show usage information and exit with non-zero return code"
 	echo ""
 	echo "    [-g | --gpu]  : attempt to use the GPU-enabled version of eddy"
-	echo "                    (eddy.gpu).  If the GPU-enabled version is not"
+	echo "                    (eddy_cuda).  If the GPU-enabled version is not"
 	echo "                    found or returns a non-zero exit code, then"
 	echo "                    this script \"falls back\" to using the standard"
 	echo "                    version of eddy."
 	echo ""
 	echo "    [--wss] : produce detailed outlier statistics after each iteration by using "
-	echo "              the --wss option to a call to eddy.gpu.  Note that this option has "
-	echo "              no effect unless the GPU-enabled version of eddy (eddy.gpu) is used."
+	echo "              the --wss option to a call to eddy_cuda.  Note that this option has "
+	echo "              no effect unless the GPU-enabled version of eddy (eddy_cude) is used."
 	echo ""
 	echo "    [--repol] : replace outliers. Note that this option has no effect unless the"
-	echo "                GPU-enabled version of eddy (eddy.gpu) is used."
+	echo "                GPU-enabled version of eddy (eddy_cuda) is used."
 	echo ""
 	echo "    [--nvoxhp=<number-of-voxel-hyperparameters>] : number of voxel hyperparameters to use"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy.gpu) is used."
+	echo "                eddy (eddy_cuda) is used."
 	echo ""
 	echo "    [--sep_offs_move] : If specified, this option stops dwi from drifting relative to b=0"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy.gpu) is used."
+	echo "                eddy (eddy_cuda) is used."
 	echo ""
 	echo "    [--rms] : If specified, write a root-mean-squared movement file for QA purposes"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy.gpu) is used."
+	echo "                eddy (eddy_cuda) is used."
 	echo ""
 	echo "    [--ff=<ff-value>] : TBW??"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy.gpu) is used."
+	echo "                eddy (eddy_cuda) is used."
 	echo ""
 	echo "    -w <working-dir>           | "
 	echo "    -w=<working-dir>           | "
 	echo "    --workingdir <working-dir> | "
 	echo "    --workingdir=<working-dir> : the working directory (REQUIRED)"
+	echo ""
+	echo "    [--dont_peas] : pass the --dont_peas (Do NOT perform a post-eddy alignment of shells) option"
+	echo "                    to eddy invocation"
+	echo ""
+	echo "    [--fwhm=<value>] : --fwhm value to pass to eddy"
+	echo "                       If unspecified, defaults to --fwhm=0"
+	echo ""
+	echo "    [--resamp=<value>] : --resamp value to pass to eddy"
+	echo "                         If unspecified, no --resamp option is passed to eddy"
 	echo ""
 	echo "  Return code:"
 	echo ""
@@ -146,7 +155,10 @@ get_options()
 	sep_offs_move="False"
 	rms="False"
 	ff_val=""
-	
+	dont_peas=""
+	fwhm_value="0"
+	resamp_value=""
+
 	# parse arguments
 	local index=0
 	local numArgs=${#arguments[@]}
@@ -197,6 +209,18 @@ get_options()
 				ff_val=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
+			--dont_peas)
+				dont_peas="--dont_peas"
+				index=$(( index + 1 ))
+				;;
+			--fwhm=*)
+				fwhm_value=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--resamp=*)
+				resamp_value=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
 			*)
 				echo "Unrecognized Option: ${argument}"
 				usage
@@ -223,6 +247,9 @@ get_options()
 	echo "   sep_offs_move: ${sep_offs_move}"
 	echo "   rms: ${rms}"
 	echo "   ff_val: ${ff_val}"
+	echo "   dont_peas: ${dont_peas}"
+	echo "   fwhm_value: ${fwhm_value}"
+	echo "   resamp_value: ${resamp_value}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -248,6 +275,82 @@ validate_environment_vars()
 	echo "-- ${scriptName}: Environment Variables Used - End --"
 }
 
+get_fsl_version()
+{
+	local fsl_version_file
+	local fsl_version
+	local __functionResultVar=${1}
+
+	fsl_version_file="${FSLDIR}/etc/fslversion"
+
+	if [ -f ${fsl_version_file} ]
+	then
+		fsl_version=`cat ${fsl_version_file}`
+		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
+	else
+		log_Msg "ERROR: Cannot tell which version of FSL you are using."
+		exit 1
+	fi
+
+	eval $__functionResultVar="'${fsl_version}'"
+}
+
+#
+# NOTE:
+#   Don't echo anything in this function other than the last echo
+#   that outputs the return value
+#
+determine_old_or_new_fsl()
+{
+	local fsl_version=${1}
+	local old_or_new
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+
+	# parse the FSL version information into primary, secondary, and tertiary parts
+	fsl_version_array=(${fsl_version//./ })
+
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+	
+	fsl_secondary_version="${fsl_version_array[1]}"
+	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+	
+	fsl_tertiary_version="${fsl_version_array[2]}"
+	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# determine whether we are using "OLD" or "NEW" FSL 
+	# 5.0.8 and below is "OLD"
+	# 5.0.9 and above is "NEW"
+
+	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
+		# e.g. 4.x.x
+		old_or_new="OLD"
+	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
+		# e.g. 6.x.x
+		old_or_new="NEW"
+	else
+		# e.g. 5.x.x
+		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
+			# e.g. 5.1.x
+			old_or_new="NEW"
+		else
+			# e.g. 5.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
+				# e.g. 5.0.1, 5.0.2, 5.0.3, 5.0.4 ... 5.0.8
+				old_or_new="OLD"
+			else
+				# e.g. 5.0.9 or 5.0.10 ...
+				old_or_new="NEW"
+			fi
+		fi
+	fi
+
+	echo ${old_or_new}
+}
+
 # 
 # Function Description
 #  Main processing of script
@@ -267,6 +370,13 @@ main()
 	
 	# Establish tool name for logging
 	log_SetToolName "run_eddy.sh"
+
+
+	# Determine whether FSL version is "OLD" or "NEW"
+	get_fsl_version fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
+
+	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 	
 	# Determine eddy executable to use
 	#
@@ -277,7 +387,16 @@ main()
 	#
 	#  If the user has not requested us to try to use the GPU-enabled version,
 	#  then we don't bother looking for it or trying to use it.
-	gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
+
+	if [ "${old_or_new_version}" == "OLD" ] ; then
+		log_Msg "INFO: Detected pre-5.0.9 version of FSL is in use."
+		gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
+	else
+		log_Msg "INFO: Detected 5.0.9 or newer version of FSL is in use."
+		gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
+	fi
+	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
+
 	stdEddy="${FSLDIR}/bin/eddy"
 	
 	if [ "${useGpuVersion}" = "True" ]
@@ -369,11 +488,19 @@ main()
 	eddy_command+="--acqp=${workingdir}/acqparams.txt "
 	eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
 	eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
-	eddy_command+="--fwhm=0 "
+	eddy_command+="--fwhm=${fwhm_value} "
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
 	eddy_command+="--flm=quadratic "
 	eddy_command+="--very_verbose "
+
+	if [ ! -z "${dont_peas}" ] ; then
+		eddy_command+="--dont_peas "
+	fi
+
+	if [ ! -z "${resamp_value}" ] ; then
+		eddy_command+="--resamp=${resamp_value}"
+	fi
 	
 	log_Msg "About to issue the following eddy command: "
 	log_Msg "${eddy_command}"
@@ -400,11 +527,19 @@ main()
 			eddy_command+="--acqp=${workingdir}/acqparams.txt "
 			eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
 			eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
-			eddy_command+="--fwhm=0 "
+			eddy_command+="--fwhm=${fwhm_value} "
 			eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 			eddy_command+="--out=${workingdir}/eddy_unwarped_images "
 			eddy_command+="--flm=quadratic "
 			eddy_command+="-v "
+
+			if [ ! -z "${dont_peas}" ] ; then
+				eddy_command+="--dont_peas"
+			fi
+
+			if [ ! -z "${resamp_value}" ] ; then
+				eddy_command+="--resamp=${resamp_value}"
+			fi
 			
 			log_Msg "About to issue the following eddy command: "
 			log_Msg "${eddy_command}"
