@@ -10,22 +10,26 @@ set -e
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {
-  echo "`basename $0`: Robust bias field correction using 'fast'"
-  echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>]"
-  echo "      --in=<input image>"
-  echo "      [--basename=<output base name>]"
-  echo "      [--Type={1:T1 (default), 2:T2}]"
-  echo "      [--FWHM=<field smoothness kernel FWHM in mm, default 10>]"
-  echo "      [--brainmask=<brain mask image>]"
-  echo "      [--smoothfillnonpos={TRUE (default), FALSE}]"
-  echo "      [--fslreorient2std={TRUE, FALSE (default)}]"
-  echo "      [--robustfov={TRUE, FALSE (default)}]"
-  echo "      [--betrestore={TRUE, FALSE (default)}]"
-  echo "      [--forcestrictbrainmask={TRUE, FALSE (default)}]"
-  echo "      [--ignorecsf={TRUE (default), FALSE}]"
-  echo "      [--ignorextrm={TRUE, FALSE (default)}]"
-  echo "      [--hpfinit={TRUE, FALSE} (default is auto-determined)]"
+cat <<EOF
+
+RobustBiasCorr.sh: Robust bias field correction using 'fast'
+
+Usage: `RobustBiasCorr.sh` [--workingdir=<working dir>]
+      --in=<input image>
+      [--basename=<output base name>]
+      [--Type={1:T1 (default), 2:T2}]
+      [--FWHM=<field smoothness kernel FWHM in mm, default 10>]
+      [--brainmask=<brain mask image>]
+      [--smoothfillnonpos={TRUE (default), FALSE}]
+      [--fslreorient2std={TRUE, FALSE (default)}]
+      [--robustfov={TRUE, FALSE (default)}]
+      [--betrestore={TRUE, FALSE (default)}]
+      [--forcestrictbrainmask={TRUE, FALSE (default)}]
+      [--ignorecsf={TRUE (default), FALSE}]
+      [--ignorextrm={TRUE, FALSE (default)}]
+      [--hpfinit={TRUE, FALSE} (default is auto-determined)]
+
+EOF
 }
 
 # function for parsing options
