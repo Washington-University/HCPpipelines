@@ -25,6 +25,8 @@ GrayordinatesResolutions="${20}"
 SubcorticalGrayLabels="${21}"
 RegName="${22}"
 
+echo "FreeSurfer2CaretConvertAndRegisterNonLinear.sh: RegName: ${RegName}"
+
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 GrayordinatesResolutions=`echo ${GrayordinatesResolutions} | sed 's/@/ /g'`
 
