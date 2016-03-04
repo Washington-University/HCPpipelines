@@ -36,12 +36,41 @@ if [ 1 -eq `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l` ] 
 	echo "${script_name}: Doing volume parcel resampling without first applying warp"
 	${CARET7DIR}/wb_command -volume-parcel-resampling "$VolumefMRI".nii.gz "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
 else
+	echo "${script_name}: Creating subcortical ROI volume in original fMRI resolution"
+	cp "$GrayordinatesSpaceDIR"/Atlas_ROIs."$FinalfMRIResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$FinalfMRIResolution".nii.gz
+
+	applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$ROIFolder"/Atlas_ROIs."$FinalfMRIResolution".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
+	${CARET7DIR}/wb_command -volume-label-import "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz ${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz -discard-others
+	rm "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
+
+	dilcount=4
+	
+	echo "${script_name}: spline resampling before volume parcel resampling"
+	echo "${script_name}: Using ${dilcount}x dilated masked input for resampling"
+	
+	dilarg=
+	for i in `seq 1 $dilcount`; do
+		dilarg+=" -dilM "
+	done
+
+	VolumeTemp="$VolumefMRI"_tmp"$BrainOrdinatesResolution"
+	fslmaths "$VolumefMRI".nii.gz $dilarg "$VolumeTemp".nii.gz
+	inputfmri="$VolumeTemp".nii.gz
+	
+	FinalfMRIResolution=`echo "scale=2; $BrainOrdinatesResolution/1.0" | bc -l`;
+	#applywarp is has less distant ringing than flirt (maybe just a datatype/precision thing?)
+	#flirt -in "$inputfmri" -ref "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -out "$VolumeTemp".nii.gz -applyisoxfm "$BrainOrdinatesResolution" -interp spline
+	BrainMask="$ResultsFolder"/brainmask_fs."$FinalfMRIResolution".nii.gz
+	applywarp -i $inputfmri -r "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -o "$VolumeTemp".nii.gz -m "$BrainMask" --interp=spline 
+
+
 	echo "${script_name}: Doing applywarp and volume label import"
-	applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$VolumefMRI".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
+	applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
 	${CARET7DIR}/wb_command -volume-label-import "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz ${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz -discard-others
 	echo "${script_name}: Doing volume parcel resampling after applying warp and doing a volume label import"
-	${CARET7DIR}/wb_command -volume-parcel-resampling-generic "$VolumefMRI".nii.gz "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
+	${CARET7DIR}/wb_command -volume-parcel-resampling-generic "$VolumeTemp".nii.gz "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
 	rm "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
+	rm -f "$VolumeTemp".nii.gz
 fi
 echo "${script_name}: END"
 
