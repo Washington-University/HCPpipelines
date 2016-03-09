@@ -25,7 +25,7 @@ Ratio="$mridir"/T1wDividedByT2w_sqrt.nii.gz
 mri_convert "$mridir"/wm.hires.mgz "$mridir"/wm.hires.nii.gz
 fslmaths "$mridir"/wm.hires.nii.gz -thr 110 -uthr 110 "$mridir"/wm.hires.nii.gz
 wmMeanT1=`fslstats "$mridir"/T1w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
-fslmaths "$mridir"/T1w_hires.nii.gz -div $wmMeanT1 -mul 110 "$mridir"/T1w_hires.norm.nii.gz  ##Not float because mris_make_surfaces isn't expecting that
+fslmaths "$mridir"/T1w_hires.nii.gz -div $wmMeanT1 -mul 110 "$mridir"/T1w_hires.norm.nii.gz
 mri_convert "$mridir"/T1w_hires.norm.nii.gz "$mridir"/T1w_hires.norm.mgz
 
 wmMeanT2=`fslstats "$mridir"/T2w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
@@ -33,12 +33,18 @@ fslmaths "$mridir"/T2w_hires.nii.gz -div $wmMeanT2 -mul 57 "$mridir"/T2w_hires.n
 mri_convert "$mridir"/T2w_hires.norm.nii.gz "$mridir"/T2w_hires.norm.mgz
 
 
-## First attempt to capture all grey matter (and plenty of vessels/dura) with permissive variable sigma.  Then remove vessels and dura using T2w image.  Normalize T1w image to reduce the effects of low spatial frequency myelin content changes.  Then generate pial surface using more precise gaussian tissue distributions (grey matter peak is narrower because of less variability in myelin content).  Finally remove veins and dura with T2w image again.
+## Overview of what follows:
+## 1) First pass attempts to capture all grey matter (and plenty of vessels/dura) with permissive variable sigma.  
+## 2) Remove vessels and dura using T2w image.  
+## 3) Normalize T1w image to reduce the effects of low spatial-frequency myelin content changes.
+## 4) Generate second pass pial surface using more precise gaussian tissue distributions 
+##    (grey matter peak is narrower because of less variability in myelin content).  
+## 5) Remove veins and dura from pial surface using T2w image again.
 
 ## ------ First pass ------
 
-# Different variable sigmas for different versions of mris_make_surfaces
-#Check if FreeSurfer is version 5.2.0 or not.
+# Different variable sigmas for different FS versions of mris_make_surfaces
+# Check if FreeSurfer is version 5.2.0 or not.
 if [ -z `cat ${FREESURFER_HOME}/build-stamp.txt | grep v5.2.0` ] ; then  #Not using v5.2.0
   VARIABLESIGMA="8"
 else  #Using v5.2.0
@@ -64,16 +70,16 @@ outputSuffix1=".postT2.pass1"
 mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID lh
 mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
 
-# Bring surfaces out of highres space
-# [e.g., Create Xh.pial files in XXX space]
+# Bring pial surfaces out of highres space into the 1 mm (FS conformed) space
+# [Note that $regII, although named 1mm2hires.dat, actually maps from the hires space into the FS conformed space].
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix1} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix1} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi rh
 
-cp -p $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial${outputSuffix1}.postsurf2surf
-cp -p $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial${outputSuffix1}.postsurf2surf
+cp -p $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial${outputSuffix1}.conformed
+cp -p $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial${outputSuffix1}.conformed
 
 
-# Deal with FreeSurfer c_ras offset
+# Deal with FreeSurfer c_ras offset (might be able to simplify this with FS 6.0)
 MatrixX=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_r" | cut -d "=" -f 5 | sed s/" "/""/g`
 MatrixY=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_a" | cut -d "=" -f 5 | sed s/" "/""/g`
 MatrixZ=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_s" | cut -d "=" -f 5 | sed s/" "/""/g`
@@ -156,7 +162,7 @@ outputSuffix2=".postT2.pass2"
 mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID lh
 mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID rh
 
-# Create final Xh.pial surfaces in XXX space [COMMENT]
+# Create final Xh.pial surfaces in FS conformed space
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix2} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix2} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi rh
 
