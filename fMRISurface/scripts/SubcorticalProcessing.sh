@@ -58,9 +58,12 @@ else
 	inputfmri="$VolumeTemp".nii.gz
 	
 	FinalfMRIResolution=`echo "scale=2; $BrainOrdinatesResolution/1.0" | bc -l`;
-	#applywarp is has less distant ringing than flirt (maybe just a datatype/precision thing?)
-	#flirt -in "$inputfmri" -ref "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -out "$VolumeTemp".nii.gz -applyisoxfm "$BrainOrdinatesResolution" -interp spline
+
+	#make new res brainmask
 	BrainMask="$ResultsFolder"/brainmask_fs."$FinalfMRIResolution".nii.gz
+	${FSLDIR}/bin/applywarp --rel --interp=nn -i ${AtlasSpaceFolder}/brainmask_fs.nii.gz -r "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$BrainMask"
+
+	#final volume spline resampling
 	applywarp -i $inputfmri -r "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -o "$VolumeTemp".nii.gz -m "$BrainMask" --interp=spline 
 
 
