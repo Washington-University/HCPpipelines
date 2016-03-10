@@ -75,8 +75,8 @@ mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled fill
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix1} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix1} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi rh
 
-cp -p $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial${outputSuffix1}.conformed
-cp -p $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial${outputSuffix1}.conformed
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial${outputSuffix1}.conformed
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial${outputSuffix1}.conformed
 
 
 # Deal with FreeSurfer c_ras offset (might be able to simplify this with FS 6.0)
@@ -150,10 +150,10 @@ mris_make_surfaces -variablesigma ${VARIABLESIGMA} -white NOWRITE -aseg aseg.hir
 mris_make_surfaces -variablesigma ${VARIABLESIGMA} -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.greynorm "$SubjectID" rh
 
 # Preserve a copy of these pial surfaces for debugging purposes
-cp -p $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2.pass2
-cp -p $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2.pass2
-cp -p $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass2
-cp -p $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass2
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2.pass2
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2.pass2
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass2
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass2
 
 # Generate pial surfaces with T2 adjustment, second pass.  
 # Same 4 files created as above, but have $outputSuffix2 ("postT2.pass2") appended through use of -output flag
@@ -168,13 +168,13 @@ mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix2} --reg $regII $mridi
 
 # Copy other outputs from final call to 'mris_make_surfaces' to their default FS file names
 # (At this point, this could be a 'mv' operation instead).
-cp -p $SubjectDIR/$SubjectID/surf/lh.thickness${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.thickness
-cp -p $SubjectDIR/$SubjectID/surf/rh.thickness${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.thickness
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.thickness
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.thickness
 
-cp -p $SubjectDIR/$SubjectID/surf/lh.area.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.area.pial
-cp -p $SubjectDIR/$SubjectID/surf/rh.area.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.area.pial
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.area.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.area.pial
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.area.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.area.pial
 
-cp -p $SubjectDIR/$SubjectID/surf/lh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.curv.pial
-cp -p $SubjectDIR/$SubjectID/surf/rh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.curv.pial
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.curv.pial
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.curv.pial
 
 echo -e "\n END: FreeSurferHighResPial"
