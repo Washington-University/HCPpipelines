@@ -56,11 +56,11 @@ mris_make_surfaces -variablesigma ${VARIABLESIGMA} -white NOWRITE -aseg aseg.hir
 mris_make_surfaces -variablesigma ${VARIABLESIGMA} -white NOWRITE -aseg aseg.hires -orig white.deformed -filled filled.hires -wm wm.hires -sdir $SubjectDIR -mgz -T1 T1w_hires.norm "$SubjectID" rh
 
 # Preserve a copy of these pial surfaces for debugging purposes
-# (Use "cp -p" to preserve time stamps when copying, so time stamps maintain temporal order of file creation).
-cp -p $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2.pass1
-cp -p $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2.pass1
-cp -p $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass1
-cp -p $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass1
+# (Use "cp --preserve=timestamps" to preserve time stamps when copying, so time stamps maintain temporal order of file creation).
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.pial $SubjectDIR/$SubjectID/surf/lh.pial.preT2.pass1
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$SubjectID/surf/rh.pial.preT2.pass1
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass1
+cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass1
 
 # Generate pial surfaces with T2 adjustment, still first pass.  
 # Same 4 files created as above, but have $outputSuffix1 ("postT2.pass1") appended through use of -output flag.
