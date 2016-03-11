@@ -319,8 +319,6 @@ case $DistortionCorrection in
         # create spline interpolated output for scout to T1w + apply bias field correction
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted_warp.nii.gz -o ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz
         ${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}_undistorted_1vol.nii.gz ${WD}/${ScoutInputFile}_undistorted2T1w_init.nii.gz
-        ###Jacobian Volume FAKED for Regular Fieldmaps (all ones) ###
-        #${FSLDIR}/bin/fslmaths ${T1wImage} -abs -add 1 -bin ${WD}/Jacobian2T1w.nii.gz
         #real jacobian, of just fieldmap warp (from epi_reg_dof)
         #NOTE: convertwarp requires an output argument regardless
         ${FSLDIR}/bin/convertwarp --rel -w ${WD}/${ScoutInputFile}_undistorted_warp.nii.gz -r ${WD}/${ScoutInputFile}_undistorted_warp.nii.gz --jacobian=${WD}/Jacobian2T1w.nii.gz -o ${WD}/junk_warp

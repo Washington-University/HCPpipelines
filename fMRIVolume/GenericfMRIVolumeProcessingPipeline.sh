@@ -77,7 +77,7 @@ RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything a
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 
 JacobianDefault="true"
-if [[ $DistortionCorrection != "TOPUP" && $DistortionCorrection != "NONE" ]]
+if [[ $DistortionCorrection != "TOPUP" ]]
 then
     #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians?
     JacobianDefault="false"
