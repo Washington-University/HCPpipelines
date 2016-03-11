@@ -58,6 +58,7 @@ OutputTransform=`getopt1 "--owarp" $@`  # "$5"
 
 # default parameters
 OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
+OutputTransformFile=`${FSLDIR}/bin/remove_ext ${OutputTransform}`
 WD=`defaultopt $WD ${OutputFile}.wdir`
 
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
@@ -89,7 +90,10 @@ gradient_unwarp.py ${BaseName}_vol1.nii.gz trilinear.nii.gz siemens -g $InputCoe
 cd $ORIGDIR
 
 # Now create an appropriate warpfield output (relative convention) and apply it to all timepoints
-${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform
+#convertwarp's jacobian output has 8 frames, each combination of one-sided differences, so average them
+#but it needs to convert to splines first
+${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform --jacobian=${OutputTransformFile}_jacobian
+${FSLDIR}/bin/fslmaths ${OutputTransformFile}_jacobian -Tmean ${OutputTransformFile}_jacobian
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
 echo " "

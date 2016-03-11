@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+set -e
+
 get_batch_options() {
     local arguments=($@)
 
@@ -65,6 +67,8 @@ echo "$@"
 #    QUEUE="-q long.q"
     QUEUE="-q hcp_priority.q"
 #fi
+
+set -x
 
 PRINTCOM=""
 #PRINTCOM="echo"
@@ -204,6 +208,7 @@ for Subject in $Subjlist ; do
     fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz" #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
     DwellTime="0.00058" #Echo Spacing or Dwelltime of fMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.   
     DistortionCorrection="TOPUP" # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP: distortion correction is required for accurate processing
+    BiasCorrection="sebased" #none, legacy, or sebased: legacy uses the T1w bias field, sebased calculates bias field from spin echo images (which requires TOPUP distortion correction)
     SpinEchoPhaseEncodeNegative="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data), set to NONE if using regular FIELDMAP
     SpinEchoPhaseEncodePositive="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data), set to NONE if using regular FIELDMAP
     MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D timepoints, set to NONE if using TOPUP
@@ -250,7 +255,8 @@ for Subject in $Subjlist ; do
       --dcmethod=$DistortionCorrection \
       --gdcoeffs=$GradientDistortionCoeffs \
       --topupconfig=$TopUpConfig \
-      --printcom=$PRINTCOM
+      --printcom=$PRINTCOM \
+      --biascorrection=$BiasCorrection
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -271,7 +277,8 @@ for Subject in $Subjlist ; do
       --dcmethod=$DistortionCorrection \
       --gdcoeffs=$GradientDistortionCoeffs \
       --topupconfig=$TopUpConfig \
-      --printcom=$PRINTCOM"
+      --printcom=$PRINTCOM \
+      --biascorrection=$BiasCorrection
 
   echo ". ${EnvironmentScript}"
 	
