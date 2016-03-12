@@ -65,18 +65,18 @@ Usage() {
   echo "             [--topupconfig=<topup config file>]"
   echo "             --ojacobian=<output filename for Jacobian image (in T1w space)>"
   echo "             --dof=<degrees of freedom for EPI-T1 FLIRT> (default 6)"
-  echo "             --fmriname=<name of fmri run> (only needed for sebased bias correction method)"
+  echo "             --fmriname=<name of fmri run> (only needed for SEBASED bias correction method)"
   echo "             --subjectfolder=<subject processing folder> (only needed for TOPUP distortion correction method)"
   echo "             --biascorrection=<method of bias correction>"
   echo ""
-  echo "               \"legacy\""
+  echo "               \"SEBASED\""
+  echo "                 use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}"
+  echo ""
+  echo "               \"LEGACY\""
   echo "                 use the bias field derived from T1w and T2w images, same as old versions of pipeline"
   echo ""
-  echo "               \"none\""
+  echo "               \"NONE\""
   echo "                 don't do bias correction"
-  echo ""
-  echo "               \"sebased\""
-  echo "                 use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}"
   echo ""
   echo "             --usejacobian=<\"true\" or \"false\">"
 }
@@ -166,18 +166,18 @@ set -x
 
 #error check bias correction opt
 case "$BiasCorrection" in
-    none)
+    NONE)
         UseBiasField=""
     ;;
     
-    legacy)
+    LEGACY)
         UseBiasField="${BiasField}"
     ;;
     
-    sebased)
+    SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
         then
-            log_Msg "sebased bias correction is only available with --method=${SPIN_ECHO_METHOD_OPT}"
+            log_Msg "SEBASED bias correction is only available with --method=${SPIN_ECHO_METHOD_OPT}"
             exit 1
         fi
         #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh
@@ -395,9 +395,9 @@ case $DistortionCorrection in
             fi
         done
         
-        #correct filename is already set in UseBiasField, but we have to compute it if using sebased
+        #correct filename is already set in UseBiasField, but we have to compute it if using SEBASED
         #we compute it in this script because it needs outputs from topup, and because it should be applied to the scout image
-        if [[ "$BiasCorrection" == "sebased" ]]
+        if [[ "$BiasCorrection" == "SEBASED" ]]
         then
             mkdir -p "$WD/ComputeSpinEchoBiasField"
             "${HCPPIPEDIR_fMRIVol}/ComputeSpinEchoBiasField.sh" \
@@ -518,7 +518,7 @@ else
 fi
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}_undistorted2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
 
-#create final affine from undistorted fMRI space to T1w space, will need it if it making sebased bias field
+#create final affine from undistorted fMRI space to T1w space, will need it if it making SEBASED bias field
 #overwrite old version of ${WD}/fMRI2str.mat, as it was just the initial registration
 #${WD}/${ScoutInputFile}_undistorted_initT1wReg.mat is from the above epi_reg_dof, initial registration from fMRI space to T1 space
 ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str.mat -concat ${WD}/fMRI2str_refinement.mat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat
@@ -539,7 +539,7 @@ then
         fi
     done
         
-    if [[ $BiasCorrection == "sebased" ]]
+    if [[ $BiasCorrection == "SEBASED" ]]
     then
         #final bias field computation
         

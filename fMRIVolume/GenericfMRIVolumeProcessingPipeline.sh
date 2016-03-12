@@ -138,17 +138,17 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 
 #error check bias correction opt
 case "$BiasCorrection" in
-    none)
+    NONE)
         UseBiasFieldMNI=""
     ;;
-    legacy)
+    LEGACY)
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
     ;;
     
-    sebased)
+    SEBASED)
         if [[ "$DistortionCorrection" != "TOPUP" ]]
         then
-            log_Msg "sebased bias correction is only available with --dcmethod=TOPUP"
+            log_Msg "SEBASED bias correction is only available with --dcmethod=TOPUP"
             exit 1
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
