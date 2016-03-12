@@ -79,12 +79,12 @@ UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 JacobianDefault="true"
 if [[ $DistortionCorrection != "TOPUP" ]]
 then
-    #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians?
+    #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians
     JacobianDefault="false"
     #warn if the user specified it
     if [[ $UseJacobian == "true" ]]
     then
-        log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP or NONE is not recommended, as the distortion warpfield is less stable than TOPUP"
+        log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
     fi
 fi
 
