@@ -42,6 +42,8 @@ ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
 
+echo "CreateMyelinMaps.sh: RegName: ${RegName}"
+
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
 MyelinMappingFWHM="5"
