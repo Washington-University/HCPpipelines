@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# trying to overcome recurring merge conflicts
+
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.1)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)

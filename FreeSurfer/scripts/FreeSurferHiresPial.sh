@@ -2,6 +2,8 @@
 set -e
 echo -e "\n START: FreeSurferHighResPial"
 
+# trying to overcome recurring merge conflicts
+
 SubjectID="$1"
 SubjectDIR="$2"
 T1wImage="$3" #T1w FreeSurfer Input (Full Resolution)
