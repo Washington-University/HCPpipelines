@@ -278,7 +278,7 @@ for Subject in $Subjlist ; do
       --gdcoeffs=$GradientDistortionCoeffs \
       --topupconfig=$TopUpConfig \
       --printcom=$PRINTCOM \
-      --biascorrection=$BiasCorrection
+      --biascorrection=$BiasCorrection"
 
   echo ". ${EnvironmentScript}"
 	

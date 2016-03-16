@@ -88,7 +88,7 @@ then
     fi
 fi
 
-UseJacobian=`opts_DefaultOpt "$UseJacobian" "$JacobianDefault"`
+UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
 
 set -x
 
