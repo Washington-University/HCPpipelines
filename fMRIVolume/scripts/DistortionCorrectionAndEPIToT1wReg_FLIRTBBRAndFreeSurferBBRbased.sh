@@ -570,13 +570,14 @@ then
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
         
         #make MNI space outputs
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        #we don't have MNI final fMRI reference space yet, can't do this here
+        #${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        #${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        #${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        #${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
+        #${FSLDIR}/bin/applywarp --interp=trilinear -i ${WD}/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
         
     else
         #don't need to do anything more with scout, it is 1-step resampled and bias correction, jacobians reapplied

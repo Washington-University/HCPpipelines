@@ -275,12 +275,6 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
 log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 
-PhaseFilesOpts=""
-if [[ ${DistortionCorrection} == "TOPUP" ]]
-then
-    PhaseFilesOpts="--phaseonedcin=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseOne_gdc_dc_unbias --ophaseone=${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc --phasetwodcin=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseTwo_gdc_dc_unbias --ophasetwo=${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc"
-fi
-
 mkdir -p ${fMRIFolder}/OneStepResampling
 ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --workingdir=${fMRIFolder}/OneStepResampling \
@@ -301,9 +295,33 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --scoutin=${fMRIFolder}/${OrigScoutName} \
     --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-    --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
-    ${PhaseFilesOpts}
+    --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
     
+log_Msg "mkdir -p ${ResultsFolder}"
+mkdir -p ${ResultsFolder}
+
+#now that we have the final MNI fMRI space, resample the T1w-space sebased bias field related outputs
+#the alternative is to add a bunch of optional arguments to OneStepResampling that just do the same thing
+#we need to do this before intensity normalization, as it uses the bias field output
+if [[ ${DistortionCorrection} == "TOPUP" ]]
+then
+    #create MNI space corrected fieldmap images
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
+    
+    #create MNINonLinear final fMRI resolution bias field outputs
+    if [[ ${BiasCorrection} == "SEBASED" ]]
+    then
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_SBRef.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
+    fi
+fi
+
 #Intensity Normalization and Bias Removal
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
@@ -316,8 +334,6 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
     --usejacobian=${UseJacobian}
 
-log_Msg "mkdir -p ${ResultsFolder}"
-mkdir -p ${ResultsFolder}
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 # TBr Response: Since the copy operations are specifying individual files
 # to be copied and not directories, the recursive copy options (-r) to the

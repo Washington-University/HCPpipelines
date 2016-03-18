@@ -30,10 +30,6 @@ Usage() {
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
-  echo "             [--phaseonedcin=<input gradient and fieldmap corrected phase one image>]"
-  echo "             [--phasetwodcin=<input gradient and fieldmap corrected phase two image>]"
-  echo "             [--ophaseone=<output transformed phase one image>]"
-  echo "             [--ophasetwo=<output transformed phase two image>]"
 }
 
 # function for parsing options
@@ -95,21 +91,6 @@ ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
 ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
 ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
-PhaseOneDCInput=`getopt1 "--phaseonedcin" $@`
-PhaseTwoDCInput=`getopt1 "--phasetwodcin" $@`
-PhaseOneOutput=`getopt1 "--ophaseone" $@`
-PhaseTwoOutput=`getopt1 "--ophasetwo" $@`
-
-if [[ $PhaseOneDCInput != "" && $PhaseOneOutput == "" ]]
-then
-    echo "Error: --phaseonedcin requires --ophaseone"
-    exit 1
-fi
-if [[ $PhaseTwoDCInput != "" && $PhaseTwoOutput == "" ]]
-then
-    echo "Error: --phasetwodcin requires --ophasetwo"
-    exit 1
-fi
 
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
@@ -216,18 +197,7 @@ fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
 ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
-#HACK: do NOT include gdc or dc warpfields, because the dc warps are opposite!
-#so, start with already-dc (and jacobianed, which are also opposite) inputs
-#we only do this resampling here because we don't have the correct output space for MNI fMRI until this script
-set -x
-if [[ $PhaseOneDCInput != "" ]]
-then
-    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${PhaseOneDCInput} -w ${StructuralToStandard} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${PhaseOneOutput}
-fi
-if [[ $PhaseTwoDCInput != "" ]]
-then
-    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${PhaseTwoDCInput} -w ${StructuralToStandard} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${PhaseTwoOutput}
-fi
+
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
 #${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 #fMRIToStructuralInput is from gdc space to T1w space, ie, only fieldmap-based distortions (like topup)

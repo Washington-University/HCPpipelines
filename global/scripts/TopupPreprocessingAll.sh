@@ -118,6 +118,20 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
+#check dimensions of phase versus sbref images
+#should we also check spacing info? could be off by tiny fractions, so probably not
+if [[ `fslhd $PhaseEncodeOne | grep '^dim[123]'` != `fslhd $ScoutInputName | grep '^dim[123]'` ]]
+then
+    log_Msg "Error: Spin echo fieldmap has different dimensions than scout image, this requires a manual fix"
+    exit 1
+fi
+#for kicks, check that the spin echo images match
+if [[ `fslhd $PhaseEncodeOne | grep '^dim[123]'` != `fslhd $PhaseEncodeTwo | grep '^dim[123]'` ]]
+then
+    log_Msg "Error: Spin echo fieldmap images have different dimensions!"
+    exit 1
+fi
+
 # PhaseOne and PhaseTwo are sets of SE EPI images with opposite phase encodes
 ${FSLDIR}/bin/imcp $PhaseEncodeOne ${WD}/PhaseOne.nii.gz
 ${FSLDIR}/bin/imcp $PhaseEncodeTwo ${WD}/PhaseTwo.nii.gz
