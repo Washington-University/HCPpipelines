@@ -65,6 +65,7 @@ FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`
 # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
 # Note: FIELDMAP and SiemensFieldMap are equivalent
 DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
+BiasCorrection=`opts_GetOpt1 "--biascorrection" $@`
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
@@ -73,6 +74,30 @@ dof=`opts_GetOpt1 "--dof" $@`
 dof=`opts_DefaultOpt $dof 6`
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+
+JacobianDefault="true"
+if [[ $DistortionCorrection != "TOPUP" ]]
+then
+    #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians
+    JacobianDefault="false"
+    #warn if the user specified it
+    if [[ $UseJacobian == "true" ]]
+    then
+        log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
+    fi
+fi
+
+UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
+
+set -x
+
+#sanity check the jacobian option
+if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
+then
+    log_Msg "the --usejacobian option must be 'true' or 'false'"
+    exit 1
+fi
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
@@ -105,6 +130,39 @@ OutputfMRI2StandardTransform="${NameOffMRI}2standard"
 Standard2OutputfMRITransform="standard2${NameOffMRI}"
 QAImage="T1wMulEPI"
 JacobianOut="Jacobian"
+SubjectFolder="$Path"/"$Subject"
+#note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
+sebasedBiasFieldMNI="$SubjectFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
+
+fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
+
+#error check bias correction opt
+case "$BiasCorrection" in
+    NONE)
+        UseBiasFieldMNI=""
+    ;;
+    LEGACY)
+        UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
+    ;;
+    
+    SEBASED)
+        if [[ "$DistortionCorrection" != "TOPUP" ]]
+        then
+            log_Msg "SEBASED bias correction is only available with --dcmethod=TOPUP"
+            exit 1
+        fi
+        UseBiasFieldMNI="$sebasedBiasFieldMNI"
+    ;;
+    
+    "")
+        log_Msg "--biascorrection option not specified"
+        exit 1
+    ;;
+    
+    *)
+        log_Msg "unrecognized value for bias correction: $BiasCorrection"
+    exit 1
+esac
 
 
 ########################################## DO WORK ########################################## 
@@ -113,7 +171,6 @@ T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
-fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
@@ -147,12 +204,22 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 	 --in="$fMRIFolder"/"$OrigScoutName" \
 	 --out="$fMRIFolder"/"$ScoutName"_gdc \
 	 --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
+	 
+	if [[ $UseJacobian == "true" ]]
+	then
+	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
+	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
+	fi
 else
     log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
     ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc_warp 0 3
     ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp -mul 0 "$fMRIFolder"/"$NameOffMRI"_gdc_warp
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$ScoutName"_gdc
+    #make fake jacobians of all 1s, for completeness
+    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$OrigScoutName" -mul 0 -add 1 "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian
+    ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc_warp "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian 0 1
+    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
 fi
 
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection_FLIRTbased"
@@ -198,11 +265,16 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --method=${DistortionCorrection} \
     --topupconfig=${TopupConfig} \
     --ojacobian=${fMRIFolder}/${JacobianOut} \
-    --dof=${dof}
+    --dof=${dof} \
+    --fmriname=${NameOffMRI} \
+    --subjectfolder=${SubjectFolder} \
+    --biascorrection=${BiasCorrection} \
+    --usejacobian=${UseJacobian}
     
 #One Step Resampling
 log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
+
 mkdir -p ${fMRIFolder}/OneStepResampling
 ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --workingdir=${fMRIFolder}/OneStepResampling \
@@ -223,23 +295,45 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --scoutin=${fMRIFolder}/${OrigScoutName} \
     --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-    --jacobianin=${fMRIFolder}/${JacobianOut} \
     --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
     
+log_Msg "mkdir -p ${ResultsFolder}"
+mkdir -p ${ResultsFolder}
+
+#now that we have the final MNI fMRI space, resample the T1w-space sebased bias field related outputs
+#the alternative is to add a bunch of optional arguments to OneStepResampling that just do the same thing
+#we need to do this before intensity normalization, as it uses the bias field output
+if [[ ${DistortionCorrection} == "TOPUP" ]]
+then
+    #create MNI space corrected fieldmap images
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
+    
+    #create MNINonLinear final fMRI resolution bias field outputs
+    if [[ ${BiasCorrection} == "SEBASED" ]]
+    then
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
+    fi
+fi
+
 #Intensity Normalization and Bias Removal
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --biasfield=${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution} \
+    --biasfield=${UseBiasFieldMNI} \
     --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
     --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
     --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
     --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
-    --usejacobian=false
+    --usejacobian=${UseJacobian}
 
-log_Msg "mkdir -p ${ResultsFolder}"
-mkdir -p ${ResultsFolder}
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 # TBr Response: Since the copy operations are specifying individual files
 # to be copied and not directories, the recursive copy options (-r) to the
