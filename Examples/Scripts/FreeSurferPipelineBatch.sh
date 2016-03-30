@@ -46,6 +46,23 @@ echo "$@"
     #QUEUE="-q hcp_priority.q"
 #fi
 
+# when on the fmrib server, pick a specific jalapeno node
+if [[ -d /home/fmribadmin/ ]] ; then
+  # randomly pick a relatively free node on jalapeno01-09
+  # list all jobs running on jalapeno 01-09
+  list=$(qstat -u \* | grep -o '@jalapeno0[0-9]' | cut -d'0' -f2)
+  # count the number of jobs per node
+  list=$(echo 1 2 3 4 5 6 7 8 9 $list | tr " " "\n" | sort -n | uniq -c | sort -n)
+  # find the lowest number of users
+  lowest=$(echo "$list" | head -1)
+  lowest=$(echo $lowest | cut -d' ' -f1)
+  # pick a random node from the ones with the fewest users
+  nodes=($(echo "$list" | grep $lowest' [0-9]' | awk '{print $2}'))
+  picknode=${nodes[$RANDOM % ${#nodes[@]}]}
+  # assign queue
+  QUEUE="$QUEUE@jalapeno0$picknode.fmrib.ox.ac.uk"
+fi
+
 PRINTCOM=""
 #PRINTCOM="echo"
 
