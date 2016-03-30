@@ -75,7 +75,7 @@ done
 
 # set dependent defaults
 [[ -z $Base ]] && Base=T"$Type"
-WD="./${Base}_biascorr$FWHM"
+[[ -z $WD ]] && WD="./${Base}_biascorr$FWHM"
 
 # check if no redundant arguments have been set
 if [[ -n $args ]] ; then
