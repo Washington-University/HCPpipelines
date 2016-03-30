@@ -1,6 +1,6 @@
 #!/bin/bash 
-#set -e
-set -xv
+set -e
+
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (version 1.0.2)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, HCPPIPEDIR_Bin and PATH for gradient_unwarp.py)
@@ -28,7 +28,8 @@ Usage() {
   echo "            [--ofmap=<output scaled topup field map image>]"
   echo "            [--ojacobian=<output Jacobian image>]"
   echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
-  echo "             [--topupconfig=<topup config file>]"
+  echo "            [--topupconfig=<topup config file>]"
+  echo "            --usejacobian=<\"true\" or \"false\">"
   echo " "
   echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
 }
@@ -88,6 +89,16 @@ DistortionCorrectionFieldOutput=`getopt1 "--ofmap" $@`
 JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
+UseJacobian=`getopt1 "--usejacobian" $@`
+
+set -x
+
+#sanity check the jacobian option
+if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
+then
+    log_Msg "the --usejacobian option must be 'true' or 'false'"
+    exit 1
+fi
 
 GlobalScripts=${HCPPIPEDIR_Global}
 
@@ -106,6 +117,20 @@ echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
+
+#check dimensions of phase versus sbref images
+#should we also check spacing info? could be off by tiny fractions, so probably not
+if [[ `fslhd $PhaseEncodeOne | grep '^dim[123]'` != `fslhd $ScoutInputName | grep '^dim[123]'` ]]
+then
+    log_Msg "Error: Spin echo fieldmap has different dimensions than scout image, this requires a manual fix"
+    exit 1
+fi
+#for kicks, check that the spin echo images match
+if [[ `fslhd $PhaseEncodeOne | grep '^dim[123]'` != `fslhd $PhaseEncodeTwo | grep '^dim[123]'` ]]
+then
+    log_Msg "Error: Spin echo fieldmap images have different dimensions!"
+    exit 1
+fi
 
 # PhaseOne and PhaseTwo are sets of SE EPI images with opposite phase encodes
 ${FSLDIR}/bin/imcp $PhaseEncodeOne ${WD}/PhaseOne.nii.gz
@@ -126,6 +151,16 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
       --in=${WD}/PhaseTwo \
       --out=${WD}/PhaseTwo_gdc \
       --owarp=${WD}/PhaseTwo_gdc_warp
+
+  if [[ $UseJacobian == "true" ]]
+  then
+    ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_gdc -mul ${WD}/PhaseOne_gdc_warp_jacobian ${WD}/PhaseOne_gdc
+    ${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo_gdc -mul ${WD}/PhaseTwo_gdc_warp_jacobian ${WD}/PhaseTwo_gdc
+  fi
+  #overwrites inputs, no else needed
+  
+  #in the below stuff, the jacobians for both phases and sbref are applied unconditionally to a separate _jac image
+  #NOTE: "SBref" is actually the input scout, which is actually the _gdc scout, with gdc jacobian applied if applicable
 
   # Make a dilated mask in the distortion corrected space
   ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne -abs -bin -dilD ${WD}/PhaseOne_mask

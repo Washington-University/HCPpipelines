@@ -86,10 +86,17 @@ if [ $JacobianModulation = true ] ; then
   jacobiancom="-mul $Jacobian"
 fi
 
+biascom=""
+if [[ "$BiasField" != "" ]]
+then
+    biascom="-div $BiasField"
+fi
+
 # sanity checking
 if [ X${ScoutInput} != X ] ; then 
     if [ X${ScoutOutput} = X ] ; then
-	echo "Must supply an output name for the normalised scout image"
+    	echo "Error: Must supply an output name for the normalised scout image"
+    	exit 1
     fi
 fi
 
@@ -108,9 +115,9 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
-${FSLDIR}/bin/fslmaths ${InputfMRI} -div ${BiasField} $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
+${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-   ${FSLDIR}/bin/fslmaths ${ScoutInput} -div ${BiasField} $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
+   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
 fi
 
 echo " "

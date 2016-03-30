@@ -29,7 +29,6 @@ Usage() {
   echo "             --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>"
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
-  echo "             --jacobianin=<input Jacobian image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
 }
 
@@ -91,7 +90,6 @@ GradientDistortionField=`getopt1 "--gdfield" $@`  # "${14}"
 ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
 ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
 ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
-JacobianIn=`getopt1 "--jacobianin" $@`  # "${17}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
 
 BiasFieldFile=`basename "$BiasField"`
@@ -199,8 +197,20 @@ fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
 ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
+
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
-${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+#${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+#fMRIToStructuralInput is from gdc space to T1w space, ie, only fieldmap-based distortions (like topup)
+#output jacobian is both gdc and topup/fieldmap jacobian, but not the to MNI jacobian
+#JacobianIn was removed from inputs, now we just compute it from the combined warpfield of gdc and dc (NOT MNI)
+#compute combined warpfield, but don't use jacobian output because it has 8 frames for no apparent reason
+#NOTE: convertwarp always requires -o anyway
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${fMRIToStructuralInput} --warp1=${GradientDistortionField} --warp2=${fMRIToStructuralInput} -o ${WD}/gdc_dc_warp --jacobian=${WD}/gdc_dc_jacobian
+#but, convertwarp's jacobian is 8 frames - each combination of one-sided differences, so average them
+${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
+
+#and resample it to MNI space
+${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 
 ###Add stuff for RMS###
 cat ${fMRIFolder}/Movement_RelativeRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_RelativeRMS_mean.txt
