@@ -57,7 +57,7 @@ Usage() {
   echo ""
   echo "            [--topupconfig=<topup config file>]"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
-  echo "            [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "            [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -121,14 +121,14 @@ T1wImageReg=`getopt1 "--t1reg" $@`
 T1wImageBrainReg=`getopt1 "--t1brainreg" $@`
 OutputT1wImageReg=`getopt1 "--ot1reg" $@`
 OutputT1wImageBrainReg=`getopt1 "--ot1brainreg" $@`
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`
 
 UseRegImages="FALSE"
 [[ -n $T1wImageReg ]] && [[ -n $T1wImageBrainReg ]] && UseRegImages="TRUE"
 
 # default parameters
 WD=`defaultopt $WD .`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
@@ -300,8 +300,8 @@ ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${T1wImageBasename} --dwell=${T1wS
 ${FSLDIR}/bin/convertwarp --relout --rel --ref=${T1wImageBrain} --shiftmap=${WD}/FieldMap2${T1wImageBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${T1wImageBasename}_Warp.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${T1wImage} -w ${WD}/FieldMap2${T1wImageBasename}_Warp.nii.gz -o ${WD}/${T1wImageBasename}
 
-# smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/${T1wImageBasename}
+# fix negative values in the images
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/${T1wImageBasename}
 
 # Make a brain image (transform to make a mask, then apply it)
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wImageBrain} -r ${T1wImageBrain} -w ${WD}/FieldMap2${T1wImageBasename}_Warp.nii.gz -o ${WD}/${T1wImageBrainBasename}
@@ -315,7 +315,7 @@ ${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasename} ${OutputT1wImageBrain}
 # apply the same warping to the registration images
 if [[ $UseRegImages = "TRUE" ]] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImageReg} -r ${T1wImage} -w ${WD}/FieldMap2${T1wImageBasename}_Warp.nii.gz -o ${WD}/${T1wImageBasenameReg}
-  [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/${T1wImageBasenameReg}
+  $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/${T1wImageBasenameReg}
   ${FSLDIR}/bin/fslmaths ${WD}/${T1wImageBasenameReg} -mas ${WD}/${T1wImageBrainBasename} ${WD}/${T1wImageBrainBasenameReg}
   ${FSLDIR}/bin/imcp ${WD}/${T1wImageBasenameReg} ${OutputT1wImageReg}
   ${FSLDIR}/bin/imcp ${WD}/${T1wImageBrainBasenameReg} ${OutputT1wImageBrainReg}

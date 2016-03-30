@@ -32,7 +32,7 @@ Usage() {
   echo "		            --ot2rest=<output bias corrected t2w to MNI>"
   echo "                --ot2restbrain=<output bias corrected, brain extracted t2w to MNI>"
   echo "                [--fnirtconfig=<FNIRT configuration file>]"
-  echo "                [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "                [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -95,14 +95,14 @@ OutputT2wImage=`getopt1 "--ot2" $@`  # "${18}"
 OutputT2wImageRestore=`getopt1 "--ot2rest" $@`  # "${19}"
 OutputT2wImageRestoreBrain=`getopt1 "--ot2restbrain" $@`  # "${20}"
 FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${21}"
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$22"
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`  # "$22"
 
 # default parameters
 WD=`defaultopt $WD .`
 Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
 Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`
 FNIRTConfig=`defaultopt $FNIRTConfig ${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 # trim file names to base
 T1wRestoreBasename=`remove_ext $T1wRestore`;
@@ -140,8 +140,8 @@ ${FSLDIR}/bin/invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${Refere
 # T1w set of warped outputs (brain/whole-head + restored/orig)
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImage}
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestore}
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT1wImage}
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT1wImageRestore}
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT1wImage}
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT1wImageRestore}
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestoreBrain}
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
 
@@ -149,8 +149,8 @@ ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrai
 if [[ -n ${T2wImage} ]] ; then
     ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImage}
     ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestore}
-    [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImage}
-    [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImageRestore}
+    $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT2wImage}
+    $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT2wImageRestore}
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
     ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrain} ${OutputT2wImageRestoreBrain}
 fi

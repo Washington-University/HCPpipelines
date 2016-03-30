@@ -67,7 +67,7 @@ Usage() {
   echo ""
   echo "            [--topupconfig=<topup config file>]"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
-  echo "            [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "            [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -150,14 +150,14 @@ OutputT1wImageReg=`getopt1 "--ot1reg" $@`
 OutputT1wImageBrainReg=`getopt1 "--ot1brainreg" $@`
 OutputT2wImageReg=`getopt1 "--ot2reg" $@`
 OutputT2wImageBrainReg=`getopt1 "--ot2brainreg" $@`
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`
 
 UseRegImages="FALSE"
 [[ -n $T1wImageReg ]] && [[ -n $T1wImageBrainReg ]] && [[ -n $T2wImageReg ]] && [[ -n $T2wImageBrainReg ]] && UseRegImages="TRUE"
 
 # default parameters
 WD=`defaultopt $WD .`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
@@ -359,8 +359,8 @@ for TXw in $Modalities ; do
     ${FSLDIR}/bin/convertwarp --relout --rel --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz
     ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${TXwImage} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasename}
 
-    # smooth inter-/extrapolate the non-positive values in the images
-    [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/${TXwImageBasename}
+    # fix negative values in the images
+    $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/${TXwImageBasename}
 
     # Make a brain image (transform to make a mask, then apply it)
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${TXwImageBrain} -r ${TXwImageBrain} -w ${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz -o ${WD}/${TXwImageBrainBasename}
@@ -376,7 +376,7 @@ for TXw in $Modalities ; do
     # apply the same warping to the registration images
     if [[ $UseRegImages = "TRUE" ]] ; then
       ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${TXwImageReg} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasenameReg}
-      [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/${TXwImageBasenameReg}
+      $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/${TXwImageBasenameReg}
       ${FSLDIR}/bin/fslmaths ${WD}/${TXwImageBasenameReg} -mas ${WD}/${TXwImageBrainBasename} ${WD}/${TXwImageBrainBasenameReg}
       if [ $TXw = T1w ] ; then
         ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasenameReg} ${OutputT1wImageReg}
@@ -403,8 +403,8 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage}
 # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
 ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
 
-# smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/T2w2T1w/T2w_reg
+# fix negative values in the images
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/T2w2T1w/T2w_reg
 
 # QA image
 ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
@@ -418,7 +418,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mas ${OutputT1wImageBrain} ${Outpu
 if [[ $UseRegImages = "TRUE" ]] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImageReg} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${OutputT2wImageReg}
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -add 1 ${OutputT2wImageReg} -odt float
-  [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImageReg}
+  $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT2wImageReg}
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -mas ${OutputT1wImageBrain} ${OutputT2wImageBrainReg}
 fi
 

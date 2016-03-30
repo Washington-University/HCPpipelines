@@ -18,7 +18,7 @@ Usage() {
   echo "      [--brainsize=<brainsize>]"
   echo "      [--inextra=<'@'-delimited list of extra input images>]"
   echo "      [--outextra=<'@'-delimited list matching inextra>]"
-  echo "      [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "      [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -62,7 +62,7 @@ OutputMatrix=`getopt1 "--omat" $@`  # "$5"
 BrainSizeOpt=`getopt1 "--brainsize" $@`  # "$6"
 InputExtraList=`getopt1 "--inextra" $@`  # "$7"
 OutputExtraList=`getopt1 "--outextra" $@`  # "$8"
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$9"
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`  # "$9"
 
 # replace all "@" with " " in the extra in/out lists
 InputExtraList="${InputExtraList//@/ }"
@@ -80,7 +80,7 @@ Reference=`defaultopt ${Reference} ${FSLDIR}/data/standard/MNI152_T1_1mm`
 Output=`$FSLDIR/bin/remove_ext $Output`
 OutputExtraList=`$FSLDIR/bin/remove_ext $OutputExtraList`
 WD=`defaultopt $WD ${Output}.wdir`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 # make optional arguments truly optional  (as -b without a following argument would crash robustfov)
 if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
@@ -116,14 +116,14 @@ ${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 # Create a resampled image (ACPC aligned) using spline interpolation
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
-# smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in="$Output"
+# fix negative values in the images
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in="$Output"
 
 # Optional: apply the same transformation to resample an accompanying image
 for idx in "${!InputExtraList[@]}" ; do
     ${FSLDIR}/bin/applywarp --rel --interp=spline -i "${InputExtraList[idx]}" -r "$Reference" --premat="$OutputMatrix" -o "${OutputExtraList[idx]}"
-    # smooth inter-/extrapolate the non-positive values in the images
-    [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in="${OutputExtraList[idx]}"
+    # fix negative values in the images
+    $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in="${OutputExtraList[idx]}"
 done
 
 echo " "

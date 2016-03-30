@@ -264,12 +264,16 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                  Bias correction method.
                                  "sqrtT1wbyT2w" =  default of HCP
                                  "FAST" = (robust implementation of) FAST
-  --smoothfillnonpos={TRUE, FALSE}
-                                 Smoothly fill (interpolate) voxels with values
-                                 below or exactly at 0. This could happen during
-                                 spline interpolation/resampling (the default in
-                                 the HCP pipelines).
-  --maskartery={TRUE, FALSE}     Mask arteries or not. This could be beneficial
+  --fixnegvalmethod={none, thr (default), abs, smooth}
+                                 Fix negative values, either by thresholding at
+                                 zero (default), taking absolute values, or
+                                 smoothly filling (interpolate) voxels with
+                                 values below or exactly at 0. Negative values
+                                 can arise through spline interpolation (the
+                                 default in the HCP pipelines). Select "none" to
+                                 skip this fix.
+  --maskartery={TRUE (default), FALSE}
+                                 Mask arteries or not. This could be beneficial
                                  for registration and bias field estimation
                                  using 7T T1w images, where arteries are
                                  generally extremely bright.
@@ -332,14 +336,13 @@ TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 InitBiasCorr=`opts_GetOpt1 "--initbiascorr" $@`
 BiasCorr=`opts_GetOpt1 "--biascorr" $@`
-SmoothFillNonPos=`opts_GetOpt1 "--smoothfillnonpos" $@`
+FixNegValMethod=`opts_GetOpt1 "--fixnegvalmethod" $@`
 MaskArtery=`opts_GetOpt1 "--maskartery" $@`
 
 # set defaults for OxfordStructural arguments
 InitBiasCorr=`defaultopt $InitBiasCorr "FALSE"`
 BiasCorr=`defaultopt $BiasCorr "sqrtT1wbyT2w"`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
-SmoothFillArgs="--smoothfillnonpos=$SmoothFillNonPos"
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 MaskArtery=`defaultopt $MaskArtery "TRUE"`
 
 # Use --printcom=echo for just printing everything and not actually
@@ -382,7 +385,7 @@ log_Msg "TopupConfig: ${TopupConfig}"
 log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
 log_Msg "InitBiasCorr: ${InitBiasCorr}"
 log_Msg "BiasCorr: ${BiasCorr}"
-log_Msg "SmoothFillNonPos: ${SmoothFillNonPos}"
+log_Msg "FixNegValMethod: ${FixNegValMethod}"
 log_Msg "MaskArtery: ${MaskArtery}"
 
 # ------------------------------------------------------------------------------
@@ -484,8 +487,8 @@ for TXw in ${Modalities} ; do
             mkdir -p $wdir
             # Make sure input axes are oriented the same as the templates
             ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${wdir}/${TXwImage}${i}
-            # smooth inter-/extrapolate the non-positive values in the images
-            [[ $SmoothFillNonPos = "TRUE" ]] && ${RUN} $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${wdir}/${TXwImage}${i}
+            # fix negative values in the images
+            ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh --in=${wdir}/${TXwImage}${i} --method=$FixNegValMethod
 
             ${RUN} ${HCPPIPEDIR_Global}/GradientDistortionUnwarp.sh \
                 --workingdir=${wdir} \
@@ -504,8 +507,9 @@ for TXw in ${Modalities} ; do
         for Image in $TXwInputImages ; do
             # reorient the input images to the standard configuration
             ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-            # smooth inter-/extrapolate the non-positive values in the images
-            [[ $SmoothFillNonPos = "TRUE" ]] && ${RUN} $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${TXwFolder}/${TXwImage}${i}_gdc
+            # fix negative values in the images
+            ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh --in=${TXwFolder}/${TXwImage}${i}_gdc --method=$FixNegValMethod
+
             OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
             i=$(($i+1))
         done
@@ -533,7 +537,7 @@ for TXw in ${Modalities} ; do
         mkdir -p ${TXwFolder}/InitBiasCorr
         [[ -n $BiasFieldSmoothingSigma ]] && bfsigma_initbiascorr=$BiasFieldSmoothingSigma || bfsigma_initbiascorr=5
         FWHM=$(echo "2.3548 * $bfsigma_initbiascorr" | bc)
-        ${RUN} $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwFolder}/${TXwImage} --workingdir=${TXwFolder}/InitBiasCorr --basename=${TXwImage} --FWHM=$FWHM --type=$X --smoothfillnonpos=$SmoothFillNonPos --fslreorient2std="FALSE" --robustfov="FALSE" --betrestore="FALSE"
+        ${RUN} $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwFolder}/${TXwImage} --workingdir=${TXwFolder}/InitBiasCorr --basename=${TXwImage} --FWHM=$FWHM --type=$X --fixnegvalmethod=$FixNegValMethod --fslreorient2std="FALSE" --robustfov="FALSE" --betrestore="FALSE"
         # move bias corrected images to main folder and clean up
         ${FSLDIR}/bin/immv ${TXwFolder}/InitBiasCorr/${TXwImage}_restore ${TXwFolder}/${TXwImage}_restore
         rm -r ${TXwFolder}/InitBiasCorr/
@@ -562,8 +566,8 @@ for TXw in ${Modalities} ; do
         --out=${Arg_out} \
         --omat=${TXwFolder}/xfms/acpc.mat \
         --brainsize=${BrainSize} \
-        $ExtraArguments \
-        ${SmoothFillArgs}
+        --fixnegvalmethod=${FixNegValMethod} \
+        $ExtraArguments
 
     # detect arteries based on intensity in T1w image
     if [[ $TXw = "T1w" && $MaskArtery = "TRUE" ]] ; then
@@ -673,8 +677,8 @@ case $AvgrdcSTRING in
             --method=${AvgrdcSTRING} \
             --topupconfig=${TopupConfig} \
             --gdcoeffs=${GradientDistortionCoeffs} \
-            ${ExtraArguments} \
-            ${SmoothFillArgs}
+            --fixnegvalmethod=${FixNegValMethod} \
+            ${ExtraArguments}
 
           else
 
@@ -713,8 +717,8 @@ case $AvgrdcSTRING in
                 --method=${AvgrdcSTRING} \
                 --topupconfig=${TopupConfig} \
                 --gdcoeffs=${GradientDistortionCoeffs} \
-                ${ExtraArguments} \
-                ${SmoothFillArgs}
+                --fixnegvalmethod=${FixNegValMethod} \
+                ${ExtraArguments}
 
             fi
 
@@ -755,8 +759,8 @@ case $AvgrdcSTRING in
             --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
             --ot2brain=${T1wFolder}/${T2wImage}_acpc_dc_brain \
             --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
-            ${ExtraArguments} \
-            ${SmoothFillArgs}
+            --fixnegvalmethod=${FixNegValMethod} \
+            ${ExtraArguments}
       else
 
         log_Msg "No Readout Distortion Correction and No T2w>T1w Registration"
@@ -815,12 +819,14 @@ if [[ $MaskArtery = "TRUE" ]] ; then
   --basename=$Arg_basename
 
   # smooth filling on original non-bias-corrected T1 and T2
-  ${RUN} $HCPPIPEDIR_PreFS/SmoothFill.sh \
+  ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
   --in=${T1wFolder}/${T1wImage}_acpc_dc \
+  --method=smooth
   --fillmask=${T1wFolder}/ArteryDetection/${Arg_basename}_arterymaskdil \
   --out=${T1wFolder}/${T1wImage}_acpc_dc_arteryfill
-  ${RUN} $HCPPIPEDIR_PreFS/SmoothFill.sh \
+  ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
   --in=${T1wFolder}/${T2wImage}_acpc_dc \
+  --method=smooth
   --fillmask=${T1wFolder}/ArteryDetection/${Arg_basename}_arterymaskdil \
   --out=${T1wFolder}/${T2wImage}_acpc_dc_arteryfill
 
@@ -859,8 +865,8 @@ if [[ -n $T2wInputImages ]] && [[ $BiasCorr = "sqrtT1wbyT2w" ]]; then
       --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
       --oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore \
       --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-      ${BiasFieldSmoothingSigma} \
-      ${SmoothFillArgs}
+      --fixnegvalmethod=${FixNegValMethod} \
+      ${BiasFieldSmoothingSigma}
 
 else
 
@@ -883,8 +889,8 @@ else
       --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
       --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
       --fastmethod="ROBUST" \
+      --fixnegvalmethod=${FixNegValMethod} \
       ${BiasFieldSmoothingSigma} \
-      ${SmoothFillArgs} \
       ${ExtraArguments}
 
 fi
@@ -966,7 +972,7 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --ot2rest=$Arg_ot2rest \
     --ot2restbrain=$Arg_ot2restbrain \
     --fnirtconfig=${FNIRTConfig} \
-    ${SmoothFillArgs}
+    --fixnegvalmethod=${FixNegValMethod}
 
 
 # ------------------------------------------------------------------------------

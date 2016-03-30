@@ -28,7 +28,7 @@ Usage() {
   echo "            [--ot1brainreg=<output corrected registration T1w brain-extracted image>]"
   echo "            [--ot2reg=<output corrected registration T2w image>]"
   echo "            [--ot2brainreg=<output corrected registration T2w brain-extracted image>]"
-  echo "            [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "            [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -74,11 +74,11 @@ OutputT1wImageReg=`getopt1 "--ot1reg" $@`  # "${12}"
 OutputT1wImageBrainReg=`getopt1 "--ot1brainreg" $@`  # "${13}"
 OutputT2wImageReg=`getopt1 "--ot2reg" $@`  # "${15}"
 OutputT2wImageBrainReg=`getopt1 "--ot2brainreg" $@`  # "${15}"
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$23"
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`  # "$23"
 
 # default parameters
 WD=`defaultopt $WD .`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 UseRegImages="FALSE"
 [[ -n $T1wImageReg ]] && [[ -n $T1wImageBrainReg ]] && [[ -n $T2wImageReg ]] && [[ -n $T2wImageBrainReg ]] && UseRegImages="TRUE"
@@ -140,8 +140,8 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage}
 # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
 ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
 
-# smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${WD}/T2w2T1w/T2w_reg
+# fix negative values in the images
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${WD}/T2w2T1w/T2w_reg
 
 # Boring overhead (including faking a warp field)
 ${FSLDIR}/bin/imcp $T1wImage $OutputT1wImage
@@ -156,7 +156,7 @@ ${FSLDIR}/bin/convertwarp --relout --rel -r ${OutputT2wImage}.nii.gz -w $OutputT
 if [[ $UseRegImages = "TRUE" ]] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=$T2wImageReg --ref=$OutputT1wImage --premat=$WD/T2w2T1w/T2w_reg.mat --out=$OutputT2wImageReg
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -add 1 ${OutputT2wImageReg} -odt float
-  [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=${OutputT2wImageReg}
+  $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=${OutputT2wImageReg}
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageReg} -mas ${OutputT1wImageBrain} ${OutputT2wImageBrainReg}
 fi
 

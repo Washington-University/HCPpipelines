@@ -21,7 +21,7 @@ Usage() {
   echo "      --oT1brain=<output corrected T1 brain>"
   echo "      --oT2im=<output corrected T2 image>"
   echo "      --oT2brain=<output corrected T2 brain>"
-  echo "      [--smoothfillnonpos=<TRUE (default), FALSE>]"
+  echo "      [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -71,13 +71,13 @@ OutputT1wRestoredBrainImage=`getopt1 "--oT1brain" $@`  # "$7"
 OutputT2wRestoredImage=`getopt1 "--oT2im" $@`  # "$8"
 OutputT2wRestoredBrainImage=`getopt1 "--oT2brain" $@`  # "$9"
 BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$9"
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$10"
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`  # "$10"
 
 # default parameters
 WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 # if no special estimation images are supplied, just the standard ones
 [[ -z $T1wImageEst ]] && T1wImageEst=$T1wImage
@@ -126,9 +126,9 @@ ${FSLDIR}/bin/fslmaths $WD/bias_raw.nii.gz -s $BiasFieldSmoothingSigma $OutputBi
 # Use bias field output to create corrected images
 ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField $OutputT1wRestoredImage -odt float
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField $OutputT2wRestoredImage -odt float
-# smooth inter-/extrapolate the non-positive values in the images
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=$OutputT1wRestoredImage
-[[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=$OutputT2wRestoredImage
+# fix negative values in the images
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=$OutputT1wRestoredImage
+$HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=$OutputT2wRestoredImage
 # extract brain
 ${FSLDIR}/bin/fslmaths $OutputT1wRestoredImage -mas $T1wImageBrain $OutputT1wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $OutputT2wRestoredImage -mas $T1wImageBrain $OutputT2wRestoredBrainImage -odt float

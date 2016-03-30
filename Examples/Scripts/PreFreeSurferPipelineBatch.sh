@@ -333,7 +333,7 @@ for Subject in $Subjlist ; do
     #BiasFieldSmoothingSigma="8"
     BiasFieldSmoothingSigma="5"
   fi
-  SmoothFillNonPos="TRUE" # smoothly fill negative and exactly zero values in images (after spline interpolation) ("TRUE", "FALSE")
+  FixNegValMethod="thr" # method to ensure the image does not contain negative values (after spline interpolation) (none, thr, abs, smooth)
 
   # Other Config Settings
   BrainSize="150" #BrainSize in mm, 150 for humans
@@ -383,7 +383,7 @@ for Subject in $Subjlist ; do
       --biascorr="$BiasCorr" \
       --bfsigma="$BiasFieldSmoothingSigma" \
       --maskartery="$MaskArtery" \
-      --smoothfillnonpos="$SmoothFillNonPos" \
+      --fixnegvalmethod="$FixNegValMethod" \
       --printcom=$PRINTCOM
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
@@ -420,7 +420,7 @@ for Subject in $Subjlist ; do
       --biascorr=${BiasCorr} \
       --bfsigma=$BiasFieldSmoothingSigma \
       --maskartery=${MaskArtery} \
-      --smoothfillnonpos=${SmoothFillNonPos} \
+      --fixnegvalmethod=$FixNegValMethod \
       --printcom=${PRINTCOM}"
 
   echo ". ${EnvironmentScript}"

@@ -25,8 +25,8 @@ Usage() {
   echo "      [--oT2im=<output corrected T2 image>]"
   echo "      [--oT2brain=<output corrected T2 brain>]"
   echo "      [--bfsigma=<sigma of bias field smoothing in mm>]"
-  echo "      [--fastmethod={ROBUST,SINGLE}]"
-  echo "      [--smoothfillnonpos={TRUE (default), FALSE}]"
+  echo "      [--fastmethod=<ROBUST, SINGLE>]"
+  echo "      [--fixnegvalmethod=<none, thr (default), abs, smooth>]"
 }
 
 # function for parsing options
@@ -80,13 +80,13 @@ OutputT2wRestoredImage=`getopt1 "--oT2im" $@`  # "$5"
 OutputT2wRestoredBrainImage=`getopt1 "--oT2brain" $@`  # "$6"
 BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$7"
 FASTMethod=`getopt1 "--fastmethod" $@`  # "$8"
-SmoothFillNonPos=`getopt1 "--smoothfillnonpos" $@`  # "$10"
+FixNegValMethod=`getopt1 "--fixnegvalmethod" $@`  # "$10"
 
 # default parameters
 WD=`defaultopt $WD .`
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
 FASTMethod=`defaultopt $FASTMethod "ROBUST"`
-SmoothFillNonPos=`defaultopt $SmoothFillNonPos "TRUE"`
+FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 
 # if no special estimation images are supplied, just the standard ones
 [[ -z $T1wImageEst ]] && T1wImageEst=$T1wImage
@@ -149,7 +149,7 @@ for TXw in ${Modalities} ; do
     TXwImageBasename=`${FSLDIR}/bin/remove_ext "$TXwImage"`
     TXwImageBasename=`basename "$TXwImageBasename"`
     # do robust bias correction based on the fsl_anat pipeline
-    $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwImageEst} --workingdir=$WD --brainmask=${T1wImageBrain} --basename=${TXwImageBasename} --FWHM=$FWHM --type=$X --smoothfillnonpos=$SmoothFillNonPos
+    $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwImageEst} --workingdir=$WD --brainmask=${T1wImageBrain} --basename=${TXwImageBasename} --FWHM=$FWHM --type=$X --fixnegvalmethod=$FixNegValMethod
     ${FSLDIR}/bin/immv $WD/${TXwImageBasename}_bias ${TXwOutputBiasField}
   else
     TXwImageBrainBasename=`${FSLDIR}/bin/remove_ext "$TXwImageBrain"`
@@ -163,8 +163,8 @@ for TXw in ${Modalities} ; do
 
   # Use bias field output to create corrected images
   ${FSLDIR}/bin/fslmaths $TXwImage -div ${TXwOutputBiasField} $OutputTXwRestoredImage -odt float
-  # smooth inter-/extrapolate the non-positive values in the images
-  [[ $SmoothFillNonPos = "TRUE" ]] && $HCPPIPEDIR_PreFS/SmoothFill.sh --in=$OutputTXwRestoredImage
+  # fix negative values in the images
+  $HCPPIPEDIR_PreFS/FixNegVal.sh --method=${FixNegValMethod} --in=$OutputTXwRestoredImage
   # extract brain
   ${FSLDIR}/bin/fslmaths $OutputTXwRestoredImage -mas $T1wImageBrain $OutputTXwRestoredBrainImage -odt float
 
