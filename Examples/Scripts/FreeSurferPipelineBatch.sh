@@ -6,9 +6,10 @@ args=""
 BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) # folder where this script is stored
 EnvironmentScript="${BatchFolder}/SetUpHCPPipeline.sh" # Pipeline environment script
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of subject folders (named by subject IDs in SubjList)
-Subjlist="100307" # Space delimited list of subject IDs
+SubjList="100307" # Space delimited list of subject IDs
 LogDir="./log"
 UseT2w="TRUE"
+runlocal="FALSE"
 
 # parse the input arguments
 for a in "$@" ; do
@@ -65,7 +66,7 @@ fi
 
 ######################################### DO WORK ##########################################
 
-for Subject in ${Subjlist//@/ } ; do
+for Subject in ${SubjList//@/ } ; do
   echo $Subject
 
   #Input Variables

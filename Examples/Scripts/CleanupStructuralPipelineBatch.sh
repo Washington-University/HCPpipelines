@@ -6,8 +6,9 @@ args=""
 BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) # folder where this script is stored
 EnvironmentScript="${BatchFolder}/SetUpHCPPipeline.sh" # Pipeline environment script
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of subject folders (named by subject IDs in SubjList)
-Subjlist="100307" # Space delimited list of subject IDs
+SubjList="100307" # Space delimited list of subject IDs
 LogDir="./log"
+runlocal="FALSE"
 
 # parse the input arguments
 for a in "$@" ; do
@@ -76,7 +77,7 @@ ResultsFolder="Results"
 xfmsFolder="xfms"
 Files2Remove=("*_1mm" "T1w_acpc_brain_mask" "T1w_acpc_brain" "T1w_acpc" "*_gdc")
 
-for Subject in $Subjlist ; do
+for Subject in $SubjList ; do
   echo $Subject
 
   # Subject specific naming conventions
