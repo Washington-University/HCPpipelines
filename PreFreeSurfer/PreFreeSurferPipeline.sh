@@ -537,7 +537,7 @@ for TXw in ${Modalities} ; do
         mkdir -p ${TXwFolder}/InitBiasCorr
         [[ -n $BiasFieldSmoothingSigma ]] && bfsigma_initbiascorr=$BiasFieldSmoothingSigma || bfsigma_initbiascorr=5
         FWHM=$(echo "2.3548 * $bfsigma_initbiascorr" | bc)
-        ${RUN} $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwFolder}/${TXwImage} --workingdir=${TXwFolder}/InitBiasCorr --basename=${TXwImage} --FWHM=$FWHM --type=$X --fixnegvalmethod=$FixNegValMethod --fslreorient2std="FALSE" --robustfov="FALSE" --betrestore="FALSE"
+        ${RUN} $HCPPIPEDIR_PreFS/RobustBiasCorr.sh --in=${TXwFolder}/${TXwImage} --workingdir=${TXwFolder}/InitBiasCorr --basename=${TXwImage} --FWHM=$FWHM --type=$X --fixnegvalmethod=$FixNegValMethod
         # move bias corrected images to main folder and clean up
         ${FSLDIR}/bin/immv ${TXwFolder}/InitBiasCorr/${TXwImage}_restore ${TXwFolder}/${TXwImage}_restore
         rm -r ${TXwFolder}/InitBiasCorr/

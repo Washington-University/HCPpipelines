@@ -44,7 +44,6 @@ if [[ $# -lt 1 ]] ; then >&2 usage; exit 1; fi
 args=""
 FWHM=10
 Type=1
-WD="./${Base}_biascorr$FWHM"
 flg_fixnegvalmethod=thr
 flg_fslreorient2std=FALSE
 flg_robustfov=FALSE
@@ -76,6 +75,7 @@ done
 
 # set dependent defaults
 [[ -z $Base ]] && Base=T"$Type"
+WD="./${Base}_biascorr$FWHM"
 
 # check if no redundant arguments have been set
 if [[ -n $args ]] ; then
@@ -144,7 +144,7 @@ if [[ -z $flg_hpfinit ]] ; then
   if [[ -z $BrainMask || $flg_forcestrictbrainmask = TRUE || $flg_ignorecsf = TRUE || $flg_ignorextrm = TRUE ]] ; then
     flg_hpfinit=TRUE
   else
-    flg_hpfinit="FALSE"
+    flg_hpfinit=FALSE
   fi
 fi
 
