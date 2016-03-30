@@ -7,60 +7,63 @@ set -e    # stop immediately on error
 #  give Lennart Verhagen (lennart.verhagen@psy.ox.ac.uk) a coffee or a pint
 
 
-################################################ SUPPORT FUNCTIONS ##################################################
+#==============================
+# overhead
+#==============================
 
 Usage() {
-  echo "`basename $0`: Ensure the image does not contain negative values."
-  echo "    1) by thresholding"
-  echo "    2) by taking absolute values"
-  echo "    3) by smooth filling non-positive values (or a mask)"
-  echo "    4) other: do nothing and return quickly)"
-  echo " "
-  echo "Usage:"
-  echo "  `basename $0`"
-  echo "      --in=<input image>"
-  echo "     [--method=<fix method>] : \"thr\" (default) \"abs\" \"smooth\" \"none\""
-  echo "     [--fillmask=<mask image to smooth fill>]"
-  echo "     [--out=<output image>]"
+cat <<EOF
+
+`basename $0`: Ensure the image does not contain negative values.
+    1) by thresholding
+    2) by taking absolute values
+    3) by smooth filling non-positive values (or a mask)
+    4) other: do nothing and return quickly)
+
+Usage:
+  `basename $0`
+      --in=<input image>
+     [--method=<fix method>] : none, thr (default), abs, smooth
+     [--fillmask=<mask image to smooth fill>]
+     [--out=<output image>]
+
+EOF
 }
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
+# if no arguments given, return the usage
+if [[ $# -eq 0 ]] ; then usage; exit 0; fi
 
-defaultopt() {
-    echo $1
-}
-
-
-################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [[ $# -eq 0 ]] ; then Usage; exit 0; fi
-# check for correct number of input arguments
-if [[ $# -lt 1 ]] ; then >&2 Usage; exit 1; fi
-
-# parse arguments
-Input=$(getopt1 "--in" $@)
-Method=$(getopt1 "--method" $@)
-FillMask=$(getopt1 "--fillmask" $@)
-Output=$(getopt1 "--out" $@)
+# if too few arguments given, return the usage, exit with error
+if [[ $# -lt 1 ]] ; then >&2 usage; exit 1; fi
 
 # default parameters
-Method=$(defaultopt $Method "thr")
-Output=$(defaultopt $Output $Input)
+args=""
+Method=thr
+
+# parse the input arguments
+for a in "$@" ; do
+  case $a in
+    --in=*)       Input="${a#*=}"; shift ;;
+    --method=*)   Method="${a#*=}"; shift ;;
+    --fillmask=*) FillMask="${a#*=}"; shift ;;
+    --output=*)   Output="${a#*=}"; shift ;;
+    *)            args=$(echo "$args" "$a"); shift ;; # unknown option
+  esac
+done
+
+# check if no redundant arguments have been set
+if [[ -n $args ]] ; then
+  >&2 echo ""; >&2 echo "unsupported arguments are given:" $args
+  exit 1
+fi
+
+# default output to input
+[[ -z $Output ]] && Output="$Input"
 
 # force lower case
 Method=$(echo "$Method" | tr '[:upper:]' '[:lower:]')
 
+# random remark:
 # Piping a comparison string to bc (echo "1 > 0" | bc) while running on fsl_sub
 # gives a strange error: "(standard_in) 2: Error: comparison in expression".
 # So far this doesn't seem to be a critical error.
@@ -72,7 +75,10 @@ Method=$(echo "$Method" | tr '[:upper:]' '[:lower:]')
 # [[ $(echo ${MinMax[0]} | awk '($1>0){print 1}') ]] && echo yeah || echo nope
 # [[ ! $(awk -v m=${MinMax[0]} 'BEGIN{ print m>0 }') ]] && echo yeah || echo nope
 
-########################################## DO WORK ##########################################
+
+#==============================
+# main code
+#==============================
 
 # get base names of the in- and output
 BaseIn=$(${FSLDIR}/bin/remove_ext $Input)

@@ -1,68 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-get_batch_options() {
-    local arguments=($@)
-
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj_list
-    unset command_line_specified_scanner
-    unset command_line_specified_run_local
-
-    local index=0
-    local numArgs=${#arguments[@]}
-    local argument
-
-    while [ ${index} -lt ${numArgs} ]; do
-        argument=${arguments[index]}
-
-        case ${argument} in
-            --StudyFolder=*)
-                command_line_specified_study_folder=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --SubjList=*)
-                command_line_specified_subj_list=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --Scanner=*)
-                command_line_specified_scanner=${argument/*=/""}
-                index=$(( index + 1 ))
-                ;;
-            --runlocal)
-                command_line_specified_run_local="TRUE"
-                index=$(( index + 1 ))
-                ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
-        esac
-    done
-}
-
-get_batch_options $@
-
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307" #Space delimited list of subject IDs
-BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-EnvironmentScript="${BatchFolder}/SetUpHCPPipeline.sh" #Pipeline environment script
+# set defaults
+args=""
+BatchFolder=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) # folder where this script is stored
+EnvironmentScript="${BatchFolder}/SetUpHCPPipeline.sh" # Pipeline environment script
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of subject folders (named by subject IDs in SubjList)
+Subjlist="100307" # Space delimited list of subject IDs
 Scanner="3T" # Scanner specific subfolder of unprocessed MR data, usually either 3T or 7T
+LogDir="./log"
 
-if [ -n "${command_line_specified_study_folder}" ]; then
-    StudyFolder="${command_line_specified_study_folder}"
-fi
+# parse the input arguments
+for a in "$@" ; do
+  case $a in
+    --StudyFolder=*)  StudyFolder="${a#*=}"; shift ;;
+    --SubjList=*)     SubjList="${a#*=}"; shift ;;
+    --Scanner=*)      Scanner="${a#*=}"; shift ;;
+    --LogDir=*)       LogDir="${a#*=}"; shift ;;
+    --runlocal)       runlocal="TRUE"; shift ;;
+    *)                args=$(echo "$args" "$a"); shift ;; # unknown option
+  esac
+done
 
-if [ -n "${command_line_specified_subj_list}" ]; then
-  # replace all "@" with " "
-  command_line_specified_subj_list="${command_line_specified_subj_list//@/ }"
-  # overwrite default with user specified value
-  Subjlist="${command_line_specified_subj_list}"
-fi
-
-if [ -n "${command_line_specified_scanner}" ]; then
-    Scanner="${command_line_specified_scanner}"
+# check if no redundant arguments have been set
+if [[ -n $args ]] ; then
+  >&2 echo ""; >&2 echo "unsupported arguments are given:" $args
+  exit 1
 fi
 
 # Requirements for this script
@@ -75,15 +38,23 @@ fi
 # Log the originating call
 echo "$@"
 
-#if [ X$SGE_ROOT != X ] ; then
+#if [[ -n $SGE_ROOT ]] ; then
     QUEUE="-q long.q"
     #QUEUE="-q hcp_priority.q"
 #fi
 
 PRINTCOM=""
 #PRINTCOM="echo"
-#QUEUE="-q veryshort.q"
 
+# set the cluster queuing or local execution command
+if [[ $runlocal == TRUE ]] ; then
+    echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    queuing_command=""
+else
+    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    mkdir -p $LogDir # ensure the directory to store fsl_sub logfiles exists
+    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE} -l $LogDir"
+fi
 
 ########################################## INPUTS ##########################################
 
@@ -126,7 +97,7 @@ PRINTCOM=""
 ######################################### DO WORK ##########################################
 
 
-for Subject in $Subjlist ; do
+for Subject in ${Subjlist//@/ } ; do
   echo $Subject
 
   # Input Images
@@ -341,14 +312,6 @@ for Subject in $Subjlist ; do
 
   # GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Location of Coeffs file or "NONE" to skip
   GradientDistortionCoeffs="NONE" # Set to NONE to skip gradient distortion correction
-
-  if [ -n "${command_line_specified_run_local}" ] ; then
-      echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-      queuing_command=""
-  else
-      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-  fi
 
   ${queuing_command} ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
       --path="$StudyFolder" \

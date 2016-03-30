@@ -7,7 +7,9 @@ set -e
 #  give Lennart Verhagen (lennart.verhagen@psy.ox.ac.uk) a coffee or a pint
 
 
-################################################ SUPPORT FUNCTIONS ##################################################
+#==============================
+# overhead
+#==============================
 
 Usage() {
 cat <<EOF
@@ -32,37 +34,14 @@ Usage: `RobustBiasCorr.sh` [--workingdir=<working dir>]
 EOF
 }
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-    	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-    	    echo $fn | sed "s/^${sopt}=//"
-    	    return 0
-    	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
-
-
-################################################## OPTION PARSING #####################################################
-
 # if no arguments given, return the usage
 if [[ $# -eq 0 ]] ; then usage; exit 0; fi
 
 # if too few arguments given, return the usage, exit with error
 if [[ $# -lt 1 ]] ; then >&2 usage; exit 1; fi
 
-# set argument defaults
-args=""
-imgtype=T1
-
-
 # default parameters
+args=""
 FWHM=10
 Type=1
 TX=T"$Type"
@@ -96,6 +75,16 @@ for a in "$@" ; do
   esac
 done
 
+# check if no redundant arguments have been set
+if [[ -n $args ]] ; then
+  >&2 echo ""; >&2 echo "unsupported arguments are given:" $args
+  exit 1
+fi
+
+
+#==============================
+# main code
+#==============================
 
 echo ""
 echo "  START: RobustBiasCorr"
