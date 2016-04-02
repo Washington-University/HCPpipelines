@@ -19,7 +19,7 @@ for a in "$@" ; do
     --Scanner=*)      Scanner="${a#*=}"; shift ;;
     --LogDir=*)       LogDir="${a#*=}"; shift ;;
     --runlocal)       runlocal="TRUE"; shift ;;
-    *)                args=$(echo "$args" "$a"); shift ;; # unknown option
+    *)                args="$args $a"; shift ;; # unsupported argument
   esac
 done
 

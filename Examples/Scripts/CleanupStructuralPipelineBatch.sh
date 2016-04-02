@@ -17,7 +17,7 @@ for a in "$@" ; do
     --SubjList=*)     SubjList="${a#*=}"; shift ;;
     --LogDir=*)       LogDir="${a#*=}"; shift ;;
     --runlocal)       runlocal="TRUE"; shift ;;
-    *)                args=$(echo "$args" "$a"); shift ;; # unknown option
+    *)                args="$args $a"; shift ;; # unsupported argument
   esac
 done
 

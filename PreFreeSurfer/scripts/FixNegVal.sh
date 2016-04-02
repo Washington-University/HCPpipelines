@@ -47,7 +47,7 @@ for a in "$@" ; do
     --method=*)   Method="${a#*=}"; shift ;;
     --fillmask=*) FillMask="${a#*=}"; shift ;;
     --output=*)   Output="${a#*=}"; shift ;;
-    *)            args=$(echo "$args" "$a"); shift ;; # unknown option
+    *)            args="$args $a"; shift ;; # unsupported argument
   esac
 done
 

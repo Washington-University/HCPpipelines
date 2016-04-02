@@ -69,7 +69,7 @@ for a in "$@" ; do
     --ignorecsf=*)            flg_ignorecsf="${a#*=}"; shift ;;
     --ignorextrm*)            flg_ignorextrm="${a#*=}"; shift ;;
     --hpfinit*)               flg_hpfinit="${a#*=}"; shift ;;
-    *)                        args=$(echo "$args" "$a"); shift ;; # unknown option
+    *)                        args="$args $a"; shift ;; # unsupported argument
   esac
 done
 
