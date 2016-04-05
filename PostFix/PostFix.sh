@@ -311,10 +311,10 @@ main()
 	ComponentList="${FIXFolder}/ComponentList.txt"
 	log_Msg "ComponentList: ${ComponentList}"
 
-	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp2000_clean pixdim4`
+	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}_clean pixdim4`
 	log_Msg "TR: ${TR}"
 
-	NumTimePoints=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp2000_clean dim4`
+	NumTimePoints=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}_clean dim4`
 	log_Msg "NumTimePoints: ${NumTimePoints}"
 
 	if [ -e ${ComponentList} ] ; then
