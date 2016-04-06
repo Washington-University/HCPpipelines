@@ -203,6 +203,9 @@ do
 		# Skipping Gradient Distortion Correction
 		GradientDistortionCoeffs="NONE"
 		
+		# Use mcflirt motion correction
+		MCType="MCFLIRT"
+		
 		# Determine output name for the fMRI
 		output_fMRIName="${TaskName}_7T_${PhaseEncodingDir}"
 		echo "  ${SCRIPT_NAME}: output_fMRIName: ${output_fMRIName}"
@@ -235,7 +238,8 @@ do
 			--gdcoeffs=${GradientDistortionCoeffs} \
 			--topupconfig=${TopUpConfig} \
 			--dof=${dof_epi2t1} \
-			--printcom=${PRINTCOM}
+			--printcom=${PRINTCOM} \
+			--mctype=${MCType}
 	done
 	
 done
