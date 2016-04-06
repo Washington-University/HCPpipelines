@@ -6,7 +6,7 @@
 
 Usage() {
     echo ""
-    echo "Usage: mcflirt_orig.sh <4dinput> <4doutput> [<scout_image> [<mcref_image>]]"
+    echo "Usage: mcflirt.sh <4dinput> <4doutput> [<scout_image> [<mcref_image>]]"
     echo ""
     echo " If neither <scout_image> nor <mcref_image> is specified, a reference image"
     echo "    will be generated automatically from volumes 10-20 in the input series."
