@@ -75,6 +75,20 @@ dof=`opts_DefaultOpt $dof 6`
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+MotionCorrectionType=`opts_GetOpt1 "--mctype" $@`  # use = "FLIRT" to run FLIRT-based mcflirt_acc.sh, or "MCFLIRT" to run MCFLIRT-based mcflirt.sh
+MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflirt by default
+
+#error check
+case "$MotionCorrectionType" in
+    MCFLIRT|FLIRT)
+        #nothing
+    ;;
+    
+    *)
+        log_Msg "ERROR: --mctype must be 'MCFLIRT' (default) or 'FLIRT'"
+        exit 1
+    ;;
+esac
 
 JacobianDefault="true"
 if [[ $DistortionCorrection != "TOPUP" ]]
@@ -231,7 +245,8 @@ ${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
     "$fMRIFolder"/"$NameOffMRI"_mc \
     "$fMRIFolder"/"$MovementRegressor" \
     "$fMRIFolder"/"$MotionMatrixFolder" \
-    "$MotionMatrixPrefix" 
+    "$MotionMatrixPrefix" \
+    "$MotionCorrectionType"
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
