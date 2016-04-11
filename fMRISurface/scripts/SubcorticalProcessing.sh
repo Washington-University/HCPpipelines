@@ -33,6 +33,9 @@ echo "${script_name}: Sigma: ${Sigma}"
 #NOTE: wmparc has dashes in structure names, which -cifti-create-* won't accept
 #ROIs files have acceptable structure names
 
+#deal with fsl_sub being silly when we want to use numeric equality on decimals
+unset POSIXLY_CORRECT
+
 #generate subject-roi space fMRI cifti for subcortical
 if [[ `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l | cut -f1 -d.` == "1" ]]
 then
