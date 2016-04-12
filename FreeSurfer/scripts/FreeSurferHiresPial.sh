@@ -177,4 +177,18 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.area.pial${outputSuffix2
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/lh.curv.pial
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.curv.pial${outputSuffix2} $SubjectDIR/$SubjectID/surf/rh.curv.pial
 
+# Other cleanup
+# Remove some intermediate "Xh.pial.*" files that were generated following the 1st pass,
+# but which no longer correspond to the final pial surfaces (after the 2nd pass)
+rm "$surfdir"/lh.pial.surf.gii "$surfdir"/lh.pial.nii.gz
+rm "$surfdir"/rh.pial.surf.gii "$surfdir"/rh.pial.nii.gz
+# Move all the "ribbon" related files generated following the 1st pass into a dedicated 
+# subdirectory since those also do not correspond to the final ribbon
+cd "$mridir"
+ribbon1Dir=ribbon${outputSuffix1}
+mkdir $ribbon1Dir
+mv lh.ribbon.nii.gz rh.ribbon.nii.gz ribbon.nii.gz ribbon_s"$Sigma".nii.gz $ribbon1Dir/.
+mv T1w_hires.norm_ribbon.nii.gz ribbon_inv.nii.gz T1w_hires.norm_ribbon_myelin.nii.gz $ribbon1Dir/.
+mv dilribbon_inv.nii.gz T1w_hires.greynorm_ribbon.nii.gz $ribbon1Dir/.
+
 echo -e "\n END: FreeSurferHighResPial"
