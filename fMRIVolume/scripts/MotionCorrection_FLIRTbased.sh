@@ -21,6 +21,7 @@ OutputfMRI="$4"
 OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
+MotionCorrectionType="$8"
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
@@ -28,7 +29,20 @@ OutputfMRIBasename=`basename ${OutputfMRI}`
 
 # Do motion correction
 log_Msg "Do motion correction"
-${HCPPIPEDIR_Global}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
+case "$MotionCorrectionType" in
+    MCFLIRT)
+        ${HCPPIPEDIR_Global}/mcflirt.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
+    ;;
+    
+    FLIRT)
+        ${HCPPIPEDIR_Global}/mcflirt_acc.sh ${InputfMRI} ${WorkingDirectory}/${OutputfMRIBasename} ${Scout}
+    ;;
+    
+    *)
+        log_Msg "ERROR: MotionCorrectionType must be 'MCFLIRT' or 'FLIRT'"
+        exit 1
+    ;;
+esac
 
 # Move output files about
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par

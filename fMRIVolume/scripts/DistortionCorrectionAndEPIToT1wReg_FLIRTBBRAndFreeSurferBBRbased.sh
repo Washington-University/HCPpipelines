@@ -640,7 +640,7 @@ log_Msg "cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz"
 cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz
 
 # QA image (sqrt of EPI * T1w)
-log_Msg "generating QA image (sqrt of EPI * T1w)"
+log_Msg 'generating QA image (sqrt of EPI * T1w)'
 ${FSLDIR}/bin/fslmaths ${T1wRestoreImage}.nii.gz -mul ${RegOutput}.nii.gz -sqrt ${QAImage}.nii.gz
 
 log_Msg "END"
