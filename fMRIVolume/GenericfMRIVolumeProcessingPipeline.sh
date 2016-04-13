@@ -238,10 +238,10 @@ else
     ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
 fi
 
-log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection_FLIRTbased"
-mkdir -p "$fMRIFolder"/MotionCorrection_FLIRTbased
-${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
-    "$fMRIFolder"/MotionCorrection_FLIRTbased \
+log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
+mkdir -p "$fMRIFolder"/MotionCorrection
+${RUN} "$PipelineScripts"/MotionCorrection.sh \
+    "$fMRIFolder"/MotionCorrection \
     "$fMRIFolder"/"$NameOffMRI"_gdc \
     "$fMRIFolder"/"$ScoutName"_gdc \
     "$fMRIFolder"/"$NameOffMRI"_mc \

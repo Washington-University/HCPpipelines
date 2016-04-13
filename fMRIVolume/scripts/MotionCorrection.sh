@@ -11,7 +11,7 @@ source $HCPPIPEDIR_Global/log.shlib # Logging related functions
 #  Establish tool name for logging
 # --------------------------------------------------------------------------------
 
-log_SetToolName "MotionCorrection_FLIRTBased.sh"
+log_SetToolName "MotionCorrection.sh"
 log_Msg "START"
 
 WorkingDirectory="$1"
