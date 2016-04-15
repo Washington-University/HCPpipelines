@@ -104,7 +104,10 @@ fi
 
 UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]

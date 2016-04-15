@@ -66,7 +66,10 @@ echo "$@"
     QUEUE="-q hcp_priority.q"
 #fi
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 PRINTCOM=""
 #PRINTCOM="echo"

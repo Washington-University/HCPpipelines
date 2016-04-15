@@ -162,7 +162,10 @@ SubjectFolder=`getopt1 "--subjectfolder" $@`
 BiasCorrection=`getopt1 "--biascorrection" $@`
 UseJacobian=`getopt1 "--usejacobian" $@`
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 #error check bias correction opt
 case "$BiasCorrection" in
