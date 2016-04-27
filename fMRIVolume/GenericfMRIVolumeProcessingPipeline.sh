@@ -143,7 +143,7 @@ then
         log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
     fi
 fi
-log_Msg "JacobianDefault: ${JacobinaDefault}"
+log_Msg "JacobianDefault: ${JacobianDefault}"
 
 UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
 log_Msg "After taking default value if necessary, UseJacobian: ${UseJacobian}"
