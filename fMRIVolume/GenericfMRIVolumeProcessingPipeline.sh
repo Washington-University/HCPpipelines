@@ -48,33 +48,75 @@ log_Msg "Parsing Command Line Options"
 
 # parse arguments
 Path=`opts_GetOpt1 "--path" $@`
+log_Msg "Path: ${Path}"
+
 Subject=`opts_GetOpt1 "--subject" $@`
+log_Msg "Subject: ${Subject}"
+
 NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
+log_Msg "NameOffMRI: ${NameOffMRI}"
+
 fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
+log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
+
 fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
+log_Msg "fMRIScout: ${fMRIScout}"
+
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
+log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
+
 SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
+log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
+
 MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # Expects 4D volume with two 3D timepoints
+log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
+
 PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  
+log_Msg "PhaseInputName: ${PhaseInputName}"
+
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
+log_Msg "GEB0InputName: ${GEB0InputName}"
+
 DwellTime=`opts_GetOpt1 "--echospacing" $@`  
+log_Msg "DwellTime: ${DwellTime}"
+
 deltaTE=`opts_GetOpt1 "--echodiff" $@`  
+log_Msg "deltaTE: ${deltaTE}"
+
 UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
+log_Msg "UnwarpDir: ${UnwarpDir}"
+
 FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
+log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
 
 # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
 # Note: FIELDMAP and SiemensFieldMap are equivalent
 DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
+log_Msg "DistortionCorrection: ${DistortionCorrection}"
+
 BiasCorrection=`opts_GetOpt1 "--biascorrection" $@`
+# Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
+BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
+log_Msg "BiasCorrection: ${BiasCorrection}"
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
+
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
+log_Msg "TopupConfig: ${TopupConfig}"
 
 dof=`opts_GetOpt1 "--dof" $@`
 dof=`opts_DefaultOpt $dof 6`
+log_Msg "dof: ${dof}"
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+log_Msg "RUN: ${RUN}"
+
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
+UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+log_Msg "UseJacobian: ${UseJacobian}"
+
 MotionCorrectionType=`opts_GetOpt1 "--mctype" $@`  # use = "FLIRT" to run FLIRT-based mcflirt_acc.sh, or "MCFLIRT" to run MCFLIRT-based mcflirt.sh
 MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflirt by default
 
@@ -101,8 +143,10 @@ then
         log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
     fi
 fi
+log_Msg "JacobianDefault: ${JacobinaDefault}"
 
 UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
+log_Msg "After taking default value if necessary, UseJacobian: ${UseJacobian}"
 
 if [[ -n $HCPPIPEDEBUG ]]
 then
