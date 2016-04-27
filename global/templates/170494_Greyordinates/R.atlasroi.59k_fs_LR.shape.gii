@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexRight]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/R.sphere.60k_fs_LR.surf.gii:
+/home/brainmappers/workbench/fetchdir/wb_command.3492 -surface-create-sphere 60000 /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/R.sphere.60k_fs_LR.surf.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 1.0
+Qt Compiled Version: 4.8.5
+Qt Runtime Version: 4.8.1
+commit: d657b42378a5f8b9946611d5bda5750c16106c08
+commit date: 2014-12-10 22:27:53 -0600
+Compiler: c++ (/usr/bin)
+Compiler Version: 
+Compiled Debug: NO
+Operating System: Linux
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/home/brainmappers/workbench/fetchdir/wb_command.3539 -metric-resample /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/R.atlasroi.164k_fs_LR.shape.gii /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/fsaverage.R_LR.spherical_std.164k_fs_LR.surf.gii /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/R.sphere.60k_fs_LR.surf.gii BARYCENTRIC /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases/R.atlasroi.60k_fs_LR.shape.gii -largest]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/myelin/brainmappers/HardDrives/2TBB/Connectome_Project/Pipelines]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="59292"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Atlas_Cortex_ROI]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_MAP</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt2lFq40AQBFDdbK/mo4dlWchH7Ej2jKpn+n08CATUVa2ESOMcx+PP8dTxeP69K/5ep6sR++skfb92v+/pvax0T9J5q+8pndOO6rIbuxm9l3Q+O8mzC7uwBzs42z+dS3e9ddZX1149d++48/PGru9c3Tqt2Ou3Pit12qXLmR7V+6zeYeX8V7JXyn81d4Xs72RO5pa1Rs67s76b8a6slfN9mm1WvhG5RmerlqlSnlFZPs0zMse7WUZnuJojOT81OzF3xsxX8++cd9es2XMAYCWj3hESzy0AAADU0fU9sOO7cLczgGd9d+zd5aynwznX7ud5O59Z7nomu+N5827n6Dv1GdUl3Wdkj1SX1TusnH909rvyr5h7RuaZuVfKu0rWFXLOyjgqZ+V8VbNVzFUt08w8VzNVyVIhRzpDcn5q9m4zf5p757yd5syeMfu+AH18+kwPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPRxPMZZIWPFfgAAlXkW8lxoDz/3t4N8Ht311llfXXv27NYxnUW3vr1267Rrn3SOUV3SGbrei9V/L1bPns6w+65XyrtK1hVyVs9YOV/lbAAAcNWr59tX5yG/ff7gf5QBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACDnePzz/+t0nru7f9/BGenMs+7/J9Id7KPuLnbYy+g9rLiL7jvo3L9rd53379zpZ3tG14p9Z/Ws1Hd2x3TPO/qlOqe6ze6d7jCjXzr32W5nO6azjrh33zsDAEAVVZ5RK+RIZ0ifKXSZe/fMxHnYDjuc3WXm9Ve67uhrjrzeqGuNuE767wO1JT+LYA9+tuzJjuwnzW7s5ZN9dN2JfZzbRzqXPdhBlR2kM+l+f/d0Hp3nd05n0VXPd3qmc+j3fr90Br0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADo4QuWEPg5</Data>
+</DataArray>
+</GIFTI>
