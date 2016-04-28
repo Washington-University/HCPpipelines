@@ -235,7 +235,8 @@ case $DistortionCorrection in
             --ofmap=${WD}/FieldMap \
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
-            --topupconfig=${TopupConfig}
+            --topupconfig=${TopupConfig} \
+            --usejacobian=true
 
         ;;
 
