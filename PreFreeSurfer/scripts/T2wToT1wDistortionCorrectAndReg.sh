@@ -132,6 +132,7 @@ OutputT2wTransform=`getopt1 "--ot2warp" $@`
 DistortionCorrection=`getopt1 "--method" $@`  
 TopupConfig=`getopt1 "--topupconfig" $@`  
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  
+UseJacobian=`getopt1 "--usejacobian" $@`
 
 # default parameters
 WD=`defaultopt $WD .`
@@ -236,7 +237,7 @@ case $DistortionCorrection in
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
             --topupconfig=${TopupConfig} \
-            --usejacobian=true
+            --usejacobian=${UseJacobian}
 
         ;;
 
