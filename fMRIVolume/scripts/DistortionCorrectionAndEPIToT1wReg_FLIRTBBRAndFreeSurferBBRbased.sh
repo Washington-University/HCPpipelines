@@ -73,7 +73,7 @@ Usage() {
   echo "                 use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}"
   echo ""
   echo "               \"LEGACY\""
-  echo "                 use the bias field derived from T1w and T2w images, same as old versions of pipeline"
+  echo "                 use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older"
   echo ""
   echo "               \"NONE\""
   echo "                 don't do bias correction"

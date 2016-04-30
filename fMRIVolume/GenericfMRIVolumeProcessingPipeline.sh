@@ -112,6 +112,7 @@ log_Msg "dof: ${dof}"
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 log_Msg "RUN: ${RUN}"
 
+#NOTE: the jacobian option only applies the jacobian of the distortion corrections to the fMRI data, and NOT from the nonlinear T1 to template registration
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"

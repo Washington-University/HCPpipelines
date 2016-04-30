@@ -308,6 +308,9 @@ GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`
 AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
+
+#NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
+#not currently in usage, either, because of this very limited use
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 
 # Use --printcom=echo for just printing everything and not actually
