@@ -122,6 +122,7 @@ main() {
 	# set up pipeline environment variables and software
 	. ${EnvironmentScript}
 
+	export FSL_FIXDIR=${FixDir}
 	FixScript=${HCPPIPEDIR_Global}/hcp_fix
 	TrainingData=HCP7T_hp2000.RData
 
@@ -172,7 +173,7 @@ main() {
 				fi
 
 				
-				${queuing_command} "export FSL_FIXDIR=${FixDir}; ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${TrainingData}
 			done
 
 		done

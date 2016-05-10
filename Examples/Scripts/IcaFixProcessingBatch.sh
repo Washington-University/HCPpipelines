@@ -122,6 +122,7 @@ main() {
 	# set up pipeline environment variables and software
 	. ${EnvironmentScript}
 
+	export FSL_FIXDIR=${FixDir}
 	FixScript=${HCPPIPEDIR_Global}/hcp_fix
 	TrainingData=HCP_hp2000.RData
 
