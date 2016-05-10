@@ -56,6 +56,7 @@ get_options()
 	unset g_fmri_name                # fMRIName
 	unset g_high_pass                # HighPass
 	unset g_reg_name                 # RegName
+	unset g_low_res_mesh		 # LowResMesh
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -92,6 +93,10 @@ get_options()
 				;;
 			--reg-name=*)
 				g_reg_name=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--low-res-mesh=*)
+				g_low_res_mesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -275,6 +280,11 @@ main()
 	else
 		RegString=""
 	fi
+
+	if [ ! -z ${g_low_res_mesh} ] && [ ${g_low_res_mesh} != "32" ]; then
+		RegString="${RegString}.${g_low_res_mesh}k"
+	fi
+
 	log_Msg "RegString: ${RegString}"
 
 	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
