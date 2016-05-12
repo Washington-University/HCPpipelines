@@ -19,9 +19,9 @@ log_SetToolName()
 #
 log_Msg() 
 {
-    local msg=$@
+    local msg="$*"
     local dateTime=`date`
-    echo $dateTime "-" $log_toolName "-" $msg
+    echo $dateTime "-" $log_toolName "-" "$msg"
 }
 
 #
@@ -34,9 +34,9 @@ log_Msg()
 #
 log_Error_Abort() 
 {
-	local msg=$@
+	local msg="$*"
 	local dateTime=`date`
-	echo $dateTime "-" $log_toolName "-" "ERROR:" $msg "--ABORTING--"
+	echo $dateTime "-" $log_toolName "-" "ERROR:" "$msg" "--ABORTING--"
 	exit 1
 }
 
@@ -50,7 +50,7 @@ log_Error_Abort()
 #
 log_Does_File_Exist()
 {
-	local file_to_check=${1}
+	local file_to_check="${1}"
 	if [ -e "${file_to_check}" ]; then
 		log_Msg "File: ${file_to_check} EXISTS"
 	else
@@ -69,7 +69,7 @@ log_Does_File_Exist()
 #
 log_File_Must_Exist() 
 {
-	local file_that_must_exist=${1}
+	local file_that_must_exist="${1}"
 	if [ -e "${file_that_must_exist}" ]; then
 		log_Msg "File: ${file_that_must_exist} EXISTS"
 	else
@@ -94,7 +94,7 @@ log_Debug_On()
 #
 log_Debug_Msg()
 {
-	local msg=$@
+	local msg="$*"
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: ${msg}"
 	fi
@@ -106,10 +106,10 @@ log_Debug_Msg()
 #
 log_Debug_Cat()
 {
-	local file_to_cat=$@
+	local file_to_cat="$*"
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: Begin contents of file: ${file_to_cat}"
-		cat ${file_to_cat}
+		cat "${file_to_cat}"
 		log_Msg "DEBUG: End contents of file: ${file_to_cat}"
 	fi
 }

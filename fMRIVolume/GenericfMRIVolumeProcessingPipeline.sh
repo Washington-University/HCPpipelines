@@ -378,10 +378,10 @@ then
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${ResultsFolder}/brainmask_fs.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
         
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${ResultsFolder}/brainmask_fs.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
         
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
     fi
