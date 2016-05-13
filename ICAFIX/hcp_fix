@@ -7,7 +7,11 @@
 #   Copyright (C) 2012-2013 University of Oxford
 #
 #   SHCOPYRIGHT
-
+#
+#   Changes to support 7T ICAFIX processing by Keith Jamison <kjamison@umn.edu>
+#
+#   Changes to echo output messages to aid in debugging by Timothy B. Brown <tbbrown@wustl.edu>
+#
 #Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
 #export FSL_FIXDIR
@@ -56,7 +60,23 @@ fi
 
 echo "running MELODIC"
 mkdir -p ${fmri}.ica
-$FSLDIR/bin/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+echo "hcp_fix: DEBUG: About to run melodic: Contents of ${fmri}.ica follow"
+ls -lRa ${fmri}.ica
+
+echo "hcp_fix: DEBUG: Modified version of melodic in use"
+echo "hcp_fix: DEBUG: melodic located at: ${HOME}/pipeline_tools/fix1.06a/melodic"
+echo "hcp_fix: DEBUG: Beginning of melodic version log"
+${HOME}/pipeline_tools/fix1.06a/melodic --version
+echo "hcp_fix: DEBUG: End of melodic version log"
+
+# "old" melodic command
+#$FSLDIR/bin/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+#
+${HOME}/pipeline_tools/fix1.06a/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+retCode=$?
+echo "hcp_fix: DEBUG: melodic has been run: retCode = ${retCode}"
+echo "hcp_fix: DEBUG: melodic has been run: Contents of ${fmri}.ica follow"
+ls -lRa ${fmri}.ica
 
 cd ${fmri}.ica
 
@@ -81,10 +101,16 @@ else
   exit -1
 fi 
 
-${FSL_FIXDIR}/call_matlab.sh -L .fix.log -f functionmotionconfounds $tr $hp 
+echo "hcp_fix: DEBUG: functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log"
+#${FSL_FIXDIR}/call_matlab.sh -L .fix.log -f functionmotionconfounds $tr $hp 
+${FSL_FIXDIR}/call_matlab.sh -L .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
 
 mkdir -p reg
 cd reg
+
+iamat=`pwd`
+echo "hcp_fix: DEBUG: current folder $iamat"
+
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
 $FSLDIR/bin/imln ../mean_func example_func
