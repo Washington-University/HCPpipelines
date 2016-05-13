@@ -488,6 +488,10 @@ main()
 		g_reg_name="MSMSulc"
 	fi
 
+	if [ ! ${g_low_res_mesh} = "32" ] ; then
+		RegString="${RegString}.${g_low_res_mesh}k"
+	fi
+
 	### Calculate CIFTI version of the bias field (which is removed as part of the fMRI minimal pre-processing)
 	### so that the bias field can be "restored" prior to the variance decomposition
 	### i.e., so that the estimate variance at each grayordinate reflects the scaling of the original data

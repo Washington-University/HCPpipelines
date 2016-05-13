@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
+DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
 DEFAULT_SUBJECT_LIST="100307"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
@@ -124,7 +124,7 @@ main() {
 
 	export FSL_FIXDIR=${FixDir}
 	FixScript=${HCPPIPEDIR_Global}/hcp_fix
-	TrainingData=HCP_hp2000.RData
+	TrainingData=HCP7T_hp2000.RData
 
 	# validate environment variables
 	# validate_environment_vars $@
@@ -134,13 +134,17 @@ main() {
 
 	# establish list of conditions on which to run ICA+FIX
 	CondList=""
-	CondList="${CondList} rfMRI_REST1"
-	CondList="${CondList} rfMRI_REST2"
+	CondList="${CondList} rfMRI_REST1_7T"
+	CondList="${CondList} rfMRI_REST2_7T"
+	CondList="${CondList} rfMRI_REST3_7T"
+	CondList="${CondList} rfMRI_REST4_7T"
 
 	# establish list of directions on which to run ICA+FIX
 	DirectionList=""
-	DirectionList="${DirectionList} RL"
-	DirectionList="${DirectionList} LR"
+	DirectionList="${DirectionList} PA"
+	DirectionList="${DirectionList} AP"
+	DirectionList="${DirectionList} PA"
+	DirectionList="${DirectionList} AP"
 
 	for Subject in ${Subjlist}
 	do
@@ -168,6 +172,7 @@ main() {
 					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 				fi
 
+				
 				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${TrainingData}
 			done
 
