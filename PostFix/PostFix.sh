@@ -326,7 +326,20 @@ main()
 	matlab_exe+="/PostFix/Compiled_prepareICAs/distrib/run_prepareICAs.sh"
 
 	# TBD: Use environment variable instead of fixed path?
-	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+    local matlab_compiler_runtime
+    if [ "${CLUSTER}" = "1.0" ]; then
+        matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+    elif [ "${CLUSTER}" = "2.0" ]; then
+        matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+    else
+        log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
+        log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
+        log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
+        log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
+        log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
+        log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
+        log_Msg "ERROR: using an environment variable's value."
+    fi
 
 	matlab_function_arguments="'${dtseriesName}' '${ICAs}' '${CARET7DIR}/wb_command' '${ICAdtseries}' '${NoiseICAs}' '${Noise}' "
 	matlab_function_arguments+="'${Signal}' '${ComponentList}' ${g_high_pass} ${TR} "
