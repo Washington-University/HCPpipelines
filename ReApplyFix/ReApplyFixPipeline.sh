@@ -177,10 +177,12 @@ check_fsl_version()
 	local version_status="OLD"
 
 	# Get FSL version
-	fsl_version_get fsl_version
+	log_Msg "About to get FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "Retrieved fsl_version: ${fsl_ver}"
 
 	# Parse FSL version into primary, secondary, and tertiary parts
-	fsl_version_array=(${fsl_version//./ })
+	fsl_version_array=(${fsl_ver//./ })
 	
 	fsl_primary_version="${fsl_version_array[0]}"
 	fsl_primary_version=${fsl_primary_version//[!0-9]/}
@@ -194,28 +196,45 @@ check_fsl_version()
 	# Determine whether we are using an "OLD" version (5.0.6 or older),
 	# an "UNTESTED" version (5.0.7 or 5.0.8),
 	# or a "NEW" version (5.0.9 or newer)
+
+	log_Msg "fsl_primary_version: ${fsl_primary_version}"
+	log_Msg "fsl_secondary_version: ${fsl_secondary_version}"
+	log_Msg "fsl_tertiary_version: ${fsl_tertiary_version}"
+
 	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
 		# e.g. 4.x.x
+		log_Msg "fsl_primary_version -lt 5"
 		version_status="OLD"
+		log_Msg "version_status: ${version_status}"
 	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
 		# e.g. 6.x.x
+		log_Msg "fsl_primary_version -gt 5"
 		version_status="NEW"
+		log_Msg "version_status: ${version_status}"
 	else
 		# e.g. 5.x.x
 		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
 			# e.g. 5.1.x
+			log_Msg "fsl_secondary_version -gt 0"
 			version_status="NEW"
+			log_Msg "version_status: ${version_status}"
 		else
 			# e.g. 5.0.x
 			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]] ; then
 				# e.g. 5.0.5 or 5.0.6
+				log_Msg "fsl_tertiary_version -le 6"
 				version_status="OLD"
+				log_Msg "version_status: ${version_status}"
 			elif [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
 				# e.g. 5.0.7 or 5.0.8
+				log_Msg "fsl_tertiary_version -le 8"
 				version_status="UNTESTED"
+				log_Msg "version_status: ${version_status}"
 			else
 				# e.g. 5.0.9, 5.0.10 ..
+				log_Msg "fsl_tertiary_version 8 or greater"
 				version_status="NEW"
+				log_Msg "version_status: ${version_status}"
 			fi
 
 		fi
@@ -323,7 +342,7 @@ main()
 	if [ -f ../Movement_Regressors.txt ] ; then
 		cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 	else
-		echo "ERROR: Movement_Regressors.txt not retrieved properly." 
+		log_Msg "ERROR: Movement_Regressors.txt not retrieved properly." 
 		exit -1
 	fi 
 
@@ -332,7 +351,20 @@ main()
 	matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
 
 	# TBD: Use environment variable instead of fixed path!
-	local matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+	local matlab_compiler_runtime
+	if [ "${CLUSTER}" = "1.0" ]; then
+		matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+	elif [ "${CLUSTER}" = "2.0" ]; then
+		matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+	else
+		log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
+		log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
+		log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
+		log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
+		log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
+		log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
+		log_Msg "ERROR: using an environment variable's value."
+	fi
 
 	local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 	
