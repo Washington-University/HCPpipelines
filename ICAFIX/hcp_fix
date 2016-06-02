@@ -24,6 +24,25 @@
 
 #############################################################
 
+DEBUG="TRUE"
+
+Debug() {
+	msg="${1}"
+	if [ "${DEBUG}" = "TRUE" ]; then
+		echo "hcp_fix: DEBUG: ${msg}"
+	fi
+}
+
+Inform() {
+	msg="${1}"
+	echo "hcp_fix: INFORM: ${msg}"
+}
+
+Error() {
+	msg="${1}"
+	echo "hcp_fix: ERROR: ${msg}"
+}
+
 Usage() {
     cat <<EOF
 
@@ -56,39 +75,45 @@ fi
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 
-echo "processing FMRI file $fmri with highpass $hp"
+Inform "processing FMRI file $fmri with highpass $hp"
 
 if [ $hp -gt 0 ] ; then
-  echo "running highpass"
+  Inform "running highpass"
   hptr=`echo "10 k $hp 2 / $tr / p" | dc -`
   ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
   fmri=${fmri}_hp$hp
 fi
 
-echo "running MELODIC"
+Inform "running MELODIC"
 mkdir -p ${fmri}.ica
-echo "hcp_fix: DEBUG: About to run melodic: Contents of ${fmri}.ica follow"
-ls -lRa ${fmri}.ica
+Debug "About to run melodic: Contents of ${fmri}.ica follow"
+if [ "${DEBUG}" = "TRUE" ] ; then
+	ls -lRa ${fmri}.ica
+fi
 
-echo "hcp_fix: DEBUG: Modified version of melodic in use"
-echo "hcp_fix: DEBUG: melodic located at: ${HOME}/pipeline_tools/fix1.06a/melodic used"
-echo "hcp_fix: DEBUG: instead of melodic located at: ${FSLDIR}/bin/melodic"
-echo "hcp_fix: DEBUG: Beginning of melodic version log"
-${HOME}/pipeline_tools/fix1.06a/melodic --version
-echo "hcp_fix: DEBUG: End of melodic version log"
+Debug "Modified version of melodic in use"
+Debug "melodic located at: ${HOME}/pipeline_tools/fix1.06a/melodic used"
+Debug "instead of melodic located at: ${FSLDIR}/bin/melodic"
+Debug "Beginning of melodic version log"
+if [ "${DEBUG}" = "TRUE" ] ; then
+	${HOME}/pipeline_tools/fix1.06a/melodic --version
+fi
+Debug "End of melodic version log"
 
 # "old" melodic command
 #$FSLDIR/bin/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
 #
 ${HOME}/pipeline_tools/fix1.06a/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
 retCode=$?
-echo "hcp_fix: DEBUG: melodic has been run: retCode = ${retCode}"
-echo "hcp_fix: DEBUG: melodic has been run: Contents of ${fmri}.ica follow"
-ls -lRa ${fmri}.ica
+Debug "melodic has been run: retCode = ${retCode}"
+Debug "melodic has been run: Contents of ${fmri}.ica follow"
+if [ "${DEBUG}" = "TRUE" ] ; then
+	ls -lRa ${fmri}.ica
+fi
 
 if [ "${retCode}" -ne "0" ] ; then
-	echo "hcp_fix: DEBUG: melodic has returned a non-zero code"
-	echo "hcp_fix: DEBUG: Exiting this script with -1 return value."
+    Error "melodic has returned a non-zero code"
+	Error "Exiting this script with -1 return value."
 	exit -1
 fi
 
@@ -111,11 +136,11 @@ mkdir -p mc
 if [ -f ../Movement_Regressors.txt ] ; then
   cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 else
-  echo "ERROR: Movement_Regressors.txt not retrieved properly." 
+  Error "Movement_Regressors.txt not retrieved properly." 
   exit -1
 fi 
 
-echo "hcp_fix: DEBUG: functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
+Inform "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
 #${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
 
@@ -124,7 +149,7 @@ mkdir -p reg
 cd reg
 
 i_am_at=`pwd`
-echo "hcp_fix: DEBUG: current folder ${i_am_at}"
+Debug "current folder ${i_am_at}"
 
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
@@ -140,7 +165,7 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 fi
 cd ../..
 
-echo "running FIX"
+Inform "running FIX"
 
 # Changes to handle user specified training data file
 if [ "X${TrainingData}" != X ]; then
@@ -159,7 +184,7 @@ if [ "X${TrainingData}" != X ]; then
 
 	# finally, if the TrainingData file is not found, report an error and get out of here
 	if [ ! -f "${TrainingData}" ]; then
-		echo "hcp_fix: ERROR: FIX training data not found: ${TrainingData}"
+		Error "FIX training data not found: ${TrainingData}"
 		exit -1
 	fi
 
@@ -169,7 +194,7 @@ if [ "X${TrainingData}" != X ]; then
 else
 	# user has not specified a training data file
 	if [ $hp != 2000 ] ; then
-		echo "hcp_fix: DEBUG: since specified hp value (${hp}) is not 2000, we assume a value of 200"
+		Debug "since specified hp value (${hp}) is not 2000, we assume a value of 200"
 		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp200.RData 10 -m -h 200
 	else
 		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h 2000
