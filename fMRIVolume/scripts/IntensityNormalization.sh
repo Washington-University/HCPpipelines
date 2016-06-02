@@ -31,9 +31,9 @@ Usage() {
   echo "             --jacobian=<jacobian image, already registered to fmri data>"
   echo "             --brainmask=<brain mask in fmri space>"
   echo "             --ofmri=<output basename for fmri data>"
+  echo "             --usejacobian=<apply jacobian modulation: true/false>"
   echo "             [--inscout=<input name for scout image (pre-sat EPI)>]"
   echo "             [--oscout=<output name for normalized scout image>]"
-  echo "             [--usejacobian=<apply jacobian modulation: true/false ; default=false>]"
   echo "             [--workingdir=<working dir>]"
 }
 
@@ -74,15 +74,21 @@ BrainMask=`getopt1 "--brainmask" $@`  # "$4"
 OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
 ScoutInput=`getopt1 "--inscout" $@`  # "$6"
 ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
-JacobianModulation=`getopt1 "--usejacobian" $@`  # 
+UseJacobian=`getopt1 "--usejacobian" $@`  # 
 
 # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 WD=`defaultopt $WD ${OutputfMRI}.wdir`
-JacobianModulation=`defaultopt $JacobianModulation false`
+
+#sanity check the jacobian option
+if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
+then
+    echo "Error: The --usejacobian option must be 'true' or 'false'"
+    exit 1
+fi
 
 jacobiancom=""
-if [ $JacobianModulation = true ] ; then
+if [[ $UseJacobian == "true" ]] ; then
   jacobiancom="-mul $Jacobian"
 fi
 

@@ -345,9 +345,17 @@ BiasCorr=`defaultopt $BiasCorr "sqrtT1wbyT2w"`
 FixNegValMethod=`defaultopt $FixNegValMethod "thr"`
 MaskArtery=`defaultopt $MaskArtery "TRUE"`
 
+#NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
+#not currently in usage, either, because of this very limited use
+UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+
 # Use --printcom=echo for just printing everything and not actually
 # running the commands (the default is to actually run the commands)
 RUN=`opts_GetOpt1 "--printcom" $@`
+
+# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
+UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 
 # ------------------------------------------------------------------------------
 #  Show Command Line Options
@@ -383,6 +391,7 @@ log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
 log_Msg "AvgrdcSTRING: ${AvgrdcSTRING}"
 log_Msg "TopupConfig: ${TopupConfig}"
 log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
+log_Msg "UseJacobian: ${UseJacobian}"
 log_Msg "InitBiasCorr: ${InitBiasCorr}"
 log_Msg "BiasCorr: ${BiasCorr}"
 log_Msg "FixNegValMethod: ${FixNegValMethod}"
@@ -677,6 +686,7 @@ case $AvgrdcSTRING in
             --method=${AvgrdcSTRING} \
             --topupconfig=${TopupConfig} \
             --gdcoeffs=${GradientDistortionCoeffs} \
+            --usejacobian=${UseJacobian} \
             --fixnegvalmethod=${FixNegValMethod} \
             ${ExtraArguments}
 
@@ -717,6 +727,7 @@ case $AvgrdcSTRING in
                 --method=${AvgrdcSTRING} \
                 --topupconfig=${TopupConfig} \
                 --gdcoeffs=${GradientDistortionCoeffs} \
+                --usejacobian=${UseJacobian} \
                 --fixnegvalmethod=${FixNegValMethod} \
                 ${ExtraArguments}
 

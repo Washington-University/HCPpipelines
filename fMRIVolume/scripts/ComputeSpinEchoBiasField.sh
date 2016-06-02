@@ -22,7 +22,10 @@ SubCorticalLUT=`getopt1 "--subcorticallut" "$@"`
 SmoothingFWHM=`getopt1 "--smoothingfwhm" "$@"`
 InputDir=`getopt1 "--inputdir" "$@"`
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command

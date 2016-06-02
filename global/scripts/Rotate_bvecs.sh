@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#fix grep argument after pattern
+unset POSIXLY_CORRECT
+
 if [ "$3" == "" ] ; then 
  echo "Usage: <original bvecs> <affine matrix> <rotated (output) bvecs>"
  echo ""

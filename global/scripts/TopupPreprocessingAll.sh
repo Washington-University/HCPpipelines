@@ -91,7 +91,10 @@ GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
 UseJacobian=`getopt1 "--usejacobian" $@`
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]

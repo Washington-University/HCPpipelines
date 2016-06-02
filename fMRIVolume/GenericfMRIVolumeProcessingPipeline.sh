@@ -48,33 +48,90 @@ log_Msg "Parsing Command Line Options"
 
 # parse arguments
 Path=`opts_GetOpt1 "--path" $@`
+log_Msg "Path: ${Path}"
+
 Subject=`opts_GetOpt1 "--subject" $@`
+log_Msg "Subject: ${Subject}"
+
 NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
+log_Msg "NameOffMRI: ${NameOffMRI}"
+
 fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
+log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
+
 fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
+log_Msg "fMRIScout: ${fMRIScout}"
+
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
+log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
+
 SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
+log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
+
 MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # Expects 4D volume with two 3D timepoints
+log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
+
 PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  
+log_Msg "PhaseInputName: ${PhaseInputName}"
+
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
+log_Msg "GEB0InputName: ${GEB0InputName}"
+
 DwellTime=`opts_GetOpt1 "--echospacing" $@`  
+log_Msg "DwellTime: ${DwellTime}"
+
 deltaTE=`opts_GetOpt1 "--echodiff" $@`  
+log_Msg "deltaTE: ${deltaTE}"
+
 UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
+log_Msg "UnwarpDir: ${UnwarpDir}"
+
 FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
+log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
 
 # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
 # Note: FIELDMAP and SiemensFieldMap are equivalent
 DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
+log_Msg "DistortionCorrection: ${DistortionCorrection}"
+
 BiasCorrection=`opts_GetOpt1 "--biascorrection" $@`
+# Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
+BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
+log_Msg "BiasCorrection: ${BiasCorrection}"
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
+
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
+log_Msg "TopupConfig: ${TopupConfig}"
 
 dof=`opts_GetOpt1 "--dof" $@`
 dof=`opts_DefaultOpt $dof 6`
+log_Msg "dof: ${dof}"
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+log_Msg "RUN: ${RUN}"
+
+#NOTE: the jacobian option only applies the jacobian of the distortion corrections to the fMRI data, and NOT from the nonlinear T1 to template registration
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
+UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+log_Msg "UseJacobian: ${UseJacobian}"
+
+MotionCorrectionType=`opts_GetOpt1 "--mctype" $@`  # use = "FLIRT" to run FLIRT-based mcflirt_acc.sh, or "MCFLIRT" to run MCFLIRT-based mcflirt.sh
+MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflirt by default
+
+#error check
+case "$MotionCorrectionType" in
+    MCFLIRT|FLIRT)
+        #nothing
+    ;;
+    
+    *)
+        log_Msg "ERROR: --mctype must be 'MCFLIRT' (default) or 'FLIRT'"
+        exit 1
+    ;;
+esac
 
 JacobianDefault="true"
 if [[ $DistortionCorrection != "TOPUP" ]]
@@ -87,10 +144,15 @@ then
         log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
     fi
 fi
+log_Msg "JacobianDefault: ${JacobianDefault}"
 
 UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
+log_Msg "After taking default value if necessary, UseJacobian: ${UseJacobian}"
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -171,6 +233,8 @@ T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
+mkdir -p ${T1wFolder}/Results/${NameOffMRI}
+
 if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
@@ -222,16 +286,17 @@ else
     ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
 fi
 
-log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection_FLIRTbased"
-mkdir -p "$fMRIFolder"/MotionCorrection_FLIRTbased
-${RUN} "$PipelineScripts"/MotionCorrection_FLIRTbased.sh \
-    "$fMRIFolder"/MotionCorrection_FLIRTbased \
+log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
+mkdir -p "$fMRIFolder"/MotionCorrection
+${RUN} "$PipelineScripts"/MotionCorrection.sh \
+    "$fMRIFolder"/MotionCorrection \
     "$fMRIFolder"/"$NameOffMRI"_gdc \
     "$fMRIFolder"/"$ScoutName"_gdc \
     "$fMRIFolder"/"$NameOffMRI"_mc \
     "$fMRIFolder"/"$MovementRegressor" \
     "$fMRIFolder"/"$MotionMatrixFolder" \
-    "$MotionMatrixPrefix" 
+    "$MotionMatrixPrefix" \
+    "$MotionCorrectionType"
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
@@ -313,10 +378,10 @@ then
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${ResultsFolder}/brainmask_fs.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
         
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${ResultsFolder}/brainmask_fs.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
         
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
     fi

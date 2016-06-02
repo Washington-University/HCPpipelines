@@ -103,7 +103,7 @@ for Subject in ${SubjList//@/ } ; do
 
   # Input Images
   # Detect Number of T1w Images
-  numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/${Scanner} | grep T1w_MPR | wc -l`
+  numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/${Scanner} | grep T1w_MPR.$ | wc -l`
   echo "Found ${numT1ws} T1w Images for subject ${Subject}"
   T1wInputImages=""
   i=1
@@ -113,7 +113,7 @@ for Subject in ${SubjList//@/ } ; do
   done
 
   # Detect Number of T2w Images
-  numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/${Scanner} | grep T2w_SPC | wc -l`
+  numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/${Scanner} | grep T2w_SPC.$ | wc -l`
   echo "Found ${numT2ws} T2w Images for subject ${Subject}"
   T2wInputImages=""
   i=1

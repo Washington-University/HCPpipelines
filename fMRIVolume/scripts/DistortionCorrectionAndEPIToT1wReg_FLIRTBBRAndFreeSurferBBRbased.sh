@@ -73,7 +73,7 @@ Usage() {
   echo "                 use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}"
   echo ""
   echo "               \"LEGACY\""
-  echo "                 use the bias field derived from T1w and T2w images, same as old versions of pipeline"
+  echo "                 use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older"
   echo ""
   echo "               \"NONE\""
   echo "                 don't do bias correction"
@@ -162,7 +162,10 @@ SubjectFolder=`getopt1 "--subjectfolder" $@`
 BiasCorrection=`getopt1 "--biascorrection" $@`
 UseJacobian=`getopt1 "--usejacobian" $@`
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 #error check bias correction opt
 case "$BiasCorrection" in
@@ -640,7 +643,7 @@ log_Msg "cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz"
 cp ${WD}/Jacobian2T1w.nii.gz ${JacobianOut}.nii.gz
 
 # QA image (sqrt of EPI * T1w)
-log_Msg "generating QA image (sqrt of EPI * T1w)"
+log_Msg 'generating QA image (sqrt of EPI * T1w)'
 ${FSLDIR}/bin/fslmaths ${T1wRestoreImage}.nii.gz -mul ${RegOutput}.nii.gz -sqrt ${QAImage}.nii.gz
 
 log_Msg "END"

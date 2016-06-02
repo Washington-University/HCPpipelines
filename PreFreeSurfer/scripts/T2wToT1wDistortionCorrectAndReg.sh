@@ -142,6 +142,7 @@ OutputT2wTransform=`getopt1 "--ot2warp" $@`
 DistortionCorrection=`getopt1 "--method" $@`
 TopupConfig=`getopt1 "--topupconfig" $@`
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
+UseJacobian=`getopt1 "--usejacobian" $@`
 T1wImageReg=`getopt1 "--t1reg" $@`
 T1wImageBrainReg=`getopt1 "--t1brainreg" $@`
 T2wImageReg=`getopt1 "--t2reg" $@`
@@ -265,7 +266,8 @@ case $DistortionCorrection in
             --ofmap=${WD}/FieldMap \
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
-            --topupconfig=${TopupConfig}
+            --topupconfig=${TopupConfig} \
+            --usejacobian=${UseJacobian}
 
         ;;
 

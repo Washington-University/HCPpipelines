@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-set -e
-
 get_batch_options() {
     local arguments=($@)
 
@@ -68,7 +66,10 @@ echo "$@"
     QUEUE="-q hcp_priority.q"
 #fi
 
-set -x
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
 PRINTCOM=""
 #PRINTCOM="echo"
@@ -229,6 +230,9 @@ for Subject in $Subjlist ; do
     GradientDistortionCoeffs="NONE" # Set to NONE to skip gradient distortion correction
     TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
 
+    # Use mcflirt motion correction
+    MCType="MCFLIRT"
+		
     if [ -n "${command_line_specified_run_local}" ] ; then
         echo "About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
         queuing_command=""
@@ -256,7 +260,8 @@ for Subject in $Subjlist ; do
       --gdcoeffs=$GradientDistortionCoeffs \
       --topupconfig=$TopUpConfig \
       --printcom=$PRINTCOM \
-      --biascorrection=$BiasCorrection
+      --biascorrection=$BiasCorrection \
+      --mctype=${MCType}
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -278,7 +283,8 @@ for Subject in $Subjlist ; do
       --gdcoeffs=$GradientDistortionCoeffs \
       --topupconfig=$TopUpConfig \
       --printcom=$PRINTCOM \
-      --biascorrection=$BiasCorrection"
+      --biascorrection=$BiasCorrection \
+      --mctype=${MCType}"
 
   echo ". ${EnvironmentScript}"
 	

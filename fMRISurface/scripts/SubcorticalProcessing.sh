@@ -30,50 +30,53 @@ echo "${script_name}: VolumefMRI: ${VolumefMRI}"
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 echo "${script_name}: Sigma: ${Sigma}"
 
+#NOTE: wmparc has dashes in structure names, which -cifti-create-* won't accept
+#ROIs files have acceptable structure names
+
+#deal with fsl_sub being silly when we want to use numeric equality on decimals
 unset POSIXLY_CORRECT
 
-if [ 1 -eq `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l` ] ; then
-	echo "${script_name}: Doing volume parcel resampling without first applying warp"
-	${CARET7DIR}/wb_command -volume-parcel-resampling "$VolumefMRI".nii.gz "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
+#generate subject-roi space fMRI cifti for subcortical
+if [[ `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l | cut -f1 -d.` == "1" ]]
+then
+    echo "${script_name}: Creating subject-roi subcortical cifti at same resolution as output"
+    ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii -volume "$VolumefMRI".nii.gz "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz
 else
-	echo "${script_name}: Creating subcortical ROI volume in original fMRI resolution"
-	cp "$GrayordinatesSpaceDIR"/Atlas_ROIs."$FinalfMRIResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$FinalfMRIResolution".nii.gz
-
-	applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$ROIFolder"/Atlas_ROIs."$FinalfMRIResolution".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
-	${CARET7DIR}/wb_command -volume-label-import "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz ${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz -discard-others
-	rm "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
-
-	dilcount=4
-	
-	echo "${script_name}: spline resampling before volume parcel resampling"
-	echo "${script_name}: Using ${dilcount}x dilated masked input for resampling"
-	
-	dilarg=
-	for i in `seq 1 $dilcount`; do
-		dilarg+=" -dilM "
-	done
-
-	VolumeTemp="$VolumefMRI"_tmp"$BrainOrdinatesResolution"
-	fslmaths "$VolumefMRI".nii.gz $dilarg "$VolumeTemp".nii.gz
-	inputfmri="$VolumeTemp".nii.gz
-	
-	FinalfMRIResolution=`echo "scale=2; $BrainOrdinatesResolution/1.0" | bc -l`;
-
-	#make new res brainmask
-	BrainMask="$ResultsFolder"/brainmask_fs."$FinalfMRIResolution".nii.gz
-	${FSLDIR}/bin/applywarp --rel --interp=nn -i ${AtlasSpaceFolder}/brainmask_fs.nii.gz -r "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$BrainMask"
-
-	#final volume spline resampling
-	applywarp -i $inputfmri -r "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -o "$VolumeTemp".nii.gz -m "$BrainMask" --interp=spline 
-
-
-	echo "${script_name}: Doing applywarp and volume label import"
-	applywarp --interp=nn -i "$AtlasSpaceFolder"/wmparc.nii.gz -r "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz -o "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
-	${CARET7DIR}/wb_command -volume-label-import "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz ${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz -discard-others
-	echo "${script_name}: Doing volume parcel resampling after applying warp and doing a volume label import"
-	${CARET7DIR}/wb_command -volume-parcel-resampling-generic "$VolumeTemp".nii.gz "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz $Sigma "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz -fix-zeros
-	rm "$ResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz
-	rm -f "$VolumeTemp".nii.gz
+    echo "${script_name}: Creating subject-roi subcortical cifti at differing fMRI resolution"
+    ${CARET7DIR}/wb_command -volume-affine-resample "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz $FSLDIR/etc/flirtsch/ident.mat "$VolumefMRI".nii.gz ENCLOSING_VOXEL "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz
+    ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii -volume "$VolumefMRI".nii.gz "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz
+    rm -f "$ResultsFolder"/ROIs."$FinalfMRIResolution".nii.gz
 fi
+
+echo "${script_name}: Dilating out zeros"
+#dilate out any exact zeros in the input data, for instance if the brain mask is wrong
+${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii
+
+echo "${script_name}: Generate atlas subcortical template cifti"
+${CARET7DIR}/wb_command -cifti-create-label ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii -volume "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz
+
+if [[ `echo "${Sigma} > 0" | bc -l | cut -f1 -d.` == "1" ]]
+then
+    echo "${script_name}: Smoothing and resampling"
+    #this is the whole timeseries, so don't overwrite, in order to allow on-disk writing, then delete temporary
+    ${CARET7DIR}/wb_command -cifti-smoothing ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii 0 ${Sigma} COLUMN ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii -fix-zeros-volume
+    #resample, delete temporary
+    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 10
+    rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii
+else
+    echo "${script_name}: Resampling"
+    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 10
+fi
+
+#delete common temporaries
+rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+rm -f ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii
+
+#write output volume, delete temporary
+#NOTE: $VolumefMRI contains a path in it, it is not a file in the current directory
+${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN -volume-all "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
+rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii
+
 echo "${script_name}: END"
 
