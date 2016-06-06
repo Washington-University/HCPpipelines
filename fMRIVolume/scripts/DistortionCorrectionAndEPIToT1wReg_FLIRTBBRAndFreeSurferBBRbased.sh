@@ -354,10 +354,23 @@ case $DistortionCorrection in
             --topupconfig=${TopupConfig} \
             --usejacobian=${UseJacobian}
 
+	#If NHP, brain extract scout for registration
+	if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
+	cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
+        ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Scout.nii.gz -ref ${T1wImage} -omat "$WD"/Scout2T1w.mat -out ${WD}/Scout2T1w.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+        ${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Scout.mat -inverse "$WD"/Scout2T1w.mat
+        ${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${ScoutInputName} --premat="$WD"/T1w2Scout.mat -o ${WD}/Scout_brain_mask.nii.gz    
+        fslmaths ${WD}/Scout_brain_mask.nii.gz -bin ${WD}/Scout_brain_mask.nii.gz
+        fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
+
         # create a spline interpolated image of scout (distortion corrected in same space)
         log_Msg "create a spline interpolated image of scout (distortion corrected in same space)"
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Scout_brain.nii.gz -r ${WD}/Scout_brain.nii.gz -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
+	else
+	# create a spline interpolated image of scout (distortion corrected in same space)
+        log_Msg "create a spline interpolated image of scout (distortion corrected in same space)"
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}_undistorted
-
+	fi
         # apply Jacobian correction to scout image (optional)
         # gdc jacobian is already applied in main script, where the gdc call for the scout is
         if [[ $UseJacobian == "true" ]]
