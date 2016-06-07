@@ -36,3 +36,9 @@ export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 export MSMBin=${HCPPIPEDIR}/MSMBinaries
 
+#try to reduce strangeness from locale and other environment settings
+export LC_ALL=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+#POSIXLY_CORRECT currently gets set by many versions of fsl_sub, unfortunately, but at least don't pass it in if the user has it set in their usual environment
+unset POSIXLY_CORRECT
+
