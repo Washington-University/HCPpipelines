@@ -294,7 +294,7 @@ main()
 	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
 
 	DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, DeDriftRegFiiles: ${DeDriftRegFiles}"
+	log_Msg "After delimeter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
 	log_Msg "After delimeter substitution, Maps: ${Maps}"
