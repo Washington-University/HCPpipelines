@@ -34,6 +34,7 @@ get_options()
 	unset g_tfmri_names              # tfMRINames - @ delimited
 	unset g_smoothing_fwhm           # SmoothingFWHM
 	unset g_highpass                 # HighPass
+	unset g_myelin_target_file       # MyelinTargetFile
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -102,6 +103,10 @@ get_options()
 				;;
 			--highpass=*)
 				g_highpass=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--myelin-target-file=*)
+				g_myelin_target_file=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -206,6 +211,10 @@ get_options()
 		log_Msg "g_highpass: ${g_highpass}"
 	fi
 
+	if [ -n "${g_myelin_target_file}" ]; then
+		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
@@ -289,6 +298,9 @@ main()
 	#HighPass="${16}"
 	local HighPass="${g_highpass}"
 	log_Msg "HighPass: ${HighPass}"
+
+	local MyelinTargetFile="${g_myelin_target_file}"
+	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
 
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
@@ -552,6 +564,15 @@ main()
 					${Caret7_Command} -cifti-resample ${cifti_in} COLUMN ${cifti_template} COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${cifti_out} -surface-postdilate 40 -left-spheres ${left_spheres_current_sphere} ${left_spheres_new_sphere} -left-area-surfs ${left_area_surfs_current_area} ${left_area_surfs_new_area} -right-spheres ${right_spheres_current_sphere} ${right_spheres_new_sphere} -right-area-surfs ${right_area_surfs_current_area} ${right_area_surfs_new_area}
 
 					log_Debug_Msg "Point 1.2"
+
+					if [ ! -e ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii ] ; then
+						if [ -n ${MyelinTargetFile} ] ; then
+							cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+						else
+							echo "A ${MyelinTargetFile} is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
+							exit 1
+						fi
+					fi
 
 					${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 					${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii
