@@ -35,6 +35,7 @@ get_options()
 	unset g_smoothing_fwhm           # SmoothingFWHM
 	unset g_highpass                 # HighPass
 	unset g_myelin_target_file       # MyelinTargetFile
+	unset g_input_reg_name           # InRegName - e.g. "_1.6mm"
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -107,6 +108,10 @@ get_options()
 				;;
 			--myelin-target-file=*)
 				g_myelin_target_file=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--input-reg-name=*)
+				g_input_reg_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -215,6 +220,10 @@ get_options()
 		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
 	fi
 
+	if [ -n "${g_input_reg_name}" ]; then
+		log_Msg "g_input_reg_name: ${g_input_reg_name}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
@@ -301,6 +310,9 @@ main()
 
 	local MyelinTargetFile="${g_myelin_target_file}"
 	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
+
+	local InRegName="${g_input_reg_name}"
+	log_Msg "InRegName: ${InRegName}"
 
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
@@ -640,7 +652,7 @@ main()
 	log_Msg "Resample (and resmooth) TS from Native"
 	for fMRIName in ${rfMRINames} ${tfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
+		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
 		for Hemisphere in L R ; do
 			if [ $Hemisphere = "L" ] ; then 
 				Structure="CORTEX_LEFT"
