@@ -181,7 +181,7 @@ else
     num_cores="${NSLOTS}"
 fi
 
-Initial Recon-all Steps
+# Initial Recon-all Steps
 log_Msg "Initial Recon-all Steps"
 
 # Call recon-all with flags that are part of "-autorecon1", with the exception of -skullstrip.
