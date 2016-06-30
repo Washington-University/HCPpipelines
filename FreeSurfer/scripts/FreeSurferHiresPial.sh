@@ -67,12 +67,12 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$Subjec
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass1
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass1
 
+outputSuffix1=".postT2.pass1"
 if [[ -n $T2wImage ]] ; then
   # Generate pial surfaces with T2 adjustment, still first pass.
   # Same 4 files created as above, but have $outputSuffix1 ("postT2.pass1") appended through use of -output flag.
   # Use -T2 flag (rather than -T2dura), since -T2 is the flag used within recon-all script of FS 5.3 (but -T2 and -T2dura generate same results)
   #For mris_make_surface with correct arguments #Could go from 3 to 2 potentially...
-  outputSuffix1=".postT2.pass1"
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID lh
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
 
@@ -201,7 +201,7 @@ fi
 # but which no longer correspond to the final pial surfaces (after the 2nd pass)
 rm "$surfdir"/lh.pial.surf.gii "$surfdir"/lh.pial.nii.gz
 rm "$surfdir"/rh.pial.surf.gii "$surfdir"/rh.pial.nii.gz
-# Move all the "ribbon" related files generated following the 1st pass into a dedicated 
+# Move all the "ribbon" related files generated following the 1st pass into a dedicated
 # subdirectory since those also do not correspond to the final ribbon
 cd "$mridir"
 ribbon1Dir=ribbon${outputSuffix1}
