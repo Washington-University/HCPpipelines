@@ -47,12 +47,12 @@ PRINTCOM=""
 
 # set the cluster queuing or local execution command
 if [[ $runlocal == TRUE ]] ; then
-    echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    echo "About to run ${HCPPIPEDIR}/Examples/Scripts/CleanupStructuralPipelineBatch.sh"
     queuing_command=""
 else
-    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/Examples/Scripts/CleanupStructuralPipelineBatch.sh"
     mkdir -p $LogDir # ensure the directory to store fsl_sub logfiles exists
-    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE} -l $LogDir"
+    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE} -l $LogDir -N CleanupStructuralPipeline"
 fi
 
 
@@ -89,19 +89,15 @@ for Subject in $SubjList ; do
   SubjTmpFS=$(mktemp -d "${SubjT1w}/tmp.FS.XXXXXXXXXX")
   SubjTmpxfms=$(mktemp -d "${SubjAtlas}/tmp.xfms.XXXXXXXXXX")
 
-  if [ -n "${command_line_specified_run_local}" ] ; then
-      echo "About to run clean-up after ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-      queuing_command="exec"
-  else
-      echo "About to use fsl_sub to queue or clean-up after ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-  fi
-
   # create a tempfile to submit multiple commands
-  TmpFile=$(mktemp "$(pwd)/tmp.$(basename $0).cleanup.XXXXXXXXXX")
+  TmpFile=$(mktemp "${LogDir}/tmp.$(basename $0).cleanup.XXXXXXXXXX")
   chmod +x $TmpFile
 
   # write the commands to the tempfile
+  echo -n "echo Cleanup started; " >> $TmpFile
+  echo -n "rm -rf talairach_with_skull.log; " >> $TmpFile
+  echo -n "rm -rf rh.white.deformed.out; " >> $TmpFile
+  echo -n "rm -rf lh.white.deformed.out; " >> $TmpFile
   echo -n "rm -rf ${SubjT2w}; " >> $TmpFile
   echo -n "rm -rf ${SubjT1w}/${ACPCFolder}; " >> $TmpFile
   echo -n "rm -rf ${SubjT1w}/${BiasFolder}; " >> $TmpFile
@@ -120,6 +116,7 @@ for Subject in $SubjList ; do
   echo -n "rm -rf ${SubjAtlas}/${xfmsFolder}; " >> $TmpFile
   echo -n "mv -f ${SubjTmpxfms} ${SubjAtlas}/${xfmsFolder}; " >> $TmpFile
   echo -n "rm -f $TmpFile; " >> $TmpFile
+  echo -n "echo Cleanup finished; " >> $TmpFile
 
   # submit or execute the tempfile
   ${queuing_command} $TmpFile
