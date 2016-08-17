@@ -91,7 +91,7 @@ PRINTCOM=""
 # Readout Distortion Correction:
 # 
 #   You have the option of using either gradient echo field maps or spin echo field maps to 
-#   perform readout distorction correction on your structural images, or not to do readout
+#   perform readout distortion correction on your structural images, or not to do readout
 #   distortion correction at all.
 #
 #   The HCP Pipeline Scripts currently support the use of gradient echo field maps or spin echo 
