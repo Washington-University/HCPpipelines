@@ -34,6 +34,8 @@ get_options()
 	unset g_tfmri_names              # tfMRINames - @ delimited
 	unset g_smoothing_fwhm           # SmoothingFWHM
 	unset g_highpass                 # HighPass
+	unset g_myelin_target_file       # MyelinTargetFile
+	unset g_input_reg_name           # InRegName - e.g. "_1.6mm"
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -102,6 +104,14 @@ get_options()
 				;;
 			--highpass=*)
 				g_highpass=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--myelin-target-file=*)
+				g_myelin_target_file=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--input-reg-name=*)
+				g_input_reg_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -206,6 +216,14 @@ get_options()
 		log_Msg "g_highpass: ${g_highpass}"
 	fi
 
+	if [ -n "${g_myelin_target_file}" ]; then
+		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
+	fi
+
+	if [ -n "${g_input_reg_name}" ]; then
+		log_Msg "g_input_reg_name: ${g_input_reg_name}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
@@ -290,11 +308,17 @@ main()
 	local HighPass="${g_highpass}"
 	log_Msg "HighPass: ${HighPass}"
 
+	local MyelinTargetFile="${g_myelin_target_file}"
+	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
+
+	local InRegName="${g_input_reg_name}"
+	log_Msg "InRegName: ${InRegName}"
+
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
 
 	DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, DeDriftRegFiiles: ${DeDriftRegFiles}"
+	log_Msg "After delimeter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
 	log_Msg "After delimeter substitution, Maps: ${Maps}"
@@ -553,6 +577,15 @@ main()
 
 					log_Debug_Msg "Point 1.2"
 
+					if [ ! -e ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii ] ; then
+						if [ -n ${MyelinTargetFile} ] ; then
+							cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+						else
+							echo "A ${MyelinTargetFile} is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
+							exit 1
+						fi
+					fi
+
 					${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 					${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii
 					${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${ConcatRegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${ConcatRegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${ConcatRegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii 
@@ -619,7 +652,7 @@ main()
 	log_Msg "Resample (and resmooth) TS from Native"
 	for fMRIName in ${rfMRINames} ${tfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
+		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
 		for Hemisphere in L R ; do
 			if [ $Hemisphere = "L" ] ; then 
 				Structure="CORTEX_LEFT"
