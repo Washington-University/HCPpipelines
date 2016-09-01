@@ -22,7 +22,7 @@ DEFAULT_FIX_DIR="${HOME}/tools/fix1.06"
 #
 get_options() {
 	local scriptName=$(basename ${0})
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	StudyFolder="${DEFAULT_STUDY_FOLDER}"
@@ -117,7 +117,7 @@ get_options() {
 #
 main() {
 	# get command line options
-	get_options $@
+	get_options "$@"
 
 	# set up pipeline environment variables and software
 	. ${EnvironmentScript}

@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 get_batch_options() {
-    local arguments=($@)
+    local arguments=("$@")
 
     unset command_line_specified_study_folder
     unset command_line_specified_subj_list
@@ -37,7 +37,7 @@ get_batch_options() {
     done
 }
 
-get_batch_options $@
+get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs

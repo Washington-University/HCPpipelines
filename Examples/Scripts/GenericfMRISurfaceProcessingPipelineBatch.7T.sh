@@ -19,7 +19,7 @@ DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCP
 #
 get_batch_options() 
 {
-	local arguments=($@)
+	local arguments=("$@")
 	
 	# Output global variables
 	unset StudyFolder
@@ -78,7 +78,7 @@ get_batch_options()
 }
 
 # Get command line batch options
-get_batch_options $@
+get_batch_options "$@"
 
 # Requirements for this script
 #
