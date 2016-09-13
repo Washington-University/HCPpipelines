@@ -174,7 +174,14 @@ do
 		
 		# Echo Spacing or Dwelltime of fMRI image
 		DwellTime="0.00032"
-		
+
+		# To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match 
+		# the phase encoding direction of the EPI scan, and you must have used the correct images in 
+		# SpinEchoPhaseEncodeNegative and Positive variables.  If the distortion is twice as bad as in 
+		# the original images, flip either the order of the spin echo images or reverse the phase encoding 
+		# list flag.  The pipeline expects you to have used the same phase encoding axis in the fMRI data 
+		# as in the spin echo field map data (x/-x or y/-y).
+
 		# Using Spin Echo Field Maps for Readout Distortion Correction
 		DistortionCorrection="TOPUP"
 		
