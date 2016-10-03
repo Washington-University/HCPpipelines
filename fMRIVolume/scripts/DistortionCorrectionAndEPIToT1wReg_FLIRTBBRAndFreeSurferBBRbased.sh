@@ -86,10 +86,10 @@ getopt1() {
     sopt="$1"
     shift 1
     for fn in $@ ; do
-    if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-        echo $fn | sed "s/^${sopt}=//"
-        return 0
-    fi
+        if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+            echo $fn | sed "s/^${sopt}=//"
+            return 0
+        fi
     done
 }
 
