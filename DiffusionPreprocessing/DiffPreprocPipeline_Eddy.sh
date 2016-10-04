@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 # 
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -131,6 +131,12 @@ usage()
 	echo "    [--resamp=<value>] : --resamp value to pass to eddy"
 	echo "                         If unspecified, no --resamp option is passed to eddy"
 	echo ""
+	echo "    [--ol_nstd=<value>] : --ol_nstd value to pass to eddy"
+	echo "                          If unspecified, no --ol_nstd option is passed to eddy"
+	echo ""
+	echo "    [-extra-eddy-args] : Generic string of arguments to be pased to the run_eddy.sh script"
+	echo "                         and subsequently to the eddy binary used."
+	echo ""
 	echo "  Return code:"
 	echo ""
 	echo "    0 if help was not requested, all parameters were properly formed, and processing succeeded"
@@ -212,6 +218,8 @@ get_options()
 	dont_peas=""
 	fwhm_value="0"
 	resamp_value=""
+	unset ol_nstd_value
+	unset extra_eddy_args
 	
 	# parse arguments
 	local index=0
@@ -283,6 +291,14 @@ get_options()
 				resamp_value=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
+			--ol_nstd=*)
+				ol_nstd_value=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--extra-eddy-args=*)
+				extra_eddy_args=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
 			*)
 				usage
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -292,22 +308,19 @@ get_options()
 	done
 	
 	# check required parameters
-	if [ -z ${StudyFolder} ]
-	then
+	if [ -z ${StudyFolder} ] ; then
 		usage
 		echo "ERROR: <study-path> not specified"
 		exit 1
 	fi
 	
-	if [ -z ${Subject} ]
-	then
+	if [ -z ${Subject} ] ; then
 		usage
 		echo "ERROR: <subject-id> not specified"
 		exit 1
 	fi
 	
-	if [ -z ${DWIName} ]
-	then
+	if [ -z ${DWIName} ] ; then
 		usage
 		echo "ERROR: <DWIName> not specified"
 		exit 1
@@ -328,6 +341,8 @@ get_options()
 	echo "   dont_peas: ${dont_peas}"
 	echo "   fwhm_value: ${fwhm_value}"
 	echo "   resamp_value: ${resamp_value}"
+	echo "   ol_nstd_value: ${ol_nstd_value}"
+	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -340,15 +355,13 @@ validate_environment_vars()
 	local scriptName=$(basename ${0})
 	
 	# validate
-	if [ -z ${HCPPIPEDIR_dMRI} ]
-	then
+	if [ -z ${HCPPIPEDIR_dMRI} ] ; then
 		usage
 		echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
 		exit 1
 	fi
 	
-	if [ ! -e ${HCPPIPEDIR_dMRI}/run_eddy.sh ]
-	then
+	if [ ! -e ${HCPPIPEDIR_dMRI}/run_eddy.sh ] ; then
 		usage
 		echo "ERROR: HCPPIPEDIR_dMRI/run_eddy.sh not found"
 		exit 1
@@ -384,53 +397,54 @@ main()
 	outdir=${StudyFolder}/${Subject}/${DWIName}
 	
 	# Determine stats_option value to pass to run_eddy.sh script
-	if [ "${DetailedOutlierStats}" = "True" ]
-	then
+	if [ "${DetailedOutlierStats}" = "True" ] ; then
 		stats_option="--wss"
 	else
 		stats_option=""
 	fi
 	
 	# Determine replace_outliers_option value to pass to run_eddy.sh script
-	if [ "${ReplaceOutliers}" = "True" ]
-	then
+	if [ "${ReplaceOutliers}" = "True" ] ; then
 		replace_outliers_option="--repol"
 	else
 		replace_outliers_option=""
 	fi
 	
 	# Determine nvoxhp_option value to pass to run_eddy.sh script
-	if [ "${nvoxhp}" != "" ]
-	then
+	if [ "${nvoxhp}" != "" ] ; then
 		nvoxhp_option="--nvoxhp=${nvoxhp}"
 	else
 		nvoxhp_option=""
 	fi
 	
 	# Determine sep_offs_move_option value to pass to run_eddy.sh script
-	if [ "${sep_offs_move}" = "True" ]
-	then
+	if [ "${sep_offs_move}" = "True" ] ; then
 		sep_offs_move_option="--sep_offs_move"
 	else
 		sep_offs_move_option=""
 	fi
 	
 	# Determine rms_option value to pass to run_eddy.sh script
-	if [ "${rms}" = "True" ]
-	then
+	if [ "${rms}" = "True" ] ; then
 		rms_option="--rms"
 	else
 		rms_option=""
 	fi
 	
 	# Determine ff_option value to pass to run_eddy.sh script
-	if [ "${ff_val}" != "" ]
-	then
+	if [ "${ff_val}" != "" ] ; then
 		ff_option="--ff=${ff_val}"
 	else
 		ff_option=""
 	fi
-	
+
+	# Determine ol_nstd value to pass to run_eddy.sh script
+	if [ -z ${ol_nstd_value} ] ; then
+		ol_nstd_value_option=""
+	else
+		ol_nstd_value_option="--ol_nstd=${ol_nstd_value}"
+	fi
+
 	log_Msg "Running Eddy"
 	
 	run_eddy_cmd="${runcmd} ${HCPPIPEDIR_dMRI}/run_eddy.sh "
@@ -440,9 +454,9 @@ main()
 	run_eddy_cmd+="${sep_offs_move_option} "
 	run_eddy_cmd+="${rms_option} "
 	run_eddy_cmd+="${ff_option} "
+	run_eddy_cmd+="${ol_nstd_value_option} "
 	run_eddy_cmd+="-g "
 	run_eddy_cmd+="-w ${outdir}/eddy "
-
 
 	if [ ! -z "${dont_peas}" ] ; then
 		run_eddy_cmd+="--dont_peas "
@@ -454,6 +468,10 @@ main()
 		run_eddy_cmd+="--resamp=${resamp_value}"
 	fi
 	
+	if [ ! -z "${extra_eddy_args}" ] ; then
+		run_eddy_cmd+=" --extra-eddy-args=\"${extra_eddy_args}\" "
+	fi
+
 	log_Msg "About to issue the following command to invoke the run_eddy.sh script"
 	log_Msg "${run_eddy_cmd}"
 	${run_eddy_cmd}

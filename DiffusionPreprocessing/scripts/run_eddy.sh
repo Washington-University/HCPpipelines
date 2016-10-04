@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -110,6 +110,15 @@ usage()
 	echo "    [--resamp=<value>] : --resamp value to pass to eddy"
 	echo "                         If unspecified, no --resamp option is passed to eddy"
 	echo ""
+	echo "    [--ol_nstd=<value>] : --ol_nstd value to pass to eddy"
+	echo "                          If unspecified, no --ol_nstd option is pssed to eddy"
+	echo ""
+	echo "    [--extra-eddy-args] : Generic string of arguments to pass to the eddy binary."
+	echo "                          The value will need to be enclosed in quotes if the value"
+	echo "                          contains any whitespace. Single quotes will prevent variables"
+	echo "                          used in the value from being replaced with their variable value."
+	echo "                          Double quotes would be the more common use."
+	echo ""
 	echo "  Return code:"
 	echo ""
 	echo "    0 if help was not requested, all parameters were properly formed, and processing succeeded"
@@ -140,6 +149,8 @@ usage()
 #  ${sep_offs_move}   - Set to "True" if user has specified the --sep_offs_move command line option
 #  ${rms}             - Set to "True" if user has specified the --rms command line option
 #  ${ff_val}          - User specified ff value (what is ff?) (empty string if unspecified)
+#  ${ol_nstd_val}     - User specified value for ol_nstd option
+#  ${extra_eddy_args} - User specified value for the --extra-eddy-args command line option
 #
 get_options()
 {
@@ -158,6 +169,8 @@ get_options()
 	dont_peas=""
 	fwhm_value="0"
 	resamp_value=""
+	unset ol_nstd_val
+	unset extra_eddy_args
 
 	# parse arguments
 	local index=0
@@ -221,6 +234,14 @@ get_options()
 				resamp_value=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
+			--ol_nstd=*)
+				ol_nstd_val=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--extra-eddy-args=*)
+				extra_eddy_args=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
 			*)
 				echo "Unrecognized Option: ${argument}"
 				usage
@@ -230,8 +251,7 @@ get_options()
 	done
 	
 	# check required parameters
-	if [ -z ${workingdir} ]
-	then
+	if [ -z ${workingdir} ]; then
 		usage
 		echo "  Error: <working-dir> not specified - Exiting without running eddy"
 		exit 1
@@ -250,6 +270,8 @@ get_options()
 	echo "   dont_peas: ${dont_peas}"
 	echo "   fwhm_value: ${fwhm_value}"
 	echo "   resamp_value: ${resamp_value}"
+	echo "   ol_nstd_val: ${ol_nstd_val}"
+	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -262,8 +284,7 @@ validate_environment_vars()
 	local scriptName=$(basename ${0})
 	
 	# validate
-	if [ -z ${FSLDIR} ]
-	then
+	if [ -z ${FSLDIR} ]; then
 		usage
 		echo "ERROR: FSLDIR environment variable not set"
 		exit 1
@@ -283,8 +304,7 @@ get_fsl_version()
 
 	fsl_version_file="${FSLDIR}/etc/fslversion"
 
-	if [ -f ${fsl_version_file} ]
-	then
+	if [ -f ${fsl_version_file} ]; then
 		fsl_version=`cat ${fsl_version_file}`
 		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
 	else
@@ -371,7 +391,6 @@ main()
 	# Establish tool name for logging
 	log_SetToolName "run_eddy.sh"
 
-
 	# Determine whether FSL version is "OLD" or "NEW"
 	get_fsl_version fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
@@ -391,19 +410,18 @@ main()
 	if [ "${old_or_new_version}" == "OLD" ] ; then
 		log_Msg "INFO: Detected pre-5.0.9 version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
+		stdEddy="${FSLDIR}/bin/eddy_openmp"
 	else
 		log_Msg "INFO: Detected 5.0.9 or newer version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
+		stdEddy="${FSLDIR}/bin/eddy_openmp"
 	fi
 	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
-
-	stdEddy="${FSLDIR}/bin/eddy"
+	log_Msg "stdEddy: ${stdEddy}"
 	
-	if [ "${useGpuVersion}" = "True" ]
-	then
+	if [ "${useGpuVersion}" = "True" ]; then
 		log_Msg "User requested GPU-enabled version of eddy"
-		if [ -e ${gpuEnabledEddy} ]
-		then
+		if [ -e ${gpuEnabledEddy} ]; then
 			log_Msg "GPU-enabled version of eddy found"
 			eddyExec="${gpuEnabledEddy}"
 		else
@@ -428,37 +446,37 @@ main()
 	sep_offs_moveOption=""
 	rmsOption=""
 	ff_valOption=""
+	ol_nstd_option=""
 	
-	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]
-	then
-		if [ "${produceDetailedOutlierStats}" = "True" ]
-		then
+	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
+		if [ "${produceDetailedOutlierStats}" = "True" ]; then
 			outlierStatsOption="--wss"
 		fi
 		
-		if [ "${replaceOutliers}" = "True" ]
-		then
+		if [ "${replaceOutliers}" = "True" ]; then
 			replaceOutliersOption="--repol"
 		fi
 		
-		if [ "${nvoxhp}" != "" ]
-		then
+		if [ "${nvoxhp}" != "" ]; then
 			nvoxhpOption="--nvoxhp=${nvoxhp}"
 		fi
 		
-		if [ "${sep_offs_move}" = "True" ]
-		then
+		if [ "${sep_offs_move}" = "True" ]; then
 			sep_offs_moveOption="--sep_offs_move"
 		fi
 		
-		if [ "${rms}" = "True" ]
-		then
+		if [ "${rms}" = "True" ]; then
 			rmsOption="--rms"
 		fi
 		
-		if [ "${ff_val}" != "" ]
-		then
+		if [ "${ff_val}" != "" ]; then
 			ff_valOption="--ff=${ff_val}"
+		fi
+
+		if [ -z "${ol_nstd_val}" ]; then
+			ol_nstd_option=""
+		else
+			ol_nstd_option="--ol_nstd=${ol_nstd_val}"
 		fi
 	fi
 	
@@ -468,7 +486,8 @@ main()
 	log_Msg "sep_offs_move option: ${sep_offs_moveOption}"
 	log_Msg "rms option: ${rmsOption}"
 	log_Msg "ff option: ${ff_valOption}"
-	
+	log_Msg "ol_nstd_option: ${ol_nstd_option}"
+
 	# Main processing - Run eddy
 	
 	topupdir=`dirname ${workingdir}`/topup
@@ -493,15 +512,24 @@ main()
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
 	eddy_command+="--flm=quadratic "
 	eddy_command+="--very_verbose "
+	eddy_command+="--initrand "
 
 	if [ ! -z "${dont_peas}" ] ; then
 		eddy_command+="--dont_peas "
 	fi
 
 	if [ ! -z "${resamp_value}" ] ; then
-		eddy_command+="--resamp=${resamp_value}"
+		eddy_command+="--resamp=${resamp_value} "
+	fi
+
+	if [ ! -z "${ol_nstd_option}" ] ; then
+		eddy_command+="${ol_nstd_option} "
 	fi
 	
+	if [ ! -z "${extra_eddy_args}" ] ; then
+		eddy_command+=" ${extra_eddy_args} "
+	fi
+
 	log_Msg "About to issue the following eddy command: "
 	log_Msg "${eddy_command}"
 	${eddy_command}
@@ -539,6 +567,10 @@ main()
 
 			if [ ! -z "${resamp_value}" ] ; then
 				eddy_command+="--resamp=${resamp_value}"
+			fi
+
+			if [ ! -z "${extra_eddy_args}" ] ; then
+				eddy_command+=" ${extra_eddy_args} "
 			fi
 			
 			log_Msg "About to issue the following eddy command: "
