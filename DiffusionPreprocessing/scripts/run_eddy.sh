@@ -113,11 +113,13 @@ usage()
 	echo "    [--ol_nstd=<value>] : --ol_nstd value to pass to eddy"
 	echo "                          If unspecified, no --ol_nstd option is pssed to eddy"
 	echo ""
-	echo "    [--extra-eddy-args] : Generic string of arguments to pass to the eddy binary."
-	echo "                          The value will need to be enclosed in quotes if the value"
-	echo "                          contains any whitespace. Single quotes will prevent variables"
-	echo "                          used in the value from being replaced with their variable value."
-	echo "                          Double quotes would be the more common use."
+	echo "    [--extra-eddy-arg=token] : Generic single token (no whitespace) argument to pass"
+	echo "                               to the eddy binary. To build a multi-token series of"
+	echo "                               arguments, you can specify this --extra-eddy-arg= "
+	echo "                               parameter serveral times. E.g."
+	echo "                               --extra-eddy-arg=--verbose --extra-eddy-arg=T"
+	echo "                               will ultimately be translated to --verbose T when"
+	echo "                               passed to the eddy binary"
 	echo ""
 	echo "  Return code:"
 	echo ""
@@ -170,7 +172,7 @@ get_options()
 	fwhm_value="0"
 	resamp_value=""
 	unset ol_nstd_val
-	unset extra_eddy_args
+	extra_eddy_args=""
 
 	# parse arguments
 	local index=0
@@ -238,8 +240,9 @@ get_options()
 				ol_nstd_val=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--extra-eddy-args=*)
-				extra_eddy_args=${argument/*=/""}
+			--extra-eddy-arg=*)
+				extra_eddy_arg=${argument#*=}
+				extra_eddy_args+=" ${extra_eddy_arg} "
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -527,7 +530,9 @@ main()
 	fi
 	
 	if [ ! -z "${extra_eddy_args}" ] ; then
-		eddy_command+=" ${extra_eddy_args} "
+		for extra_eddy_arg in ${extra_eddy_args} ; do
+			eddy_command+=" ${extra_eddy_arg} "
+		done
 	fi
 
 	log_Msg "About to issue the following eddy command: "

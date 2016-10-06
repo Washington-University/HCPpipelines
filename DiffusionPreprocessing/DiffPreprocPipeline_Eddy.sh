@@ -147,8 +147,15 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--ol_nstd=<value>]     --ol_nstd value to pass to the eddy binary
                           If unspecified, no --ol_nstd option is passed to the
                           eddy binary
-  [--extra-eddy-args]     Generic string of arguments to be passed to the 
-                          run_eddy.sh script and subsequently to the eddy binary
+  [--extra-eddy-arg=<token>]
+                          Generic single token (no whitespace) argument to be 
+                          passed to the run_eddy.sh script and subsequently to 
+                          the eddy binary. To build a multi-token series of 
+                          arguments, you can specify this --extra-eddy-arg=
+                          parameter several times. E.g. 
+                          --extra-eddy-arg=--verbose --extra-eddy-arg=T 
+                          will ultimately be translated to --verbose T when
+                          passed to the eddy binary.
 
 Return Status Value:
 
@@ -196,7 +203,8 @@ EOF
 #  ${fwhm_value}           Value of user specified --fwhm= parameter
 #  ${resamp_value}         Value of user specified --resamp= parameter
 #  ${ol_nstd_value}        Value of user specified --ol_nstd= parameter
-#  ${extra_eddy_args}      Value of user specified --extra-eddy-args parameter
+#  ${extra_eddy_args}      Value of user specified --extra-eddy-arg parameters, space 
+#                          separated tokens
 #
 get_options()
 {
@@ -217,7 +225,7 @@ get_options()
 	fwhm_value="0"
 	resamp_value=""
 	unset ol_nstd_value
-	unset extra_eddy_args
+	extra_eddy_args=""
 	
 	# parse arguments
 	local index=0
@@ -312,8 +320,9 @@ get_options()
 				ol_nstd_value=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--extra-eddy-args=*)
-				extra_eddy_args=${argument/*=/""}
+			--extra-eddy-arg=*)
+				extra_eddy_arg=${argument#*=}
+				extra_eddy_args+=" ${extra_eddy_arg} "
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -489,7 +498,9 @@ main()
 	fi
 	
 	if [ ! -z "${extra_eddy_args}" ] ; then
-		run_eddy_cmd+=" --extra-eddy-args=\"${extra_eddy_args}\" "
+		for extra_eddy_arg in ${extra_eddy_args} ; do
+			run_eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
+		done
 	fi
 
 	log_Msg "About to issue the following command to invoke the run_eddy.sh script"

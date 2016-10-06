@@ -237,7 +237,7 @@ get_options()
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
-	unset extra_eddy_args
+	extra_eddy_args=""
 	CombineDataFlag=1
 
 	# parse arguments
@@ -301,8 +301,9 @@ get_options()
 				runcmd=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--extra-eddy-args=*)
-				extra_eddy_args=${argument/*=/""}
+			--extra-eddy-arg=*)
+				extra_eddy_arg=${argument#*=}
+				extra_eddy_args+=" ${extra_eddy_arg} "
 				index=$(( index + 1 ))
 				;;
 			--combine-data-flag=*)
@@ -467,7 +468,9 @@ main()
 	eddy_cmd+=" --printcom=\"${runcmd}\" "
    
 	if [ -z "${extra_eddy_args}" ] ; then
-		eddy_cmd+=" --extra-eddy-args=\"${extra_eddy_args}\" "
+		for extra_eddy_arg in ${extra_eddy_args} ; do
+			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
+		done
 	fi
 
 	${eddy_cmd}
