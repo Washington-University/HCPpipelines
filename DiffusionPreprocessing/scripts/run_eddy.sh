@@ -516,6 +516,7 @@ main()
 	eddy_command+="--flm=quadratic "
 	eddy_command+="--very_verbose "
 	eddy_command+="--initrand "
+	eddy_command+="--with_outliers " 
 
 	if [ ! -z "${dont_peas}" ] ; then
 		eddy_command+="--dont_peas "
