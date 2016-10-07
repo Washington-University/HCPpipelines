@@ -514,9 +514,6 @@ main()
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
 	eddy_command+="--flm=quadratic "
-	eddy_command+="--very_verbose "
-	eddy_command+="--initrand "
-	eddy_command+="--with_outliers " 
 
 	if [ ! -z "${dont_peas}" ] ; then
 		eddy_command+="--dont_peas "
