@@ -53,11 +53,11 @@ get_batch_options() {
 		
 		case ${argument} in
 			--StudyFolder=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--Subjlist=*)
-				Subjlist=${argument/*=/""}
+			--Subject=*)
+				Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--runlocal | --RunLocal)
@@ -65,7 +65,7 @@ get_batch_options() {
 				index=$(( index + 1 ))
 				;;
 			--EnvironmentScript=*)
-				EnvironmentScript=${argument/*=/""}
+				EnvironmentScript=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -96,7 +96,7 @@ get_batch_options "$@"
 #  * PATH (for gradient_unwarp.py)
 
 #Set up pipeline environment variables and software
-. ${EnvironmentScript}
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"

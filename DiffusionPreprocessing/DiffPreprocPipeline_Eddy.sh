@@ -245,15 +245,15 @@ get_options()
 				exit 0
 				;;
 			--path=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				Subject=${argument/*=/""}
+				Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--detailed-outlier-stats=*)
-				DetailedOutlierStats=${argument/*=/""}
+				DetailedOutlierStats=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--detailed-outlier-stats)
@@ -261,7 +261,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--replace-outliers=*)
-				ReplaceOutliers=${argument/*=/""}
+				ReplaceOutliers=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--replace-outliers)
@@ -269,19 +269,19 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--printcom=*)
-				runcmd=${argument/*=/""}
+				runcmd=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dwiname=*)
-				DWIName=${argument/*=/""}
+				DWIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--nvoxhp=*)
-				nvoxhp=${argument/*=/""}
+				nvoxhp=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sep_offs_move=*)
-				sep_offs_move=${argument/*=/""}
+				sep_offs_move=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sep_offs_move)
@@ -293,7 +293,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--rms=*)
-				rms=${argument/*=/""}
+				rms=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--rms)
@@ -301,7 +301,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--ff=*)
-				ff_val=${argument/*=/""}
+				ff_val=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dont_peas)
@@ -309,15 +309,15 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--fwhm=*)
-				fwhm_value=${argument/*=/""}
+				fwhm_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--resamp=*)
-				resamp_value=${argument/*=/""}
+				resamp_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--ol_nstd=*)
-				ol_nstd_value=${argument/*=/""}
+				ol_nstd_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--extra-eddy-arg=*)

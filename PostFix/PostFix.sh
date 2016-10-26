@@ -152,31 +152,31 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument/*=/""}
+				g_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument/*=/""}
+				g_high_pass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-dual-screen=*)
-				g_template_scene_dual_screen=${argument/*=/""}
+				g_template_scene_dual_screen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-single-screen=*)
-				g_template_scene_single_screen=${argument/*=/""}
+				g_template_scene_single_screen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

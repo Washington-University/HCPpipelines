@@ -6,7 +6,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -187,39 +187,39 @@ get_options()
 				exit 0
 				;;
 			--path=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				Subject=${argument/*=/""}
+				Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--PEdir=*)
-				PEdir=${argument/*=/""}
+				PEdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--posData=*)
-				PosInputImages=${argument/*=/""}
+				PosInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--negData=*)
-				NegInputImages=${argument/*=/""}
+				NegInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dwiname=*)
-				DWIName=${argument/*=/""}
+				DWIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--echospacing=*)
-				echospacing=${argument/*=/""}
+				echospacing=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--b0maxbval=*)
-				b0maxbval=${argument/*=/""}
+				b0maxbval=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--printcom=*)
-				runcmd=${argument/*=/""}
+				runcmd=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

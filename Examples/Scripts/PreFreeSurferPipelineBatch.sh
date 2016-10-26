@@ -86,7 +86,7 @@ get_batch_options() {
     local arguments=("$@")
 
     unset command_line_specified_study_folder
-    unset command_line_specified_subj_list
+    unset command_line_specified_subj
     unset command_line_specified_run_local
 
     local index=0
@@ -98,11 +98,11 @@ get_batch_options() {
 
         case ${argument} in
             --StudyFolder=*)
-                command_line_specified_study_folder=${argument/*=/""}
+                command_line_specified_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --Subjlist=*)
-                command_line_specified_subj_list=${argument/*=/""}
+            --Subject=*)
+                command_line_specified_subj=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --runlocal)
@@ -137,8 +137,8 @@ main()
 		StudyFolder="${command_line_specified_study_folder}"
 	fi
 
-	if [ -n "${command_line_specified_subj_list}" ]; then
-		Subjlist="${command_line_specified_subj_list}"
+	if [ -n "${command_line_specified_subj}" ]; then
+		Subjlist="${command_line_specified_subj}"
 	fi
 
 	# Report major script control variables to user
@@ -148,7 +148,7 @@ main()
 	echo "Run locally: ${command_line_specified_run_local}"
 
 	# Set up pipeline environment variables and software
-	. ${EnvironmentScript}
+	source ${EnvironmentScript}
 
 	# Define processing queue to be used if submitted to job scheduler
 	# if [ X$SGE_ROOT != X ] ; then

@@ -67,34 +67,30 @@ usage()
 	echo ""
 	echo "    [-h | --help] : show usage information and exit with non-zero return code"
 	echo ""
-	echo "    [-g | --gpu]  : attempt to use the GPU-enabled version of eddy"
-	echo "                    (eddy_cuda).  If the GPU-enabled version is not"
-	echo "                    found or returns a non-zero exit code, then"
-	echo "                    this script \"falls back\" to using the standard"
-	echo "                    version of eddy."
+	echo "    [-g | --gpu]  : use the GPU-enabled version of eddy."
 	echo ""
 	echo "    [--wss] : produce detailed outlier statistics after each iteration by using "
-	echo "              the --wss option to a call to eddy_cuda.  Note that this option has "
-	echo "              no effect unless the GPU-enabled version of eddy (eddy_cude) is used."
+	echo "              the --wss option to a call to eddy.  Note that this option has "
+	echo "              no effect unless the GPU-enabled version of eddy is used."
 	echo ""
 	echo "    [--repol] : replace outliers. Note that this option has no effect unless the"
-	echo "                GPU-enabled version of eddy (eddy_cuda) is used."
+	echo "                GPU-enabled version of eddy is used."
 	echo ""
 	echo "    [--nvoxhp=<number-of-voxel-hyperparameters>] : number of voxel hyperparameters to use"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--sep_offs_move] : If specified, this option stops dwi from drifting relative to b=0"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--rms] : If specified, write a root-mean-squared movement file for QA purposes"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--ff=<ff-value>] : TBW??"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    -w <working-dir>           | "
 	echo "    -w=<working-dir>           | "
@@ -205,11 +201,11 @@ get_options()
 				index=$(( index + 2 ))
 				;;
 			-w=* | --workingdir=*)
-				workingdir=${argument/*=/""}
+				workingdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--nvoxhp=*)
-				nvoxhp=${argument/*=/""}
+				nvoxhp=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sep_offs_move)
@@ -221,7 +217,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--ff=*)
-				ff_val=${argument/*=/""}
+				ff_val=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dont_peas)
@@ -229,15 +225,15 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--fwhm=*)
-				fwhm_value=${argument/*=/""}
+				fwhm_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--resamp=*)
-				resamp_value=${argument/*=/""}
+				resamp_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--ol_nstd=*)
-				ol_nstd_val=${argument/*=/""}
+				ol_nstd_val=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--extra-eddy-arg=*)
@@ -399,21 +395,21 @@ main()
 	log_Msg "FSL version: ${fsl_ver}"
 
 	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-	
-	# Determine eddy executable to use
-	#
-	#  If the user has asked us to try to use the GPU-enabled version of eddy,
-	#  then we check to see if that GPU-enabled version exists.  If it does,
-	#  we'll try to use it. Otherwise, we'll fall back to using the standard
-	#  (CPU) version of eddy.
-	#
-	#  If the user has not requested us to try to use the GPU-enabled version,
-	#  then we don't bother looking for it or trying to use it.
 
+	# Set values for stdEddy (non-GPU-enabled version of eddy binary)
+	# and gpuEnabledEddy (GPU-enabled version of eddy binary) 
+	# based upon version of FSL being used.
+	# 
+	# stdEddy is "eddy" for FSL versions prior to FSL 5.0.9
+	#         is "eddy_openmp" for FSL versions starting with FSL 5.0.9
+	#
+	# gpuEnabledEddy is "eddy.gpu" for FSL versions prior to FSL 5.0.9 (may not exist)
+	#                is "eddy_cuda" for FSL versions starting with FSL 5.0.9
+	
 	if [ "${old_or_new_version}" == "OLD" ] ; then
 		log_Msg "INFO: Detected pre-5.0.9 version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
-		stdEddy="${FSLDIR}/bin/eddy_openmp"
+		stdEddy="${FSLDIR}/bin/eddy"
 	else
 		log_Msg "INFO: Detected 5.0.9 or newer version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
@@ -421,19 +417,31 @@ main()
 	fi
 	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
 	log_Msg "stdEddy: ${stdEddy}"
-	
+
+	# Determine which eddy executable to use based upon whether 
+	# the user requested use of the GPU-enabled version of eddy
+	# and whether the requested version of eddy can be found.
+
 	if [ "${useGpuVersion}" = "True" ]; then
 		log_Msg "User requested GPU-enabled version of eddy"
 		if [ -e ${gpuEnabledEddy} ]; then
-			log_Msg "GPU-enabled version of eddy found"
+			log_Msg "GPU-enabled version of eddy found: ${gpuEnabledEddy}"
 			eddyExec="${gpuEnabledEddy}"
 		else
-			log_Msg "GPU-enabled version of eddy NOT found"
-			eddyExec="${stdEddy}"
+			log_Msg "GPU-enabled version of eddy NOT found: ${gpuEnabledEddy}"
+			log_Msg "ABORTING"
+			exit 1
 		fi
 	else
 		log_Msg "User did not request GPU-enabled version of eddy"
-		eddyExec="${stdEddy}"
+		if [ -e ${stdEddy} ]; then
+			log_Msg "Non-GPU-enabled version of eddy found: ${stdEddy}"
+			eddyExec="${stdEddy}"
+		else
+			log_Msg "Non-GPU-enabled version of eddy NOT found: ${stdEddy}"
+			log_Msg "ABORTING"
+			exit 1
+		fi
 	fi
 	
 	log_Msg "eddy executable command to use: ${eddyExec}"
@@ -537,51 +545,6 @@ main()
 	log_Msg "${eddy_command}"
 	${eddy_command}
 	eddyReturnValue=$?
-	
-	# Another fallback.
-	#
-	#  If we were trying to use the GPU-enabled version of eddy, but it
-	#  returned a failure code, then report that the GPU-enabled eddy
-	#  failed and use the standard version of eddy.
-	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]
-	then
-		if [ ${eddyReturnValue} -ne 0 ]
-		then
-			log_Msg "Tried to run GPU-enabled eddy, ${eddyExec}, as requested."
-			log_Msg "That attempt failed with return code: ${eddyReturnValue}"
-			log_Msg "Running standard version of eddy, ${stdEddy}, instead."
-			
-			eddy_command="${stdEddy} "
-			eddy_command+="--imain=${workingdir}/Pos_Neg "
-			eddy_command+="--mask=${workingdir}/nodif_brain_mask "
-			eddy_command+="--index=${workingdir}/index.txt "
-			eddy_command+="--acqp=${workingdir}/acqparams.txt "
-			eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
-			eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
-			eddy_command+="--fwhm=${fwhm_value} "
-			eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
-			eddy_command+="--out=${workingdir}/eddy_unwarped_images "
-			eddy_command+="--flm=quadratic "
-			eddy_command+="-v "
-
-			if [ ! -z "${dont_peas}" ] ; then
-				eddy_command+="--dont_peas"
-			fi
-
-			if [ ! -z "${resamp_value}" ] ; then
-				eddy_command+="--resamp=${resamp_value}"
-			fi
-
-			if [ ! -z "${extra_eddy_args}" ] ; then
-				eddy_command+=" ${extra_eddy_args} "
-			fi
-			
-			log_Msg "About to issue the following eddy command: "
-			log_Msg "${eddy_command}"
-			${eddy_command}
-			eddyReturnValue=$?
-		fi
-	fi
 	
 	log_Msg "Completed with return value: ${eddyReturnValue}"
 	exit ${eddyReturnValue}

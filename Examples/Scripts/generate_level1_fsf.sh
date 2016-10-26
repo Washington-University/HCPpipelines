@@ -61,84 +61,84 @@ get_options() {
     local argument
 
     while [ ${index} -lt ${numArgs} ]; do
-	argument=${arguments[index]}
+		argument=${arguments[index]}
 
-	case ${argument} in
-	    --help)
-		usage
-		exit 1
-		;;
-	    --studyfolder=*)
-		StudyFolder=${argument/*=/""}
-		index=$(( index + 1 ))
-		;;
-	    --subject=*)
-		Subject=${argument/*=/""}
-		index=$(( index + 1 ))
-		;;
-	    --taskname=*)
-		taskname=${argument/*=/""}
-		index=$(( index + 1 ))
-		;;
-	    --templatedir=*)
-		templatedir=${argument/*=/""}
-		index=$(( index + 1 ))
-		;;
-	    --outdir=*)
-		outdir=${argument/*=/""}
-		index=$(( index + 1 ))
-		;;
-	    *)
-		usage
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
-	esac
+		case ${argument} in
+			--help)
+				usage
+				exit 1
+				;;
+			--studyfolder=*)
+				StudyFolder=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--subject=*)
+				Subject=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--taskname=*)
+				taskname=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--templatedir=*)
+				templatedir=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--outdir=*)
+				outdir=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			*)
+				usage
+				echo ""
+				echo "ERROR: Unrecognized Option: ${argument}"
+				echo ""
+				exit 1
+				;;
+		esac
     done
 
     # check required parameters
     if [ -z ${StudyFolder} ]; then
-	usage
-	echo ""
-	echo "ERROR: <study-folder> not specified"
-	echo ""
-	exit 1
+		usage
+		echo ""
+		echo "ERROR: <study-folder> not specified"
+		echo ""
+		exit 1
     fi
-
+	
     if [ -z ${Subject} ]; then
-	usage
-	echo ""
-	echo "ERROR: <subject-id> not specified"
-	echo ""
-	exit 1
+		usage
+		echo ""
+		echo "ERROR: <subject-id> not specified"
+		echo ""
+		exit 1
     fi
-
+	
     if [ -z ${taskname} ]; then
-	usage
-	echo ""
-	echo "ERROR: <task-name> not specified"
-	echo ""
-	exit 1
+		usage
+		echo ""
+		echo "ERROR: <task-name> not specified"
+		echo ""
+		exit 1
     fi
-
+	
     if [ -z ${templatedir} ]; then
-	usage
-	echo ""
-	echo "ERROR: <template-dir> not specified"
-	echo ""
-	exit 1
+		usage
+		echo ""
+		echo "ERROR: <template-dir> not specified"
+		echo ""
+		exit 1
     fi
-
+	
     if [ -z ${outdir} ]; then
-	usage
-	echo ""
-	echo "ERROR: <out-dir> not specified"
-	echo ""
-	exit 1
+		usage
+		echo ""
+		echo "ERROR: <out-dir> not specified"
+		echo ""
+		exit 1
     fi
-
+	
     # report
     echo ""
     echo "-- ${scriptName}: Specified command-line options - Start --"

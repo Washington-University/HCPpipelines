@@ -135,39 +135,39 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fmri_names_list=${argument/*=/""}
+				g_fmri_names_list=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument/*=/""}
+				g_output_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument/*=/""}
+				g_fmri_proc_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--migp-vars=*)
-				g_migp_vars=${argument/*=/""}
+				g_migp_vars=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-proc-string=*)
-				g_output_proc_string=${argument/*=/""}
+				g_output_proc_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument/*=/""}
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

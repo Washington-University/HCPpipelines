@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -258,47 +258,47 @@ get_options()
 				exit 0
 				;;
 			--path=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				Subject=${argument/*=/""}
+				Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--PEdir=*)
-				PEdir=${argument/*=/""}
+				PEdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--posData=*)
-				PosInputImages=${argument/*=/""}
+				PosInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--negData=*)
-				NegInputImages=${argument/*=/""}
+				NegInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--echospacing=*)
-				echospacing=${argument/*=/""}
+				echospacing=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--gdcoeffs=*)
-				GdCoeffs=${argument/*=/""}
+				GdCoeffs=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dwiname=*)
-				DWIName=${argument/*=/""}
+				DWIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dof=*)
-				DegreesOfFreedom=${argument/*=/""}
+				DegreesOfFreedom=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--b0maxbval=*)
-				b0maxbval=${argument/*=/""}
+				b0maxbval=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--printcom=*)
-				runcmd=${argument/*=/""}
+				runcmd=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--extra-eddy-arg=*)
@@ -307,7 +307,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--combine-data-flag=*)
-				CombineDataFlag=${argument/*=/""}
+				CombineDataFlag=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -455,17 +455,18 @@ main()
 	pre_eddy_cmd+=" --negData=${NegInputImages} "
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
-	pre_eddy_cmd+=" --printcom=\"${runcmd}\" "
+	pre_eddy_cmd+=" --printcom=${runcmd} "
 
+	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
 	${pre_eddy_cmd}
-	
+
 	log_Msg "Invoking Eddy Step"
 	local eddy_cmd=""
 	eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh "
 	eddy_cmd+=" --path=${StudyFolder} "
 	eddy_cmd+=" --subject=${Subject} "
 	eddy_cmd+=" --dwiname=${DWIName} "
-	eddy_cmd+=" --printcom=\"${runcmd}\" "
+	eddy_cmd+=" --printcom=${runcmd} "
    
 	if [ -z "${extra_eddy_args}" ] ; then
 		for extra_eddy_arg in ${extra_eddy_args} ; do
@@ -473,6 +474,7 @@ main()
 		done
 	fi
 
+	log_Msg "eddy_cmd: ${eddy_cmd}"
 	${eddy_cmd}
 
 	log_Msg "Invoking Post-Eddy Steps"
@@ -484,8 +486,9 @@ main()
 	post_eddy_cmd+=" --gdcoeffs=${GdCoeffs} "
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
-	post_eddy_cmd+=" --printcom=\"${runcmd}\" "
+	post_eddy_cmd+=" --printcom=${runcmd} "
 
+	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
 	${post_eddy_cmd}
 	
 	log_Msg "Completed"

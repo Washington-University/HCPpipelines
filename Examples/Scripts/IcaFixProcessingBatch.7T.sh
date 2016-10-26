@@ -42,19 +42,19 @@ get_options() {
 
 		case ${argument} in
 			--StudyFolder=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--Subjlist=*)
-				Subjlist=${argument/*=/""}
+			--Subject=*)
+				Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--EnvironmentScript=*)
-				EnvironmentScript=${argument/*=/""}
+				EnvironmentScript=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--FixDir=*)
-				FixDir=${argument/*=/""}
+				FixDir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--runlocal | --RunLocal)
@@ -120,7 +120,7 @@ main() {
 	get_options "$@"
 
 	# set up pipeline environment variables and software
-	. ${EnvironmentScript}
+	source ${EnvironmentScript}
 
 	export FSL_FIXDIR=${FixDir}
 	FixScript=${HCPPIPEDIR_Global}/hcp_fix

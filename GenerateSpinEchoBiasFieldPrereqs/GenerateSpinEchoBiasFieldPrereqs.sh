@@ -39,23 +39,23 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--rfmri-names=*)
-				g_rfmri_names=${argument/*=/""}
+				g_rfmri_names=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--tfmri-names=*)
-				g_tfmri_names=${argument/*=/""}
+				g_tfmri_names=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

@@ -224,71 +224,71 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument/*=/""}
+				g_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument/*=/""}
+				g_high_pass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument/*=/""}
+				g_reg_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				g_low_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--final-fmri-res=*)
-				g_final_fmri_res=${argument/*=/""}
+				g_final_fmri_res=${argument#*=}
 				index=$(( index + 1 ))
 				;;				
 			--brain-ordinates-res=*)
-				g_brain_ordinates_res=${argument/*=/""}
+				g_brain_ordinates_res=${argument#*=}
 				index=$(( index + 1 ))
 				;;				
 			--smoothing-fwhm=*)
-				g_smoothing_fwhm=${argument/*=/""}
+				g_smoothing_fwhm=${argument#*=}
 				index=$(( index + 1 ))
 				;;				
 			--output-proc-string=*)
-				g_output_proc_string=${argument/*=/""}
+				g_output_proc_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dlabel-file=*)
-				g_dlabel_file=${argument/*=/""}
+				g_dlabel_file=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument/*=/""}
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--bc-mode=*)
-				g_bc_mode=${argument/*=/""}
+				g_bc_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--out-string=*)
-				g_out_string=${argument/*=/""}
+				g_out_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 		  --wm=*)
-				g_wm=${argument/*=/""}
+				g_wm=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--csf=*)
-				g_csf=${argument/*=/""}
+				g_csf=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

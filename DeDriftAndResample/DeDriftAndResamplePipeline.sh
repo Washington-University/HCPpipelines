@@ -51,67 +51,67 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				g_high_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-meshes=*)
-				g_low_res_meshes=${argument/*=/""}
+				g_low_res_meshes=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--registration-name=*)
-				g_registration_name=${argument/*=/""}
+				g_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dedrift-reg-files=*)
-				g_dedrift_reg_files=${argument/*=/""}
+				g_dedrift_reg_files=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--concat-reg-name=*)
-				g_concat_reg_name=${argument/*=/""}
+				g_concat_reg_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--maps=*)
-				g_maps=${argument/*=/""}
+				g_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--myelin-maps=*)
-				g_myelin_maps=${argument/*=/""}
+				g_myelin_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--rfmri-names=*)
-				g_rfmri_names=${argument/*=/""}
+				g_rfmri_names=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--tfmri-names=*)
-				g_tfmri_names=${argument/*=/""}
+				g_tfmri_names=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--smoothing-fwhm=*)
-				g_smoothing_fwhm=${argument/*=/""}
+				g_smoothing_fwhm=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--highpass=*)
-				g_highpass=${argument/*=/""}
+				g_highpass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--myelin-target-file=*)
-				g_myelin_target_file=${argument/*=/""}
+				g_myelin_target_file=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-reg-name=*)
-				g_input_reg_name=${argument/*=/""}
+				g_input_reg_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
