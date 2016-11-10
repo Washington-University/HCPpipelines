@@ -377,13 +377,13 @@ then
     #create MNINonLinear final fMRI resolution bias field outputs
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
     fi
 fi
 
