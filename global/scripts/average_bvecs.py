@@ -97,18 +97,40 @@ def main(bvals1file,
 def loadFile(filename, ndims, dimlens):
     """Convenience function which loads data from a file, and checks
     that it has the correct number of dimensions/dimension sizes.
+
+    :arg filename: File to load
+    
+    :arg ndims:    Expected number of dimensions (1 or 2)
+    
+    :arg dimlens:  Sequence of expected lengths, one per dimension. Pass
+                   in -1 for a dimension to accept any size for that
+                   dimension. 
     """
 
     data = np.loadtxt(filename, dtype=np.float64)
 
+    # Expected 2 dimensions, but only got 1 - file
+    # with a single line or a single column
+    if ndims == 2 and len(data.shape) == 1:
+        try:
+            # Caller wants 2D, but doesn't care 
+            # about the length of each dimension.
+            if np.all(np.array(dimlens) == -1):
+                dimlens = [data.shape[0], -1]
+                
+            data = data.reshape(dimlens)
+        except:
+            raise ValueError('Unexpected size: {0} (expected: {1}, is: '
+                             '{2})'.format(filename, dimlens, data.shape))
+            
     if len(data.shape) != ndims:
         raise ValueError('Wrong number of dimensions: {0}'.format(filename))
 
     for dim, dimlen in enumerate(dimlens):
 
-        # Pass in a dimlen < 0 to skip
+        # Pass in a dimlen == -1 to skip
         # the size check for a dimension
-        if dimlen < 0:
+        if dimlen == -1:
             continue
 
         if data.shape[dim] != dimlen:
