@@ -283,7 +283,7 @@ get_options()
 				g_out_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-		  --wm=*)
+			--wm=*)
 				g_wm=${argument#*=}
 				index=$(( index + 1 ))
 				;;
@@ -931,8 +931,20 @@ main()
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
 
-			# TBD: Use environment variable instead of fixed path?
-			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+			# TBD: Use environment variable instead of fixed path
+			if [ "${CLUSTER}" = "1.0" ]; then
+				matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+			elif [ "${CLUSTER}" = "2.0" ]; then
+				matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+			else
+				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
+				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
+				log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
+				log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
+				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
+				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
+				log_Msg "ERROR: using an environment variable's value."
+			fi
 
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
 			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
