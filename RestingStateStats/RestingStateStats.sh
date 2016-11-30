@@ -444,6 +444,21 @@ get_options()
 	fi
 }
 
+#
+# Function Description:
+#  move the specified file to the new path if the
+#  specified file exists, otherwise, do nothing
+#
+mv_if_exists()
+{
+	local from="${1}"
+	local to="${2}"
+
+	if [ -e "${from}" ] ; then
+		mv --verbose "${from}" "${to}"
+	fi
+}
+
 # 
 # Function Description:
 #  Main processing of script.
@@ -1096,11 +1111,11 @@ main()
 	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
 	# --------------------------------------------------------------------------------
 
-	mv \
+	mv_if_exists \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
 
-	mv \
+	mv_if_exists \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
 
