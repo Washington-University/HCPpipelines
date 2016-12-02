@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015 The Human Connectome Project
+# Copyright (C) 2015-2016 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -510,6 +510,12 @@ main()
 	fi
 
 	if [ ! "${g_bc_mode}" = "NONE" ]; then
+
+		### This whole section (the creation of a CIFTI version of the bias field) is contingent on the use
+		### of --biascorrection=LEGACY in the GenericfMRIVolumeProcessingPipeline.sh script.
+		### i.e. the code does not current support "reverting" the bias field if it was originally applied
+		### via --biascorrection=SEBASED back in GenericfMRIVolumeProcessingPipeline.sh.
+
 		### Calculate CIFTI version of the bias field (which is removed as part of the fMRI minimal pre-processing)
 		### so that the bias field can be "restored" prior to the variance decomposition
 		### i.e., so that the estimate variance at each grayordinate reflects the scaling of the original data
