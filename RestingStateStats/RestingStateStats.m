@@ -17,11 +17,10 @@ function RestingStateStats(motionparameters,hp,TR,ICAs,noiselist,wbcommand,input
 % INPUTDTSERIES: input CIFTI timeseries (uncleaned timeseries after
 %   registration to CIFTI standard space).
 % BIAS: bias field (as dscalar.nii) to apply (via grayordinate-wise
-%   multiplication) to INPUTDTSERIES. Set to empty to apply nothing.
+%   multiplication) to INPUTDTSERIES.
 %   N.B. In the HCP "minimal processing", the bias field is removed.
 %   So, if you want the spatial variance to reflect the intensity 
 %   scaling of the original data, the bias field must be "restored".
-%   This is the recommended approach currently.
 % OUTPREFIX (optional): file name prefix for the outputs; if omitted
 %   then INPUTDTSERIES is used as the file name prefix.
 %   Set to empty if you need a place holder for this argument.

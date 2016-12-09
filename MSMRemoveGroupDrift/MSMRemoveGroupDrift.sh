@@ -69,43 +69,43 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject-list=*)
-				g_subject_list=${argument/*=/""}
+				g_subject_list=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--common-folder=*)
-				g_common_folder=${argument/*=/""}
+				g_common_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--group-average-name=*)
-				g_group_average_name=${argument/*=/""}
+				g_group_average_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
-				g_input_registration_name=${argument/*=/""}
+				g_input_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--target-registration-name=*)
-				g_target_registration_name=${argument/*=/""}
+				g_target_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--registration-name=*)
-				g_registration_name=${argument/*=/""}
+				g_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				g_high_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				g_low_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

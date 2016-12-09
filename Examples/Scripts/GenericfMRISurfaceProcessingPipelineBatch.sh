@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 get_batch_options() {
-    local arguments=($@)
+    local arguments=("$@")
 
     unset command_line_specified_study_folder
     unset command_line_specified_subj_list
@@ -16,11 +16,11 @@ get_batch_options() {
 
         case ${argument} in
             --StudyFolder=*)
-                command_line_specified_study_folder=${argument/*=/""}
+                command_line_specified_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --Subjlist=*)
-                command_line_specified_subj_list=${argument/*=/""}
+            --Subject=*)
+                command_line_specified_subj=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --runlocal)
@@ -37,7 +37,7 @@ get_batch_options() {
     done
 }
 
-get_batch_options $@
+get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
@@ -47,8 +47,8 @@ if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
 
-if [ -n "${command_line_specified_subj_list}" ]; then
-    Subjlist="${command_line_specified_subj_list}"
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
 fi
 
 # Requirements for this script
@@ -56,7 +56,7 @@ fi
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 #Set up pipeline environment variables and software
-. ${EnvironmentScript}
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"

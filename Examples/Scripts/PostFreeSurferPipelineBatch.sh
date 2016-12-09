@@ -31,8 +31,8 @@ fi
 #  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.2) if doing gradient distortion correction
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
-# Set up pipeline environment variables and software
-. ${EnvironmentScript}
+#Set up pipeline environment variables and software
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"

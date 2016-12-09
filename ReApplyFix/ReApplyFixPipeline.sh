@@ -72,31 +72,31 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument/*=/""}
+				g_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument/*=/""}
+				g_high_pass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument/*=/""}
+				g_reg_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				g_low_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

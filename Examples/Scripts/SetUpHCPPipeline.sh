@@ -19,7 +19,7 @@ module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 # Set up FreeSurfer (if not already done so in the running environment)
 # Uncomment the following 2 lines (remove the leading #) and correct the FREESURFER_HOME setting for your setup
 #export FREESURFER_HOME=/usr/local/bin/freesurfer
-. ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
+#source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
 #export HCPPIPEDIR=${HOME}/projects/Pipelines

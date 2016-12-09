@@ -28,7 +28,7 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENCE.md) file
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
 #
 # ## Description
 #

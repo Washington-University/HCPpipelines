@@ -150,47 +150,47 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				g_path_to_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				g_subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fmri_names_list=${argument/*=/""}
+				g_fmri_names_list=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument/*=/""}
+				g_output_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument/*=/""}
+				g_fmri_proc_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--msm-all-templates=*)
-				g_msm_all_templates=${argument/*=/""}
+				g_msm_all_templates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-registration-name=*)
-				g_output_registration_name=${argument/*=/""}
+				g_output_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				g_high_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				g_low_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
-				g_input_registration_name=${argument/*=/""}
+				g_input_registration_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

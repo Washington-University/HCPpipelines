@@ -21,7 +21,7 @@ DIRECTIONS="71 72"
 #  are not specified.
 #
 get_batch_options() {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# Output global variables
 	unset StudyFolder
@@ -53,11 +53,11 @@ get_batch_options() {
 		
 		case ${argument} in
 			--StudyFolder=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--Subjlist=*)
-				Subjlist=${argument/*=/""}
+			--Subject=*)
+				Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--runlocal | --RunLocal)
@@ -65,7 +65,7 @@ get_batch_options() {
 				index=$(( index + 1 ))
 				;;
 			--EnvironmentScript=*)
-				EnvironmentScript=${argument/*=/""}
+				EnvironmentScript=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -79,7 +79,7 @@ get_batch_options() {
 }
 
 # Get command line batch options
-get_batch_options $@
+get_batch_options "$@"
 
 # Requirements for this script
 #
@@ -96,7 +96,7 @@ get_batch_options $@
 #  * PATH (for gradient_unwarp.py)
 
 #Set up pipeline environment variables and software
-. ${EnvironmentScript}
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"
@@ -143,8 +143,19 @@ for Subject in $Subjlist ; do
 	SubjectID="${Subject}" #Subject ID Name
 	RawDataDir="${StudyFolder}/${SubjectID}/unprocessed/${SCAN_STRENGTH_CODE}/Diffusion" # Folder where unprocessed diffusion data are
 
-	# Data with positive Phase encoding direction. Separated by @. (LR in HCP data, AP in 7T HCP data)
-	# Data with negative Phase encoding direction. Separated by @. (RL in HCP data, PA in 7T HCP data)
+	# PosData is a list of files (separated by ‘@‘ symbol) having the same phase encoding (PE) direction 
+	# and polarity. Similarly for NegData, which must have the opposite PE polarity of PosData.
+	# The PosData files will come first in the merged data file that forms the input to ‘eddy’.
+	# The particular PE polarity assigned to PosData/NegData is not relevant; the distortion and eddy 
+	# current correction will be accurate either way.
+	#
+	# Note that only volumes (gradient directions) that have matched Pos/Neg pairs are ultimately
+	# propagated to the final output, *and* these pairs will be averaged to yield a single
+	# volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
+	# avoids having volumes with different SNR features/ residual distortions.
+	#
+	# [This behavior can be changed through the hard-coded 'CombineDataFlag' variable in the 
+	# DiffPreprocPipeline_PostEddy.sh script if necessary].
 	PosData=""
 	NegData=""
 	for DirectionNumber in ${DIRECTIONS} ; do

@@ -115,4 +115,9 @@ ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nod
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
 
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/temp
+${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
+${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
+
 echo " END: DiffusionToStructural"
