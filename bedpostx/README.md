@@ -16,4 +16,4 @@ of job names to make job management easier.
 
 [FSL]: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki
 [CHPC]: http://chpc2.wustl.edu
-[NRG][NRG]: http://nrg.wustl.edu
+[NRG]: http://nrg.wustl.edu
