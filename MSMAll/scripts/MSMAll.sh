@@ -14,9 +14,6 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 log_Debug_On
 
-#MATLAB_HOME="/export/matlab/R2013a"
-#log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
-
 #
 # Function Description:
 #  TBW
@@ -657,7 +654,7 @@ main()
 				matlab_exe="${HCPPIPEDIR}"
 				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 				
-				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 				matlab_function_arguments="'${inputspatialmaps}'"
 				matlab_function_arguments+=" '${inputdtseries}'"
@@ -744,7 +741,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				matlab_exe="${HCPPIPEDIR}"
 				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 				matlab_function_arguments="'${inputspatialmaps}'"
 				matlab_function_arguments+=" '${inputdtseries}'"
@@ -1131,7 +1128,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 		matlab_exe="${HCPPIPEDIR}"
 		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 		matlab_function_arguments="'${inputspatialmaps}'"
 		matlab_function_arguments+=" '${inputdtseries}'"
@@ -1202,7 +1199,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 		matlab_exe="${HCPPIPEDIR}"
 		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 		matlab_function_arguments="'${inputspatialmaps}'"
 		matlab_function_arguments+=" '${inputdtseries}'"

@@ -75,17 +75,26 @@ PRINTCOM=""
 
 ######################################### DO WORK ##########################################
 
-fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
-OutfMRIName="rfMRI_REST"
-fMRIProcSTRING="_Atlas_hp2000_clean"
-MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
-RegName="MSMAll_InitalReg"
 HighResMesh="164"
 LowResMesh="32"
-InRegName="MSMSulc"
+RegName="MSMAll_InitalReg_2_d40_WRN"
+DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
+ConcatRegName="MSMAll_Test"
+Maps="sulc curvature corrThickness thickness"
+MyelinMaps="MyelinMap SmoothedMyelinMap" #No _BC, this will be reapplied
+rfMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL" #Space delimited list or NONE
+rfMRINames="rfMRI_REST1_LR" #Space delimited list or NONE
+tfMRINames="tfMRI_WM_LR tfMRI_WM_RL tfMRI_GAMBLING_LR tfMRI_GAMBLING_RL tfMRI_MOTOR_LR tfMRI_MOTOR_RL tfMRI_LANGUAGE_LR tfMRI_LANGUAGE_RL tfMRI_SOCIAL_LR tfMRI_SOCIAL_RL tfMRI_RELATIONAL_LR tfMRI_RELATIONAL_RL tfMRI_EMOTION_LR tfMRI_EMOTION_RL" #Space delimited list or NONE
+tfMRINames="NONE"
+SmoothingFWHM="2" #Should equal previous grayordiantes smoothing (because we are resampling from unsmoothed native mesh timeseries
+HighPass="2000"
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
 MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
 
-fMRINames=`echo ${fMRINames} | sed 's/ /@/g'`
+Maps=`echo "$Maps" | sed s/" "/"@"/g`
+MyelinMaps=`echo "$MyelinMaps" | sed s/" "/"@"/g`
+rfMRINames=`echo "$rfMRINames" | sed s/" "/"@"/g`
+tfMRINames=`echo "$tfMRINames" | sed s/" "/"@"/g`
 
 for Subject in $Subjlist ; do
 	echo "    ${Subject}"
@@ -98,17 +107,20 @@ for Subject in $Subjlist ; do
 	    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 	fi
 
-	${queuing_command} ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh \
+	${queuing_command} ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
   --path=${StudyFolder} \
   --subject=${Subject} \
-  --fmri-names-list=${fMRINames} \
-  --output-fmri-name=${OutfMRIName} \
-  --fmri-proc-string=${fMRIProcSTRING} \
-  --msm-all-templates=${MSMAllTemplates} \
-  --output-registration-name=${RegName} \
   --high-res-mesh=${HighResMesh} \
-  --low-res-mesh=${LowResMesh} \
-  --input-registration-name=${InRegName} \
+  --low-res-meshes=${LowResMesh} \
+  --registration-name=${RegName} \
+  --dedrift-reg-files=${DeDriftRegFiles} \
+  --concat-reg-name=${ConcatRegName} \
+  --maps=${Maps} \
+  --myelin-maps=${MyelinMaps} \
+  --rfmri-names=${rfMRINames} \
+  --tfmri-names=${tfMRINames} \
+  --smoothing-fwhm=${SmoothingFWHM} \
+  --highpass=${HighPass} \
   --matlab-run-mode=${MatlabMode}
 done
 

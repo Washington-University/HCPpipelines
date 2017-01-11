@@ -54,10 +54,10 @@ if exist('Atlas.dtseries.nii','file') == 2
     BO.cdata=BO.cdata-repmat(meanBO,1,size(BO.cdata,2));
     save_avw(reshape([BO.cdata ; zeros(100*BOdimZnew-BOdimX,BOdimT)],10,10,BOdimZnew,BOdimT),'Atlas','f',[1 1 1 TR]);
 
-%   call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
-    cmd_str=sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR);
-    fprintf('%s - About to execute: %s\n',func_name,cmd_str);
-    system(cmd_str);
+    call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
+    %cmd_str=sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR);
+    %fprintf('%s - About to execute: %s\n',func_name,cmd_str);
+    %system(cmd_str);
 
     grot=reshape(read_avw('Atlas'),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot; BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
     ciftisave(BO,'Atlas_hp_preclean.dtseries.nii',WBC); % save out noncleaned hp-filtered data for future reference, as brainordinates file
@@ -82,24 +82,24 @@ ICA=functionnormalise(load(sprintf('filtered_func_data.ica/melodic_mix')));
 if aggressive == 1
   sprintf('aggressive cleanup')
   confounds=[confounds ICA(:,DDremove)];
-  %cts = cts - (confounds * (pinv(confounds) * cts));
+  %cts = cts - (confounds * (pinv(confounds,1e-6) * cts));
   if DObrainord == 1
-    BO.cdata = BO.cdata - (confounds * (pinv(confounds) * BO.cdata'))';
+    BO.cdata = BO.cdata - (confounds * (pinv(confounds,1e-6) * BO.cdata'))';
   end
 else
   sprintf('unaggressive cleanup')
   if domot == 1
     % aggressively regress out motion parameters from ICA and from data
-    ICA = ICA - (confounds * (pinv(confounds) * ICA));
-    %cts = cts - (confounds * (pinv(confounds) * cts));
+    ICA = ICA - (confounds * (pinv(confounds,1e-6) * ICA));
+    %cts = cts - (confounds * (pinv(confounds,1e-6) * cts));
     if DObrainord == 1
-      BO.cdata = BO.cdata - (confounds * (pinv(confounds) * BO.cdata'))';
+      BO.cdata = BO.cdata - (confounds * (pinv(confounds,1e-6) * BO.cdata'))';
     end
   end
-  %betaICA = pinv(ICA) * cts;                              % beta for ICA (good *and* bad)
+  %betaICA = pinv(ICA,1e-6) * cts;                              % beta for ICA (good *and* bad)
   %cts = cts - (ICA(:,DDremove) * betaICA(DDremove,:));    % cleanup
   if DObrainord == 1
-    betaICA = pinv(ICA) * BO.cdata';                                   % beta for ICA (good *and* bad)
+    betaICA = pinv(ICA,1e-6) * BO.cdata';                                   % beta for ICA (good *and* bad)
     BO.cdata = BO.cdata - (ICA(:,DDremove) * betaICA(DDremove,:))';    % cleanup
   end
 end

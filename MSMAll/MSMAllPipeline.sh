@@ -343,7 +343,7 @@ main()
 	#       help make the form and values easier to understand.
 	# Note: If UseMIGP value is NO, then we use the full timeseries
 	log_Msg "Running MSM on full timeseries"
-	migp_vars="NO@0@0@NO@YES"
+	migp_vars="NO@0@0@YES@YES"
 	log_Msg "migp_vars: ${migp_vars}"
 
 	output_proc_string="_nobias_vn"
