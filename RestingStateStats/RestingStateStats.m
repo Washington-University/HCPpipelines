@@ -211,25 +211,25 @@ if ~strcmp(CSF,'NONE')
 end
 
 %%%% Aggressively regress out motion parameters from ICA and from data
-ICA = ICAorig - (confounds * (pinv(confounds) * ICAorig));
+ICA = ICAorig - (confounds * (pinv(confounds,1e-6) * ICAorig));
 if ~strcmp(WM,'NONE')
     %%%% Aggressively regress out motion parameters from WM
-    WMtcPM = WMtcHP - (confounds * (pinv(confounds) * WMtcHP));
+    WMtcPM = WMtcHP - (confounds * (pinv(confounds,1e-6) * WMtcHP));
     %%%% Regress out Noise
-    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMbetaICA = pinv(ICA,1e-6) * WMtcPM;
     WMtcClean = WMtcPM - (ICA(:,Inoise) * WMbetaICA(Inoise,:));
     WMtcClean = demean(WMtcClean);
 end
 if ~strcmp(CSF,'NONE')
     %%%% Aggressively regress out motion parameters from CSF
-    CSFtcPM = CSFtcHP - (confounds * (pinv(confounds) * CSFtcHP));
+    CSFtcPM = CSFtcHP - (confounds * (pinv(confounds,1e-6) * CSFtcHP));
     %%%% Regress out Noise
-    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFbetaICA = pinv(ICA,1e-6) * CSFtcPM;
     CSFtcClean = CSFtcPM - (ICA(:,Inoise) * CSFbetaICA(Inoise,:));
     CSFtcClean = demean(CSFtcClean);
 end
 %%%% Aggressively regress out motion parameters from data
-PostMotionTCS = HighPassTCS - (confounds * (pinv(confounds) * HighPassTCS'))';
+PostMotionTCS = HighPassTCS - (confounds * (pinv(confounds,1e-6) * HighPassTCS'))';
 [PostMotionMGTRtcs,PostMotionMGT,PostMotionMGTbeta,PostMotionMGTVar,PostMotionMGTrsq] = MGTR(PostMotionTCS);
 MotionVar=var((HighPassTCS - PostMotionTCS),[],tpDim);
 
@@ -240,7 +240,7 @@ Isignal = total(~ismember(total,Inoise));
 
 % beta for ICA (signal *and* noise components), followed by unaggressive cleanup
 % (i.e., only remove unique variance associated with the noise components)
-betaICA = pinv(ICA) * PostMotionTCS';
+betaICA = pinv(ICA,1e-6) * PostMotionTCS';
 CleanedTCS = PostMotionTCS - (ICA(:,Inoise) * betaICA(Inoise,:))';
 [CleanedMGTRtcs,CleanedMGT,CleanedMGTbeta,CleanedMGTVar,CleanedMGTrsq] = MGTR(CleanedTCS);
 
@@ -271,40 +271,40 @@ TotalSharedVar = OrigVar - TotalUnsharedVar;
 %unstructured noise grey plots
 if ~strcmp(WM,'NONE')
     % Regress out all structured signal
-    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMbetaICA = pinv(ICA,1e-6) * WMtcPM;
     WMtcUnstructNoise = WMtcPM - (ICA * WMbetaICA);
     WMtcUnstructNoise = demean(WMtcUnstructNoise);
 end
 if ~strcmp(CSF,'NONE')
     % Regress out all structured signal    
-    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFbetaICA = pinv(ICA,1e-6) * CSFtcPM;
     CSFtcUnstructNoise = CSFtcPM - (ICA * CSFbetaICA);
     CSFtcUnstructNoise = demean(CSFtcUnstructNoise);
 end
 
 if ~strcmp(WM,'NONE')
     % Regress out all signal
-    WMbetaICA = pinv(ICA) * WMtcPM;
+    WMbetaICA = pinv(ICA,1e-6) * WMtcPM;
     WMtcStructNoise = WMtcPM - (ICA(:,Isignal) * WMbetaICA(Isignal,:));
     WMtcStructNoise = demean(WMtcStructNoise);
 end
 if ~strcmp(CSF,'NONE')
     % Regress out all signal    
-    CSFbetaICA = pinv(ICA) * CSFtcPM;
+    CSFbetaICA = pinv(ICA,1e-6) * CSFtcPM;
     CSFtcStructNoise = CSFtcPM - (ICA(:,Isignal) * CSFbetaICA(Isignal,:));
     CSFtcStructNoise = demean(CSFtcStructNoise);
 end
 
 %Create data if regressing out cleaned WM timecourse
 if ~strcmp(WM,'NONE')
-    betaWM = pinv(WMtcClean) * CleanedTCS';
+    betaWM = pinv(WMtcClean,1e-6) * CleanedTCS';
     WMCleanedTCS = CleanedTCS - (WMtcClean * betaWM)';
     [WMCleanedMGTRtcs,WMCleanedMGT,WMCleanedMGTbeta,WMCleanedMGTVar,WMCleanedMGTrsq] = MGTR(WMCleanedTCS);
     WMVar = var((CleanedTCS - WMCleanedTCS),[],tpDim);
 end
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     % Regress out WM from CSF signal   
-    betaCSFWM = pinv(WMtcClean) * CSFtcClean;
+    betaCSFWM = pinv(WMtcClean,1e-6) * CSFtcClean;
     CSFWM = CSFtcClean - (WMtcClean * betaCSFWM);
     CSFWM = demean(CSFWM);
     WMWM=single(zeros(length(CSFWM),1));
@@ -312,14 +312,14 @@ end
 
 %Create data if regressing out cleaned CSF timecourse
 if ~strcmp(CSF,'NONE')
-    betaCSF = pinv(CSFtcClean) * CleanedTCS';
+    betaCSF = pinv(CSFtcClean,1e-6) * CleanedTCS';
     CSFCleanedTCS = CleanedTCS - (CSFtcClean * betaCSF)';
     [CSFCleanedMGTRtcs,CSFCleanedMGT,CSFCleanedMGTbeta,CSFCleanedMGTVar,CSFCleanedMGTrsq] = MGTR(CSFCleanedTCS);
     CSFVar = var((CleanedTCS - CSFCleanedTCS),[],tpDim);
 end
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
     % Regress out CSF from WM signal   
-    betaWMCSF = pinv(CSFtcClean) * WMtcClean;
+    betaWMCSF = pinv(CSFtcClean,1e-6) * WMtcClean;
     WMCSF = WMtcClean - (CSFtcClean * betaWMCSF);
     WMCSF = demean(WMCSF);
     CSFCSF=single(zeros(length(WMCSF),1));
@@ -327,7 +327,7 @@ end
 
 %Create data if regressing out cleaned WM and CSF timecourses
 if ~strcmp(WM,'NONE') && ~strcmp(CSF,'NONE')
-    betaWMCSF = pinv([WMtcClean CSFtcClean]) * CleanedTCS';
+    betaWMCSF = pinv([WMtcClean CSFtcClean],1e-6) * CleanedTCS';
     WMCSFCleanedTCS = CleanedTCS - ([WMtcClean CSFtcClean] * betaWMCSF)';
     [WMCSFCleanedMGTRtcs,WMCSFCleanedMGT,WMCSFCleanedMGTbeta,WMCSFCleanedMGTVar,WMCSFCleanedMGTrsq] = MGTR(WMCSFCleanedTCS);
     WMCSFVar = var((CleanedTCS - WMCSFCleanedTCS),[],tpDim);
@@ -655,7 +655,7 @@ end
 % mean that is present in the input tcs.
 function [MGTRtcs,MGT,MGTbeta,MGTVar,MGTrsq] = MGTR(tcs)
     MGT = demean(mean(tcs,1))';
-    MGTbeta = pinv(MGT) * tcs';
+    MGTbeta = pinv(MGT,1e-6) * tcs';
     MGTRtcs = tcs - (MGT * MGTbeta)';
     MGTVar = var((tcs - MGTRtcs),[],2);
     MGTbeta = MGTbeta';
