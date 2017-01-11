@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/HCP_PhaseFinalTesting" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
