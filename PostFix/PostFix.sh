@@ -110,6 +110,11 @@ usage()
 	echo "    --high-pass=<high pass>"
 	echo "    --template-scene-dual-screen=<template scene file>"
 	echo "    --template-scene-single-screen=<template scene file>"
+	echo "    --reuse-high-pass=<YES | NO>"
+	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
+	echo "     0 = Use compiled Matlab"
+	echo "     1 = Use Matlab"
+	#echo "     2 = Use Octave"	
 	echo ""
 }
 
@@ -137,6 +142,11 @@ get_options()
 	unset g_high_pass
 	unset g_template_scene_dual_screen
 	unset g_template_scene_single_screen
+  unset g_reuse_high_pass
+	unset g_matlab_run_mode             
+
+  # set default values
+  g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -177,6 +187,14 @@ get_options()
 				;;
 			--template-scene-single-screen=*)
 				g_template_scene_single_screen=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--reuse-high-pass=*)
+				g_reuse_high_pass=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+  		--matlab-run-mode=*)
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -231,6 +249,32 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_template_scene_single_screen: ${g_template_scene_single_screen}"
+	fi
+
+	if [ -z "${g_reuse_high_pass}" ]; then
+		echo "ERROR: reuse high pass not specified"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_template_scene_single_screen: ${g_template_scene_single_screen}"
+	fi
+
+	if [ -z "${g_matlab_run_mode}" ]; then
+		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${g_matlab_run_mode} in 
+			0)
+				;;
+			1)
+				;;
+			# 2)
+			#	;;
+			*)
+				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				echo "ERROR: matlab run mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -289,9 +333,16 @@ main()
 	# --------------------------------------------------------------------------------
 	log_Msg "Set up for prepareICAs Matlab code"
 	# --------------------------------------------------------------------------------
-
-	dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas" #No Extension Here	
-	log_Msg "dtseriesName: ${dtseriesName}"
+        
+        if [ ${g_reuse_high_pass} = "YES" ] ; then
+		dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas_hp${g_high_pass}" #No Extension Here	
+		log_Msg "dtseriesName: ${dtseriesName}"
+                g_high_pass_use="-1"
+        else
+		dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas" #No Extension Here	
+		log_Msg "dtseriesName: ${dtseriesName}"
+                g_high_pass_use="${g_high_pass}"
+        fi
 
 	ICAs="${ICAFolder}/melodic_mix"
 	log_Msg "ICAs: ${ICAs}"
@@ -321,39 +372,60 @@ main()
 		log_Msg "Removing ComponentList: ${ComponentList}"
 		rm ${ComponentList}
 	fi
+        
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
+			matlab_exe="${HCPPIPEDIR}"
+			matlab_exe+="/PostFix/Compiled_prepareICAs/distrib/run_prepareICAs.sh"
 
-	matlab_exe="${HCPPIPEDIR}"
-	matlab_exe+="/PostFix/Compiled_prepareICAs/distrib/run_prepareICAs.sh"
+      matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 
-	# TBD: Use environment variable instead of fixed path?
-    local matlab_compiler_runtime
-    if [ "${CLUSTER}" = "1.0" ]; then
-        matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-    elif [ "${CLUSTER}" = "2.0" ]; then
-        matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
-    else
-        log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-        log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-        log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-        log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-        log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-        log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-        log_Msg "ERROR: using an environment variable's value."
-    fi
+			matlab_function_arguments="'${dtseriesName}' '${ICAs}' '${CARET7DIR}/wb_command' '${ICAdtseries}' '${NoiseICAs}' '${Noise}' "
+			matlab_function_arguments+="'${Signal}' '${ComponentList}' ${g_high_pass_use} ${TR} "
 
-	matlab_function_arguments="'${dtseriesName}' '${ICAs}' '${CARET7DIR}/wb_command' '${ICAdtseries}' '${NoiseICAs}' '${Noise}' "
-	matlab_function_arguments+="'${Signal}' '${ComponentList}' ${g_high_pass} ${TR} "
+			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
-	matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
+			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+			# --------------------------------------------------------------------------------
+			log_Msg "Run matlab command: ${matlab_cmd}"
+			# --------------------------------------------------------------------------------
 
-	# --------------------------------------------------------------------------------
-	log_Msg "Run matlab command: ${matlab_cmd}"
-	# --------------------------------------------------------------------------------
+			echo "${matlab_cmd}" | bash
+			echo $?
 
-	echo "${matlab_cmd}" | bash
-	echo $?
+			;;
+
+		1)
+			# Use Matlab - Untested
+			matlab_script_file_name=${ResultsFolder}/PostFix_${g_fmri_name}.m
+			log_Msg "Creating Matlab script: ${matlab_script_file_name}"
+
+			if [ -e ${matlab_script_file_name} ]; then
+				echo "Removing old ${matlab_script_file_name}"
+				rm -f ${matlab_script_file_name}
+			fi
+			
+			# TBD: change these paths to use variables instead of hard coded paths
+			touch ${matlab_script_file_name}
+			echo "addpath ${HCPPIPEDIR}/PostFix " >> ${matlab_script_file_name}
+			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
+			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
+			echo "prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${g_high_pass_use},${TR});" >> ${matlab_script_file_name}
+
+			log_Msg "About to execute the following Matlab script"
+
+			cat ${matlab_script_file_name}
+			cat ${matlab_script_file_name} | matlab -nodisplay -nosplash
+
+			;;
+
+		*)
+			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
+			exit 1
+	esac
+
 
 	# --------------------------------------------------------------------------------
 	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
