@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="ssConcat" location="/home/tbb/projects/Pipelines/MSMAll/scripts" file="/home/tbb/projects/Pipelines/MSMAll/scripts/ssConcat.prj" build-checksum="1581301113">
+  <configuration target="target.standalone" target-name="Standalone Application" name="ssConcat" location="/home/tbb/projects/Pipelines/MSMAll/scripts" file="/home/tbb/projects/Pipelines/MSMAll/scripts/ssConcat.prj" build-checksum="1963082057">
     <param.project.name>/home/tbb/projects/Pipelines/MSMAll/scripts/ssConcat.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>ssConcat</param.appname>
@@ -8,7 +8,7 @@
     <param.output>${PROJECT_ROOT}/Compiled_ssConcat/distrib</param.output>
     <param.embed.ctf>true</param.embed.ctf>
     <param.tbx_on_path>
-      <item>none</item>
+      <item>all</item>
     </param.tbx_on_path>
     <param.warnings>
       <warning.fullpath>on</warning.fullpath>
@@ -37,6 +37,7 @@
       <param.target.type />
       <param.appname />
       <param.embed.ctf />
+      <param.tbx_on_path />
       <param.warnings />
       <param.version />
       <param.user.only.registration />
@@ -655,7 +656,7 @@
       <vista>false</vista>
       <linux>true</linux>
       <solaris>false</solaris>
-      <osver>4.4.0-57-generic</osver>
+      <osver>4.4.0-59-generic</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>glnxa64</arch>

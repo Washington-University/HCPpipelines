@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbb/projects/Pipelines/RestingStateStats" file="/home/tbb/projects/Pipelines/RestingStateStats/RestingStateStats.prj" build-checksum="1410843571">
+  <configuration target="target.standalone" target-name="Standalone Application" name="RestingStateStats" location="/home/tbb/projects/Pipelines/RestingStateStats" file="/home/tbb/projects/Pipelines/RestingStateStats/RestingStateStats.prj" build-checksum="1389074230">
     <param.project.name>/home/tbb/projects/Pipelines/RestingStateStats/RestingStateStats.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>RestingStateStats</param.appname>
@@ -8,7 +8,7 @@
     <param.output>${PROJECT_ROOT}/Compiled_RestingStateStats/distrib</param.output>
     <param.embed.ctf>true</param.embed.ctf>
     <param.tbx_on_path>
-      <item>none</item>
+      <item>all</item>
     </param.tbx_on_path>
     <param.warnings>
       <warning.fullpath>on</warning.fullpath>
@@ -37,6 +37,7 @@
       <param.target.type />
       <param.appname />
       <param.embed.ctf />
+      <param.tbx_on_path />
       <param.warnings />
       <param.version />
       <param.user.only.registration />
@@ -658,7 +659,7 @@
       <vista>false</vista>
       <linux>true</linux>
       <solaris>false</solaris>
-      <osver>4.4.0-57-generic</osver>
+      <osver>4.4.0-59-generic</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>glnxa64</arch>
