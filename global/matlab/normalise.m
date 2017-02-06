@@ -21,4 +21,5 @@ dimrep = ones(1,length(dims));
 dimrep(dim) = dimsize;
 
 x = x - repmat(mean(x,dim),dimrep);
-x = x./repmat(std(x,0,dim),dimrep);
+x = x./repmat(max(std(x,0,dim),0.00001),dimrep);
+

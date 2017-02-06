@@ -23,6 +23,7 @@ module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 
 # Set up specific environment variables for the HCP Pipeline
 #export HCPPIPEDIR=${HOME}/projects/Pipelines
+#export HCPPIPEDIR=/media/myelin/brainmappers/Connectome_Project/Pipelines
 if [[ -z $HCPPIPEDIR ]] ; then
   # retrieve the Example/Scripts folder
   # this script will be sourced, so BASH_SOURCE[0] will be empty
@@ -33,7 +34,14 @@ if [[ -z $HCPPIPEDIR ]] ; then
 fi
 
 #export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
+#export CARET7DIR=/home/brainmappers/workbench
 export CARET7DIR=/opt/fmrib/bin # When on Jalapeno: source it from the general bin folder to allow wb_command to find other libraries and packages
+
+export MSMBin=${HCPPIPEDIR}/MSMBinaries
+
+# the two locations below are specific for Washington-University
+export MATLAB_COMPILER_RUNTIME=/media/myelin/brainmappers/HardDrives/1TB/MATLAB_Runtime/v901
+export FSL_FIXDIR=/media/myelin/aahana/fix1.06
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
@@ -49,7 +57,6 @@ export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
-export MSMBin=${HCPPIPEDIR}/MSMBinaries
 
 # FMRIB Jalapeno specific settings
 # no further job branching beyond fsl_sub is allowed on the Jalapeno cluster

@@ -46,7 +46,9 @@ echo "$@"
     #QUEUE="-q hcp_priority.q"
 #fi
 
+<<"BLOCK_COMMENT"
 # when on the fmrib server, pick a specific jalapeno node
+# unfortunately, this fails when a broken node is picked
 if [[ -d /home/fmribadmin/ ]] ; then
   # randomly pick a relatively free node on jalapeno01-09
   # list all jobs running on jalapeno 01-09
@@ -62,6 +64,7 @@ if [[ -d /home/fmribadmin/ ]] ; then
   # assign queue
   QUEUE="$QUEUE@jalapeno0$picknode.fmrib.ox.ac.uk"
 fi
+BLOCK_COMMENT
 
 PRINTCOM=""
 #PRINTCOM="echo"

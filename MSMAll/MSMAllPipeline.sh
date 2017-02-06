@@ -92,6 +92,10 @@ usage()
 	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
 	echo "    --subject=<subject ID>"
 	echo "    --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names"
+	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
+	echo "     0 = Use compiled Matlab"
+	echo "     1 = Use Matlab"
+	#echo "     2 = Use Octave"	
 	echo " "
 	echo "  TBW "
 	echo " "
@@ -133,8 +137,10 @@ get_options()
 	unset g_high_res_mesh
 	unset g_low_res_mesh
 	unset g_input_registration_name
+	unset g_matlab_run_mode             
 
-	# set default values
+  # set default values
+  g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -191,6 +197,10 @@ get_options()
 				;;
 			--input-registration-name=*)
 				g_input_registration_name=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--matlab-run-mode=*)
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -273,6 +283,25 @@ get_options()
 	else
 		log_Msg "g_input_registration_name: ${g_input_registration_name}"
 	fi
+	
+	if [ -z "${g_matlab_run_mode}" ]; then
+		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${g_matlab_run_mode} in 
+			0)
+				;;
+			1)
+				;;
+			# 2)
+			#	;;
+			*)
+				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				echo "ERROR: matlab run mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
+	fi
 
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
@@ -314,7 +343,7 @@ main()
 	#       help make the form and values easier to understand.
 	# Note: If UseMIGP value is NO, then we use the full timeseries
 	log_Msg "Running MSM on full timeseries"
-	migp_vars="NO@0@0@NO@YES"
+	migp_vars="NO@0@0@YES@YES"
 	log_Msg "migp_vars: ${migp_vars}"
 
 	output_proc_string="_nobias_vn"
@@ -327,7 +356,8 @@ main()
 		--output-fmri-name=${g_output_fmri_name} \
 		--fmri-proc-string=${g_fmri_proc_string} \
 		--migp-vars=${migp_vars} \
-		--output-proc-string=${output_proc_string}
+		--output-proc-string=${output_proc_string} \
+		--matlab-run-mode=${g_matlab_run_mode}
 
 	expected_concatenated_output_file=""
 	expected_concatenated_output_file+="${g_path_to_study_folder}"
@@ -424,20 +454,22 @@ main()
 	MSMAllRegsOrig+="@7_8_9_10_11_12_13_14_15_16_17_18_19_20_21"  # RegressionParams
 	MSMAllRegsOrig+="@NO"                             # VarianceNormalization
 	MSMAllRegsOrig+="@YES"                            # ReRunIfExists
-	MSMAllRegsOrig+="@${MSMBin}/allparametersVariableMSMOptimiztionAllDRconf" # RegConf
+#	MSMAllRegsOrig+="@${MSMBin}/allparametersVariableMSMOptimiztionAllDRconf" # RegConf
+	MSMAllRegsOrig+="@${MSMBin}/MSMAllStrainFinalconf1to1_1to3" # RegConf
 	MSMAllRegsOrig+="@RegConfVars"                    # RegConfVars
 	log_Msg "MSMAllRegsOrig: ${MSMAllRegsOrig}"
 	log_Msg ""
 
-	RegConfVars=""
-	RegConfVars+="REGNUMBER=1"
-	RegConfVars+=",REGPOWER=3"
-	RegConfVars+=",SCALEPOWER=0"
-	RegConfVars+=",AREALDISTORTION=0"
-	RegConfVars+=",MAXTHETA=0"
-	RegConfVars+=",LAMBDAONE=0.01"
-	RegConfVars+=",LAMBDATWO=0.05"
-	RegConfVars+=",LAMBDATHREE=0.1"
+	#RegConfVars=""
+	#RegConfVars+="REGNUMBER=1"
+	#RegConfVars+=",REGPOWER=3"
+	#RegConfVars+=",SCALEPOWER=0"
+	#RegConfVars+=",AREALDISTORTION=0"
+	#RegConfVars+=",MAXTHETA=0"
+	#RegConfVars+=",LAMBDAONE=0.01"
+	#RegConfVars+=",LAMBDATWO=0.05"
+	#RegConfVars+=",LAMBDATHREE=0.1"
+	RegConfVars="NONE"
 	log_Msg "RegConfVars: ${RegConfVars}"
 	log_Msg ""
 
@@ -527,7 +559,8 @@ main()
 				--vn=${VN} \
 				--rerun=${ReRun} \
 				--reg-conf=${RegConf} \
-				--reg-conf-vars="${RegConfVars}"
+				--reg-conf-vars="${RegConfVars}" \
+        --matlab-run-mode=${g_matlab_run_mode}	
 			
 			g_input_registration_name=${RegName}
 		done

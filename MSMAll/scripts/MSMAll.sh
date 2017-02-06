@@ -14,9 +14,6 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 log_Debug_On
 
-MATLAB_HOME="/export/matlab/R2013a"
-log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
-
 #
 # Function Description:
 #  TBW
@@ -27,6 +24,10 @@ usage()
 	echo "  MSMAll.sh"
 	echo ""
 	echo " usage TBW"
+	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
+	echo "     0 = Use compiled Matlab"
+	echo "     1 = Use Matlab"
+	#echo "     2 = Use Octave"	
 	echo ""
 }
 
@@ -68,6 +69,10 @@ get_options()
 	unset g_rerun                       # ${ReRun}
 	unset g_reg_conf                    # ${RegConf}
 	unset g_reg_conf_vars               # ${RegConfVars}
+	unset g_matlab_run_mode             
+
+  # set default values
+  g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -176,6 +181,10 @@ get_options()
 				;;
 			--reg-conf=*)
 				g_reg_conf=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--matlab-run-mode=*)
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-conf-vars=*)
@@ -365,6 +374,25 @@ get_options()
 		log_Msg "g_reg_conf_vars: ${g_reg_conf_vars}"
 	fi
 
+	if [ -z "${g_matlab_run_mode}" ]; then
+		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${g_matlab_run_mode} in 
+			0)
+				;;
+			1)
+				;;
+			# 2)
+			#	;;
+			*)
+				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				echo "ERROR: matlab run mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
@@ -514,6 +542,9 @@ main()
 	nTPsForSpectra="0" #Set to zero to not compute spectra
 	log_Msg "nTPsForSpectra: ${nTPsForSpectra}"
 
+  VolParams="NO" #Dont' output volume RSN maps
+	log_Msg "VolParams: ${VolParams}"
+
 	if [[ ! -e ${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii || ${ReRun} = "YES" ]] ; then 
 		
 		##IsRunning="${NativeFolder}/${Subject}.IsRunning_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.txt"
@@ -617,10 +648,13 @@ main()
 					done
 				fi
 
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
 				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 				
-				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 				matlab_function_arguments="'${inputspatialmaps}'"
 				matlab_function_arguments+=" '${inputdtseries}'"
@@ -633,6 +667,7 @@ main()
 				matlab_function_arguments+=" '${VN}'"
 				matlab_function_arguments+=" ${nTPsForSpectra}"
 				matlab_function_arguments+=" '${BC}'"
+				matlab_function_arguments+=" '${VolParams}'"
 
 				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.Iteration${i}.log 2>&1"
 
@@ -644,6 +679,16 @@ main()
 
 				echo "${matlab_cmd}" | bash
 				echo "Matlab command return code: $?"
+    ;;
+		1)
+      mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
+M_PROG
+echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+		;;
+	esac
 
 				rm ${Params} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
@@ -688,11 +733,15 @@ main()
 					Distortion="${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 					echo ${Distortion} > ${Params}
 				fi
+				
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
 
 				matlab_exe="${HCPPIPEDIR}"
 				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 				matlab_function_arguments="'${inputspatialmaps}'"
 				matlab_function_arguments+=" '${inputdtseries}'"
@@ -705,6 +754,7 @@ main()
 				matlab_function_arguments+=" '${VN}'"
 				matlab_function_arguments+=" ${nTPsForSpectra}"
 				matlab_function_arguments+=" '${BC}'"
+				matlab_function_arguments+=" '${VolParams}'"
 
 				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
 
@@ -716,6 +766,16 @@ main()
 
 				echo "${matlab_cmd}" | bash
 				echo "Matlab command return code: $?"
+		;;
+		1)
+      mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
+M_PROG
+echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+		;;
+	esac
 
 				rm ${Params} ${TopographicWeights} ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
@@ -1061,10 +1121,14 @@ main()
 			done
 		fi
 
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
+
 		matlab_exe="${HCPPIPEDIR}"
 		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 		matlab_function_arguments="'${inputspatialmaps}'"
 		matlab_function_arguments+=" '${inputdtseries}'"
@@ -1077,6 +1141,7 @@ main()
 		matlab_function_arguments+=" '${VN}'"
 		matlab_function_arguments+=" ${nTPsForSpectra}"
 		matlab_function_arguments+=" '${BC}'"
+   	matlab_function_arguments+=" '${VolParams}'"
 
 		matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.1.log 2>&1"
 
@@ -1088,6 +1153,16 @@ main()
 
 		echo "${matlab_cmd}" | bash
 		echo "Matlab command return code: $?"
+		;;
+		1)
+    mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
+M_PROG
+echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+		;;
+	esac
 
 		rm ${Params} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
@@ -1117,10 +1192,14 @@ main()
 			echo ${Distortion} > ${Params}
 		fi
 
+	case ${g_matlab_run_mode} in
+		0)
+			# Use Compiled Matlab
+
 		matlab_exe="${HCPPIPEDIR}"
 		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_compiler_runtime="${MATLAB_HOME}/MCR"
+		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 		matlab_function_arguments="'${inputspatialmaps}'"
 		matlab_function_arguments+=" '${inputdtseries}'"
@@ -1133,6 +1212,7 @@ main()
 		matlab_function_arguments+=" '${VN}'"
 		matlab_function_arguments+=" ${nTPsForSpectra}"
 		matlab_function_arguments+=" '${BC}'"
+		matlab_function_arguments+=" '${VolParams}'"
 
 		matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.2.log 2>&1"
 
@@ -1144,6 +1224,16 @@ main()
 
 		echo "${matlab_cmd}" | bash
 		echo "Matlab command return code: $?"
+		;;
+		1)
+    mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
+M_PROG
+echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+		;;
+	esac
 
 		rm ${Params} ${TopographicWeights} ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii
 

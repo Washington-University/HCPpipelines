@@ -13,6 +13,10 @@ usage()
 	echo "  De-Drift and Resample"
 	echo ""
 	echo "  Usage: ${g_script_name} - TO BE WRITTEN"
+	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
+	echo "     0 = Use compiled Matlab"
+	echo "     1 = Use Matlab"
+	#echo "     2 = Use Octave"	
 	echo ""
 }
 
@@ -36,6 +40,10 @@ get_options()
 	unset g_highpass                 # HighPass
 	unset g_myelin_target_file       # MyelinTargetFile
 	unset g_input_reg_name           # InRegName - e.g. "_1.6mm"
+	unset g_matlab_run_mode             
+
+  # set default values
+  g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -112,6 +120,10 @@ get_options()
 				;;
 			--input-reg-name=*)
 				g_input_reg_name=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+  		--matlab-run-mode=*)
+				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -222,6 +234,25 @@ get_options()
 
 	if [ -n "${g_input_reg_name}" ]; then
 		log_Msg "g_input_reg_name: ${g_input_reg_name}"
+	fi
+
+	if [ -z "${g_matlab_run_mode}" ]; then
+		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${g_matlab_run_mode} in 
+			0)
+				;;
+			1)
+				;;
+			# 2)
+			#	;;
+			*)
+				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				echo "ERROR: matlab run mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -677,7 +708,7 @@ main()
 	for fMRIName in ${rfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
 		#${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh ${Caret7_Command} ${GitRepo} ${FixDir} ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ${ConcatRegName} 
-		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName}
+		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName} --matlab-run-mode=${g_matlab_run_mode}
 	done
 	
 	log_Msg "End"
