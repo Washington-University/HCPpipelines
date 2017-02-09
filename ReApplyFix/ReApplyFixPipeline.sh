@@ -346,7 +346,12 @@ main()
 	local aggressive=0
 	local domot=1
 	local hp=${HighPass}
-	local fixlist=".fix"
+	
+	if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+    local fixlist=".fix"
+  else
+    local fixlist="HandNoise.txt"
+  fi
 	local fmri_orig="${fMRIName}"
 	local fmri=${fMRIName}
 
@@ -378,59 +383,90 @@ main()
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
+  if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+    local matlab_exe="${HCPPIPEDIR}"
+    matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
 
-	local matlab_exe="${HCPPIPEDIR}"
-	matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
-	
-  matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
-  
-	# TBD: Use environment variable instead of fixed path!
-	#local matlab_compiler_runtime
-	#if [ "${CLUSTER}" = "1.0" ]; then
-	#	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-	#elif [ "${CLUSTER}" = "2.0" ]; then
-	#	matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
-	#else
-	#	log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-	#	log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-	#	log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-	#	log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-	#	log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-	#	log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-	#	log_Msg "ERROR: using an environment variable's value."
-	#fi
+    matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 
-	local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
-	
-	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+    # TBD: Use environment variable instead of fixed path!
+    #local matlab_compiler_runtime
+    #if [ "${CLUSTER}" = "1.0" ]; then
+    #	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+    #elif [ "${CLUSTER}" = "2.0" ]; then
+    #	matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+    #else
+    #	log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
+    #	log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
+    #	log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
+    #	log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
+    #	log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
+    #	log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
+    #	log_Msg "ERROR: using an environment variable's value."
+    #fi
 
-	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+    local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 
-	# --------------------------------------------------------------------------------
-	log_Msg "Run matlab command: ${matlab_cmd}"
-	# --------------------------------------------------------------------------------
-	echo "${matlab_cmd}" | bash
-	echo $?
+    local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+
+    matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+
+    # --------------------------------------------------------------------------------
+    log_Msg "Run matlab command: ${matlab_cmd}"
+    # --------------------------------------------------------------------------------
+    echo "${matlab_cmd}" | bash
+    echo $?
+  else
+    local matlab_exe="${HCPPIPEDIR}"
+    matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/run_fix_3_clean.sh"
+
+    matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
+
+    # TBD: Use environment variable instead of fixed path!
+    #local matlab_compiler_runtime
+    #if [ "${CLUSTER}" = "1.0" ]; then
+    #	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+    #elif [ "${CLUSTER}" = "2.0" ]; then
+    #	matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+    #else
+    #	log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
+    #	log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
+    #	log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
+    #	log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
+    #	log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
+    #	log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
+    #	log_Msg "ERROR: using an environment variable's value."
+    #fi
+
+    local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+
+    local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+
+    matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+
+    # --------------------------------------------------------------------------------
+    log_Msg "Run matlab command: ${matlab_cmd}"
+    # --------------------------------------------------------------------------------
+    echo "${matlab_cmd}" | bash
+    echo $?
+  fi
 		;;
 		1)
 #  #Call matlab
   ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
-		
+if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
 matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});
 M_PROG
 echo "${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});"
-cd ${DIR}
+else
+matlab -nojvm -nodisplay -nosplash <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
+M_PROG
+echo "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});"
+fi
 		;;
 	esac
-
-
-#matlab -nojvm -nodisplay -nosplash <<M_PROG
-#${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});
-#M_PROG
-#echo "${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});"
-
-	cd ${DIR}
 
 	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
 	fmri_orig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
@@ -438,7 +474,11 @@ cd ${DIR}
 		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
 
-	$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+  if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+    $FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+  fi
+
+	cd ${DIR}
 }
 
 #

@@ -247,6 +247,18 @@ case $DistortionCorrection in
         exit 1
 esac
 
+if [ "${UnwarpDir}" = "-x" ] ; then
+  UnwarpDir="x-"
+fi
+
+if [ "${UnwarpDir}" = "-y" ] ; then
+  UnwarpDir="y-"
+fi
+
+if [ "${UnwarpDir}" = "-z" ] ; then
+  UnwarpDir="z-"
+fi
+
 ### LOOP over available modalities ###
 
 for TXw in $Modalities ; do
