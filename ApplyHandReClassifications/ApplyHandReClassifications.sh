@@ -225,7 +225,7 @@ main()
 		0)
 			# Use Compiled Matlab
 			matlab_exe="${g_hcppipedir}"
-			matlab_exe+="/ApplyHandReClassifications/Compiled_MergeEditClassifications/distrib/run_MergeEditClassifications.sh"
+			matlab_exe+="/ApplyHandReClassifications/MergeEditClassifications/distrib/run_MergeEditClassifications.sh"
 
 			# TBD: Use environment variable instead of fixed path
 			if [ "${CLUSTER}" = "2.0" ]; then
@@ -256,7 +256,13 @@ main()
 		1)
 			# Use Matlab
 
-			matlab <<M_PROG
+			g_matlab_home=${MATLAB_HOME}
+			if [ -z "${g_matlab_home}" ]; then
+				echo "ERROR: MATLAB_HOME must be set!"
+				exit 1
+			fi
+			
+			${g_matlab_home}/bin/matlab <<M_PROG
 MergeEditClassifications('${OriginalFixSignal}','${OriginalFixNoise}','${ReclassifyAsSignal}','${ReclassifyAsNoise}','${HandSignalName}','${HandNoiseName}','${TrainingLabelsName}',${NumICAs});
 M_PROG
 

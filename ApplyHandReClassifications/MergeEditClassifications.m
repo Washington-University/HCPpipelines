@@ -1,6 +1,28 @@
 function [ output_args ] = MergeEditClassifications(OriginalFixSignal,OriginalFixNoise,ReclassifyAsSignal,ReclassifyAsNoise,HandSignalName,HandNoiseName,TrainingLabelsName,NumICAs)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
+%
+% Author(s): M. Glasser
+%
+% Minor edits by T.B. Brown to show values of input parameters for debugging purposes
+% Minor edits by T.B. Brown to convert string parameters to numeric values as necessary.
+%                           When used with compiled MATLAB, all parameters are passed 
+%                           in as strings               
+
+func_name='MergeEditClassifications'
+fprintf('%s - start\n', func_name)
+fprintf('%s - OriginalFixSignal: %s\n',  func_name, OriginalFixSignal)
+fprintf('%s - OriginalFixNoise: %s\n',   func_name, OriginalFixNoise)
+fprintf('%s - ReclassifyAsSignal: %s\n', func_name, ReclassifyAsSignal)
+fprintf('%s - ReclassifyAsNoise: %s\n',  func_name, ReclassifyAsNoise)
+fprintf('%s - HandSignalName: %s\n',     func_name, HandSignalName)
+fprintf('%s - HandNoiseName: %s\n',      func_name, HandNoiseName)
+fprintf('%s - TrainingLabelsName: %s\n', func_name, TrainingLabelsName)
+if isdeployed
+  fprintf('%s - NumICAs (as string): "%s"\n', func_name, NumICAs)
+  NumICAs=str2double(NumICAs)
+end
+fprintf('%s - NumICAs: %d\n', func_name, NumICAs)  
 
 OriginalFixSignal = load(OriginalFixSignal);
 OriginalFixNoise = load(OriginalFixNoise);
