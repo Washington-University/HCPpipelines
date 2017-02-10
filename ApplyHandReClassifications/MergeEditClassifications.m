@@ -70,6 +70,7 @@ dlmwrite(HandSignalName,HandSignal, 'delimiter', ' ');
 
 unix(['echo "' TrainingLabels '" > ' TrainingLabelsName]);
 
+fprintf('%s - Complete\n', func_name)
 
 end
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="MergeEditClassifications" location="/home/tbb/projects/Pipelines/ApplyHandReClassifications" file="/home/tbb/projects/Pipelines/ApplyHandReClassifications/MergeEditClassifications.prj" build-checksum="578077553">
+  <configuration target="target.standalone" target-name="Standalone Application" name="MergeEditClassifications" location="/home/tbb/projects/Pipelines/ApplyHandReClassifications" file="/home/tbb/projects/Pipelines/ApplyHandReClassifications/MergeEditClassifications.prj" build-checksum="559822199">
     <param.project.name>/home/tbb/projects/Pipelines/ApplyHandReClassifications/MergeEditClassifications.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>MergeEditClassifications</param.appname>
