@@ -1,4 +1,5 @@
-function [ output_args ] = MergeEditClassifications(OriginalFixSignal,OriginalFixNoise,ReclassifyAsSignal,ReclassifyAsNoise,HandSignalName,HandNoiseName,TrainingLabelsName,NumICAs)
+function MergeEditClassifications(OriginalFixSignal,OriginalFixNoise,ReclassifyAsSignal,ReclassifyAsNoise,HandSignalName,HandNoiseName,TrainingLabelsName,NumICAs)
+%function [ output_args ] = MergeEditClassifications(OriginalFixSignal,OriginalFixNoise,ReclassifyAsSignal,ReclassifyAsNoise,HandSignalName,HandNoiseName,TrainingLabelsName,NumICAs)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 %
