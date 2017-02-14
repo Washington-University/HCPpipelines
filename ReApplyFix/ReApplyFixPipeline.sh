@@ -42,29 +42,19 @@ usage()
 #
 get_options()
 {
-#Caret7_Command="${1}"   ${CARET7_DIR}/wb_command
-#GitRepo="${2}"          ${HCPPIPEDIR}
-#FixDir="${3}"           ${ICAFIX}
-
-#StudyFolder="${4}"
-#Subject="${5}"
-#fMRIName="${6}"
-#HighPass="${7}"
-#RegName="${8}"
-
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder     # StudyFolder
-	unset g_subject                  # Subject
-	unset g_fmri_name                # fMRIName
-	unset g_high_pass                # HighPass
-	unset g_reg_name                 # RegName
-	unset g_low_res_mesh		 # LowResMesh
+	unset g_path_to_study_folder	# StudyFolder
+	unset g_subject					# Subject
+	unset g_fmri_name				# fMRIName
+	unset g_high_pass				# HighPass
+	unset g_reg_name				# RegName
+	unset g_low_res_mesh			# LowResMesh
 	unset g_matlab_run_mode             
 
-  # set default values
-  g_matlab_run_mode=0
+	# set default values
+	g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -107,7 +97,7 @@ get_options()
 				g_low_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-  		--matlab-run-mode=*)
+	  		--matlab-run-mode=*)
 				g_matlab_run_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
@@ -166,22 +156,19 @@ get_options()
 				;;
 			1)
 				;;
-			# 2)
-			#	;;
 			*)
-				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
 				echo "ERROR: matlab run mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
-
+	
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
 	fi
-}
-
+	}
+	
 show_tool_versions()
 {
 	# Show HCP pipelines version
@@ -191,7 +178,7 @@ show_tool_versions()
 	# Show wb_command version
 	log_Msg "Showing Connectome Workbench (wb_command) version"
 	${CARET7DIR}/wb_command -version
-
+	
 	# Show fsl version
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
@@ -299,17 +286,17 @@ main()
 {
 	# Get command line options
 	get_options $@
-
+	
 	show_tool_versions
-
+	
 	check_fsl_version
-
+	
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
-
+	
 	#GitRepo="${2}"
 	#FixDir="${3}"
-
+	
 	local StudyFolder="${g_path_to_study_folder}"
 	log_Msg "StudyFolder: ${StudyFolder}"
 	
@@ -318,40 +305,40 @@ main()
 	
 	local fMRIName="${g_fmri_name}"
 	log_Msg "fMRIName: ${fMRIName}"
-
+	
 	local HighPass="${g_high_pass}"
 	log_Msg "HighPass: ${HighPass}"
-
+	
 	local RegName="${g_reg_name}"
 	log_Msg "RegName: ${RegName}"
-
+	
 	if [ ${RegName} != "NONE" ] ; then
 		RegString="_${RegName}"
 	else
 		RegString=""
 	fi
-
+	
 	if [ ! -z ${g_low_res_mesh} ] && [ ${g_low_res_mesh} != "32" ]; then
 		RegString="${RegString}.${g_low_res_mesh}k"
 	fi
-
+	
 	log_Msg "RegString: ${RegString}"
-
+	
 	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 
-#  #Make appropriate files if they don't exist
+	# Make appropriate files if they don't exist
 
 	local aggressive=0
 	local domot=1
 	local hp=${HighPass}
 	
 	if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
-    local fixlist=".fix"
-  else
-    local fixlist="HandNoise.txt"
-  fi
+		local fixlist=".fix"
+	else
+		local fixlist="HandNoise.txt"
+	fi
 	local fmri_orig="${fMRIName}"
 	local fmri=${fMRIName}
 
@@ -363,7 +350,6 @@ main()
 		log_Msg "Performing imln"
 		$FSLDIR/bin/imln ../${fmri_orig}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
-		
 		log_Msg "START: Showing linked files"
 		ls -l ../${fmri_orig}_Atlas${RegString}.dtseries.nii
 		ls -l Atlas.dtseries.nii
@@ -371,7 +357,7 @@ main()
 	fi
 
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
-
+	
 	mkdir -p mc
 	if [ -f ../Movement_Regressors.txt ] ; then
 		cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
@@ -383,89 +369,63 @@ main()
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
-  if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
-    local matlab_exe="${HCPPIPEDIR}"
-    matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
 
-    matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
+			if [ -z "${MATLAB_COMPILER_RUNTIME}" ] ; then
+				log_Msg "ERROR: To use Compiled Matlab, MATLAB_COMPILER_RUNTIME environment variable must be set"
+				exit 1
+			fi
 
-    # TBD: Use environment variable instead of fixed path!
-    #local matlab_compiler_runtime
-    #if [ "${CLUSTER}" = "1.0" ]; then
-    #	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-    #elif [ "${CLUSTER}" = "2.0" ]; then
-    #	matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
-    #else
-    #	log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-    #	log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-    #	log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-    #	log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-    #	log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-    #	log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-    #	log_Msg "ERROR: using an environment variable's value."
-    #fi
+			if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+				local matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
 
-    local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+				matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 
-    local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+				local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 
-    matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+				local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+				
+				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-    # --------------------------------------------------------------------------------
-    log_Msg "Run matlab command: ${matlab_cmd}"
-    # --------------------------------------------------------------------------------
-    echo "${matlab_cmd}" | bash
-    echo $?
-  else
-    local matlab_exe="${HCPPIPEDIR}"
-    matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/run_fix_3_clean.sh"
+				# --------------------------------------------------------------------------------
+				log_Msg "Run matlab command: ${matlab_cmd}"
+				# --------------------------------------------------------------------------------
+				echo "${matlab_cmd}" | bash
+				echo $?
+			else
+				local matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/run_fix_3_clean.sh"
 
-    matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
+				matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 
-    # TBD: Use environment variable instead of fixed path!
-    #local matlab_compiler_runtime
-    #if [ "${CLUSTER}" = "1.0" ]; then
-    #	matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-    #elif [ "${CLUSTER}" = "2.0" ]; then
-    #	matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
-    #else
-    #	log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-    #	log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-    #	log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-    #	log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-    #	log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-    #	log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-    #	log_Msg "ERROR: using an environment variable's value."
-    #fi
+				local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+				
+				local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
 
-    local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-    local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
-
-    matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-    # --------------------------------------------------------------------------------
-    log_Msg "Run matlab command: ${matlab_cmd}"
-    # --------------------------------------------------------------------------------
-    echo "${matlab_cmd}" | bash
-    echo $?
-  fi
-		;;
+				# --------------------------------------------------------------------------------
+				log_Msg "Run matlab command: ${matlab_cmd}"
+				# --------------------------------------------------------------------------------
+				echo "${matlab_cmd}" | bash
+				echo $?
+			fi
+			;;
 		1)
-#  #Call matlab
-  ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
-if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+			#  Call matlab
+			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
+			if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});
 M_PROG
-echo "${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});"
-else
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+				echo "${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});"
+			else
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
 M_PROG
-echo "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});"
-fi
-		;;
+				echo "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});"
+			fi
+			;;
 	esac
 
 	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
@@ -473,11 +433,11 @@ fi
 	if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
-
-  if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
-    $FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
-  fi
-
+	
+	if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+	fi
+	
 	cd ${DIR}
 }
 
