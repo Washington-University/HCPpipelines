@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Standalone Application" name="fix_3_clean" location="/home/tbb/projects/Pipelines/ReApplyFix/scripts" file="/home/tbb/projects/Pipelines/ReApplyFix/scripts/fix_3_clean.prj" build-checksum="1400564214">
+  <configuration target="target.standalone" target-name="Standalone Application" name="fix_3_clean" location="/home/tbb/projects/Pipelines/ReApplyFix/scripts" file="/home/tbb/projects/Pipelines/ReApplyFix/scripts/fix_3_clean.prj" build-checksum="340239713">
     <param.project.name>/home/tbb/projects/Pipelines/ReApplyFix/scripts/fix_3_clean.prj</param.project.name>
     <param.target.type>Standalone Application</param.target.type>
     <param.appname>fix_3_clean</param.appname>
@@ -70,8 +70,8 @@
     <fileset.package />
     <build-deliverables>
       <file name="run_fix_3_clean.sh" location="${PROJECT_ROOT}/Compiled_fix_3_clean/distrib" optional="false">/home/tbb/projects/Pipelines/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/run_fix_3_clean.sh</file>
-      <file name="fix_3_clean" location="${PROJECT_ROOT}/Compiled_fix_3_clean/distrib" optional="false">/home/tbb/projects/Pipelines/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/fix_3_clean</file>
       <file name="readme.txt" location="${PROJECT_ROOT}/Compiled_fix_3_clean/distrib" optional="true">/home/tbb/projects/Pipelines/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/readme.txt</file>
+      <file name="fix_3_clean" location="${PROJECT_ROOT}/Compiled_fix_3_clean/distrib" optional="false">/home/tbb/projects/Pipelines/ReApplyFix/scripts/Compiled_fix_3_clean/distrib/fix_3_clean</file>
     </build-deliverables>
     <workflow />
     <matlab>
@@ -659,7 +659,7 @@
       <vista>false</vista>
       <linux>true</linux>
       <solaris>false</solaris>
-      <osver>4.4.0-59-generic</osver>
+      <osver>4.4.0-62-generic</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>glnxa64</arch>
