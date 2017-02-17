@@ -185,7 +185,7 @@ show_tool_versions()
 	log_Msg "FSL version: ${fsl_ver}"
 }
 
-check_fsl_version()
+check_fsl_version_new()
 {
 	local fsl_version
 	local fsl_version_array
@@ -282,14 +282,96 @@ check_fsl_version()
 	fi
 }
 
+check_fsl_version_old()
+{
+	local fsl_version
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+	local version_status="OLD"
+
+	# Get FSL version
+	log_Msg "About to get FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "Retrieved fsl_version: ${fsl_ver}"
+
+	# Parse FSL version into primary, secondary, and tertiary parts
+	fsl_version_array=(${fsl_ver//./ })
+	
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+
+	fsl_secondary_version="${fsl_version_array[1]}"
+    fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+
+    fsl_tertiary_version="${fsl_version_array[2]}"
+    fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# Determine whether we are using an "OLD" version (5.0.6 or older),
+	# an "UNTESTED" version (5.0.7 or 5.0.8),
+	# or a "NEW" version (5.0.9 or newer)
+
+	log_Msg "fsl_primary_version: ${fsl_primary_version}"
+	log_Msg "fsl_secondary_version: ${fsl_secondary_version}"
+	log_Msg "fsl_tertiary_version: ${fsl_tertiary_version}"
+
+	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
+		# e.g. 4.x.x
+		log_Msg "fsl_primary_version -lt 5"
+		version_status="OLD"
+		log_Msg "version_status: ${version_status}"
+	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
+		# e.g. 6.x.x
+		log_Msg "fsl_primary_version -gt 5"
+		version_status="NEW"
+		log_Msg "version_status: ${version_status}"
+	else
+		# e.g. 5.x.x
+		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
+			# e.g. 5.1.x
+			log_Msg "fsl_secondary_version -gt 0"
+			version_status="NEW"
+			log_Msg "version_status: ${version_status}"
+		else
+			# e.g. 5.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]] ; then
+				# e.g. 5.0.5 or 5.0.6
+				log_Msg "fsl_tertiary_version -le 6"
+				version_status="OLD"
+				log_Msg "version_status: ${version_status}"
+			elif [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
+				# e.g. 5.0.7 or 5.0.8
+				log_Msg "fsl_tertiary_version -le 8"
+				version_status="UNTESTED"
+				log_Msg "version_status: ${version_status}"
+			else
+				# e.g. 5.0.9, 5.0.10 ..
+				log_Msg "fsl_tertiary_version 8 or greater"
+				version_status="NEW"
+				log_Msg "version_status: ${version_status}"
+			fi
+
+		fi
+
+	fi
+
+	if [ "${version_status}" == "NEW" ] || [ "${version_status}" == "UNTESTED"] ; then
+		log_Msg "ERROR: The version of FSL in use (${fsl_version}) is incompatible with this script."
+		log_Msg "ERROR: This script and the Matlab code invoked by it, use a behavior of FSL version"
+		log_Msg "ERROR: 5.0.6 or earlier."
+		log_Msg "ERROR: Since the current version is guaranteed to give unexpected results, we are"
+		log_Msg "ERROR: aborting this run of: ${g_script_name}"
+		exit 1
+	fi
+}
+
 main() 
 {
 	# Get command line options
 	get_options $@
 	
 	show_tool_versions
-	
-	check_fsl_version
 	
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
@@ -327,6 +409,14 @@ main()
 	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
+
+	if [ ! -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+		# If we ARE NOT using hand reclassification, we perform an FSL version check that ensures that FSL v5.0.7 or later is being used.
+		check_fsl_version_new
+	else
+		# If we ARE using hand reclassification, we perform an FSL version check that ensures that FSL v5.0.6 or earlier is being used.
+		check_fsl_version_old
+	fi
 
 	# Make appropriate files if they don't exist
 
