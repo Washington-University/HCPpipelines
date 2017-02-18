@@ -356,7 +356,7 @@ check_fsl_version_old()
 
 	fi
 
-	if [ "${version_status}" == "NEW" ] || [ "${version_status}" == "UNTESTED"] ; then
+	if [ "${version_status}" == "NEW" ] || [ "${version_status}" == "UNTESTED" ] ; then
 		log_Msg "ERROR: The version of FSL in use (${fsl_version}) is incompatible with this script."
 		log_Msg "ERROR: This script and the Matlab code invoked by it, use a behavior of FSL version"
 		log_Msg "ERROR: 5.0.6 or earlier."
