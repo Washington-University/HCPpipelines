@@ -19,7 +19,8 @@ export FSL_DIR="${FSLDIR}"
 # Set up specific environment variables for the HCP Pipeline
 export HCPPIPEDIR=/media/myelin/brainmappers/Connectome_Project/Pipelines
 export CARET7DIR=/home/brainmappers/workbench
-export MSMBin=${HCPPIPEDIR}/MSMBinaries
+export MSMBINDIR=${HOME}/pipeline_tools/MSM-2015.01.14
+export MSMCONFIGDIR=${HCPPIPEDIR}/MSMConfig
 export MATLAB_COMPILER_RUNTIME=/media/myelin/brainmappers/HardDrives/1TB/MATLAB_Runtime/v901
 export FSL_FIXDIR=/media/myelin/aahana/fix1.06
 

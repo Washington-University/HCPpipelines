@@ -1,45 +1,107 @@
 #!/bin/bash
 
-# If any command exits with non-zero value, this script exits
-set -e
-g_script_name=`basename ${0}`
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
+#
+# # ReApplyFixPipeline.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2015-2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
+#~ND~END~
+
+set -e # If any command exits with non-zero value, this script exits
+
+# ------------------------------------------------------------------------------
+#  Verify HCPPIPEDIR environment variable is set
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
 
 # ------------------------------------------------------------------------------
 #  Load function libraries
 # ------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
+#  Verify other needed environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+
+if [ -z "${FSLDIR}" ]; then
+	log_Err_Abort "FSLDIR environment variable must be set"
+fi
+log_Msg "FSLDIR: ${FSLDIR}"
+
+# ------------------------------------------------------------------------------
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  Usage: ${g_script_name} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "   [--help] : show usage information and exit"
-	echo " "
-	echo "  TBW "
-	echo " "
-	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
-	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use Matlab"
-	#echo "     2 = Use Octave"	
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --fmri-name=TBW
+   --high-pass=TBW
+   --reg-name=TBW
+   --low-res-mesh=TBW
+  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
@@ -61,7 +123,7 @@ get_options()
 	local argument
 	local index=0
 
-	while [ ${index} -lt ${num_args} ]; do
+	while [ "${index}" -lt "${num_args}" ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -103,72 +165,76 @@ get_options()
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+	
 	# check required parameters
 	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+		log_Err "path to study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "path to study folder: ${g_path_to_study_folder}"
 	fi
 
 	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID (--subject=) required"
+		log_Err "subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "subject ID (--subject=): ${g_subject}"
 	fi
 
 	if [ -z "${g_fmri_name}" ]; then
-		echo "ERROR: fMRI Name (--fmri-name=) required"
+		log_Err "fMRI Name (--fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "fMRI Name: (--fmri-name=): ${g_fmri_name}"
 	fi
 
 	if [ -z "${g_high_pass}" ]; then
-		echo "ERROR: High Pass (--high-pass=) required"
+		log_Err "High Pass (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "High Pass: (--high-pass=): ${g_high_pass}"
 	fi
 
 	if [ -z "${g_reg_name}" ]; then
-		echo "ERROR: Reg Name (--reg-name=) required"
+		log_Err "Reg Name (--reg-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "Reg Name: (--reg-name=): ${g_reg_name}"
 	fi
-
+	
 	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_matlab_run_mode} in 
 			0)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
 			1)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
 			*)
-				echo "ERROR: matlab run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
 	
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
-	}
-	
+}
+
+# ------------------------------------------------------------------------------
+#  Show/Document Tool Versions
+# ------------------------------------------------------------------------------
+
 show_tool_versions()
 {
 	# Show HCP pipelines version
@@ -184,6 +250,20 @@ show_tool_versions()
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 }
+
+
+
+
+
+tbb - ici - tbb
+
+
+
+
+
+
+
+
 
 check_fsl_version_new()
 {

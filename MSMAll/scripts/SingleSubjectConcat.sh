@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015 The Human Connectome Project
+# Copyright (C) 2015-2017 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -47,12 +47,6 @@
 #
 #   The executable directory for the Connectome Workbench installation
 #
-# * OCTAVE_HOME
-# 
-#   The home directory for the Octave installation - only needed if Octave option 
-#   is used for running Matlab code.
-#
-#
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
@@ -61,49 +55,69 @@
 # ------------------------------------------------------------------------------
 #  Code Start
 # ------------------------------------------------------------------------------
-g_script_name=`basename ${0}`
+
+# ------------------------------------------------------------------------------
+#  Verify HCPPIPEDIR environment variable is set
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
 
 # ------------------------------------------------------------------------------
 #  Load function libraries
 # ------------------------------------------------------------------------------
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-#MATLAB_HOME="/export/matlab/R2013a"
-#log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
+# ------------------------------------------------------------------------------
+#  Verify other needed environment variables are set
+# ------------------------------------------------------------------------------
 
-#
-# Function Description:
-#  TBW
-#
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+# ------------------------------------------------------------------------------
+#  Show usage information for this script
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  SingleSubjectConcat.sh"
-	echo ""
-	echo " usage TBW"
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: Single Subject Scan Concatenation
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --fmri-names-list=<fMRI names> and @ symbol separated list of fMRI scan names
+   --output-fmri-name=<name to give to concatenated single subject "scan">
+   --fmri-proc-string=<identification for FIX cleaned dtseries to use>
+   --migp-vars=TBW
+   --output-proc-string=TBW
+  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
-#  Get the command line options for this script
-#  Shows usage information and exits if command line is malformed
-#
-# Global Output Variables
-#  ${g_path_to_study_folder} - path to folder containing subject data directories
-#  ${g_subject}
-#  ${g_fmri_names_list}
-#  ${g_output_fmri_name}
-#  ${g_fmri_proc_string}
-#  ${g_migp_vars}
-#  ${g_output_proc_string}
-#  ${g_matlab_run_mode}
-#    0 - Use compiled Matlab
-#    1 - Use Matlab
-#    2 - Use Octave
-#
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
@@ -172,99 +186,102 @@ get_options()
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
 	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+		log_Err "path to study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
 	fi
 
 	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID required"
+		log_Err "subject ID required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_subject: ${g_subject}"
 	fi
 
 	if [ -z "${g_fmri_names_list}" ]; then
-		echo "ERROR: fMRI name list required"
+		log_Err "fMRI name list required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 	fi
 
 	if [ -z "${g_output_fmri_name}" ]; then
-		echo "ERROR: output fMRI name required"
+		log_Err "output fMRI name required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
 	fi
 
 	if [ -z "${g_fmri_proc_string}" ]; then
-		echo "ERROR: fMRI proc string required"
+		log_Err "fMRI proc string required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
 	fi
 
 	if [ -z "${g_migp_vars}" ]; then
-		echo "ERROR: MIGP vars required"
+		log_Err "MIGP vars required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_migp_vars: ${g_migp_vars}"
 	fi
 
 	if [ -z "${g_output_proc_string}" ]; then
-		echo "ERROR: output proc string required"
+		log_Err "output proc string required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_output_proc_string: ${g_output_proc_string}"
 	fi
 
 	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run_mode=) required"
+		log_Err "MATLAB run mode value (--matlab-run_mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_matlab_run_mode} in
 			0)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				fi
 				;;
 			1)
-				;;
-			2)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
 			*)
-				echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				log_Err "MATLAB run mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-#
+# ------------------------------------------------------------------------------
+
 main()
 {
 	# Get command line options
-	# See documentation for get_options function for global variables set
-	get_options $@
+	get_options "$@"
 
-	g_fmri_names_list=`echo ${g_fmri_names_list} | sed 's/@/ /g'`
+	g_fmri_names_list=$(echo ${g_fmri_names_list} | sed 's/@/ /g')
 	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 
 	# Naming Conventions
@@ -282,7 +299,7 @@ main()
 	OutputConcat="${OutputFolder}/${g_output_fmri_name}${g_fmri_proc_string}${g_output_proc_string}.dtseries.nii"
 	log_Msg "OutputConcat: ${OutputConcat}"
 
-	if [[ ! -e ${OutputConcat} || `echo ${g_migp_var} | cut -d "@" -f 4` = "YES" ]] ; then
+	if [[ ! -e ${OutputConcat} || $(echo ${g_migp_vars} | cut -d "@" -f 4) = "YES" ]] ; then
 
 		if [ ! -e "${OutputFolder}" ] ; then
 			mkdir -p ${OutputFolder}
@@ -290,7 +307,7 @@ main()
 
 		txtfile="${OutputFolder}/${g_output_fmri_name}.txt"
 		log_Msg "txtfile: ${txtfile}"
-		
+
 		if [ -e "${txtfile}" ]; then
 			rm ${txtfile}
 		fi
@@ -310,80 +327,44 @@ main()
 			log_Msg "Done Showing txtfile contents"
 		done
 
-		VN=`echo ${g_migp_vars} | cut -d "@" -f 5`
+		VN=$(echo ${g_migp_vars} | cut -d "@" -f 5)
 		log_Msg "VN: ${VN}"
 
-		mPath="${HCPPIPEDIR}/MSMAll/scripts"
-		log_Msg "mPath: ${mPath}"
-
-		# run matlab ssConcat function 
+		# run MATLAB ssConcat function
 		case ${g_matlab_run_mode} in
+
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
 				matlab_exe+="/MSMAll/scripts/Compiled_ssConcat/distrib/run_ssConcat.sh"
-				
+
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 				matlab_function_arguments="'${txtfile}' '${CARET7DIR}/wb_command' '${OutputConcat}' '${VN}'"
-			
+
 				matlab_logging=">> ${g_path_to_study_folder}/${g_subject}.ssConcat.matlab.log 2>&1"
 
 				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-				# --------------------------------------------------------------------------------
 				log_Msg "Run Matlab command: ${matlab_cmd}"
-				# --------------------------------------------------------------------------------
 
 				echo "${matlab_cmd}" | bash
-				echo $?
-
+				log_Msg "MATLAB command return code: $?"
 				;;
 
 			1)
-				# Use Matlab - Untested
-				matlab_script_file_name=${ResultsFolder}/ssConcat.m
-				log_Msg "Creating Matlab script: ${matlab_script_file_name}"
+				# Use interpreted MATLAB
+				mPath="${HCPPIPEDIR}/MSMAll/scripts"
 
-				if [ -e ${matlab_script_file_name} ]; then
-					echo "Removing old ${matlab_script_file_name}"
-					rm -f ${matlab_script_file_name}
-				fi
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; ssConcat('${txtfile}','${CARET7DIR}/wb_command','${OutputConcat}','${VN}');
+M_PROG
 
-				touch ${matlab_script_file_name}
-				echo "addpath ${mPath}" >> ${matlab_script_file_name}
-				echo "ssConcat('${txtfile}', '${CARET7DIR}/wb_command', '${OutputConcat}', '${VN}');" >> ${matlab_script_file_name}
-
-				log_Msg "About to execute the following Matlab script"
-
-				cat ${matlab_script_file_name}
-				cat ${matlab_script_file_name} | matlab -nojvm -nodisplay -nosplash
-
-				;;
-
-			2) 
-				# Use Octave - Untested
-				octave_script_file_name=${ResultsFolder}/ssConcat.m
-				log_Msg "Creating Octave script: ${octave_script_file_name}"
-
-				if [ -e ${octave_script_file_name} ]; then
-					echo "Removing old ${octave_script_file_name}"
-					rm -f ${octave_script_file_name}
-				fi
-
-				touch ${octave_script_file_name}
-				echo "addpath ${mPath}" >> ${octave_script_file_name}
-				echo "ssConcat('${txtfile}', '${CARET7DIR}/wb_command', '${OutputConcat}', '${VN}');" >> ${octave_script_file_name}
-
-				log_Msg "About to execute the following Octave script"
-
-				cat ${octave_script_file_name}
-				cat ${octave_script_file_name} | ${OCTAVE_HOME}/bin/octave
-
+				log_Msg "addpath '$mPath'; ssConcat('${txtfile}','${CARET7DIR}/wb_command','${OutputConcat}','${VN}');"
 				;;
 
 			*)
-				log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
+				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
 				exit 1
 		esac
 
@@ -393,7 +374,8 @@ main()
 
 }
 
-# 
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  Invoke the main function to get things started
+# ------------------------------------------------------------------------------
+
+main "$@"
