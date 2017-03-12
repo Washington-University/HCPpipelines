@@ -122,6 +122,20 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
+#Caret7_Command="${1}"
+#StudyFolder="${2}"
+#Subject="${3}"
+#fMRINames="${4}"
+#HighPass="${5}"
+#OutputfMRIName="${6}"
+#fMRIProcSTRING="${7}"
+#OutputProcSTRING="${8}"
+#Demean="${9}"
+#VarianceNormalization="${10}"
+#ComputeVarianceNormalization="${11}"
+#RevertBiasField="${12}"
+#g_matlab_run_mode="${13}"
+
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -249,7 +263,7 @@ get_options()
 	else
 		log_Msg "g_high_pass: ${g_high_pass}"
 	fi
-	
+
 	if [ -z "${g_output_fmri_name}" ]; then
 		log_Err "output fMRI name required"
 		error_count=$(( error_count + 1 ))
@@ -328,6 +342,7 @@ get_options()
 	fi
 }
 
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -338,6 +353,7 @@ main()
 	get_options "$@"
 
 	g_fmri_names_list=$(echo ${g_fmri_names_list} | sed 's/@/ /g')
+	fMRINames=${g_fmri_names_list}
 	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 
 	# Naming Conventions
@@ -499,8 +515,6 @@ M_PROG
 		
 	done
 	${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING} 
-
-}
 
 # ------------------------------------------------------------------------------
 #  Invoke the main function to get things started
