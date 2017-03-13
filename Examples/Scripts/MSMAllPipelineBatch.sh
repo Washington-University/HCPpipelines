@@ -39,7 +39,7 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/HCP_PhaseFinalTesting" #Location of Subject folders (named by subjectID)
+StudyFolder="/media/myelin/brainmappers/Connectome_Project/HCP_PhaseFinalTestingMSMAll" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
 EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
@@ -77,13 +77,14 @@ PRINTCOM=""
 
 fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
 OutfMRIName="rfMRI_REST"
+HighPass="2000"
 fMRIProcSTRING="_Atlas_hp2000_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 RegName="MSMAll_InitalReg"
 HighResMesh="164"
 LowResMesh="32"
 InRegName="MSMSulc"
-MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
 
 fMRINames=`echo ${fMRINames} | sed 's/ /@/g'`
 
@@ -103,6 +104,7 @@ for Subject in $Subjlist ; do
   --subject=${Subject} \
   --fmri-names-list=${fMRINames} \
   --output-fmri-name=${OutfMRIName} \
+  --high-pass=${HighPass} \
   --fmri-proc-string=${fMRIProcSTRING} \
   --msm-all-templates=${MSMAllTemplates} \
   --output-registration-name=${RegName} \

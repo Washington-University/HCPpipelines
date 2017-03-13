@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 #~ND~FORMAT~MARKDOWN
 #~ND~START~
@@ -103,10 +104,17 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
    --fmri-names-list=<fMRI names> and @ symbol separated list of fMRI scan names
+   --high-pass=<high-pass filter used in ICA+FIX>
    --output-fmri-name=<name to give to concatenated single subject "scan">
    --fmri-proc-string=<identification for FIX cleaned dtseries to use>
-   --migp-vars=TBW
    --output-proc-string=TBW
+   --demean=<YES | NO> demean or not the data
+   --variance-normalization=<YES | NO> variance normalize the data or not 
+   --compute-variance-normalization=<YES | NO> compute the variance normalization
+        so as not to require having run the RestingStateStats pipeline
+   --revert-bias-field=<YES | NO> revert the bias field or not
+        Requires having run the RestingStateStats pipeline and is not necessary if 
+        computing variance normalization above
   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -126,12 +134,16 @@ get_options()
 	unset g_path_to_study_folder
 	unset g_subject
 	unset g_fmri_names_list
+	unset g_high_pass
 	unset g_output_fmri_name
 	unset g_fmri_proc_string
-	unset g_migp_vars
 	unset g_output_proc_string
+	unset g_demean
+	unset g_variance_normalization
+	unset g_compute_variance_normalization
+	unset g_revert_bias_field
 	unset g_matlab_run_mode
-
+	
 	# set default values
 	g_matlab_run_mode=0
 
@@ -164,6 +176,10 @@ get_options()
 				g_fmri_names_list=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+			--high-pass=*)
+				g_high_pass=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			--output-fmri-name=*)
 				g_output_fmri_name=${argument#*=}
 				index=$(( index + 1 ))
@@ -172,12 +188,24 @@ get_options()
 				g_fmri_proc_string=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--migp-vars=*)
-				g_migp_vars=${argument#*=}
-				index=$(( index + 1 ))
-				;;
 			--output-proc-string=*)
 				g_output_proc_string=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--demean=*)
+				g_demean=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--variance-normalization=*)
+				g_variance_normalization=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--compute-variance-normalization=*)
+				g_compute_variance_normalization=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--revert-bias-field=*)
+				g_revert_bias_field=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
@@ -215,6 +243,13 @@ get_options()
 		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 	fi
 
+	if [ -z "${g_high_pass}" ]; then
+		log_Err "ICA+FIX highpass setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_high_pass: ${g_high_pass}"
+	fi
+	
 	if [ -z "${g_output_fmri_name}" ]; then
 		log_Err "output fMRI name required"
 		error_count=$(( error_count + 1 ))
@@ -229,13 +264,6 @@ get_options()
 		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
 	fi
 
-	if [ -z "${g_migp_vars}" ]; then
-		log_Err "MIGP vars required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_migp_vars: ${g_migp_vars}"
-	fi
-
 	if [ -z "${g_output_proc_string}" ]; then
 		log_Err "output proc string required"
 		error_count=$(( error_count + 1 ))
@@ -243,6 +271,34 @@ get_options()
 		log_Msg "g_output_proc_string: ${g_output_proc_string}"
 	fi
 
+	if [ -z "${g_demean}" ]; then
+		log_Err "demean setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_demean: ${g_demean}"
+	fi
+
+	if [ -z "${g_variance_normalization}" ]; then
+		log_Err "variance normalization setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_variance_normalization: ${g_variance_normalization}"
+	fi
+
+	if [ -z "${g_compute_variance_normalization}" ]; then
+		log_Err "compute variance normalization setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_compute_variance_normalization: ${g_compute_variance_normalization}"
+	fi
+
+	if [ -z "${g_revert_bias_field}" ]; then
+		log_Err "revert bias field setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_revert_bias_field: ${g_revert_bias_field}"
+	fi
+	
 	if [ -z "${g_matlab_run_mode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run_mode=) required"
 		error_count=$(( error_count + 1 ))
@@ -285,6 +341,9 @@ main()
 	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 
 	# Naming Conventions
+	fMRINames=${g_fmri_names_list}
+	log_Msg "fMRINames: ${fMRINames}"
+
 	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
@@ -296,81 +355,150 @@ main()
 	fi
 	log_Msg "g_output_proc_string: ${g_output_proc_string}"
 
-	OutputConcat="${OutputFolder}/${g_output_fmri_name}${g_fmri_proc_string}${g_output_proc_string}.dtseries.nii"
-	log_Msg "OutputConcat: ${OutputConcat}"
+	OutputProcSTRING=${g_output_proc_string}
+	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
 
-	if [[ ! -e ${OutputConcat} || $(echo ${g_migp_vars} | cut -d "@" -f 4) = "YES" ]] ; then
+	Caret7_Command=${CARET7DIR}/wb_command
+	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-		if [ ! -e "${OutputFolder}" ] ; then
-			mkdir -p ${OutputFolder}
+	HighPass=${g_high_pass}
+	log_Msg "HighPass: ${HighPass}"
+
+	OutputfMRIName=${g_output_fmri_name}
+	log_Msg "OutputfMRIName: ${OutputfMRIName}"
+
+	fMRIProcSTRING=${g_fmri_proc_string}
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
+
+	Demean=${g_demean}
+	log_Msg "Demean: ${Demean}"
+
+	VarianceNormalization=${g_variance_normalization}
+	log_Msg "VarianceNormalization: ${VarianceNormalization}"
+
+	ComputeVarianceNormalization=${g_compute_variance_normalization}
+	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
+
+	RevertBiasField=${g_revert_bias_field}
+	log_Msg "RevertBiasField: ${RevertBiasField}"
+
+	for fMRIName in $fMRINames ; do
+		
+		ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
+
+		if [ "${Demean}" = "YES" ] ; then
+			${Caret7_Command} -cifti-reduce ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii MEAN ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii
+			MATHDemean=" - Mean"
+			VarDemean="-var Mean ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii -select 1 1 -repeat"
+		else
+			MATHDemean=""
+			VarDemean=""
 		fi
 
-		txtfile="${OutputFolder}/${g_output_fmri_name}.txt"
-		log_Msg "txtfile: ${txtfile}"
-
-		if [ -e "${txtfile}" ]; then
-			rm ${txtfile}
+		if [ "${RevertBiasField}" = "YES" ] ; then
+			if [ ! -e ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii ] ; then
+				log_Err "Bias field in CIFTI space with correct file name doesn't exist:"
+				log_Err "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii"
+				log_Err_Abort "You need to run RestingStateStats to generate it or set RevertBiasField to NO"
+			fi
+			bias="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii"
+			MATHRB=" * Bias"
+			VarRB="-var Bias ${bias} -select 1 1 -repeat"
+		else
+			bias="NONE"
+			MATHRB=""
+			VarRB=""
 		fi
 
-		touch ${txtfile}
+		if [ "${VarianceNormalization}" = "YES" ] ; then
 
-		log_Msg "Showing txtfile: ${txtfile} contents"
-		cat ${txtfile}
-		log_Msg "Done Showing txtfile contents"
-
-		for fMRIName in ${g_fmri_names_list} ; do
-			ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
-			log_Msg "ResultsFolder: ${ResultsFolder}"
-			echo "${ResultsFolder}/${fMRIName}${g_fmri_proc_string}" >> ${txtfile}
-			log_Msg "Showing txtfile: ${txtfile} contents"
-			cat ${txtfile}
-			log_Msg "Done Showing txtfile contents"
-		done
-
-		VN=$(echo ${g_migp_vars} | cut -d "@" -f 5)
-		log_Msg "VN: ${VN}"
-
-		# run MATLAB ssConcat function
-		case ${g_matlab_run_mode} in
-
-			0)
-				# Use Compiled Matlab
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_ssConcat/distrib/run_ssConcat.sh"
-
-				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
-
-				matlab_function_arguments="'${txtfile}' '${CARET7DIR}/wb_command' '${OutputConcat}' '${VN}'"
-
-				matlab_logging=">> ${g_path_to_study_folder}/${g_subject}.ssConcat.matlab.log 2>&1"
-
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-
-				echo "${matlab_cmd}" | bash
-				log_Msg "MATLAB command return code: $?"
-				;;
-
-			1)
-				# Use interpreted MATLAB
-				mPath="${HCPPIPEDIR}/MSMAll/scripts"
-
-				matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; ssConcat('${txtfile}','${CARET7DIR}/wb_command','${OutputConcat}','${VN}');
+			if [ "${ComputeVarianceNormalization}" = "YES" ] ; then
+				cleandtseries="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii"
+				bias="${bias}"
+				ICAtcs="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix"
+				if [ ! -e ${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+					ICANoise="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/.fix"
+				else
+					ICANoise="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt"
+				fi
+				log_Msg "ICANoise: ${ICANoise}"
+				
+				OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn_tempcompute.dscalar.nii"
+				log_Msg "OutputVN: ${OutputVN}"
+				
+				# run MATLAB ComputVN function
+				case ${g_matlab_run_mode} in
+					
+					0)
+						# Use Compiled MATLAB
+						matlab_exe="${HCPPIPEDIR}"
+						matlab_exe+="/MSMAll/scripts/Compiled_ComputeVN/run_ComputeVN.sh"
+						
+						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+						
+						matlab_function_arguments="'${cleandtseries}' '${bias}' '${ICAtcs}' '${ICANoise}' '${OutputVN}' '${Caret7_Command}'"
+						
+						matlab_logging=">> ${g_path_to_study_folder}/${g_subject}.ComputeVN.matlab.log 2>&1"
+						
+						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+						
+						log_Msg "Run MATLAB command: ${matlab_cmd}"
+						#echo "${matlab_cmd}" | bash
+						${matlab_cmd}
+						log_msg "MATLAB command return code: $?"
+						;;
+					
+					1)
+						# Use interpreted MATLAB
+						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						
+						matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');
 M_PROG
+						log_Msg "ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');"
+						;;
+					
+					*)
+						# Unsupported MATLAB run mode
+						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						;;
+				esac
+				
+			else
+				if [ ! -e ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii ] ; then
+					log_Err "Variance Normalization file doesn't exist:"
+					log_Err "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+					log_Err_Abort "You need to run RestingStateStats to generate it or set ComputeVarianceNormalization to YES"
+				fi
+				OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+			fi
+			
+			MATHVN=" / max(VN,0.001)"
+			VarVN="-var VN ${OutputVN} -select 1 1 -repeat"
+		else
+			MATHVN=""
+			VarVN=""
+		fi
+      
+		MATH="((TCS${MATHDemean})${MATHRB})${MATHVN}"
+		log_Msg "${MATH}"
+    
+		${Caret7_Command} -cifti-math "${MATH}" ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii -var TCS ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii ${VarDemean} ${VarRB} ${VarVN} 
 
-				log_Msg "addpath '$mPath'; ssConcat('${txtfile}','${CARET7DIR}/wb_command','${OutputConcat}','${VN}');"
-				;;
+		if [ "${Demean}" = "YES" ] ; then
+			rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii
+		fi
 
-			*)
-				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
-				exit 1
-		esac
+		if [ "${VarianceNormalization}" = "YES" ] ; then
+			if [ "${ComputeVarianceNormalization}" = "YES" ] ; then
+				rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn_tempcompute.dscalar.nii
+			fi
+		fi
 
-		log_Msg "Removing ${txtfile} used as input to ssConcat"
-		rm ${txtfile}
-	fi
+		MergeSTRING=`echo "${MergeSTRING} -cifti ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii"`
+		
+	done
+	${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING} 
 
 }
 
