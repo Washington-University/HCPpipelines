@@ -1,9 +1,21 @@
-function [ output_args ] = ComputeVN(cleandtseries,bias,ICAtcs,ICANoise,OutputVN,wbcommand)
+%function [ output_args ] = ComputeVN(cleandtseries,bias,ICAtcs,ICANoise,OutputVN,wbcommand)
+function ComputeVN(cleandtseries,bias,ICAtcs,ICANoise,OutputVN,wbcommand)
 %Compute CIFTI variance normalization based on ICA+FIX outputs
 %This function regresses the structured signal out of the data
 %to create a dense timeseries of only unstructured noise
 %the standard deviation of this map is used to normalize
 %the dense timeseries.
+
+# edits by T.B. Brown to print debugging information.
+func_name='ComputeVN'
+fprintf('%s - start\n', func_name)
+fprintf('%s - cleandtseries: %s\n', func_name, cleandtseries)
+fprintf('%s - bias: %s\n', func_name, bias)
+fprintf('%s - ICAtcs: %s\n', func_name, ICAtcs)
+fprintf('%s - ICANoise: %s\n', func_name, ICANoise)
+fprintf('%s - OutputVN: %s\n', func_name, OutputVN)
+fprintf('%s - wbcommand: %s\n', func_name, wbcommand)
+
 
 cleandtseries=ciftiopen(cleandtseries,wbcommand);
 

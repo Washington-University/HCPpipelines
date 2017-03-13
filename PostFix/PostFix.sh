@@ -362,8 +362,8 @@ main()
 		0)
 			# Use Compiled Matlab
 			matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/PostFix/Compiled_prepareICAs/distrib/run_prepareICAs.sh"
-
+			matlab_exe+="/PostFix/Compiled_prepareICAs/run_prepareICAs.sh"
+			
 			matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
 			matlab_function_arguments="'${dtseriesName}'"
