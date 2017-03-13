@@ -705,7 +705,7 @@ main()
 					0)
 						# Use Compiled MATLAB
 						matlab_exe="${HCPPIPEDIR}"
-						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -797,7 +797,7 @@ M_PROG
 					0)
 						# Use Compiled Matlab
 						matlab_exe="${HCPPIPEDIR}"
-						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -1209,7 +1209,7 @@ M_PROG
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -1284,7 +1284,7 @@ M_PROG
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 

@@ -6,7 +6,7 @@ function ComputeVN(cleandtseries,bias,ICAtcs,ICANoise,OutputVN,wbcommand)
 %the standard deviation of this map is used to normalize
 %the dense timeseries.
 
-# edits by T.B. Brown to print debugging information.
+% edits by T.B. Brown to print debugging information.
 func_name='ComputeVN'
 fprintf('%s - start\n', func_name)
 fprintf('%s - cleandtseries: %s\n', func_name, cleandtseries)

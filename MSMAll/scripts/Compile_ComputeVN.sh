@@ -34,10 +34,10 @@ log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
 
 main()
 {
-	local app_name=prepareICAs
+	local app_name=ComputeVN
 	local output_directory=Compiled_${app_name}
 	
-	pushd ${HCPPIPEDIR}/PostFix > /dev/null
+	pushd ${HCPPIPEDIR}/MSMAll/scripts > /dev/null
 	log_Msg "Working in ${PWD}"
 	
 	log_Msg "Creating output directory: ${output_directory}"
@@ -45,10 +45,11 @@ main()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
+	
+	#				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+	#				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+	#				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 
 	popd > /dev/null
 }
