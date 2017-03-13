@@ -337,7 +337,6 @@ main()
 
 	output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
 	log_Msg "output_proc_string: ${output_proc_string}"
-
 	Demean="YES"
 	VarianceNormalization="YES"
 	ComputeVarianceNormalization="YES" #Don't rely on RestingStateStats to have been run
