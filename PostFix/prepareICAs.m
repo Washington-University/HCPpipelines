@@ -67,6 +67,6 @@ end
 dlmwrite(Noise,Noisemat, 'delimiter', ' '); 
 dlmwrite(Signal,Signalmat, 'delimiter', ' '); 
 
-
+fprintf('%s - complete\n', func_name);
 end
 
