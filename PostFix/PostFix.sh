@@ -107,17 +107,17 @@ get_options()
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder
-	unset g_subject
-	unset g_fmri_name
-	unset g_high_pass
-	unset g_template_scene_dual_screen
-	unset g_template_scene_single_screen
-	unset g_reuse_high_pass
-	unset g_matlab_run_mode
+	unset g_StudyFolder
+	unset g_Subject
+	unset g_fMRIName
+	unset g_HighPass
+	unset g_TemplateSceneDualScreen
+	unset g_TemplateSceneSingleScreen
+	unset g_ReuseHighPass
+	unset g_MatlabRunMode
 
 	# set default values
-	g_matlab_run_mode=0
+	g_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -133,39 +133,39 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
+				g_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
+				g_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument#*=}
+				g_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument#*=}
+				g_fMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument#*=}
+				g_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-dual-screen=*)
-				g_template_scene_dual_screen=${argument#*=}
+				g_TemplateSceneDualScreen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-single-screen=*)
-				g_template_scene_single_screen=${argument#*=}
+				g_TemplateSceneSingleScreen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reuse-high-pass=*)
-				g_reuse_high_pass=${argument#*=}
+				g_ReuseHighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument#*=}
+				g_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -178,72 +178,72 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		log_Err "path to study folder (--path= or --study-folder=) required"
+	if [ -z "${g_StudyFolder}" ]; then
+		log_Err "study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "g_StudyFolder: ${g_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		log_Err "subject ID required"
+	if [ -z "${g_Subject}" ]; then
+		log_Err "Subject ID required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "g_Subject: ${g_Subject}"
 	fi
 
-	if [ -z "${g_fmri_name}" ]; then
+	if [ -z "${g_fMRIName}" ]; then
 		log_Err "fMRI name required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_name: ${g_fmri_name}"
+		log_Msg "g_fMRIName: ${g_fMRIName}"
 	fi
 
-	if [ -z "${g_high_pass}" ]; then
-		log_Err "high pass required"
+	if [ -z "${g_HighPass}" ]; then
+		log_Err "High Pass required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_pass: ${g_high_pass}"
+		log_Msg "g_HighPass: ${g_HighPass}"
 	fi
 
-	if [ -z "${g_template_scene_dual_screen}" ]; then
-		log_Err "template scene dual screen required"
+	if [ -z "${g_TemplateSceneDualScreen}" ]; then
+		log_Err "Dual Screen Template Scene required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_template_scene_dual_screen: ${g_template_scene_dual_screen}"
+		log_Msg "g_TemplateSceneDualScreen: ${g_TemplateSceneDualScreen}"
 	fi
 
-	if [ -z "${g_template_scene_single_screen}" ]; then
-		log_Err "template scene single screen required"
+	if [ -z "${g_TemplateSceneSingleScreen}" ]; then
+		log_Err "Single Screen Template Scene required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_template_scene_single_screen: ${g_template_scene_single_screen}"
+		log_Msg "g_TemplateSceneSingleScreen: ${g_TemplateSceneSingleScreen}"
 	fi
 
-	if [ -z "${g_reuse_high_pass}" ]; then
+	if [ -z "${g_ReuseHighPass}" ]; then
 		log_Err "reuse high pass not specified"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_template_scene_single_screen: ${g_template_scene_single_screen}"
+		log_Msg "g_ReuseHighPass: ${g_ReuseHighPass}"
 	fi
 
-	if [ -z "${g_matlab_run_mode}" ]; then
+	if [ -z "${g_MatlabRunMode}" ]; then
 		log_Err "matlab run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_matlab_run_mode} in
+		case ${g_MatlabRunMode} in
 			0)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
 				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${g_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
 			1)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
 				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_GIFTI_LIB environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${g_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
 				else
 					log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
 				fi
@@ -292,16 +292,16 @@ main()
 	show_tool_versions
 
 	# Naming Conventions
-	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
+	local AtlasFolder="${g_StudyFolder}/${g_Subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
-	ResultsFolder="${AtlasFolder}/Results/${g_fmri_name}"
+	local ResultsFolder="${AtlasFolder}/Results/${g_fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
-	ICAFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica/filtered_func_data.ica"
+	local ICAFolder="${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}.ica/filtered_func_data.ica"
 	log_Msg "ICAFolder: ${ICAFolder}"
 
-	FIXFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica"
+	local FIXFolder="${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 
 	log_Msg "Creating ${ICAFolder}/ICAVolumeSpace.txt file"
@@ -317,38 +317,39 @@ main()
 	${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ICAFolder}/melodic_oIC_vol.dtseries.nii -volume ${ICAFolder}/melodic_oIC.nii.gz ${ICAFolder}/mask.nii.gz -timestep 1 -timestart 1
 
 	log_Msg "Set up for prepareICAs MATLAB code"
-	if [ ${g_reuse_high_pass} = "YES" ] ; then
-		dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas_hp${g_high_pass}" #No Extension Here
+	local HighPassUse
+	if [ ${g_ReuseHighPass} = "YES" ] ; then
+		dtseriesName="${ResultsFolder}/${g_fMRIName}_Atlas_hp${g_HighPass}" #No Extension Here
 		log_Msg "dtseriesName: ${dtseriesName}"
-		g_high_pass_use="-1"
+		HighPassUse="-1"
 	else
-		dtseriesName="${ResultsFolder}/${g_fmri_name}_Atlas" #No Extension Here
+		dtseriesName="${ResultsFolder}/${g_fMRIName}_Atlas" #No Extension Here
 		log_Msg "dtseriesName: ${dtseriesName}"
-		g_high_pass_use="${g_high_pass}"
+		HighPassUse="${g_HighPass}"
 	fi
 
-	ICAs="${ICAFolder}/melodic_mix"
+	local ICAs="${ICAFolder}/melodic_mix"
 	log_Msg "ICAs: ${ICAs}"
 
-	ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
+	local ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
 	log_Msg "ICAdtseries: ${ICAdtseries}"
 
-	NoiseICAs="${FIXFolder}/.fix"
+	local NoiseICAs="${FIXFolder}/.fix"
 	log_Msg "NoiseICAs: ${NoiseICAs}"
 
-	Noise="${FIXFolder}/Noise.txt"
+	local Noise="${FIXFolder}/Noise.txt"
 	log_Msg "Noise: ${Noise}"
 
-	Signal="${FIXFolder}/Signal.txt"
+	local Signal="${FIXFolder}/Signal.txt"
 	log_Msg "Signal: ${Signal}"
 
-	ComponentList="${FIXFolder}/ComponentList.txt"
+	local ComponentList="${FIXFolder}/ComponentList.txt"
 	log_Msg "ComponentList: ${ComponentList}"
 
-	TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}_clean pixdim4)
+	local TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}_clean pixdim4)
 	log_Msg "TR: ${TR}"
 
-	NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}_clean dim4)
+	local NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}_clean dim4)
 	log_Msg "NumTimePoints: ${NumTimePoints}"
 
 	if [ -e ${ComponentList} ] ; then
@@ -357,15 +358,18 @@ main()
 	fi
 
 	# run MATLAB prepareICAs function
-	case ${g_matlab_run_mode} in
+	case ${g_MatlabRunMode} in
 
 		0)
 			# Use Compiled Matlab
+			local matlab_exe
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/PostFix/Compiled_prepareICAs/run_prepareICAs.sh"
 			
+			local matlab_compiler_runtime
 			matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
+			local matlab_function_arguments
 			matlab_function_arguments="'${dtseriesName}'"
 			matlab_function_arguments+=" '${ICAs}'"
 			matlab_function_arguments+=" '${CARET7DIR}/wb_command'"
@@ -374,11 +378,13 @@ main()
 			matlab_function_arguments+=" '${Noise}'"
 			matlab_function_arguments+=" '${Signal}'"
 			matlab_function_arguments+=" '${ComponentList}'"
-			matlab_function_arguments+=" ${g_high_pass_use}"
+			matlab_function_arguments+=" ${HighPassUse}"
 			matlab_function_arguments+=" ${TR} "
 
-			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
+			local matlab_logging
+			matlab_logging=">> ${g_StudyFolder}/${g_Subject}_${g_fMRIName}.matlab.log 2>&1"
 
+			local matlab_cmd
 			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
 			log_Msg "Run MATLAB command: ${matlab_cmd}"
@@ -391,13 +397,13 @@ main()
 			# Use interpreted MATLAB
 
 			matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${g_high_pass_use},${TR});
+addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
 M_PROG
-			log_Msg "addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${g_high_pass_use},${TR});"
+			log_Msg "addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
 			;;
 
 		*)
-			log_Err_Abort "Unrecognized MATLAB run mode value: ${g_matlab_run_mode}"
+			log_Err_Abort "Unrecognized MATLAB run mode value: ${g_MatlabRunMode}"
 			;;
 	esac
 
@@ -411,16 +417,16 @@ M_PROG
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAs} ${ICAs}.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
 
 	# TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
-	FTmixStep=$(echo "scale=7 ; 1/(${NumTimePoints}*${TR})" | bc -l)
+	local FTmixStep=$(echo "scale=7 ; 1/(${NumTimePoints}*${TR})" | bc -l)
 	log_Msg "FTmixStep: ${FTmixStep}"
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
 	rm ${ComponentList}
 
 	log_Msg "Making dual screen scene"
-	cat ${g_template_scene_dual_screen} | sed s/SubjectID/${g_subject}/g | sed s/fMRIName/${g_fmri_name}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_subject}_${g_fmri_name}_ICA_Classification_dualscreen.scene
+	cat ${g_TemplateSceneDualScreen} | sed s/SubjectID/${g_Subject}/g | sed s/fMRIName/${g_fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_Subject}_${g_fMRIName}_ICA_Classification_dualscreen.scene
 
 	log_Msg "Making single screen scene"
-	cat ${g_template_scene_single_screen} | sed s/SubjectID/${g_subject}/g | sed s/fMRIName/${g_fmri_name}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_subject}_${g_fmri_name}_ICA_Classification_singlescreen.scene
+	cat ${g_TemplateSceneSingleScreen} | sed s/SubjectID/${g_Subject}/g | sed s/fMRIName/${g_fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_Subject}_${g_fMRIName}_ICA_Classification_singlescreen.scene
 
 	if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
 		touch ${ResultsFolder}/ReclassifyAsSignal.txt
