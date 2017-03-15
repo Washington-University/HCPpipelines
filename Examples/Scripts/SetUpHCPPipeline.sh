@@ -13,7 +13,8 @@ echo "This script is set up to run from FMRIB's Jalapeno"
 export FSL_DIR="${FSLDIR}"
 
 # ensure that the HCP specific version of FreeSurfer is being used
-module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
+module add freesurfer/5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
+# pre-2017 way to do this: module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 # you can revert back using: module swap freesurfer-5.3.0-HCP freesurfer > /dev/null 2>&1 # (don't say a peep)
 
 # Set up FreeSurfer (if not already done so in the running environment)
