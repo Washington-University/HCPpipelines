@@ -6,7 +6,7 @@
 
 # If any commands exit with non-zero value, this script exits
 set -e
-g_script_name=`basename ${0}`
+g_script_name=$(basename "${0}")
 
 # ------------------------------------------------------------------------------
 #  Load function libraries
@@ -192,7 +192,7 @@ get_options()
 # Function Description:
 #  Document Tool Versions
 #
-show_tool_versions() 
+show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
@@ -211,7 +211,7 @@ main()
 {
 	# Get command line options
 	# See documentation for the get_options function for global variables set
-	get_options $@
+	get_options "$@"
 
 	# show the versions of tools used
 	show_tool_versions
@@ -246,7 +246,7 @@ main()
 	LowResMesh="${g_low_res_mesh}"
 	log_Msg "LowResMes: ${LowResMesh}"
 
-	Subjlist=`echo "$Subjlist" | sed 's/@/ /g'`
+	Subjlist=${Subjlist//@/ }
 	log_Msg "Subjlist: ${Subjlist}"
 
 	CommonAtlasFolder="${CommonFolder}/MNINonLinear"
@@ -257,23 +257,23 @@ main()
 
 	if [ ! -e ${CommonAtlasFolder}/${RegName} ] ; then
 		mkdir -p ${CommonAtlasFolder}/${RegName}
-	else 
-		rm -r ${CommonAtlasFolder}/${RegName}
+	else
+		rm -r ${CommonAtlasFolder:?}/${RegName}
 		mkdir -p ${CommonAtlasFolder}/${RegName}
 	fi
 
 	for Hemisphere in L R ; do
-	
+
 		log_Msg "Working on hemisphere: ${Hemisphere}"
 
-		if [ $Hemisphere = "L" ] ; then 
+		if [ $Hemisphere = "L" ] ; then
 			Structure="CORTEX_LEFT"
-		elif [ $Hemisphere = "R" ] ; then 
+		elif [ $Hemisphere = "R" ] ; then
 			Structure="CORTEX_RIGHT"
 		fi
 		SurfAverageSTRING=""
 
-		for Subject in ${Subjlist} ; do 
+		for Subject in ${Subjlist} ; do
 			log_Msg "Working on subject: ${Subject}"
 
 			AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
@@ -297,10 +297,10 @@ main()
 
 			log_File_Must_Exist "${sphere_out}"
 
-			# Note: Surface files are specified in the SurfAverageSTRING using relative paths from the ${StudyFolder}. 
-			# This is to save characters to stave off the point at which we've created a command line for the 
-			# -surface-average operation (done right after we exit this loop) that is longer than a command 
-			# line is allowed to be. (Use the command $ getconf ARG_MAX to find out what the maximum command 
+			# Note: Surface files are specified in the SurfAverageSTRING using relative paths from the ${StudyFolder}.
+			# This is to save characters to stave off the point at which we've created a command line for the
+			# -surface-average operation (done right after we exit this loop) that is longer than a command
+			# line is allowed to be. (Use the command $ getconf ARG_MAX to find out what the maximum command
 			# line length is.)
 
 			#SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
@@ -316,9 +316,9 @@ main()
 		surface_average_cmd+="${CommonAtlasFolder}/${RegName}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii "
 		surface_average_cmd+="${SurfAverageSTRING}"
 
-		max_cmd_length=`getconf ARG_MAX`
+		max_cmd_length=$(getconf ARG_MAX)
 		if [ ${#surface_average_cmd} -gt ${max_cmd_length} ] ; then
-			log_Error_Abort "Command will be too long to execute. Command: ${surface_average_cmd}."
+			log_Err_Abort "Command will be too long to execute. Command: ${surface_average_cmd}."
 		fi
 
 		${surface_average_cmd}
@@ -334,14 +334,14 @@ main()
 
 		cp \
 			${CommonAtlasFolder}/${RegName}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii \
-			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii 
-  
+			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii
+
 		if [ ! -e ${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii ] ; then
 			cp \
 				${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii \
 				${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii
 		fi
-  
+
 		${Caret7_Command} -surface-vertex-areas \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.shape.gii
@@ -363,7 +363,7 @@ main()
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${RegName}.${HighResMesh}k_fs_LR.surf.gii \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.EdgeDistortion_${RegName}.${HighResMesh}k_fs_LR.shape.gii \
-			-edge-method 
+			-edge-method
 
 	done
 
@@ -441,7 +441,7 @@ main()
 	file_to_remove="${CommonAtlasFolder}/${GroupAverageName}.ArealDistortion_${RegName}.${HighResMesh}k_fs_LR.dtseries.nii"
 
 	log_Msg "About to remove ArealDistortion dense timeseries file: ${file_to_remove}"
-	
+
 	rm ${file_to_remove}
 
 	# ------------------------------
@@ -471,7 +471,7 @@ main()
 
 	log_Msg "About to create EdgeDistortion dscalar file: ${cifti_out}"
 	log_File_Must_Exist "${cifti_in}"
-	
+
 	${Caret7_Command} -cifti-convert-to-scalar ${cifti_in} ${direction} ${cifti_out}
 
 	# ------------------------------
@@ -529,7 +529,7 @@ main()
 
 }
 
-# 
+#
 # Invoke the main function to get things started
 #
-main $@
+main "$@"

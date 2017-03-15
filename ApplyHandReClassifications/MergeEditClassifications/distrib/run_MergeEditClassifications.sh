@@ -33,7 +33,7 @@ else
       args="${args} \"${token}\"" 
       shift
   done
-  eval "\"${exe_dir}/fix_3_clean\"" $args
+  eval "\"${exe_dir}/MergeEditClassifications\"" $args
 fi
 exit
 

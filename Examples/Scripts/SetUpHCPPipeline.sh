@@ -37,7 +37,8 @@ fi
 #export CARET7DIR=/home/brainmappers/workbench
 export CARET7DIR=/opt/fmrib/bin # When on Jalapeno: source it from the general bin folder to allow wb_command to find other libraries and packages
 
-export MSMBin=${HCPPIPEDIR}/MSMBinaries
+export MSMBINDIR=${HCPPIPEDIR}/MSMBinaries #export MSMBINDIR=${HOME}/pipeline_tools/MSM-2015.01.14
+export MSMCONFIGDIR=${HCPPIPEDIR}/MSMConfig
 
 # the two locations below are specific for Washington-University
 export MATLAB_COMPILER_RUNTIME=/media/myelin/brainmappers/HardDrives/1TB/MATLAB_Runtime/v901

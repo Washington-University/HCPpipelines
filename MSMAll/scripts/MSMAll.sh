@@ -1,45 +1,95 @@
 #!/bin/bash
 
+set -e # If any commands exit with non-zero value, this script exits
+
 # ------------------------------------------------------------------------------
-#  Code Start
+#  Verify HCPPIPEDIR environment variable is set
 # ------------------------------------------------------------------------------
-set -e # If any command exit with non-zero value, this script exits
-g_script_name=`basename ${0}`
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
 
 # ------------------------------------------------------------------------------
 #  Load function libraries
 # ------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
 log_Debug_On
 
-#
-# Function Description:
-#  TBW
-#
+# ------------------------------------------------------------------------------
+#  Verify other needed environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+if [ -z "${MSMBINDIR}" ]; then
+	log_Err_Abort "MSMBINDIR environment variable must be set"
+fi
+log_Msg "MSMBINDIR: ${MSMBINDIR}"
+
+# ------------------------------------------------------------------------------
+#  Show usage information for this script
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  MSMAll.sh"
-	echo ""
-	echo " usage TBW"
-	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
-	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use Matlab"
-	#echo "     2 = Use Octave"	
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: MSM-All Registration
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  TBW = To Be Written
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --high-res-mesh=<high resolution mesh node count> (in thousands)
+   --low-res-mesh=<low resolution mesh node count> (in thousands)
+   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
+   --output-fmri-name=<name given to concatenated singel subject "scan">
+   --fmri-proc-string=<identification for FIX cleaned dtseries to use>
+   --input-pca-registration-name=TBW
+   --input-registration-name=TBW
+   --registration-name-stem=TBW
+   --rsn-target-file=TBW
+   --rsn-cost-weights=TBW
+   --myelin-target-file=TBW
+   --topography-roi-file=TBW
+   --topography-target-file=TBW
+   --iterations=TBW
+   --method=TBW
+   --use-migp=TBW
+   --ica-dim=TBW
+   --regression-params=TBW
+   --vn=TBW
+   --rerun=TBW
+   --reg-conf=TBW
+   --reg-conf-vars=TBW
+  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
-#  Get the command line options for this script
-#  Shows usage information and exits if command line is malformed
-#
-# Global Output Variables
-#
-#   TBW
-#
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
@@ -69,17 +119,17 @@ get_options()
 	unset g_rerun                       # ${ReRun}
 	unset g_reg_conf                    # ${RegConf}
 	unset g_reg_conf_vars               # ${RegConfVars}
-	unset g_matlab_run_mode             
+	unset g_matlab_run_mode
 
-  # set default values
-  g_matlab_run_mode=0
+	# set default values
+	g_matlab_run_mode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
 	local index=0
 
-	while [ ${index} -lt ${num_args} ]; do
+	while [ "${index}" -lt "${num_args}" ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -196,236 +246,245 @@ get_options()
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
-	# check required parameters
 
+	# check required parameters
 	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+		log_Err "path to study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
 	fi
 
 	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject required"
+		log_Err "subject required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_subject: ${g_subject}"
 	fi
 
 	if [ -z "${g_high_res_mesh}" ]; then
-		echo "ERROR: high_res_mesh required"
+		log_Err "high_res_mesh required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
 	fi
 
 	if [ -z "${g_low_res_mesh}" ]; then
-		echo "ERROR: low_res_mesh required"
+		log_Err "low_res_mesh required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_low_res_mesh: ${g_low_res_mesh}"
 	fi
 
 	if [ -z "${g_fmri_names_list}" ]; then
-		echo "ERROR: fmri_names_list required"
+		log_Err "fmri_names_list required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
 	fi
 
 	if [ -z "${g_output_fmri_name}" ]; then
-		echo "ERROR: output_fmri_name required"
+		log_Err "output_fmri_name required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
 	fi
 
 	if [ -z "${g_fmri_proc_string}" ]; then
-		echo "ERROR: fmri_proc_string required"
+		log_Err "fmri_proc_string required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
 	fi
 
 	if [ -z "${g_input_pca_registration_name}" ]; then
-		echo "ERROR: input_pca_registration_name required"
+		log_Err "input_pca_registration_name required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_input_pca_registration_name: ${g_input_pca_registration_name}"
 	fi
 
 	if [ -z "${g_input_registration_name}" ]; then
-		echo "ERROR: input_registration_name required"
+		log_Err "input_registration_name required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_input_registration_name: ${g_input_registration_name}"
 	fi
 
 	if [ -z "${g_registration_name_stem}" ]; then
-		echo "ERROR: registration_name_stem required"
+		log_Err "registration_name_stem required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_registration_name_stem: ${g_registration_name_stem}"
 	fi
 
 	if [ -z "${g_rsn_target_file}" ]; then
-		echo "ERROR: rsn_target_file required"
+		log_Err "rsn_target_file required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_rsn_target_file: ${g_rsn_target_file}"
 	fi
 
 	if [ -z "${g_rsn_cost_weights}" ]; then
-		echo "ERROR: rsn_cost_weights required"
+		log_Err "rsn_cost_weights required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_rsn_cost_weights: ${g_rsn_cost_weights}"
 	fi
 
 	if [ -z "${g_myelin_target_file}" ]; then
-		echo "ERROR: myelin_target_file required"
+		log_Err "myelin_target_file required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
 	fi
 
 	if [ -z "${g_topography_roi_file}" ]; then
-		echo "ERROR: topography_roi_file required"
+		log_Err "topography_roi_file required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_topography_roi_file: ${g_topography_roi_file}"
 	fi
 
 	if [ -z "${g_topography_target_file}" ]; then
-		echo "ERROR: topography_target_file required"
+		log_Err "topography_target_file required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_topography_target_file: ${g_topography_target_file}"
 	fi
 
 	if [ -z "${g_iterations}" ]; then
-		echo "ERROR: iterations required"
+		log_Err "iterations required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_iterations: ${g_iterations}"
 	fi
 
 	if [ -z "${g_method}" ]; then
-		echo "ERROR: method required"
+		log_Err "method required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_method: ${g_method}"
 	fi
 
 	if [ -z "${g_use_migp}" ]; then
-		echo "ERROR: use_migp required"
+		log_Err "use_migp required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_use_migp: ${g_use_migp}"
 	fi
 
 	if [ -z "${g_ica_dim}" ]; then
-		echo "ERROR: ica_dim required"
+		log_Err "ica_dim required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_ica_dim: ${g_ica_dim}"
 	fi
 
 	if [ -z "${g_regression_params}" ]; then
-		echo "ERROR: regression_params required"
+		log_Err "regression_params required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_regression_params: ${g_regression_params}"
 	fi
 
 	if [ -z "${g_vn}" ]; then
-		echo "ERROR: vn required"
+		log_Err "vn required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_vn: ${g_vn}"
 	fi
 
 	if [ -z "${g_rerun}" ]; then
-		echo "ERROR: rerun required"
+		log_Err "rerun required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_rerun: ${g_rerun}"
 	fi
 
 	if [ -z "${g_reg_conf}" ]; then
-		echo "ERROR: reg_conf required"
+		log_Err "reg_conf required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_reg_conf: ${g_reg_conf}"
 	fi
 
 	if [ -z "${g_reg_conf_vars}" ]; then
-		echo "ERROR: reg_conf_vars required"
+		log_Err "reg_conf_vars required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_reg_conf_vars: ${g_reg_conf_vars}"
 	fi
 
 	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_matlab_run_mode} in 
+		case ${g_matlab_run_mode} in
 			0)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				fi
 				;;
 			1)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
-			# 2)
-			#	;;
 			*)
-				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
-				echo "ERROR: matlab run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
 
-#
-# Function Description:
-#  Document Tool Versions
-#
-show_tool_versions() 
+# ------------------------------------------------------------------------------
+#  Show/Document Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
 {
 	# Show wb_command version
 	log_Msg "Showing wb_command version"
-	${CARET7DIR}/wb_command -version
+	"${CARET7DIR}"/wb_command -version
 
-	# Show MSMBin
-	log_Msg "MSMBin: ${MSMBin}"
+	# Show msm version
+	log_Msg "Showing msm version"
+	set +e
+	"${MSMBINDIR}"/msm --version
+	return_code=$?
+	set -e
+	if [ "${return_code}" -ne "0" ]; then
+		log_Msg "msm does not support the --version option"
+	fi
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-#
+# ------------------------------------------------------------------------------
+
 main()
 {
 	# Get command line options
-	# See documentation for get_options function for global variables set
-	get_options $@
+	get_options "$@"
 
 	# show the versions of tools used
 	show_tool_versions
 
+	# Naming Conventions
 	Caret7_Command=${CARET7DIR}/wb_command
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
@@ -522,15 +581,15 @@ main()
 	NativeT1wFolder="${T1wFolder}/Native"
 	log_Msg "NativeT1wFolder: ${NativeT1wFolder}"
 
-	if [[ `echo -n ${Method} | grep "WR"` ]] ; then
-		LowICAdims=`echo ${RegressionParams} | sed 's/_/ /g'`
+	if [[ $(echo -n "${Method}" | grep "WR") ]] ; then
+		LowICAdims=$(echo "${RegressionParams}" | sed 's/_/ /g')
 	fi
 	log_Msg "LowICAdims: ${LowICAdims}"
 
-	Iterations=`echo ${Iterations} | sed 's/_/ /g'`
+	Iterations=$(echo "${Iterations}" | sed 's/_/ /g')
 	log_Msg "Iterations: ${Iterations}"
 
-	NumIterations=`echo ${Iterations} | wc -w`
+	NumIterations=$(echo "${Iterations}" | wc -w)
 	log_Msg "NumIterations: ${NumIterations}"
 
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
@@ -542,11 +601,11 @@ main()
 	nTPsForSpectra="0" #Set to zero to not compute spectra
 	log_Msg "nTPsForSpectra: ${nTPsForSpectra}"
 
-  VolParams="NO" #Dont' output volume RSN maps
+	VolParams="NO" #Dont' output volume RSN maps
 	log_Msg "VolParams: ${VolParams}"
 
-	if [[ ! -e ${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii || ${ReRun} = "YES" ]] ; then 
-		
+	if [[ ! -e ${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii || ${ReRun} = "YES" ]] ; then
+
 		##IsRunning="${NativeFolder}/${Subject}.IsRunning_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.txt"
 		##if [ ! -e ${IsRunning} ] ; then
 		##  touch ${IsRunning}
@@ -554,20 +613,20 @@ main()
 		##  exit
 		##fi
 
-		RSNTargetFile=`echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${ICAdim}/g"`
+		RSNTargetFile=$(echo "${RSNTargetFileOrig}" | sed "s/REPLACEDIM/${ICAdim}/g")
 		log_Msg "RSNTargetFile: ${RSNTargetFile}"
 		log_File_Must_Exist "${RSNTargetFile}"
-		
-		RSNCostWeights=`echo ${RSNCostWeightsOrig} | sed "s/REPLACEDIM/${ICAdim}/g"`
+
+		RSNCostWeights=$(echo "${RSNCostWeightsOrig}" | sed "s/REPLACEDIM/${ICAdim}/g")
 		log_Msg "RSNCostWeights: ${RSNCostWeights}"
 		log_File_Must_Exist "${RSNCostWeights}"
 
-		cp --verbose ${RSNTargetFile} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii
-		cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
-		cp --verbose ${TopographyROIFile} ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii
-		cp --verbose ${TopographyTargetFile} ${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii
+		cp --verbose "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp --verbose "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp --verbose "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp --verbose "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
 
-		if [ ${InPCARegName} = "MSMSulc" ] ; then
+		if [ "${InPCARegName}" = "MSMSulc" ] ; then
 			log_Msg "InPCARegName is MSMSulc"
 			InPCARegString="MSMSulc"
 			OutPCARegString=""
@@ -587,33 +646,33 @@ main()
 		log_Msg "SurfRegSTRING: ${SurfRegSTRING}"
 
 		for Hemisphere in L R ; do
-			${Caret7_Command} -surface-vertex-areas ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.shape.gii 
+			${Caret7_Command} -surface-vertex-areas ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.shape.gii
 		done
 		${Caret7_Command} -cifti-create-dense-scalar ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii -left-metric ${DownSampleT1wFolder}/${Subject}.L.midthickness_va.${LowResMesh}k_fs_LR.shape.gii -roi-left ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii -right-metric ${DownSampleT1wFolder}/${Subject}.R.midthickness_va.${LowResMesh}k_fs_LR.shape.gii -roi-right ${DownSampleFolder}/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-		VAMean=`${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii -reduce MEAN`
+		VAMean=$(${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii -reduce MEAN)
 		log_Msg "VAMean: ${VAMean}"
 
 		${Caret7_Command} -cifti-math "VA / ${VAMean}" ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii -var VA ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii
-  
+
 		log_Msg "NumIterations: ${NumIterations}"
 		i=1
 		while [ ${i} -le ${NumIterations} ] ; do
 			log_Msg "i: ${i}"
 			RegName="${RegNameStem}_${i}_d${ICAdim}_${Method}"
 			log_Msg "RegName: ${RegName}"
-			Modalities=`echo ${Iterations} | cut -d " " -f ${i}`
+			Modalities=$(echo ${Iterations} | cut -d " " -f ${i})
 			log_Msg "Modalities: ${Modalities}"
 
 			if [ ! -e ${NativeFolder}/${RegName} ] ; then
 				mkdir --verbose ${NativeFolder}/${RegName}
-			else 
-				rm -r ${NativeFolder}/${RegName}
+			else
+				rm -r "${NativeFolder:?}/${RegName}"
 				mkdir --verbose ${NativeFolder}/${RegName}
 			fi
 
-			if [[ `echo -n ${Modalities} | grep "C"` || `echo -n ${Modalities} | grep "T"` ]] ; then
+			if [[ $(echo -n ${Modalities} | grep "C") || $(echo -n ${Modalities} | grep "T") ]] ; then
 				for Hemisphere in L R ; do
-					${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii      
+					${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii
 				done
 
 				if [ ${UseMIGP} = "YES" ] ; then
@@ -622,106 +681,113 @@ main()
 					inputdtseries="${ResultsFolder}/${OutputfMRIName}${fMRIProcSTRING}${PCARegString}.dtseries.nii"
 				fi
 			fi
-    
-			if [[ `echo -n ${Modalities} | grep "C"` ]] ; then   
+
+			if [[ $(echo -n ${Modalities} | grep "C") ]] ; then
 				log_Msg "Modalities includes C"
 				log_Msg "Resample the atlas instead of the timeseries"
 				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-      
-				NumValidRSNs=`cat ${RSNCostWeights} | wc -w`
+
+				NumValidRSNs=$(cat ${RSNCostWeights} | wc -w)
 				inputweights="${RSNCostWeights}"
 				inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii"
 				outputspatialmaps="${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR" #No Ext
 				outputweights="${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.dscalar.nii"
 				Params="${NativeFolder}/${RegName}/Params.txt"
 				touch ${Params}
-				if [[ `echo -n ${Method} | grep "WR"` ]] ; then
+				if [[ $(echo -n ${Method} | grep "WR") ]] ; then
 					Distortion="${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 					echo ${Distortion} > ${Params}
 					LeftSurface="${DownSampleT1wFolder}/${Subject}.L.midthickness${SurfRegSTRING}.${LowResMesh}k_fs_LR.surf.gii"
 					echo ${LeftSurface} >> ${Params}
 					RightSurface="${DownSampleT1wFolder}/${Subject}.R.midthickness${SurfRegSTRING}.${LowResMesh}k_fs_LR.surf.gii"
-					echo ${RightSurface} >> ${Params}        
+					echo ${RightSurface} >> ${Params}
 					for LowICAdim in ${LowICAdims} ; do
-						LowDim=`echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${LowICAdim}/g"`
+						LowDim=$(echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${LowICAdim}/g")
 						echo ${LowDim} >> ${Params}
 					done
 				fi
 
-	case ${g_matlab_run_mode} in
-		0)
-			# Use Compiled Matlab
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
-				
-				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+				case ${g_matlab_run_mode} in
 
-				matlab_function_arguments="'${inputspatialmaps}'"
-				matlab_function_arguments+=" '${inputdtseries}'"
-				matlab_function_arguments+=" '${inputweights}'"
-				matlab_function_arguments+=" '${outputspatialmaps}'"
-				matlab_function_arguments+=" '${outputweights}'"
-				matlab_function_arguments+=" '${Caret7_Command}'"
-				matlab_function_arguments+=" '${Method}'"
-				matlab_function_arguments+=" '${Params}'"
-				matlab_function_arguments+=" '${VN}'"
-				matlab_function_arguments+=" ${nTPsForSpectra}"
-				matlab_function_arguments+=" '${BC}'"
-				matlab_function_arguments+=" '${VolParams}'"
+					0)
+						# Use Compiled MATLAB
+						matlab_exe="${HCPPIPEDIR}"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.Iteration${i}.log 2>&1"
+						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+						matlab_function_arguments="'${inputspatialmaps}'"
+						matlab_function_arguments+=" '${inputdtseries}'"
+						matlab_function_arguments+=" '${inputweights}'"
+						matlab_function_arguments+=" '${outputspatialmaps}'"
+						matlab_function_arguments+=" '${outputweights}'"
+						matlab_function_arguments+=" '${Caret7_Command}'"
+						matlab_function_arguments+=" '${Method}'"
+						matlab_function_arguments+=" '${Params}'"
+						matlab_function_arguments+=" '${VN}'"
+						matlab_function_arguments+=" ${nTPsForSpectra}"
+						matlab_function_arguments+=" '${BC}'"
+						matlab_function_arguments+=" '${VolParams}'"
 
-				# --------------------------------------------------------------------------------
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-				# --------------------------------------------------------------------------------
+						matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.Iteration${i}.log 2>&1"
 
-				echo "${matlab_cmd}" | bash
-				echo "Matlab command return code: $?"
-    ;;
-		1)
-      mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+						log_Msg "Run MATLAB command: ${matlab_cmd}"
+
+						echo "${matlab_cmd}" | bash
+						log_Msg "MATLAB command return code: $?"
+						;;
+
+					1)
+						# Use interpreted MATLAB
+						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+						matlab -nojvm -nodisplay -nosplash <<M_PROG
 addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
 M_PROG
-echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
-		;;
-	esac
+						log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						;;
+
+					*)
+						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						;;
+				esac
 
 				rm ${Params} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
 				# Resample the individual maps so they are in the correct space
 				log_Msg "Resample the individual maps so they are in the correct space"
 				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-    
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii
 
 			fi
 
-			if [[ `echo -n ${Modalities} | grep "A"` ]] ; then
-				echo "Modalities includes A"
+			if [[ $(echo -n ${Modalities} | grep "A") ]] ; then
+				log_Msg "Modalities includes A"
 				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 				${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 				${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
 			fi
-    
-			if [[ `echo -n ${Modalities} | grep "T"` ]] ; then
+
+			if [[ $(echo -n ${Modalities} | grep "T") ]] ; then
 				# Resample the atlas instead of the timeseries
 				log_Msg "Modalities includes T"
 				log_Msg "Resample the atlas instead of the timeseries"
 				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-				NumMaps=`${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps`
+				NumMaps=$(${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps)
 				TopographicWeights=${NativeFolder}/${RegName}/TopographicWeights.txt
 				n=1
 				while [ ${n} -le ${NumMaps} ] ; do
 					echo -n "${n} " >> ${TopographicWeights}
-					n=$((${n}+1))
+					n=$(( n+1 ))
 				done
 				inputweights="${TopographicWeights}"
 				inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii"
@@ -729,156 +795,171 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				outputweights="${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii"
 				Params="${NativeFolder}/${RegName}/Params.txt"
 				touch ${Params}
-				if [[ `echo -n ${Method} | grep "WR"` ]] ; then
+				if [[ $(echo -n ${Method} | grep "WR") ]] ; then
 					Distortion="${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 					echo ${Distortion} > ${Params}
 				fi
-				
-	case ${g_matlab_run_mode} in
-		0)
-			# Use Compiled Matlab
 
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				case ${g_matlab_run_mode} in
+					0)
+						# Use Compiled Matlab
+						matlab_exe="${HCPPIPEDIR}"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-				matlab_function_arguments="'${inputspatialmaps}'"
-				matlab_function_arguments+=" '${inputdtseries}'"
-				matlab_function_arguments+=" '${inputweights}'"
-				matlab_function_arguments+=" '${outputspatialmaps}'"
-				matlab_function_arguments+=" '${outputweights}'"
-				matlab_function_arguments+=" '${Caret7_Command}'"
-				matlab_function_arguments+=" '${Method}'"
-				matlab_function_arguments+=" '${Params}'"
-				matlab_function_arguments+=" '${VN}'"
-				matlab_function_arguments+=" ${nTPsForSpectra}"
-				matlab_function_arguments+=" '${BC}'"
-				matlab_function_arguments+=" '${VolParams}'"
+						matlab_function_arguments="'${inputspatialmaps}'"
+						matlab_function_arguments+=" '${inputdtseries}'"
+						matlab_function_arguments+=" '${inputweights}'"
+						matlab_function_arguments+=" '${outputspatialmaps}'"
+						matlab_function_arguments+=" '${outputweights}'"
+						matlab_function_arguments+=" '${Caret7_Command}'"
+						matlab_function_arguments+=" '${Method}'"
+						matlab_function_arguments+=" '${Params}'"
+						matlab_function_arguments+=" '${VN}'"
+						matlab_function_arguments+=" ${nTPsForSpectra}"
+						matlab_function_arguments+=" '${BC}'"
+						matlab_function_arguments+=" '${VolParams}'"
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
+						matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
 
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-				# --------------------------------------------------------------------------------
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-				# --------------------------------------------------------------------------------
+						log_Msg "Run Matlab command: ${matlab_cmd}"
 
-				echo "${matlab_cmd}" | bash
-				echo "Matlab command return code: $?"
-		;;
-		1)
-      mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						echo "${matlab_cmd}" | bash
+						log_Msg "Matlab command return code: $?"
+						;;
 
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+					1)
+						# Use interpreted MATLAB
+						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+						matlab -nojvm -nodisplay -nosplash <<M_PROG
 addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
 M_PROG
-echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
-		;;
-	esac
+						log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						;;
+
+					*)
+						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						;;
+				esac
 
 				rm ${Params} ${TopographicWeights} ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
 				# Resample the individual maps so they are in the correct space
 				log_Msg "Resample the individual maps so they are in the correct space"
+
 				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-    
+
 				${Caret7_Command} -cifti-math "Weights - (V1 > 0)" ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii -var V1 ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -select 1 8 -repeat -var Weights ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii
-    
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_Topography.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_Topography.${LowResMesh}k_fs_LR.func.gii
+
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii
+
 			fi
 
-			##for Hemisphere in L R ; do 
-			function RegHemi {
+			function RegHemi
+			{
 				Hemisphere="${1}"
-				if [ $Hemisphere = "L" ] ; then 
+				if [ $Hemisphere = "L" ] ; then
 					Structure="CORTEX_LEFT"
-				elif [ $Hemisphere = "R" ] ; then 
+				elif [ $Hemisphere = "R" ] ; then
 					Structure="CORTEX_RIGHT"
-				fi  
-				
+				fi
+
 				log_Msg "RegHemi - Hemisphere: ${Hemisphere}"
 				log_Msg "RegHemi - Structure:  ${Structure}"
 				log_Msg "RegHemi - Modalities: ${Modalities}"
 
-				if [[ `echo -n ${Modalities} | grep "C"` ]] ; then
+				if [[ $(echo -n ${Modalities} | grep "C") ]] ; then
 					log_Msg "RegHemi - Modalities contains C"
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii 
+
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+
 					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii -largest
 
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii 
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+
 				fi
 
-				if [[ `echo -n ${Modalities} | grep "A"` ]] ; then   
+				if [[ $(echo -n ${Modalities} | grep "A") ]] ; then
 					log_Msg "RegHemi - Modalities contains A"
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii        
+
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+
 				fi
 
-				if [[ `echo -n ${Modalities} | grep "T"` ]] ; then   
+				if [[ $(echo -n ${Modalities} | grep "T") ]] ; then
 					log_Msg "RegHemi - Modalities contains T"
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii 
+
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+
 					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii -largest
 
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.atlas_Topography.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii 
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.atlas_Topography.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+
 				fi
 
 				MedialWallWeight="1"
-				${Caret7_Command} -metric-math "((var - 1) * -1) * ${MedialWallWeight}" ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii -var var ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii 
+				${Caret7_Command} -metric-math "((var - 1) * -1) * ${MedialWallWeight}" ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii -var var ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
 				${Caret7_Command} -metric-math "((var - 1) * -1) * ${MedialWallWeight}" ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi_inv.${LowResMesh}k_fs_LR.shape.gii -var var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-      
+
 				NativeMetricMerge=""
 				NativeWeightsMerge=""
 				AtlasMetricMerge=""
 				AtlasWeightsMerge=""
 				n=1
-				for Modality in `echo ${Modalities} | sed 's/\(.\)/\1 /g'` ; do
+				for Modality in $(echo ${Modalities} | sed 's/\(.\)/\1 /g') ; do
 					log_Msg "RegHemi - n: ${n}"
 					if [ ${Modality} = "C" ] ; then
 						log_Msg "RegHemi - Modality: ${Modality}"
 						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii
-						SDEVs=`${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -reduce STDEV`
-						SDEVs=`echo ${SDEVs} | sed 's/ / + /g' | bc -l`
-						MeanSDEV=`echo "${SDEVs} / ${NumValidRSNs}" | bc -l`
+						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
+						SDEVs=$(echo ${SDEVs} | sed 's/ / + /g' | bc -l)
+						MeanSDEV=$(echo "${SDEVs} / ${NumValidRSNs}" | bc -l)
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii
-						NativeMetricMerge=`echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii"`
-						NativeWeightsMerge=`echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.native.func.gii"`
-						AtlasMetricMerge=`echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii"`
-						AtlasWeightsMerge=`echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii"`
+						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii")
+						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.native.func.gii")
+						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.func.gii")
+						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii")
 					elif [ ${Modality} = "A" ] ; then
 						log_Msg "RegHemi - Modality: ${Modality}"
 						###Renormalize individual map?
 						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-						SDEVs=`${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -reduce STDEV`
-						SDEVs=`echo ${SDEVs} | sed 's/ / + /g' | bc -l`
-						MeanSDEV=`echo "${SDEVs} / 1" | bc -l`
+						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
+						SDEVs=$(echo ${SDEVs} | sed 's/ / + /g' | bc -l)
+						MeanSDEV=$(echo "${SDEVs} / 1" | bc -l)
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
 						${Caret7_Command} -metric-math "(Var - Bias) / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.MyelinMap.native.func.gii -var Bias ${NativeFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.native.func.gii
-						NativeMetricMerge=`echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC_${InRegName}.native.func.gii"` 
-						NativeWeightsMerge=`echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii"` 
-						AtlasMetricMerge=`echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii"` 
-						AtlasWeightsMerge=`echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii"` 
+						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC_${InRegName}.native.func.gii")
+						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii")
+						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii")
+						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii")
 					elif [ ${Modality} = "T" ] ; then
 						log_Msg "RegHemi - Modality: ${Modality}"
 						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii
-						SDEVs=`${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -reduce STDEV`
-						SDEVs=`echo ${SDEVs} | sed 's/ / + /g' | bc -l`
-						MeanSDEV=`echo "${SDEVs} / 1" | bc -l`
+						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
+						SDEVs=$(echo ${SDEVs} | sed 's/ / + /g' | bc -l)
+						MeanSDEV=$(echo "${SDEVs} / 1" | bc -l)
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_Topography_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.native.func.gii
-						NativeMetricMerge=`echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_Topography_${InRegName}.native.func.gii"` 
-						NativeWeightsMerge=`echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.native.func.gii"` 
-						AtlasMetricMerge=`echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii"` 
-						AtlasWeightsMerge=`echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii"` 
+						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_Topography_${InRegName}.native.func.gii")
+						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.native.func.gii")
+						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii")
+						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii")
 					fi
 					if [ ${n} -eq "1" ] ; then
 						NormSDEV=${MeanSDEV}
 					fi
-					n=$((${n}+1))
+					n=$(( n+1 ))
 				done
-      
+
 				log_Debug_Msg "RegHemi 1"
 				${Caret7_Command} -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii ${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii
 				${Caret7_Command} -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii ${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii
@@ -886,10 +967,10 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				${Caret7_Command} -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii ${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi_inv.${LowResMesh}k_fs_LR.shape.gii
 
 				log_Debug_Msg "RegHemi 2"
-				${Caret7_Command} -metric-math "Modalities * Weights * ${NormSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Modalities ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Weights ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii     
+				${Caret7_Command} -metric-math "Modalities * Weights * ${NormSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Modalities ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Weights ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii
 				${Caret7_Command} -metric-math "Modalities * Weights * ${NormSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -var Modalities ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -var Weights ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii
-      
-				MEANs=`${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii -reduce MEAN`
+
+				MEANs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii -reduce MEAN)
 				Native=""
 				NativeWeights=""
 				Atlas=""
@@ -898,21 +979,21 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				for MEAN in ${MEANs} ; do
 					log_Debug_Msg "RegHemi j: ${j}"
 					if [ ! ${MEAN} = 0 ] ; then
-						Native=`echo "${Native} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -column ${j}"`
-						NativeWeights=`echo "${NativeWeights} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii -column ${j}"`
-						Atlas=`echo "${Atlas} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -column ${j}"`
-						AtlasWeights=`echo "${AtlasWeights} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii -column ${j}"`
+						Native=$(echo "${Native} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -column ${j}")
+						NativeWeights=$(echo "${NativeWeights} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii -column ${j}")
+						Atlas=$(echo "${Atlas} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -column ${j}")
+						AtlasWeights=$(echo "${AtlasWeights} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii -column ${j}")
 					fi
-					j=$((${j}+1))
+					j=$(( j+1 ))
 				done
-      
+
 				log_Debug_Msg "RegHemi 3"
 				$Caret7_Command -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii ${Native}
 				$Caret7_Command -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii ${NativeWeights}
 				$Caret7_Command -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii ${Atlas}
 				$Caret7_Command -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii ${AtlasWeights}
 
-				DIR=`pwd`
+				DIR=$(pwd)
 				cd ${NativeFolder}/${RegName}
 
 				log_Debug_Msg "RegConf: ${RegConf}"
@@ -925,7 +1006,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				if [ ! ${RegConfVars} = "NONE" ] ; then
 					log_Debug_Msg "RegConfVars not equal to NONE"
 					log_Debug_Msg "RegConfVars: ${RegConfVars}"
-					RegConfVars=`echo ${RegConfVars} | sed 's/,/ /g'`
+					RegConfVars=$(echo ${RegConfVars} | sed 's/,/ /g')
 
 					log_Debug_Msg "RegConfVars: ${RegConfVars}"
 					log_Debug_Msg "Before substitution"
@@ -933,8 +1014,8 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 
 					for RegConfVar in ${RegConfVars} ; do
 						mv -f ${NativeFolder}/${RegName}/conf.${Hemisphere} ${NativeFolder}/${RegName}/confbak.${Hemisphere}
-						STRING=`echo ${RegConfVar} | cut -d "=" -f 1`
-						Var=`echo ${RegConfVar} | cut -d "=" -f 2`
+						STRING=$(echo ${RegConfVar} | cut -d "=" -f 1)
+						Var=$(echo ${RegConfVar} | cut -d "=" -f 2)
 						cat ${NativeFolder}/${RegName}/confbak.${Hemisphere} | sed s/${STRING}/${Var}/g > ${NativeFolder}/${RegName}/conf.${Hemisphere}
 					done
 
@@ -942,7 +1023,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 					log_Debug_Cat ${NativeFolder}/${RegName}/conf.${Hemisphere}
 
 					rm ${NativeFolder}/${RegName}/confbak.${Hemisphere}
-					RegConfVars=`echo ${RegConfVars} | sed 's/ /,/g'`
+					RegConfVars=$(echo ${RegConfVars} | sed 's/ /,/g')
 				fi
 
 				log_Debug_Msg "RegHemi 4"
@@ -950,9 +1031,9 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				msm_configuration_file="${NativeFolder}/${RegName}/conf.${Hemisphere}"
 				log_File_Must_Exist "${msm_configuration_file}"
 
-				# MSMOut=`${MSMBin}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}. --verbose --debug 2>&1`
-
-				${MSMBin}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}. --verbose --debug 2>&1
+				msm_cmd=${MSMBINDIR}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}. --verbose --debug 2>&1
+				log_Debug_Msg "msm_cmd: ${msm_cmd}"
+				${msm_cmd}
 				MSMOut=$?
 				log_Debug_Msg "MSMOut: ${MSMOut}"
 
@@ -963,8 +1044,8 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				log_File_Must_Exist "${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii"
 
 				${Caret7_Command} -set-structure ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${Structure}
-				echo "${MSMOut}"
-			}
+
+			} # end of function RegHemi
 
 			for Hemisphere in L R ; do
 				log_Msg "About to call RegHemi with Hemisphere: ${Hemisphere}"
@@ -973,7 +1054,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				#
 				# RegHemi ${Hemisphere} &
 				RegHemi ${Hemisphere}
-				log_Msg "Called RegHemi"
+				log_Msg "Called RegHemi ${Hemisphere}"
 			done
 
 			# Starting jobs in the background and waiting on them makes
@@ -982,11 +1063,11 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 			#wait
 
 			for Hemisphere in L R ; do
-				if [ $Hemisphere = "L" ] ; then 
+				if [ $Hemisphere = "L" ] ; then
 					Structure="CORTEX_LEFT"
-				elif [ $Hemisphere = "R" ] ; then 
+				elif [ $Hemisphere = "R" ] ; then
 					Structure="CORTEX_RIGHT"
-				fi  
+				fi
 				log_Msg "Hemisphere: ${Hemisphere}"
 				log_Msg "Structure: ${Structure}"
 
@@ -1005,7 +1086,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 				${Caret7_Command} -metric-math "ln(spherereg / sphere) / ln(2)" ${NativeFolder}/${Subject}.${Hemisphere}.ArealDistortion_${RegName}.native.shape.gii -var sphere ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii -var spherereg ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.shape.gii
 				rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.shape.gii
 
-				${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii      
+				${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii
 
 				${Caret7_Command} -surface-resample ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii BARYCENTRIC ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
 			done
@@ -1014,21 +1095,22 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 			${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii
 			${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii 1 ${Subject}_ArealDistortion_${RegName}
 			${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-			rm ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii 
+			rm ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii
 
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.ArealDistortion_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.ArealDistortion_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
 			InRegName="${RegName}"
 			SurfRegSTRING="_${RegName}"
-			i=$(($i+1))
-		done
+			i=$(( i+1 ))
+
+		done # while [ ${i} -le ${NumIterations} ]
 
 
 		for Hemisphere in L R ; do
-			if [ $Hemisphere = "L" ] ; then 
+			if [ $Hemisphere = "L" ] ; then
 				Structure="CORTEX_LEFT"
-			elif [ $Hemisphere = "R" ] ; then 
+			elif [ $Hemisphere = "R" ] ; then
 				Structure="CORTEX_RIGHT"
-			fi  
+			fi
 			log_Msg "Hemisphere: ${Hemisphere}"
 			log_Msg "Structure: ${Structure}"
 
@@ -1039,7 +1121,7 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 			${Caret7_Command} -metric-math "ln(spherereg / sphere) / ln(2)" ${NativeFolder}/${Subject}.${Hemisphere}.ArealDistortion_${RegName}.native.shape.gii -var sphere ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii -var spherereg ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.shape.gii
 			rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.shape.gii
 
-			${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${RegName}.native.shape.gii -edge-method 
+			${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${RegName}.native.shape.gii -edge-method
 
 			# Make MSM Registration Areal Distortion Maps
 			log_Msg "Make MSM Registration Areal Distortion Maps"
@@ -1048,31 +1130,31 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 			${Caret7_Command} -metric-math "ln(sphere / midthickness) / ln(2)" ${NativeFolder}/${Subject}.${Hemisphere}.SphericalDistortion.native.shape.gii -var midthickness ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.shape.gii -var sphere ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii
 			rm ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii
 
-			${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii      
-		done
+			${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii
+		done # for Hemispher in L R
 
 		${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.ArealDistortion_${RegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.ArealDistortion_${RegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
 		${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii
 		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii 1 ${Subject}_ArealDistortion_${RegName}
 		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-		rm ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii 
+		rm ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii
 
 		${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.EdgeDistortion_${RegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.EdgeDistortion_${RegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
 		${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii
 		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii 1 ${Subject}_EdgeDistortion_${RegName}
 		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-		rm ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dtseries.nii 
+		rm ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dtseries.nii
 
 		${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.SphericalDistortion.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.SphericalDistortion.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
 		${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii ROW ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii
 		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii 1 ${Subject}_SphericalDistortion
 		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-		rm ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii 
+		rm ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii
 
 		${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
 		${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 		${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii 
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
 		${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.MyelinMap_BC_${RegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii
 
 		for Mesh in ${HighResMesh} ${LowResMesh} ; do
@@ -1083,7 +1165,6 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 			fi
 			for Map in ArealDistortion EdgeDistortion sulc SphericalDistortion MyelinMap_BC ; do
 				if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "MyelinMap_BC" ]] ; then
-				##if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" ]] ; then
 					NativeMap="${Map}_${RegName}"
 				else
 					NativeMap="${Map}"
@@ -1108,61 +1189,64 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 		outputweights="NONE"
 		Params="${NativeFolder}/${RegName}/Params.txt"
 		touch ${Params}
-		if [[ `echo -n ${Method} | grep "WR"` ]] ; then
+		if [[ $(echo -n ${Method} | grep "WR") ]] ; then
 			Distortion="${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 			echo ${Distortion} > ${Params}
 			LeftSurface="${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii"
 			echo ${LeftSurface} >> ${Params}
 			RightSurface="${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii"
-			echo ${RightSurface} >> ${Params}        
+			echo ${RightSurface} >> ${Params}
 			for LowICAdim in ${LowICAdims} ; do
-				LowDim=`echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${LowICAdim}/g"`
+				LowDim=$(echo ${RSNTargetFileOrig} | sed "s/REPLACEDIM/${LowICAdim}/g")
 				echo ${LowDim} >> ${Params}
 			done
 		fi
 
-	case ${g_matlab_run_mode} in
-		0)
-			# Use Compiled Matlab
+		case ${g_matlab_run_mode} in
+			0)
+				# Use Compiled Matlab
+				matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_exe="${HCPPIPEDIR}"
-		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+				matlab_function_arguments="'${inputspatialmaps}'"
+				matlab_function_arguments+=" '${inputdtseries}'"
+				matlab_function_arguments+=" '${inputweights}'"
+				matlab_function_arguments+=" '${outputspatialmaps}'"
+				matlab_function_arguments+=" '${outputweights}'"
+				matlab_function_arguments+=" '${Caret7_Command}'"
+				matlab_function_arguments+=" '${Method}'"
+				matlab_function_arguments+=" '${Params}'"
+				matlab_function_arguments+=" '${VN}'"
+				matlab_function_arguments+=" ${nTPsForSpectra}"
+				matlab_function_arguments+=" '${BC}'"
+   				matlab_function_arguments+=" '${VolParams}'"
 
-		matlab_function_arguments="'${inputspatialmaps}'"
-		matlab_function_arguments+=" '${inputdtseries}'"
-		matlab_function_arguments+=" '${inputweights}'"
-		matlab_function_arguments+=" '${outputspatialmaps}'"
-		matlab_function_arguments+=" '${outputweights}'"
-		matlab_function_arguments+=" '${Caret7_Command}'"
-		matlab_function_arguments+=" '${Method}'"
-		matlab_function_arguments+=" '${Params}'"
-		matlab_function_arguments+=" '${VN}'"
-		matlab_function_arguments+=" ${nTPsForSpectra}"
-		matlab_function_arguments+=" '${BC}'"
-   	matlab_function_arguments+=" '${VolParams}'"
+				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.1.log 2>&1"
 
-		matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.1.log 2>&1"
+				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-		matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+				log_Msg "Run Matlab command: ${matlab_cmd}"
 
-		# --------------------------------------------------------------------------------
-		log_Msg "Run Matlab command: ${matlab_cmd}"
-		# --------------------------------------------------------------------------------
+				echo "${matlab_cmd}" | bash
+				log_Msg "Matlab command return code: $?"
+				;;
 
-		echo "${matlab_cmd}" | bash
-		echo "Matlab command return code: $?"
-		;;
-		1)
-    mPath="${HCPPIPEDIR}/MSMAll/scripts"
+			1)
+				# Use interpreted MATLAB
+				mPath="${HCPPIPEDIR}/MSMAll/scripts"
 
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
 addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
 M_PROG
-echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
-		;;
-	esac
+				log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+				;;
+
+			*)
+				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+				;;
+		esac
 
 		rm ${Params} ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
@@ -1174,12 +1258,12 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 		# Resample the atlas instead of the timeseries
 		log_Msg "Resample the atlas instead of the timeseries"
 		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-		NumMaps=`${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps`
+		NumMaps=$(${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps)
 		TopographicWeights=${NativeFolder}/${RegName}/TopographicWeights.txt
 		n=1
 		while [ ${n} -le ${NumMaps} ] ; do
 			echo -n "${n} " >> ${TopographicWeights}
-			n=$((${n}+1))
+			n=$(( n+1 ))
 		done
 		inputweights="NONE"
 		inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii"
@@ -1187,66 +1271,72 @@ echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','
 		outputweights="NONE"
 		Params="${NativeFolder}/${RegName}/Params.txt"
 		touch ${Params}
-		if [[ `echo -n ${Method} | grep "WR"` ]] ; then
+		if [[ $(echo -n ${Method} | grep "WR") ]] ; then
 			Distortion="${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 			echo ${Distortion} > ${Params}
 		fi
 
-	case ${g_matlab_run_mode} in
-		0)
-			# Use Compiled Matlab
+		case ${g_matlab_run_mode} in
 
-		matlab_exe="${HCPPIPEDIR}"
-		matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+			0)
+				# Use Compiled Matlab
+				matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
 
-		matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-		matlab_function_arguments="'${inputspatialmaps}'"
-		matlab_function_arguments+=" '${inputdtseries}'"
-		matlab_function_arguments+=" '${inputweights}'"
-		matlab_function_arguments+=" '${outputspatialmaps}'"
-		matlab_function_arguments+=" '${outputweights}'"
-		matlab_function_arguments+=" '${Caret7_Command}'"
-		matlab_function_arguments+=" '${Method}'"
-		matlab_function_arguments+=" '${Params}'"
-		matlab_function_arguments+=" '${VN}'"
-		matlab_function_arguments+=" ${nTPsForSpectra}"
-		matlab_function_arguments+=" '${BC}'"
-		matlab_function_arguments+=" '${VolParams}'"
+				matlab_function_arguments="'${inputspatialmaps}'"
+				matlab_function_arguments+=" '${inputdtseries}'"
+				matlab_function_arguments+=" '${inputweights}'"
+				matlab_function_arguments+=" '${outputspatialmaps}'"
+				matlab_function_arguments+=" '${outputweights}'"
+				matlab_function_arguments+=" '${Caret7_Command}'"
+				matlab_function_arguments+=" '${Method}'"
+				matlab_function_arguments+=" '${Params}'"
+				matlab_function_arguments+=" '${VN}'"
+				matlab_function_arguments+=" ${nTPsForSpectra}"
+				matlab_function_arguments+=" '${BC}'"
+				matlab_function_arguments+=" '${VolParams}'"
 
-		matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.2.log 2>&1"
+				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.2.log 2>&1"
 
-		matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
-		# --------------------------------------------------------------------------------
-		log_Msg "Run Matlab command: ${matlab_cmd}"
-		# --------------------------------------------------------------------------------
+				log_Msg "Run Matlab command: ${matlab_cmd}"
 
-		echo "${matlab_cmd}" | bash
-		echo "Matlab command return code: $?"
-		;;
-		1)
-    mPath="${HCPPIPEDIR}/MSMAll/scripts"
+				echo "${matlab_cmd}" | bash
+				log_Msg "Matlab command return code: $?"
+				;;
 
-matlab -nojvm -nodisplay -nosplash <<M_PROG
+			1)
+				# Use interpreted MATLAB
+				mPath="${HCPPIPEDIR}/MSMAll/scripts"
+
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
 addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
 M_PROG
-echo "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
-		;;
-	esac
+				log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+				;;
+
+			*)
+				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+				;;
+		esac
 
 		rm ${Params} ${TopographicWeights} ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
 		# Resample the individual maps so they are in the correct space
 		log_Msg "Resample the individual maps so they are in the correct space"
 		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+
 	fi
 
 # ##rm ${IsRunning}
 
 }
 
-# 
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  Invoke the main function to get things started
+# ------------------------------------------------------------------------------
+
+main "$@"
