@@ -81,6 +81,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject=<subject ID>
    --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
    --output-fmri-name=<name to give to concatenated single subject "scan">
+   --high-pass=<high-pass filter used in ICA+FIX>
    --fmri-proc-string=<identification for FIX cleaned dtseries to use>
         The dense timeseries files used will be named
         <fmri_name>_<fmri_proc_string>.dtseries.nii where
@@ -111,6 +112,7 @@ get_options()
 	unset g_subject
 	unset g_fmri_names_list
 	unset g_output_fmri_name
+	unset g_high_pass
 	unset g_fmri_proc_string
 	unset g_msm_all_templates
 	unset g_output_registration_name
@@ -153,6 +155,10 @@ get_options()
 				;;
 			--output-fmri-name=*)
 				g_output_fmri_name=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--high-pass=*)
+				g_high_pass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
@@ -219,6 +225,13 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
+	fi
+
+	if [ -z "${g_high_pass}" ]; then
+		log_Err "ICA+FIX highpass setting required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_high_pass: ${g_high_pass}"
 	fi
 
 	if [ -z "${g_fmri_proc_string}" ]; then
@@ -319,21 +332,31 @@ main()
 	#       help make the form and values easier to understand.
 	# Note: If UseMIGP value is NO, then we use the full timeseries
 	log_Msg "Running MSM on full timeseries"
-	migp_vars="NO@0@0@YES@YES"
-	log_Msg "migp_vars: ${migp_vars}"
+#	migp_vars="NO@0@0@YES@YES"
+#	log_Msg "migp_vars: ${migp_vars}"
 
-	output_proc_string="_nobias_vn"
+	output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
 	log_Msg "output_proc_string: ${output_proc_string}"
+	Demean="YES"
+	VarianceNormalization="YES"
+	ComputeVarianceNormalization="YES" #Don't rely on RestingStateStats to have been run
+	RevertBiasField="NO" # Will recompute VN based on not reverting bias field
 
 	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
 		--path="${g_path_to_study_folder}" \
 		--subject="${g_subject}" \
 		--fmri-names-list="${g_fmri_names_list}" \
+		--high-pass="${g_high_pass}" \
 		--output-fmri-name="${g_output_fmri_name}" \
 		--fmri-proc-string="${g_fmri_proc_string}" \
-		--migp-vars="${migp_vars}" \
 		--output-proc-string="${output_proc_string}" \
+		--demean="${Demean}" \
+		--variance-normalization="${VarianceNormalization}" \
+		--compute-variance-normalization="${ComputeVarianceNormalization}" \
+		--revert-bias-field="${RevertBiasField}" \
 		--matlab-run-mode="${g_matlab_run_mode}"
+
+	#"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh ${CARET7DIR}/wb_command ${g_path_to_study_folder} ${g_subject} ${g_fmri_names_list} ${g_high_pass} ${g_output_fmri_name} ${g_fmri_proc_string} ${output_proc_string} ${Demean} ${VarianceNormalization} ${ComputeVarianceNormalization} ${RevertBiasField} ${g_matlab_run_mode}
 
 	expected_concatenated_output_file=""
 	expected_concatenated_output_file+="${g_path_to_study_folder}"

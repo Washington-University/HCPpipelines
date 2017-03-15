@@ -1031,7 +1031,7 @@ M_PROG
 				msm_configuration_file="${NativeFolder}/${RegName}/conf.${Hemisphere}"
 				log_File_Must_Exist "${msm_configuration_file}"
 
-				msm_cmd=${MSMBINDIR}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}. --verbose --debug 2>&1
+				msm_cmd="${MSMBINDIR}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}."
 				log_Debug_Msg "msm_cmd: ${msm_cmd}"
 				${msm_cmd}
 				MSMOut=$?
