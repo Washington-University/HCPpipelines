@@ -32,7 +32,7 @@ fi
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 # Set up pipeline environment variables and software
-. ${EnvironmentScript}
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"
@@ -77,7 +77,7 @@ ResultsFolder="Results"
 xfmsFolder="xfms"
 Files2Remove=("*_1mm" "T1w_acpc_brain_mask" "T1w_acpc_brain" "T1w_acpc" "*_gdc")
 
-for Subject in $SubjList ; do
+for Subject in ${SubjList//@/ } ; do
   echo $Subject
 
   # Subject specific naming conventions

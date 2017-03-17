@@ -38,7 +38,7 @@ source ${EnvironmentScript}
 echo "$@"
 
 #if [[ -n $SGE_ROOT ]] ; then
-    QUEUE="-q long.q"
+    QUEUE="-q short.q"
     #QUEUE="-q hcp_priority.q"
 #fi
 
