@@ -31,41 +31,6 @@
 #
 #~ND~END~
 
-set -e # If any commands exit with non-zero value, this script exits
-
-# ------------------------------------------------------------------------------
-#  Verify HCPPIPEDIR environment variable is set
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
-
-# ------------------------------------------------------------------------------
-#  Verify other needed environment variables are set
-# ------------------------------------------------------------------------------
-
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
-
-if [ -z "${FSLDIR}" ]; then
-	log_Err_Abort "FSLDIR environment variable must be set"
-fi
-log_Msg "FSLDIR: ${FSLDIR}"
-
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
@@ -107,17 +72,17 @@ get_options()
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_StudyFolder
-	unset g_Subject
-	unset g_fMRIName
-	unset g_HighPass
-	unset g_TemplateSceneDualScreen
-	unset g_TemplateSceneSingleScreen
-	unset g_ReuseHighPass
-	unset g_MatlabRunMode
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRIName
+	unset p_HighPass
+	unset p_TemplateSceneDualScreen
+	unset p_TemplateSceneSingleScreen
+	unset p_ReuseHighPass
+	unset p_MatlabRunMode
 
 	# set default values
-	g_MatlabRunMode=0
+	p_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -133,39 +98,39 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_StudyFolder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_StudyFolder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_Subject=${argument#*=}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fMRIName=${argument#*=}
+				p_fMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_HighPass=${argument#*=}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-dual-screen=*)
-				g_TemplateSceneDualScreen=${argument#*=}
+				p_TemplateSceneDualScreen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--template-scene-single-screen=*)
-				g_TemplateSceneSingleScreen=${argument#*=}
+				p_TemplateSceneSingleScreen=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reuse-high-pass=*)
-				g_ReuseHighPass=${argument#*=}
+				p_ReuseHighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_MatlabRunMode=${argument#*=}
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -178,78 +143,78 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_StudyFolder}" ]; then
-		log_Err "study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_StudyFolder: ${g_StudyFolder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_Subject}" ]; then
-		log_Err "Subject ID required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_Subject: ${g_Subject}"
+		log_Msg "Subject ID: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fMRIName}" ]; then
-		log_Err "fMRI name required"
+	if [ -z "${p_fMRIName}" ]; then
+		log_Err "fMRI Name (--fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fMRIName: ${g_fMRIName}"
+		log_Msg "fMRI Name: ${p_fMRIName}"
 	fi
 
-	if [ -z "${g_HighPass}" ]; then
-		log_Err "High Pass required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "High Pass: (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_HighPass: ${g_HighPass}"
+		log_Msg "High Pass: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_TemplateSceneDualScreen}" ]; then
-		log_Err "Dual Screen Template Scene required"
+	if [ -z "${p_TemplateSceneDualScreen}" ]; then
+		log_Err "Dual Screen Template Scene (--template-scene-dual-screen=)required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_TemplateSceneDualScreen: ${g_TemplateSceneDualScreen}"
+		log_Msg "Dual Screen Template Scene: ${p_TemplateSceneDualScreen}"
 	fi
 
-	if [ -z "${g_TemplateSceneSingleScreen}" ]; then
-		log_Err "Single Screen Template Scene required"
+	if [ -z "${p_TemplateSceneSingleScreen}" ]; then
+		log_Err "Single Screen Template Scene (--template-scene-single-screen=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_TemplateSceneSingleScreen: ${g_TemplateSceneSingleScreen}"
+		log_Msg "Single Screen Template Scene: ${p_TemplateSceneSingleScreen}"
 	fi
 
-	if [ -z "${g_ReuseHighPass}" ]; then
-		log_Err "reuse high pass not specified"
+	if [ -z "${p_ReuseHighPass}" ]; then
+		log_Err "Reuse High Pass (--reuse-high-pass=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_ReuseHighPass: ${g_ReuseHighPass}"
+		log_Msg "Reuse High Pass: ${p_ReuseHighPass}"
 	fi
 
-	if [ -z "${g_MatlabRunMode}" ]; then
-		log_Err "matlab run mode value (--matlab-run-mode=) required"
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB Run Mode (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_MatlabRunMode} in
+		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
 				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
 			1)
-				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
 				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
 				else
 					log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
 				fi
 				;;
 			*)
-				log_Err "MATLAB run mode value must be 0 or 1"
+				log_Err_Abort "MATLAB Run Mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -261,7 +226,7 @@ get_options()
 }
 
 # ------------------------------------------------------------------------------
-#  Show/Document Tool Versions
+#  Show Tool Versions
 # ------------------------------------------------------------------------------
 
 show_tool_versions() {
@@ -285,23 +250,44 @@ show_tool_versions() {
 
 main()
 {
-	# Get command line options
-	get_options "$@"
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRIName="${3}"
+	local HighPass="${4}"
+	local TemplateSceneDualScreen="${5}"
+	local TemplateSceneSingleScreen="${6}"
+	local ReuseHighPass="${7}"
 
-	# show the versions of tools used
-	show_tool_versions
+	local MatlabRunMode
+	if [ -z "${8}" ]; then
+		MatlabRunMode=0
+	else
+		MatlabRunMode="${8}"
+	fi
+	
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
 
-	# Naming Conventions
-	local AtlasFolder="${g_StudyFolder}/${g_Subject}/MNINonLinear"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRIName: ${fMRIName}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "TemplateSceneDualScreen: ${TemplateSceneDualScreen}"
+	log_Msg "TemplateSceneSingleScreen: ${TemplateSceneSingleScreen}"
+	log_Msg "ReuseHighPass: ${ReuseHighPass}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+
+	# Naming Conventions and other variables
+	local AtlasFolder:
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
-	local ResultsFolder="${AtlasFolder}/Results/${g_fMRIName}"
+	local ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
-	local ICAFolder="${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}.ica/filtered_func_data.ica"
+	local ICAFolder="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica"
 	log_Msg "ICAFolder: ${ICAFolder}"
 
-	local FIXFolder="${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}.ica"
+	local FIXFolder="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 
 	log_Msg "Creating ${ICAFolder}/ICAVolumeSpace.txt file"
@@ -318,14 +304,14 @@ main()
 
 	log_Msg "Set up for prepareICAs MATLAB code"
 	local HighPassUse
-	if [ ${g_ReuseHighPass} = "YES" ] ; then
-		dtseriesName="${ResultsFolder}/${g_fMRIName}_Atlas_hp${g_HighPass}" #No Extension Here
+	if [ ${ReuseHighPass} = "YES" ] ; then
+		dtseriesName="${ResultsFolder}/${fMRIName}_Atlas_hp${HighPass}" #No Extension Here
 		log_Msg "dtseriesName: ${dtseriesName}"
 		HighPassUse="-1"
 	else
-		dtseriesName="${ResultsFolder}/${g_fMRIName}_Atlas" #No Extension Here
+		dtseriesName="${ResultsFolder}/${fMRIName}_Atlas" #No Extension Here
 		log_Msg "dtseriesName: ${dtseriesName}"
-		HighPassUse="${g_HighPass}"
+		HighPassUse="${HighPass}"
 	fi
 
 	local ICAs="${ICAFolder}/melodic_mix"
@@ -346,10 +332,10 @@ main()
 	local ComponentList="${FIXFolder}/ComponentList.txt"
 	log_Msg "ComponentList: ${ComponentList}"
 
-	local TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}_clean pixdim4)
+	local TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}_hp${HighPass}_clean pixdim4)
 	log_Msg "TR: ${TR}"
 
-	local NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fMRIName}_hp${g_HighPass}_clean dim4)
+	local NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}_hp${HighPass}_clean dim4)
 	log_Msg "NumTimePoints: ${NumTimePoints}"
 
 	if [ -e ${ComponentList} ] ; then
@@ -358,7 +344,7 @@ main()
 	fi
 
 	# run MATLAB prepareICAs function
-	case ${g_MatlabRunMode} in
+	case ${MatlabRunMode} in
 
 		0)
 			# Use Compiled Matlab
@@ -382,7 +368,7 @@ main()
 			matlab_function_arguments+=" ${TR} "
 
 			local matlab_logging
-			matlab_logging=">> ${g_StudyFolder}/${g_Subject}_${g_fMRIName}.matlab.log 2>&1"
+			matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}.matlab.log 2>&1"
 
 			local matlab_cmd
 			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
@@ -403,7 +389,7 @@ M_PROG
 			;;
 
 		*)
-			log_Err_Abort "Unrecognized MATLAB run mode value: ${g_MatlabRunMode}"
+			log_Err_Abort "Unrecognized MATLAB run mode value: ${MatlabRunMode}"
 			;;
 	esac
 
@@ -423,10 +409,10 @@ M_PROG
 	rm ${ComponentList}
 
 	log_Msg "Making dual screen scene"
-	cat ${g_TemplateSceneDualScreen} | sed s/SubjectID/${g_Subject}/g | sed s/fMRIName/${g_fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_Subject}_${g_fMRIName}_ICA_Classification_dualscreen.scene
+	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
 
 	log_Msg "Making single screen scene"
-	cat ${g_TemplateSceneSingleScreen} | sed s/SubjectID/${g_Subject}/g | sed s/fMRIName/${g_fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${g_Subject}_${g_fMRIName}_ICA_Classification_singlescreen.scene
+	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
 
 	if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
 		touch ${ResultsFolder}/ReclassifyAsSignal.txt
@@ -438,7 +424,53 @@ M_PROG
 }
 
 # ------------------------------------------------------------------------------
-#  Invoke the main function to get things started
+#  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-main "$@"
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
+# Verify that other needed environment variables are set
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+if [ -z "${FSLDIR}" ]; then
+	log_Err_Abort "FSLDIR environment variable must be set"
+fi
+log_Msg "FSLDIR: ${FSLDIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}            ${4}            ${5}                           ${6}                             ${7}                 ${8}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_TemplateSceneDualScreen}" "${p_TemplateSceneSingleScreen}" "${p_ReuseHighPass}"	"${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+
+fi

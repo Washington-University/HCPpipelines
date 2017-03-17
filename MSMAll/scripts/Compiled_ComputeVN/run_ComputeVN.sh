@@ -27,6 +27,10 @@ else
       args="${args} \"${token}\"" 
       shift
   done
+
+  echo "exe_dir: ${exe_dir}"
+  echo "args: ${args}"
+
   eval "\"${exe_dir}/ComputeVN\"" $args
 fi
 exit

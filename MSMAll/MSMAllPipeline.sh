@@ -31,34 +31,6 @@
 #
 #~ND~END~
 
-set -e # If any commands exit with non-zero value, this script exits
-
-# ------------------------------------------------------------------------------
-#  Verify HCPPIPEDIR environment variable is set
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-# ------------------------------------------------------------------------------
-#  Verify other needed environment variables are set
-# ------------------------------------------------------------------------------
-
-if [ -z "${MSMCONFIGDIR}" ]; then
-	log_Err_Abort "MSMCONFIGDIR environment variable must be set"
-fi
-log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
-
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
@@ -108,21 +80,21 @@ get_options()
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_StudyFolder
-	unset g_Subject
-	unset g_fMRINames
-	unset g_OutputfMRIName
-	unset g_HighPass
-	unset g_fMRIProcSTRING
-	unset g_MSMAllTemplates
-	unset g_OutputRegName
-	unset g_HighResMesh
-	unset g_LowResMesh
-	unset g_InputRegName
-	unset g_MatlabRunMode
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRINames
+	unset p_OutputfMRIName
+	unset p_HighPass
+	unset p_fMRIProcSTRING
+	unset p_MSMAllTemplates
+	unset p_OutputRegName
+	unset p_HighResMesh
+	unset p_LowResMesh
+	unset p_InputRegName
+	unset p_MatlabRunMode
 	
 	# set default values
-	g_MatlabRunMode=0
+	p_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -138,55 +110,55 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_StudyFolder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_StudyFolder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_Subject=${argument#*=}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fMRINames=${argument#*=}
+				p_fMRINames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_OutputfMRIName=${argument#*=}
+				p_OutputfMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_HighPass=${argument#*=}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fMRIProcSTRING=${argument#*=}
+				p_fMRIProcSTRING=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--msm-all-templates=*)
-				g_MSMAllTemplates=${argument#*=}
+				p_MSMAllTemplates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-registration-name=*)
-				g_OutputRegName=${argument#*=}
+				p_OutputRegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_HighResMesh=${argument#*=}
+				p_HighResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_LowResMesh=${argument#*=}
+				p_LowResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
-				g_InputRegName=${argument#*=}
+				p_InputRegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_MatlabRunMode=${argument#*=}
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -199,93 +171,93 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_StudyFolder}" ]; then
+	if [ -z "${p_StudyFolder}" ]; then
 		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_StudyFolder: ${g_StudyFolder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_Subject}" ]; then
-		log_Err "Subject ID required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_Subject: ${g_Subject}"
+		log_Msg "Subject: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fMRINames}" ]; then
-		log_Err "fMRI name list required"
+	if [ -z "${p_fMRINames}" ]; then
+		log_Err "fMRI name list (--fmri-names-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fMRINames: ${g_fMRINames}"
+		log_Msg "fMRI Names: ${p_fMRINames}"
 	fi
 
-	if [ -z "${g_OutputfMRIName}" ]; then
-		log_Err "Output fMRI name required"
+	if [ -z "${p_OutputfMRIName}" ]; then
+		log_Err "Output fMRI name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_OutputfMRIName: ${g_OutputfMRIName}"
+		log_Msg "Output fMRI Name: ${p_OutputfMRIName}"
 	fi
 
-	if [ -z "${g_HighPass}" ]; then
-		log_Err "ICA+FIX HighPass setting required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "ICA+FIX HighPass setting (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_HighPass: ${g_HighPass}"
+		log_Msg "ICA+FIX HighPass setting: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_fMRIProcSTRING}" ]; then
-		log_Err "fMRI proc string required"
+	if [ -z "${p_fMRIProcSTRING}" ]; then
+		log_Err "fMRI Proc string (--fmri-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fMRIProcSTRING: ${g_fMRIProcSTRING}"
+		log_Msg "fMRI Proc string: ${p_fMRIProcSTRING}"
 	fi
 
-	if [ -z "${g_MSMAllTemplates}" ]; then
-		log_Err "msm all templates required"
+	if [ -z "${p_MSMAllTemplates}" ]; then
+		log_Err "MSM All Templates (--msm-all-templates=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_MSMAllTemplates: ${g_MSMAllTemplates}"
+		log_Msg "MSM All Templates: ${p_MSMAllTemplates}"
 	fi
 
-	if [ -z "${g_OutputRegName}" ]; then
-		log_Err "output registration name required"
+	if [ -z "${p_OutputRegName}" ]; then
+		log_Err "Output Registration Name (--output-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_OutputRegName: ${g_OutputRegName}"
+		log_Msg "Output Registration Name: ${p_OutputRegName}"
 	fi
 
-	if [ -z "${g_HighResMesh}" ]; then
-		log_Err "high resolution mesh required"
+	if [ -z "${p_HighResMesh}" ]; then
+		log_Err "High Resolution Mesh (--high-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_HighResMesh: ${g_HighResMesh}"
+		log_Msg "High Resolution Mesh: ${p_HighResMesh}"
 	fi
 
-	if [ -z "${g_LowResMesh}" ]; then
-		log_Err "low resolution mesh required"
+	if [ -z "${p_LowResMesh}" ]; then
+		log_Err "Low Resolution Mesh (--low-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_LowResMesh: ${g_LowResMesh}"
+		log_Msg "Low Resolution Mesh: ${p_LowResMesh}"
 	fi
 
-	if [ -z "${g_InputRegName}" ]; then
-		log_Err "input registration name required"
+	if [ -z "${p_InputRegName}" ]; then
+		log_Err "Input Registration Name (--input-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_InputRegName: ${g_InputRegName}"
+		log_Msg "Input Registration Name: ${p_InputRegName}"
 	fi
 
-	if [ -z "${g_MatlabRunMode}" ]; then
+	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_MatlabRunMode} in
+		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			1)
-				log_Msg "g_MatlabRunMode: ${g_MatlabRunMode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
 				log_Err "MATLAB run mode value must be 0 or 1"
@@ -300,7 +272,7 @@ get_options()
 }
 
 # ------------------------------------------------------------------------------
-#  Show/Document Tool Versions
+#  Show Tool Versions
 # ------------------------------------------------------------------------------
 
 show_tool_versions()
@@ -316,14 +288,46 @@ show_tool_versions()
 
 main()
 {
-	# Get command line options
-	get_options "$@"
+	log_Msg "Staring main functionality"
+	
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRINames="${3}"
+	local OutputfMRIName="${4}"
+	local HighPass="${5}"
+	local fMRIProcSTRING="${6}"
+	local MSMAllTemplates="${7}"
+	local OutputRegName="${8}"
+	local HighResMesh="${9}"
+	local LowResMesh="${10}"
+	local InputRegName="${11}"
+	
+	local MatlabRunMode
+	if [ -z "${12}" ]; then
+		MatlabRunMode=0
+	else
+		MatlabRunMode="${12}"
+	fi
+	
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRINames: ${fMRINames}"
+	log_Msg "OutputfMRIName: ${OutputfMRIName}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
+	log_Msg "MSMAllTemplates: ${MSMAllTemplates}"
+	log_Msg "OutputRegName: ${OutputRegName}"
+	log_Msg "HighResMesh: ${HighResMesh}"
+	log_Msg "LowResMesh: ${LowResMesh}"
+	log_Msg "InputRegName: ${InputRegName}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 
-	# Show the versions of tools used
-	show_tool_versions
-
-	local InPCARegName="${g_InputRegName}"
-
+	# Naming Conventions and other variables
+	local InPCARegName="${InputRegName}"
+	log_Msg "InPCARegName: ${InPCARegName}"
+	
 	# Values of variables determining MIGP usage
 	# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
 	# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
@@ -351,48 +355,48 @@ main()
 	log_Msg "RevertBiasField: ${RevertBiasField}"
 
 	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
-		--path="${g_StudyFolder}" \
-		--subject="${g_Subject}" \
-		--fmri-names-list="${g_fMRINames}" \
-		--high-pass="${g_HighPass}" \
-		--output-fmri-name="${g_OutputfMRIName}" \
-		--fmri-proc-string="${g_fMRIProcSTRING}" \
+		--path="${StudyFolder}" \
+		--subject="${Subject}" \
+		--fmri-names-list="${fMRINames}" \
+		--high-pass="${HighPass}" \
+		--output-fmri-name="${OutputfMRIName}" \
+		--fmri-proc-string="${fMRIProcSTRING}" \
 		--output-proc-string="${output_proc_string}" \
 		--demean="${Demean}" \
 		--variance-normalization="${VarianceNormalization}" \
 		--compute-variance-normalization="${ComputeVarianceNormalization}" \
 		--revert-bias-field="${RevertBiasField}" \
-		--matlab-run-mode="${g_MatlabRunMode}"
+		--matlab-run-mode="${MatlabRunMode}"
 
-	#"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh ${CARET7DIR}/wb_command ${g_StudyFolder} ${g_Subject} ${g_fMRINames} ${g_HighPass} ${g_OutputfMRIName} ${g_fMRIProcSTRING} ${output_proc_string} ${Demean} ${VarianceNormalization} ${ComputeVarianceNormalization} ${RevertBiasField} ${g_MatlabRunMode}
+	#"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh ${CARET7DIR}/wb_command ${StudyFolder} ${Subject} ${fMRINames} ${HighPass} ${OutputfMRIName} ${fMRIProcSTRING} ${output_proc_string} ${Demean} ${VarianceNormalization} ${ComputeVarianceNormalization} ${RevertBiasField} ${MatlabRunMode}
 
 	local expected_concatenated_output_file=""
-	expected_concatenated_output_file+="${g_StudyFolder}"
-	expected_concatenated_output_file+="/${g_Subject}/MNINonLinear/Results"
-	expected_concatenated_output_file+="/${g_OutputfMRIName}"
-	expected_concatenated_output_file+="/${g_OutputfMRIName}${g_fMRIProcSTRING}${output_proc_string}"
+	expected_concatenated_output_file+="${StudyFolder}"
+	expected_concatenated_output_file+="/${Subject}/MNINonLinear/Results"
+	expected_concatenated_output_file+="/${OutputfMRIName}"
+	expected_concatenated_output_file+="/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}"
 	expected_concatenated_output_file+=".dtseries.nii"
 
 	log_File_Must_Exist "${expected_concatenated_output_file}"
 	
-	# g_fMRIProcSTRING now should reflect the name expected by registrations done below
+	# fMRIProcSTRING now should reflect the name expected by registrations done below
 	# (e.g. MSMAll)
-	g_fMRIProcSTRING+="${output_proc_string}"
-	log_Msg "g_fMRIProcSTRING: ${g_fMRIProcSTRING}"
+	fMRIProcSTRING+="${output_proc_string}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
-	local RSNTemplates="${g_MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
+	local RSNTemplates="${MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
 	log_Msg "RSNTemplates: ${RSNTemplates}"
 
-	local RSNWeights="${g_MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
+	local RSNWeights="${MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
 	log_Msg "RSNWeights: ${RSNWeights}"
 
-	local MyelinMaps="${g_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+	local MyelinMaps="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
 	log_File_Must_Exist "${MyelinMaps}"
 	
-	local TopographicRegressors="${g_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
+	local TopographicRegressors="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
 	log_File_Must_Exist "${TopographicRegressors}"
 
-	local TopographicMaps="${g_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
+	local TopographicMaps="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
 	log_File_Must_Exist "${TopographicMaps}"
 	
 	# Value of MSMAllRegsOrig and MSMAllRegs variables are @ symbol separated strings that supply the
@@ -519,15 +523,15 @@ main()
 			log_Msg "RegConfVars: ${RegConfVars}"
 
 			"${HCPPIPEDIR}"/MSMAll/scripts/"${Module}" \
-				--path="${g_StudyFolder}" \
-				--subject="${g_Subject}" \
-				--high-res-mesh="${g_HighResMesh}" \
-				--low-res-mesh="${g_LowResMesh}" \
-				--fmri-names-list="${g_fMRINames}" \
-				--output-fmri-name="${g_OutputfMRIName}" \
-				--fmri-proc-string="${g_fMRIProcSTRING}" \
+				--path="${StudyFolder}" \
+				--subject="${Subject}" \
+				--high-res-mesh="${HighResMesh}" \
+				--low-res-mesh="${LowResMesh}" \
+				--fmri-names-list="${fMRINames}" \
+				--output-fmri-name="${OutputfMRIName}" \
+				--fmri-proc-string="${fMRIProcSTRING}" \
 				--input-pca-registration-name="${InPCARegName}" \
-				--input-registration-name="${g_InputRegName}" \
+				--input-registration-name="${InputRegName}" \
 				--registration-name-stem="${RegName}" \
 				--rsn-target-file="${RSNTargetFile}" \
 				--rsn-cost-weights="${RSNCostWeights}" \
@@ -543,15 +547,55 @@ main()
 				--rerun="${ReRun}" \
 				--reg-conf="${RegConf}" \
 				--reg-conf-vars="${RegConfVars}" \
-				--matlab-run-mode="${g_MatlabRunMode}"
+				--matlab-run-mode="${MatlabRunMode}"
 
-			g_InputRegName=${RegName}
+			InputRegName=${RegName}
 		done
 	fi
 }
 
 # ------------------------------------------------------------------------------
-#  Invoke the main function to get things started
+#  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-main "$@"
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify that other needed environment variables are set
+if [ -z "${MSMCONFIGDIR}" ]; then
+	log_Err_Abort "MSMCONFIGDIR environment variable must be set"
+fi
+log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}               ${12}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+
+fi
+

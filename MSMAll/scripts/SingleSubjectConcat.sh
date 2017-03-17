@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 #~ND~FORMAT~MARKDOWN
 #~ND~START~
@@ -54,36 +53,6 @@ set -e
 #~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------------
-#  Verify HCPPIPEDIR environment variable is set
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-# ------------------------------------------------------------------------------
-#  Verify other needed environment variables are set
-# ------------------------------------------------------------------------------
-
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
-
-# ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
@@ -122,20 +91,6 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
-#Caret7_Command="${1}"
-#StudyFolder="${2}"
-#Subject="${3}"
-#fMRINames="${4}"
-#HighPass="${5}"
-#OutputfMRIName="${6}"
-#fMRIProcSTRING="${7}"
-#OutputProcSTRING="${8}"
-#Demean="${9}"
-#VarianceNormalization="${10}"
-#ComputeVarianceNormalization="${11}"
-#RevertBiasField="${12}"
-#g_matlab_run_mode="${13}"
-
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -145,21 +100,21 @@ get_options()
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder
-	unset g_subject
-	unset g_fmri_names_list
-	unset g_high_pass
-	unset g_output_fmri_name
-	unset g_fmri_proc_string
-	unset g_output_proc_string
-	unset g_demean
-	unset g_variance_normalization
-	unset g_compute_variance_normalization
-	unset g_revert_bias_field
-	unset g_matlab_run_mode
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRINames
+	unset p_HighPass
+	unset p_OutputfMRIName
+	unset p_fMRIProcSTRING
+	unset p_OutputProcSTRING
+	unset p_Demean
+	unset p_VarianceNormalization
+	unset p_ComputeVarianceNormalization
+	unset p_RevertBiasField
+	unset p_MatlabRunMode
 	
 	# set default values
-	g_matlab_run_mode=0
+	p_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -175,55 +130,55 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument#*=}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fmri_names_list=${argument#*=}
+				p_fMRINames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument#*=}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument#*=}
+				p_OutputfMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument#*=}
+				p_fMRIProcSTRING=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-proc-string=*)
-				g_output_proc_string=${argument#*=}
+				p_OutputProcSTRING=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--demean=*)
-				g_demean=${argument#*=}
+				p_Demean=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--variance-normalization=*)
-				g_variance_normalization=${argument#*=}
+				p_VarianceNormalization=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--compute-variance-normalization=*)
-				g_compute_variance_normalization=${argument#*=}
+				p_ComputeVarianceNormalization=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--revert-bias-field=*)
-				g_revert_bias_field=${argument#*=}
+				p_RevertBiasField=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument#*=}
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -236,99 +191,99 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		log_Err "path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		log_Err "subject ID required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "Subject ID: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fmri_names_list}" ]; then
-		log_Err "fMRI name list required"
+	if [ -z "${p_fMRINames}" ]; then
+		log_Err "fMRI name list (--fmri-names-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+		log_Msg "fMRI name list: ${p_fMRINames}"
 	fi
 
-	if [ -z "${g_high_pass}" ]; then
-		log_Err "ICA+FIX highpass setting required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "ICA+FIX highpass setting (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_pass: ${g_high_pass}"
+		log_Msg "ICA+FIX highpass setting: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_output_fmri_name}" ]; then
-		log_Err "output fMRI name required"
+	if [ -z "${p_OutputfMRIName}" ]; then
+		log_Err "Output fMRI Name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
+		log_Msg "Output fMRI Name: ${p_OutputfMRIName}"
 	fi
 
-	if [ -z "${g_fmri_proc_string}" ]; then
-		log_Err "fMRI proc string required"
+	if [ -z "${p_fMRIProcSTRING}" ]; then
+		log_Err "fMRI Proc String: (--fmri-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
+		log_Msg "fMRI Proc String: ${p_fMRIProcSTRING}"
 	fi
 
-	if [ -z "${g_output_proc_string}" ]; then
-		log_Err "output proc string required"
+	if [ -z "${p_OutputProcSTRING}" ]; then
+		log_Err "Output Proc String: (--output-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_proc_string: ${g_output_proc_string}"
+		log_Msg "Output Proc String: ${p_OutputProcSTRING}"
 	fi
 
-	if [ -z "${g_demean}" ]; then
-		log_Err "demean setting required"
+	if [ -z "${p_Demean}" ]; then
+		log_Err "Demean: (--demean=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_demean: ${g_demean}"
+		log_Msg "Demean: ${p_Demean}"
 	fi
 
-	if [ -z "${g_variance_normalization}" ]; then
-		log_Err "variance normalization setting required"
+	if [ -z "${p_VarianceNormalization}" ]; then
+		log_Err "Variance Normalization (--variance-normalization=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_variance_normalization: ${g_variance_normalization}"
+		log_Msg "Variance Normalization: ${p_VarianceNormalization}"
 	fi
 
-	if [ -z "${g_compute_variance_normalization}" ]; then
-		log_Err "compute variance normalization setting required"
+	if [ -z "${p_ComputeVarianceNormalization}" ]; then
+		log_Err "Compute Variance Normalization (--compute-variance-normalization=<YES | NO> required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_compute_variance_normalization: ${g_compute_variance_normalization}"
+		log_Msg "Compute Variance Normalization: ${p_ComputeVarianceNormalization}"
 	fi
 
-	if [ -z "${g_revert_bias_field}" ]; then
-		log_Err "revert bias field setting required"
+	if [ -z "${p_RevertBiasField}" ]; then
+		log_Err "Revert Bias Field (--revert-bias-field=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_revert_bias_field: ${g_revert_bias_field}"
+		log_Msg "Revert Bias Field: ${p_RevertBiasField}"
 	fi
 	
-	if [ -z "${g_matlab_run_mode}" ]; then
+	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run_mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_matlab_run_mode} in
+		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 
 				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
 			1)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
 				log_Err "MATLAB run mode value must be 0 or 1"
@@ -342,6 +297,16 @@ get_options()
 	fi
 }
 
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
+{
+	# Show wb_command version
+	log_Msg "Showing wb_command version"
+	"${CARET7DIR}"/wb_command -version
+}
 
 # ------------------------------------------------------------------------------
 #  Main processing of script.
@@ -349,59 +314,65 @@ get_options()
 
 main()
 {
-	# Get command line options
-	get_options "$@"
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRINames="${3}"
+	local HighPass="${4}"
+	local OutputfMRIName="${5}"
+	local fMRIProcSTRING="${6}"
+	local OutputProcSTRING="${7}"
+	local Demean="${8}"
+	local VarianceNormalization="${9}"
+	local ComputeVarianceNormalization="${10}"
+	local RevertBiasField="${11}"
 
-	g_fmri_names_list=$(echo ${g_fmri_names_list} | sed 's/@/ /g')
-	fMRINames=${g_fmri_names_list}
-	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+	local MatlabRunMode
+	if [ -z "${12}" ]; then
+		MatlabRunMode=0
+	else
+		MatlabRunMode="${12}"
+	fi
+	
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRINames: ${fMRINames}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "OutputfMRIName: ${OutputfMRIName}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
+	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
+	log_Msg "Demean: ${Demean}"
+	log_Msg "VarianceNormalization: ${VarianceNormalization}"
+	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
+	log_Msg "RevertBiasField: ${RevertBiasField}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 
-	# Naming Conventions
-	fMRINames=${g_fmri_names_list}
+	# Naming Conventions and other variables
+	fMRINames=$(echo ${fMRINames} | sed 's/@/ /g')
 	log_Msg "fMRINames: ${fMRINames}"
 
-	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
+	if [ "${OutputProcSTRING}" = "NONE" ]; then
+		OutputProcSTRING=""
+	fi
+	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
+
+	AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
-	OutputFolder="${AtlasFolder}/Results/${g_output_fmri_name}"
+	OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
 	log_Msg "OutputFolder: ${OutputFolder}"
-
-	if [ "${g_output_proc_string}" = "NONE" ]; then
-		g_output_proc_string=""
-	fi
-	log_Msg "g_output_proc_string: ${g_output_proc_string}"
-
-	OutputProcSTRING=${g_output_proc_string}
-	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
 
 	Caret7_Command=${CARET7DIR}/wb_command
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	HighPass=${g_high_pass}
-	log_Msg "HighPass: ${HighPass}"
-
-	OutputfMRIName=${g_output_fmri_name}
-	log_Msg "OutputfMRIName: ${OutputfMRIName}"
-
-	fMRIProcSTRING=${g_fmri_proc_string}
-	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
-
-	Demean=${g_demean}
-	log_Msg "Demean: ${Demean}"
-
-	VarianceNormalization=${g_variance_normalization}
-	log_Msg "VarianceNormalization: ${VarianceNormalization}"
-
-	ComputeVarianceNormalization=${g_compute_variance_normalization}
-	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
-
-	RevertBiasField=${g_revert_bias_field}
-	log_Msg "RevertBiasField: ${RevertBiasField}"
-
-	for fMRIName in $fMRINames ; do
+	# Actual work
+	for fMRIName in ${fMRINames} ; do
+		log_Msg "fMRIName: ${fMRIName}"
 		
 		ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
-
+		log_Msg "ResultsFolder: ${ResultsFolder}"
+		
 		if [ "${Demean}" = "YES" ] ; then
 			${Caret7_Command} -cifti-reduce ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii MEAN ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii
 			MATHDemean=" - Mean"
@@ -442,8 +413,8 @@ main()
 				OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn_tempcompute.dscalar.nii"
 				log_Msg "OutputVN: ${OutputVN}"
 				
-				# run MATLAB ComputVN function
-				case ${g_matlab_run_mode} in
+				# run MATLAB ComputeVN function
+				case ${MatlabRunMode} in
 					
 					0)
 						# Use Compiled MATLAB
@@ -454,7 +425,7 @@ main()
 						
 						matlab_function_arguments="'${cleandtseries}' '${bias}' '${ICAtcs}' '${ICANoise}' '${OutputVN}' '${Caret7_Command}'"
 						
-						matlab_logging=">> ${g_path_to_study_folder}/${g_subject}.ComputeVN.matlab.log 2>&1"
+						matlab_logging=">> ${StudyFolder}/${Subject}.ComputeVN.matlab.log 2>&1"
 						
 						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 						
@@ -476,7 +447,7 @@ M_PROG
 					
 					*)
 						# Unsupported MATLAB run mode
-						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
 						;;
 				esac
 				
@@ -518,7 +489,46 @@ M_PROG
 }
 
 # ------------------------------------------------------------------------------
-#  Invoke the main function to get things started
+#  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-main "$@"
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify other needed environment variables are set
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}             ${4}            ${5}                  ${6}                  ${7}                    ${8}          ${9}                         ${10}                               ${11}                  ${12}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_HighPass}" "${p_OutputfMRIName}" "${p_fMRIProcSTRING}" "${p_OutputProcSTRING}" "${p_Demean}" "${p_VarianceNormalization}" "${p_ComputeVarianceNormalization}" "${p_RevertBiasField}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+	
+fi
