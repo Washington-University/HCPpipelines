@@ -1,10 +1,5 @@
 function prepareICAs(dtseriesName,ICAs,wbcommand,ICAdtseries,NoiseICAs,Noise,Signal,ComponentList,hp,TR)
 
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
-dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
-ICAs = load(ICAs);
-
 % Convert input paramter strings to numerics as necessary and show input parameters
 func_name='prepareICAs';
 fprintf('%s - start\n', func_name);
@@ -30,19 +25,34 @@ end
 fprintf('%s - TR: %d\n', func_name, TR);
 
 %%%%  read and highpass CIFTI version of the data if it exists
+dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
+ICAs = load(ICAs);
+
 if hp==0
   dtseries.cdata=detrend(dtseries.cdata')';
   ciftisave(dtseries,[dtseriesName '_dt.dtseries.nii'],wbcommand);
 end
 if hp>0
-  BOdimX=size(dtseries.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(dtseries.cdata,2);
-  save_avw(reshape([dtseries.cdata ; zeros(100*BOdimZnew-BOdimX,BOdimT)],10,10,BOdimZnew,BOdimT),[dtseriesName '_fakeNIFTI'],'f',[1 1 1 TR]);
-  system(sprintf(['fslmaths ' dtseriesName '_fakeNIFTI -bptf %f -1 ' dtseriesName '_fakeNIFTI'],0.5*hp/TR));
-  grot=reshape(read_avw([dtseriesName '_fakeNIFTI']),100*BOdimZnew,BOdimT);  dtseries.cdata=grot(1:BOdimX,:);  clear grot; unix(['rm ' dtseriesName '_fakeNIFTI.nii.gz']);
+  dts_dimX=size(dtseries.cdata,1); dts_dimZnew=ceil(dts_dimX/100); dts_dimT=size(dtseries.cdata,2);
+  % compute mean of dtseries data
+  dts_mean=mean(dtseries.cdata,2);
+  % remove (subtract out) the mean from the dtseries data
+  dtseries.cdata=dtseries.cdata-repmat(dts_mean,1,size(dtseries.cdata,2));
+  % save the dtseries with mean subtracted, to a "_fakeNIFTI" file to use as input to an 'fslmaths -bptf' command
+  save_avw(reshape([dtseries.cdata ; zeros(100*dts_dimZnew-dts_dimX,dts_dimT)],10,10,dts_dimZnew,dts_dimT),[dtseriesName '_fakeNIFTI'],'f',[1 1 1 TR]);
+  % call fslmaths -bptf on the "_fakeNIFTI" file - output goes back into the "_fakeNIFTI" file
+  call_fsl(sprintf(['fslmaths ' dtseriesName '_fakeNIFTI -bptf %f -1 ' dtseriesName '_fakeNIFTI'], 0.5*hp/TR));
+  % get the filtered data out of the "_fakeNIFTI" file and into the dtseries 
+  grot=reshap(read_avw([dtseriesName '_fakeNIFTI']),100*dts_dimZnew,dts_dimT);
+  dtseries.cdata=grot(1:dts_dimX,:);
+  clear grot;
+  % add the mean of the dtseries back in to the data
+  dtseries.cdata=dtseries.cdata+repmat(dts_mean,1,size(dtseries.cdata,2));
+  % remove the "_fakeNIFTI" file
+  unix(['rm ' dtseriesName '_fakeNIFTI.nii.gz']);
+  % save the highpass filtered (with mean included) data
   ciftisave(dtseries,[dtseriesName '_hp' num2str(hp) '.dtseries.nii'],wbcommand); 
 end
-
-
 
 ICA_dtseries = dtseries;
 ICA_dtseries.cdata = (pinv([ones(length(ICAs),1) ICAs])*dtseries.cdata')';
