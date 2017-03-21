@@ -566,7 +566,7 @@ main()
 	
 	if [[ ! -e ${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii || ${ReRun} = "YES" ]] ; then
 
-		##IsRunning="${NativeFolder}/${Subject}.IsRunnin_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.txt"
+		##IsRunning="${NativeFolder}/${Subject}.IsRunning_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.txt"
 		##if [ ! -e ${IsRunning} ] ; then
 		##  touch ${IsRunning}
 		##else
@@ -582,7 +582,7 @@ main()
 		log_File_Must_Exist "${RSNCostWeights}"
 
 		cp --verbose "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp --verbose "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp --verbose "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
 		cp --verbose "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
 		cp --verbose "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
 
@@ -645,7 +645,7 @@ main()
 			if [[ $(echo -n ${Modalities} | grep "C") ]] ; then
 				log_Msg "Modalities includes C"
 				log_Msg "Resample the atlas instead of the timeseries"
-				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
 				NumValidRSNs=$(cat ${RSNCostWeights} | wc -w)
 				inputweights="${RSNCostWeights}"
@@ -724,7 +724,7 @@ M_PROG
 
 				# Resample the individual maps so they are in the correct space
 				log_Msg "Resample the individual maps so they are in the correct space"
-				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii
 
@@ -736,18 +736,18 @@ M_PROG
 
 			if [[ $(echo -n ${Modalities} | grep "A") ]] ; then
 				log_Msg "Modalities includes A"
-				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-				${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 				${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii
-				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
+				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
 			fi
 
 			if [[ $(echo -n ${Modalities} | grep "T") ]] ; then
 				# Resample the atlas instead of the timeseries
 				log_Msg "Modalities includes T"
 				log_Msg "Resample the atlas instead of the timeseries"
-				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 				NumMaps=$(${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps)
 				TopographicWeights=${NativeFolder}/${RegName}/TopographicWeights.txt
 				n=1
@@ -757,8 +757,8 @@ M_PROG
 				done
 				inputweights="${TopographicWeights}"
 				inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii"
-				outputspatialmaps="${DownSampleFolder}/${Subject}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR" #No Ext
-				outputweights="${DownSampleFolder}/${Subject}.individualtopography_weights.${LowResMesh}k_fs_LR.dscalar.nii"
+				outputspatialmaps="${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR" #No Ext
+				outputweights="${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii"
 				Params="${NativeFolder}/${RegName}/Params.txt"
 				touch ${Params}
 				if [[ $(echo -n ${Method} | grep "WR") ]] ; then
@@ -823,15 +823,15 @@ M_PROG
 				# Resample the individual maps so they are in the correct space
 				log_Msg "Resample the individual maps so they are in the correct space"
 
-				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
-				${Caret7_Command} -cifti-math "Weights - (V1 > 0)" ${DownSampleFolder}/${Subject}.individualtopography_weights.${LowResMesh}k_fs_LR.dscalar.nii -var V1 ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -select 1 8 -repeat -var Weights ${DownSampleFolder}/${Subject}.individualtopography_weights.${LowResMesh}k_fs_LR.dscalar.nii
+				${Caret7_Command} -cifti-math "Weights - (V1 > 0)" ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii -var V1 ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -select 1 8 -repeat -var Weights ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii
 
-				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.func.gii
+				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii
 
 				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_Topography.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_Topography.${LowResMesh}k_fs_LR.func.gii
 
-				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individualtopography_weights.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individualtopography_weights.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individualtopography_weights.${LowResMesh}k_fs_LR.func.gii
+				${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.individual_Topography_weights.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii
 
 			fi
 
@@ -869,9 +869,9 @@ M_PROG
 				if [[ $(echo -n ${Modalities} | grep "T") ]] ; then
 					log_Msg "RegHemi - Modalities contains T"
 
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individualtopography_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individualtopography_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
 
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individualtopography_weights.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individualtopography_weights.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii -largest
+					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii -largest
 
 					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.atlas_Topography.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
 
@@ -903,28 +903,28 @@ M_PROG
 					elif [ ${Modality} = "A" ] ; then
 						log_Msg "RegHemi - Modality: ${Modality}"
 						###Renormalize individual map?
-						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.normmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.normmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
+						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
 						SDEVs=$(echo ${SDEVs} | sed 's/ / + /g' | bc -l)
 						MeanSDEV=$(echo "${SDEVs} / 1" | bc -l)
-						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
-						${Caret7_Command} -metric-math "(Var - Bias) / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.normmyelinMap_BC_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.MyelinMap.native.func.gii -var Bias ${NativeFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.native.func.gii
-						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.normmyelinMap_BC_${InRegName}.native.func.gii")
+						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
+						${Caret7_Command} -metric-math "(Var - Bias) / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.MyelinMap.native.func.gii -var Bias ${NativeFolder}/${Subject}.${Hemisphere}.BiasField_${InRegName}.native.func.gii
+						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_MyelinMap_BC_${InRegName}.native.func.gii")
 						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii")
-						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlasmyelinMap_BC.${LowResMesh}k_fs_LR.func.gii")
+						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii")
 						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii")
 					elif [ ${Modality} = "T" ] ; then
 						log_Msg "RegHemi - Modality: ${Modality}"
-						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.individualtopography_weights.${LowResMesh}k_fs_LR.func.gii
+						${Caret7_Command} -metric-math "Var * ROI" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var ROI ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii
 						SDEVs=$(${Caret7_Command} -metric-stats ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -reduce STDEV)
 						SDEVs=$(echo ${SDEVs} | sed 's/ / + /g' | bc -l)
 						MeanSDEV=$(echo "${SDEVs} / 1" | bc -l)
 						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii -var Var ${DownSampleFolder}/${Subject}.${Hemisphere}.atlas_Topography.${LowResMesh}k_fs_LR.func.gii
-						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_individualtopography_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.individualtopography_${InRegName}.native.func.gii
-						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individualtopography_${InRegName}.native.func.gii")
-						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individualtopography_weights.native.func.gii")
+						${Caret7_Command} -metric-math "Var / ${MeanSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_Topography_${InRegName}.native.func.gii -var Var ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_${InRegName}.native.func.gii
+						NativeMetricMerge=$(echo "${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.norm_individual_Topography_${InRegName}.native.func.gii")
+						NativeWeightsMerge=$(echo "${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.native.func.gii")
 						AtlasMetricMerge=$(echo "${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.norm_atlas_Topography.${LowResMesh}k_fs_LR.func.gii")
-						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individualtopography_weights.${LowResMesh}k_fs_LR.func.gii")
+						AtlasWeightsMerge=$(echo "${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_Topography_weights.${LowResMesh}k_fs_LR.func.gii")
 					fi
 					if [ ${n} -eq "1" ] ; then
 						NormSDEV=${MeanSDEV}
@@ -932,13 +932,13 @@ M_PROG
 					n=$(( n+1 ))
 				done
 
-				log_Debu_Msg "RegHemi 1"
+				log_Debug_Msg "RegHemi 1"
 				${Caret7_Command} -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii ${NativeMetricMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii
 				${Caret7_Command} -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii ${NativeWeightsMerge} -metric ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi_inv.native.shape.gii
 				${Caret7_Command} -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii ${AtlasMetricMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi_inv.${LowResMesh}k_fs_LR.shape.gii
 				${Caret7_Command} -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii ${AtlasWeightsMerge} -metric ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi_inv.${LowResMesh}k_fs_LR.shape.gii
 
-				log_Debu_Msg "RegHemi 2"
+				log_Debug_Msg "RegHemi 2"
 				${Caret7_Command} -metric-math "Modalities * Weights * ${NormSDEV}" ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Modalities ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -var Weights ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii
 				${Caret7_Command} -metric-math "Modalities * Weights * ${NormSDEV}" ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -var Modalities ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii -var Weights ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii
 
@@ -949,7 +949,7 @@ M_PROG
 				AtlasWeights=""
 				j=1
 				for MEAN in ${MEANs} ; do
-					log_Debu_Msg "RegHemi j: ${j}"
+					log_Debug_Msg "RegHemi j: ${j}"
 					if [ ! ${MEAN} = 0 ] ; then
 						Native=$(echo "${Native} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii -column ${j}")
 						NativeWeights=$(echo "${NativeWeights} -metric ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii -column ${j}")
@@ -959,7 +959,7 @@ M_PROG
 					j=$(( j+1 ))
 				done
 
-				log_Debu_Msg "RegHemi 3"
+				log_Debug_Msg "RegHemi 3"
 				$Caret7_Command -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii ${Native}
 				$Caret7_Command -metric-merge ${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii ${NativeWeights}
 				$Caret7_Command -metric-merge ${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii ${Atlas}
@@ -968,21 +968,21 @@ M_PROG
 				DIR=$(pwd)
 				cd ${NativeFolder}/${RegName}
 
-				log_Debu_Msg "RegConf: ${RegConf}"
-				log_Debu_Msg "i: ${i}"
+				log_Debug_Msg "RegConf: ${RegConf}"
+				log_Debug_Msg "i: ${i}"
 
 				log_File_Must_Exist "${RegConf}_${i}"
 				cp ${RegConf}_${i} ${NativeFolder}/${RegName}/conf.${Hemisphere}
 				log_File_Must_Exist "${NativeFolder}/${RegName}/conf.${Hemisphere}"
 
 				if [ ! ${RegConfVars} = "NONE" ] ; then
-					log_Debu_Msg "RegConfVars not equal to NONE"
-					log_Debu_Msg "RegConfVars: ${RegConfVars}"
+					log_Debug_Msg "RegConfVars not equal to NONE"
+					log_Debug_Msg "RegConfVars: ${RegConfVars}"
 					RegConfVars=$(echo ${RegConfVars} | sed 's/,/ /g')
 
-					log_Debu_Msg "RegConfVars: ${RegConfVars}"
-					log_Debu_Msg "Before substitution"
-					log_Debu_Cat ${NativeFolder}/${RegName}/conf.${Hemisphere}
+					log_Debug_Msg "RegConfVars: ${RegConfVars}"
+					log_Debug_Msg "Before substitution"
+					log_Debug_Cat ${NativeFolder}/${RegName}/conf.${Hemisphere}
 
 					for RegConfVar in ${RegConfVars} ; do
 						mv -f ${NativeFolder}/${RegName}/conf.${Hemisphere} ${NativeFolder}/${RegName}/confbak.${Hemisphere}
@@ -991,14 +991,14 @@ M_PROG
 						cat ${NativeFolder}/${RegName}/confbak.${Hemisphere} | sed s/${STRING}/${Var}/g > ${NativeFolder}/${RegName}/conf.${Hemisphere}
 					done
 
-					log_Debu_Msg "After substitution"
-					log_Debu_Cat ${NativeFolder}/${RegName}/conf.${Hemisphere}
+					log_Debug_Msg "After substitution"
+					log_Debug_Cat ${NativeFolder}/${RegName}/conf.${Hemisphere}
 
 					rm ${NativeFolder}/${RegName}/confbak.${Hemisphere}
 					RegConfVars=$(echo ${RegConfVars} | sed 's/ /,/g')
 				fi
 
-				log_Debu_Msg "RegHemi 4"
+				log_Debug_Msg "RegHemi 4"
 
 				msm_configuration_file="${NativeFolder}/${RegName}/conf.${Hemisphere}"
 				log_File_Must_Exist "${msm_configuration_file}"
@@ -1017,7 +1017,7 @@ M_PROG
 							--debug \
 							2>&1
 				MSMOut=$?
-				log_Debu_Msg "MSMOut: ${MSMOut}"
+				log_Debug_Msg "MSMOut: ${MSMOut}"
 
 				cd $DIR
 
@@ -1079,7 +1079,7 @@ M_PROG
 			${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 			rm ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dtseries.nii
 
-			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.ArealDistortion_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.ArealDistortion_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
+			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.ArealDistortion_${RegName}.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.ArealDistortion_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.ArealDistortion_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
 			InRegName="${RegName}"
 			SurfRegSTRING="_${RegName}"
 			i=$(( i+1 ))
@@ -1133,10 +1133,10 @@ M_PROG
 		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 		rm ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii
 
-		${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
-		${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlasmyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+		${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
+		${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 		${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${RegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
 		${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.MyelinMap_BC_${RegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${RegName}.native.dscalar.nii
 
 		for Mesh in ${HighResMesh} ${LowResMesh} ; do
@@ -1151,7 +1151,7 @@ M_PROG
 				else
 					NativeMap="${Map}"
 				fi
-				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${Folder}/${Subject}.${Map}_${RegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${RegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${RegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${RegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness.${Mesh}k_fs_LR.surf.gii
 			done
 		done
 
@@ -1163,7 +1163,7 @@ M_PROG
 
 		# Resample the atlas instead of the timeseries
 		log_Msg "Resample the atlas instead of the timeseries"
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
 		inputweights="NONE"
 		inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii"
@@ -1240,12 +1240,12 @@ M_PROG
 
 		# Resample the individual maps so they are in the correct space
 		log_Msg "Resample the individual maps so they are in the correct space"
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_RSNs_d${ICAdim}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii  -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
 
 		# Resample the atlas instead of the timeseries
 		log_Msg "Resample the atlas instead of the timeseries"
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 		NumMaps=$(${Caret7_Command} -file-information ${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii -only-number-of-maps)
 		TopographicWeights=${NativeFolder}/${RegName}/TopographicWeights.txt
 		n=1
@@ -1255,7 +1255,7 @@ M_PROG
 		done
 		inputweights="NONE"
 		inputspatialmaps="${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii"
-		outputspatialmaps="${DownSampleFolder}/${Subject}.individualtopography_${RegName}.${LowResMesh}k_fs_LR" #No Ext
+		outputspatialmaps="${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR" #No Ext
 		outputweights="NONE"
 		Params="${NativeFolder}/${RegName}/Params.txt"
 		touch ${Params}
@@ -1321,7 +1321,7 @@ M_PROG
 
 		# Resample the individual maps so they are in the correct space
 		log_Msg "Resample the individual maps so they are in the correct space"
-		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individualtopography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individualtopography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSIN_VOXEL ${DownSampleFolder}/${Subject}.individualtopography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${DownSampleFolder}/${Subject}.individual_Topography_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii -left-area-surfs ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${OutPCARegString}${RegName}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii -right-area-surfs ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 
 	fi
 
