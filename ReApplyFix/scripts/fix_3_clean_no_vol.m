@@ -24,7 +24,7 @@ end
 CIFTI=getenv('FSL_FIX_CIFTIRW');
 WBC=getenv('FSL_FIX_WBC');
 
-func_name='fix_3_clean';
+func_name='fix_3_clean (no_vol)';
 fprintf('%s - fixlist: "%s"\n', func_name, fixlist);
 fprintf('%s - aggressive: %d\n', func_name, aggressive);
 fprintf('%s - domot: %d\n', func_name, domot);
@@ -53,13 +53,9 @@ if exist('Atlas.dtseries.nii','file') == 2
     meanBO=mean(BO.cdata,2);
     BO.cdata=BO.cdata-repmat(meanBO,1,size(BO.cdata,2));
     save_avw(reshape([BO.cdata ; zeros(100*BOdimZnew-BOdimX,BOdimT)],10,10,BOdimZnew,BOdimT),'Atlas','f',[1 1 1 TR]);
-
     call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
-    %cmd_str=sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR);
-    %fprintf('%s - About to execute: %s\n',func_name,cmd_str);
-    %system(cmd_str);
-
-    grot=reshape(read_avw('Atlas'),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot; BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
+    grot=reshape(read_avw('Atlas'),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot; 
+    BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
     ciftisave(BO,'Atlas_hp_preclean.dtseries.nii',WBC); % save out noncleaned hp-filtered data for future reference, as brainordinates file
   end
 end
