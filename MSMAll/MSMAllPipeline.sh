@@ -288,7 +288,7 @@ show_tool_versions()
 
 main()
 {
-	log_Msg "Staring main functionality"
+	log_Msg "Starting main functionality"
 	
 	# Retrieve positional parameters
 	local StudyFolder="${1}"
@@ -431,7 +431,7 @@ main()
 	#                            use NONE to use config file as specified
 	local MSMAllRegsOrig=""
 	MSMAllRegsOrig+="MSMAll.sh"                       # ModuleName
-	MSMAllRegsOrig+="@${g_OutputRegName}"             # RegName
+	MSMAllRegsOrig+="@${OutputRegName}"               # RegName
 	MSMAllRegsOrig+="@${RSNTemplates}"                # RSNTargetFile
 	MSMAllRegsOrig+="@${RSNWeights}"                  # RSNCostWeights
 	MSMAllRegsOrig+="@${MyelinMaps}"                  # ArchitectureTargetFile
@@ -522,12 +522,12 @@ main()
 			local RegConfVars=$(echo "${MSMAllRegs}" | cut -d "@" -f 16)
 			log_Msg "RegConfVars: ${RegConfVars}"
 
+			#				--fmri-names-list="${fMRINames}" \
 			"${HCPPIPEDIR}"/MSMAll/scripts/"${Module}" \
 				--path="${StudyFolder}" \
 				--subject="${Subject}" \
 				--high-res-mesh="${HighResMesh}" \
 				--low-res-mesh="${LowResMesh}" \
-				--fmri-names-list="${fMRINames}" \
 				--output-fmri-name="${OutputfMRIName}" \
 				--fmri-proc-string="${fMRIProcSTRING}" \
 				--input-pca-registration-name="${InPCARegName}" \
@@ -552,6 +552,8 @@ main()
 			InputRegName=${RegName}
 		done
 	fi
+	
+	log_Msg "Completing main functionality"
 }
 
 # ------------------------------------------------------------------------------
