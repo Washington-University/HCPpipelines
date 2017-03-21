@@ -48,6 +48,8 @@ main()
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
 				  -a ss_svds.m \
+				  -a ${HCPPIPEDIR}/global/matlab/cifitopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
 				  -d ${output_directory}
 	
 	popd > /dev/null

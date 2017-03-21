@@ -47,9 +47,9 @@ main()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -d ${output_directory} \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 
+				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -d ${output_directory}
 
 	popd > /dev/null
 }
