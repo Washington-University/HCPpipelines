@@ -1,17 +1,49 @@
 #!/bin/bash
 
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
+#
+# # Compile_MATLAB_code.sh
+#
+# Compile the MATLAB code necessary for running the PostFix Pipeline
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
+#~ND~END~
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-main()
+compile_prepareICAs()
 {
 	local app_name=prepareICAs
 	local output_directory=Compiled_${app_name}
-	
+
 	pushd ${HCPPIPEDIR}/PostFix > /dev/null
 	log_Msg "Working in ${PWD}"
-	
+
 	log_Msg "Creating output directory: ${output_directory}"
 	mkdir --parents ${output_directory}
 
@@ -23,6 +55,11 @@ main()
 				  -d ${output_directory}
 
 	popd > /dev/null
+}
+
+main()
+{
+	compile_prepareICAs
 }
 
 # ------------------------------------------------------------------------------
@@ -48,5 +85,5 @@ if [ -z "${MATLAB_HOME}" ]; then
 fi
 log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
 
-# Invoke the main function to get things started
+# Invoke the main processing
 main "$@"
