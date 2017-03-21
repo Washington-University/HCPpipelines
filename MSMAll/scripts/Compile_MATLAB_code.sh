@@ -3,7 +3,9 @@
 #~ND~FORMAT~MARKDOWN~
 #~ND~START~
 #
-# # Compile_ComputeVN.sh
+# # Compile_MATLAB_code.sh
+#
+# Compile the MATLAB code necessary for running the MSMAll Pipeline
 #
 # ## Copyright Notice
 #
@@ -34,14 +36,14 @@
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-main()
+compile_ComputeVN()
 {
 	local app_name=ComputeVN
 	local output_directory=Compiled_${app_name}
-	
+
 	pushd ${HCPPIPEDIR}/MSMAll/scripts > /dev/null
 	log_Msg "Working in ${PWD}"
-	
+
 	log_Msg "Creating output directory: ${output_directory}"
 	mkdir --parents ${output_directory}
 
@@ -52,6 +54,33 @@ main()
 				  -d ${output_directory}
 
 	popd > /dev/null
+}
+
+compile_MSMregression()
+{
+	local app_name=MSMregression
+	local output_directory=Compiled_${app_name}
+
+	pushd ${HCPPIPEDIR}/MSMAll/scripts > /dev/null
+	log_Msg "Working in ${PWD}"
+
+	log_Msg "Creating output directory: ${output_directory}"
+	mkdir --parents ${output_directory}
+
+	log_Msg "Compiling ${app_name} application"
+	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
+				  -a ss_svds.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -d ${output_directory}
+
+	popd > /dev/null
+}
+
+main()
+{
+	compile_ComputeVN
+	compile_MSMregression
 }
 
 # ------------------------------------------------------------------------------
