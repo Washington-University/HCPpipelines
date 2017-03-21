@@ -36,3 +36,4 @@ unstructurednoiseTCS=cleandtseries.cdata - (ICAtcs(:,ICASignal)*betaICA)'; %Regr
 VN.cdata=max(sqrt(var(unstructurednoiseTCS,[],2)),0.001); %Avoid divide by zero errors
 ciftisavereset(VN,OutputVN,wbcommand);
 
+fprintf('%s - complete\n', func_name)
