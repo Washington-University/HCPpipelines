@@ -1,5 +1,35 @@
 #!/bin/bash
 
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
+#
+# # Compile_ComputeVN.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
+#~ND~END~
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -17,11 +47,9 @@ main()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -d ${output_directory}
-	
-	#				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-	#				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-	#				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+				  -d ${output_directory} \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 
 
 	popd > /dev/null
 }
