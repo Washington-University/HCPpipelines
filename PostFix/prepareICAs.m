@@ -34,22 +34,30 @@ if hp==0
 end
 if hp>0
   dts_dimX=size(dtseries.cdata,1); dts_dimZnew=ceil(dts_dimX/100); dts_dimT=size(dtseries.cdata,2);
+  
   % compute mean of dtseries data
   dts_mean=mean(dtseries.cdata,2);
+  
   % remove (subtract out) the mean from the dtseries data
   dtseries.cdata=dtseries.cdata-repmat(dts_mean,1,size(dtseries.cdata,2));
+  
   % save the dtseries with mean subtracted, to a "_fakeNIFTI" file to use as input to an 'fslmaths -bptf' command
   save_avw(reshape([dtseries.cdata ; zeros(100*dts_dimZnew-dts_dimX,dts_dimT)],10,10,dts_dimZnew,dts_dimT),[dtseriesName '_fakeNIFTI'],'f',[1 1 1 TR]);
+  
   % call fslmaths -bptf on the "_fakeNIFTI" file - output goes back into the "_fakeNIFTI" file
   call_fsl(sprintf(['fslmaths ' dtseriesName '_fakeNIFTI -bptf %f -1 ' dtseriesName '_fakeNIFTI'], 0.5*hp/TR));
+  
   % get the filtered data out of the "_fakeNIFTI" file and into the dtseries 
-  grot=reshap(read_avw([dtseriesName '_fakeNIFTI']),100*dts_dimZnew,dts_dimT);
+  grot=reshape(read_avw([dtseriesName '_fakeNIFTI']),100*dts_dimZnew,dts_dimT);
   dtseries.cdata=grot(1:dts_dimX,:);
   clear grot;
+  
   % add the mean of the dtseries back in to the data
   dtseries.cdata=dtseries.cdata+repmat(dts_mean,1,size(dtseries.cdata,2));
+  
   % remove the "_fakeNIFTI" file
   unix(['rm ' dtseriesName '_fakeNIFTI.nii.gz']);
+  
   % save the highpass filtered (with mean included) data
   ciftisave(dtseries,[dtseriesName '_hp' num2str(hp) '.dtseries.nii'],wbcommand); 
 end
