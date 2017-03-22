@@ -227,4 +227,7 @@ if ~strcmp(inputweights,'NONE')
   ciftisave(OUTBO,outputweights,wbcommand); 
 
 end
+
+fprintf('%s - end\n', func_name);
+
 end
