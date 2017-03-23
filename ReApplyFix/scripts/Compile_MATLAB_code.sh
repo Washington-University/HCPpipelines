@@ -53,6 +53,7 @@ compile_fix_3_clean()
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 	
 	popd > /dev/null
