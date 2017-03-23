@@ -46,35 +46,9 @@ compile_fix_3_clean()
 	mkdir --parents ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a functionmotionconfounds.m \
-				  -a functionnormalise.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -d ${output_directory}
-	
-	popd > /dev/null
-}
-
-# ------------------------------------------------------------------------------
-#  Compile the fix_3_clean_no_vol MATLAB code
-# ------------------------------------------------------------------------------
-
-compile_fix_3_clean_no_vol()
-{
-	local app_name=fix_3_clean_no_vol
-	local output_directory=Compiled_${app_name}
-
-	pushd ${HCPPIPEDIR}/ReApplyFix/scripts > /dev/null
-	log_Msg "Creating output directory: ${output_directory}"
-	mkdir --parents ${output_directory}
-
-	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a functionmotionconfounds.m \
-				  -a functionnormalise.m \
+	${MATLAB_HOME}/bin/mcc -mv ${ICAFIX}/${app_name}.m \
+				  -a ${ICAFIX}/functionmotionconfounds.m \
+				  -a ${ICAFIX}/functionnormalise.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
@@ -91,7 +65,6 @@ compile_fix_3_clean_no_vol()
 main()
 {
 	compile_fix_3_clean
-	compile_fix_3_clean_no_vol	
 }
 
 # ------------------------------------------------------------------------------
@@ -116,6 +89,11 @@ if [ -z "${MATLAB_HOME}" ]; then
 	log_Err_Abort "MATLAB_HOME environment variable must be set"
 fi
 log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
+
+if [ -z "${ICAFIX}" ]; then
+	log_Err_Abort "ICAFIX environment variable must be set to where FIX MATLAB files (*.m files) are to be found"
+fi
+log_Msg "ICAFIX: ${ICAFIX}"
 
 # Invoke the main processing
 main "$@"
