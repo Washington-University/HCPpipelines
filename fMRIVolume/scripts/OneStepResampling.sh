@@ -168,8 +168,7 @@ mkdir -p ${WD}/postvols
 ${FSLDIR}/bin/fslsplit ${InputfMRI} ${WD}/prevols/vol -t
 FrameMergeSTRING=""
 FrameMergeSTRINGII=""
-k=0
-while [ $k -lt $NumFrames ] ; do
+for ((k=0; k < $NumFrames; k++)); do
   vnum=`${FSLDIR}/bin/zeropad $k 4`
   ###Add stuff for RMS###
   rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
@@ -186,8 +185,7 @@ while [ $k -lt $NumFrames ] ; do
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${WD}/prevols/vol${vnum}.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postvols/vol${vnum}.nii.gz
   ${FSLDIR}/bin/applywarp --rel --interp=nn --in=${WD}/prevols/vol${vnum}_mask.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postvols/vol${vnum}_mask.nii.gz
   FrameMergeSTRING="${FrameMergeSTRING}${WD}/postvols/vol${vnum}.nii.gz " 
-  FrameMergeSTRINGII="${FrameMergeSTRINGII}${WD}/postvols/vol${vnum}_mask.nii.gz " 
-  (( k++ ))
+  FrameMergeSTRINGII="${FrameMergeSTRINGII}${WD}/postvols/vol${vnum}_mask.nii.gz "
 done
 # Merge together results and restore the TR (saved beforehand)
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
