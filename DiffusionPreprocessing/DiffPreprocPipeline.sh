@@ -468,7 +468,7 @@ main()
 	eddy_cmd+=" --dwiname=${DWIName} "
 	eddy_cmd+=" --printcom=${runcmd} "
    
-	if [ -z "${extra_eddy_args}" ] ; then
+	if [ ! -z "${extra_eddy_args}" ] ; then
 		for extra_eddy_arg in ${extra_eddy_args} ; do
 			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
 		done
