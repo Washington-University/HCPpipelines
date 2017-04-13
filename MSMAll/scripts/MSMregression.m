@@ -228,6 +228,6 @@ if ~strcmp(inputweights,'NONE')
 
 end
 
-fprintf('%s - end\n', func_name);
+fprintf('%s - complete\n', func_name);
 
 end
