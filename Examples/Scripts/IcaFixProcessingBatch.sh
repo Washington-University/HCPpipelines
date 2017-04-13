@@ -123,7 +123,7 @@ main() {
 	source ${EnvironmentScript}
 
 	export FSL_FIXDIR=${FixDir}
-	FixScript=${HCPPIPEDIR_Global}/hcp_fix
+	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 	TrainingData=HCP_hp2000.RData
 
 	# validate environment variables
