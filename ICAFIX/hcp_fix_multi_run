@@ -22,17 +22,20 @@ log_Debug() {
 	msg="${1}"
 	if [ "${DEBUG}" = "TRUE" ]; then
 		echo "${g_script_name}: DEBUG: ${msg}"
+		>&2 echo "${g_script_name}: DEBUG: ${msg}"
 	fi
 }
 
 log_Inform() {
 	msg="${1}"
 	echo "${g_script_name}: INFORM: ${msg}"
+	>&2 echo "${g_script_name}: INFORM: ${msg}"
 }
 
 log_Error() {
 	msg="${1}"
 	echo "${g_script_name}: ERROR: ${msg}"
+	>&2 echo "${g_script_name}: ERROR: ${msg}"
 }
 
 # Set this before calling hcp_fix instead, to make it more flexible
@@ -126,7 +129,7 @@ SBRefVolSTRING=""
 MeanVolSTRING=""
 MeanCIFTISTRING=""
 for fmri in $fmris ; do  
-	log_Debug "fmri: ${fmri}"
+	log_Debug "Top of loop through fmris: fmri: ${fmri}"
 	NIFTIvolMergeSTRING=`echo "${NIFTIvolMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_demean "`
 	NIFTIvolhpMergeSTRING=`echo "${NIFTIvolhpMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp$hp "`
 	SBRefVolSTRING=`echo "${SBRefVolSTRING}$($FSLDIR/bin/remove_ext $fmri)_SBRef "`
@@ -143,7 +146,7 @@ for fmri in $fmris ; do
 
 
 	tr=`$FSLDIR/bin/fslval $fmri pixdim4` 
-	echo $tr
+	log_Inform "tr: $tr"
 	log_Inform "processing FMRI file $fmri with highpass $hp"
 
 	${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
@@ -152,7 +155,7 @@ for fmri in $fmris ; do
 	if [ $hp -gt 0 ] ; then 
 		log_Inform "running highpass"
 		hptr=`echo "10 k $hp 2 / $tr / p" | dc -` 
-		echo $hptr
+		log_Inform "hptr $hptr"
 		${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean -bptf $hptr -1 ${fmri}_hp$hp 
 	fi
 	
@@ -189,6 +192,7 @@ for fmri in $fmris ; do
 	cd ${fmri}.ica
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
 	cd ..
+	log_Debug "Botton of loop through fmris: fmri: ${fmri}"
 done
 
 AlreadyHP="-1" #Don't run highpass on concatenated data

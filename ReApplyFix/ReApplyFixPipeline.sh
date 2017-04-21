@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#~ND~FORMAT~MARKDOWN~
-#~ND~START~
 #
 # # ReApplyFixPipeline.sh
 #
@@ -29,7 +27,6 @@
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
-#~ND~END~
 
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
@@ -55,7 +52,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --high-pass=TBW
    --reg-name=TBW
    --low-res-mesh=TBW
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
 
@@ -77,10 +74,10 @@ get_options()
 	unset p_HighPass
 	unset p_RegName
 	unset p_LowResMesh
-	unset p_MatlabRunMode             
+	unset p_MatlabRunMode
 
 	# set default values
-	p_MatlabRunMode=0
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -135,7 +132,7 @@ get_options()
 	done
 
 	local error_count=0
-	
+
 	# check required parameters
 	if [ -z "${p_StudyFolder}" ]; then
 		log_Err "Study Folder (--path= or --study-folder=) required"
@@ -176,16 +173,16 @@ get_options()
 		log_Err "Low Res Mesh: (--low-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "Low Res Mesh: ${p_LowResMes}"
+		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
-		
+
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${p_MatlabRunMode} in 
+		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use compiled MATLAB"
 				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
 					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
@@ -193,7 +190,7 @@ get_options()
 				fi
 				;;
 			1)
-				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
 			*)
 				log_Err "MATLAB Run Mode value must be 0 or 1"
@@ -201,7 +198,7 @@ get_options()
 				;;
 		esac
 	fi
-	
+
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi
@@ -220,7 +217,7 @@ show_tool_versions()
 	# Show wb_command version
 	log_Msg "Showing Connectome Workbench (wb_command) version"
 	${CARET7DIR}/wb_command -version
-	
+
 	# Show FSL version
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
@@ -245,10 +242,10 @@ have_hand_reclassification()
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-main() 
+main()
 {
 	log_Msg "Starting main functionality"
-	
+
 	# Retrieve positional parameters
 	local StudyFolder="${1}"
 	local Subject="${2}"
@@ -259,7 +256,7 @@ main()
 
 	local MatlabRunMode
 	if [ -z "${7}" ]; then
-		MatlabRunMode=0
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
 		MatlabRunMode="${7}"
 	fi
@@ -272,7 +269,7 @@ main()
 	log_Msg "RegName: ${RegName}"
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
-	
+
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
@@ -283,13 +280,13 @@ main()
 	else
 		RegString=""
 	fi
-	
+
 	if [ ! -z ${LowResMesh} ] && [ ${LowResMesh} != "32" ]; then
 		RegString="${RegString}.${LowResMesh}k"
 	fi
-	
+
 	log_Msg "RegString: ${RegString}"
-	
+
 	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
@@ -309,7 +306,7 @@ main()
 	local fmri_orig="${fMRIName}"
 	local fmri=${fMRIName}
 
-	DIR=`pwd`
+	DIR=$(pwd)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
 
 	if [ -f ../${fmri_orig}_Atlas${RegString}.dtseries.nii ] ; then
@@ -324,21 +321,21 @@ main()
 	fi
 
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
-	
+
 	mkdir -p mc
 	if [ -f ../Movement_Regressors.txt ] ; then
 		cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 	else
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly."
-	fi 
+	fi
 
 	case ${MatlabRunMode} in
-		
+
 		0)
 			# Use Compiled MATLAB
 
 			local matlab_exe="${HCPPIPEDIR}/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
-			
+
 			local matlab_function_arguments
 			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
@@ -348,7 +345,7 @@ main()
 
 			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
 			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
-			
+
 			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
 			#       does NOT work. The output redirects that are part of the ${matlab_logging}
 			#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
@@ -387,11 +384,11 @@ M_PROG
 	if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
-	
+
 	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
 		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
 	fi
-	
+
 	cd ${DIR}
 
 	log_Msg "Completing main functionality"
@@ -405,9 +402,8 @@ set -e # If any command exits with non-zero value, this script exits
 
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+    exit 1
 fi
 
 # Load function libraries
@@ -417,18 +413,14 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 
 # Verify other needed environment variables are set
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
-
-if [ -z "${FSLDIR}" ]; then
-	log_Err_Abort "FSLDIR environment variable must be set"
-fi
-log_Msg "FSLDIR: ${FSLDIR}"
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
 
 # Show tool versions
 show_tool_versions
+
+# Establish default MATLAB run mode
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
@@ -441,10 +433,10 @@ if [[ ${1} == --* ]]; then
 	# Invoke main functionality
 	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}
 	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}"
-	
+
 else
 	# Positional parameters are used
 	log_Msg "Using positional parameters"
-	main $@
+	main "$@"
 
 fi

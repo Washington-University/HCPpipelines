@@ -64,7 +64,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --high-res-mesh=<high resolution mesh node count> (in thousands)
    --low-res-mesh=<low resolution mesh node count> (in thousands)
    --input-registration-name=<input registration name>
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
 
@@ -94,7 +94,7 @@ get_options()
 	unset p_MatlabRunMode
 	
 	# set default values
-	p_MatlabRunMode=0
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -254,10 +254,14 @@ get_options()
 	else
 		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use compiled MATLAB"
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				;;
 			1)
-				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
 			*)
 				log_Err "MATLAB run mode value must be 0 or 1"
@@ -305,7 +309,7 @@ main()
 	
 	local MatlabRunMode
 	if [ -z "${12}" ]; then
-		MatlabRunMode=0
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
 		MatlabRunMode="${12}"
 	fi
@@ -367,8 +371,6 @@ main()
 		--compute-variance-normalization="${ComputeVarianceNormalization}" \
 		--revert-bias-field="${RevertBiasField}" \
 		--matlab-run-mode="${MatlabRunMode}"
-
-	#"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh ${CARET7DIR}/wb_command ${StudyFolder} ${Subject} ${fMRINames} ${HighPass} ${OutputfMRIName} ${fMRIProcSTRING} ${output_proc_string} ${Demean} ${VarianceNormalization} ${ComputeVarianceNormalization} ${RevertBiasField} ${MatlabRunMode}
 
 	local expected_concatenated_output_file=""
 	expected_concatenated_output_file+="${StudyFolder}"
@@ -581,6 +583,9 @@ log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
 
 # Show tool versions
 show_tool_versions
+
+# Establish default MATLAB run mode
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
