@@ -158,7 +158,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--smoothing-fwhm=*)
-				g_SmoothingFWHM=${argument#*=}
+				p_SmoothingFWHM=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--highpass=*)
@@ -198,7 +198,7 @@ get_options()
 		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "Subject: ${p_subject}"
+		log_Msg "Subject: ${p_Subject}"
 	fi
 
 	if [ -z "${p_HighResMesh}" ]; then
