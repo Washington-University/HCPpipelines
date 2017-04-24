@@ -51,7 +51,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --fmri-name=TBW
    --high-pass=TBW
    --reg-name=TBW
-   --low-res-mesh=TBW
+  [--low-res-mesh=TBW]
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -77,6 +77,7 @@ get_options()
 	unset p_MatlabRunMode
 
 	# set default values
+	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
@@ -169,13 +170,10 @@ get_options()
 		log_Msg "Reg Name: ${p_RegName}"
 	fi
 
-	if [ -z "${p_LowResMesh}" ]; then
-		log_Err "Low Res Mesh: (--low-res-mesh=) required"
-		error_count=$(( error_count + 1 ))
-	else
+	if [ ! -z "${p_LowResMesh}" ]; then
 		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
-
+	
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
@@ -280,8 +278,8 @@ main()
 	else
 		RegString=""
 	fi
-
-	if [ ! -z ${LowResMesh} ] && [ ${LowResMesh} != "32" ]; then
+	
+	if [ ! -z ${LowResMesh} ] && [ ${LowResMesh} != ${G_DEFAULT_LOW_RES_MESH} ]; then
 		RegString="${RegString}.${LowResMesh}k"
 	fi
 
@@ -421,6 +419,9 @@ show_tool_versions
 
 # Establish default MATLAB run mode
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Establish default low res mesh
+G_DEFAULT_LOW_RES_MESH=32
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
