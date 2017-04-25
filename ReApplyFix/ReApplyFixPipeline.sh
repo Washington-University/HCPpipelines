@@ -5,7 +5,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2017 The Human Connectome Project
+# Copyright (C) 2015-2017 The Human Connectome Project/Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -48,10 +48,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name=TBW
-   --high-pass=TBW
-   --reg-name=TBW
-  [--low-res-mesh=TBW]
+   --fmri-name= TBW
+   --high-pass= TBW
+   --reg-name= TBW
+  [--low-res-mesh= TBW]
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -406,11 +406,10 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
-
-# Verify other needed environment variables are set
+# Verify any other needed environment variables are set
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 
