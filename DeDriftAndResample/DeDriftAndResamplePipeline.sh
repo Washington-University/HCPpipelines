@@ -380,28 +380,28 @@ main()
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
+	log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
 
 	DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
+	log_Msg "After delimiter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, Maps: ${Maps}"
+	log_Msg "After delimiter substitution, Maps: ${Maps}"
 
 	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, MyelinMaps: ${MyelinMaps}"
+	log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
 	rfMRINames=`echo "$rfMRINames" | sed s/"@"/" "/g`
 	if [ "${rfMRINames}" = "NONE" ] ; then
 		rfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, rfMRINames: ${rfMRINames}"
+	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames}"
 
 	tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
 	if [ "${tfMRINames}" = "NONE" ] ; then
 		tfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, tfMRINames: ${tfMRINames}"
+	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames}"
 
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
 	log_Msg "CorrectionSigma: ${CorrectionSigma}"

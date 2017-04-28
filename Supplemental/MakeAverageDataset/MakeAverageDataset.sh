@@ -1,34 +1,96 @@
 #!/bin/bash
-set -e
-g_script_name=`basename ${0}`
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
+#
+# # MakeAverageDataset.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2014-2017 The Human Connectome Project/Connectome Coordination Facility
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
 
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+# ------------------------------------------------------------------------------
+#  Show usage information for this script
+# ------------------------------------------------------------------------------
+
+usage()
+{
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: Make average dataset
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show this usage information and exit
+   --subject-list=<@ delimited list of subject ids>
+   --study-folder=<path to study folder>
+   --group-average-name=<output group average name> (e.g. S900)
+   --surface-atlas-dir= TBW (e.g. ${HCPPIPEDIR}/global/templates/standard_mesh_atlases)
+   --grayordinates-space-dir= TBW (e.g. ${HCPPIPEDIR}/global/templates/91282_Greyordinates)
+   --high-res-mesh= TBW (e.g. 164)
+   --low-res-meshes= TBW (@ delimited list) (e.g. 32)
+   --freesurfer-labels= TBW (path to a file) (e.g. ${HCPPIPEDIR}/global/config/FreeSurferAllLut.txt)
+   --sigma= TBW (e.g. 1)
+   --reg-name= TBW (e.g. MSMAll)
+   --videen-maps= TBW (@ delimited list) (e.g. corrThickness@thickness@MyelinMap_BC@SmoothedMyelinMap_BC)
+   --greyscale-maps= TBW (@ delimited list) (e.g. sulc@curvature)
+   --distortion-maps= TBW (@ delimited list) (e.g. SphericalDistortion@ArealDistortion@EdgeDistortion)
+   --gradient-maps= TBW (@ delimited list) (e.g. MyelinMap_BC@SmoothedMyelinMap_BC@corrThickness)
+   --std-maps= TBW (@ delimited list) (e.g. sulc@curvature@corrThickness@thickness@MyelinMap_BC)
+   --multi-maps= TBW (@ delimited list) (e.g. NONE)
+
+EOF
+}
+
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
 
 get_options()
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_subject_list
-	unset g_study_folder
-	unset g_group_average_name
-	unset g_surface_atlas_dir
-	unset g_grayordinates_space_dir
-	unset g_high_res_mesh
-	unset g_low_res_meshes
-	unset g_freesurfer_labels
-	#Caret7_Command="${9}"
-	unset g_sigma
-	unset g_reg_name
-	unset g_videen_maps
-	unset g_greyscale_maps
-	unset g_distortion_maps
-	unset g_gradient_maps
-	unset g_std_maps
-	unset g_multi_maps
+	unset p_Subjlist
+	unset p_StudyFolder
+	unset p_GroupAverageName
+	unset p_SurfaceAtlasDIR
+	unset p_GrayordinatesSpaceDIR
+	unset p_HighResMesh
+	unset p_LowResMeshes
+	unset p_FreeSurferLabels
+	unset p_Sigma
+	unset p_RegName
+	unset p_VideenMaps
+	unset p_GreyScaleMaps
+	unset p_DistortionMaps
+	unset p_GradientMaps
+	unset p_STDMaps
+	unset p_MultiMaps
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -40,197 +102,199 @@ get_options()
 
 		case ${argument} in
 			--subject-list=*)
-				g_subject_list=${argument#*=}
+				p_Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--group-average-name=*)
-				g_group_average_name=${argument#*=}
+				p_GroupAverageName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--surface-atlas-dir=*)
-				g_surface_atlas_dir=${argument#*=}
+				p_SurfaceAtlasDIR=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--grayordinates-space-dir=*)
-				g_grayordinates_space_dir=${argument#*=}
+				p_GrayordinatesSpaceDIR=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument#*=}
+				p_HighResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-meshes=*)
-				g_low_res_meshes=${argument#*=}
+				p_LowResMeshes=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--freesurfer-labels=*)
-				g_freesurfer_labels=${argument#*=}
+				p_FreeSurferLabels=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sigma=*)
-				g_sigma=${argument#*=}
+				p_Sigma=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument#*=}
+				p_RegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--videen-maps=*)
-				g_videen_maps=${argument#*=}
+				p_VideenMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--greyscale-maps=*)
-				g_greyscale_maps=${argument#*=}
+				p_GreyScaleMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--distortion-maps=*)
-				g_distortion_maps=${argument#*=}
+				p_DistortionMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--gradient-maps=*)
-				g_gradient_maps=${argument#*=}
+				p_GradientMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--std-maps=*)
-				g_std_maps=${argument#*=}
+				p_STDMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--multi-maps=*)
-				g_multi_maps=${argument#*=}
+				p_MultiMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
-	if [ -z "${g_subject_list}" ]; then
-		echo "ERROR: subject list (--subject-list=) required"
+	if [ -z "${p_Subjlist}" ]; then
+		log_Err "subject list (--subject-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject_list: ${g_subject_list}"
+		log_Msg "subject list: ${p_Subjlist}"
+	fi
+	
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "study folder (--study-folder=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_study_folder}" ]; then
-		echo "ERROR: study folder (--study-folder=) required"
+	if [ -z "${p_GroupAverageName}" ]; then
+		log_Err "group average name (--group-average-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_study_folder: ${g_study_folder}"
+		log_Msg "group average name: ${p_GroupAverageName}"
 	fi
 
-	if [ -z "${g_group_average_name}" ]; then
-		echo "ERROR: group average name (--group-average-name=) required"
+	if [ -z "${p_SurfaceAtlasDIR}" ]; then
+		log_Err "surface atlas dir (--surface-atlas-dir=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_group_average_name: ${g_group_average_name}"
+		log_Msg "surface atlas dir: ${p_SurfaceAtlasDIR}"
+	fi
+	
+	if [ -z "${p_GrayordinatesSpaceDIR}" ]; then
+		log_Err "grayordinates space dir (--grayordinates-space-dir=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "grayordinates space dir: ${p_GrayordinatesSpaceDIR}"
 	fi
 
-	if [ -z "${g_surface_atlas_dir}" ]; then
-		echo "ERROR: surface atlas dir (--surface-atlas-dir=) required"
+	if [ -z "${p_HighResMesh}" ]; then
+		log_Err "high res mesh (--high-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_surface_atlas_dir: ${g_surface_atlas_dir}"
+		log_Msg "high res mesh: ${p_HighResMesh}"
+	fi
+	
+	if [ -z "${p_LowResMeshes}" ]; then
+		log_Err "low res meshes (--low-res-meshes=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "low res meshes: ${p_LowResMeshes}"
 	fi
 
-	if [ -z "${g_grayordinates_space_dir}" ]; then
-		echo "ERROR: grayordinates space dir (--grayordinates-space-dir=) required"
+	if [ -z "${p_FreeSurferLabels}" ]; then
+		log_Err "freesurfer labels (--freesurfer-labels=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_grayordinates_space_dir: ${g_grayordinates_space_dir}"
+		log_Msg "freesurfer labels: ${p_FreeSurferLabels}"
+	fi
+	
+	if [ -z "${p_Sigma}" ]; then
+		log_Err "sigma (--sigma=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "sigma: ${p_Sigma}"
+	fi
+	
+	if [ -z "${p_RegName}" ]; then
+		log_Err "reg name (--reg-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "reg name: ${p_RegName}"
 	fi
 
-	if [ -z "${g_high_res_mesh}" ]; then
-		echo "ERROR: high res mesh (--high-res-mesh=) required"
+	if [ -z "${p_VideenMaps}" ]; then
+		log_Err "videen maps (--videen-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
+		log_Msg "videen maps: ${p_VideenMaps}"
 	fi
 
-	if [ -z "${g_low_res_meshes}" ]; then
-		echo "ERROR: low res meshes (--low-res-meshes=) required"
+	if [ -z "${p_GreyScaleMaps}" ]; then
+		log_Err "greyscale maps (--greyscale-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_low_res_meshes: ${g_low_res_meshes}"
+		log_Msg "greyscale maps: ${p_GreyScaleMaps}"
 	fi
 
-	if [ -z "${g_freesurfer_labels}" ]; then
-		echo "ERROR: freesurfer labels (--freesurfer-labels=) required"
+	if [ -z "${p_DistortionMaps}" ]; then
+		log_Err "distortion maps (--distortion-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_freesurfer_labels: ${g_freesurfer_labels}"
+		log_Msg "distortion maps: ${p_DistortionMaps}"
 	fi
 
-	if [ -z "${g_sigma}" ]; then
-		echo "ERROR: sigma (--sigma=) required"
+	if [ -z "${p_GradientMaps}" ]; then
+		log_Err "gradient maps (--gradient-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_sigma: ${g_sigma}"
+		log_Msg "gradient maps: ${p_GradientMaps}"
 	fi
 
-	if [ -z "${g_reg_name}" ]; then
-		echo "ERROR: reg name (--reg-name=) required"
+	if [ -z "${p_STDMaps}" ]; then
+		log_Err "std maps (--std-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_reg_name: ${g_reg_name}"
+		log_Msg "std maps: ${p_STDMaps}"
 	fi
 
-	if [ -z "${g_videen_maps}" ]; then
-		echo "ERROR: videen maps (--videen-maps=) required"
+	if [ -z "${p_MultiMaps}" ]; then
+		log_Err "multi maps (--multi-maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_videen_maps: ${g_videen_maps}"
-	fi
-
-	if [ -z "${g_greyscale_maps}" ]; then
-		echo "ERROR: greyscale maps (--greyscale-maps=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_greyscale_maps: ${g_greyscale_maps}"
-	fi
-
-	if [ -z "${g_distortion_maps}" ]; then
-		echo "ERROR: distortion maps (--distortion-maps=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_distortion_maps: ${g_distortion_maps}"
-	fi
-
-	if [ -z "${g_gradient_maps}" ]; then
-		echo "ERROR: gradient maps (--gradient-maps=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_gradient_maps: ${g_gradient_maps}"
-	fi
-
-	if [ -z "${g_std_maps}" ]; then
-		echo "ERROR: std maps (--std-maps=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_std_maps: ${g_std_maps}"
-	fi
-
-	if [ -z "${g_multi_maps}" ]; then
-		echo "ERROR: multi maps (--multi-maps=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_multi_maps: ${g_multi_maps}"
+		log_Msg "multi maps: ${p_MultiMaps}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		#echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
+
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
@@ -248,105 +312,77 @@ show_tool_versions()
 	log_Msg "FSL version: ${fsl_ver}"
 }
 
+# ------------------------------------------------------------------------------
+#  Main processing of script.
+# ------------------------------------------------------------------------------
+
 main() 
 {
-	# Get command line options
-	get_options $@
+	log_Msg "Staring main functionality"
 
-	# Show the versions of tools used
-	show_tool_versions
-
-	#Subjlist="${1}"
-	local Subjlist="${g_subject_list}"
+	# Retrieve positional parameters
+	local Subjlist="${1}"
+	local StudyFolder="${2}"
+	local GroupAverageName="${3}"
+	local SurfaceAtlasDIR="${4}"
+	local GrayordinatesSpaceDIR="${5}"
+	local HighResMesh="${6}"
+	local LowResMeshes="${7}"
+	local FreeSurferLabels="${8}"
+	local Sigma="${9}"
+	local RegName="${10}"
+	local VideenMaps="${11}"
+	local GreyScaleMaps="${12}"
+	local DistortionMaps="${13}"
+	local GradientMaps="${14}"
+	local STDMaps="${15}"
+	local MultiMaps="${16}"
+	
+	# Log values retrieved from positional parameters
 	log_Msg "Subjlist: ${Subjlist}"
-
-	#StudyFolder="${2}"
-	local StudyFolder="${g_study_folder}"
-	log_Msg "StudyFolder: ${StudyFolder}"
-
-	#GroupAverageName="${3}"
-	local GroupAverageName="${g_group_average_name}"
+	log_Msg "StudyFolder: ${StudyFolder}"	
 	log_Msg "GroupAverageName: ${GroupAverageName}"
-
-	#SurfaceAtlasDIR="${4}"
-	local SurfaceAtlasDIR="${g_surface_atlas_dir}"
 	log_Msg "SurfaceAtlasDIR: ${SurfaceAtlasDIR}"
-
-	#GrayordinatesSpaceDIR="${5}"
-	local GrayordinatesSpaceDIR="${g_grayordinates_space_dir}"
 	log_Msg "GrayordinatesSpaceDIR: ${GrayordinatesSpaceDIR}"
-
-	#HighResMesh="${6}"
-	local HighResMesh="${g_high_res_mesh}"
-	log_Msg "HighResMesh: ${HighResMesh}"
-
-	#LowResMeshes="${7}"
-	local LowResMeshes="${g_low_res_meshes}"
+	log_Msg "HighResMesh: ${HighResMesh}"	
 	log_Msg "LowResMeshes: ${LowResMeshes}"
-
-	#FreeSurferLabels="${8}"
-	local FreeSurferLabels="${g_freesurfer_labels}"
 	log_Msg "FreeSurferLabels: ${FreeSurferLabels}"
+	log_Msg "Sigma: ${Sigma}"
+	log_Msg "RegName: ${RegName}"
+	log_Msg "VideenMaps: ${VideenMaps}"
+	log_Msg "GreyScaleMaps: ${GreyScaleMaps}"
+	log_Msg "DistortionMaps: ${DistortionMaps}"
+	log_Msg "GradientMaps: ${GradientMaps}"
+	log_Msg "STDMaps: ${STDMaps}"
+	log_Msg "MultiMaps: ${MultiMaps}"	
 
-	#Caret7_Command="${9}"
+	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	#Sigma="${10}" #Pregradient Smoothing
-	local Sigma="${g_sigma}" #Pregradient Smoothing
-	log_Msg "Sigma: ${Sigma}"
-
-	#RegName="${11}"
-	local RegName="${g_reg_name}"
-	log_Msg "RegName: ${RegName}"
-
-	#VideenMaps="${12}"
-	local VideenMaps="${g_videen_maps}"
-	log_Msg "VideenMaps: ${VideenMaps}"
-
-	#GreyScaleMaps="${13}"
-	local GreyScaleMaps="${g_greyscale_maps}"
-	log_Msg "GreyScaleMaps: ${GreyScaleMaps}"
-
-	#DistortionMaps="${14}"
-	local DistortionMaps="${g_distortion_maps}"
-	log_Msg "DistortionMaps: ${DistortionMaps}"
-
-	#GradientMaps="${15}"
-	local GradientMaps="${g_gradient_maps}"
-	log_Msg "GradientMaps: ${GradientMaps}"
-
-	#STDMaps="${16}"
-	local STDMaps="${g_std_maps}"
-	log_Msg "STDMaps: ${STDMaps}"
-
-	#MultiMaps="${17}"
-	local MultiMaps="${g_multi_maps}"
-	log_Msg "MultiMaps: ${MultiMaps}"
-
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
+	log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
 	
 	Subjlist=`echo ${Subjlist} | sed 's/@/ /g'`	
-	log_Msg "After delimeter substitution, Subjlist: ${Subjlist}"
+	log_Msg "After delimiter substitution, Subjlist: ${Subjlist}"
 
 	VideenMaps=`echo ${VideenMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, VideenMaps: ${VideenMaps}"
+	log_Msg "After delimiter substitution, VideenMaps: ${VideenMaps}"
 
 	GreyScaleMaps=`echo ${GreyScaleMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, GreyScaleMaps: ${GreyScaleMaps}"
+	log_Msg "After delimiter substitution, GreyScaleMaps: ${GreyScaleMaps}"
 
 	DistortionMaps=`echo ${DistortionMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, DistortionMaps: ${DistortionMaps}"
+	log_Msg "After delimiter substitution, DistortionMaps: ${DistortionMaps}"
 
 	GradientMaps=`echo ${GradientMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, GradientMaps: ${GradientMaps}"
+	log_Msg "After delimiter substitution, GradientMaps: ${GradientMaps}"
 
 	STDMaps=`echo ${STDMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, STDMaps: ${STDMaps}"
+	log_Msg "After delimiter substitution, STDMaps: ${STDMaps}"
 
 	MultiMaps=`echo ${MultiMaps} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, MultiMaps: ${MultiMaps}"
+	log_Msg "After delimiter substitution, MultiMaps: ${MultiMaps}"
 
 	if [ ${RegName} = "NONE" ] ; then
 		RegSTRING=""
@@ -359,7 +395,6 @@ main()
 	fi
 
 	# Naming Conventions
-	log_Msg "Naming Conventions"
 	DownSampleFolderNames=""
 	for LowResMesh in ${LowResMeshes} ; do
 		DownSampleFolderNames=`echo "${DownSampleFolderNames}fsaverage_LR${LowResMesh}k "`
@@ -537,7 +572,7 @@ main()
 
 	done
 
-	log_Msg "Debug Point 1"
+	log_Debug_Msg "Debug Point 1"
 
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
@@ -564,7 +599,7 @@ main()
 		done
 	done
 
-	log_Msg "Debug Point 2"
+	log_Debug_Msg "Debug Point 2"
 
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
@@ -670,7 +705,7 @@ main()
 		${Caret7_Command} -add-to-spec-file ${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec INVALID ${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
 	done
 
-	log_Msg "Debug Point 3"
+	log_Debug_Msg "Debug Point 3"
 
 	for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 		log_Msg "Map: ${Map}"
@@ -732,7 +767,7 @@ main()
 				fi
 			fi  
 
-			log_Msg "Debug Point 3.5"
+			log_Debug_Msg "Debug Point 3.5"
 
 			${Caret7_Command} -cifti-palette ${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii ${PaletteStringOne} ${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii ${PaletteStringTwo}
 			${Caret7_Command} -set-map-name ${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii 1 ${GroupAverageName}_${Map}${RegSTRING}
@@ -775,7 +810,7 @@ main()
 				${Caret7_Command} -cifti-palette ${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}_grad.${Mesh}k_fs_LR.dscalar.nii ${PaletteStringOne} ${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}_grad.${Mesh}k_fs_LR.dscalar.nii ${PaletteStringTwo}
 			fi
 
-			log_Msg "Debug Point: 3.9"
+			log_Debug_Msg "Debug Point: 3.9"
 
 			if [ ! x`echo ${STDMaps} | grep -oE "(^| )${Map}" | sed 's/ //g'` = "x" ] ; then
 				PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
@@ -789,10 +824,48 @@ main()
 		
 	done
 
-	log_Msg "End"
+	log_Msg "Completing main functionality"
 }
 
-#
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality
+	#     ${1}            ${2}               ${3}                    ${4}                   ${5}                         ${6}               ${7}                ${8}                    ${9}         ${10}          ${11}             ${12}                ${13}                 ${14}               ${15}          ${16}
+	main "${p_Subjlist}" "${p_StudyFolder}" "${p_GroupAverageName}" "${p_SurfaceAtlasDIR}" "${p_GrayordinatesSpaceDIR}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_FreeSurferLabels}" "${p_Sigma}" "${p_RegName}" "${p_VideenMaps}" "${p_GreyScaleMaps}" "${p_DistortionMaps}" "${p_GradientMaps}"	"${p_STDMaps}" "${p_MultiMaps}"
+	
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main "$@"
+
+fi
