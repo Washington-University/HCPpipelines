@@ -1,13 +1,13 @@
 #
 # Description:
-#   sets the name of the tool to use for future logging 
+#   sets the name of the tool to use for future logging
 #
 # Input:
 #   The first parameter is the name of the tool
 #
-log_SetToolName() 
+log_SetToolName()
 {
-    log_toolName="$1"
+	log_toolName="$1"
 }
 
 #
@@ -17,27 +17,61 @@ log_SetToolName()
 # Input:
 #   The parameters are the message to send to standard output
 #
-log_Msg() 
+log_Msg()
 {
-    local msg=$@
-    local dateTime=`date`
-    echo $dateTime "-" $log_toolName "-" $msg
+	local msg="$*"
+	local dateTime
+	dateTime=$(date)
+	local toolname
+
+	if [ -z "${log_toolName}" ]; then
+		toolname=$(basename ${0})
+	else
+		toolname="${log_toolName}"
+	fi
+
+	echo ${dateTime} "-" ${toolname} "-" "${msg}"
 }
 
 #
 # Description:
-#   logs a time-stamped, tool-described error message to standard output 
+#   logs a time-stamped, tool-described error message to standard output
 #   and aborts the script
 #
 # Input:
 #   The parameters are the message to send to the standard output
 #
-log_Error_Abort() 
+log_Err_Abort()
 {
-	local msg=$@
-	local dateTime=`date`
-	echo $dateTime "-" $log_toolName "-" "ERROR:" $msg "--ABORTING--"
+	local msg="$*"
+	local dateTime
+	dateTime=$(date)
+	local toolname
+
+	if [ -z "${log_toolName}" ]; then
+		toolname=$(basename ${0})
+	else
+		toolname="${log_toolName}"
+	fi
+
+	echo ${dateTime} "-" ${toolname} "-" "ABORTING:" "${msg}"
 	exit 1
+}
+
+log_Err()
+{
+	local msg="$*"
+	local dateTime
+	dateTime=$(date)
+	local toolname
+
+	if [ -z "${log_toolName}" ]; then
+		toolname=$(basename ${0})
+	else
+		toolname="${log_toolName}"
+	fi
+
+	echo ${dateTime} "-" ${toolname} "-" "ERROR:" "${msg}"
 }
 
 #
@@ -50,7 +84,7 @@ log_Error_Abort()
 #
 log_Does_File_Exist()
 {
-	local file_to_check=${1}
+	local file_to_check="${1}"
 	if [ -e "${file_to_check}" ]; then
 		log_Msg "File: ${file_to_check} EXISTS"
 	else
@@ -61,25 +95,25 @@ log_Does_File_Exist()
 #
 # Description:
 #   Checks that the specified file actually exists.
-#   If it does, then that fact is logged. 
+#   If it does, then that fact is logged.
 #   If it doesn't, causes an abort of the processing.
 #
 # Input:
 #   Full path to file that must exist
 #
-log_File_Must_Exist() 
+log_File_Must_Exist()
 {
-	local file_that_must_exist=${1}
+	local file_that_must_exist="${1}"
 	if [ -e "${file_that_must_exist}" ]; then
 		log_Msg "File: ${file_that_must_exist} EXISTS"
 	else
-		log_Error_Abort "File: ${file_that_must_exist} DOES NOT EXIST"
+		log_Err_Abort "File: ${file_that_must_exist} DOES NOT EXIST"
 	fi
 }
 
 #
 # Description:
-#   Turn on debugging. Set a flag to indicate debugging messages 
+#   Turn on debugging. Set a flag to indicate debugging messages
 #   should be logged
 #
 log_Debug_On()
@@ -94,7 +128,7 @@ log_Debug_On()
 #
 log_Debug_Msg()
 {
-	local msg=$@
+	local msg="$*"
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: ${msg}"
 	fi
@@ -106,10 +140,26 @@ log_Debug_Msg()
 #
 log_Debug_Cat()
 {
-	local file_to_cat=$@
+	local file_to_cat="$*"
 	if [ ! -z "${log_debugOn}" ] ; then
 		log_Msg "DEBUG: Begin contents of file: ${file_to_cat}"
-		cat ${file_to_cat}
+		cat "${file_to_cat}"
 		log_Msg "DEBUG: End contents of file: ${file_to_cat}"
 	fi
+}
+
+#
+# Description:
+#   Check to see if the specified environment variable has a value
+#   set (is not an empty string). Abort script if it is not set.
+#   Log its value if it is set.
+#
+log_Check_Env_Var()
+{
+	local var_name="${1}"
+
+	if [ -z "${!var_name}" ]; then
+		log_Err_Abort "${var_name} environment variable must be set"
+	fi
+	log_Msg "${var_name}: ${!var_name}"
 }

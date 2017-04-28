@@ -1,5 +1,5 @@
-function MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatialmaps,outputweights,wbcommand,Method,Params,VN,nTPsForSpectra,BC)
-%function [ output_args ] = MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatialmaps,outputweights,wbcommand,Method,Params,VN,nTPsForSpectra,BC)
+function MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatialmaps,outputweights,wbcommand,Method,Params,VN,nTPsForSpectra,BC,VolParams)
+%function [ output_args ] = MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatialmaps,outputweights,wbcommand,Method,Params,VN,nTPsForSpectra,BC,VolParams)
 %Perform MSM Regression
 %functions on the path:
 %ciftiopen.m
@@ -9,7 +9,7 @@ function MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatial
 
 % edits by T.B. Brown to convert string parameters to numeric values
 % as necessary and print debugging information. When used with compiled
-  % Matlab, all parameters are passed in as strings
+% Matlab, all parameters are passed in as strings
 
 func_name='MSMregression';
 fprintf('%s - start\n', func_name);
@@ -24,6 +24,7 @@ fprintf('%s - wbcommand: %s\n', func_name, wbcommand);
 fprintf('%s - Method: %s\n', func_name, Method);
 fprintf('%s - Params: %s\n', func_name, Params);
 fprintf('%s - VN: %s\n', func_name, VN);
+fprintf('%s - VolParams: %s\n', func_name, VolParams);
 
 if isdeployed
     fprintf('%s - nTPsForSpectra: "%s"\n', func_name, nTPsForSpectra);
@@ -148,6 +149,22 @@ end
 betaICA = ((pinv(NODEts) * demean(BO.cdata')))';
 OUTBO.cdata = betaICA;
 
+if ~strcmp(VolParams,'NO')
+    fid = fopen(VolParams);
+    txtfileArray = textscan(fid,'%s');
+    txtfileArray = txtfileArray{1,1};
+    Vol=txtfileArray{1,1};
+    Vol=ciftiopen(Vol,wbcommand);
+    OutVol=Vol;
+    VolOutName=txtfileArray{2,1};
+    if ~strcmp(BC,'NO')
+        VolBC=txtfileArray{3,1};
+        VolBC=ciftiopen(VolBC,wbcommand);
+    end
+    VolbetaICA = ((pinv(NODEts) * demean(Vol.cdata')))';
+    OutVol.cdata = VolbetaICA;
+end
+
 if (length(Method) > 2) && strcmp(Method(3),'Z')
     %Convert to Z stat image
     dof=size(NODEts,1)-size(NODEts,2)-1;
@@ -158,6 +175,17 @@ if (length(Method) > 2) && strcmp(Method(3),'Z')
     Z(t>0) = -norminv(tcdf(-t(t>0),dof));
     Z(t<0) = norminv(tcdf(t(t<0),dof));
     OUTBO.cdata = Z;
+    if ~strcmp(VolParams,'NO')
+        residuals=demean(Vol.cdata,2)-VolbetaICA*NODEts';
+        t = VolbetaICA ./ sqrt(sum(residuals.^2,2)*dpN/dof);
+        Z = zeros(size(t));
+        Z(t>0) = -norminv(tcdf(-t(t>0),dof));
+        Z(t<0) = norminv(tcdf(t(t<0),dof));
+        OutVol.cdata = Z;
+    end
+    if ~strcmp(VolParams,'NO')
+        OutVol.cdata = ((((VolbetaICA-repmat(betaICAmean,length(VolbetaICA),1))./repmat(betaICAstd,length(VolbetaICA),1)).*repmat(GMstd,length(VolbetaICA),1))+repmat(GMmean,length(VolbetaICA),1));        
+    end
 end
 
 if (length(Method) > 2) && strcmp(Method(3),'N')
@@ -171,9 +199,17 @@ end
 
 ciftisave(OUTBO,[outputspatialmaps '.dscalar.nii'],wbcommand); 
 
+if ~strcmp(VolParams,'NO')
+    ciftisavereset(OutVol,[VolOutName '.dscalar.nii'],wbcommand);     
+end
+
 if ~strcmp(BC,'NO')
     OUTBO.cdata=(OUTBO.cdata./repmat(BC.cdata,1,size(OUTBO.cdata,2)))*100;
     ciftisave(OUTBO,[outputspatialmaps '_norm.dscalar.nii'],wbcommand); 
+    if ~strcmp(VolParams,'NO')
+        OutVol.cdata=(OutVol.cdata./repmat(VolBC.cdata,1,size(OutVol.cdata,2)))*100;
+        ciftisavereset(OutVol,[VolOutName '_norm.dscalar.nii'],wbcommand); 
+    end   
 end
 
 if ~strcmp(inputweights,'NONE')
@@ -191,4 +227,7 @@ if ~strcmp(inputweights,'NONE')
   ciftisave(OUTBO,outputweights,wbcommand); 
 
 end
+
+fprintf('%s - complete\n', func_name);
+
 end

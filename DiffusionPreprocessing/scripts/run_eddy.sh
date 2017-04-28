@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -67,34 +67,30 @@ usage()
 	echo ""
 	echo "    [-h | --help] : show usage information and exit with non-zero return code"
 	echo ""
-	echo "    [-g | --gpu]  : attempt to use the GPU-enabled version of eddy"
-	echo "                    (eddy_cuda).  If the GPU-enabled version is not"
-	echo "                    found or returns a non-zero exit code, then"
-	echo "                    this script \"falls back\" to using the standard"
-	echo "                    version of eddy."
+	echo "    [-g | --gpu]  : use the GPU-enabled version of eddy."
 	echo ""
 	echo "    [--wss] : produce detailed outlier statistics after each iteration by using "
-	echo "              the --wss option to a call to eddy_cuda.  Note that this option has "
-	echo "              no effect unless the GPU-enabled version of eddy (eddy_cude) is used."
+	echo "              the --wss option to a call to eddy.  Note that this option has "
+	echo "              no effect unless the GPU-enabled version of eddy is used."
 	echo ""
 	echo "    [--repol] : replace outliers. Note that this option has no effect unless the"
-	echo "                GPU-enabled version of eddy (eddy_cuda) is used."
+	echo "                GPU-enabled version of eddy is used."
 	echo ""
 	echo "    [--nvoxhp=<number-of-voxel-hyperparameters>] : number of voxel hyperparameters to use"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--sep_offs_move] : If specified, this option stops dwi from drifting relative to b=0"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--rms] : If specified, write a root-mean-squared movement file for QA purposes"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    [--ff=<ff-value>] : TBW??"
 	echo "                Note that this option has no effect unless the GPU-enabled version of"
-	echo "                eddy (eddy_cuda) is used."
+	echo "                eddy is used."
 	echo ""
 	echo "    -w <working-dir>           | "
 	echo "    -w=<working-dir>           | "
@@ -109,6 +105,17 @@ usage()
 	echo ""
 	echo "    [--resamp=<value>] : --resamp value to pass to eddy"
 	echo "                         If unspecified, no --resamp option is passed to eddy"
+	echo ""
+	echo "    [--ol_nstd=<value>] : --ol_nstd value to pass to eddy"
+	echo "                          If unspecified, no --ol_nstd option is pssed to eddy"
+	echo ""
+	echo "    [--extra-eddy-arg=token] : Generic single token (no whitespace) argument to pass"
+	echo "                               to the eddy binary. To build a multi-token series of"
+	echo "                               arguments, you can specify this --extra-eddy-arg= "
+	echo "                               parameter serveral times. E.g."
+	echo "                               --extra-eddy-arg=--verbose --extra-eddy-arg=T"
+	echo "                               will ultimately be translated to --verbose T when"
+	echo "                               passed to the eddy binary"
 	echo ""
 	echo "  Return code:"
 	echo ""
@@ -140,6 +147,8 @@ usage()
 #  ${sep_offs_move}   - Set to "True" if user has specified the --sep_offs_move command line option
 #  ${rms}             - Set to "True" if user has specified the --rms command line option
 #  ${ff_val}          - User specified ff value (what is ff?) (empty string if unspecified)
+#  ${ol_nstd_val}     - User specified value for ol_nstd option
+#  ${extra_eddy_args} - User specified value for the --extra-eddy-args command line option
 #
 get_options()
 {
@@ -158,6 +167,8 @@ get_options()
 	dont_peas=""
 	fwhm_value="0"
 	resamp_value=""
+	unset ol_nstd_val
+	extra_eddy_args=""
 
 	# parse arguments
 	local index=0
@@ -190,11 +201,11 @@ get_options()
 				index=$(( index + 2 ))
 				;;
 			-w=* | --workingdir=*)
-				workingdir=${argument/*=/""}
+				workingdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--nvoxhp=*)
-				nvoxhp=${argument/*=/""}
+				nvoxhp=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sep_offs_move)
@@ -206,7 +217,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--ff=*)
-				ff_val=${argument/*=/""}
+				ff_val=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dont_peas)
@@ -214,11 +225,20 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--fwhm=*)
-				fwhm_value=${argument/*=/""}
+				fwhm_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--resamp=*)
-				resamp_value=${argument/*=/""}
+				resamp_value=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--ol_nstd=*)
+				ol_nstd_val=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--extra-eddy-arg=*)
+				extra_eddy_arg=${argument#*=}
+				extra_eddy_args+=" ${extra_eddy_arg} "
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -230,8 +250,7 @@ get_options()
 	done
 	
 	# check required parameters
-	if [ -z ${workingdir} ]
-	then
+	if [ -z ${workingdir} ]; then
 		usage
 		echo "  Error: <working-dir> not specified - Exiting without running eddy"
 		exit 1
@@ -250,6 +269,8 @@ get_options()
 	echo "   dont_peas: ${dont_peas}"
 	echo "   fwhm_value: ${fwhm_value}"
 	echo "   resamp_value: ${resamp_value}"
+	echo "   ol_nstd_val: ${ol_nstd_val}"
+	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${scriptName}: Specified Command-Line Options - End --"
 }
 
@@ -262,8 +283,7 @@ validate_environment_vars()
 	local scriptName=$(basename ${0})
 	
 	# validate
-	if [ -z ${FSLDIR} ]
-	then
+	if [ -z ${FSLDIR} ]; then
 		usage
 		echo "ERROR: FSLDIR environment variable not set"
 		exit 1
@@ -283,8 +303,7 @@ get_fsl_version()
 
 	fsl_version_file="${FSLDIR}/etc/fslversion"
 
-	if [ -f ${fsl_version_file} ]
-	then
+	if [ -f ${fsl_version_file} ]; then
 		fsl_version=`cat ${fsl_version_file}`
 		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
 	else
@@ -371,48 +390,58 @@ main()
 	# Establish tool name for logging
 	log_SetToolName "run_eddy.sh"
 
-
 	# Determine whether FSL version is "OLD" or "NEW"
 	get_fsl_version fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 
 	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-	
-	# Determine eddy executable to use
-	#
-	#  If the user has asked us to try to use the GPU-enabled version of eddy,
-	#  then we check to see if that GPU-enabled version exists.  If it does,
-	#  we'll try to use it. Otherwise, we'll fall back to using the standard
-	#  (CPU) version of eddy.
-	#
-	#  If the user has not requested us to try to use the GPU-enabled version,
-	#  then we don't bother looking for it or trying to use it.
 
+	# Set values for stdEddy (non-GPU-enabled version of eddy binary)
+	# and gpuEnabledEddy (GPU-enabled version of eddy binary) 
+	# based upon version of FSL being used.
+	# 
+	# stdEddy is "eddy" for FSL versions prior to FSL 5.0.9
+	#         is "eddy_openmp" for FSL versions starting with FSL 5.0.9
+	#
+	# gpuEnabledEddy is "eddy.gpu" for FSL versions prior to FSL 5.0.9 (may not exist)
+	#                is "eddy_cuda" for FSL versions starting with FSL 5.0.9
+	
 	if [ "${old_or_new_version}" == "OLD" ] ; then
 		log_Msg "INFO: Detected pre-5.0.9 version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
+		stdEddy="${FSLDIR}/bin/eddy"
 	else
 		log_Msg "INFO: Detected 5.0.9 or newer version of FSL is in use."
 		gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
+		stdEddy="${FSLDIR}/bin/eddy_openmp"
 	fi
 	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
+	log_Msg "stdEddy: ${stdEddy}"
 
-	stdEddy="${FSLDIR}/bin/eddy"
-	
-	if [ "${useGpuVersion}" = "True" ]
-	then
+	# Determine which eddy executable to use based upon whether 
+	# the user requested use of the GPU-enabled version of eddy
+	# and whether the requested version of eddy can be found.
+
+	if [ "${useGpuVersion}" = "True" ]; then
 		log_Msg "User requested GPU-enabled version of eddy"
-		if [ -e ${gpuEnabledEddy} ]
-		then
-			log_Msg "GPU-enabled version of eddy found"
+		if [ -e ${gpuEnabledEddy} ]; then
+			log_Msg "GPU-enabled version of eddy found: ${gpuEnabledEddy}"
 			eddyExec="${gpuEnabledEddy}"
 		else
-			log_Msg "GPU-enabled version of eddy NOT found"
-			eddyExec="${stdEddy}"
+			log_Msg "GPU-enabled version of eddy NOT found: ${gpuEnabledEddy}"
+			log_Msg "ABORTING"
+			exit 1
 		fi
 	else
 		log_Msg "User did not request GPU-enabled version of eddy"
-		eddyExec="${stdEddy}"
+		if [ -e ${stdEddy} ]; then
+			log_Msg "Non-GPU-enabled version of eddy found: ${stdEddy}"
+			eddyExec="${stdEddy}"
+		else
+			log_Msg "Non-GPU-enabled version of eddy NOT found: ${stdEddy}"
+			log_Msg "ABORTING"
+			exit 1
+		fi
 	fi
 	
 	log_Msg "eddy executable command to use: ${eddyExec}"
@@ -428,37 +457,37 @@ main()
 	sep_offs_moveOption=""
 	rmsOption=""
 	ff_valOption=""
+	ol_nstd_option=""
 	
-	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]
-	then
-		if [ "${produceDetailedOutlierStats}" = "True" ]
-		then
+	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
+		if [ "${produceDetailedOutlierStats}" = "True" ]; then
 			outlierStatsOption="--wss"
 		fi
 		
-		if [ "${replaceOutliers}" = "True" ]
-		then
+		if [ "${replaceOutliers}" = "True" ]; then
 			replaceOutliersOption="--repol"
 		fi
 		
-		if [ "${nvoxhp}" != "" ]
-		then
+		if [ "${nvoxhp}" != "" ]; then
 			nvoxhpOption="--nvoxhp=${nvoxhp}"
 		fi
 		
-		if [ "${sep_offs_move}" = "True" ]
-		then
+		if [ "${sep_offs_move}" = "True" ]; then
 			sep_offs_moveOption="--sep_offs_move"
 		fi
 		
-		if [ "${rms}" = "True" ]
-		then
+		if [ "${rms}" = "True" ]; then
 			rmsOption="--rms"
 		fi
 		
-		if [ "${ff_val}" != "" ]
-		then
+		if [ "${ff_val}" != "" ]; then
 			ff_valOption="--ff=${ff_val}"
+		fi
+
+		if [ -z "${ol_nstd_val}" ]; then
+			ol_nstd_option=""
+		else
+			ol_nstd_option="--ol_nstd=${ol_nstd_val}"
 		fi
 	fi
 	
@@ -468,7 +497,8 @@ main()
 	log_Msg "sep_offs_move option: ${sep_offs_moveOption}"
 	log_Msg "rms option: ${rmsOption}"
 	log_Msg "ff option: ${ff_valOption}"
-	
+	log_Msg "ol_nstd_option: ${ol_nstd_option}"
+
 	# Main processing - Run eddy
 	
 	topupdir=`dirname ${workingdir}`/topup
@@ -492,61 +522,29 @@ main()
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
 	eddy_command+="--flm=quadratic "
-	eddy_command+="--very_verbose "
 
 	if [ ! -z "${dont_peas}" ] ; then
 		eddy_command+="--dont_peas "
 	fi
 
 	if [ ! -z "${resamp_value}" ] ; then
-		eddy_command+="--resamp=${resamp_value}"
+		eddy_command+="--resamp=${resamp_value} "
+	fi
+
+	if [ ! -z "${ol_nstd_option}" ] ; then
+		eddy_command+="${ol_nstd_option} "
 	fi
 	
+	if [ ! -z "${extra_eddy_args}" ] ; then
+		for extra_eddy_arg in ${extra_eddy_args} ; do
+			eddy_command+=" ${extra_eddy_arg} "
+		done
+	fi
+
 	log_Msg "About to issue the following eddy command: "
 	log_Msg "${eddy_command}"
 	${eddy_command}
 	eddyReturnValue=$?
-	
-	# Another fallback.
-	#
-	#  If we were trying to use the GPU-enabled version of eddy, but it
-	#  returned a failure code, then report that the GPU-enabled eddy
-	#  failed and use the standard version of eddy.
-	if [ "${eddyExec}" = "${gpuEnabledEddy}" ]
-	then
-		if [ ${eddyReturnValue} -ne 0 ]
-		then
-			log_Msg "Tried to run GPU-enabled eddy, ${eddyExec}, as requested."
-			log_Msg "That attempt failed with return code: ${eddyReturnValue}"
-			log_Msg "Running standard version of eddy, ${stdEddy}, instead."
-			
-			eddy_command="${stdEddy} "
-			eddy_command+="--imain=${workingdir}/Pos_Neg "
-			eddy_command+="--mask=${workingdir}/nodif_brain_mask "
-			eddy_command+="--index=${workingdir}/index.txt "
-			eddy_command+="--acqp=${workingdir}/acqparams.txt "
-			eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
-			eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
-			eddy_command+="--fwhm=${fwhm_value} "
-			eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
-			eddy_command+="--out=${workingdir}/eddy_unwarped_images "
-			eddy_command+="--flm=quadratic "
-			eddy_command+="-v "
-
-			if [ ! -z "${dont_peas}" ] ; then
-				eddy_command+="--dont_peas"
-			fi
-
-			if [ ! -z "${resamp_value}" ] ; then
-				eddy_command+="--resamp=${resamp_value}"
-			fi
-			
-			log_Msg "About to issue the following eddy command: "
-			log_Msg "${eddy_command}"
-			${eddy_command}
-			eddyReturnValue=$?
-		fi
-	fi
 	
 	log_Msg "Completed with return value: ${eddyReturnValue}"
 	exit ${eddyReturnValue}

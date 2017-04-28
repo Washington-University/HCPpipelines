@@ -1,68 +1,91 @@
 #!/bin/bash
 
-# If any command exits with non-zero value, this script exits
-set -e
-g_script_name=`basename ${0}`
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
-
 #
-# Function Description:
+# # ReApplyFixPipeline.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2015-2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
+
+# ------------------------------------------------------------------------------
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  Usage: ${g_script_name} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "   [--help] : show usage information and exit"
-	echo " "
-	echo "  TBW "
-	echo " "
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: ReApplyFix Pipeline
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --fmri-name=TBW
+   --high-pass=TBW
+   --reg-name=TBW
+  [--low-res-mesh=TBW]
+  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
+# ------------------------------------------------------------------------------
+
 get_options()
 {
-#Caret7_Command="${1}"   ${CARET7_DIR}/wb_command
-#GitRepo="${2}"          ${HCPPIPEDIR}
-#FixDir="${3}"           ${ICAFIX}
-
-#StudyFolder="${4}"
-#Subject="${5}"
-#fMRIName="${6}"
-#HighPass="${7}"
-#RegName="${8}"
-
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder     # StudyFolder
-	unset g_subject                  # Subject
-	unset g_fmri_name                # fMRIName
-	unset g_high_pass                # HighPass
-	unset g_reg_name                 # RegName
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRIName
+	unset p_HighPass
+	unset p_RegName
+	unset p_LowResMesh
+	unset p_MatlabRunMode
+
+	# set default values
+	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
 	local index=0
 
-	while [ ${index} -lt ${num_args} ]; do
+	while [ "${index}" -lt "${num_args}" ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -71,80 +94,117 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument/*=/""}
+				p_fMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument/*=/""}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument/*=/""}
+				p_RegName=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--low-res-mesh=*)
+				p_LowResMesh=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+	  		--matlab-run-mode=*)
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "path to study folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID (--subject=) required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "subject ID (--subject=): ${g_subject}"
+		log_Msg "Subject ID: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fmri_name}" ]; then
-		echo "ERROR: fMRI Name (--fmri-name=) required"
+	if [ -z "${p_fMRIName}" ]; then
+		log_Err "fMRI Name (--fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "fMRI Name: (--fmri-name=): ${g_fmri_name}"
+		log_Msg "fMRI Name: ${p_fMRIName}"
 	fi
 
-	if [ -z "${g_high_pass}" ]; then
-		echo "ERROR: High Pass (--high-pass=) required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "High Pass (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "High Pass: (--high-pass=): ${g_high_pass}"
+		log_Msg "High Pass: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_reg_name}" ]; then
-		echo "ERROR: Reg Name (--reg-name=) required"
+	if [ -z "${p_RegName}" ]; then
+		log_Err "Reg Name (--reg-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "Reg Name: (--reg-name=): ${g_reg_name}"
+		log_Msg "Reg Name: ${p_RegName}"
+	fi
+
+	if [ ! -z "${p_LowResMesh}" ]; then
+		log_Msg "Low Res Mesh: ${p_LowResMesh}"
+	fi
+	
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${p_MatlabRunMode} in
+			0)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use compiled MATLAB"
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				fi
+				;;
+			1)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
+				;;
+			*)
+				log_Err "MATLAB Run Mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
+
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
@@ -156,143 +216,95 @@ show_tool_versions()
 	log_Msg "Showing Connectome Workbench (wb_command) version"
 	${CARET7DIR}/wb_command -version
 
-	# Show fsl version
+	# Show FSL version
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 }
 
-check_fsl_version()
+# ------------------------------------------------------------------------------
+#  Check for whether or not we have hand reclassification files
+# ------------------------------------------------------------------------------
+
+have_hand_reclassification()
 {
-	local fsl_version
-	local fsl_version_array
-	local fsl_primary_version
-	local fsl_secondary_version
-	local fsl_tertiary_version
-	local version_status="OLD"
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRIName="${3}"
+	local HighPass="${4}"
 
-	# Get FSL version
-	fsl_version_get fsl_version
-
-	# Parse FSL version into primary, secondary, and tertiary parts
-	fsl_version_array=(${fsl_version//./ })
-	
-	fsl_primary_version="${fsl_version_array[0]}"
-	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-
-	fsl_secondary_version="${fsl_version_array[1]}"
-    fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-
-    fsl_tertiary_version="${fsl_version_array[2]}"
-    fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
-
-	# Determine whether we are using an "OLD" version (5.0.6 or older),
-	# an "UNTESTED" version (5.0.7 or 5.0.8),
-	# or a "NEW" version (5.0.9 or newer)
-	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
-		# e.g. 4.x.x
-		version_status="OLD"
-	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
-		# e.g. 6.x.x
-		version_status="NEW"
-	else
-		# e.g. 5.x.x
-		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
-			# e.g. 5.1.x
-			version_status="NEW"
-		else
-			# e.g. 5.0.x
-			if [[ $(( ${fsl_tertiary_version} )) -le 6 ]] ; then
-				# e.g. 5.0.5 or 5.0.6
-				version_status="OLD"
-			elif [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
-				# e.g. 5.0.7 or 5.0.8
-				version_status="UNTESTED"
-			else
-				# e.g. 5.0.9, 5.0.10 ..
-				version_status="NEW"
-			fi
-
-		fi
-
-	fi
-
-	if [ "${version_status}" == "OLD" ] ; then
-		log_Msg "ERROR: The version of FSL in use (${fsl_version}) is incompatible with this script."
-		log_Msg "ERROR: This script and the Matlab code invoked by it, use a behavior of FSL that was"
-		log_Msg "ERROR: introduced in version 5.0.7 of FSL. You will need to upgrade to at least FSL"
-		log_Msg "ERROR: version 5.0.7 for this script to work correctly. Note, however, that this script"
-		log_Msg "ERROR: has not yet been testing using version 5.0.7 or 5.0.8 of FSL. Therefore, if"
-		log_Msg "ERROR: you use either of those two versions of FSL, you will receive an \"Untested FSL"
-		log_Msg "ERROR: version\" warning. But the script will continue to run."
-		log_Msg "ERROR: Since the current version is guaranteed to give unexpected results, we are"
-		log_Msg "ERROR: aborting this run of: ${g_script_name}"
-		exit 1
-
-	elif [ "${version_status}" == "UNTESTED" ]; then
-		log_Msg "WARNING: The version of FSL in use (${fsl_version}) should work with this script,"
-		log_Msg "WARNING: but is untested.  This script and the Matlab code invoked by it, use a behavior"
-		log_Msg "WARNING: that was introduced in version 5.0.7 of FSL. However, this script has not been"
-		log_Msg "WARNING: tested with any version of FSL older than version 5.0.9. This script should"
-		log_Msg "WARNING: continue to run after this warning. To avoid this warning in the future, upgrade"
-		log_Msg "WARNING: to FSL version 5.0.9 or newer."
-
-	fi
+	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 }
 
-main() 
+# ------------------------------------------------------------------------------
+#  Main processing of script.
+# ------------------------------------------------------------------------------
+
+main()
 {
-	# Get command line options
-	get_options $@
+	log_Msg "Starting main functionality"
 
-	show_tool_versions
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRIName="${3}"
+	local HighPass="${4}"
+	local RegName="${5}"
+	local LowResMesh="${6}"
 
-	check_fsl_version
+	local MatlabRunMode
+	if [ -z "${7}" ]; then
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
+	else
+		MatlabRunMode="${7}"
+	fi
 
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRIName: ${fMRIName}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "RegName: ${RegName}"
+	log_Msg "LowResMesh: ${LowResMesh}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+
+	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	#GitRepo="${2}"
-	#FixDir="${3}"
-
-	local StudyFolder="${g_path_to_study_folder}"
-	log_Msg "StudyFolder: ${StudyFolder}"
-	
-	local Subject="${g_subject}"
-	log_Msg "Subject: ${Subject}"
-	
-	local fMRIName="${g_fmri_name}"
-	log_Msg "fMRIName: ${fMRIName}"
-
-	local HighPass="${g_high_pass}"
-	log_Msg "HighPass: ${HighPass}"
-
-	local RegName="${g_reg_name}"
-	log_Msg "RegName: ${RegName}"
-
+	local RegString
 	if [ ${RegName} != "NONE" ] ; then
 		RegString="_${RegName}"
 	else
 		RegString=""
 	fi
+	
+	if [ ! -z ${LowResMesh} ] && [ ${LowResMesh} != ${G_DEFAULT_LOW_RES_MESH} ]; then
+		RegString="${RegString}.${LowResMesh}k"
+	fi
+
 	log_Msg "RegString: ${RegString}"
 
 	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 
-#  #Make appropriate files if they don't exist
-#  #Call matlab
-#  ML_PATHS="addpath('${FixDir}'); addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
+	# Make appropriate files if they don't exist
 
 	local aggressive=0
 	local domot=1
 	local hp=${HighPass}
-	local fixlist=".fix"
+
+	local fixlist
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+		fixlist="HandNoise.txt"
+	else
+		fixlist=".fix"
+	fi
 	local fmri_orig="${fMRIName}"
 	local fmri=${fMRIName}
 
-	DIR=`pwd`
+	DIR=$(pwd)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
 
 	if [ -f ../${fmri_orig}_Atlas${RegString}.dtseries.nii ] ; then
@@ -300,7 +312,6 @@ main()
 		log_Msg "Performing imln"
 		$FSLDIR/bin/imln ../${fmri_orig}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
-		
 		log_Msg "START: Showing linked files"
 		ls -l ../${fmri_orig}_Atlas${RegString}.dtseries.nii
 		ls -l Atlas.dtseries.nii
@@ -313,36 +324,58 @@ main()
 	if [ -f ../Movement_Regressors.txt ] ; then
 		cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 	else
-		echo "ERROR: Movement_Regressors.txt not retrieved properly." 
-		exit -1
-	fi 
+		log_Err_Abort "Movement_Regressors.txt not retrieved properly."
+	fi
 
-	# Use Compiled Matlab
-	local matlab_exe="${HCPPIPEDIR}"
-	matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean_no_vol/distrib/run_fix_3_clean_no_vol.sh"
+	case ${MatlabRunMode} in
 
-	# TBD: Use environment variable instead of fixed path!
-	local matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+		0)
+			# Use Compiled MATLAB
 
-	local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
-	
-	local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+			local matlab_exe="${HCPPIPEDIR}/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
-	matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+			local matlab_function_arguments
+			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
+			else
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+			fi
 
-	# --------------------------------------------------------------------------------
-	log_Msg "Run matlab command: ${matlab_cmd}"
-	# --------------------------------------------------------------------------------
-	echo "${matlab_cmd}" | bash
-	echo $?
+			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
+			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
+			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+			#       does NOT work. The output redirects that are part of the ${matlab_logging}
+			#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+			#       such that they get passed as parameters to the underlying executable.
+			#       So ">>" gets passed as a parameter to the executable as does the
+			#       log file name and the "2>&1" redirection. This causes the executable
+			#       to die with a "too many parameters" error message.
+			log_Msg "Run MATLAB command: ${matlab_cmd}"
+			echo "${matlab_cmd}" | bash
+			log_Msg "MATLAB command return code $?"
+			;;
 
-#matlab -nojvm -nodisplay -nosplash <<M_PROG
-#${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});
-#M_PROG
-#echo "${ML_PATHS} fix_3_clean_no_vol('${fixlist}',${aggressive},${domot},${hp});"
+		1)
+			# Use interpreted MATLAB
+			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
 
-	cd ${DIR}
+			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},0);
+M_PROG
+			else
+				matlab -nojvm -nodisplay -nosplash <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
+M_PROG
+			fi
+			;;
+
+		*)
+			# Unsupported MATLAB run mode
+			log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+			;;
+	esac
 
 	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
 	fmri_orig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
@@ -350,10 +383,61 @@ main()
 		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
 
-	$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+	fi
+
+	cd ${DIR}
+
+	log_Msg "Completing main functionality"
 }
 
-#
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any command exits with non-zero value, this script exits
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+    exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
+
+# Verify other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
+
+# Show tool versions
+show_tool_versions
+
+# Establish default MATLAB run mode
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Establish default low res mesh
+G_DEFAULT_LOW_RES_MESH=32
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality
+	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main "$@"
+
+fi

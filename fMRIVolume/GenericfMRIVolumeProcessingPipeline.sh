@@ -300,14 +300,18 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
-if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
-    ${RUN} rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+
+DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+DCFolder=${fMRIFolder}/${DCFolderName}
+
+if [ -e ${DCFolder} ] ; then
+    ${RUN} rm -r ${DCFolder}
 fi
-log_Msg "mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased"
-mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+log_Msg "mkdir -p ${DCFolder}"
+mkdir -p ${DCFolder}
 
 ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
-    --workingdir=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased \
+    --workingdir=${DCFolder} \
     --scoutin=${fMRIFolder}/${ScoutName}_gdc \
     --t1=${T1wFolder}/${T1wImage} \
     --t1restore=${T1wFolder}/${T1wRestoreImage} \
@@ -371,19 +375,19 @@ mkdir -p ${ResultsFolder}
 if [[ ${DistortionCorrection} == "TOPUP" ]]
 then
     #create MNI space corrected fieldmap images
-    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
-    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
     
     #create MNINonLinear final fMRI resolution bias field outputs
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
+        ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
-        ${FSLDIR}/bin/fslmaths ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
+        ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
         
-        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${SubjectFolder}/MNINonLinear/xfms/acpc_dc2standard.nii.gz -o ${SubjectFolder}/MNINonLinear/Results/${NameOffMRI}/${NameOffMRI}_dropouts.nii.gz
+        ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_dropouts.nii.gz
     fi
 fi
 

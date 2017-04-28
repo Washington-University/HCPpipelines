@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015 The Human Connectome Project
+# Copyright (C) 2015-2017 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -26,100 +26,74 @@
 #
 # See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
 #
-# ## Description
-#
-# TBW
-#
-# ## Prerequisites
-#
-# ### Installed Software
-#
-# * TBW
-#
-# ### Environment Variables
-#
-# * HCPPIPEDIR
-#
-#   The "home" directory for the HCP Pipeline product.
-#   e.g. /home/tbrown01/projects/Pipelines
-#
-# * CARET7DIR
-#
-#   The executable directory for the Connectome Workbench installation
-#
-# * OCTAVE_HOME
-# 
-#   The home directory for the Octave installation - only needed if Octave option 
-#   is used for running Matlab code.
-#
-#
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
 #~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-g_script_name=`basename ${0}`
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
+#  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-MATLAB_HOME="/export/matlab/R2013a"
-log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
-
-#
-# Function Description:
-#  TBW
-#
 usage()
 {
-	echo ""
-	echo "  SingleSubjectConcat.sh"
-	echo ""
-	echo " usage TBW"
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: Single Subject Scan Concatenation
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --fmri-names-list=<fMRI names> and @ symbol separated list of fMRI scan names
+   --high-pass=<high-pass filter used in ICA+FIX>
+   --output-fmri-name=<name to give to concatenated single subject "scan">
+   --fmri-proc-string=<identification for FIX cleaned dtseries to use>
+   --output-proc-string=TBW
+   --demean=<YES | NO> demean or not the data
+   --variance-normalization=<YES | NO> variance normalize the data or not 
+   --compute-variance-normalization=<YES | NO> compute the variance normalization
+        so as not to require having run the RestingStateStats pipeline
+   --revert-bias-field=<YES | NO> revert the bias field or not
+        Requires having run the RestingStateStats pipeline and is not necessary if 
+        computing variance normalization above
+  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
-#  Get the command line options for this script
-#  Shows usage information and exits if command line is malformed
-#
-# Global Output Variables
-#  ${g_path_to_study_folder} - path to folder containing subject data directories
-#  ${g_subject}
-#  ${g_fmri_names_list}
-#  ${g_output_fmri_name}
-#  ${g_fmri_proc_string}
-#  ${g_migp_vars}
-#  ${g_output_proc_string}
-#  ${g_matlab_run_mode}
-#    0 - Use compiled Matlab
-#    1 - Use Matlab
-#    2 - Use Octave
-#
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder
-	unset g_subject
-	unset g_fmri_names_list
-	unset g_output_fmri_name
-	unset g_fmri_proc_string
-	unset g_migp_vars
-	unset g_output_proc_string
-	unset g_matlab_run_mode
-
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRINames
+	unset p_HighPass
+	unset p_OutputfMRIName
+	unset p_fMRIProcSTRING
+	unset p_OutputProcSTRING
+	unset p_Demean
+	unset p_VarianceNormalization
+	unset p_ComputeVarianceNormalization
+	unset p_RevertBiasField
+	unset p_MatlabRunMode
+	
 	# set default values
-	g_matlab_run_mode=0
+	p_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -135,265 +109,412 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fmri_names_list=${argument/*=/""}
+				p_fMRINames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--high-pass=*)
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument/*=/""}
+				p_OutputfMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument/*=/""}
-				index=$(( index + 1 ))
-				;;
-			--migp-vars=*)
-				g_migp_vars=${argument/*=/""}
+				p_fMRIProcSTRING=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-proc-string=*)
-				g_output_proc_string=${argument/*=/""}
+				p_OutputProcSTRING=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--demean=*)
+				p_Demean=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--variance-normalization=*)
+				p_VarianceNormalization=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--compute-variance-normalization=*)
+				p_ComputeVarianceNormalization=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--revert-bias-field=*)
+				p_RevertBiasField=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument/*=/""}
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "Subject ID: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fmri_names_list}" ]; then
-		echo "ERROR: fMRI name list required"
+	if [ -z "${p_fMRINames}" ]; then
+		log_Err "fMRI name list (--fmri-names-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+		log_Msg "fMRI name list: ${p_fMRINames}"
 	fi
 
-	if [ -z "${g_output_fmri_name}" ]; then
-		echo "ERROR: output fMRI name required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "ICA+FIX highpass setting (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
+		log_Msg "ICA+FIX highpass setting: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_fmri_proc_string}" ]; then
-		echo "ERROR: fMRI proc string required"
+	if [ -z "${p_OutputfMRIName}" ]; then
+		log_Err "Output fMRI Name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
+		log_Msg "Output fMRI Name: ${p_OutputfMRIName}"
 	fi
 
-	if [ -z "${g_migp_vars}" ]; then
-		echo "ERROR: MIGP vars required"
+	if [ -z "${p_fMRIProcSTRING}" ]; then
+		log_Err "fMRI Proc String: (--fmri-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_migp_vars: ${g_migp_vars}"
+		log_Msg "fMRI Proc String: ${p_fMRIProcSTRING}"
 	fi
 
-	if [ -z "${g_output_proc_string}" ]; then
-		echo "ERROR: output proc string required"
+	if [ -z "${p_OutputProcSTRING}" ]; then
+		log_Err "Output Proc String: (--output-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_proc_string: ${g_output_proc_string}"
+		log_Msg "Output Proc String: ${p_OutputProcSTRING}"
 	fi
 
-	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run_mode=) required"
+	if [ -z "${p_Demean}" ]; then
+		log_Err "Demean: (--demean=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_matlab_run_mode} in
+		log_Msg "Demean: ${p_Demean}"
+	fi
+
+	if [ -z "${p_VarianceNormalization}" ]; then
+		log_Err "Variance Normalization (--variance-normalization=<YES | NO>) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Variance Normalization: ${p_VarianceNormalization}"
+	fi
+
+	if [ -z "${p_ComputeVarianceNormalization}" ]; then
+		log_Err "Compute Variance Normalization (--compute-variance-normalization=<YES | NO> required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Compute Variance Normalization: ${p_ComputeVarianceNormalization}"
+	fi
+
+	if [ -z "${p_RevertBiasField}" ]; then
+		log_Err "Revert Bias Field (--revert-bias-field=<YES | NO>) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Revert Bias Field: ${p_RevertBiasField}"
+	fi
+	
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB run mode value (--matlab-run_mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${p_MatlabRunMode} in
 			0)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
+
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				fi
 				;;
 			1)
-				;;
-			2)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
-				echo "ERROR: matlab run mode value must be 0, 1, or 2"
+				log_Err "MATLAB run mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
+{
+	# Show wb_command version
+	log_Msg "Showing wb_command version"
+	"${CARET7DIR}"/wb_command -version
+}
+
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-#
+# ------------------------------------------------------------------------------
+
 main()
 {
-	# Get command line options
-	# See documentation for get_options function for global variables set
-	get_options $@
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRINames="${3}"
+	local HighPass="${4}"
+	local OutputfMRIName="${5}"
+	local fMRIProcSTRING="${6}"
+	local OutputProcSTRING="${7}"
+	local Demean="${8}"
+	local VarianceNormalization="${9}"
+	local ComputeVarianceNormalization="${10}"
+	local RevertBiasField="${11}"
 
-	g_fmri_names_list=`echo ${g_fmri_names_list} | sed 's/@/ /g'`
-	log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+	local MatlabRunMode
+	if [ -z "${12}" ]; then
+		MatlabRunMode=0
+	else
+		MatlabRunMode="${12}"
+	fi
+	
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRINames: ${fMRINames}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "OutputfMRIName: ${OutputfMRIName}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
+	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
+	log_Msg "Demean: ${Demean}"
+	log_Msg "VarianceNormalization: ${VarianceNormalization}"
+	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
+	log_Msg "RevertBiasField: ${RevertBiasField}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 
-	# Naming Conventions
-	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
+	# Naming Conventions and other variables
+	fMRINames=$(echo ${fMRINames} | sed 's/@/ /g')
+	log_Msg "fMRINames: ${fMRINames}"
+
+	if [ "${OutputProcSTRING}" = "NONE" ]; then
+		OutputProcSTRING=""
+	fi
+	log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
+
+	AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
-	OutputFolder="${AtlasFolder}/Results/${g_output_fmri_name}"
+	OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
 	log_Msg "OutputFolder: ${OutputFolder}"
 
-	if [ "${g_output_proc_string}" = "NONE" ]; then
-		g_output_proc_string=""
-	fi
-	log_Msg "g_output_proc_string: ${g_output_proc_string}"
+	Caret7_Command=${CARET7DIR}/wb_command
+	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	OutputConcat="${OutputFolder}/${g_output_fmri_name}${g_fmri_proc_string}${g_output_proc_string}.dtseries.nii"
-	log_Msg "OutputConcat: ${OutputConcat}"
-
-	if [[ ! -e ${OutputConcat} || `echo ${g_migp_var} | cut -d "@" -f 4` = "YES" ]]; then
-
-		if [ ! -e "${OutputFolder}" ] ; then
-			mkdir -p ${OutputFolder}
-		fi
-
-		txtfile="${OutputFolder}/${g_output_fmri_name}.txt"
-		log_Msg "txtfile: ${txtfile}"
+	# Actual work
+	for fMRIName in ${fMRINames} ; do
+		log_Msg "fMRIName: ${fMRIName}"
 		
-		if [ -e "${txtfile}" ]; then
-			rm ${txtfile}
+		ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
+		log_Msg "ResultsFolder: ${ResultsFolder}"
+		
+		if [ "${Demean}" = "YES" ] ; then
+			${Caret7_Command} -cifti-reduce ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii MEAN ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii
+			MATHDemean=" - Mean"
+			VarDemean="-var Mean ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii -select 1 1 -repeat"
+		else
+			MATHDemean=""
+			VarDemean=""
 		fi
 
-		touch ${txtfile}
+		if [ "${RevertBiasField}" = "YES" ] ; then
+			if [ ! -e ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii ] ; then
+				log_Err "Bias field in CIFTI space with correct file name doesn't exist:"
+				log_Err "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii"
+				log_Err_Abort "You need to run RestingStateStats to generate it or set RevertBiasField to NO"
+			fi
+			bias="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_bias.dscalar.nii"
+			MATHRB=" * Bias"
+			VarRB="-var Bias ${bias} -select 1 1 -repeat"
+		else
+			bias="NONE"
+			MATHRB=""
+			VarRB=""
+		fi
 
-		log_Msg "Showing txtfile: ${txtfile} contents"
-		cat ${txtfile}
-		log_Msg "Done Showing txtfile contents"
+		if [ "${VarianceNormalization}" = "YES" ] ; then
 
-		for fMRIName in ${g_fmri_names_list} ; do
-			ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
-			log_Msg "ResultsFolder: ${ResultsFolder}"
-			echo "${ResultsFolder}/${fMRIName}${g_fmri_proc_string}" >> ${txtfile}
-			log_Msg "Showing txtfile: ${txtfile} contents"
-			cat ${txtfile}
-			log_Msg "Done Showing txtfile contents"
-		done
-
-		VN=`echo ${g_migp_vars} | cut -d "@" -f 5`
-		log_Msg "VN: ${VN}"
-
-		mPath="${HCPPIPEDIR}/MSMAll/scripts"
-		log_Msg "mPath: ${mPath}"
-
-		# run matlab ssConcat function 
-		case ${g_matlab_run_mode} in
-			0)
-				# Use Compiled Matlab
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_ssConcat/distrib/run_ssConcat.sh"
+			if [ "${ComputeVarianceNormalization}" = "YES" ] ; then
+				cleandtseries="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii"
+				bias="${bias}"
+				ICAtcs="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix"
+				if [ ! -e ${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt ] ; then
+					ICANoise="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/.fix"
+				else
+					ICANoise="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt"
+				fi
+				log_Msg "ICANoise: ${ICANoise}"
 				
-				matlab_compiler_runtime="${MATLAB_HOME}/MCR"
-
-				matlab_function_arguments="'${txtfile}' '${CARET7DIR}/wb_command' '${OutputConcat}' '${VN}'"
+				OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn_tempcompute.dscalar.nii"
+				log_Msg "OutputVN: ${OutputVN}"
+				
+				# run MATLAB ComputeVN function
+				case ${MatlabRunMode} in
+					
+					0)
+						# Use Compiled MATLAB
+						matlab_exe="${HCPPIPEDIR}"
+						matlab_exe+="/MSMAll/scripts/Compiled_ComputeVN/run_ComputeVN.sh"
+						
+						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
+						
+						matlab_function_arguments="'${cleandtseries}' '${bias}' '${ICAtcs}' '${ICANoise}' '${OutputVN}' '${Caret7_Command}'"
+						
+						matlab_logging=">> ${StudyFolder}/${Subject}.ComputeVN.matlab.log 2>&1"
+						
+						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+						
+						# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+						#       does NOT work. The output redirects that are part of the ${matlab_logging}
+						#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+						#       such that they get passed as parameters to the underlying executable.
+						#       So ">>" gets passed as a parameter to the executable as does the
+						#       log file name and the "2>&1" redirection. This causes the executable
+						#       to die with a "too many parameters" error message.
+						log_Msg "Run MATLAB command: ${matlab_cmd}"
+						echo "${matlab_cmd}" | bash
+						log_Msg "MATLAB command return code: $?"
+						;;
+					
+					1)
+						# Use interpreted MATLAB
+						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						
+						matlab -nojvm -nodisplay -nosplash <<M_PROG
+addpath '$mPath'; ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');
+M_PROG
+						log_Msg "ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');"
+						;;
+					
+					*)
+						# Unsupported MATLAB run mode
+						log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+						;;
+				esac
+				
+			else
+				if [ ! -e ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii ] ; then
+					log_Err "Variance Normalization file doesn't exist:"
+					log_Err "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+					log_Err_Abort "You need to run RestingStateStats to generate it or set ComputeVarianceNormalization to YES"
+				fi
+				OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+			fi
 			
-				matlab_logging=">> ${g_path_to_study_folder}/${g_subject}.ssConcat.matlab.log 2>&1"
+			MATHVN=" / max(VN,0.001)"
+			VarVN="-var VN ${OutputVN} -select 1 1 -repeat"
+		else
+			MATHVN=""
+			VarVN=""
+		fi
+      
+		MATH="((TCS${MATHDemean})${MATHRB})${MATHVN}"
+		log_Msg "MATH: ${MATH}"
+    
+		${Caret7_Command} -cifti-math "${MATH}" ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii -var TCS ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii ${VarDemean} ${VarRB} ${VarVN} 
 
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+		if [ "${Demean}" = "YES" ] ; then
+			rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_mean.dscalar.nii
+		fi
 
-				# --------------------------------------------------------------------------------
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-				# --------------------------------------------------------------------------------
+		if [ "${VarianceNormalization}" = "YES" ] ; then
+			if [ "${ComputeVarianceNormalization}" = "YES" ] ; then
+				rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn_tempcompute.dscalar.nii
+			fi
+		fi
 
-				echo "${matlab_cmd}" | bash
-				echo $?
-
-				;;
-
-			1)
-				# Use Matlab - Untested
-				matlab_script_file_name=${ResultsFolder}/ssConcat.m
-				log_Msg "Creating Matlab script: ${matlab_script_file_name}"
-
-				if [ -e ${matlab_script_file_name} ]; then
-					echo "Removing old ${matlab_script_file_name}"
-					rm -f ${matlab_script_file_name}
-				fi
-
-				touch ${matlab_script_file_name}
-				echo "addpath ${mPath}" >> ${matlab_script_file_name}
-				echo "ssConcat('${txtfile}', '${CARET7DIR}/wb_command', '${OutputConcat}', '${VN}');" >> ${matlab_script_file_name}
-
-				log_Msg "About to execute the following Matlab script"
-
-				cat ${matlab_script_file_name}
-				cat ${matlab_script_file_name} | matlab -nojvm -nodisplay -nosplash
-
-				;;
-
-			2) 
-				# Use Octave - Untested
-				octave_script_file_name=${ResultsFolder}/ssConcat.m
-				log_Msg "Creating Octave script: ${octave_script_file_name}"
-
-				if [ -e ${octave_script_file_name} ]; then
-					echo "Removing old ${octave_script_file_name}"
-					rm -f ${octave_script_file_name}
-				fi
-
-				touch ${octave_script_file_name}
-				echo "addpath ${mPath}" >> ${octave_script_file_name}
-				echo "ssConcat('${txtfile}', '${CARET7DIR}/wb_command', '${OutputConcat}', '${VN}');" >> ${octave_script_file_name}
-
-				log_Msg "About to execute the following Octave script"
-
-				cat ${octave_script_file_name}
-				cat ${octave_script_file_name} | ${OCTAVE_HOME}/bin/octave
-
-				;;
-
-			*)
-				log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
-				exit 1
-		esac
-
-		log_Msg "Removing ${txtfile} used as input to ssConcat"
-		rm ${txtfile}
-	fi
-
+		MergeSTRING=`echo "${MergeSTRING} -cifti ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii"`
+		
+	done
+	mkdir --parents "${OutputFolder}"
+	${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING}
 }
 
-# 
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify other needed environment variables are set
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}             ${4}            ${5}                  ${6}                  ${7}                    ${8}          ${9}                         ${10}                               ${11}                  ${12}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_HighPass}" "${p_OutputfMRIName}" "${p_fMRIProcSTRING}" "${p_OutputProcSTRING}" "${p_Demean}" "${p_VarianceNormalization}" "${p_ComputeVarianceNormalization}" "${p_RevertBiasField}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+	
+fi

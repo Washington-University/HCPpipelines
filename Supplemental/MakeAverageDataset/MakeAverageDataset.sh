@@ -40,67 +40,67 @@ get_options()
 
 		case ${argument} in
 			--subject-list=*)
-				g_subject_list=${argument/*=/""}
+				g_subject_list=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_study_folder=${argument/*=/""}
+				g_study_folder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--group-average-name=*)
-				g_group_average_name=${argument/*=/""}
+				g_group_average_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--surface-atlas-dir=*)
-				g_surface_atlas_dir=${argument/*=/""}
+				g_surface_atlas_dir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--grayordinates-space-dir=*)
-				g_grayordinates_space_dir=${argument/*=/""}
+				g_grayordinates_space_dir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				g_high_res_mesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-meshes=*)
-				g_low_res_meshes=${argument/*=/""}
+				g_low_res_meshes=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--freesurfer-labels=*)
-				g_freesurfer_labels=${argument/*=/""}
+				g_freesurfer_labels=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--sigma=*)
-				g_sigma=${argument/*=/""}
+				g_sigma=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument/*=/""}
+				g_reg_name=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--videen-maps=*)
-				g_videen_maps=${argument/*=/""}
+				g_videen_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--greyscale-maps=*)
-				g_greyscale_maps=${argument/*=/""}
+				g_greyscale_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--distortion-maps=*)
-				g_distortion_maps=${argument/*=/""}
+				g_distortion_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--gradient-maps=*)
-				g_gradient_maps=${argument/*=/""}
+				g_gradient_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--std-maps=*)
-				g_std_maps=${argument/*=/""}
+				g_std_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--multi-maps=*)
-				g_multi_maps=${argument/*=/""}
+				g_multi_maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)

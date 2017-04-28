@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015 The Human Connectome Project
+# Copyright (C) 2015-2017 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -26,122 +26,82 @@
 #
 # See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
 #
-# ## Description
-#
-# This is the main script for the MSM Registration pipeline. Once this registration is run
-# on all subjects in a group, the Group Registration Drift can be computed.
-#
-# ## Prerequisites
-#
-# ### Previous Processing
-#
-# The necessary input files for this processing come from:
-#
-# * TBW
-# * The Resting State Stats pipeline
-#
-# ### Installed Software
-#
-# * TBW
-#
-# ### Environment Variables
-#
-# * HCPPIPEDIR
-#
-#   The "home" directory for the HCP Pipeline product.
-#   e.g. /home/tbrown01/projects/Pipelines
-#
-#
-#
-#
-#
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
 #~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-set -e # If any commands exit with non-zero value, this script exits
-g_script_name=`basename ${0}`
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-
-
-#
-# Function Description:
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  MSM-All Registration"
-	echo ""
-	echo "  Usage: ${g_script_name} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "   [--help] : show usage information and exit"
-	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
-	echo "    --subject=<subject ID>"
-	echo "    --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names"
-	echo " "
-	echo "  TBW "
-	echo " "
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: MSM-All Registration Pipeline
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
+   --output-fmri-name=<name to give to concatenated single subject "scan">
+   --high-pass=<high-pass filter used in ICA+FIX>
+   --fmri-proc-string=<identification for FIX cleaned dtseries to use>
+        The dense timeseries files used will be named
+        <fmri_name>_<fmri_proc_string>.dtseries.nii where
+        <fmri_name> is each of the fMRIs specified in the <fMRI Names> list
+        and <fmri_proc_string> is this specified value
+   --msm-all-templates=<path to directory containing MSM All template files>
+   --output-registration-name=<name to give output registration>
+   --high-res-mesh=<high resolution mesh node count> (in thousands)
+   --low-res-mesh=<low resolution mesh node count> (in thousands)
+   --input-registration-name=<input registration name>
+  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
-# Global Output Variables
-#  ${g_path_to_study_folder} - path to folder containing subject data directories
-#  ${g_subject} - subject ID
-#  ${g_fmri_names_list} - @ symbol separated list of fMRI names
-#  ${g_output_fmri_name} - name to give to concatenated single subject "scan"
-#  ${g_fmri_proc_string} - identification for FIX cleaned dtseries to use
-#                          The dense timeseries files used will be named
-#                          ${fmri_name}_${g_fmri_proc_string}.dtseries.nii
-#                          where ${fmri_name} is each of the fMRIs specified in
-#                          ${g_fmri_names_list}.
-#  ${g_msm_all_templates} - path to directory containing MSM All template files
-#  ${g_output_registration_name} - name to give output registration
-#  ${g_high_res_mesh}
-#  ${g_low_res_mesh}
-#
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder
-	unset g_subject
-	unset g_fmri_names_list
-	unset g_output_fmri_name
-	unset g_fmri_proc_string
-	unset g_msm_all_templates
-	unset g_output_registration_name
-	unset g_high_res_mesh
-	unset g_low_res_mesh
-	unset g_input_registration_name
-
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRINames
+	unset p_OutputfMRIName
+	unset p_HighPass
+	unset p_fMRIProcSTRING
+	unset p_MSMAllTemplates
+	unset p_OutputRegName
+	unset p_HighResMesh
+	unset p_LowResMesh
+	unset p_InputRegName
+	unset p_MatlabRunMode
+	
 	# set default values
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
 	local index=0
 
-	while [ ${index} -lt ${num_args} ]; do
+	while [ "${index}" -lt "${num_args}" ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -150,242 +110,304 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
-				g_fmri_names_list=${argument/*=/""}
+				p_fMRINames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument/*=/""}
+				p_OutputfMRIName=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--high-pass=*)
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument/*=/""}
+				p_fMRIProcSTRING=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--msm-all-templates=*)
-				g_msm_all_templates=${argument/*=/""}
+				p_MSMAllTemplates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--output-registration-name=*)
-				g_output_registration_name=${argument/*=/""}
+				p_OutputRegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				p_HighResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				p_LowResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
-				g_input_registration_name=${argument/*=/""}
+				p_InputRegName=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--matlab-run-mode=*)
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "Subject: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fmri_names_list}" ]; then
-		echo "ERROR: fMRI name list required"
+	if [ -z "${p_fMRINames}" ]; then
+		log_Err "fMRI name list (--fmri-names-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+		log_Msg "fMRI Names: ${p_fMRINames}"
 	fi
 
-	if [ -z "${g_output_fmri_name}" ]; then
-		echo "ERROR: output fMRI name required"
+	if [ -z "${p_OutputfMRIName}" ]; then
+		log_Err "Output fMRI name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
+		log_Msg "Output fMRI Name: ${p_OutputfMRIName}"
 	fi
 
-	if [ -z "${g_fmri_proc_string}" ]; then
-		echo "ERROR: fMRI proc string required"
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "ICA+FIX HighPass setting (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
+		log_Msg "ICA+FIX HighPass setting: ${p_HighPass}"
 	fi
 
-	if [ -z "${g_msm_all_templates}" ]; then
-		echo "ERROR: msm all templates required"
+	if [ -z "${p_fMRIProcSTRING}" ]; then
+		log_Err "fMRI Proc string (--fmri-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_msm_all_templates: ${g_msm_all_templates}"
+		log_Msg "fMRI Proc string: ${p_fMRIProcSTRING}"
 	fi
 
-	if [ -z "${g_output_registration_name}" ]; then
-		echo "ERROR: output registration name required"
+	if [ -z "${p_MSMAllTemplates}" ]; then
+		log_Err "MSM All Templates (--msm-all-templates=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_registration_name: ${g_output_registration_name}"
+		log_Msg "MSM All Templates: ${p_MSMAllTemplates}"
 	fi
 
-	if [ -z "${g_high_res_mesh}" ]; then
-		echo "ERROR: high resolution mesh required"
+	if [ -z "${p_OutputRegName}" ]; then
+		log_Err "Output Registration Name (--output-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
+		log_Msg "Output Registration Name: ${p_OutputRegName}"
 	fi
 
-	if [ -z "${g_low_res_mesh}" ]; then
-		echo "ERROR: low resolution mesh required"
+	if [ -z "${p_HighResMesh}" ]; then
+		log_Err "High Resolution Mesh (--high-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_low_res_mesh: ${g_low_res_mesh}"
+		log_Msg "High Resolution Mesh: ${p_HighResMesh}"
 	fi
 
-	if [ -z "${g_input_registration_name}" ]; then
-		echo "ERROR: input registration name required"
+	if [ -z "${p_LowResMesh}" ]; then
+		log_Err "Low Resolution Mesh (--low-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_input_registration_name: ${g_input_registration_name}"
+		log_Msg "Low Resolution Mesh: ${p_LowResMesh}"
+	fi
+
+	if [ -z "${p_InputRegName}" ]; then
+		log_Err "Input Registration Name (--input-registration-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Input Registration Name: ${p_InputRegName}"
+	fi
+
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${p_MatlabRunMode} in
+			0)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use compiled MATLAB"
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				;;
+			1)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
+				;;
+			*)
+				log_Err "MATLAB run mode value must be 0 or 1"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
 
-#
-# Function Description:
-#  Document Tool Versions
-#
-show_tool_versions() 
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
+	cat "${HCPPIPEDIR}"/version.txt
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-#
+# ------------------------------------------------------------------------------
+
 main()
 {
-	# Get command line options
-	# See documentation for the get_options function for global variables set
-	get_options $@
+	log_Msg "Starting main functionality"
+	
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRINames="${3}"
+	local OutputfMRIName="${4}"
+	local HighPass="${5}"
+	local fMRIProcSTRING="${6}"
+	local MSMAllTemplates="${7}"
+	local OutputRegName="${8}"
+	local HighResMesh="${9}"
+	local LowResMesh="${10}"
+	local InputRegName="${11}"
+	
+	local MatlabRunMode
+	if [ -z "${12}" ]; then
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
+	else
+		MatlabRunMode="${12}"
+	fi
+	
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "fMRINames: ${fMRINames}"
+	log_Msg "OutputfMRIName: ${OutputfMRIName}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
+	log_Msg "MSMAllTemplates: ${MSMAllTemplates}"
+	log_Msg "OutputRegName: ${OutputRegName}"
+	log_Msg "HighResMesh: ${HighResMesh}"
+	log_Msg "LowResMesh: ${LowResMesh}"
+	log_Msg "InputRegName: ${InputRegName}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 
-	# show the versions of tools used
-	show_tool_versions
-
-	InPCARegName="${g_input_registration_name}"
-
+	# Naming Conventions and other variables
+	local InPCARegName="${InputRegName}"
+	log_Msg "InPCARegName: ${InPCARegName}"
+	
 	# Values of variables determining MIGP usage
 	# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
 	# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
-	# 
-	# Note: Spaces should not be used in the variable's value. They are used above to 
+	#
+	# Note: Spaces should not be used in the variable's value. They are used above to
 	#       help make the form and values easier to understand.
 	# Note: If UseMIGP value is NO, then we use the full timeseries
 	log_Msg "Running MSM on full timeseries"
-	migp_vars="NO@0@0@NO@YES"
-	log_Msg "migp_vars: ${migp_vars}"
+#	migp_vars="NO@0@0@YES@YES"
+#	log_Msg "migp_vars: ${migp_vars}"
 
-	output_proc_string="_nobias_vn"
+	local output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
 	log_Msg "output_proc_string: ${output_proc_string}"
 
-	${HCPPIPEDIR}/MSMAll/scripts/SingleSubjectConcat.sh \
-		--path=${g_path_to_study_folder} \
-		--subject=${g_subject} \
-		--fmri-names-list=${g_fmri_names_list} \
-		--output-fmri-name=${g_output_fmri_name} \
-		--fmri-proc-string=${g_fmri_proc_string} \
-		--migp-vars=${migp_vars} \
-		--output-proc-string=${output_proc_string}
+	local Demean="YES"
+	log_Msg "Demean: ${Demean}"
+	
+	local VarianceNormalization="YES"
+	log_Msg "VarianceNormalization: ${VarianceNormalization}"
+	
+	local ComputeVarianceNormalization="YES" #Don't rely on RestingStateStats to have been run
+	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
 
-	expected_concatenated_output_file=""
-	expected_concatenated_output_file+="${g_path_to_study_folder}"
-	expected_concatenated_output_file+="/${g_subject}/MNINonLinear/Results"
-	expected_concatenated_output_file+="/${g_output_fmri_name}"
-	expected_concatenated_output_file+="/${g_output_fmri_name}${g_fmri_proc_string}${output_proc_string}"
+	local RevertBiasField="NO" # Will recompute VN based on not reverting bias field
+	log_Msg "RevertBiasField: ${RevertBiasField}"
+
+	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
+		--path="${StudyFolder}" \
+		--subject="${Subject}" \
+		--fmri-names-list="${fMRINames}" \
+		--high-pass="${HighPass}" \
+		--output-fmri-name="${OutputfMRIName}" \
+		--fmri-proc-string="${fMRIProcSTRING}" \
+		--output-proc-string="${output_proc_string}" \
+		--demean="${Demean}" \
+		--variance-normalization="${VarianceNormalization}" \
+		--compute-variance-normalization="${ComputeVarianceNormalization}" \
+		--revert-bias-field="${RevertBiasField}" \
+		--matlab-run-mode="${MatlabRunMode}"
+
+	local expected_concatenated_output_file=""
+	expected_concatenated_output_file+="${StudyFolder}"
+	expected_concatenated_output_file+="/${Subject}/MNINonLinear/Results"
+	expected_concatenated_output_file+="/${OutputfMRIName}"
+	expected_concatenated_output_file+="/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}"
 	expected_concatenated_output_file+=".dtseries.nii"
 
-	log_Msg "SingleSubjectConcat.sh should have created: ${expected_concatenated_output_file}"
-	if [ -e "${expected_concatenated_output_file}" ]; then
-		log_Msg "Existence of expected file confirmed"
-	else
-		log_Msg "Expected file: ${expected_concatenated_output_file} DOES NOT EXIST - Aborting"
-		exit 1
-	fi
+	log_File_Must_Exist "${expected_concatenated_output_file}"
+	
+	# fMRIProcSTRING now should reflect the name expected by registrations done below
+	# (e.g. MSMAll)
+	fMRIProcSTRING+="${output_proc_string}"
+	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
-	# g_fmri_proc_string now should reflect the name expected by registrations done below
-	# (e.g. MSMAll.sh)
-	g_fmri_proc_string+="${output_proc_string}"
-	log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
-
-	RSNTemplates="${g_msm_all_templates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
+	local RSNTemplates="${MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
 	log_Msg "RSNTemplates: ${RSNTemplates}"
 
-	RSNWeights="${g_msm_all_templates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
+	local RSNWeights="${MSMAllTemplates}/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
 	log_Msg "RSNWeights: ${RSNWeights}"
 
-	MyelinMaps="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-	if [ -e "${MyelinMaps}" ]; then
-		log_Msg "MyelinMaps: ${MyelinMaps}"
-	else
-		log_Msg "ERROR: MyelinMaps file: ${MyelinMaps} DOES NOT EXIST - ABORTING"
-		exit 1
-	fi
+	local MyelinMaps="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+	log_File_Must_Exist "${MyelinMaps}"
+	
+	local TopographicRegressors="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
+	log_File_Must_Exist "${TopographicRegressors}"
 
-	TopographicRegressors="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
-	if [ -e "${TopographicRegressors}" ]; then
-		log_Msg "TopographicRegressors: ${TopographicRegressors}"
-	else
-		log_Msg "ERROR: TopographicRegressors file: ${TopographicRegressors} DOES NOT EXIST - ABORTING"
-		exit 1
-	fi
-
-	TopographicMaps="${g_msm_all_templates}/Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
-	if [ -e "${TopographicMaps}" ]; then
-		log_Msg "TopographicMaps: ${TopographicMaps}"
-	else
-		log_Msg "ERROR: TopographicMaps file: ${TopographicMaps} DOES NOT EXIST - ABORTING"
-		exit 1
-	fi
-
-	# Value of MSMAllRegsOrig and MSMAllRegs variables are @ symbol separated strings that supply the 
+	local TopographicMaps="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
+	log_File_Must_Exist "${TopographicMaps}"
+	
+	# Value of MSMAllRegsOrig and MSMAllRegs variables are @ symbol separated strings that supply the
 	# following values in order. MSMAllRegs is the one actually used. MSMAllRegsOrig is just an
 	# intermediate step in building MSMAllRegs. Once MSMAllRegsOrig is populated, the last field
 	# in it (RegConfVars) is replaced with the comma delimited value of the ${RegConfVars} variable.
 	#
 	# ModuleName             = name of script or code used to run registration (e.g. MSMAll.sh)
-	# RegName                = output registration name (e.g. MSMAll_InitalReg") 
+	# RegName                = output registration name (e.g. MSMAll_InitalReg")
 	# RSNTargetFile          = Resting State Network target file
 	# RSNCostWeights         = Resting State Network cost weights (NONE is a valid value)
 	# ArchitectureTargetFile = TBW
@@ -395,11 +417,11 @@ main()
 	#                            A=Myelin Architecture
 	#                            T=RSN Topography
 	#                          and number is the number of elements delimited by _
-	#                          So CA_CAT means one iteration using RSN Connectivity and Myelin 
+	#                          So CA_CAT means one iteration using RSN Connectivity and Myelin
 	#                          Architecture, followed by another iteration using RSN Connectivity,
 	#                          Myelin Architecture, and RSN Topography. (TBD - Is the comment correct?)
 	# Method                 = Possible values: DR, DRZ, DRN, WR, WRZ, WRN - (TBD - each meaning?)
-	# UseMIGP                = Possible values: YES or NO (MIGP = MELODIC's Incremental Group Principal 
+	# UseMIGP                = Possible values: YES or NO (MIGP = MELODIC's Incremental Group Principal
 	#                          Component Analysis)
 	# ICAdim                 = ICA (Independent Component Analysis) dimension
 	# RegressionParams       = ICA dimensionalilties delimited by _ to use in spatial weighting for WR
@@ -409,10 +431,10 @@ main()
 	# RegConfVars            = TBW
 	#                            delimited by ,
 	#                            use NONE to use config file as specified
-	MSMAllRegsOrig=""
+	local MSMAllRegsOrig=""
 	MSMAllRegsOrig+="MSMAll.sh"                       # ModuleName
-	MSMAllRegsOrig+="@${g_output_registration_name}"  # RegName
-	MSMAllRegsOrig+="@${RSNTemplates}"                # RSNTargetFile 
+	MSMAllRegsOrig+="@${OutputRegName}"               # RegName
+	MSMAllRegsOrig+="@${RSNTemplates}"                # RSNTargetFile
 	MSMAllRegsOrig+="@${RSNWeights}"                  # RSNCostWeights
 	MSMAllRegsOrig+="@${MyelinMaps}"                  # ArchitectureTargetFile
 	MSMAllRegsOrig+="@${TopographicRegressors}"       # TopographyROIFile
@@ -424,117 +446,163 @@ main()
 	MSMAllRegsOrig+="@7_8_9_10_11_12_13_14_15_16_17_18_19_20_21"  # RegressionParams
 	MSMAllRegsOrig+="@NO"                             # VarianceNormalization
 	MSMAllRegsOrig+="@YES"                            # ReRunIfExists
-	MSMAllRegsOrig+="@${MSMBin}/allparametersVariableMSMOptimiztionAllDRconf" # RegConf
+	MSMAllRegsOrig+="@${MSMCONFIGDIR}/MSMAllStrainFinalconf1to1_1to3" # RegConf
 	MSMAllRegsOrig+="@RegConfVars"                    # RegConfVars
 	log_Msg "MSMAllRegsOrig: ${MSMAllRegsOrig}"
-	log_Msg ""
 
-	RegConfVars=""
-	RegConfVars+="REGNUMBER=1"
-	RegConfVars+=",REGPOWER=3"
-	RegConfVars+=",SCALEPOWER=0"
-	RegConfVars+=",AREALDISTORTION=0"
-	RegConfVars+=",MAXTHETA=0"
-	RegConfVars+=",LAMBDAONE=0.01"
-	RegConfVars+=",LAMBDATWO=0.05"
-	RegConfVars+=",LAMBDATHREE=0.1"
+	#local RegConfVars=""
+	#RegConfVars+="REGNUMBER=1"
+	#RegConfVars+=",REGPOWER=3"
+	#RegConfVars+=",SCALEPOWER=0"
+	#RegConfVars+=",AREALDISTORTION=0"
+	#RegConfVars+=",MAXTHETA=0"
+	#RegConfVars+=",LAMBDAONE=0.01"
+	#RegConfVars+=",LAMBDATWO=0.05"
+	#RegConfVars+=",LAMBDATHREE=0.1"
+	local RegConfVars="NONE"
 	log_Msg "RegConfVars: ${RegConfVars}"
-	log_Msg ""
 
-	MSMAllRegs=`echo ${MSMAllRegsOrig} | sed "s/RegConfVars/${RegConfVars}/g"`
+	local MSMAllRegs=$(echo "${MSMAllRegsOrig}" | sed "s/RegConfVars/${RegConfVars}/g")
 	log_Msg "MSMAllRegs: ${MSMAllRegs}"
-	log_Msg ""
 
 	# Run whatever MSMAll registrations were specified (e.g. when running multiple dimensionalities)
 
 	if [ ! "${MSMAllRegs}" = "NONE" ] ; then
-		
-		MSMAllRegs=`echo ${MSMAllRegs} | sed 's/+/ /g'`		
+
+		MSMAllRegs=$(echo "${MSMAllRegs}" | sed 's/+/ /g')
 		log_Msg "About to enter loop through MSMAll registrations: MSMAllRegs: ${MSMAllRegs}"
 
+		local MSMAllReg
 		for MSMAllReg in ${MSMAllRegs} ; do
 			log_Msg "MSMAllReg: ${MSMAllReg}"
-			
-			Module=`echo ${MSMAllRegs} | cut -d "@" -f 1`
+
+			local Module=$(echo "${MSMAllRegs}" | cut -d "@" -f 1)
 			log_Msg "Module: ${Module}"
 
-			RegName=`echo ${MSMAllRegs} | cut -d "@" -f 2`
+			local RegName=$(echo "${MSMAllRegs}" | cut -d "@" -f 2)
 			log_Msg "RegName: ${RegName}"
 
-			RSNTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 3`
+			local RSNTargetFile=$(echo "${MSMAllRegs}" | cut -d "@" -f 3)
 			log_Msg "RSNTargetFile: ${RSNTargetFile}"
 
-			RSNCostWeights=`echo ${MSMAllRegs} | cut -d "@" -f 4`
+			local RSNCostWeights=$(echo "${MSMAllRegs}" | cut -d "@" -f 4)
 			log_Msg "RSNCostWeights: ${RSNCostWeights}"
 
-			MyelinTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 5`
+			local MyelinTargetFile=$(echo "${MSMAllRegs}" | cut -d "@" -f 5)
 			log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
 
-			TopographyROIFile=`echo ${MSMAllRegs} | cut -d "@" -f 6`
+			local TopographyROIFile=$(echo "${MSMAllRegs}" | cut -d "@" -f 6)
 			log_Msg "TopographyROIFile: ${TopographyROIFile}"
 
-			TopographyTargetFile=`echo ${MSMAllRegs} | cut -d "@" -f 7`
+			local TopographyTargetFile=$(echo "${MSMAllRegs}" | cut -d "@" -f 7)
 			log_Msg "TopographyTargetFile: ${TopographyTargetFile}"
 
-			Iterations=`echo ${MSMAllRegs} | cut -d "@" -f 8`
+			local Iterations=$(echo "${MSMAllRegs}" | cut -d "@" -f 8)
 			log_Msg "Iterations: ${Iterations}"
 
-			Method=`echo ${MSMAllRegs} | cut -d "@" -f 9`
+			local Method=$(echo "${MSMAllRegs}" | cut -d "@" -f 9)
 			log_Msg "Method: ${Method}"
 
-			UseMIGP=`echo ${MSMAllRegs} | cut -d "@" -f 10`
+			local UseMIGP=$(echo "${MSMAllRegs}" | cut -d "@" -f 10)
 			log_Msg "UseMIGP: ${UseMIGP}"
 
-			ICAdim=`echo ${MSMAllRegs} | cut -d "@" -f 11`
+			local ICAdim=$(echo "${MSMAllRegs}" | cut -d "@" -f 11)
 			log_Msg "ICAdim: ${ICAdim}"
 
-			RegressionParams=`echo ${MSMAllRegs} | cut -d "@" -f 12`
+			local RegressionParams=$(echo "${MSMAllRegs}" | cut -d "@" -f 12)
 			log_Msg "RegressionParams: ${RegressionParams}"
 
-			VN=`echo ${MSMAllRegs} | cut -d "@" -f 13`
+			local VN=$(echo "${MSMAllRegs}" | cut -d "@" -f 13)
 			log_Msg "VN: ${VN}"
 
-			ReRun=`echo ${MSMAllRegs} | cut -d "@" -f 14`
+			local ReRun=$(echo "${MSMAllRegs}" | cut -d "@" -f 14)
 			log_Msg "ReRun: ${ReRun}"
 
-			RegConf=`echo ${MSMAllRegs} | cut -d "@" -f 15`
+			local RegConf=$(echo "${MSMAllRegs}" | cut -d "@" -f 15)
 			log_Msg "RegConf: ${RegConf}"
 
-			RegConfVars=`echo ${MSMAllRegs} | cut -d "@" -f 16`
+			local RegConfVars=$(echo "${MSMAllRegs}" | cut -d "@" -f 16)
 			log_Msg "RegConfVars: ${RegConfVars}"
 
-			${HCPPIPEDIR}/MSMAll/scripts/${Module} \
-				--path=${g_path_to_study_folder} \
-				--subject=${g_subject} \
-				--high-res-mesh=${g_high_res_mesh} \
-				--low-res-mesh=${g_low_res_mesh} \
-				--fmri-names-list=${g_fmri_names_list} \
-				--output-fmri-name=${g_output_fmri_name} \
-				--fmri-proc-string=${g_fmri_proc_string} \
-				--input-pca-registration-name=${InPCARegName} \
-				--input-registration-name=${g_input_registration_name} \
-				--registration-name-stem=${RegName} \
-				--rsn-target-file=${RSNTargetFile} \
-				--rsn-cost-weights=${RSNCostWeights} \
-				--myelin-target-file=${MyelinTargetFile} \
-				--topography-roi-file=${TopographyROIFile} \
-				--topography-target-file=${TopographyTargetFile} \
-				--iterations=${Iterations} \
-				--method=${Method} \
-				--use-migp=${UseMIGP} \
-				--ica-dim=${ICAdim} \
-				--regression-params=${RegressionParams} \
-				--vn=${VN} \
-				--rerun=${ReRun} \
-				--reg-conf=${RegConf} \
-				--reg-conf-vars="${RegConfVars}"
-			
-			g_input_registration_name=${RegName}
+			#				--fmri-names-list="${fMRINames}" \
+			"${HCPPIPEDIR}"/MSMAll/scripts/"${Module}" \
+				--path="${StudyFolder}" \
+				--subject="${Subject}" \
+				--high-res-mesh="${HighResMesh}" \
+				--low-res-mesh="${LowResMesh}" \
+				--output-fmri-name="${OutputfMRIName}" \
+				--fmri-proc-string="${fMRIProcSTRING}" \
+				--input-pca-registration-name="${InPCARegName}" \
+				--input-registration-name="${InputRegName}" \
+				--registration-name-stem="${RegName}" \
+				--rsn-target-file="${RSNTargetFile}" \
+				--rsn-cost-weights="${RSNCostWeights}" \
+				--myelin-target-file="${MyelinTargetFile}" \
+				--topography-roi-file="${TopographyROIFile}" \
+				--topography-target-file="${TopographyTargetFile}" \
+				--iterations="${Iterations}" \
+				--method="${Method}" \
+				--use-migp="${UseMIGP}" \
+				--ica-dim="${ICAdim}" \
+				--regression-params="${RegressionParams}" \
+				--vn="${VN}" \
+				--rerun="${ReRun}" \
+				--reg-conf="${RegConf}" \
+				--reg-conf-vars="${RegConfVars}" \
+				--matlab-run-mode="${MatlabRunMode}"
+
+			InputRegName=${RegName}
 		done
 	fi
+	
+	log_Msg "Completing main functionality"
 }
 
-# 
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify that other needed environment variables are set
+if [ -z "${MSMCONFIGDIR}" ]; then
+	log_Err_Abort "MSMCONFIGDIR environment variable must be set"
+fi
+log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Establish default MATLAB run mode
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}               ${12}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+
+fi
+

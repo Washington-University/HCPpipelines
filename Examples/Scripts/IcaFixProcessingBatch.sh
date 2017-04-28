@@ -22,7 +22,7 @@ DEFAULT_FIX_DIR="${HOME}/tools/fix1.06"
 #
 get_options() {
 	local scriptName=$(basename ${0})
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	StudyFolder="${DEFAULT_STUDY_FOLDER}"
@@ -42,19 +42,19 @@ get_options() {
 
 		case ${argument} in
 			--StudyFolder=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--Subjlist=*)
-				Subjlist=${argument/*=/""}
+			--Subject=*)
+				Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--EnvironmentScript=*)
-				EnvironmentScript=${argument/*=/""}
+				EnvironmentScript=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--FixDir=*)
-				FixDir=${argument/*=/""}
+				FixDir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--runlocal | --RunLocal)
@@ -117,10 +117,14 @@ get_options() {
 #
 main() {
 	# get command line options
-	get_options $@
+	get_options "$@"
 
 	# set up pipeline environment variables and software
-	. ${EnvironmentScript}
+	source ${EnvironmentScript}
+
+	export FSL_FIXDIR=${FixDir}
+	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
+	TrainingData=HCP_hp2000.RData
 
 	# validate environment variables
 	# validate_environment_vars $@
@@ -157,14 +161,14 @@ main() {
 				
 				if [ "${RunLocal}" == "TRUE" ]
 				then
-					echo "About to run ${FixDir}/hcp_fix ${InputFile} ${bandpass}"
+					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
 					queuing_command=""
 				else
-					echo "About to use fsl_sub to queue or run ${FixDir}/hcp_fix ${InputFile} ${bandpass}"
+					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
 					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 				fi
 
-				${queuing_command} ${FixDir}/hcp_fix ${InputFile} ${bandpass}
+				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${TrainingData}
 			done
 
 		done

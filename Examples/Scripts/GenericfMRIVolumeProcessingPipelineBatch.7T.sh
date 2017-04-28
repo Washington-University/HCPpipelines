@@ -19,7 +19,7 @@ DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCP
 #
 get_batch_options()
 {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# Output global variables
 	unset StudyFolder
@@ -52,11 +52,11 @@ get_batch_options()
 		
 		case ${argument} in
 			--StudyFolder=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--Subjlist=*)
-				Subjlist=${argument/*=/""}
+			--Subject=*)
+				Subjlist=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--runlocal | --RunLocal)
@@ -64,7 +64,7 @@ get_batch_options()
 				index=$(( index + 1 ))
 				;;
 			--EnvironmentScript=*)
-				EnvironmentScript=${argument/*=/""}
+				EnvironmentScript=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -78,7 +78,7 @@ get_batch_options()
 }
 
 # Get command line batch options
-get_batch_options $@
+get_batch_options "$@"
 
 # Requirements for this script
 #
@@ -95,7 +95,7 @@ get_batch_options $@
 #  * PATH (for gradient_unwarp.py)
 
 # Set up pipeline environment variables and software
-. ${EnvironmentScript}
+source ${EnvironmentScript}
 
 # Log the originating call
 echo "$@"
@@ -174,7 +174,14 @@ do
 		
 		# Echo Spacing or Dwelltime of fMRI image
 		DwellTime="0.00032"
-		
+
+		# To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match 
+		# the phase encoding direction of the EPI scan, and you must have used the correct images in 
+		# SpinEchoPhaseEncodeNegative and Positive variables.  If the distortion is twice as bad as in 
+		# the original images, flip either the order of the spin echo images or reverse the phase encoding 
+		# list flag.  The pipeline expects you to have used the same phase encoding axis in the fMRI data 
+		# as in the spin echo field map data (x/-x or y/-y).
+
 		# Using Spin Echo Field Maps for Readout Distortion Correction
 		DistortionCorrection="TOPUP"
 		

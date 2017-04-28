@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2014 The Human Connectome Project
+# Copyright (C) 2012-2016 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -26,7 +26,7 @@
 # 
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENCE.md) file
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
 # 
 # ## Description 
 #
@@ -47,12 +47,14 @@
 #
 # ## Prerequisite Environment Variables
 # 
-# See output of usage function: e.g. <code>$ ./DiffPreprocPipeline.sh --help</code>
+# See output of usage function: 
+# e.g. <code>$ ./DiffPreprocPipeline.sh --help</code>
 # 
 # ## Output Directories
 # 
-# *NB: NO assumption is made about the input paths with respect to the output directories - they can be totally different.
-# All inputs are taken directly from the input variables without additions or modifications.*
+# *NB: NO assumption is made about the input paths with respect to the output 
+#      directories - they can be totally different. All inputs are taken directly
+#      from the input variables without additions or modifications.*
 # 
 # Output path specifiers
 # 
@@ -75,7 +77,8 @@
 # * <code>$DiffFolder/reg</code>
 # * <code>$T1wDiffFolder</code>
 # 
-# Also assumes that T1 preprocessing has been carried out with results in <code>${StudyFolder}/${Subject}/T1w</code>
+# Also assumes that T1 preprocessing has been carried out with results in 
+# <code>${StudyFolder}/${Subject}/T1w</code>
 # 
 # <!-- References -->
 # 
@@ -88,7 +91,7 @@
 # 
 #~ND~END~
 
-# Setup this script such that if any command exits with a non-zero value, the 
+# Set up this script such that if any command exits with a non-zero value, the 
 # script itself exits and does not attempt any further processing.
 set -e
 
@@ -96,8 +99,10 @@ set -e
 source ${HCPPIPEDIR}/global/scripts/log.shlib		# log_ functions
 source ${HCPPIPEDIR}/global/scripts/version.shlib	# version_ functions
 
-# Global default values
+# Global values
 DEFAULT_B0_MAX_BVAL=50
+DEFAULT_DEGREES_OF_FREEDOM=6
+SCRIPT_NAME=$(basename ${0})
 
 #
 # Function Descripton
@@ -105,92 +110,84 @@ DEFAULT_B0_MAX_BVAL=50
 #
 usage()
 {
-	local scriptName=$(basename ${0})
-	echo ""
-	echo "  Perform the steps of the HCP Diffusion Preprocessing Pipeline"
-	echo ""
-	echo "  Usage: ${scriptName} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "    [--help] : show usage information and exit with non-zero return code"
-	echo ""
-	echo "    [--version] : show version information and exit with 0 as return code"
-	echo ""
-	echo "    --path=<study-path>"
-	echo "    : path to subject's data folder"
-	echo ""
-	echo "    --subject=<subject-id>"
-	echo "    : Subject ID"
-	echo ""
-	echo "    --PEdir=<phase-encoding-dir>"
-	echo "    : phase encoding direction: 1=LR/RL, 2=AP/PA"
-	echo ""
-	echo "    --posData=<positive-phase-encoding-data>"
-	echo "    : @ symbol separated list of data with positive phase encoding direction"
-	echo "      e.g. dataRL1@dataRL2@...dataRLN"
-	echo ""
-	echo "    --negData=<negative-phase-encoding-data>"
-	echo "    : @ symbol separated list of data with negative phase encoding direction"
-	echo "      e.g. dataLR1@dataLR2@...dataLRN"
-	echo ""
-	echo "    --echospacing=<echo-spacing>"
-	echo "    : Echo spacing in msecs"
-	echo ""
-	echo "    --gdcoeffs=<path-to-gradients-coefficients-file>"
-	echo "    : path to file containing coefficients that describe spatial variations"
-	echo "      of the scanner gradients. Use --gdcoeffs=NONE if not available"
-	echo ""
-	echo "    [--dwiname=<DWIName>]"
-	echo "    : name to give DWI output directories"
-	echo "      defaults to Diffusion"
-	echo ""
-	echo "    [--dof=<Degrees of Freedom>]"
-	echo "    : Degrees of Freedom for post eddy registration to structural images"
-	echo "      defaults to 6"
-	echo ""
-	echo "    [--b0maxbval=<b0-max-bval>]"
-	echo "    : Volumes with a bvalue smaller than this value will be considered as b0s"
-	echo "      If not specified, defaults to ${DEFAULT_B0_MAX_BVAL}"
-	echo ""
-	echo "    [--printcom=<print-command>]"
-	echo "    : Use the specified <print-command> to echo or otherwise output the commands"
-	echo "      that would be executed instead of actually running them"
-	echo "      --printcom=echo is intended for testing purposes"
-	echo ""
-	echo "  Return Code:"
-	echo ""
-	echo "    0 if help was not requested, all parameters were properly formed, and processing succeeded"
-	echo "    Non-zero otherwise - malformed parameters, help requested, or processing failure was detected"
-	echo ""
-	echo "  Required Environment Variables:"
-	echo ""
-	echo "    HCPPIPEDIR"
-	echo ""
-	echo "      The home directory for the version of the HCP Pipeline Tools product"
-	echo "      being used."
-	echo ""
-	echo "      Example value: /nrgpackages/tools.release/hcp-pipeline-tools-3.0"
-	echo ""
-	echo "    HCPPIPEDIR_dMRI"
-	echo ""
-	echo "      Location of Diffusion MRI sub-scripts that are used to carry out some of the"
-	echo "      steps of the Diffusion Preprocessing Pipeline"
-	echo ""
-	echo "      Example value: ${HCPPIPEDIR}/DiffusionPreprocessing/scripts"
-	echo ""
-	echo "    FSLDIR"
-	echo ""
-	echo "      The home directory for FSL"
-	echo ""
-	echo "    FREESURFER_HOME"
-	echo ""
-	echo "      Home directory for FreeSurfer"
-	echo ""
-	echo "    PATH"
-	echo ""
-	echo "      Must be set to find HCP Customized version of gradient_unwarp.py"
-	echo ""
+	cat << EOF
+
+Perform the steps of the HCP Diffusion Preprocessing Pipeline
+
+Usage: ${SCRIPT_NAME} PARAMETER...
+
+PARAMETERs are: [ ] = optional; < > = user supplied value
+  [--help]                show usage information and exit with a non-zero return
+                          code
+  [--version]             show version information and exit with 0 as return code
+  --path=<study-path>     path to subject's data folder
+  --subject=<subject-id>  subject ID
+  --PEdir=<phase-encoding-dir>
+                          phase encoding direction specifier: 1=LR/RL, 2=AP/PA
+  --posData=<positive-phase-encoding-data>
+                          @ symbol separated list of data with positive phase 
+                          encoding direction (e.g. dataRL1@dataRL2@...dataRLn)
+  --negData=<negative-phase-encoding-data>
+                          @ symbol separated list of data with negative phase
+                          encoding direction (e.g. dataLR1@dataLR2@...dataLRn)
+  --echospacing=<echo-spacing>
+                          Echo spacing in msecs
+  --gdcoeffs=<path-to-gradients-coefficients-file>
+                          path to file containing coefficients that describe
+                          spatial variations of the scanner gradients.
+                          Use --gdcoeffs=NONE if not available
+  [--dwiname=<DWIName>]   name to give DWI output directories.
+                          Defaults to Diffusion
+  [--dof=<Degrees of Freedom>]
+                          Degrees of Freedom for post eddy registration to 
+                          structural images. Defaults to ${DEFAULT_DEGREES_OF_FREEDOM}
+  [--b0maxbval=<b0-max-bval>]
+                          Volumes with a bvalue smaller than this value will be 
+                          considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to 
+                          be used for testing purposes
+  [--extra-eddy-args=<value>]
+                          Generic string of arguments to be passed to the 
+                          DiffPreprocPipeline_Eddy.sh script and and subsequently
+                          to the run_eddy.sh script and finally to the command 
+                          that actually invokes the eddy binary
+  [--combine-data-flag=<value>]
+                          Specified value is passed as the CombineDataFlag value
+                          for the eddy_postproc.sh script.
+                          If JAC resampling has been used in eddy, this value 
+                          determines what to do with the output file.
+                          2 - include in the output all volumes uncombined (i.e.
+                              output file of eddy)
+                          1 - include in the output and combine only volumes 
+                              where both LR/RL (or AP/PA) pairs have been 
+                              acquired
+                          0 - As 1, but also include uncombined single volumes
+                          Defaults to 1
+
+Return Status Value:
+
+  0                       if help was not requested, all parameters were properly
+                          formed, and processing succeeded
+  Non-zero                Otherwise - malformed parameters, help requested, or a 
+                          processing failure was detected
+
+Required Environment Variables:
+
+  HCPPIPEDIR              The home directory for the version of the HCP Pipeline 
+                          Scripts being used.
+  HCPPIPEDIR_dMRI         Location of the Diffusion MRI Preprocessing sub-scripts
+                          that are used to carry out some of the steps of the
+                          Diffusion Preprocessing Pipeline. 
+                          (e.g. \${HCPPIPEDIR}/DiffusionPreprocessing/scripts)
+  FSLDIR                  The home directory for FSL
+  FREESURFER_HOME         The home directory for FreeSurfer
+  PATH                    Standard PATH environment variable must be set to find
+                          HCP-customized version of gradient_unwarp.py
+
+EOF
 }
 
 #
@@ -198,24 +195,34 @@ usage()
 #  Get the command line options for this script
 #
 # Global Output Variables
-#  ${StudyFolder}		- Path to subject's data folder
-#  ${Subject}			- Subject ID
-#  ${PEdir}				- Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages}	- @ symbol separated list of data with positive phase encoding direction
-#  ${NegInputImages}	- @ symbol separated lsit of data with negative phase encoding direction
-#  ${echospacing}		- echo spacing in msecs
-#  ${GdCoeffs}			- Path to file containing coefficients that describe spatial variations
-#						  of the scanner gradients. Use NONE if not available.
-#  ${DWIName}			- Name to give DWI output directories
-#  ${DegreesOfFreedom}	- Degrees of Freedom for post eddy registration to structural images
-#  ${b0maxbval}			- Volumes with a bvalue smaller than this value will be considered as b0s
-#  ${runcmd}			- Set to a user specifed command to use if user has requested that commands
-#						  be echo'd (or printed) instead of actually executed.  Otherwise, set to
+#  ${StudyFolder}         Path to subject's data folder
+#  ${Subject}             Subject ID
+#  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
+#  ${PosInputImages}	  @ symbol separated list of data with positive phase 
+#                         encoding direction
+#  ${NegInputImages}      @ symbol separated lsit of data with negative phase
+#                         encoding direction
+#  ${echospacing}         Echo spacing in msecs
+#  ${GdCoeffs}			  Path to file containing coefficients that describe 
+#                         spatial variations of the scanner gradients. NONE 
+#                         if not available.
+#  ${DWIName}             Name to give DWI output directories
+#  ${DegreesOfFreedom}    Degrees of Freedom for post eddy registration to 
+#                         structural images
+#  ${b0maxbval}           Volumes with a bvalue smaller than this value will 
+#                         be considered as b0s
+#  ${runcmd}              Set to a user specifed command to use if user has 
+#                         requested that commands be echo'd (or printed)
+#                         instead of actually executed. Otherwise, set to
 #						  empty string.
+#  ${extra_eddy_args}     Generic string of arguments to be passed to the 
+#                         eddy binary
+#  ${CombineDataFlag}     CombineDataFlag value to pass to 
+#                         DiffPreprocPipeline_PostEddy.sh script and 
+#                         subsequently to eddy_postproc.sh script
 #
 get_options()
 {
-	local scriptName=$(basename ${0})
 	local arguments=($@)
 	
 	# initialize global output variables
@@ -227,17 +234,18 @@ get_options()
 	unset echospacing
 	unset GdCoeffs
 	DWIName="Diffusion"
-	DegreesOfFreedom=6
+	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
-	
+	extra_eddy_args=""
+	CombineDataFlag=1
+
 	# parse arguments
 	local index=0
 	local numArgs=${#arguments[@]}
 	local argument
 	
-	while [ ${index} -lt ${numArgs} ]
-	do
+	while [ ${index} -lt ${numArgs} ] ; do
 		argument=${arguments[index]}
 		
 		case ${argument} in
@@ -250,47 +258,56 @@ get_options()
 				exit 0
 				;;
 			--path=*)
-				StudyFolder=${argument/*=/""}
+				StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				Subject=${argument/*=/""}
+				Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--PEdir=*)
-				PEdir=${argument/*=/""}
+				PEdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--posData=*)
-				PosInputImages=${argument/*=/""}
+				PosInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--negData=*)
-				NegInputImages=${argument/*=/""}
+				NegInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--echospacing=*)
-				echospacing=${argument/*=/""}
+				echospacing=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--gdcoeffs=*)
-				GdCoeffs=${argument/*=/""}
+				GdCoeffs=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dwiname=*)
-				DWIName=${argument/*=/""}
+				DWIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dof=*)
-				DegreesOfFreedom=${argument/*=/""}
+				DegreesOfFreedom=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--b0maxbval=*)
-				b0maxbval=${argument/*=/""}
+				b0maxbval=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--printcom=*)
-				runcmd=${argument/*=/""}
+				runcmd=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--extra-eddy-arg=*)
+				extra_eddy_arg=${argument#*=}
+				extra_eddy_args+=" ${extra_eddy_arg} "
+				index=$(( index + 1 ))
+				;;
+			--combine-data-flag=*)
+				CombineDataFlag=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -301,72 +318,58 @@ get_options()
 		esac
 	done
 	
+	local error_msgs=""
+
 	# check required parameters
-	if [ -z ${StudyFolder} ]
-	then
+	if [ -z ${StudyFolder} ] ; then
+		error_msgs+="\nERROR: <study-path> not specified"
+	fi
+	
+	if [ -z ${Subject} ] ; then
+		error_msgs+="\nERROR: <subject-id> not specified"
+	fi
+	
+	if [ -z ${PEdir} ] ; then
+		error_msgs+="\nERROR: <phase-encoding-dir> not specified"
+	fi
+	
+	if [ -z ${PosInputImages} ] ; then
+		error_msgs+="\nERROR: <positive-phase-encoded-data> not specified"
+	fi
+	
+	if [ -z ${NegInputImages} ] ; then
+		error_msgs+="\nERROR: <negative-phase-encoded-data> not specified"
+	fi
+	
+	if [ -z ${echospacing} ] ; then
+		error_msgs+="\nERROR: <echo-spacing> not specified"
+	fi
+	
+	if [ -z ${GdCoeffs} ] ; then
+		error_msgs+="\nERROR: <path-to-gradients-coefficients-file> not specified"
+	fi
+	
+	if [ -z ${b0maxbval} ] ; then
+		error_msgs+="\nERROR: <b0-max-bval> not specified"
+	fi
+	
+	if [ -z ${DWIName} ] ; then
+		error_msgs+="\nERROR: <DWIName> not specified"
+	fi
+
+	if [ -z ${CombineDataFlag} ] ; then
+		error_msgs+="\nERROR: CombineDataFlag not specified"
+	fi
+
+	if [ ! -z "${error_msgs}" ] ; then
 		usage
-		echo "ERROR: <study-path> not specified"
+		echo -e ${error_msgs}
+		echo ""
 		exit 1
 	fi
 	
-	if [ -z ${Subject} ]
-	then
-		usage
-		echo "ERROR: <subject-id> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${PEdir} ]
-	then
-		usage
-		echo "ERROR: <phase-encoding-dir> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${PosInputImages} ]
-	then
-		usage
-		echo "ERROR: <positive-phase-encoded-data> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${NegInputImages} ]
-	then
-		usage
-		echo "ERROR: <negative-phase-encoded-data> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${echospacing} ]
-	then
-		usage
-		echo "ERROR: <echo-spacing> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${GdCoeffs} ]
-	then
-		usage
-		echo "ERROR: <path-to-gradients-coefficients-file> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${b0maxbval} ]
-	then
-		usage
-		echo "ERROR: <b0-max-bval> not specified"
-		exit 1
-	fi
-	
-	if [ -z ${DWIName} ]
-	then
-		usage
-		echo "ERROR: <DWIName> not specified"
-		exit 1
-	fi
-	
-	# report options
-	echo "-- ${scriptName}: Specified Command-Line Options - Start --"
+	# report parameters
+	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
 	echo "   Subject: ${Subject}"
 	echo "   PEdir: ${PEdir}"
@@ -378,7 +381,9 @@ get_options()
 	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
-	echo "-- ${scriptName}: Specified Command-Line Options - End --"
+	echo "   CombineDataFlag: ${CombineDataFlag}"
+	echo "   extra_eddy_args: ${extra_eddy_args}"
+	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - End --"
 }
 
 # 
@@ -387,48 +392,41 @@ get_options()
 #
 validate_environment_vars()
 {
-	local scriptName=$(basename ${0}) 
+	local error_msgs=""
+
 	# validate
-	if [ -z ${HCPPIPEDIR_dMRI} ]
-	then
-		usage
-		echo "ERROR: HCPPIPEDIR_dMRI environment variable not set"
-		exit 1
+	if [ -z ${HCPPIPEDIR_dMRI} ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR_dMRI environment variable not set"
 	fi
 	
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]
-	then
-		usage
-		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
-		exit 1
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
 	fi
 	
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]
-	then
-		usage
-		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
-		exit 1
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
 	fi
 	
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]
-	then
-		usage
-		echo "ERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
-		exit 1
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 	
-	if [ -z ${FSLDIR} ]
-	then
-		usage
-		echo "ERROR: FSLDIR environment variable not set"
-		exit 1
+	if [ -z ${FSLDIR} ] ; then
+		error_msgs+="\nERROR: FSLDIR environment variable not set"
 	fi
 	
+	if [ ! -z "${error_msgs}" ] ; then
+		usage
+		echo -e ${error_msgs}
+		echo ""
+		exit 1
+	fi
+
 	# report
-	echo "-- ${scriptName}: Environment Variables Used - Start --"
+	echo "-- ${SCRIPT_NAME}: Environment Variables Used - Start --"
 	echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
 	echo "   FSLDIR: ${FSLDIR}"
-	echo "-- ${scriptName}: Environment Variables Used - End --"
+	echo "-- ${SCRIPT_NAME}: Environment Variables Used - End --"
 }
 
 #
@@ -438,44 +436,60 @@ validate_environment_vars()
 main()
 {
 	# Get Command Line Options
-	# 
-	# Global Variables Set
-	#  See documentation for get_options function
 	get_options $@
 	
 	# Validate environment variables
 	validate_environment_vars $@
 	
 	# Establish tool name for logging
-	log_SetToolName "DiffPreprocPipeline.sh"
+	log_SetToolName "${SCRIPT_NAME}"
 	
 	log_Msg "Invoking Pre-Eddy Steps"
-	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh \
-		--path=${StudyFolder} \
-		--subject=${Subject} \
-		--dwiname=${DWIName} \
-		--PEdir=${PEdir} \
-		--posData=${PosInputImages} \
-		--negData=${NegInputImages} \
-		--echospacing=${echospacing} \
-		--b0maxbval=${b0maxbval} \
-		--printcom="${runcmd}"
-	
+	local pre_eddy_cmd=""
+	pre_eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh "
+	pre_eddy_cmd+=" --path=${StudyFolder} "
+	pre_eddy_cmd+=" --subject=${Subject} "
+	pre_eddy_cmd+=" --dwiname=${DWIName} "
+	pre_eddy_cmd+=" --PEdir=${PEdir} "
+	pre_eddy_cmd+=" --posData=${PosInputImages} "
+	pre_eddy_cmd+=" --negData=${NegInputImages} "
+	pre_eddy_cmd+=" --echospacing=${echospacing} "
+	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
+	pre_eddy_cmd+=" --printcom=${runcmd} "
+
+	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
+	${pre_eddy_cmd}
+
 	log_Msg "Invoking Eddy Step"
-	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh \
-		--path=${StudyFolder} \
-		--subject=${Subject} \
-		--dwiname=${DWIName} \
-		--printcom="${runcmd}"
-	
+	local eddy_cmd=""
+	eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh "
+	eddy_cmd+=" --path=${StudyFolder} "
+	eddy_cmd+=" --subject=${Subject} "
+	eddy_cmd+=" --dwiname=${DWIName} "
+	eddy_cmd+=" --printcom=${runcmd} "
+   
+	if [ ! -z "${extra_eddy_args}" ] ; then
+		for extra_eddy_arg in ${extra_eddy_args} ; do
+			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
+		done
+	fi
+
+	log_Msg "eddy_cmd: ${eddy_cmd}"
+	${eddy_cmd}
+
 	log_Msg "Invoking Post-Eddy Steps"
-	${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh \
-		--path=${StudyFolder} \
-		--subject=${Subject} \
-		--dwiname=${DWIName} \
-		--gdcoeffs=${GdCoeffs} \
-		--dof=${DegreesOfFreedom} \
-		--printcom="${runcmd}"
+	local post_eddy_cmd=""
+	post_eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh "
+	post_eddy_cmd+=" --path=${StudyFolder} "
+	post_eddy_cmd+=" --subject=${Subject} "
+	post_eddy_cmd+=" --dwiname=${DWIName} "
+	post_eddy_cmd+=" --gdcoeffs=${GdCoeffs} "
+	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
+	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
+	post_eddy_cmd+=" --printcom=${runcmd} "
+
+	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
+	${post_eddy_cmd}
 	
 	log_Msg "Completed"
 	exit 0

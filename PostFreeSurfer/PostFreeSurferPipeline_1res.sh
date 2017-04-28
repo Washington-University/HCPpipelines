@@ -59,11 +59,13 @@ FreeSurferLabels=`opts_GetOpt1 "--freesurferlabels" $@`
 ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
 CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
+InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
 
 log_Msg "RegName: ${RegName}"
 # default parameters
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
 RegName=`opts_DefaultOpt $RegName FS`
+InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
@@ -121,7 +123,7 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
 log_Msg "RegName: ${RegName}"
 
-"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$T1wRestoreImage" "$T2wRestoreImage" "$SurfaceAtlasDIR" "$HighResMesh" "$LowResMeshes" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$AtlasSpaceT2wImage" "$T1wImageBrainMask" "$FreeSurferLabels" "$GrayordinatesSpaceDIR" "$GrayordinatesResolutions" "$SubcorticalGrayLabels" "$RegName"
+"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$T1wRestoreImage" "$T2wRestoreImage" "$SurfaceAtlasDIR" "$HighResMesh" "$LowResMeshes" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$AtlasSpaceT2wImage" "$T1wImageBrainMask" "$FreeSurferLabels" "$GrayordinatesSpaceDIR" "$GrayordinatesResolutions" "$SubcorticalGrayLabels" "$RegName" "$InflateExtraScale"
 
 #Myelin Mapping
 log_Msg "Myelin Mapping"
