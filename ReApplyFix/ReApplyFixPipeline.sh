@@ -45,6 +45,16 @@ Usage: ${script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
+  Note: The PARAMETERS can be specified positionally (i.e. without using the --param=value
+        form) by simply specifying all values on the command line in the order they are
+        listed below.
+
+        E.g. ${script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
+
+        When using this technique, if the optional low res mesh value is not specified, then 
+        the default low res mesh value is used (${G_DEFAULT_LOW_RES_MESH}) and the default
+        MATLAB run mode (${G_DEFAULT_MATLAB_RUN_MODE}) are used.
+
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
@@ -170,10 +180,13 @@ get_options()
 		log_Msg "Reg Name: ${p_RegName}"
 	fi
 
-	if [ ! -z "${p_LowResMesh}" ]; then
+	if [ -z "${p_LowResMesh}" ]; then
+		log_Err "Low Res Mesh (--low-res-mesh=) required"
+		error_count=$(( error_count + 1 ))
+	else
 		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
-	
+
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
@@ -250,15 +263,21 @@ main()
 	local fMRIName="${3}"
 	local HighPass="${4}"
 	local RegName="${5}"
-	local LowResMesh="${6}"
 
+	local LowResMesh
+	if [ -z "${6}" ]; then
+		LowResMesh=${G_DEFAULT_LOW_RES_MESH}
+	else
+		LowResMesh="${6}"
+	fi
+	
 	local MatlabRunMode
 	if [ -z "${7}" ]; then
 		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
 		MatlabRunMode="${7}"
 	fi
-
+	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
