@@ -45,22 +45,43 @@ Usage: ${script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
+  Note: The PARAMETERS can be specified positionally (i.e. without using the --param=value
+        form) by simply specifying all values on the command line in the order they are
+        listed below.
+
+        E.g. ${script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
+
+        However, to use this technique, all optional parameters (e.g. myelin target file
+        and input registration name) except the final one (the MATLAB run mode) must be 
+        specified as NONE.
+
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --high-res-mesh=  TBW
-   --low-res-meses=  TBW
-   --registration-name=  TBW
-   --dedrift-reg-files=  TBW
-   --concat-reg-name=  TBW
-   --maps=  TBW
-   --myelin-maps=  TBW
-   --rfmri-names=  TBW
-   --tfmri-names=  TBW
-   --smoothing-fwhm=  TBW
-   --highpass=  TBW
-   --myelin-target-file=  TBW
-   --input-reg-name=  TBW
+   --high-res-mesh=<meshnum> String corresponding to high resolution mesh, e.g. 164
+   --low-res-meshes=<meshnum@meshnum> String corresponding to low resolution meshes delimited by @, 
+       (e.g. 32@59)
+   --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name 
+       (e.g. ${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii)
+   --dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii> 
+       Path to the spheres output by the MSMRemoveGroupDrift pipeline or NONE
+   --concat-reg-name=<regname> String corresponding to the output name of the concatenated registration 
+       (i.e. the dedrifted registration)
+   --maps=<non@myelin@maps> @ delimited map name strings corresponding to maps that are not myelin maps 
+       (e.g. sulc curvature corrThickness thickness)
+   --myelin-maps=<myelin@maps> @ delimited map name strings corresponding to myelin maps 
+       (e.g. MyelinMap SmoothedMyelinMap) No _BC, this will be reapplied
+   --rfmri-names=<ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will 
+       have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). If none are to be used,
+       specify "NONE".
+   --tfmri-names=<not@ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will
+       not have ICA+FIX reapplied to them (likely not to be used in the future as ICA+FIX will be 
+       recommended for all fMRI data) If none are to be used, specify "NONE".
+   --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
+   --highpass=<number> Highpass filter sigma that matches what was used in the ICA+FIX pipeline
+  [--myelin-target-file=<path/to/myelin/target/file>] A myelin target file is required to run this 
+       pipeline when using a different mesh resolution than the original MSMAll registration.
+  [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -84,16 +105,16 @@ get_options()
 	unset p_RegName
 	unset p_DeDriftRegFiles			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
 	unset p_ConcatRegName
-	unset p_Maps
-	unset p_MyelinMaps
+	unset p_Maps					# @ delimited
+	unset p_MyelinMaps				# @ delimited
 	unset p_rfMRINames				# @ delimited
 	unset p_tfMRINames				# @ delimited
 	unset p_SmoothingFWHM
 	unset p_HighPass
 
 	# set default values
-	p_MyelinTargetFile=""
-	p_InRegName=""					# e.g. "_1.6mm"
+	p_MyelinTargetFile="NONE"
+	p_InRegName="NONE"				# e.g. "_1.6mm"
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
@@ -278,9 +299,19 @@ get_options()
 		log_Msg "highpass value: ${p_HighPass}"
 	fi
 
-	log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
-
-	log_Msg "Input Registration Name: ${p_InRegName}"
+	if [ -z "{p_MyelineTargetFile}" ]; then
+		log_Err "Myelin Target File (--myelin-target-file=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
+	fi
+	
+	if [ -z "${p_InRegName}" ]; then
+		log_Err "Input Registration Name (--input-reg-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Input Registration Name: ${p_InRegName}"
+	fi
 	
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
@@ -347,9 +378,17 @@ main()
 	local tfMRINames="${11}"
 	local SmoothingFWHM="${12}"
 	local HighPass="${13}"
+	
 	local MyelinTargetFile="${14}"
-	local InRegName="${15}"
+	if [ "${MyelinTargetFile}" = "NONE" ]; then
+		MyelinTargetFile=""
+	fi
 
+	local InRegName="${15}"
+	if [ "${InRegName}" = "NONE" ]; then
+		InRegName=""
+	fi
+	
 	local MatlabRunMode
 	if [ -z "${16}" ]; then
 		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
@@ -380,28 +419,28 @@ main()
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
+	log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
 
 	DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
+	log_Msg "After delimiter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, Maps: ${Maps}"
+	log_Msg "After delimiter substitution, Maps: ${Maps}"
 
 	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, MyelinMaps: ${MyelinMaps}"
+	log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
 	rfMRINames=`echo "$rfMRINames" | sed s/"@"/" "/g`
 	if [ "${rfMRINames}" = "NONE" ] ; then
 		rfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, rfMRINames: ${rfMRINames}"
+	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames}"
 
 	tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
 	if [ "${tfMRINames}" = "NONE" ] ; then
 		tfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, tfMRINames: ${tfMRINames}"
+	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames}"
 
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
 	log_Msg "CorrectionSigma: ${CorrectionSigma}"

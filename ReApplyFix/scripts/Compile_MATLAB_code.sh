@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#~ND~FORMAT~MARKDOWN~
-#~ND~START~
 #
 # # Compile_MATLAB_code.sh
 #
@@ -30,7 +28,6 @@
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
-#~ND~END~
 
 # ------------------------------------------------------------------------------
 #  Compile the fix_3_clean MATLAB code
