@@ -48,19 +48,19 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --high-res-mesh=  TBW
-   --low-res-meses=  TBW
-   --registration-name=  TBW
-   --dedrift-reg-files=  TBW
-   --concat-reg-name=  TBW
-   --maps=  TBW
-   --myelin-maps=  TBW
-   --rfmri-names=  TBW
-   --tfmri-names=  TBW
-   --smoothing-fwhm=  TBW
-   --highpass=  TBW
-   --myelin-target-file=  TBW
-   --input-reg-name=  TBW
+   --high-res-mesh=<meshnum> String corresponding to high resolution mesh, e.g. 164
+   --low-res-meshes=<meshnum@meshnum> String corresponding to low resolution meshes delimited by @, e.g. 32@59
+   --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name (e.g. ${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii)
+   --dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii> Path to the spheres output by the MSMRemoveGroupDrift pipeline or NONE
+   --concat-reg-name=<regname> String corresponding to the output name of the concatinated registration (i.e. the dedrifted registration
+   --maps=<non@myelin@maps> @ delimited map name strings corresponding to maps that are not myelin maps (e.g. sulc curvature corrThickness thickness)
+   --myelin-maps=<myelin@maps> @ delimited map name strings corresponding to myelin maps (e.g. MyelinMap SmoothedMyelinMap) No _BC, this will be reapplied
+   --rfmri-names=<ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will have ICA+FIX reapplied to them (could be either rfMRI or tfMRI)
+   --tfmri-names=<not@ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will not have ICA+FIX reapplied to them (likely not to be used in the future as ICA+FIX will be recommended for all fMRI data)
+   --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
+   --highpass=<number> Highpass filter sigma that matches what was used in the ICA+FIX pipeline
+  [--myelin-target-file=<path/to/myelin/target/file>] A myelin target file is required to run this pipeline when using a different mesh resolution than the original MSMAll registration
+  [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -84,8 +84,8 @@ get_options()
 	unset p_RegName
 	unset p_DeDriftRegFiles			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
 	unset p_ConcatRegName
-	unset p_Maps
-	unset p_MyelinMaps
+	unset p_Maps              # @ delimited
+	unset p_MyelinMaps        # @ delimited
 	unset p_rfMRINames				# @ delimited
 	unset p_tfMRINames				# @ delimited
 	unset p_SmoothingFWHM
@@ -278,9 +278,9 @@ get_options()
 		log_Msg "highpass value: ${p_HighPass}"
 	fi
 
-	log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
+	log_Msg "Myelin Target File: ${p_MyelinTargetFile}" ###TODO does this need to check for something?
 
-	log_Msg "Input Registration Name: ${p_InRegName}"
+	log_Msg "Input Registration Name: ${p_InRegName}" ###TODO does this need to check for something?
 	
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
@@ -776,7 +776,7 @@ if [[ ${1} == --* ]]; then
 	# Get command line options
 	get_options "$@"
 
-	# Invoke main functionality use positional parameters
+	# Invoke main functionality use positional parameters ###TODO how will this interact with several arguments that have "".  I think you might need to set these to NONE and then reset to "" inside of main {}
 	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}                ${13}           ${14}                   ${15}            ${16}
 	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
 	
