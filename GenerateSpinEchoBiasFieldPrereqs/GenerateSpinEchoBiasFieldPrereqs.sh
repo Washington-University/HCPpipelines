@@ -130,14 +130,14 @@ main()
 	if [ "${rfMRINames}" = "NONE" ] ; then
 		rfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, rfMRINames: ${rfMRINames}"
+	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames}"
 
 	tfMRINames=${g_tfmri_names}
 	tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
 	if [ "${tfMRINames}" = "NONE" ] ; then
 		tfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, tfMRINames: ${tfMRINames}"
+	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames}"
 
 	for fMRIName in ${rfMRINames} ${tfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
