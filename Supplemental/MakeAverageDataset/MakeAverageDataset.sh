@@ -95,6 +95,10 @@ get_options()
 	unset p_NoMergedT1T2vols
 	unset p_NoLabelVols
 
+	# set default values
+	p_NoMergedT1T2vols="FALSE"
+	p_NoLabelVols="FALSE"
+
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
@@ -169,12 +173,12 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--no-merged-t1t2-vols)
-			        p_NoMergedT1T2vols="TRUE"
-			    	index=$(( index + 1 ))
+				p_NoMergedT1T2vols="TRUE"
+				index=$(( index + 1 ))
 				;;
 			--no-label-vols)
-			        p_NoLabelVols="TRUE"
-			    	index=$(( index + 1 ))
+				p_NoLabelVols="TRUE"
+				index=$(( index + 1 ))
 				;;
 			*)
 				usage
@@ -192,7 +196,7 @@ get_options()
 	else
 		log_Msg "subject list: ${p_Subjlist}"
 	fi
-	
+
 	if [ -z "${p_StudyFolder}" ]; then
 		log_Err "study folder (--study-folder=) required"
 		error_count=$(( error_count + 1 ))
@@ -213,7 +217,7 @@ get_options()
 	else
 		log_Msg "surface atlas dir: ${p_SurfaceAtlasDIR}"
 	fi
-	
+
 	if [ -z "${p_GrayordinatesSpaceDIR}" ]; then
 		log_Err "grayordinates space dir (--grayordinates-space-dir=) required"
 		error_count=$(( error_count + 1 ))
@@ -227,7 +231,7 @@ get_options()
 	else
 		log_Msg "high res mesh: ${p_HighResMesh}"
 	fi
-	
+
 	if [ -z "${p_LowResMeshes}" ]; then
 		log_Err "low res meshes (--low-res-meshes=) required"
 		error_count=$(( error_count + 1 ))
@@ -241,14 +245,14 @@ get_options()
 	else
 		log_Msg "freesurfer labels: ${p_FreeSurferLabels}"
 	fi
-	
+
 	if [ -z "${p_Sigma}" ]; then
 		log_Err "sigma (--sigma=) required"
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "sigma: ${p_Sigma}"
 	fi
-	
+
 	if [ -z "${p_RegName}" ]; then
 		log_Err "reg name (--reg-name=) required"
 		error_count=$(( error_count + 1 ))
@@ -298,8 +302,19 @@ get_options()
 		log_Msg "multi maps: ${p_MultiMaps}"
 	fi
 
-	log_Msg "p_NoMergedT1T2vols: ${p_NoMergedT1T2vols}"  # Optional
-	log_Msg "p_NoLabelVols: ${p_NoLabelVols}"  # Optional
+	if [ -z "${p_NoMergedT1T2vols}" ]; then
+		log_Err "No Merged T1T2 Volumes value required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "No Merged T1T2 Volumes: ${p_NoMergedT1T2vols}"
+	fi
+
+	if [ -z "{p_NoLabelVols}" ]; then
+		log_Err "No Label Volumes value required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "No Label Volumes: ${p_NoLabelVols}"
+	fi
 
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
@@ -330,7 +345,7 @@ show_tool_versions()
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-main() 
+main()
 {
 	log_Msg "Starting main functionality"
 
@@ -351,14 +366,16 @@ main()
 	local GradientMaps="${14}"
 	local STDMaps="${15}"
 	local MultiMaps="${16}"
-	
+	local NoMergedT1T2vols="${17}"
+	local NoLabelVols="${18}"
+
 	# Log values retrieved from positional parameters
 	log_Msg "Subjlist: ${Subjlist}"
-	log_Msg "StudyFolder: ${StudyFolder}"	
+	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "GroupAverageName: ${GroupAverageName}"
 	log_Msg "SurfaceAtlasDIR: ${SurfaceAtlasDIR}"
 	log_Msg "GrayordinatesSpaceDIR: ${GrayordinatesSpaceDIR}"
-	log_Msg "HighResMesh: ${HighResMesh}"	
+	log_Msg "HighResMesh: ${HighResMesh}"
 	log_Msg "LowResMeshes: ${LowResMeshes}"
 	log_Msg "FreeSurferLabels: ${FreeSurferLabels}"
 	log_Msg "Sigma: ${Sigma}"
@@ -368,7 +385,17 @@ main()
 	log_Msg "DistortionMaps: ${DistortionMaps}"
 	log_Msg "GradientMaps: ${GradientMaps}"
 	log_Msg "STDMaps: ${STDMaps}"
-	log_Msg "MultiMaps: ${MultiMaps}"	
+	log_Msg "MultiMaps: ${MultiMaps}"
+	log_Msg "No Merged T1T2 Volumes: ${NoMergedT1T2vols}"
+	log_Msg "No Label Volumes: ${NoLabelVols}"
+
+	if [ "${NoMergedT1T2Vols}" != "TRUE" ]; then
+		NoMergedT1T2Vols=""
+	fi
+
+	if [ "${NoLabelVols}" != "TRUE" ]; then
+		NoLabelVols=""
+	fi
 
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
@@ -376,8 +403,8 @@ main()
 
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 	log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
-	
-	Subjlist=`echo ${Subjlist} | sed 's/@/ /g'`	
+
+	Subjlist=`echo ${Subjlist} | sed 's/@/ /g'`
 	log_Msg "After delimiter substitution, Subjlist: ${Subjlist}"
 
 	VideenMaps=`echo ${VideenMaps} | sed 's/@/ /g'`
@@ -445,34 +472,36 @@ main()
 	# Scalar Volumes
 	log_Msg "Scalar Volumes"
 	for Volume in ${T1wName} ${T2wName} ; do
-	    MergeVolumeSTRING=""
-	    for Subject in ${Subjlist} ; do
+
+		MergeVolumeSTRING=""
+		for Subject in ${Subjlist} ; do
 		MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
-	    done
-	    allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-	    avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
-	    if [ -n "${p_NoMergedT1T2vols}" ]; then
-	        # Creating a merged T1/T2 volume can be very time and memory intensive for large number of subjects.
-                # Therefore, the --no-merged-t1t2-vols flag exists to forego creation of merged T1/T2 volumes.
-                # In this case, create the average across subjects in single command using 'fsladd' (which
-		# implements its averaging in a highly memory efficient manner).
-		log_Msg "Skipping creation of merged ${Volume}. Only creating the average."
-		fsladd ${avgvolume} -m ${MergeVolumeSTRING}
-	    else
-		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
-		# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
-		#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
-		${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
-	    fi
+		done
+		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
+		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+		if [ -n "${NoMergedT1T2vols}" ]; then
+			# Creating a merged T1/T2 volume can be very time and memory intensive for large number of subjects.
+			# Therefore, the --no-merged-t1t2-vols flag exists to forego creation of merged T1/T2 volumes.
+			# In this case, create the average across subjects in single command using 'fsladd' (which
+			# implements its averaging in a highly memory efficient manner).
+			log_Msg "Skipping creation of merged ${Volume}. Only creating the average."
+			fsladd ${avgvolume} -m ${MergeVolumeSTRING}
+		else
+			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
+			# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
+			#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
+			${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
+		fi
+
 	done
 
 	volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
 	${Caret7_Command} -volume-math "clamp((T1w / T2w), 0, 100)" ${volume_out} \
-	    -var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
-	    -var T2w ${CommonAtlasFolder}/${GroupAverageName}_Average${T2wName}.nii.gz \
-	    -fixnan 0
+		-var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
+		-var T2w ${CommonAtlasFolder}/${GroupAverageName}_Average${T2wName}.nii.gz \
+		-fixnan 0
 	${Caret7_Command} -volume-palette ${volume_out} \
-	    MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+		MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
 
 	# Label Volumes
 	# N.B. While the wmparc and ribbon files compress massively, internally they still require memory
@@ -481,30 +510,32 @@ main()
 	# Thus, it is either all or none for the label volumes.
 	log_Msg "Label Volumes"
 	for Volume in ${wmparc} ${ribbon} ; do
-	    if [ -z "${p_NoLabelVols}" ]; then
-		MergeVolumeSTRING=""
-		for Subject in ${Subjlist} ; do
-		    MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
-		done
-		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
-		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
-		${Caret7_Command} -volume-label-import ${allvolumes} ${FreeSurferLabels} ${allvolumes} -drop-unused-labels
-		${Caret7_Command} -volume-reduce ${allvolumes} MODE ${avgvolume}
-		${Caret7_Command} -volume-label-import ${avgvolume} ${FreeSurferLabels} ${avgvolume} -drop-unused-labels
-	    else  # --no-label-vols flag was used
-		log_Msg "Skipping creation of merged and average ${Volume}."
-	    fi
+
+		if [ -z "${NoLabelVols}" ]; then
+			MergeVolumeSTRING=""
+			for Subject in ${Subjlist} ; do
+				MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
+			done
+			allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
+			avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
+			${Caret7_Command} -volume-label-import ${allvolumes} ${FreeSurferLabels} ${allvolumes} -drop-unused-labels
+			${Caret7_Command} -volume-reduce ${allvolumes} MODE ${avgvolume}
+			${Caret7_Command} -volume-label-import ${avgvolume} ${FreeSurferLabels} ${avgvolume} -drop-unused-labels
+		else  # --no-label-vols flag was used
+			log_Msg "Skipping creation of merged and average ${Volume}."
+		fi
+
 	done
 
 	# Make Average Surfaces and Surface Data
 	log_Msg "Make Average Surfaces and Surface Data"
 	for Hemisphere in L R ; do
-		if [ ${Hemisphere} = "L" ] ; then 
+		if [ ${Hemisphere} = "L" ] ; then
 			Structure="CORTEX_LEFT"
-		elif [ ${Hemisphere} = "R" ] ; then 
+		elif [ ${Hemisphere} = "R" ] ; then
 			Structure="CORTEX_RIGHT"
-		fi 
+		fi
 
 		# Copying of some atlas files
 		file1=${SurfaceAtlasDIR}/fsaverage.${Hemisphere}_LR.spherical_std.${HighResMesh}k_fs_LR.surf.gii
@@ -550,14 +581,15 @@ main()
 				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 			fi
 			i=$(($i+1))
-		done 
-  
+
+		done
+
 		# Average the actual surfaces across subjects
 		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 			if [ $Mesh = ${HighResMesh} ] ; then
 				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
-			else 
+			else
 				i=1
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -581,7 +613,7 @@ main()
 					AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 					if [ $Mesh = ${HighResMesh} ] ; then
 						Folder=${AtlasFolder}
-					else      
+					else
 						i=1
 						for LowResMesh in ${LowResMeshes} ; do
 							if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -614,12 +646,12 @@ main()
 
 				#log_Msg "${Caret7_Command} -metric-palette 1"
 				${Caret7_Command} -metric-palette ${uncert_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
-				    -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+					-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
 
 				#log_Msg "${Caret7_Command} -metric-palette 2"
 				${Caret7_Command} -metric-palette ${stddev_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
-				    -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
-				
+					-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+
 				#log_Msg "Back for another surface"
 			done
 
@@ -641,7 +673,7 @@ main()
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
-		else 
+		else
 			i=1
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -656,10 +688,11 @@ main()
 			PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
 			cifti_out=${CommonFolder}/${GroupAverageName}.${Map}.${Mesh}k_fs_LR.dscalar.nii
 			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
-			    -left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
-			    -roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-			    -right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
-			    -roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+
 			${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
 			${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
 			for Hemisphere in L R ; do
@@ -673,10 +706,12 @@ main()
 
 	# Create the vertex area ("va") files
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
-	        log_Msg "Proceeding to generate vertex area files for individual subjects for ${Mesh}k mesh"
+
+		log_Msg "Proceeding to generate vertex area files for individual subjects for ${Mesh}k mesh"
+
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
-		else 
+		else
 			i=1
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -689,49 +724,53 @@ main()
 		MNIMapMerge=""
 
 		for Subject in ${Subjlist} ; do
-		        log_Msg "Subject: ${Subject}; Mesh: ${Mesh}"
+
+			log_Msg "Subject: ${Subject}; Mesh: ${Mesh}"
+
 			AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 			T1wFolder="${StudyFolder}/${Subject}/T1w"
 			if [ $Mesh = ${HighResMesh} ] ; then
 				Folder="${T1wFolder}"
 				MNIFolder="${AtlasFolder}"
 				for Hemisphere in L R ; do
-				        # Create surface on HighResMesh in subject's T1w space
+
+					# Create surface on HighResMesh in subject's T1w space
 					surface=${Subject}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 					${Caret7_Command} -surface-resample ${T1wFolder}/Native/${Subject}.${Hemisphere}.midthickness.native.surf.gii \
-					    ${MNIFolder}/Native/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii \
-					    ${MNIFolder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii \
-					    BARYCENTRIC ${T1wFolder}/${surface}
-					
+						${MNIFolder}/Native/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii \
+						${MNIFolder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii \
+						BARYCENTRIC ${T1wFolder}/${surface}
+
 					# Compute vertex-areas of HighResMesh in T1 space
 					metric=${Subject}.${Hemisphere}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 					${Caret7_Command} -surface-vertex-areas ${T1wFolder}/${surface} ${T1wFolder}/${metric}
 					rm ${T1wFolder}/${surface}
 
 					# Compute vertex-areas of HighResMesh in MNI space
-				        # (Surface on HighResMesh in MNI space already exists)
-					${Caret7_Command} -surface-vertex-areas ${MNIFolder}/${surface} ${MNIFolder}/${metric}
 
+					# (Surface on HighResMesh in MNI space already exists)
+					${Caret7_Command} -surface-vertex-areas ${MNIFolder}/${surface} ${MNIFolder}/${metric}
 				done
+
 				# Convert both T1 and MNI space HighResMesh va files to cifti
 				cifti=${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 				left_metric=${Subject}.L.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 				right_metric=${Subject}.R.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 				${Caret7_Command} -cifti-create-dense-scalar ${T1wFolder}/${cifti} \
-				    -left-metric ${T1wFolder}/${left_metric} \
-				    -roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-				    -right-metric ${T1wFolder}/${right_metric} \
-				    -roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+					-left-metric ${T1wFolder}/${left_metric} \
+					-roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+					-right-metric ${T1wFolder}/${right_metric} \
+					-roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 				${Caret7_Command} -cifti-create-dense-scalar ${MNIFolder}/${cifti} \
-				    -left-metric ${MNIFolder}/${left_metric} \
-				    -roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-				    -right-metric ${MNIFolder}/${right_metric} \
-				    -roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+					-left-metric ${MNIFolder}/${left_metric} \
+					-roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+					-right-metric ${MNIFolder}/${right_metric} \
+					-roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 				rm ${T1wFolder}/${left_metric} ${T1wFolder}/${right_metric}
 				rm ${MNIFolder}/${left_metric} ${MNIFolder}/${right_metric}
 			else
-                        # Repeat for the LowResMeshes
-			# Here, all the relevant surfaces should already exist
+				# Repeat for the LowResMeshes
+				# Here, all the relevant surfaces should already exist
 				i=1
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -745,7 +784,7 @@ main()
 				MNIFolder=${MNIDownSampleFolder}
 				for Hemisphere in L R ; do
 					# Compute vertex-areas of LowResMesh in MNI space
-				        surface=${Subject}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+					surface=${Subject}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 					metric=${Subject}.${Hemisphere}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 					${Caret7_Command} -surface-vertex-areas ${MNIFolder}/${surface} ${MNIFolder}/${metric}
 				done
@@ -754,14 +793,15 @@ main()
 				left_metric=${Subject}.L.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 				right_metric=${Subject}.R.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.shape.gii
 				${Caret7_Command} -cifti-create-dense-scalar ${MNIFolder}/${cifti} \
-				    -left-metric ${MNIFolder}/${left_metric} \
-				    -roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-				    -right-metric ${MNIFolder}/${right_metric} \
-				    -roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+					-left-metric ${MNIFolder}/${left_metric} \
+					-roi-left ${MNIFolder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+					-right-metric ${MNIFolder}/${right_metric} \
+					-roi-right ${MNIFolder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 				rm ${MNIFolder}/${left_metric} ${MNIFolder}/${right_metric}
 			fi
 			MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii"`
-			MNIMapMerge=`echo "${MNIMapMerge} -cifti ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii"` 
+			MNIMapMerge=`echo "${MNIMapMerge} -cifti ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii"`
+
 		done  #subject loop
 
 		log_Msg "Completed creation of vertex area files for individual subjects for ${Mesh}k mesh"
@@ -801,12 +841,12 @@ main()
 			MNIFolder=${MNIDownSampleFolder}
 			rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 		fi
-		
+
 		# Create va files for group average surface
 		for Hemisphere in L R ; do
-		        surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+				surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 			metric=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
-                        # Q: Why no "_va" in file name of the metric file output of -surface-vertex-areas?
+			# Q: Why no "_va" in file name of the metric file output of -surface-vertex-areas?
 			# (or the dscalar.nii created from the metric files?)
 			${Caret7_Command} -surface-vertex-areas ${surface} ${metric}
 		done
@@ -815,25 +855,27 @@ main()
 		left_metric=${CommonFolder}/${GroupAverageName}.L.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
 		right_metric=${CommonFolder}/${GroupAverageName}.R.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
 		${Caret7_Command} -cifti-create-dense-scalar ${cifti} \
-		    -left-metric ${left_metric} \
-		    -roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-		    -right-metric ${right_metric} \
-		    -roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+			-left-metric ${left_metric} \
+			-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+			-right-metric ${right_metric} \
+			-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+
 		# Should the intermediate ${left_metric} and ${right_metric} files be deleted, as they are above?
 
 		cifti_out=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_ratio.${Mesh}k_fs_LR.dscalar.nii
 		ciftivar1=${cifti}
 		ciftivar2=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_mni.${Mesh}k_fs_LR.dscalar.nii
 		${Caret7_Command} -cifti-math "ln(avgsurf / meanorig) / ln(2)" ${cifti_out} \
-		    -var avgsurf ${ciftivar1} \
-		    -var meanorig ${ciftivar2}
+			-var avgsurf ${ciftivar1} \
+			-var meanorig ${ciftivar2}
+
 		rm ${ciftivar1} ${ciftivar2}
 
 		spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
 		for Hemisphere in L R ; do
-			if [ ${Hemisphere} = "L" ] ; then 
+			if [ ${Hemisphere} = "L" ] ; then
 				Structure="CORTEX_LEFT"
-			elif [ ${Hemisphere} = "R" ] ; then 
+			elif [ ${Hemisphere} = "R" ] ; then
 				Structure="CORTEX_RIGHT"
 			fi
 			cifti_in=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
@@ -860,10 +902,11 @@ main()
 	for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 
 		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
-		    log_Msg "Map: ${Map}; Mesh: ${Mesh}"
+			log_Msg "Map: ${Map}; Mesh: ${Mesh}"
+
 			if [ $Mesh = ${HighResMesh} ] ; then
 				CommonFolder=${CommonAtlasFolder}
-			else 
+			else
 				i=1
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -873,11 +916,11 @@ main()
 				done
 			fi
 			MapMerge=""
-			for Subject in ${Subjlist} ; do 
+			for Subject in ${Subjlist} ; do
 				AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 				if [ $Mesh = ${HighResMesh} ] ; then
 					Folder=${AtlasFolder}
-				else      
+				else
 					i=1
 					for LowResMesh in ${LowResMeshes} ; do
 						if [ ${LowResMesh} = ${Mesh} ] ; then
@@ -888,7 +931,7 @@ main()
 					DownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
 					Folder=${DownSampleFolder}
 				fi
-				MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii"` 
+				MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii"`
 			done
 
 			if [ ! x`echo ${VideenMaps} | grep -oE "(^| )${Map}" | sed 's/ //g'` = "x" ] ; then
@@ -906,11 +949,11 @@ main()
 			fi
 
 			if [ ! x`echo ${MultiMaps} | grep -oE "(^| )${Map}" | sed 's/ //g'` = "x" ] ; then
-			        avgcifti=${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
+				avgcifti=${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
 				${Caret7_Command} -cifti-average ${avgcifti} -exclude-outliers 3 3 ${MapMerge}
 				SpecFile="False"
 			else
-			        cifti=${CommonFolder}/${GroupAverageName}.All.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
+				cifti=${CommonFolder}/${GroupAverageName}.All.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
 				${Caret7_Command} -cifti-merge ${cifti} ${MapMerge}
 				${Caret7_Command} -cifti-palette ${cifti} ${PaletteStringOne} ${cifti} ${PaletteStringTwo}
 
@@ -918,10 +961,10 @@ main()
 				${Caret7_Command} -cifti-reduce ${cifti} MEAN ${avgcifti} -exclude-outliers 3 3
 
 				if [ ${SpecFile} = "True" ] ; then
-				        spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
+					spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
 					${Caret7_Command} -add-to-spec-file ${spec_file} INVALID ${avgcifti}
 				fi
-			fi  
+			fi
 
 			#log_Debug_Msg "Debug Point 3.5"
 
@@ -947,9 +990,9 @@ main()
 				PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
 				###Workaround
 				for Hemisphere in L R ; do
-					if [ ${Hemisphere} = "L" ] ; then 
+					if [ ${Hemisphere} = "L" ] ; then
 						Structure="CORTEX_LEFT"
-					elif [ ${Hemisphere} = "R" ] ; then 
+					elif [ ${Hemisphere} = "R" ] ; then
 						Structure="CORTEX_RIGHT"
 					fi
 
@@ -972,8 +1015,7 @@ main()
 
 					metric_tempgrad=${CommonFolder}/temp${Hemisphere}Grad.func.gii
 					${Caret7_Command} -metric-gradient ${surf} ${metric_temp} ${metric_tempgrad} \
-					    -presmooth ${Sigma} -roi ${roi_temp} -corrected-areas ${metric_temparea}
-
+						-presmooth ${Sigma} -roi ${roi_temp} -corrected-areas ${metric_temparea}
 					${Caret7_Command} -cifti-replace-structure ${cifti_grad} COLUMN -metric ${Structure} ${metric_tempgrad}
 
 					rm ${metric_temp} ${roi_temp} ${metric_temparea} ${metric_tempgrad}
@@ -993,13 +1035,13 @@ main()
 				PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
 				cifti=${CommonFolder}/${GroupAverageName}.All.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
 				stdcifti=${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}_std.${Mesh}k_fs_LR.dscalar.nii
-				${Caret7_Command} -cifti-reduce ${cifti} STDEV ${stdcifti} -exclude-outliers 3 3     
+				${Caret7_Command} -cifti-reduce ${cifti} STDEV ${stdcifti} -exclude-outliers 3 3
 				${Caret7_Command} -set-map-name ${stdcifti} 1 ${GroupAverageName}_${Map}${RegSTRING}_std
 				${Caret7_Command} -cifti-palette ${stdcifti} ${PaletteStringOne} ${stdcifti} ${PaletteStringTwo}
 			fi
-			
-		done  
-		
+
+		done
+
 	done
 
 	log_Msg "Completed main functionality"
@@ -1038,9 +1080,9 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#     ${1}            ${2}               ${3}                    ${4}                   ${5}                         ${6}               ${7}                ${8}                    ${9}         ${10}          ${11}             ${12}                ${13}                 ${14}               ${15}          ${16}
-	main "${p_Subjlist}" "${p_StudyFolder}" "${p_GroupAverageName}" "${p_SurfaceAtlasDIR}" "${p_GrayordinatesSpaceDIR}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_FreeSurferLabels}" "${p_Sigma}" "${p_RegName}" "${p_VideenMaps}" "${p_GreyScaleMaps}" "${p_DistortionMaps}" "${p_GradientMaps}"	"${p_STDMaps}" "${p_MultiMaps}"
-	
+	#     ${1}            ${2}               ${3}                    ${4}                   ${5}                         ${6}               ${7}                ${8}                    ${9}         ${10}          ${11}             ${12}                ${13}                 ${14}               ${15}          ${16}            ${17}                   ${18}
+	main "${p_Subjlist}" "${p_StudyFolder}" "${p_GroupAverageName}" "${p_SurfaceAtlasDIR}" "${p_GrayordinatesSpaceDIR}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_FreeSurferLabels}" "${p_Sigma}" "${p_RegName}" "${p_VideenMaps}" "${p_GreyScaleMaps}" "${p_DistortionMaps}" "${p_GradientMaps}"	"${p_STDMaps}" "${p_MultiMaps}" "${p_NoMergedT1T2vols}" "${p_NoLabelVols}"
+
 else
 	# Positional parameters are used
 	log_Msg "Using positional parameters"
