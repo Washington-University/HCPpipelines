@@ -844,7 +844,7 @@ main()
 
 		# Create va files for group average surface
 		for Hemisphere in L R ; do
-				surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+			surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 			metric=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
 			# No "_va" in file name of the metric file output of -surface-vertex-areas so as to not conflict with average of indiviuals files
 			${Caret7_Command} -surface-vertex-areas ${surface} ${metric}
