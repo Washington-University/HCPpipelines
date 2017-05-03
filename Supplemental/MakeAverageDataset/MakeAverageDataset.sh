@@ -389,8 +389,8 @@ main()
 	log_Msg "No Merged T1T2 Volumes: ${NoMergedT1T2vols}"
 	log_Msg "No Label Volumes: ${NoLabelVols}"
 
-	if [ "${NoMergedT1T2Vols}" != "TRUE" ]; then
-		NoMergedT1T2Vols=""
+	if [ "${NoMergedT1T2vols}" != "TRUE" ]; then
+		NoMergedT1T2vols=""
 	fi
 
 	if [ "${NoLabelVols}" != "TRUE" ]; then
