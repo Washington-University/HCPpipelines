@@ -92,6 +92,8 @@ get_options()
 	unset p_GradientMaps
 	unset p_STDMaps
 	unset p_MultiMaps
+	unset p_NoMergedT1T2vols
+	unset p_NoLabelVols
 
 	# set default values
 	p_NoMergedT1T2vols="FALSE"
@@ -387,8 +389,8 @@ main()
 	log_Msg "No Merged T1T2 Volumes: ${NoMergedT1T2vols}"
 	log_Msg "No Label Volumes: ${NoLabelVols}"
 
-	if [ "${NoMergedT1T2Vols}" != "TRUE" ]; then
-		NoMergedT1T2Vols=""
+	if [ "${NoMergedT1T2vols}" != "TRUE" ]; then
+		NoMergedT1T2vols=""
 	fi
 
 	if [ "${NoLabelVols}" != "TRUE" ]; then
@@ -470,6 +472,7 @@ main()
 	# Scalar Volumes
 	log_Msg "Scalar Volumes"
 	for Volume in ${T1wName} ${T2wName} ; do
+
 		MergeVolumeSTRING=""
 		for Subject in ${Subjlist} ; do
 		MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
@@ -489,6 +492,7 @@ main()
 			#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
 			${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
 		fi
+
 	done
 
 	volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
@@ -506,6 +510,7 @@ main()
 	# Thus, it is either all or none for the label volumes.
 	log_Msg "Label Volumes"
 	for Volume in ${wmparc} ${ribbon} ; do
+
 		if [ -z "${NoLabelVols}" ]; then
 			MergeVolumeSTRING=""
 			for Subject in ${Subjlist} ; do
@@ -520,6 +525,7 @@ main()
 		else  # --no-label-vols flag was used
 			log_Msg "Skipping creation of merged and average ${Volume}."
 		fi
+
 	done
 
 	# Make Average Surfaces and Surface Data
@@ -575,6 +581,7 @@ main()
 				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 			fi
 			i=$(($i+1))
+
 		done
 
 		# Average the actual surfaces across subjects
@@ -659,7 +666,7 @@ main()
 		done
 
 	done
-
+	
 	log_Debug_Msg "Debug Point 1"
 
 	# Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
@@ -685,6 +692,7 @@ main()
 				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
 				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
 				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+
 			${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
 			${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
 			for Hemisphere in L R ; do
@@ -698,7 +706,9 @@ main()
 
 	# Create the vertex area ("va") files
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
-			log_Msg "Proceeding to generate vertex area files for individual subjects for ${Mesh}k mesh"
+
+		log_Msg "Proceeding to generate vertex area files for individual subjects for ${Mesh}k mesh"
+
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
@@ -714,13 +724,16 @@ main()
 		MNIMapMerge=""
 
 		for Subject in ${Subjlist} ; do
-				log_Msg "Subject: ${Subject}; Mesh: ${Mesh}"
+
+			log_Msg "Subject: ${Subject}; Mesh: ${Mesh}"
+
 			AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 			T1wFolder="${StudyFolder}/${Subject}/T1w"
 			if [ $Mesh = ${HighResMesh} ] ; then
 				Folder="${T1wFolder}"
 				MNIFolder="${AtlasFolder}"
 				for Hemisphere in L R ; do
+
 					# Create surface on HighResMesh in subject's T1w space
 					surface=${Subject}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 					${Caret7_Command} -surface-resample ${T1wFolder}/Native/${Subject}.${Hemisphere}.midthickness.native.surf.gii \
@@ -734,6 +747,7 @@ main()
 					rm ${T1wFolder}/${surface}
 
 					# Compute vertex-areas of HighResMesh in MNI space
+
 					# (Surface on HighResMesh in MNI space already exists)
 					${Caret7_Command} -surface-vertex-areas ${MNIFolder}/${surface} ${MNIFolder}/${metric}
 				done
@@ -787,6 +801,7 @@ main()
 			fi
 			MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii"`
 			MNIMapMerge=`echo "${MNIMapMerge} -cifti ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii"`
+
 		done  #subject loop
 
 		log_Msg "Completed creation of vertex area files for individual subjects for ${Mesh}k mesh"
@@ -853,6 +868,7 @@ main()
 		${Caret7_Command} -cifti-math "ln(avgsurf / meanorig) / ln(2)" ${cifti_out} \
 			-var avgsurf ${ciftivar1} \
 			-var meanorig ${ciftivar2}
+
 		rm ${ciftivar1} ${ciftivar2}
 
 		spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
@@ -887,6 +903,7 @@ main()
 
 		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 			log_Msg "Map: ${Map}; Mesh: ${Mesh}"
+
 			if [ $Mesh = ${HighResMesh} ] ; then
 				CommonFolder=${CommonAtlasFolder}
 			else
@@ -932,7 +949,7 @@ main()
 			fi
 
 			if [ ! x`echo ${MultiMaps} | grep -oE "(^| )${Map}" | sed 's/ //g'` = "x" ] ; then
-					avgcifti=${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
+				avgcifti=${CommonFolder}/${GroupAverageName}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
 				${Caret7_Command} -cifti-average ${avgcifti} -exclude-outliers 3 3 ${MapMerge}
 				SpecFile="False"
 			else
@@ -944,12 +961,12 @@ main()
 				${Caret7_Command} -cifti-reduce ${cifti} MEAN ${avgcifti} -exclude-outliers 3 3
 
 				if [ ${SpecFile} = "True" ] ; then
-						spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
+					spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
 					${Caret7_Command} -add-to-spec-file ${spec_file} INVALID ${avgcifti}
 				fi
 			fi
 
-			log_Debug_Msg "Debug Point 3.5"
+			#log_Debug_Msg "Debug Point 3.5"
 
 			${Caret7_Command} -cifti-palette ${avgcifti} ${PaletteStringOne} ${avgcifti} ${PaletteStringTwo}
 			${Caret7_Command} -set-map-name ${avgcifti} 1 ${GroupAverageName}_${Map}${RegSTRING}
@@ -999,7 +1016,6 @@ main()
 					metric_tempgrad=${CommonFolder}/temp${Hemisphere}Grad.func.gii
 					${Caret7_Command} -metric-gradient ${surf} ${metric_temp} ${metric_tempgrad} \
 						-presmooth ${Sigma} -roi ${roi_temp} -corrected-areas ${metric_temparea}
-
 					${Caret7_Command} -cifti-replace-structure ${cifti_grad} COLUMN -metric ${Structure} ${metric_tempgrad}
 
 					rm ${metric_temp} ${roi_temp} ${metric_temparea} ${metric_tempgrad}
@@ -1012,7 +1028,7 @@ main()
 				${Caret7_Command} -cifti-palette ${cifti_grad} ${PaletteStringOne} ${cifti_grad} ${PaletteStringTwo}
 			fi
 
-			log_Debug_Msg "Debug Point: 3.9"
+			#log_Debug_Msg "Debug Point: 3.9"
 
 			if [ ! x`echo ${STDMaps} | grep -oE "(^| )${Map}" | sed 's/ //g'` = "x" ] ; then
 				PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
