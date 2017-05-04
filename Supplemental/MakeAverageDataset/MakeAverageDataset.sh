@@ -50,19 +50,19 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject-list=<@ delimited list of subject ids>
    --study-folder=<path to study folder>
    --group-average-name=<output group average name> (e.g. S900)
-   --surface-atlas-dir= TBW (e.g. ${HCPPIPEDIR}/global/templates/standard_mesh_atlases)
-   --grayordinates-space-dir= TBW (e.g. ${HCPPIPEDIR}/global/templates/91282_Greyordinates)
-   --high-res-mesh= TBW (e.g. 164)
-   --low-res-meshes= TBW (@ delimited list) (e.g. 32)
-   --freesurfer-labels= TBW (path to a file) (e.g. ${HCPPIPEDIR}/global/config/FreeSurferAllLut.txt)
-   --sigma= TBW (e.g. 1)
-   --reg-name= TBW (e.g. MSMAll)
-   --videen-maps= TBW (@ delimited list) (e.g. corrThickness@thickness@MyelinMap_BC@SmoothedMyelinMap_BC)
-   --greyscale-maps= TBW (@ delimited list) (e.g. sulc@curvature)
-   --distortion-maps= TBW (@ delimited list) (e.g. SphericalDistortion@ArealDistortion@EdgeDistortion)
-   --gradient-maps= TBW (@ delimited list) (e.g. MyelinMap_BC@SmoothedMyelinMap_BC@corrThickness)
-   --std-maps= TBW (@ delimited list) (e.g. sulc@curvature@corrThickness@thickness@MyelinMap_BC)
-   --multi-maps= TBW (@ delimited list) (e.g. NONE)
+   --surface-atlas-dir=<path/to/folder> location of the standard surfaces (e.g. ${HCPPIPEDIR}/global/templates/standard_mesh_atlases)
+   --grayordinates-space-dir=<path/to/folder> location of the standard grayorinates space (e.g. ${HCPPIPEDIR}/global/templates/91282_Greyordinates)
+   --high-res-mesh=<numstring> representing the highres mesh (e.g. 164)
+   --low-res-meshes=<numstring> representing the low res mesh (@ delimited list) (e.g. 32)
+   --freesurfer-labels=<path/to/file> location of the FreeSurfer look up table (path to a file) (e.g. ${HCPPIPEDIR}/global/config/FreeSurferAllLut.txt)
+   --sigma=<num> Sigma of pregradient smoothing (e.g. 1)
+   --reg-name=<string> Name of the registration (e.g. MSMAll)
+   --videen-maps=<mapstring@mapstring> Maps you want to use the videen palette (@ delimited list) (e.g. corrThickness@thickness@MyelinMap_BC@SmoothedMyelinMap_BC)
+   --greyscale-maps=<mapstring@mapstring> Maps you want to use the grayscale palette (@ delimited list) (e.g. sulc@curvature)
+   --distortion-maps=<mapstring@mapstring> Distortion maps (@ delimited list) (e.g. SphericalDistortion@ArealDistortion@EdgeDistortion)
+   --gradient-maps=<mapstring@mapstring> Maps you want to compute the gradietn on (@ delimited list) (e.g. MyelinMap_BC@SmoothedMyelinMap_BC@corrThickness)
+   --std-maps=<mapstring@mapstring> maps you want to compute a standard deviation on (@ delimited list) (e.g. sulc@curvature@corrThickness@thickness@MyelinMap_BC)
+   --multi-maps=<mapstring@mapstring> Maps with more than one map (column) that cannot be merged and must be averaged (@ delimited list) (e.g. NONE)
 
 EOF
 }
@@ -846,8 +846,7 @@ main()
 		for Hemisphere in L R ; do
 				surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
 			metric=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
-			# Q: Why no "_va" in file name of the metric file output of -surface-vertex-areas?
-			# (or the dscalar.nii created from the metric files?)
+			# No "_va" in file name of the metric file output of -surface-vertex-areas so as to not conflict with average of indiviuals files
 			${Caret7_Command} -surface-vertex-areas ${surface} ${metric}
 		done
 
@@ -860,8 +859,8 @@ main()
 			-right-metric ${right_metric} \
 			-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 
-		# Should the intermediate ${left_metric} and ${right_metric} files be deleted, as they are above?
-
+		rm ${CommonFolder}/${GroupAverageName}.L.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii ${CommonFolder}/${GroupAverageName}.R.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
+		
 		cifti_out=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_ratio.${Mesh}k_fs_LR.dscalar.nii
 		ciftivar1=${cifti}
 		ciftivar2=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_mni.${Mesh}k_fs_LR.dscalar.nii

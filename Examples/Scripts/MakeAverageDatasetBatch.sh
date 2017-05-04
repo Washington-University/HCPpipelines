@@ -25,28 +25,28 @@ get_batch_options() {
                 command_line_specified_subj_list=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-	    --GroupAverageName=*)
-	        command_line_specified_group_average_name=${argument#*=}
+	          --GroupAverageName=*)
+	              command_line_specified_group_average_name=${argument#*=}
                 index=$(( index + 1 ))
-		;;
-	    --RegName=*)
-	        command_line_specified_reg_name=${argument#*=}
+		            ;;
+	          --RegName=*)
+	              command_line_specified_reg_name=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-	    --SymLinkStudyFolder=*)
-	        command_line_specified_symlink_study_folder=${argument#*=}
+	          --SymLinkStudyFolder=*)
+	              command_line_specified_symlink_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --runlocal)
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+	          *)
+		            echo ""
+		            echo "ERROR: Unrecognized Option: ${argument}"
+		            echo ""
+		            exit 1
+		            ;;
         esac
     done
 }
@@ -142,7 +142,7 @@ Sigma="1" #Pregradient Smoothing
 VideenMaps="corrThickness thickness MyelinMap_BC SmoothedMyelinMap_BC"
 GreyScaleMaps="sulc curvature"
 if [ "$RegName" = "NONE" ] ; then
-    DistortionMaps="SphericalDistortion" #Don't Include ArealDistortion or EdgeDistortion with RegName NONE
+    DistortionMaps="SphericalDistortion" #Don't Include ArealDistortion or EdgeDistortion with RegName NONE  ###TODO why?
 else
     DistortionMaps="SphericalDistortion ArealDistortion EdgeDistortion"
 fi
