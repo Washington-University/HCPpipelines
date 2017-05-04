@@ -58,10 +58,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name= TBW
-   --high-pass= TBW
-   --reg-name= TBW
-  [--low-res-mesh= TBW]
+   --fmri-name=<string> String to represent the ${fMRIName} variable
+   --high-pass=<num> Number to represent the ${HighPass} variable used in ICA+FIX
+   --reg-name=<string> String to represent the registration that was done (e.g. by DeDriftAndResamplePipeline).  
+  [--low-res-mesh=<meshnum> String corresponding to low res mesh number]
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -354,8 +354,9 @@ main()
 			local matlab_exe="${HCPPIPEDIR}/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 			local matlab_function_arguments
-			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
+			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
+			  DoVol="0"
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
 			else
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 			fi
@@ -379,9 +380,10 @@ main()
 			# Use interpreted MATLAB
 			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
 
-			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
+			  DoVol="0"
 				matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},0);
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
 M_PROG
 			else
 				matlab -nojvm -nodisplay -nosplash <<M_PROG
