@@ -747,7 +747,6 @@ main()
 					rm ${T1wFolder}/${surface}
 
 					# Compute vertex-areas of HighResMesh in MNI space
-
 					# (Surface on HighResMesh in MNI space already exists)
 					${Caret7_Command} -surface-vertex-areas ${MNIFolder}/${surface} ${MNIFolder}/${metric}
 				done
@@ -842,25 +841,25 @@ main()
 			rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 		fi
 
-		# Create va files for group average surface
+		# Compute vertex areas for the group average midthickness surface (in MNI space)
 		for Hemisphere in L R ; do
-				surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-			metric=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
-			# No "_va" in file name of the metric file output of -surface-vertex-areas so as to not conflict with average of indiviuals files
+			surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+			metric=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}_vaFromAvgSurf.${Mesh}k_fs_LR.shape.gii
 			${Caret7_Command} -surface-vertex-areas ${surface} ${metric}
 		done
 
-		cifti=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii
-		left_metric=${CommonFolder}/${GroupAverageName}.L.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
-		right_metric=${CommonFolder}/${GroupAverageName}.R.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
+		cifti=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_vaFromAvgSurf.${Mesh}k_fs_LR.dscalar.nii
+		left_metric=${CommonFolder}/${GroupAverageName}.L.midthickness${RegSTRING}_vaFromAvgSurf.${Mesh}k_fs_LR.shape.gii
+		right_metric=${CommonFolder}/${GroupAverageName}.R.midthickness${RegSTRING}_vaFromAvgSurf.${Mesh}k_fs_LR.shape.gii
 		${Caret7_Command} -cifti-create-dense-scalar ${cifti} \
 			-left-metric ${left_metric} \
 			-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
 			-right-metric ${right_metric} \
 			-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 
-		rm ${CommonFolder}/${GroupAverageName}.L.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii ${CommonFolder}/${GroupAverageName}.R.midthickness${RegSTRING}.${Mesh}k_fs_LR.shape.gii
-		
+		rm ${left_metric} ${right_metric}
+
+		# Compute ratio of the "vaFromAvgSurf" vs. the average va across individual subjects
 		cifti_out=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_ratio.${Mesh}k_fs_LR.dscalar.nii
 		ciftivar1=${cifti}
 		ciftivar2=${CommonFolder}/${GroupAverageName}.midthickness${RegSTRING}_va_mni.${Mesh}k_fs_LR.dscalar.nii
@@ -868,6 +867,7 @@ main()
 			-var avgsurf ${ciftivar1} \
 			-var meanorig ${ciftivar2}
 
+		# Why not keep the "vaFromAvgSurf" and "va_mni" files around?
 		rm ${ciftivar1} ${ciftivar2}
 
 		spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
@@ -885,6 +885,7 @@ main()
 			${Caret7_Command} -metric-dilate ${metric} ${surface} 10 ${metric} -nearest
 
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${metric}
+			# What is the role of these dilated va files, and why are they left as metric (rather than converted to cifti)?
 		done
 
 		log_Msg "Completed merging and averaging of the vertex area files for ${Mesh}k mesh"
