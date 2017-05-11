@@ -867,8 +867,7 @@ main()
 			-var avgsurf ${ciftivar1} \
 			-var meanorig ${ciftivar2}
 
-		# Why not keep the "vaFromAvgSurf" and "va_mni" files around?
-		rm ${ciftivar1} ${ciftivar2}
+		#rm ${ciftivar1} ${ciftivar2}
 
 		spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
 		for Hemisphere in L R ; do
@@ -886,6 +885,7 @@ main()
 
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${metric}
 			# What is the role of these dilated va files, and why are they left as metric (rather than converted to cifti)?
+			# A: Probably used as part of some computations for MG's semi-automated parcellation.
 		done
 
 		log_Msg "Completed merging and averaging of the vertex area files for ${Mesh}k mesh"
