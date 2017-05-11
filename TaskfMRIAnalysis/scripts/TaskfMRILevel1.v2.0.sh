@@ -166,6 +166,11 @@ DesignMatrix=${FEATDir}/design.mat
 DesignContrasts=${FEATDir}/design.con
 DesignfContrasts=${FEATDir}/design.fts
 
+# An F-test may not always be requested as part of the design.fsf
+ExtraArgs=""
+if [ -e ${DesignfContrasts ] ; then
+	ExtraArgs="$ExtraArgs --fcon=${DesignfContrasts}"
+fi
 
 ###CIFTI Processing###
 log_Msg "CIFTI Processing"
@@ -196,7 +201,7 @@ if [ -z ${ParcellationString} ] ; then
 
   #Run film_gls on subcortical volume data
   log_Msg "Run film_gls on subcortical volume data"
-  film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} --fcon=${DesignfContrasts} --thr=1 --mode=volumetric
+  film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} ${ExtraArgs} --thr=1 --mode=volumetric
   rm ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical"$TemporalFilterString""$SmoothingString".nii.gz
 
   #Run film_gls on cortical surface data 
@@ -208,7 +213,7 @@ if [ -z ${ParcellationString} ] ; then
 
     #Run film_gls on surface data
     log_Msg "Run film_gls on surface data"
-    film_gls --rn=${FEATDir}/"$Hemisphere"_SurfaceStats --sa --ms=15 --epith=5 --in2="$DownSampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii --in=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi_dil."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii --pd="$DesignMatrix" --con=${DesignContrasts} --fcon=${DesignfContrasts} --mode=surface
+    film_gls --rn=${FEATDir}/"$Hemisphere"_SurfaceStats --sa --ms=15 --epith=5 --in2="$DownSampleFolder"/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii --in=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi_dil."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii --pd="$DesignMatrix" --con=${DesignContrasts} ${ExtraArgs} --mode=surface
     rm ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi_dil."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi."$Hemisphere"."$LowResMesh"k_fs_LR.func.gii
   done
 
@@ -232,7 +237,7 @@ else
   ###Parcellated Processing###
   log_Msg "Parcellated Processing"
   ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}.${Extension} ${FEATDir}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
-  film_gls --rn=${FEATDir}/ParcellatedStats --in=${FEATDir}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} --fcon=${DesignfContrasts} --thr=1 --mode=volumetric
+  film_gls --rn=${FEATDir}/ParcellatedStats --in=${FEATDir}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} ${ExtraArgs} --thr=1 --mode=volumetric
   rm ${FEATDir}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
   cd ${FEATDir}/ParcellatedStats
   Files=`ls | grep .nii.gz | cut -d "." -f 1`
@@ -258,7 +263,7 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
 
   #Run film_gls on subcortical volume data
   log_Msg "Run film_gls on subcortical volume data"
-  film_gls --rn=${FEATDir}/StandardVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} --fcon=${DesignfContrasts} --thr=1000
+  film_gls --rn=${FEATDir}/StandardVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} ${ExtraArgs} --thr=1000
 fi
 
 
