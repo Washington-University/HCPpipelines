@@ -516,6 +516,45 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
 	done
 done
 
+# Create midthickness Vertex Area (VA) maps
+log_Msg "Create midthickness Vertex Area (VA) maps"
+
+for LowResMesh in ${LowResMeshes} ; do
+
+	log_Msg "Creating midthickness Vertex Area (VA) maps for LowResMesh: ${LowResMesh}"
+	
+	DownSampleT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
+	local midthickness_va_file=${DownSampleT1wFolder}/${Subject}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii
+	local normalized_midthickness_va_file=${DownSampleT1wFolder}/${Subject}.midthickness_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+
+	for Hemisphere in L R ; do
+		local surface_to_measure=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		local output_metric=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_va.${LowResMesh}k_fs_LR.shape.gii
+		${CARET7DIR}/wb_command -surface-vertex-areas ${surface_to_measure} ${output_metric}
+	done
+
+	local left_metric=${DownSampleT1wFolder}/${Subject}.L.midthickness_va.${LowResMesh}k_fs_LR.shape.gii
+	local roi_left=${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+	local right_metric=${DownSampleT1wFolder}/${Subject}.R.midthickness_va.${LowResMesh}k_fs_LR.shape.gii
+	local roi_right=${DownSampleFolder}/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+
+	${CARET7DIR}/wb_command -cifti-create-dense-scalar ${midthickness_va_file} \
+				-left-metric  ${left_metric} \
+				-roi-left     ${roi_left} \
+				-right-metric ${right_metric} \
+				-roi-right    ${roi_right}
+	
+	local VAMean=$(${Caret7_Command} -cifti-stats ${midthickness_va_file} -reduce MEAN)
+	log_Msg "VAMean: ${VAMean}"
+
+	${CARET7DIR}/wb_command -cifti-math "VA / ${VAMean}" ${normalized_midthickness_va_file} -var VA ${midthickness_va_file}
+
+	log_Msg "Done creating midthickness Vertex Area (VA) maps for LowResMesh: ${LowResMesh}"
+
+done
+
+log_Msg "Done creating midthickness Vertex Area (VA) maps"
+
 log_Msg "END"
 
 
