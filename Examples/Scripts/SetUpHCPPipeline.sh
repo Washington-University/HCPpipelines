@@ -14,6 +14,7 @@ export FSL_DIR="${FSLDIR}"
 
 # ensure that the HCP specific version of FreeSurfer is being used
 module add freesurfer/5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
+module add workbench
 # pre-2017 way to do this: module load freesurfer-5.3.0-HCP > /dev/null 2>&1 # (don't say a peep)
 # you can revert back using: module swap freesurfer-5.3.0-HCP freesurfer > /dev/null 2>&1 # (don't say a peep)
 
