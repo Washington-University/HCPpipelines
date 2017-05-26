@@ -147,3 +147,19 @@ log_Debug_Cat()
 		log_Msg "DEBUG: End contents of file: ${file_to_cat}"
 	fi
 }
+
+#
+# Description:
+#   Check to see if the specified environment variable has a value
+#   set (is not an empty string). Abort script if it is not set.
+#   Log its value if it is set.
+#
+log_Check_Env_Var()
+{
+	local var_name="${1}"
+
+	if [ -z "${!var_name}" ]; then
+		log_Err_Abort "${var_name} environment variable must be set"
+	fi
+	log_Msg "${var_name}: ${!var_name}"
+}

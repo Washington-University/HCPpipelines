@@ -1,49 +1,121 @@
 #!/bin/bash
-set -e
-g_script_name=`basename ${0}`
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-log_Debug_On
+#
+# # DeDriftAndResamplePipeline.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2015-2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
 
+# ------------------------------------------------------------------------------
+#  Show usage information for this script
+# ------------------------------------------------------------------------------
 
 usage()
 {
-	echo ""
-	echo "  De-Drift and Resample"
-	echo ""
-	echo "  Usage: ${g_script_name} - TO BE WRITTEN"
-	echo "   [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
-	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use Matlab"
-	#echo "     2 = Use Octave"	
-	echo ""
+	local script_name
+	script_name=$(basename "${0}")
+
+	cat <<EOF
+
+${script_name}: De-Drift and Resample"
+
+Usage: ${script_name} PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+
+  Note: The PARAMETERS can be specified positionally (i.e. without using the --param=value
+        form) by simply specifying all values on the command line in the order they are
+        listed below.
+
+        E.g. ${script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
+
+        However, to use this technique, all optional parameters (e.g. myelin target file
+        and input registration name) except the final one (the MATLAB run mode) must be 
+        specified as NONE.
+
+  [--help] : show this usage information and exit
+   --path=<path to study folder> OR --study-folder=<path to study folder>
+   --subject=<subject ID>
+   --high-res-mesh=<meshnum> String corresponding to high resolution mesh, e.g. 164
+   --low-res-meshes=<meshnum@meshnum> String corresponding to low resolution meshes delimited by @, 
+       (e.g. 32@59)
+   --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name 
+       (e.g. ${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii)
+   --dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii> 
+       Path to the spheres output by the MSMRemoveGroupDrift pipeline or NONE
+   --concat-reg-name=<regname> String corresponding to the output name of the concatenated registration 
+       (i.e. the dedrifted registration)
+   --maps=<non@myelin@maps> @ delimited map name strings corresponding to maps that are not myelin maps 
+       (e.g. sulc curvature corrThickness thickness)
+   --myelin-maps=<myelin@maps> @ delimited map name strings corresponding to myelin maps 
+       (e.g. MyelinMap SmoothedMyelinMap) No _BC, this will be reapplied
+   --rfmri-names=<ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will 
+       have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). If none are to be used,
+       specify "NONE".
+   --tfmri-names=<not@ICA+FIXed@fMRI@Names> @ delimited fMRIName strings corresponding to maps that will
+       not have ICA+FIX reapplied to them (likely not to be used in the future as ICA+FIX will be 
+       recommended for all fMRI data) If none are to be used, specify "NONE".
+   --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
+   --highpass=<number> Highpass filter sigma that matches what was used in the ICA+FIX pipeline
+  [--myelin-target-file=<path/to/myelin/target/file>] A myelin target file is required to run this 
+       pipeline when using a different mesh resolution than the original MSMAll registration.
+  [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
+  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+
+EOF
 }
+
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
 
 get_options() 
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder     # StudyFolder
-	unset g_subject                  # Subject
-	unset g_high_res_mesh            # HighResMesh
-	unset g_low_res_meshes           # LowResMeshes - @ delimited list, e.g. 32@59, multiple resolutions not currently supported for fMRI data
-	unset g_registration_name        # RegName
-	unset g_dedrift_reg_files        # DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
-	unset g_concat_reg_name          # ConcatRegName
-	unset g_maps                     # Maps
-	unset g_myelin_maps              # MyelinMaps
-	unset g_rfmri_names              # rfMRINames - @ delimited
-	unset g_tfmri_names              # tfMRINames - @ delimited
-	unset g_smoothing_fwhm           # SmoothingFWHM
-	unset g_highpass                 # HighPass
-	unset g_myelin_target_file       # MyelinTargetFile
-	unset g_input_reg_name           # InRegName - e.g. "_1.6mm"
-	unset g_matlab_run_mode             
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_HighResMesh
+	unset p_LowResMeshes			# LowReshMeshes - @ delimited list, e.g. 32@59, multiple resolutions not currently supported for fMRI data
+	unset p_RegName
+	unset p_DeDriftRegFiles			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
+	unset p_ConcatRegName
+	unset p_Maps					# @ delimited
+	unset p_MyelinMaps				# @ delimited
+	unset p_rfMRINames				# @ delimited
+	unset p_tfMRINames				# @ delimited
+	unset p_SmoothingFWHM
+	unset p_HighPass
 
-  # set default values
-  g_matlab_run_mode=0
+	# set default values
+	p_MyelinTargetFile="NONE"
+	p_InRegName="NONE"				# e.g. "_1.6mm"
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -59,207 +131,219 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument#*=}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument#*=}
+				p_HighResMesh=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--low-res-meshes=*)
-				g_low_res_meshes=${argument#*=}
+				p_LowResMeshes=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--registration-name=*)
-				g_registration_name=${argument#*=}
+				p_RegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dedrift-reg-files=*)
-				g_dedrift_reg_files=${argument#*=}
+				p_DeDriftRegFiles=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--concat-reg-name=*)
-				g_concat_reg_name=${argument#*=}
+				p_ConcatRegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--maps=*)
-				g_maps=${argument#*=}
+				p_Maps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--myelin-maps=*)
-				g_myelin_maps=${argument#*=}
+				p_MyelinMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--rfmri-names=*)
-				g_rfmri_names=${argument#*=}
+				p_rfMRINames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--tfmri-names=*)
-				g_tfmri_names=${argument#*=}
+				p_tfMRINames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--smoothing-fwhm=*)
-				g_smoothing_fwhm=${argument#*=}
+				p_SmoothingFWHM=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--highpass=*)
-				g_highpass=${argument#*=}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--myelin-target-file=*)
-				g_myelin_target_file=${argument#*=}
+				p_MyelinTargetFile=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--input-reg-name=*)
-				g_input_reg_name=${argument#*=}
+				p_InRegName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-  		--matlab-run-mode=*)
-				g_matlab_run_mode=${argument#*=}
+			--matlab-run-mode=*)
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
+
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		echo "ERROR: subject ID (--subject=) required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject ID (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "Subject: ${p_Subject}"
 	fi
 
-	if [ -z "${g_high_res_mesh}" ]; then
-		echo "ERROR: high resolution mesh (--high-res-mesh=) required"
+	if [ -z "${p_HighResMesh}" ]; then
+		log_Err "high resolution mesh (--high-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
-	fi
-
-	if [ -z "${g_low_res_meshes}" ]; then
-		echo "ERROR: log resolution mesh list (--low-res-meshes=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_low_res_meshes: ${g_low_res_meshes}"
-	fi
-
-	if [ -z "${g_registration_name}" ]; then
-		echo "ERROR: registration name (--registration-name=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_registration_name: ${g_registration_name}"
-	fi
-
-	if [ -z "${g_dedrift_reg_files}" ]; then
-		echo "ERROR: De-Drifting registration files (--dedrift-reg-files=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_dedrift_reg_files: ${g_dedrift_reg_files}"
-	fi
-
-	if [ -z "${g_concat_reg_name}" ]; then
-		echo "ERROR: concatenated registration name (--concat-reg-name=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_concat_reg_name: ${g_concat_reg_name}"
+		log_Msg "High Resolution Mesh: ${p_HighResMesh}"
 	fi
 	
-	if [ -z "${g_maps}" ]; then
-		echo "ERROR: list of structural maps to be resampled (--maps=) required"
+	if [ -z "${p_LowResMeshes}" ]; then
+		log_Err "low resolution mesh list (--low-res-meshes=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_maps: ${g_maps}"
+		log_Msg "Low Resolution Meshes: ${p_LowResMeshes}"
 	fi
 
-	if [ -z "${g_myelin_maps}" ]; then
-		echo "ERROR: list of Myelin maps to be resampled (--myelin-maps) required"
+	if [ -z "${p_RegName}" ]; then
+		log_Err "Registration Name (--registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_myelin_maps: ${g_myelin_maps}"
+		log_Msg "Registration Name: ${p_RegName}"
 	fi
-
-	if [ -z "${g_rfmri_names}" ]; then
-		echo "ERROR: list of resting state scans (--rfmri-names=) required"
+	
+	if [ -z "${p_DeDriftRegFiles}" ]; then
+		log_Err "De-Drifting registration files (--dedrift-reg-files=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_rfmri_names: ${g_rfmri_names}"
+		log_Msg "De-Drifting registration files: ${p_DeDriftRegFiles}"
 	fi
 
-	if [ -z "${g_tfmri_names}" ]; then
-		echo "ERROR: list of task scans (--tfmri-names=) required"
+	if [ -z "${p_ConcatRegName}" ]; then
+		log_Err "concatenated registration name (--concat-reg-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_tfmri_names: ${g_tfmri_names}"
+		log_Msg "concatenated registration name: ${p_ConcatRegName}"
 	fi
-
-	if [ -z "${g_smoothing_fwhm}" ]; then
-		echo "ERROR: smoothing value (--smoothing-fwhm=) required"
+	
+	if [ -z "${p_Maps}" ]; then
+		log_Err "list of structural maps to be resampled (--maps=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_smoothing_fwhm: ${g_smoothing_fwhm}"
+		log_Msg "list of structural maps to be resampled: ${p_Maps}"
 	fi
 
-	if [ -z "${g_highpass}" ]; then
-		echo "ERROR: highpass value (--highpass=) required"
+	if [ -z "${p_MyelinMaps}" ]; then
+		log_Err "list of Myelin maps to be resampled (--myelin-maps) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_highpass: ${g_highpass}"
+		log_Msg "list of Myelin maps to be resampled: ${p_MyelinMaps}"
 	fi
 
-	if [ -n "${g_myelin_target_file}" ]; then
-		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
-	fi
-
-	if [ -n "${g_input_reg_name}" ]; then
-		log_Msg "g_input_reg_name: ${g_input_reg_name}"
-	fi
-
-	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
+	if [ -z "${p_rfMRINames}" ]; then
+		log_Err "list of resting state scans (--rfmri-names=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case ${g_matlab_run_mode} in 
+		log_Msg "list of resting state scans: ${p_rfMRINames}"
+	fi
+	
+	if [ -z "${p_tfMRINames}" ]; then
+		log_Err "list of task scans (--tfmri-names=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "list of task scans: ${p_tfMRINames}"
+	fi
+
+	if [ -z "${p_SmoothingFWHM}" ]; then
+		log_Err "smoothing value (--smoothing-fwhm=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "smoothing value: ${p_SmoothingFWHM}"
+	fi
+
+	if [ -z "${p_HighPass}" ]; then
+		log_Err "highpass value (--highpass=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "highpass value: ${p_HighPass}"
+	fi
+
+	if [ -z "{p_MyelineTargetFile}" ]; then
+		log_Err "Myelin Target File (--myelin-target-file=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
+	fi
+	
+	if [ -z "${p_InRegName}" ]; then
+		log_Err "Input Registration Name (--input-reg-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Input Registration Name: ${p_InRegName}"
+	fi
+	
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case ${p_MatlabRunMode} in 
 			0)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use compiled MATLAB"
+				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+				else
+					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+				fi
 				;;
 			1)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
-			# 2)
-			#	;;
 			*)
-				#echo "ERROR: matlab run mode value must be 0, 1, or 2"
-				echo "ERROR: matlab run mode value must be 0 or 1"
+				log_Err "MATLAB Run Mode value must be 0 or 1"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
+
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
@@ -272,102 +356,91 @@ show_tool_versions()
 	${CARET7DIR}/wb_command -version
 }
 
+# ------------------------------------------------------------------------------
+#  Main processing of script.
+# ------------------------------------------------------------------------------
+
 main()
 {
-	# Get command line options
-	get_options $@
+	log_Msg "Starting main functionality"
 
-	# Show the versions of tools used
-	show_tool_versions
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local HighResMesh="${3}"
+	local LowResMeshes="${4}"
+	local RegName="${5}"
+	local DeDriftRegFiles="${6}"
+	local ConcatRegName="${7}"
+	local Maps="${8}"
+	local MyelinMaps="${9}"
+	local rfMRINames="${10}"
+	local tfMRINames="${11}"
+	local SmoothingFWHM="${12}"
+	local HighPass="${13}"
+	
+	local MyelinTargetFile="${14}"
+	if [ "${MyelinTargetFile}" = "NONE" ]; then
+		MyelinTargetFile=""
+	fi
 
-	#Caret7_Command="${1}"
+	local InRegName="${15}"
+	if [ "${InRegName}" = "NONE" ]; then
+		InRegName=""
+	fi
+	
+	local MatlabRunMode
+	if [ -z "${16}" ]; then
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
+	else
+		MatlabRunMode="${16}"
+	fi
+
+	# Log values retrieved from positional parameters
+	log_Msg "StudyFolder: ${StudyFolder}"
+	log_Msg "Subject: ${Subject}"
+	log_Msg "HighResMesh: ${HighResMesh}"
+	log_Msg "LowResMeshes: ${LowResMeshes}"
+	log_Msg "RegName: ${RegName}"
+	log_Msg "DeDriftRegFiles: ${DeDriftRegFiles}"
+	log_Msg "ConcatRegName: ${ConcatRegName}"
+	log_Msg "Maps: ${Maps}"
+	log_Msg "MyelinMaps: ${MyelinMaps}"
+	log_Msg "rfMRINames: ${rfMRINames}"
+	log_Msg "tfMRINames: ${tfMRINames}"
+	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
+	log_Msg "HighPass: ${HighPass}"
+	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
+	log_Msg "InRegName: ${InRegName}"
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+
+	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	#GitRepo="${2}"
-	#FixDir="${3}"
-
-	#StudyFolder="${4}"
-	local StudyFolder="${g_path_to_study_folder}"
-	log_Msg "StudyFolder: ${StudyFolder}"
-
-	#Subject="${5}"
-	local Subject="${g_subject}"
-	log_Msg "Subject: ${Subject}"
-
-	#HighResMesh="${6}"
-	local HighResMesh="${g_high_res_mesh}"
-	log_Msg "HighResMesh: ${HighResMesh}"
-
-	#LowResMeshes="${7}"
-	local LowResMeshes="${g_low_res_meshes}"
-	log_Msg "LowResMeshes: ${LowResMeshes}"
-
-	#RegName="${8}"
-	local RegName="${g_registration_name}"
-	log_Msg "RegName: ${RegName}"
-
-	#DeDriftRegFiles="${9}"
-	local DeDriftRegFiles="${g_dedrift_reg_files}"
-	log_Msg "DeDriftRegFile: ${DeDriftRegFiles}"
-
-	#ConcatRegName="${10}"
-	local ConcatRegName="${g_concat_reg_name}"
-	log_Msg "ConcatRegName: ${ConcatRegName}"
-
-	#Maps="${11}"
-	local Maps="${g_maps}"
-	log_Msg "Maps: ${Maps}"
-
-	#MyelinMaps="${12}"
-	local MyelinMaps="${g_myelin_maps}"
-	log_Msg "MyelinMaps: ${MyelinMaps}"
-
-	#rfMRINames="${13}"
-	local rfMRINames="${g_rfmri_names}"
-	log_Msg "rfMRINames: ${rfMRINames}"
-
-	#tfMRINames="${14}"
-	local tfMRINames="${g_tfmri_names}"
-	log_Msg "tfMRINames: ${tfMRINames}"
-
-	#SmoothingFWHM="${15}"
-	local SmoothingFWHM="${g_smoothing_fwhm}"
-	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
-
-	#HighPass="${16}"
-	local HighPass="${g_highpass}"
-	log_Msg "HighPass: ${HighPass}"
-
-	local MyelinTargetFile="${g_myelin_target_file}"
-	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
-
-	local InRegName="${g_input_reg_name}"
-	log_Msg "InRegName: ${InRegName}"
-
 	LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
-	log_Msg "After delimeter substitution, LowResMeshes: ${LowResMeshes}"
+	log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
 
 	DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
+	log_Msg "After delimiter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, Maps: ${Maps}"
+	log_Msg "After delimiter substitution, Maps: ${Maps}"
 
 	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
-	log_Msg "After delimeter substitution, MyelinMaps: ${MyelinMaps}"
+	log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
 	rfMRINames=`echo "$rfMRINames" | sed s/"@"/" "/g`
 	if [ "${rfMRINames}" = "NONE" ] ; then
 		rfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, rfMRINames: ${rfMRINames}"
+	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames}"
 
 	tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
 	if [ "${tfMRINames}" = "NONE" ] ; then
 		tfMRINames=""
 	fi
-	log_Msg "After delimeter substitution, tfMRINames: ${tfMRINames}"
+	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames}"
 
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
 	log_Msg "CorrectionSigma: ${CorrectionSigma}"
@@ -378,8 +451,6 @@ main()
 	T1wFolder="${StudyFolder}/${Subject}/T1w"
 	log_Msg "T1wFolder: ${T1wFolder}"
 
-	#DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
-	
 	NativeFolder="${AtlasFolder}/Native"
 	log_Msg "NativeFolder: ${NativeFolder}"
 
@@ -388,8 +459,6 @@ main()
 
 	ResultsFolder="${AtlasFolder}/Results"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
-
-	#DownSampleT1wFolder="${T1wFolder}/fsaverage_LR${LowResMesh}k"
 
 	#Naming Conventions
 	local DownSampleFolderNames=""
@@ -612,8 +681,7 @@ main()
 						if [ -n ${MyelinTargetFile} ] ; then
 							cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 						else
-							echo "A ${MyelinTargetFile} is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
-							exit 1
+							log_Err_Abort "A ${MyelinTargetFile} is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
 						fi
 					fi
 
@@ -707,14 +775,53 @@ main()
 	log_Msg "ReApply FIX Cleanup"
 	for fMRIName in ${rfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		#${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh ${Caret7_Command} ${GitRepo} ${FixDir} ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ${ConcatRegName} 
-		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName} --matlab-run-mode=${g_matlab_run_mode}
+		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName} --matlab-run-mode=${MatlabRunMode}
 	done
 	
-	log_Msg "End"
+	log_Msg "Completing main functionality"
 }
 
-#
-# Invoke the main function to get things started
-#
-main $@
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_Debug_On
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+
+# Show tool versions
+show_tool_versions
+
+# Establish default MATLAB run mode
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality use positional parameters
+	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}                ${13}           ${14}                   ${15}            ${16}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
+	
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main "$@"
+
+fi

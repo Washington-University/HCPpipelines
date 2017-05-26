@@ -9,7 +9,7 @@ function MSMregression(inputspatialmaps,inputdtseries,inputweights,outputspatial
 
 % edits by T.B. Brown to convert string parameters to numeric values
 % as necessary and print debugging information. When used with compiled
-  % Matlab, all parameters are passed in as strings
+% Matlab, all parameters are passed in as strings
 
 func_name='MSMregression';
 fprintf('%s - start\n', func_name);
@@ -227,4 +227,7 @@ if ~strcmp(inputweights,'NONE')
   ciftisave(OUTBO,outputweights,wbcommand); 
 
 end
+
+fprintf('%s - complete\n', func_name);
+
 end

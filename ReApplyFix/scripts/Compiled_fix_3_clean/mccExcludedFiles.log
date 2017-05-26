@@ -1,0 +1,7 @@
+The List of Excluded Files
+Excluded files	 Exclusion Message ID	 Reason For Exclusion	 Exclusion Rule
+/usr/local/MATLAB/R2016b/toolbox/local/+matlab/+internal/+toolboxes/addInstalledToolboxesToJavaPath.m	MATLAB:depfun:req:ExcludedBy	Cannot be packaged for use in the target environment MCR. Removed from the parts list by license Compiler.	/usr/local/MATLAB/R2016b/toolbox/local/[+]matlab/[+]internal/[+]toolboxes/
+/usr/local/MATLAB/R2016b/toolbox/local/+matlab/+internal/+toolboxes/addInstalledToolboxesToPath.m	MATLAB:depfun:req:ExcludedBy	Cannot be packaged for use in the target environment MCR. Removed from the parts list by license Compiler.	/usr/local/MATLAB/R2016b/toolbox/local/[+]matlab/[+]internal/[+]toolboxes/
+/usr/local/MATLAB/R2016b/toolbox/local/+matlab/+internal/+zipAddOns/addInstalledZipAddOnsToPath.m	MATLAB:depfun:req:ExcludedBy	Cannot be packaged for use in the target environment MCR. Removed from the parts list by license Compiler.	/usr/local/MATLAB/R2016b/toolbox/local/[+]matlab/[+]internal/[+]zipAddOns/
+/usr/local/MATLAB/R2016b/toolbox/local/pathdef.m	MATLAB:depfun:req:ExcludedBy	Cannot be packaged for use in the target environment MCR. Removed from the parts list by license Compiler.	/usr/local/MATLAB/R2016b/toolbox/local/pathdef[.]m
+/usr/local/MATLAB/R2016b/toolbox/matlab/codetools/initdesktoputils.m	MATLAB:depfun:req:ExcludedBy	Cannot be packaged for use in the target environment MCR. Removed from the parts list by license Compiler.	/usr/local/MATLAB/R2016b/toolbox/matlab/codetools/

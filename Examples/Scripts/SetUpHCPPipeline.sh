@@ -65,3 +65,10 @@ export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 # no further job branching beyond fsl_sub is allowed on the Jalapeno cluster
 export NSLOTS=1
 export OMP_NUM_THREADS=1
+#try to reduce strangeness from locale and other environment settings
+export LC_ALL=C
+export LANGUAGE=C
+# running the intial recon-all on fsl_sub gives a strange error: "(standard_in) 2: Error: comparison in expression" So far this doesn't seem to be a critical error.
+#POSIXLY_CORRECT currently gets set by many versions of fsl_sub, unfortunately, but at least don't pass it in if the user has it set in their usual environment
+unset POSIXLY_CORRECT
+# or: export POSIXLY_CORRECT=0

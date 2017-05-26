@@ -38,10 +38,7 @@ show_usage() {
 # --------------------------------------------------------------------------------
 log_SetToolName "FreeSurferPipeline.sh"
 
-# running the intial recon-all on fsl_sub gives a strange error: "(standard_in) 2: Error: comparison in expression" So far this doesn't seem to be a critical error.
-# it can probably be solved by unsetting POSIXLY_CORRECT (set by fsl)
-unset POSIXLY_CORRECT
-# or: export POSIXLY_CORRECT=0
+
 
 ################################################## OPTION PARSING #####################################################
 
@@ -132,7 +129,6 @@ T1wImageBrainFile=`remove_ext $T1wImageBrain`;
 
 PipelineScripts=${HCPPIPEDIR_FS}
 
-
 if [ -e "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh ] ; then
   rm "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh
 fi
@@ -184,10 +180,12 @@ fi
 # Initial Recon-all Steps
 log_Msg "Initial Recon-all Steps"
 
+
+
 # Call recon-all with flags that are part of "-autorecon1", with the exception of -skullstrip.
 # -skullstrip of FreeSurfer not reliable for Phase II data because of poor FreeSurfer mri_em_register registrations with Skull on,
 # so run registration with PreFreeSurfer masked data and then generate brain mask as usual.
-recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -motioncor -talairach -nuintensitycor -normalization ${seed_cmd_appendix}
+recon-all -i "$T1wImageFile"_1mm.nii.gz -subjid $SubjectID -sd $SubjectDIR -motioncor -talairach -nuintensitycor -normalization -openmp ${num_cores} ${seed_cmd_appendix}
 
 # Generate brain mask
 mri_convert "$T1wImageBrainFile"_1mm.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.mgz --conform
@@ -207,7 +205,7 @@ recon-all -subjid $SubjectID -sd $SubjectDIR -autorecon2 -nosmooth2 -noinflate2 
 
 #Intermediate Recon-all Steps
 log_Msg "Intermediate Recon-all Steps"
-recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc ${seed_cmd_appendix}
+recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphere -surfreg -jacobian_white -avgcurv -cortparc -openmp ${num_cores} ${seed_cmd_appendix}
 
 #Highres pial stuff (this module adjusts the pial surface based on the the T2w image)
 [[ $FlgHiRes = "TRUE" ]] && [[ -n $T2wImage ]] && log_Msg "High resolution pial surface, using T2w for enhanced contrast"
@@ -218,6 +216,6 @@ recon-all -subjid $SubjectID -sd $SubjectDIR -smooth2 -inflate2 -curvstats -sphe
 
 #Final Recon-all Steps
 log_Msg "Final Recon-all Steps"
-recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec ${seed_cmd_appendix}
+recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec -openmp ${num_cores} ${seed_cmd_appendix}
 
 log_Msg "Completed"

@@ -1,39 +1,35 @@
 #!/bin/bash
 
-set -e # If any commands exit with non-zero value, this script exits
-
-# ------------------------------------------------------------------------------
-#  Verify HCPPIPEDIR environment variable is set
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-log_Debug_On
-
-# ------------------------------------------------------------------------------
-#  Verify other needed environment variables are set
-# ------------------------------------------------------------------------------
-
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
-
-if [ -z "${MSMBINDIR}" ]; then
-	log_Err_Abort "MSMBINDIR environment variable must be set"
-fi
-log_Msg "MSMBINDIR: ${MSMBINDIR}"
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
+#
+# # MSMAll.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2015-2017 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+#
+# <!-- References -->
+# [HCP]: http://www.humanconnectome.org
+#
+#~ND~END~
 
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
@@ -95,34 +91,35 @@ get_options()
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder # ${StudyFolder}
-	unset g_subject              # ${Subject}
-	unset g_high_res_mesh        # ${HighResMesh}
-	unset g_low_res_mesh         # ${LowResMesh}
-	unset g_fmri_names_list      # ${fMRINames}
-	unset g_output_fmri_name     # ${OutputfMRIName}
-	unset g_fmri_proc_string     # ${fMRIProcSTRING}
-	unset g_input_pca_registration_name # ${InPCARegName}
-	unset g_input_registration_name     # ${InRegName}
-	unset g_registration_name_stem      # ${RegNameStem}
-	unset g_rsn_target_file             # ${RSNTargetFileOrig}
-	unset g_rsn_cost_weights            # ${RSNCostWeightsOrig}
-	unset g_myelin_target_file          # ${MyelinTargetFile}
-	unset g_topography_roi_file         # ${TopographyROIFile}
-	unset g_topography_target_file      # ${TopographyTargetFile}
-	unset g_iterations                  # ${Iterations}
-	unset g_method                      # ${Method}
-	unset g_use_migp                    # ${UseMIGP}
-	unset g_ica_dim                     # ${ICAdim}
-	unset g_regression_params           # ${RegressionParams}
-	unset g_vn                          # ${VN}
-	unset g_rerun                       # ${ReRun}
-	unset g_reg_conf                    # ${RegConf}
-	unset g_reg_conf_vars               # ${RegConfVars}
-	unset g_matlab_run_mode
-
+	
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_HighResMesh
+	unset p_LowResMesh
+	#unset p_fMRINames
+	unset p_OutputfMRIName
+	unset p_fMRIProcSTRING
+	unset p_InPCARegName
+	unset p_InRegName
+	unset p_RegNameStem
+	unset p_RSNTargetFileOrig
+	unset p_RSNCostWeightsOrig
+	unset p_MyelinTargetFile
+	unset p_TopographyROIFile
+	unset p_TopographyTargetFile
+	unset p_Iterations
+	unset p_Method
+	unset p_UseMIGP
+	unset p_ICAdim
+	unset p_RegressionParams
+	unset p_VN
+	unset p_ReRun
+	unset p_RegConf
+	unset p_RegConfVars
+	unset p_MatlabRunMode
+	
 	# set default values
-	g_matlab_run_mode=0
+	p_MatlabRunMode=0
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -138,110 +135,110 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument/*=/""}
+				p_StudyFolder=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument/*=/""}
+				p_Subject=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument/*=/""}
+				p_HighResMesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument/*=/""}
+				p_LowResMesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--fmri-names-list=*)
-				g_fmri_names_list=${argument/*=/""}
-				index=$(( index + 1 ))
-				;;
+			#--fmri-names-list=*)
+			#	p_fMRINames=${argument/*=/""}
+			#	index=$(( index + 1 ))
+			#	;;
 			--output-fmri-name=*)
-				g_output_fmri_name=${argument/*=/""}
+				p_OutputfMRIName=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
-				g_fmri_proc_string=${argument/*=/""}
+				p_fMRIProcSTRING=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--input-pca-registration-name=*)
-				g_input_pca_registration_name=${argument/*=/""}
+				p_InPCARegName=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
-				g_input_registration_name=${argument/*=/""}
+				p_InRegName=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--registration-name-stem=*)
-				g_registration_name_stem=${argument/*=/""}
+				p_RegNameStem=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--rsn-target-file=*)
-				g_rsn_target_file=${argument/*=/""}
+				p_RSNTargetFileOrig=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--rsn-cost-weights=*)
-				g_rsn_cost_weights=${argument/*=/""}
+				p_RSNCostWeightsOrig=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--myelin-target-file=*)
-				g_myelin_target_file=${argument/*=/""}
+				p_MyelinTargetFile=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--topography-roi-file=*)
-				g_topography_roi_file=${argument/*=/""}
+				p_TopographyROIFile=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--topography-target-file=*)
-				g_topography_target_file=${argument/*=/""}
+				p_TopographyTargetFile=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--iterations=*)
-				g_iterations=${argument/*=/""}
+				p_Iterations=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--method=*)
-				g_method=${argument/*=/""}
+				p_Method=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--use-migp=*)
-				g_use_migp=${argument/*=/""}
+				p_UseMIGP=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--ica-dim=*)
-				g_ica_dim=${argument/*=/""}
+				p_ICAdim=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--regression-params=*)
-				g_regression_params=${argument/*=/""}
+				p_RegressionParams=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--vn=*)
-				g_vn=${argument/*=/""}
+				p_VN=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--rerun=*)
-				g_rerun=${argument/*=/""}
+				p_ReRun=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--reg-conf=*)
-				g_reg_conf=${argument/*=/""}
-				index=$(( index + 1 ))
-				;;
-			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument#*=}
+				p_RegConf=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--reg-conf-vars=*)
 				# Note: since the value of this parameter contains equal signs ("="),
 				# we have to handle grabbing the value slightly differently than
 				# in the other cases.
-				g_reg_conf_vars=${argument#--reg-conf-vars=}
+				p_RegConfVars=${argument#--reg-conf-vars=}
+				index=$(( index + 1 ))
+				;;
+			--matlab-run-mode=*)
+				p_MatlabRunMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -254,190 +251,189 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
-		log_Err "path to study folder (--path= or --study-folder=) required"
+	if [ -z "${p_StudyFolder}" ]; then
+		log_Err "Study Folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "Study Folder: ${study_folder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
-		log_Err "subject required"
+	if [ -z "${p_Subject}" ]; then
+		log_Err "Subject (--subject=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "Subject: ${p_Subject}"
+	fi
+	
+	if [ -z "${p_HighResMesh}" ]; then
+		log_Err "High Res Mesh (--high-res-mesh=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "High Res Mesh: ${p_HighResMesh}"
+	fi
+	
+	if [ -z "${p_LowResMesh}" ]; then
+		log_Err "Low Res Mesh (--low-res-mesh=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
 
-	if [ -z "${g_high_res_mesh}" ]; then
-		log_Err "high_res_mesh required"
+	#if [ -z "${p_fMRINames}" ]; then
+	#	log_Err "fMRI Names List (--fmri-names-list=) required"
+	#	error_count=$(( error_count + 1 ))
+	#else
+	#	log_Msg "fMRI Names List: ${p_fMRINames}"
+	#fi
+	
+	if [ -z "${p_OutputfMRIName}" ]; then
+		log_Err "Output fMRI Name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
+		log_Msg "Output fMRI Name: ${p_OutputfMRIName}"
 	fi
 
-	if [ -z "${g_low_res_mesh}" ]; then
-		log_Err "low_res_mesh required"
+	if [ -z "${p_fMRIProcSTRING}" ]; then
+		log_Err "fMRI Proc STRING (--fmri-proc-string=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_low_res_mesh: ${g_low_res_mesh}"
+		log_Msg "fMRI Proc STRING: ${p_fMRIProcSTRING}"
 	fi
 
-	if [ -z "${g_fmri_names_list}" ]; then
-		log_Err "fmri_names_list required"
+	if [ -z "${p_InPCARegName}" ]; then
+		log_Err "Input PCA Registration Name (--input-pca-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_names_list: ${g_fmri_names_list}"
+		log_Msg "Input PCA Registration Name: ${p_InPCARegName}"
+	fi
+	
+	if [ -z "${p_InRegName}" ]; then
+		log_Err "Input Registration Name (--input-registration-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Input Registration Name: ${p_InRegName}"
+	fi
+	
+	if [ -z "${p_RegNameStem}" ]; then
+		log_Err "Registration Name Stem: (--registration-name-stem=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Registration Name Stem: ${p_RegNameStem}"
 	fi
 
-	if [ -z "${g_output_fmri_name}" ]; then
-		log_Err "output_fmri_name required"
+	if [ -z "${p_RSNTargetFileOrig}" ]; then
+		log_Err "RSN Target File: (--rsn-target-file=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_output_fmri_name: ${g_output_fmri_name}"
+		log_Msg "RSN Target File: ${p_RSNTargetFileOrig}"
+	fi
+	
+	if [ -z "${p_RSNCostWeightsOrig}" ]; then
+		log_Err "RSN Cost Weights: (--rsn-cost-weights=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "RSN Cost Weights: ${p_RSNCostWeightsOrig}"
+	fi
+	
+	if [ -z "${p_MyelinTargetFile}" ]; then
+		log_Err "Myelin Target File: (--myelin-target-file=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
 	fi
 
-	if [ -z "${g_fmri_proc_string}" ]; then
-		log_Err "fmri_proc_string required"
+	if [ -z "${p_TopographyROIFile}" ]; then
+		log_Err "Topography ROI File: (--topography-roi-file=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_proc_string: ${g_fmri_proc_string}"
+		log_Msg "Topography ROI File: ${p_TopographyROIFile}"
+	fi
+	
+	if [ -z "${p_TopographyTargetFile}" ]; then
+		log_Err "Topography Target File: (--topography-target-file=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Topography Target File: ${p_TopographyTargetFile}"
+	fi
+	
+	if [ -z "${p_Iterations}" ]; then
+		log_Err "Iterations: (--iterations=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Iterations: ${p_Iterations}"
 	fi
 
-	if [ -z "${g_input_pca_registration_name}" ]; then
-		log_Err "input_pca_registration_name required"
+	if [ -z "${p_Method}" ]; then
+		log_Err "Method: (--method=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_input_pca_registration_name: ${g_input_pca_registration_name}"
+		log_Msg "Method: ${p_method}"
 	fi
 
-	if [ -z "${g_input_registration_name}" ]; then
-		log_Err "input_registration_name required"
+ 	if [ -z "${p_UseMIGP}" ]; then
+		log_Err "Use MIGP: (--use-migp=<YES | NO>) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_input_registration_name: ${g_input_registration_name}"
+		log_Msg "Use MIGP: ${p_UseMIGP}"
 	fi
 
-	if [ -z "${g_registration_name_stem}" ]; then
-		log_Err "registration_name_stem required"
+	if [ -z "${p_ICAdim}" ]; then
+		log_Err "ICA Dim: (--ica-dim=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_registration_name_stem: ${g_registration_name_stem}"
+		log_Msg "ICA Dim: ${p_ICAdim}"
 	fi
 
-	if [ -z "${g_rsn_target_file}" ]; then
-		log_Err "rsn_target_file required"
+	if [ -z "${p_RegressionParams}" ]; then
+		log_Err "Regression Params: (--regression-params=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_rsn_target_file: ${g_rsn_target_file}"
+		log_Msg "Regression Params: ${p_RegressionParams}"
+	fi
+	
+	if [ -z "${p_VN}" ]; then
+		log_Err "VN: (--vn=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "VN: ${p_vn}"
 	fi
 
-	if [ -z "${g_rsn_cost_weights}" ]; then
-		log_Err "rsn_cost_weights required"
+	if [ -z "${p_ReRun}" ]; then
+		log_Err "ReRun: (--rerun=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_rsn_cost_weights: ${g_rsn_cost_weights}"
+		log_Msg "ReRun: ${p_ReRun}"
 	fi
-
-	if [ -z "${g_myelin_target_file}" ]; then
-		log_Err "myelin_target_file required"
+	
+	if [ -z "${p_RegConf}" ]; then
+		log_Err "Reg Conf: (--reg-conf=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_myelin_target_file: ${g_myelin_target_file}"
+		log_Msg "Reg Conf: ${p_RegConf}"
 	fi
-
-	if [ -z "${g_topography_roi_file}" ]; then
-		log_Err "topography_roi_file required"
+	
+	if [ -z "${p_RegConfVars}" ]; then
+		log_Err "Reg Conf Vars: (--reg-conf-vars=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_topography_roi_file: ${g_topography_roi_file}"
+		log_Msg "Reg Conf Vars: ${p_RegConfVars}"
 	fi
-
-	if [ -z "${g_topography_target_file}" ]; then
-		log_Err "topography_target_file required"
+	
+	if [ -z "${p_MatlabRunMode}" ]; then
+		log_Err "MATLAB run mode: (--matlab-run-mode=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_topography_target_file: ${g_topography_target_file}"
-	fi
-
-	if [ -z "${g_iterations}" ]; then
-		log_Err "iterations required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_iterations: ${g_iterations}"
-	fi
-
-	if [ -z "${g_method}" ]; then
-		log_Err "method required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_method: ${g_method}"
-	fi
-
-	if [ -z "${g_use_migp}" ]; then
-		log_Err "use_migp required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_use_migp: ${g_use_migp}"
-	fi
-
-	if [ -z "${g_ica_dim}" ]; then
-		log_Err "ica_dim required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_ica_dim: ${g_ica_dim}"
-	fi
-
-	if [ -z "${g_regression_params}" ]; then
-		log_Err "regression_params required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_regression_params: ${g_regression_params}"
-	fi
-
-	if [ -z "${g_vn}" ]; then
-		log_Err "vn required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_vn: ${g_vn}"
-	fi
-
-	if [ -z "${g_rerun}" ]; then
-		log_Err "rerun required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_rerun: ${g_rerun}"
-	fi
-
-	if [ -z "${g_reg_conf}" ]; then
-		log_Err "reg_conf required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_reg_conf: ${g_reg_conf}"
-	fi
-
-	if [ -z "${g_reg_conf_vars}" ]; then
-		log_Err "reg_conf_vars required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "g_reg_conf_vars: ${g_reg_conf_vars}"
-	fi
-
-	if [ -z "${g_matlab_run_mode}" ]; then
-		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		case ${g_matlab_run_mode} in
+		case ${p_MatlabRunMode} in
 			0)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
-
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${g_matlab_run_mode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
 			1)
-				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
 				log_Err "MATLAB run mode value must be 0 or 1"
@@ -452,7 +448,7 @@ get_options()
 }
 
 # ------------------------------------------------------------------------------
-#  Show/Document Tool Versions
+#  Show Tool Versions
 # ------------------------------------------------------------------------------
 
 show_tool_versions()
@@ -461,15 +457,8 @@ show_tool_versions()
 	log_Msg "Showing wb_command version"
 	"${CARET7DIR}"/wb_command -version
 
-	# Show msm version
-	log_Msg "Showing msm version"
-	set +e
-	"${MSMBINDIR}"/msm --version
-	return_code=$?
-	set -e
-	if [ "${return_code}" -ne "0" ]; then
-		log_Msg "msm does not support the --version option"
-	fi
+	# Show msm version (?)
+	log_Msg "Cannot reliably show an msm version because some versions of msm do not support a --version option"
 }
 
 # ------------------------------------------------------------------------------
@@ -478,132 +467,103 @@ show_tool_versions()
 
 main()
 {
-	# Get command line options
-	get_options "$@"
+	# Retrieve positional parameters
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local HighResMesh="${3}"
+	local LowResMesh="${4}"
+	local OutputfMRIName="${5}"
+	local fMRIProcSTRING="${6}"
+	local InPCARegName="${7}"
+	local InRegName="${8}"
+	local RegNameStem="${9}"
+	local RSNTargetFileOrig="${10}"
+	local RSNCostWeightsOrig="${11}"
+	local MyelinTargetFile="${12}"
+	local TopographyROIFile="${13}"
+	local TopographyTargetFile="${14}"
+	local Iterations="${15}"
+	local Method="${16}"
+	local UseMIGP="${17}"
+	local ICAdim="${18}"
+	local RegressionParams="${19}"
+	local VN="${20}"
+	local ReRun="${21}"
+	local RegConf="${22}"
+	local RegConfVars="${23}"
 
-	# show the versions of tools used
-	show_tool_versions
-
-	# Naming Conventions
-	Caret7_Command=${CARET7DIR}/wb_command
-	log_Msg "Caret7_Command: ${Caret7_Command}"
-
-	StudyFolder="${g_path_to_study_folder}"
+	local MatlabRunMode
+	if [ -z "${24}" ]; then
+		MatlabRunMode=0
+	else
+		MatlabRunMode="${24}"
+	fi
+	
+	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
-
-	Subject="${g_subject}"
 	log_Msg "Subject: ${Subject}"
-
-	HighResMesh="${g_high_res_mesh}"
 	log_Msg "HighResMesh: ${HighResMesh}"
-
-	LowResMesh="${g_low_res_mesh}"
 	log_Msg "LowResMesh: ${LowResMesh}"
-
-	fMRINames="${g_fmri_names_list}"
-	log_Msg "fMRINames: ${fMRINames}"
-
-	OutputfMRIName="${g_output_fmri_name}"
 	log_Msg "OutputfMRIName: ${OutputfMRIName}"
-
-	fMRIProcSTRING="${g_fmri_proc_string}"
 	log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
-
-	InPCARegName="${g_input_pca_registration_name}"
 	log_Msg "InPCARegName: ${InPCARegName}"
-
-	InRegName="${g_input_registration_name}"
 	log_Msg "InRegName: ${InRegName}"
-
-	RegNameStem="${g_registration_name_stem}"
 	log_Msg "RegNameStem: ${RegNameStem}"
-
-	RSNTargetFileOrig="${g_rsn_target_file}"
 	log_Msg "RSNTargetFileOrig: ${RSNTargetFileOrig}"
-
-	RSNCostWeightsOrig="${g_rsn_cost_weights}"
 	log_Msg "RSNCostWeightsOrig: ${RSNCostWeightsOrig}"
-
-	MyelinTargetFile="${g_myelin_target_file}"
 	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
-
-	TopographyROIFile="${g_topography_roi_file}"
 	log_Msg "TopographyROIFile: ${TopographyROIFile}"
-
-	TopographyTargetFile="${g_topography_target_file}"
 	log_Msg "TopographyTargetFile: ${TopographyTargetFile}"
-
-	Iterations="${g_iterations}"
 	log_Msg "Iterations: ${Iterations}"
-
-	Method="${g_method}"
 	log_Msg "Method: ${Method}"
-
-	UseMIGP="${g_use_migp}"
 	log_Msg "UseMIGP: ${UseMIGP}"
-
-	ICAdim="${g_ica_dim}"
 	log_Msg "ICAdim: ${ICAdim}"
-
-	RegressionParams="${g_regression_params}"
 	log_Msg "RegressionParams: ${RegressionParams}"
-
-	VN="${g_vn}"
 	log_Msg "VN: ${VN}"
-
-	ReRun="${g_rerun}"
 	log_Msg "ReRun: ${ReRun}"
-
-	RegConf="${g_reg_conf}"
 	log_Msg "RegConf: ${RegConf}"
-
-	RegConfVars="${g_reg_conf_vars}"
 	log_Msg "RegConfVars: ${RegConfVars}"
-
+	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+	
+	# Naming Conventions and other variables
+	Caret7_Command=${CARET7DIR}/wb_command
 	AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
-	log_Msg "AtlasFolder: ${AtlasFolder}"
-
 	DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
-	log_Msg "DownSampleFolder: ${DownSampleFolder}"
-
 	NativeFolder="${AtlasFolder}/Native"
-	log_Msg "NativeFolder: ${NativeFolder}"
-
 	ResultsFolder="${AtlasFolder}/Results/${OutputfMRIName}"
-	log_Msg "ResultsFolder: ${ResultsFolder}"
-
 	T1wFolder="${StudyFolder}/${Subject}/T1w"
-	log_Msg "T1wFolder: ${T1wFolder}"
-
 	DownSampleT1wFolder="${T1wFolder}/fsaverage_LR${LowResMesh}k"
-	log_Msg "DownSampleT1wFolder: ${DownSampleT1wFolder}"
-
 	NativeT1wFolder="${T1wFolder}/Native"
-	log_Msg "NativeT1wFolder: ${NativeT1wFolder}"
 
 	if [[ $(echo -n "${Method}" | grep "WR") ]] ; then
 		LowICAdims=$(echo "${RegressionParams}" | sed 's/_/ /g')
 	fi
-	log_Msg "LowICAdims: ${LowICAdims}"
 
 	Iterations=$(echo "${Iterations}" | sed 's/_/ /g')
-	log_Msg "Iterations: ${Iterations}"
-
 	NumIterations=$(echo "${Iterations}" | wc -w)
-	log_Msg "NumIterations: ${NumIterations}"
-
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
-	log_Msg "CorrectionSigma: ${CorrectionSigma}"
-
 	BC="NO"
-	log_Msg "BC: ${BC}"
-
 	nTPsForSpectra="0" #Set to zero to not compute spectra
-	log_Msg "nTPsForSpectra: ${nTPsForSpectra}"
-
 	VolParams="NO" #Dont' output volume RSN maps
+
+	# Log values of Naming Conventions and other variables
+	log_Msg "Caret7_Command: ${Caret7_Command}"
+	log_Msg "AtlasFolder: ${AtlasFolder}"
+	log_Msg "DownSampleFolder: ${DownSampleFolder}"
+	log_Msg "NativeFolder: ${NativeFolder}"
+	log_Msg "ResultsFolder: ${ResultsFolder}"
+	log_Msg "T1wFolder: ${T1wFolder}"
+	log_Msg "DownSampleT1wFolder: ${DownSampleT1wFolder}"
+	log_Msg "NativeT1wFolder: ${NativeT1wFolder}"
+	log_Msg "LowICAdims: ${LowICAdims}"
+	log_Msg "Iterations: ${Iterations}"
+	log_Msg "NumIterations: ${NumIterations}"
+	log_Msg "CorrectionSigma: ${CorrectionSigma}"
+	log_Msg "BC: ${BC}"
+	log_Msg "nTPsForSpectra: ${nTPsForSpectra}"
 	log_Msg "VolParams: ${VolParams}"
 
+	
 	if [[ ! -e ${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii || ${ReRun} = "YES" ]] ; then
 
 		##IsRunning="${NativeFolder}/${Subject}.IsRunning_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.txt"
@@ -707,12 +667,12 @@ main()
 					done
 				fi
 
-				case ${g_matlab_run_mode} in
+				case ${MatlabRunMode} in
 
 					0)
 						# Use Compiled MATLAB
 						matlab_exe="${HCPPIPEDIR}"
-						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -733,8 +693,14 @@ main()
 
 						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
+						# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+						#       does NOT work. The output redirects that are part of the ${matlab_logging}
+						#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+						#       such that they get passed as parameters to the underlying executable.
+						#       So ">>" gets passed as a parameter to the executable as does the
+						#       log file name and the "2>&1" redirection. This causes the executable
+						#       to die with a "too many parameters" error message.
 						log_Msg "Run MATLAB command: ${matlab_cmd}"
-
 						echo "${matlab_cmd}" | bash
 						log_Msg "MATLAB command return code: $?"
 						;;
@@ -750,7 +716,7 @@ M_PROG
 						;;
 
 					*)
-						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
 						;;
 				esac
 
@@ -800,11 +766,11 @@ M_PROG
 					echo ${Distortion} > ${Params}
 				fi
 
-				case ${g_matlab_run_mode} in
+				case ${MatlabRunMode} in
 					0)
 						# Use Compiled Matlab
 						matlab_exe="${HCPPIPEDIR}"
-						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -824,9 +790,15 @@ M_PROG
 						matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
 
 						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
+						
+						# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+						#       does NOT work. The output redirects that are part of the ${matlab_logging}
+						#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+						#       such that they get passed as parameters to the underlying executable.
+						#       So ">>" gets passed as a parameter to the executable as does the
+						#       log file name and the "2>&1" redirection. This causes the executable
+						#       to die with a "too many parameters" error message.
 						log_Msg "Run Matlab command: ${matlab_cmd}"
-
 						echo "${matlab_cmd}" | bash
 						log_Msg "Matlab command return code: $?"
 						;;
@@ -842,7 +814,7 @@ M_PROG
 						;;
 
 					*)
-						log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+						log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
 						;;
 				esac
 
@@ -879,7 +851,7 @@ M_PROG
 				if [[ $(echo -n ${Modalities} | grep "C") ]] ; then
 					log_Msg "RegHemi - Modalities contains C"
 
-					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
+ 					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_${InRegName}.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii
 
 					${Caret7_Command} -metric-resample ${DownSampleFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ADAP_BARY_AREA ${NativeFolder}/${Subject}.${Hemisphere}.individual_RSNs_d${ICAdim}_weights.native.func.gii -area-surfs ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii -current-roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii -valid-roi-out ${NativeFolder}/${Subject}.${Hemisphere}.${InRegName}_roi.native.shape.gii -largest
 
@@ -1031,9 +1003,19 @@ M_PROG
 				msm_configuration_file="${NativeFolder}/${RegName}/conf.${Hemisphere}"
 				log_File_Must_Exist "${msm_configuration_file}"
 
-				msm_cmd="${MSMBINDIR}/msm --conf=${msm_configuration_file} --inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii --trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii --refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii --indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii --inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii --refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii --refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii --out=${NativeFolder}/${RegName}/${Hemisphere}."
-				log_Debug_Msg "msm_cmd: ${msm_cmd}"
-				${msm_cmd}
+				${MSMBINDIR}/msm \
+							--conf=${msm_configuration_file} \
+							--inmesh=${NativeFolder}/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii \
+							--trans=${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegName}.native.surf.gii \
+							--refmesh=${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii \
+							--indata=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_${InRegName}.native.func.gii \
+							--inweight=${NativeFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.native.func.gii \
+							--refdata=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}.${LowResMesh}k_fs_LR.func.gii \
+							--refweight=${DownSampleFolder}/${Subject}.${Hemisphere}.Modalities_${i}_weights.${LowResMesh}k_fs_LR.func.gii \
+							--out=${NativeFolder}/${RegName}/${Hemisphere}. \
+							--verbose \
+							--debug \
+							2>&1
 				MSMOut=$?
 				log_Debug_Msg "MSMOut: ${MSMOut}"
 
@@ -1202,11 +1184,11 @@ M_PROG
 			done
 		fi
 
-		case ${g_matlab_run_mode} in
+		case ${MatlabRunMode} in
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -1227,8 +1209,14 @@ M_PROG
 
 				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
+				# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+				#       does NOT work. The output redirects that are part of the ${matlab_logging}
+				#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+				#       such that they get passed as parameters to the underlying executable.
+				#       So ">>" gets passed as a parameter to the executable as does the
+				#       log file name and the "2>&1" redirection. This causes the executable
+				#       to die with a "too many parameters" error message.
 				log_Msg "Run Matlab command: ${matlab_cmd}"
-
 				echo "${matlab_cmd}" | bash
 				log_Msg "Matlab command return code: $?"
 				;;
@@ -1244,7 +1232,7 @@ M_PROG
 				;;
 
 			*)
-				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
 				;;
 		esac
 
@@ -1276,12 +1264,12 @@ M_PROG
 			echo ${Distortion} > ${Params}
 		fi
 
-		case ${g_matlab_run_mode} in
+		case ${MatlabRunMode} in
 
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/distrib/run_MSMregression.sh"
+				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
@@ -1302,8 +1290,14 @@ M_PROG
 
 				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
 
+				# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
+				#       does NOT work. The output redirects that are part of the ${matlab_logging}
+				#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
+				#       such that they get passed as parameters to the underlying executable.
+				#       So ">>" gets passed as a parameter to the executable as does the
+				#       log file name and the "2>&1" redirection. This causes the executable
+				#       to die with a "too many parameters" error message.
 				log_Msg "Run Matlab command: ${matlab_cmd}"
-
 				echo "${matlab_cmd}" | bash
 				log_Msg "Matlab command return code: $?"
 				;;
@@ -1319,7 +1313,7 @@ M_PROG
 				;;
 
 			*)
-				log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
+				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
 				;;
 		esac
 
@@ -1336,7 +1330,52 @@ M_PROG
 }
 
 # ------------------------------------------------------------------------------
-#  Invoke the main function to get things started
+#  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-main "$@"
+set -e # If any commands exit with non-zero value, this script exits
+
+# Verify that HCPPIPEDIR Environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify that other needed environment variables are set
+if [ -z "${CARET7DIR}" ]; then
+	log_Err_Abort "CARET7DIR environment variable must be set"
+fi
+log_Msg "CARET7DIR: ${CARET7DIR}"
+
+if [ -z "${MSMBINDIR}" ]; then
+	log_Err_Abort "MSMBINDIR environment variable must be set"
+fi
+log_Msg "MSMBINDIR: ${MSMBINDIR}"
+
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used
+if [[ ${1} == --* ]]; then
+	# Named parameters (e.g. --parameter-name=parameter-value) are used
+	log_Msg "Using named parameters"
+	
+	# Get command line options
+	get_options "$@"
+
+	# Invoke main functionality using positional parameters
+	#     ${1}               ${2}           ${3}               ${4}              ${5}                  ${6}                  ${7}                ${8}             ${9}               ${10}                    ${11}                     ${12}                   ${13}                    ${14}                       ${15}             ${16}         ${17}          ${18}         ${19}                   ${20}     ${21}        ${22}          ${23}              ${24}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_OutputfMRIName}" "${p_fMRIProcSTRING}" "${p_InPCARegName}" "${p_InRegName}" "${p_RegNameStem}" "${p_RSNTargetFileOrig}" "${p_RSNCostWeightsOrig}" "${p_MyelinTargetFile}" "${p_TopographyROIFile}" "${p_TopographyTargetFile}" "${p_Iterations}" "${p_Method}" "${p_UseMIGP}" "${p_ICAdim}" "${p_RegressionParams}" "${p_VN}" "${p_ReRun}" "${p_RegConf}" "${p_RegConfVars}" "${p_MatlabRunMode}"
+
+else
+	# Positional parameters are used
+	log_Msg "Using positional parameters"
+	main $@
+
+fi
+	
