@@ -886,6 +886,7 @@ main()
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${metric}
 			# What is the role of these dilated va files, and why are they left as metric (rather than converted to cifti)?
 			# A: Probably used as part of some computations for MG's semi-automated parcellation.
+
 		done
 
 		log_Msg "Completed merging and averaging of the vertex area files for ${Mesh}k mesh"

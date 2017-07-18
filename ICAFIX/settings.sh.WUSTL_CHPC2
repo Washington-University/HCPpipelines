@@ -101,7 +101,7 @@ FSL_FIX_CIFTIRW='/export/matlab/MCR/R2012a/v717/toolbox/local';
 
 # Set this to the location of the HCP Workbench command for your platform
 #FSL_FIX_WBC='/vols/Data/HCP/workbench/bin_linux64/wb_command';
-FSL_FIX_WBC='/home/HCPpipeline/pipeline_tools/workbench-v1.1.1/bin_rh_linux64/wb_command'
+FSL_FIX_WBC='/export/HCP/workbench-v1.1.1/bin_rh_linux64/wb_command'
 
 export FSL_FIX_CIFTIRW FSL_FIX_WBC
 
