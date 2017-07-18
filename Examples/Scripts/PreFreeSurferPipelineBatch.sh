@@ -184,7 +184,8 @@ main()
 	# Scan settings:
 	#
 	# Change the Scan Settings (e.g. Sample Spacings and $UnwarpDir) to match your 
-	# images. These are set to match the HCP Protocol by default.
+	# structural images. These are set to match the HCP-YA ("Young Adult") Protocol by default.
+	# (i.e., the study collected on the customized Connectom scanner).
 
 	# Readout Distortion Correction:
 	# 
@@ -199,14 +200,14 @@ main()
 	# 
 	# Change either the gradient echo field map or spin echo field map scan 
 	# settings to match your data. This script is setup to use gradient echo 
-	# field maps from the Siemens Connectom Scanner using the HCP Protocol.
+	# field maps from the Siemens Connectom Scanner collected using the HCP-YA Protocol.
 
 	# Gradient Distortion Correction:
 	#
 	# If using gradient distortion correction, use the coefficents from your 
 	# scanner. The HCP gradient distortion coefficents are only available through
 	# Siemens. Gradient distortion in standard scanners like the Trio is much 
-	# less than for the HCP Skyra.
+	# less than for the HCP Connectom scanner.
 
 	# DO WORK
 
@@ -273,7 +274,7 @@ main()
 		#   The following settings for AvgrdcSTRING, MagnitudeInputName, 
 		#   PhaseInputName, and TE are for using the Siemens specific 
 		#   Gradient Echo Field Maps that are collected and used in the 
-		#   standard HCP protocol.  
+		#   standard HCP-YA protocol.  
 		#
 		#   Note: The AvgrdcSTRING variable could also be set to the value 
 		#   "FIELDMAP" which is equivalent to "SiemensFieldMap".
@@ -304,21 +305,23 @@ main()
 
 		# The SpinEchoPhaseEncodeNegative variable should be set to the 
 		# spin echo field map volume with a negative phase encoding direction
-		# (LR in 3T HCP data, AP in 7T HCP data), and set to "NONE" if not
-		# using Spin Echo Field Maps (i.e. if AvgrdcSTRING is not equal to 
-		# "TOPUP")
+		# (LR if using a pair of LR/RL Siemens Spin Echo Field Maps (SEFMs);
+		# AP if using a pair of AP/PA Siemens SEFMS)
+		# and set to "NONE" if not using SEFMs
+		# (i.e. if AvgrdcSTRING is not equal to "TOPUP")
 		#
-		# Example values for when using Spin Echo Field Maps: 
+		# Example values for when using Spin Echo Field Maps from a Siemens machine:
 		#   ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz
 		#   ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_SpinEchoFieldMap_AP.nii.gz
 		SpinEchoPhaseEncodeNegative="NONE" 
 
 		# The SpinEchoPhaseEncodePositive variable should be set to the 
 		# spin echo field map volume with positive phase encoding direction
-		# (RL in 3T HCP data, PA in 7T HCP data), and set to "NONE" if not
-		# using Spin Echo Field Maps (i.e. if AvgrdcSTRING is not equal to "TOPUP")
+		# (RL if using a pair of LR/RL SEFMs; PA if using a AP/PA pair),
+		# and set to "NONE" if not using Spin Echo Field Maps
+		# (i.e. if AvgrdcSTRING is not equal to "TOPUP")
 		# 
-		# Example values for when using Spin Echo Field Maps:
+		# Example values for when using Spin Echo Field Maps from a Siemens machine:
 		#   ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz
 		#   ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_SpinEchoFieldMap_PA.nii.gz
 		SpinEchoPhaseEncodePositive="NONE"
@@ -341,6 +344,7 @@ main()
 		# 
 		# Example values for when using Spin Echo Field Maps: x, -x, y, -y
 		# Note: +x or +y are not supported. For positive values, DO NOT include the + sign
+		## MPH: Why do we say that "minus or not does not matter", but then list -x and -y as example values??
 		SEUnwarpDir="NONE"
 
 		# Topup Configuration file
@@ -395,14 +399,18 @@ main()
 
 		# Structural Scan Settings 
 		#
+		# Note that "UnwarpDir" is the *readout* direction of the *structural* (T1w,T2w)
+		# images, and should not be confused with "SEUnwarpDir" which is the *phase* encoding direction
+		# of the Spin Echo Field Maps (if using them).
+		#
 		# set all these values to NONE if not doing readout distortion correction
 		# 
-		# Sample values for when using General Electric Gradient Echo Field Maps
+		# Sample values for when using General Electric structurals
 		#   T1wSampleSpacing="0.000011999" # For General Electric scanners, 1/((0018,0095)*(0028,0010))
 		#   T2wSampleSpacing="0.000008000" # For General Electric scanners, 1/((0018,0095)*(0028,0010))
-		#   UnwarpDir="y"
+		#   UnwarpDir="y"  ## MPH: This doesn't seem right. Is this accurate??
 
-		# The values set below are for the HCP Protocol using the Siemens 
+		# The values set below are for the HCP-YA Protocol using the Siemens 
 		# Connectom Scanner
 
 		# DICOM field (0019,1018) in s or "NONE" if not used
@@ -411,7 +419,7 @@ main()
 		# DICOM field (0019,1018) in s or "NONE" if not used
 		T2wSampleSpacing="0.0000021" 
 
-		# z appears to be best for Siemens Gradient Echo Field Maps 
+		# z appears to be the appropriate polarity for the 3D structurals collected on Siemens scanners
 		# or "NONE" if not used
 		UnwarpDir="z" 
 
