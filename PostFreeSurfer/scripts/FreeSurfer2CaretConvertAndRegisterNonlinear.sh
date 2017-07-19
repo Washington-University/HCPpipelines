@@ -557,7 +557,7 @@ for LowResMesh in ${LowResMeshes} ; do
 				-roi-right    ${roi_right}
 	
 	# VAMean - mean of surface area accounted for for each vertex - used for normalization
-	VAMean=$(${Caret7_Command} -cifti-stats ${midthickness_va_file} -reduce MEAN)
+	VAMean=$(${CARET7DIR}/wb_command -cifti-stats ${midthickness_va_file} -reduce MEAN)
 	log_Msg "VAMean: ${VAMean}"
 
 	${CARET7DIR}/wb_command -cifti-math "VA / ${VAMean}" ${normalized_midthickness_va_file} -var VA ${midthickness_va_file}
