@@ -259,6 +259,7 @@ get_options()
 					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 				else
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+			  fi
 				;;
 			1)
 				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
