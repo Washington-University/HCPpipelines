@@ -80,7 +80,7 @@ PRINTCOM=""
 fMRINames="tfMRI_WM_GAMBLING_MOTOR_LR tfMRI_WM_GAMBLING_MOTOR_RL tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL"
 
 HighPass="2000"
-ReUseHighPass="YES"
+ReUseHighPass="YES" #Use YES if using multi-run ICA-FIX, otherwise use NO
 
 DualScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
 SingleScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
@@ -103,8 +103,8 @@ for Subject in $Subjlist ; do
 	  ${queuing_command} ${HCPPIPEDIR}/PostFix/PostFix.sh \
     --study-folder=${StudyFolder} \
     --subject=${Subject} \
-    --fmri-names=${fMRIName} \
-    --highpass=${HighPass} \
+    --fmri-name=${fMRIName} \
+    --high-pass=${HighPass} \
     --template-scene-dual-screen=${DualScene} \
     --template-scene-single-screen=${SingleScene} \
     --reuse-high-pass=${ReUseHighPass} \
