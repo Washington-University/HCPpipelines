@@ -85,7 +85,7 @@ PRINTCOM=""
 #	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir96_LR.nii.gz
 #	${StudyFolder}/${Subject}/unprocessed/3T/Diffusion/${SubjectID}_3T_DWI_dir97_LR.nii.gz
 
-#Change Scan Settings: Echo Spacing and PEDir to match your images
+#Change Scan Settings: e.g. Echo Spacing, to match your images
 #These are set to match the HCP Protocol by default
 
 #If using gradient distortion correction, use the coefficents from your scanner
@@ -119,7 +119,6 @@ for Subject in $Subjlist ; do
 
   #Scan Setings
   EchoSpacing=0.78 #Echo Spacing or Dwelltime of dMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.
-  PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
   #Config Settings
   # Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
@@ -136,7 +135,7 @@ for Subject in $Subjlist ; do
   ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
       --posData="${PosData}" --negData="${NegData}" \
       --path="${StudyFolder}" --subject="${SubjectID}" \
-      --echospacing="${EchoSpacing}" --PEdir=${PEdir} \
+      --echospacing="${EchoSpacing}" \
       --gdcoeffs="${Gdcoeffs}" \
       --printcom=$PRINTCOM
 

@@ -170,8 +170,8 @@ for Subject in $Subjlist ; do
 			NegDataSeparator=""
 		fi
 
-		PosData="${PosData}${PosDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_AP.nii.gz"
-		NegData="${NegData}${NegDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_PA.nii.gz"
+		PosData="${PosData}${PosDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_PA.nii.gz"
+		NegData="${NegData}${NegDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_AP.nii.gz"
 	done
 
 	echo "  ${SCRIPT_NAME}: PosData: ${PosData}"
@@ -180,8 +180,6 @@ for Subject in $Subjlist ; do
 	#Scan Setings
 	EchoSpacing=0.2733285956376756 #Echo Spacing or Dwelltime of dMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.
 	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing}"
-	PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
-	echo "  ${SCRIPT_NAME}: PEdir: ${PEdir}"
 
 	#Config Settings
 	# Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
@@ -201,7 +199,6 @@ for Subject in $Subjlist ; do
 		--path="${StudyFolder}" \
 		--subject="${SubjectID}" \
 		--echospacing="${EchoSpacing}" \
-		--PEdir=${PEdir} \
 		--gdcoeffs="${Gdcoeffs}" \
 		--b0maxbval=100 \
 		--printcom=$PRINTCOM
