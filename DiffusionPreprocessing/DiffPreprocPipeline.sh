@@ -6,7 +6,8 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2016 The Human Connectome Project
+# Copyright (C) 2012-2017 The Human Connectome Project (HCP) and
+#                         The Connectome Coordination Facility (CCF)
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -122,8 +123,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--version]             show version information and exit with 0 as return code
   --path=<study-path>     path to subject's data folder
   --subject=<subject-id>  subject ID
-  --PEdir=<phase-encoding-dir>
-                          phase encoding direction specifier: 1=LR/RL, 2=AP/PA
   --posData=<positive-phase-encoding-data>
                           @ symbol separated list of data with positive phase 
                           encoding direction (e.g. dataRL1@dataRL2@...dataRLn)
@@ -197,7 +196,6 @@ EOF
 # Global Output Variables
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
-#  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
 #  ${PosInputImages}	  @ symbol separated list of data with positive phase 
 #                         encoding direction
 #  ${NegInputImages}      @ symbol separated lsit of data with negative phase
@@ -228,7 +226,6 @@ get_options()
 	# initialize global output variables
 	unset StudyFolder
 	unset Subject
-	unset PEdir
 	unset PosInputImages
 	unset NegInputImages
 	unset echospacing
@@ -263,10 +260,6 @@ get_options()
 				;;
 			--subject=*)
 				Subject=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--PEdir=*)
-				PEdir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--posData=*)
@@ -329,10 +322,6 @@ get_options()
 		error_msgs+="\nERROR: <subject-id> not specified"
 	fi
 	
-	if [ -z ${PEdir} ] ; then
-		error_msgs+="\nERROR: <phase-encoding-dir> not specified"
-	fi
-	
 	if [ -z ${PosInputImages} ] ; then
 		error_msgs+="\nERROR: <positive-phase-encoded-data> not specified"
 	fi
@@ -372,7 +361,6 @@ get_options()
 	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
 	echo "   Subject: ${Subject}"
-	echo "   PEdir: ${PEdir}"
 	echo "   PosInputImages: ${PosInputImages}"
 	echo "   NegInputImages: ${NegInputImages}"
 	echo "   echospacing: ${echospacing}"
@@ -450,7 +438,6 @@ main()
 	pre_eddy_cmd+=" --path=${StudyFolder} "
 	pre_eddy_cmd+=" --subject=${Subject} "
 	pre_eddy_cmd+=" --dwiname=${DWIName} "
-	pre_eddy_cmd+=" --PEdir=${PEdir} "
 	pre_eddy_cmd+=" --posData=${PosInputImages} "
 	pre_eddy_cmd+=" --negData=${NegInputImages} "
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
