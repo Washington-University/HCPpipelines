@@ -320,9 +320,6 @@ for Hemisphere in L R ; do
 		#Calculate Affine Transform and Apply
 		if [ ! -e "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc ] ; then
 		  mkdir "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-		else
-		  rm -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-		  mkdir "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
 		fi
 		${CARET7DIR}/wb_command -surface-affine-regression "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.mat
 		${CARET7DIR}/wb_command -surface-apply-affine "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.mat "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
