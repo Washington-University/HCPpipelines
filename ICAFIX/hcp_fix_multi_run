@@ -192,7 +192,7 @@ for fmri in $fmris ; do
 	cd ${fmri}.ica
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
 	cd ..
-	log_Debug "Botton of loop through fmris: fmri: ${fmri}"
+	log_Debug "Bottom of loop through fmris: fmri: ${fmri}"
 done
 
 AlreadyHP="-1" #Don't run highpass on concatenated data
