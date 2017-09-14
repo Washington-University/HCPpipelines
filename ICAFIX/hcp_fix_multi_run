@@ -10,7 +10,7 @@
 #
 #   Changes by Timothy B. Brown <tbbrown@wustl.edu>
 #
-#   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith jamison <kjamison@umn.edu>
+#   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith Jamison <kjamison@umn.edu>
 #   2) Changes to echo output messages to aid in debugging 
 #   3) Changes to call version 3.14a of melodic instead of melodic in FSL distribution based on changes
 #      originally made by Mohana Ramaratnam <mohanakannan9@gmail.com>
@@ -19,23 +19,30 @@ DEBUG="TRUE"
 g_script_name=$(basename "${0}")
 
 log_Debug() {
-	msg="${1}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
 	if [ "${DEBUG}" = "TRUE" ]; then
-		echo "${g_script_name}: DEBUG: ${msg}"
-		>&2 echo "${g_script_name}: DEBUG: ${msg}"
+		output_msg="${date_time} - ${g_script_name} - DEBUG - ${msg}"
+		echo "${output_msg}"
 	fi
 }
 
 log_Inform() {
-	msg="${1}"
-	echo "${g_script_name}: INFORM: ${msg}"
-	>&2 echo "${g_script_name}: INFORM: ${msg}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
+	output_msg="${date_time} - ${g_script_name} - INFORM - ${msg}"
+	echo ${output_msg}
 }
 
 log_Error() {
-	msg="${1}"
-	echo "${g_script_name}: ERROR: ${msg}"
-	>&2 echo "${g_script_name}: ERROR: ${msg}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
+	output_msg="${date_time} - ${g_script_name} - ERROR - ${msg}"
+	echo ${output_msg}
+	>&2 echo "${output_msg}"
 }
 
 # Set this before calling hcp_fix instead, to make it more flexible
