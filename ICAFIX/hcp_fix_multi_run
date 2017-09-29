@@ -271,7 +271,8 @@ log_Debug "End of melodic version log, help, and checksum"
 ###Run on concatenated file --
 
 #${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
-melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --verbose --debug"
+#melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --verbose --debug"
+melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr"
 log_Inform "melodic_cmd: ${melodic_cmd}"
 ${melodic_cmd}
 retCode=$?
