@@ -356,9 +356,14 @@ else
 	${FSL_FIXDIR}/fix ${concatfmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h ${AlreadyHP}
 fi
 
+log_Inform "Done running FIX"
+
+log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
 $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
 
+log_Debug "Checking for existence of ${concatfmri}.ica/Atlas_clean.dtseries.nii"
 if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
+	log_Debug "Moving ${concatfmri}.ica to ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii"
 	/bin/mv ${concatfmri}.ica/Atlas_clean.dtseries.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
 fi
 
@@ -366,8 +371,10 @@ Start="1"
 for fmri in $fmris ; do
 	NumTPS=`${FSL_FIX_WBC} -file-information $(remove_ext ${fmri})_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
-	echo "Start=${Start} Stop=${Stop}"
+	log_Inform "Start=${Start} Stop=${Stop}"
+	log_Debug "cifti merging"
 	${FSL_FIX_WBC} -cifti-merge `remove_ext ${fmri}`_Atlas_hp${hp}_clean.dtseries.nii -cifti ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	log_Debug "volume merging"
 	${FSL_FIX_WBC} -volume-merge `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -Tmean `remove_ext ${fmri}`_hp${hp}_clean_mean
 	fslmaths `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -sub `remove_ext ${fmri}`_hp${hp}_clean_mean `remove_ext ${fmri}`_hp${hp}_clean.nii.gz ###Remove the run average mean again if added above
