@@ -10,32 +10,40 @@
 #
 #   Changes by Timothy B. Brown <tbbrown@wustl.edu>
 #
-#   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith jamison <kjamison@umn.edu>
+#   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith Jamison <kjamison@umn.edu>
 #   2) Changes to echo output messages to aid in debugging 
-#   3) Changes to call version 3.14a of melodic instead of melodic in FSL distribution based on changes
-#      originally made by Mohana Ramaratnam <mohanakannan9@gmail.com>
+#
 
 DEBUG="TRUE"
 g_script_name=$(basename "${0}")
 
 log_Debug() {
-	msg="${1}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
 	if [ "${DEBUG}" = "TRUE" ]; then
-		echo "${g_script_name}: DEBUG: ${msg}"
-		>&2 echo "${g_script_name}: DEBUG: ${msg}"
+		output_msg="${date_time} - ${g_script_name} - DEBUG - ${msg}"
+		echo "${output_msg}"
+		>&2 echo "${output_msg}"
 	fi
 }
 
 log_Inform() {
-	msg="${1}"
-	echo "${g_script_name}: INFORM: ${msg}"
-	>&2 echo "${g_script_name}: INFORM: ${msg}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
+	output_msg="${date_time} - ${g_script_name} - INFORM - ${msg}"
+	echo "${output_msg}"
+	>&2 echo "${output_msg}"
 }
 
 log_Error() {
-	msg="${1}"
-	echo "${g_script_name}: ERROR: ${msg}"
-	>&2 echo "${g_script_name}: ERROR: ${msg}"
+	local msg="${1}"
+	local date_time=$(date)
+	local output_msg
+	output_msg="${date_time} - ${g_script_name} - ERROR - ${msg}"
+	echo ${output_msg}
+	>&2 echo "${output_msg}"
 }
 
 # Set this before calling hcp_fix instead, to make it more flexible
@@ -68,9 +76,17 @@ unset POSIXLY_CORRECT
 
 demeanMovementRegressors() {
 	In=${1}
+	log_Debug "demeanMovementRegressors: In: ${In}"
 	Out=${2}
-	nCols=`cat ${In} | head -1 | wc -w`
-	nRows=`cat ${In} | wc -l`
+	log_Debug "demeanMovementRegressors: Out: ${Out}"
+	log_Debug "demeanMovementRegressors: getting nCols"
+	nCols=$(head -1 ${In} | wc -w)
+	
+	log_Debug "demeanMovementRegressors: nCols: ${nCols}"
+	log_Debug "demeanMovementRegressors: getting nRows"
+	nRows=$(wc -l < ${In})
+	log_Debug "demeanMovementRegressors: nRows: ${nRows}"
+	
 	AllOut=""
 	c=1
 	while [ ${c} -le ${nCols} ] ; do
@@ -164,6 +180,7 @@ for fmri in $fmris ; do
 	
 	mkdir -p ${fmri}_hp$hp.ica/mc
 	if [ -f Movement_Regressors.txt ] ; then
+		log_Debug "About to create ${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf.par file"
 		cat Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf.par
 	else
 		log_Error "Movement_Regressors.txt not retrieved properly." 
@@ -192,7 +209,7 @@ for fmri in $fmris ; do
 	cd ${fmri}.ica
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
 	cd ..
-	log_Debug "Botton of loop through fmris: fmri: ${fmri}"
+	log_Debug "Bottom of loop through fmris: fmri: ${fmri}"
 done
 
 AlreadyHP="-1" #Don't run highpass on concatenated data
@@ -227,6 +244,7 @@ concatfmri=`basename $(remove_ext ${ConcatName})`_hp$hp
 concat_fmri_orig=`basename $(remove_ext ${ConcatName})`
 
 mkdir -p ${concatfmri}.ica
+log_Debug "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
 cat ${MovementTXTMergeSTRING} > Movement_Regressors_demean.txt
 mkdir ${concatfmri}.ica/mc
 fslmerge -tr ${concatfmri}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
@@ -239,15 +257,24 @@ if [ "${DEBUG}" = "TRUE" ] ; then
 fi
 
 log_Debug "Running melodic located at: ${FSLDIR}/bin/melodic"
-log_Debug "Beginning of melodic version log"
+log_Debug "Beginning of melodic version log, help, and checksum"
 if [ "${DEBUG}" = "TRUE" ] ; then
+	log_Debug "${FSLDIR}/bin/melodic --version"
 	${FSLDIR}/bin/melodic --version
+	log_Debug "${FSLDIR}/bin/melodic --help"
+	${FSLDIR}/bin/melodic --help
+	log_Debug "md5sum ${FSLDIR}/bin/melodic"
+	md5sum ${FSLDIR}/bin/melodic
 fi
-log_Debug "End of melodic version log"
+log_Debug "End of melodic version log, help, and checksum"
 
 ###Run on concatenated file --
 
-${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+#${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+#melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --verbose --debug"
+melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr"
+log_Inform "melodic_cmd: ${melodic_cmd}"
+${melodic_cmd}
 retCode=$?
 log_Debug "melodic has been run: retCode = ${retCode}"
 log_Debug "melodic has been run: Contents of ${concatfmri}.ica follow"
@@ -329,9 +356,14 @@ else
 	${FSL_FIXDIR}/fix ${concatfmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h ${AlreadyHP}
 fi
 
+log_Inform "Done running FIX"
+
+log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
 $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
 
+log_Debug "Checking for existence of ${concatfmri}.ica/Atlas_clean.dtseries.nii"
 if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
+	log_Debug "Moving ${concatfmri}.ica to ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii"
 	/bin/mv ${concatfmri}.ica/Atlas_clean.dtseries.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
 fi
 
@@ -339,8 +371,10 @@ Start="1"
 for fmri in $fmris ; do
 	NumTPS=`${FSL_FIX_WBC} -file-information $(remove_ext ${fmri})_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
-	echo "Start=${Start} Stop=${Stop}"
+	log_Inform "Start=${Start} Stop=${Stop}"
+	log_Debug "cifti merging"
 	${FSL_FIX_WBC} -cifti-merge `remove_ext ${fmri}`_Atlas_hp${hp}_clean.dtseries.nii -cifti ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	log_Debug "volume merging"
 	${FSL_FIX_WBC} -volume-merge `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -Tmean `remove_ext ${fmri}`_hp${hp}_clean_mean
 	fslmaths `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -sub `remove_ext ${fmri}`_hp${hp}_clean_mean `remove_ext ${fmri}`_hp${hp}_clean.nii.gz ###Remove the run average mean again if added above

@@ -34,7 +34,7 @@ show_usage() {
 # --------------------------------------------------------------------------------
 #   Establish tool name for logging
 # --------------------------------------------------------------------------------
-log_SetToolName "GenericfMRIVolumeProcessingPipeline.sh"
+#log_SetToolName "GenericfMRIVolumeProcessingPipeline.sh"
 
 ################################################## OPTION PARSING #####################################################
 
@@ -128,8 +128,7 @@ case "$MotionCorrectionType" in
     ;;
     
     *)
-        log_Msg "ERROR: --mctype must be 'MCFLIRT' (default) or 'FLIRT'"
-        exit 1
+		log_Err_Abort "--mctype must be 'MCFLIRT' (default) or 'FLIRT'"
     ;;
 esac
 
@@ -157,8 +156,7 @@ fi
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
-    log_Msg "the --usejacobian option must be 'true' or 'false'"
-    exit 1
+	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
 # Setup PATHS
@@ -202,28 +200,23 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 case "$BiasCorrection" in
     NONE)
         UseBiasFieldMNI=""
-    ;;
+		;;
     LEGACY)
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
-    ;;
-    
+		;;    
     SEBASED)
         if [[ "$DistortionCorrection" != "TOPUP" ]]
         then
-            log_Msg "SEBASED bias correction is only available with --dcmethod=TOPUP"
-            exit 1
+            log_Err_Abort "SEBASED bias correction is only available with --dcmethod=TOPUP"
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
-    ;;
-    
+		;;
     "")
-        log_Msg "--biascorrection option not specified"
-        exit 1
-    ;;
-    
+        log_Err_Abort "--biascorrection option not specified"
+		;;
     *)
-        log_Msg "unrecognized value for bias correction: $BiasCorrection"
-    exit 1
+        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
+		;;
 esac
 
 
@@ -254,21 +247,21 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
     mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-	--workingdir="$fMRIFolder"/GradientDistortionUnwarp \
-	--coeffs="$GradientDistortionCoeffs" \
-	--in="$fMRIFolder"/"$OrigTCSName" \
-	--out="$fMRIFolder"/"$NameOffMRI"_gdc \
-	--owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
-
+		   --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
+		   --coeffs="$GradientDistortionCoeffs" \
+		   --in="$fMRIFolder"/"$OrigTCSName" \
+		   --out="$fMRIFolder"/"$NameOffMRI"_gdc \
+		   --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
+	
     log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"	
-     mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
-     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-	 --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
-	 --coeffs="$GradientDistortionCoeffs" \
-	 --in="$fMRIFolder"/"$OrigScoutName" \
-	 --out="$fMRIFolder"/"$ScoutName"_gdc \
-	 --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
-	 
+    mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
+    ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
+		   --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
+		   --coeffs="$GradientDistortionCoeffs" \
+		   --in="$fMRIFolder"/"$OrigScoutName" \
+		   --out="$fMRIFolder"/"$ScoutName"_gdc \
+		   --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
+	
 	if [[ $UseJacobian == "true" ]]
 	then
 	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
@@ -289,14 +282,14 @@ fi
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
 mkdir -p "$fMRIFolder"/MotionCorrection
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
-    "$fMRIFolder"/MotionCorrection \
-    "$fMRIFolder"/"$NameOffMRI"_gdc \
-    "$fMRIFolder"/"$ScoutName"_gdc \
-    "$fMRIFolder"/"$NameOffMRI"_mc \
-    "$fMRIFolder"/"$MovementRegressor" \
-    "$fMRIFolder"/"$MotionMatrixFolder" \
-    "$MotionMatrixPrefix" \
-    "$MotionCorrectionType"
+       "$fMRIFolder"/MotionCorrection \
+       "$fMRIFolder"/"$NameOffMRI"_gdc \
+       "$fMRIFolder"/"$ScoutName"_gdc \
+       "$fMRIFolder"/"$NameOffMRI"_mc \
+       "$fMRIFolder"/"$MovementRegressor" \
+       "$fMRIFolder"/"$MotionMatrixFolder" \
+       "$MotionMatrixPrefix" \
+       "$MotionCorrectionType"
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
@@ -311,61 +304,61 @@ log_Msg "mkdir -p ${DCFolder}"
 mkdir -p ${DCFolder}
 
 ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
-    --workingdir=${DCFolder} \
-    --scoutin=${fMRIFolder}/${ScoutName}_gdc \
-    --t1=${T1wFolder}/${T1wImage} \
-    --t1restore=${T1wFolder}/${T1wRestoreImage} \
-    --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
-    --fmapmag=${MagnitudeInputName} \
-    --fmapphase=${PhaseInputName} \
-    --fmapgeneralelectric=${GEB0InputName} \
-    --echodiff=${deltaTE} \
-    --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-    --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-    --echospacing=${DwellTime} \
-    --unwarpdir=${UnwarpDir} \
-    --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-    --biasfield=${T1wFolder}/${BiasField} \
-    --oregim=${fMRIFolder}/${RegOutput} \
-    --freesurferfolder=${T1wFolder} \
-    --freesurfersubjectid=${Subject} \
-    --gdcoeffs=${GradientDistortionCoeffs} \
-    --qaimage=${fMRIFolder}/${QAImage} \
-    --method=${DistortionCorrection} \
-    --topupconfig=${TopupConfig} \
-    --ojacobian=${fMRIFolder}/${JacobianOut} \
-    --dof=${dof} \
-    --fmriname=${NameOffMRI} \
-    --subjectfolder=${SubjectFolder} \
-    --biascorrection=${BiasCorrection} \
-    --usejacobian=${UseJacobian}
-    
+       --workingdir=${DCFolder} \
+       --scoutin=${fMRIFolder}/${ScoutName}_gdc \
+       --t1=${T1wFolder}/${T1wImage} \
+       --t1restore=${T1wFolder}/${T1wRestoreImage} \
+       --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
+       --fmapmag=${MagnitudeInputName} \
+       --fmapphase=${PhaseInputName} \
+       --fmapgeneralelectric=${GEB0InputName} \
+       --echodiff=${deltaTE} \
+       --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+       --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+       --echospacing=${DwellTime} \
+       --unwarpdir=${UnwarpDir} \
+       --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+       --biasfield=${T1wFolder}/${BiasField} \
+       --oregim=${fMRIFolder}/${RegOutput} \
+       --freesurferfolder=${T1wFolder} \
+       --freesurfersubjectid=${Subject} \
+       --gdcoeffs=${GradientDistortionCoeffs} \
+       --qaimage=${fMRIFolder}/${QAImage} \
+       --method=${DistortionCorrection} \
+       --topupconfig=${TopupConfig} \
+       --ojacobian=${fMRIFolder}/${JacobianOut} \
+       --dof=${dof} \
+       --fmriname=${NameOffMRI} \
+       --subjectfolder=${SubjectFolder} \
+       --biascorrection=${BiasCorrection} \
+       --usejacobian=${UseJacobian}
+
 #One Step Resampling
 log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 
 mkdir -p ${fMRIFolder}/OneStepResampling
 ${RUN} ${PipelineScripts}/OneStepResampling.sh \
-    --workingdir=${fMRIFolder}/OneStepResampling \
-    --infmri=${fMRIFolder}/${OrigTCSName}.nii.gz \
-    --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
-    --fmriresout=${FinalfMRIResolution} \
-    --fmrifolder=${fMRIFolder} \
-    --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-    --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
-    --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
-    --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
-    --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
-    --motionmatprefix=${MotionMatrixPrefix} \
-    --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
-    --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
-    --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
-    --scoutin=${fMRIFolder}/${OrigScoutName} \
-    --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
-    --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-    --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
-    
+       --workingdir=${fMRIFolder}/OneStepResampling \
+       --infmri=${fMRIFolder}/${OrigTCSName}.nii.gz \
+       --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
+       --fmriresout=${FinalfMRIResolution} \
+       --fmrifolder=${fMRIFolder} \
+       --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+       --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
+       --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
+       --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
+       --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
+       --motionmatprefix=${MotionMatrixPrefix} \
+       --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
+       --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
+       --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
+       --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
+       --scoutin=${fMRIFolder}/${OrigScoutName} \
+       --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
+       --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
+       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
+
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
 
@@ -394,14 +387,14 @@ fi
 #Intensity Normalization and Bias Removal
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
-    --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --biasfield=${UseBiasFieldMNI} \
-    --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
-    --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
-    --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
-    --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-    --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
-    --usejacobian=${UseJacobian}
+       --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
+       --biasfield=${UseBiasFieldMNI} \
+       --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+       --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
+       --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
+       --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
+       --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
+       --usejacobian=${UseJacobian}
 
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 # TBr Response: Since the copy operations are specifying individual files
