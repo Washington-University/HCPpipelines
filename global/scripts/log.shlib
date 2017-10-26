@@ -30,7 +30,7 @@ log_Msg()
 		toolname="${log_toolName}"
 	fi
 
-	echo ${dateTime} "-" ${toolname} "-" "${msg}"
+	echo "${dateTime} - ${toolname}: ${msg}"
 }
 
 #
@@ -44,34 +44,14 @@ log_Msg()
 log_Err_Abort()
 {
 	local msg="$*"
-	local dateTime
-	dateTime=$(date)
-	local toolname
-
-	if [ -z "${log_toolName}" ]; then
-		toolname=$(basename ${0})
-	else
-		toolname="${log_toolName}"
-	fi
-
-	echo ${dateTime} "-" ${toolname} "-" "ABORTING:" "${msg}"
+	log_Msg "ABORTING: ${msg}"
 	exit 1
 }
 
 log_Err()
 {
 	local msg="$*"
-	local dateTime
-	dateTime=$(date)
-	local toolname
-
-	if [ -z "${log_toolName}" ]; then
-		toolname=$(basename ${0})
-	else
-		toolname="${log_toolName}"
-	fi
-
-	echo ${dateTime} "-" ${toolname} "-" "ERROR:" "${msg}"
+	log_Msg "ERROR: ${msg}"
 }
 
 #
