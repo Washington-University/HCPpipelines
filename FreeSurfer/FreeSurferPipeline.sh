@@ -70,7 +70,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
      --path=<path to study folder>
      --study-folder=<path to study folder>
 
-   --subject=*=<subject ID>
+  --subject=<subject ID>
 
   one from the following group is required 
 
