@@ -65,10 +65,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
    
   one from the following group is required 
 
-     --subject-dir=<path to study folder>
-     --subjectDIR=<path to study folder>
-     --path=<path to study folder>
-     --study-folder=<path to study folder>
+     --subject-dir=<path to subject directory>
+     --subjectDIR=<path to subject directory>
 
   --subject=<subject ID>
 
@@ -86,7 +84,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 PARAMETERs can also be specified positionally as:
 
-  ${g_script_name} <path to study folder> <subject ID> <path to T1 image> <path to T2w image> [<recon-all seed value>]
+  ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T2w image> [<recon-all seed value>]
 
 EOF
 }
@@ -120,14 +118,6 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--subjectDIR=*)
-				p_subject_dir=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--path=*)
-				p_subject_dir=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--study-folder=*)
 				p_subject_dir=${argument#*=}
 				index=$(( index + 1 ))
 				;;
