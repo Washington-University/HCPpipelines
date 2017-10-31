@@ -36,7 +36,7 @@ show_tool_versions()
 	cat "${HCPPIPEDIR}"/version.txt
 
 	# Show recon-all version
-	log_Msg "Showing recon-all version"
+	log_Msg "Showing recon-all.v6.hires version"
 	which recon-all.v6.hires
 	recon-all.v6.hires -version
 
@@ -243,7 +243,7 @@ main()
 	recon_all_cmd+=" -sd ${SubjectDIR}"
 	recon_all_cmd+=" -hires"
 	recon_all_cmd+=" -openmp ${num_cores}"
-	if [ -z "${recon_all_seed}" ]; then
+	if [ ! -z "${recon_all_seed}" ]; then
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
 
