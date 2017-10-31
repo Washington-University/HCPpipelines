@@ -37,8 +37,8 @@ show_tool_versions()
 
 	# Show recon-all version
 	log_Msg "Showing recon-all version"
-	which recon-all
-	recon-all -version
+	which recon-all.v6.hires
+	recon-all.v6.hires -version
 
 	# Show tkregister2 version
 	log_Msg "Showing tkregister2 version"
