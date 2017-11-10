@@ -75,6 +75,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
      --t1w-image=<path to T1w image>
      --t1=<path to T1w image>
 
+  one from the following group is required
+
+     --t1brain=<path to T1w brain mask>
+     --t1w-brain=<path to T1w brain mask>
+
   one from the following group is required 
  
      --t2w-image=<path to T2w image>
@@ -84,7 +89,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 PARAMETERs can also be specified positionally as:
 
-  ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T2w image> [<recon-all seed value>]
+  ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
 EOF
 }
@@ -97,6 +102,7 @@ get_options()
 	unset p_subject_dir
 	unset p_subject
 	unset p_t1w_image
+	unset p_t1w_brain
 	unset p_t2w_image
 	unset p_seed
 
@@ -131,6 +137,14 @@ get_options()
 				;;
 			--t1=*)
 				p_t1w_image=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--t1brain=*)
+				p_t1w_brain=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--t1w-brain=*)
+				p_t1w_brain=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--t2w-image=*)
@@ -176,6 +190,13 @@ get_options()
 	else
 		log_Msg "T1w Image: ${p_t1w_image}"
 	fi
+
+	if [ -z "${p_t1w_brain}" ]; then
+		log_Err "T1w Brain (--t1brain= or --t1w-brain=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "T1w Brain: ${p_t1w_brain}"
+	fi
 		
 	if [ -z "${p_t2w_image}" ]; then
 		log_Err "T2w Image (--t2w-image= or --t2=) required"
@@ -202,13 +223,15 @@ main()
 	local SubjectDIR="${1}"
 	local SubjectID="${2}"
 	local T1wImage="${3}"
-	local T2wImage="${4}"
-	local recon_all_seed="${5}"
+	local T1wImageBrain="${4}"
+	local T2wImage="${5}"
+	local recon_all_seed="${6}"
 
 	# Log values retrieved from positional parameters
 	log_Msg "SubjectDIR: ${SubjectDIR}"
 	log_Msg "SubjectID: ${SubjectID}"
 	log_Msg "T1wImage: ${T1wImage}"
+	log_Msg "T1wImageBrain: ${T1wImageBrain}"
 	log_Msg "T2wImage: ${T2wImage}"
 	log_Msg "recon_all_seed: ${recon_all_seed}"
 	
@@ -228,6 +251,7 @@ main()
 	# Call recon-all
 	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -i ${T1wImage}"
+	recon_all_cmd+=" 
 	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
