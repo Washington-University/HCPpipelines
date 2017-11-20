@@ -2,7 +2,7 @@
 
 #   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time (useful for cleaning shorter runs)
 #
-#   Requires FIX version 1.063 or later and FSL 6.0 melodic version
+#   Requires FIX version 1.065 or later and FSL 6.0 melodic version
 #
 #   Stephen Smith and Matthew F. Glasser
 #
@@ -11,7 +11,7 @@
 #   Changes by Timothy B. Brown <tbbrown@wustl.edu>
 #
 #   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith Jamison <kjamison@umn.edu>
-#   2) Changes to echo output messages to aid in debugging 
+#   2) Changes to log output messages to aid in debugging 
 #
 
 DEBUG="TRUE"
@@ -145,7 +145,7 @@ SBRefVolSTRING=""
 MeanVolSTRING=""
 MeanCIFTISTRING=""
 for fmri in $fmris ; do  
-	log_Debug "Top of loop through fmris: fmri: ${fmri}"
+	log_Inform "Top of loop through fmris: fmri: ${fmri}"
 	NIFTIvolMergeSTRING=`echo "${NIFTIvolMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_demean "`
 	NIFTIvolhpMergeSTRING=`echo "${NIFTIvolhpMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp$hp "`
 	SBRefVolSTRING=`echo "${SBRefVolSTRING}$($FSLDIR/bin/remove_ext $fmri)_SBRef "`
@@ -209,7 +209,7 @@ for fmri in $fmris ; do
 	cd ${fmri}.ica
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
 	cd ..
-	log_Debug "Bottom of loop through fmris: fmri: ${fmri}"
+	log_Inform "Bottom of loop through fmris: fmri: ${fmri}"
 done
 
 AlreadyHP="-1" #Don't run highpass on concatenated data
@@ -256,7 +256,7 @@ if [ "${DEBUG}" = "TRUE" ] ; then
 	ls -lRa `remove_ext ${concatfmri}`.ica
 fi
 
-log_Debug "Running melodic located at: ${FSLDIR}/bin/melodic"
+log_Inform "Running melodic located at: ${FSLDIR}/bin/melodic"
 log_Debug "Beginning of melodic version log, help, and checksum"
 if [ "${DEBUG}" = "TRUE" ] ; then
 	log_Debug "${FSLDIR}/bin/melodic --version"
@@ -270,19 +270,23 @@ log_Debug "End of melodic version log, help, and checksum"
 
 ###Run on concatenated file --
 
-#${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
-#melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --verbose --debug"
+# Original melodic command without logging of command
+# ${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+#
+# melodic command with verbose output and debugging output, used when trying to determine why melodic was crashing
+# melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --verbose --debug"
+
 melodic_cmd="${FSLDIR}/bin/melodic -i $concatfmri -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr"
 log_Inform "melodic_cmd: ${melodic_cmd}"
 ${melodic_cmd}
-retCode=$?
-log_Debug "melodic has been run: retCode = ${retCode}"
+return_code=$?
+log_Inform "melodic has been run: return_code = ${return_code}"
 log_Debug "melodic has been run: Contents of ${concatfmri}.ica follow"
 if [ "${DEBUG}" = "TRUE" ] ; then
 	ls -lRa `remove_ext ${concatfmri}`.ica
 fi
 
-if [ "${retCode}" -ne "0" ] ; then
+if [ "${return_code}" -ne "0" ] ; then
     log_Error "melodic has returned a non-zero code"
 	log_Error "Exiting this script with -1 return value."
 	exit -1
@@ -348,7 +352,14 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 	
 	# now run fix
-	${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -m -h ${AlreadyHP}
+	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -m -h ${AlreadyHP}"
+	log_Inform "fix_cmd: ${fix_cmd}"
+	${fix_cmd}
+	return_code=$?
+	log_Msg "return_code from fix_cmd: ${return_code}"
+	if [ "${return_code}" -ne "0" ]; then
+		exit ${return_code}
+	fi
 	
 else
 	log_Inform "User has NOT specified a training data file"
