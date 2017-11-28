@@ -251,7 +251,7 @@ main()
 	# Call recon-all
 	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -i ${T1wImage}"
-	recon_all_cmd+=" 
+	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
@@ -341,8 +341,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality using positional parameters
-	#     ${1}               ${2}           ${3}             ${4}             ${5}
-	main "${p_subject_dir}" "${p_subject}" "${p_t1w_image}" "${p_t2w_image}" "${p_seed}"
+	#     ${1}               ${2}           ${3}             ${4}             ${5}             ${6}
+	main "${p_subject_dir}" "${p_subject}" "${p_t1w_image}" "${p_t1w_brain}" "${p_t2w_image}" "${p_seed}"
 	
 else
 	# Positional parameters are used
