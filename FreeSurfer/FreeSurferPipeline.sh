@@ -269,7 +269,7 @@ main()
 		exit ${return_code}
 	fi
 	
-	mridir=${SubjectDir}/${SubjectID}/mri
+	mridir=${SubjectDIR}/${SubjectID}/mri
 	log_Msg "Creating ${mridir}/transforms/eye.dat"
 	mkdir -p ${mridir}/transforms
 
