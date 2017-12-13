@@ -53,11 +53,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
-   --subject=<subject ID>
-   --fmri-names=<fMRI Names> @-separated list of fMRI names (e.g. tfMRI_RETCON_AP@tfMRI_RETCCW_PA)
-   --concat-fmri-name=<concatenated fMRI scan name>
-   --high-pass=<num> the HighPass variable used in Multi-run ICA+FIX
-   --reg-name=<registration name>
+   --subject=<subject ID> (e.g. 100610)
+   --fmri-names=<fMRI Names> @-separated list of fMRI file names 
+     (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_RETCCW_7T_AP/tfMRI_RETCCW_7T_AP.nii.gz@/path/to/study/100610/MNINonLinear/Results/tfMRI_RETCW_7T_PA/tfMRI_RETCW_7T_PA.nii.gz)
+   --concat-fmri-name=<concatenated fMRI scan file name>
+     (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_7T_RETCCW_AP_RETCW_PA/tfMRI_7T_RETCCW_AP_RETCW_PA.nii.gz)
+   --high-pass=<num> the HighPass variable used in Multi-run ICA+FIX (e.g. 2000)
+   --reg-name=<registration name> (e.g. MSMAll)
   [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
   [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
     0 = Use compiled MATLAB
@@ -394,7 +396,7 @@ main()
 			#matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 			
 			local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${AlreadyHP}"
-			local matlab_logging=">> ${StudyFolder}/${Subject}_${ConcatfMRIName}_${HighPass}${RegString}.matlab.log 2>&1"
+			local matlab_logging=">> ${StudyFolder}/${Subject}_$(basename ${ConcatfMRIName} .nii.gz)_${HighPass}${RegString}.matlab.log 2>&1"
 			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
 			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
