@@ -169,7 +169,7 @@ get_options()
 		log_Msg "fMRI Names: ${p_fMRINames}"
 	fi
 
-	if [ -z "${p_ConcatfMRIName}"]; then
+	if [ -z "${p_ConcatfMRIName}" ]; then
 		log_Err "Concatenated fMRI scan name (--concat-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
@@ -385,7 +385,10 @@ main()
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
 	fi
+	
+	${FSLDIR}/bin/imln ../${concat_fmri_orig} filtered_func_data
 
+	local DoVol="0"
 	case ${MatlabRunMode} in
 		0)
 			# Use Compiled Matlab
@@ -394,9 +397,8 @@ main()
 			matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
 			#matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
-			
-			local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${AlreadyHP}"
-			local matlab_logging=">> ${StudyFolder}/${Subject}_$(basename ${ConcatfMRIName} .nii.gz)_${HighPass}${RegString}.matlab.log 2>&1"
+			local matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${AlreadyHP} ${DoVol}"
+			local matlab_logging=">> ${StudyFolder}/${Subject}_${concat_fmri_orig}_${HighPass}${RegString}.matlab.log 2>&1"
 			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
 			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
@@ -416,7 +418,7 @@ main()
 			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
 
 			matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
 			;;
 
