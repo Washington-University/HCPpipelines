@@ -40,10 +40,10 @@ show_tool_versions()
 	which recon-all.v6.hires
 	recon-all.v6.hires -version
 
-	# Show tkregister2 version
-	log_Msg "Showing tkregister2 version"
-	which tkregister2
-	tkregister2 -version
+	# Show tkregister version
+	log_Msg "Showing tkregister version"
+	which tkregister
+	tkregister -version
 
 	# Show fslmaths version
 	log_Msg "Showing fslmaths version"
@@ -267,9 +267,8 @@ main()
 	log_Msg "recon_all_cmd: ${recon_all_cmd}"
 	${recon_all_cmd}
 	return_code=$?
-	log_Msg "return_code from recon_all_cmd: ${return_code}"
-	if [ "${return_code}" -ne "0" ]; then
-		exit ${return_code}
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 	fi
 	
 	mridir=${SubjectDIR}/${SubjectID}/mri
@@ -286,32 +285,50 @@ main()
 	echo "0 0 0 1" >> "${mridir}"/transforms/eye.dat
 	echo "round" >> "${mridir}"/transforms/eye.dat
 
-	log_Msg "Making internal T1w to T2w registration available in FSL format"
-	tkregister2_cmd="tkregister2"
-	tkregister2_cmd+=" --noedit"
-	tkregister2_cmd+=" --reg ${mridir}/transforms/T2wtoT1w.dat"
-	tkregister2_cmd+=" --mov ${T2wImage}"
-	tkregister2_cmd+=" --targ ${mridir}/T1w_hires.nii.gz"
-	tkregister2_cmd+=" --fslregout ${mridir}/transforms/T2wtoT1w.mat"
-	log_Msg "tkregister2_cmd: ${tkregister2_cmd}"
-	${tkregister2_cmd}
+	log_Msg "Making T1w to T2w registration available in FSL format"
+	
+	pushd ${mridir}
+
+	log_Msg "...Create a registration between the original conformed space and the rawavg space"
+	# This produces deleteme.data and P.lta
+	log_Msg "cmd: tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit"
+	tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit
 	return_code=$?
-	log_Msg "return_code from tkregister2_cmd: ${return_code}"
-	if [ "${return_code}" -ne "0" ]; then
-		exit ${return_code}
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
 	fi
 
-	log_Msg "Generating QC file"
-	fslmaths_cmd="fslmaths"
-	fslmaths_cmd+=" ${mridir}/T1w_hires.nii.gz"
-	fslmaths_cmd+=" -mul ${mridir}/T2w_hires.nii.gz"
-	fslmaths_cmd+=" -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
-	log_Msg "fslmaths_cmd: ${fslmaths_cmd}"
-	${fslmaths_cmd}
+	log_Msg "...Concatenate the T1raw-->orig transform with the T2raw-->orig transform"
+	# This concatenates transforms/T2raw.tla and P.lta to get Q.lta
+	log_Msg "cmd: mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta"
+	mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta
 	return_code=$?
-	log_Msg "return_code from fslmaths_cmd: ${return_code}"
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
+	fi
+
+	log_Msg "...Convert to FSL format"
+	# This produces the ${mridir}/transforms/T2wtoT1w.mat file that we need
+	log_Msg "cmd: tkregister --move orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit"
+	tkregister --move orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+	fi
+
+	log_Msg "...clean up"
+	rm --verbose deleteme.dat
+	rm --verbose P.lta
+	rm --verbose Q.lta
+	
+	popd 
+
+	log_Msg "Generating QC file"
+	log_Msg "cmd: fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
+	fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz
+	return_code=$?
 	if [ "${return_code}" -ne "0" ]; then
-		exit ${return_code}
+		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
 	fi
 	
 	log_Msg "Completing main functionality"
