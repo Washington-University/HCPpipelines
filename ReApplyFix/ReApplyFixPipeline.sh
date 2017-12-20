@@ -358,7 +358,7 @@ main()
 			  DoVol="0"
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
 			else
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
 			fi
 
 			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
