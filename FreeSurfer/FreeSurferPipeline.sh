@@ -309,8 +309,8 @@ main()
 
 	log_Msg "...Convert to FSL format"
 	# This produces the ${mridir}/transforms/T2wtoT1w.mat file that we need
-	log_Msg "cmd: tkregister --move orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit"
-	tkregister --move orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit
+	log_Msg "cmd: tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit"
+	tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
