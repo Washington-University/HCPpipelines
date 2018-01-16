@@ -299,7 +299,7 @@ get_options()
 		log_Msg "highpass value: ${p_HighPass}"
 	fi
 
-	if [ -z "{p_MyelinTargetFile}" ]; then
+	if [ -z "${p_MyelinTargetFile}" ]; then
 		log_Err "Myelin Target File (--myelin-target-file=) required"
 		error_count=$(( error_count + 1 ))
 	else

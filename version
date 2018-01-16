@@ -1,8 +1,0 @@
-#!/bin/bash
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-cat ${HCPPIPEDIR}/version.txt

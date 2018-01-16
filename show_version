@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+version_file="${HCPPIPEDIR}/version.txt"
+deployment_file="${HCPPIPEDIR}/deployment.txt"
+
+cat ${version_file}
+if [ -e "${deployment_file}" ] ; then
+	cat ${deployment_file}
+fi
+
