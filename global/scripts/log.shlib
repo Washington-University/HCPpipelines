@@ -54,6 +54,12 @@ log_Err()
 	log_Msg "ERROR: ${msg}"
 }
 
+log_Warn()
+{
+	local msg="$*"
+	log_Msg "WARNING: ${msg}"
+}
+
 #
 # Description:
 #   Checks whether the specified file exists.

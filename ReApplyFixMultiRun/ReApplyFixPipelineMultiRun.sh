@@ -378,12 +378,16 @@ main()
 	if [ -f ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii ] ; then
 		log_Msg "FOUND FILE: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
 		log_Msg "Performing imln"
+
+		rm -f Atlas.dtseries.nii
 		$FSLDIR/bin/imln ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii Atlas.dtseries.nii
 		
 		log_Msg "START: Showing linked files"
 		ls -l ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
+	else
+		log_Warn "FILE NOT FOUND: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
 	fi
 	
 	${FSLDIR}/bin/imln ../${concat_fmri_orig} filtered_func_data

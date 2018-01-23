@@ -773,9 +773,13 @@ main()
 
 	# ReApply FIX Cleanup
 	log_Msg "ReApply FIX Cleanup"
-	for fMRIName in ${rfMRINames} ; do
+	log_Msg "rfMRINames: ${rfMRINames}"
+	log_Msg "tfMRINames: ${tfMRINames}"
+	for fMRIName in ${rfMRINames} ${tfMRINames} ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName} --matlab-run-mode=${MatlabRunMode}
+		reapply_fix_cmd="${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh --path=${StudyFolder} --subject=${Subject} --fmri-name=${fMRIName} --high-pass=${HighPass} --reg-name=${ConcatRegName} --matlab-run-mode=${MatlabRunMode}"
+		log_Msg "reapply_fix_cmd: ${reapply_fix_cmd}"
+		${reapply_fix_cmd}
 	done
 	
 	log_Msg "Completing main functionality"

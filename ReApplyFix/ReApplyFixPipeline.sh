@@ -329,22 +329,29 @@ main()
 	if [ -f ../${fmri_orig}_Atlas${RegString}.dtseries.nii ] ; then
 		log_Msg "FOUND FILE: ../${fmri_orig}_Atlas${RegString}.dtseries.nii"
 		log_Msg "Performing imln"
+
+		rm -f Atlas.dtseries.nii
 		$FSLDIR/bin/imln ../${fmri_orig}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
 		log_Msg "START: Showing linked files"
 		ls -l ../${fmri_orig}_Atlas${RegString}.dtseries.nii
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
+	else
+		log_Warn "FILE NOT FOUND: ../${fmri_orig}_Atlas${RegString}.dtseries.nii"
 	fi
 
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
 
 	mkdir -p mc
 	if [ -f ../Movement_Regressors.txt ] ; then
+		log_Msg "Creating mc/prefiltered_func_data_mcf.par file"
 		cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 	else
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly."
 	fi
+
+	log_Msg "About to run fix_3_clean"
 
 	case ${MatlabRunMode} in
 
@@ -355,7 +362,7 @@ main()
 
 			local matlab_function_arguments
 			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
-			  DoVol="0"
+				DoVol="0"
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
 			else
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
