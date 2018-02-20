@@ -202,9 +202,9 @@ for fmri in $fmris ; do
 	${FSL_FIX_WBC} -cifti-math "TCS - MEAN" $($FSLDIR/bin/remove_ext $fmri)_Atlas_demean.dtseries.nii -var TCS $($FSLDIR/bin/remove_ext $fmri)_Atlas.dtseries.nii -var MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas_mean.dscalar.nii -select 1 1 -repeat
 	
 	${FSL_FIX_WBC} -cifti-convert -to-nifti ${fmri}_Atlas.dtseries.nii ${fmri}_Atlas_FAKENIFTI.nii.gz
-	${FSLDIR}/bin/fslmaths ${fmri}_Atlas_FAKENIFTI.nii.gz -bptf $hptr -1 ${fmri}_Atlas_hp$hp_FAKENIFTI.nii.gz
-	${FSL_FIX_WBC} -cifti-convert -from-nifti ${fmri}_Atlas_hp$hp_FAKENIFTI.nii.gz ${fmri}_Atlas.dtseries.nii ${fmri}_Atlas_hp$hp.dtseries.nii
-	$FSLDIR/bin/imrm ${fmri}_Atlas_FAKENIFTI ${fmri}_Atlas_hp$hp_FAKENIFTI
+	${FSLDIR}/bin/fslmaths ${fmri}_Atlas_FAKENIFTI.nii.gz -bptf $hptr -1 ${fmri}_Atlas_hp${hp}_FAKENIFTI.nii.gz
+	${FSL_FIX_WBC} -cifti-convert -from-nifti ${fmri}_Atlas_hp${hp}_FAKENIFTI.nii.gz ${fmri}_Atlas.dtseries.nii ${fmri}_Atlas_hp$hp.dtseries.nii
+	$FSLDIR/bin/imrm ${fmri}_Atlas_FAKENIFTI ${fmri}_Atlas_hp${hp}_FAKENIFTI
 	fmri=${fmri}_hp$hp
 	cd ${fmri}.ica
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
