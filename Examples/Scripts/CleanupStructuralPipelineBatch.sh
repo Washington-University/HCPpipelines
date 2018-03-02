@@ -106,6 +106,11 @@ for Subject in ${SubjList//@/ } ; do
   echo -n "rm -f ${SubjT1w}/${FSLHAverageLink}; " >> $TmpFile
   echo -n "rm -f ${SubjT1w}/${FSRHAverageLink}; " >> $TmpFile
   echo -n "mv -f ${SubjFS}/${statsFolder} ${SubjTmpFS}/${statsFolder}; " >> $TmpFile
+  echo -n "mkdir -p ${SubjTmpFS}/mri/transforms; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/mri/transforms/eye.dat ${SubjTmpFS}/mri/transforms/eye.dat; " >> $TmpFile
+  echo -n "mkdir -p ${SubjTmpFS}/surf; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/surf/lh.white.deformed ${SubjTmpFS}/surf/lh.white.deformed; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/surf/rh.white.deformed ${SubjTmpFS}/surf/rh.white.deformed; " >> $TmpFile
   echo -n "rm -rf ${SubjFS}; " >> $TmpFile
   echo -n "mv -f ${SubjTmpFS} ${SubjFS}; " >> $TmpFile
   echo -n "$FSLDIR/bin/imrm ${SubjFiles2Remove}; " >> $TmpFile
@@ -122,3 +127,15 @@ for Subject in ${SubjList//@/ } ; do
   ${queuing_command} $TmpFile
 
 done
+
+
+# if the eye.dat needs to be recreated:
+#echo "${Subject}" > "${SubjFS}/mri"/transforms/eye.dat
+#echo "1" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "1" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "1" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "1 0 0 0" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "0 1 0 0" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "0 0 1 0" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "0 0 0 1" >> "${SubjFS}/mri"/transforms/eye.dat
+#echo "round" >> "${SubjFS}/mri"/transforms/eye.dat
