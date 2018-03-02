@@ -35,10 +35,10 @@ EOF
 }
 
 # if no arguments given, return the usage
-if [[ $# -eq 0 ]] ; then usage; exit 0; fi
+if [[ $# -eq 0 ]] ; then Usage; exit 0; fi
 
 # if too few arguments given, return the usage, exit with error
-if [[ $# -lt 1 ]] ; then >&2 usage; exit 1; fi
+if [[ $# -lt 1 ]] ; then >&2 Usage; exit 1; fi
 
 # default parameters
 args=""
