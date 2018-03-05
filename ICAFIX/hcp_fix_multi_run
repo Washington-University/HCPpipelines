@@ -207,7 +207,8 @@ for fmri in $fmris ; do
 	$FSLDIR/bin/imrm ${fmri}_Atlas_FAKENIFTI ${fmri}_Atlas_hp${hp}_FAKENIFTI
 	fmri=${fmri}_hp$hp
 	cd ${fmri}.ica
-	$FSLDIR/bin/imln ../$fmri filtered_func_data
+	# Per https://github.com/Washington-University/Pipelines/issues/60, the following line doesn't appear to be necessary
+	#$FSLDIR/bin/imln ../$fmri filtered_func_data
 	cd ..
 	log_Inform "Bottom of loop through fmris: fmri: ${fmri}"
 done
