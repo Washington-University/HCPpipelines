@@ -832,12 +832,12 @@ if [[ $MaskArtery = "TRUE" ]] ; then
   # smooth filling on original non-bias-corrected T1 and T2
   ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
   --in=${T1wFolder}/${T1wImage}_acpc_dc \
-  --method=smooth
+  --method=smooth \
   --fillmask=${T1wFolder}/ArteryDetection/${Arg_basename}_arterymaskdil \
   --out=${T1wFolder}/${T1wImage}_acpc_dc_arteryfill
   ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
   --in=${T1wFolder}/${T2wImage}_acpc_dc \
-  --method=smooth
+  --method=smooth \
   --fillmask=${T1wFolder}/ArteryDetection/${Arg_basename}_arterymaskdil \
   --out=${T1wFolder}/${T2wImage}_acpc_dc_arteryfill
 
@@ -905,6 +905,102 @@ else
       ${ExtraArguments}
 
 fi
+
+
+# ------------------------------------------------------------------------------
+#  Retrieve complete bias field based on original biased T1w image
+# ------------------------------------------------------------------------------
+
+# test if an original biased T1w image is found
+T1wInputFirstImg=$(echo $T1wInputImages | awk '{print $1}')
+T1wInputBiasedImg=$(basename $T1wInputFirstImg)
+T1wInputBiasedImg=$(dirname $T1wInputFirstImg)/${T1wInputBiasedImg%%.*}_Biased
+if [[ -r $T1wInputBiasedImg.nii.gz ]] ; then
+
+  # continue only if there is exactly one T1w image supplied
+  if [[ $(echo $T1wInputImages | wc -w) -eq 1 ]] ; then
+
+    log_Msg "Retrieving complete BiasField based on original"
+
+    # test for Gradient Nonlinearity Correction
+    cmdWarp=""
+    if [[ ! $GradientDistortionCoeffs = "NONE" ]] ; then
+      cmdWarp="--warp=${T1wFolder}/xfms/${T1wImage}_gdc_warp"
+    fi
+
+    # set the acpc transformation matrix
+    cmdPostMat="--postmat=${T1wFolder}/xfms/acpc.mat"
+
+    # test if distortion correction is requested
+    case $AvgrdcSTRING in
+      ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT} )
+        if [[ ! $GradientDistortionCoeffs = "NONE" ]] ; then
+          ${RUN} ${FSLDIR}/bin/convertwarp --ref=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+            --out=${T1wFolder}/xfms/${T1wImage}_gdc_acpc_dc_warp \
+            --warp1=${TXwFolder}/xfms/${T1wImage}_gdc_warp \
+            --midmat=${T1wFolder}/xfms/acpc.mat \
+            --warp2=${T1wFolder}/xfms/${T1wImage}_dc
+          cmdWarp="--warp=${T1wFolder}/xfms/${T1wImage}_gdc_acpc_dc_warp"
+          cmdPostMat=""
+        fi ;;
+    esac
+
+    # warp the original (biased) T1w to acpc_dc space
+    ${RUN} ${FSLDIR}/bin/applywarp --rel --interp=spline \
+      --in="$T1wInputBiasedImg" \
+      --ref="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
+      $cmdWarp $cmdPostMat \
+      --out="${T1wFolder}/${T1wImage}_acpc_dc_biased"
+
+    # fix (close to) zero values in the biased image
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_biased -thr 0.0001 -binv ${T1wFolder}/${T1wImage}_acpc_dc_biased_fillmask
+    ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
+      --in=${T1wFolder}/${T1wImage}_acpc_dc_biased \
+      --method=smooth \
+      --fillmask=${T1wFolder}/${T1wImage}_acpc_dc_biased_fillmask \
+      --out=${T1wFolder}/${T1wImage}_acpc_dc_biased
+
+    # fix (close to) zero values in the restored image
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc -thr 0.0001 -binv ${T1wFolder}/${T1wImage}_acpc_dc_restore_fillmask
+    ${RUN} $HCPPIPEDIR_PreFS/FixNegVal.sh \
+      --in=${T1wFolder}/${T1wImage}_acpc_dc \
+      --method=smooth \
+      --fillmask=${T1wFolder}/${T1wImage}_acpc_dc_restore_fillmask \
+      --out=${T1wFolder}/${T1wImage}_acpc_dc_restore_smoothfill
+
+    # calculate the complete bias field
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_biased -div ${T1wFolder}/${T1wImage}_acpc_dc_restore_smoothfill ${T1wFolder}/BiasField_acpc_dc
+
+    # make a strict brain mask by ignoring the darkest 1% of voxels in the brain
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/T1w_acpc_dc_restore_brain.nii.gz -thrP 1 -bin ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain_mask_strict
+
+    # extrapolate the bias field from this strict brain mask
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/BiasField_acpc_dc -sub 1 ${T1wFolder}/BiasField_acpc_dc
+    tmpDir=$(mktemp -d "/tmp/fslsmoothfill.XXXXXXXXXX")
+    ${RUN} ${FSLDIR}/bin/fslsmoothfill -i ${T1wFolder}/BiasField_acpc_dc -m ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain_mask_strict -o ${tmpDir}/BiasField_acpc_dc > /dev/null
+    ${RUN} ${FSLDIR}/bin/fslmaths ${tmpDir}/BiasField_acpc_dc -add 1 ${T1wFolder}/BiasField_acpc_dc
+
+    # ensure a smooth bias field according to BiasFieldSmoothingSigma
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/BiasField_acpc_dc -s ${BiasFieldSmoothingSigma##*=} ${T1wFolder}/BiasField_acpc_dc
+
+    # create a new restored image from the enhanced bias field
+    ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_biased -div ${T1wFolder}/BiasField_acpc_dc ${T1wFolder}/${T1wImage}_acpc_dc_restore
+    if [[ -n $T2wInputImages ]] ; then
+      ${RUN} ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T2wImage}_acpc_dc_biased -div ${T1wFolder}/BiasField_acpc_dc ${T1wFolder}/${T2wImage}_acpc_dc_restore
+    fi
+
+    # clean up
+    rm -rf $tmpDir
+    ${RUN} imrm ${T1wFolder}/${T1wImage}_acpc_dc_biased_fillmask ${T1wFolder}/${T1wImage}_acpc_dc_restore_fillmask ${T1wFolder}/${T1wImage}_acpc_dc_restore_smoothfill ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain_mask_strict
+
+  else
+    # I couldn't be bothered to figure out how to implement the T1w motion correction transform
+    echo "incorporating the original bias field is not yet implemented when more than 1 T1w image is supplied"
+    echo "skipping..."
+  fi
+
+fi
+
 
 # ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
@@ -984,6 +1080,13 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --ot2restbrain=$Arg_ot2restbrain \
     --fnirtconfig=${FNIRTConfig} \
     --fixnegvalmethod=${FixNegValMethod}
+
+# warp the bias field to MNI space
+${RUN} ${FSLDIR}/bin/applywarp --rel --interp=spline \
+  --in="${T1wFolder}/BiasField_acpc_dc" \
+  --ref="${AtlasSpaceFolder}/${T1wImage}_restore" \
+  --warp="${AtlasSpaceFolder}/xfms/acpc_dc2standard" \
+  --out="${AtlasSpaceFolder}/BiasField"
 
 
 # ------------------------------------------------------------------------------

@@ -71,10 +71,10 @@ PRINTCOM=""
 
 # set the cluster queuing or local execution command
 if [[ $runlocal == TRUE ]] ; then
-    echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    echo "About to run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
     queuing_command=""
 else
-    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
     mkdir -p $LogDir # ensure the directory to store fsl_sub logfiles exists
     queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE} -l $LogDir"
 fi

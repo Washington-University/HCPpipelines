@@ -151,6 +151,11 @@ if [[ $FlgRes = 0 ]] ; then
   applywarp --rel --interp=nn -i "$T1wImageBrain" -r "$T1wImageFile"_1mm.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wImageBrainFile"_1mm.nii.gz
   fslmaths "$T1wImageFile"_1mm.nii.gz -div $Mean -mul 150 -abs "$T1wImageFile"_1mm.nii.gz
 
+  # HACK, remove extreme values, NaNs, and zeros
+  #maxVal=$(fslstats "$T1wImageBrainFile"_1mm.nii.gz -P 99.8)
+  #fslmaths "$T1wImageFile"_1mm.nii.gz -nan -min $maxVal -thr 0.01 -binv -mul 0.01 "$T1wImageFile"_1mm_zeromask.nii.gz
+  #fslmaths "$T1wImageFile"_1mm.nii.gz -nan -min $maxVal -sub "$T1wImageFile"_1mm_zeromask.nii.gz -thr 0.01 -add "$T1wImageFile"_1mm_zeromask.nii.gz "$T1wImageFile"_1mm.nii.gz
+
 else
   FlgHiRes="FALSE"
 

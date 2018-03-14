@@ -34,6 +34,7 @@ if [[ -z $HCPPIPEDIR ]] ; then
   # define the general Pipelines folder
   export HCPPIPEDIR=$(cd "${ExampleScriptsFolder}/../../" && pwd)
 fi
+#echo "HCPPIPEDIR: $HCPPIPEDIR"
 
 #export CARET7DIR=${HOME}/tools/workbench/bin_rh_linux64
 #export CARET7DIR=/home/brainmappers/workbench

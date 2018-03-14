@@ -31,10 +31,10 @@ EOF
 }
 
 # if no arguments given, return the usage
-if [[ $# -eq 0 ]] ; then usage; exit 0; fi
+if [[ $# -eq 0 ]] ; then Usage; exit 0; fi
 
 # if too few arguments given, return the usage, exit with error
-if [[ $# -lt 1 ]] ; then >&2 usage; exit 1; fi
+if [[ $# -lt 1 ]] ; then >&2 Usage; exit 1; fi
 
 # default parameters
 args=""
@@ -43,11 +43,11 @@ Method=thr
 # parse the input arguments
 for a in "$@" ; do
   case $a in
-    --in=*)       Input="${a#*=}"; shift ;;
-    --method=*)   Method="${a#*=}"; shift ;;
-    --fillmask=*) FillMask="${a#*=}"; shift ;;
-    --output=*)   Output="${a#*=}"; shift ;;
-    *)            args="$args $a"; shift ;; # unsupported argument
+    --in=*)             Input="${a#*=}"; shift ;;
+    --method=*)         Method="${a#*=}"; shift ;;
+    --fillmask=*)       FillMask="${a#*=}"; shift ;;
+    --output=*|--out=*) Output="${a#*=}"; shift ;;
+    *)                  args="$args $a"; shift ;; # unsupported argument
   esac
 done
 
@@ -102,7 +102,6 @@ case $Method in
 
     # create a tmpdir
     tmpdir=$(mktemp -d "/tmp/FixNegVal.XXXXXXXXXX")
-    betbase=$tmpdir/$(basename $base)
 
     # Use the provided mask if available, or create one
     if [[ -n $FillMask ]] ; then
@@ -129,7 +128,8 @@ case $Method in
     exit 0
     ;;
 esac
-
+# I have no clue why this line is here, but it prevents a crash
+echo ""
 
 
 

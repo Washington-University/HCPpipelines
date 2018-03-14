@@ -1,15 +1,15 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP) , gradunwarp (HCP version 1.0.2) 
+#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP) , gradunwarp (HCP version 1.0.2)
 #  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
 
-########################################## PIPELINE OVERVIEW ########################################## 
+########################################## PIPELINE OVERVIEW ##########################################
 
 # TODO
 
-########################################## OUTPUT DIRECTORIES ########################################## 
+########################################## OUTPUT DIRECTORIES ##########################################
 
 # TODO
 
@@ -71,22 +71,22 @@ log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
 MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # Expects 4D volume with two 3D timepoints
 log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
 
-PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  
+PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`
 log_Msg "PhaseInputName: ${PhaseInputName}"
 
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 log_Msg "GEB0InputName: ${GEB0InputName}"
 
-DwellTime=`opts_GetOpt1 "--echospacing" $@`  
+DwellTime=`opts_GetOpt1 "--echospacing" $@`
 log_Msg "DwellTime: ${DwellTime}"
 
-deltaTE=`opts_GetOpt1 "--echodiff" $@`  
+deltaTE=`opts_GetOpt1 "--echodiff" $@`
 log_Msg "deltaTE: ${deltaTE}"
 
-UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
+UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`
 log_Msg "UnwarpDir: ${UnwarpDir}"
 
-FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`
 log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
 
 # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
@@ -99,7 +99,7 @@ BiasCorrection=`opts_GetOpt1 "--biascorrection" $@`
 BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
 log_Msg "BiasCorrection: ${BiasCorrection}"
 
-GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`
 log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
 
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
@@ -126,7 +126,7 @@ case "$MotionCorrectionType" in
     MCFLIRT|FLIRT)
         #nothing
     ;;
-    
+
     *)
         log_Msg "ERROR: --mctype must be 'MCFLIRT' (default) or 'FLIRT'"
         exit 1
@@ -206,7 +206,7 @@ case "$BiasCorrection" in
     LEGACY)
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
     ;;
-    
+
     SEBASED)
         if [[ "$DistortionCorrection" != "TOPUP" ]]
         then
@@ -215,19 +215,19 @@ case "$BiasCorrection" in
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
     ;;
-    
+
     "")
         log_Msg "--biascorrection option not specified"
         exit 1
     ;;
-    
+
     *)
         log_Msg "unrecognized value for bias correction: $BiasCorrection"
     exit 1
 esac
 
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
@@ -248,6 +248,7 @@ else
   cp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName".nii.gz
 fi
 
+
 #Gradient Distortion Correction of fMRI
 log_Msg "Gradient Distortion Correction of fMRI"
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
@@ -260,7 +261,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 	--out="$fMRIFolder"/"$NameOffMRI"_gdc \
 	--owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
 
-    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"	
+    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"
      mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
      ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
 	 --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
@@ -268,7 +269,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 	 --in="$fMRIFolder"/"$OrigScoutName" \
 	 --out="$fMRIFolder"/"$ScoutName"_gdc \
 	 --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
-	 
+
 	if [[ $UseJacobian == "true" ]]
 	then
 	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
@@ -298,6 +299,7 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
     "$MotionMatrixPrefix" \
     "$MotionCorrectionType"
 
+
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
@@ -309,6 +311,7 @@ if [ -e ${DCFolder} ] ; then
 fi
 log_Msg "mkdir -p ${DCFolder}"
 mkdir -p ${DCFolder}
+
 
 ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
     --workingdir=${DCFolder} \
@@ -339,7 +342,8 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
     --subjectfolder=${SubjectFolder} \
     --biascorrection=${BiasCorrection} \
     --usejacobian=${UseJacobian}
-    
+
+
 #One Step Resampling
 log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
@@ -365,7 +369,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
     --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
     --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
-    
+
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
 
@@ -377,19 +381,20 @@ then
     #create MNI space corrected fieldmap images
     ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
     ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
-    
+
     #create MNINonLinear final fMRI resolution bias field outputs
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
         ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
-        
+
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
         ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
-        
+
         ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_dropouts.nii.gz
     fi
 fi
+
 
 #Intensity Normalization and Bias Removal
 log_Msg "Intensity Normalization and Bias Removal"
@@ -406,7 +411,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 # TBr Response: Since the copy operations are specifying individual files
 # to be copied and not directories, the recursive copy options (-r) to the
-# cp calls below definitely seem unnecessary. They should be removed in 
+# cp calls below definitely seem unnecessary. They should be removed in
 # a code clean up phase when tests are in place to verify that removing them
 # has no unexpected bad side-effect.
 ${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
@@ -423,4 +428,3 @@ ${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Moveme
 ###Add stuff for RMS###
 
 log_Msg "Completed"
-

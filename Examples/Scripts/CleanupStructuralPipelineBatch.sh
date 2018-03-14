@@ -110,7 +110,10 @@ for Subject in ${SubjList//@/ } ; do
   echo -n "mv -f ${SubjFS}/mri/transforms/eye.dat ${SubjTmpFS}/mri/transforms/eye.dat; " >> $TmpFile
   echo -n "mkdir -p ${SubjTmpFS}/surf; " >> $TmpFile
   echo -n "mv -f ${SubjFS}/surf/lh.white.deformed ${SubjTmpFS}/surf/lh.white.deformed; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/surf/lh.thickness ${SubjTmpFS}/surf/lh.thickness; " >> $TmpFile
   echo -n "mv -f ${SubjFS}/surf/rh.white.deformed ${SubjTmpFS}/surf/rh.white.deformed; " >> $TmpFile
+  echo -n "mv -f ${SubjFS}/surf/rh.thickness ${SubjTmpFS}/surf/rh.thickness; " >> $TmpFile
+  echo -n "cp -r ${SubjFS}/label/ ${SubjTmpFS}/label/; " >> $TmpFile
   echo -n "rm -rf ${SubjFS}; " >> $TmpFile
   echo -n "mv -f ${SubjTmpFS} ${SubjFS}; " >> $TmpFile
   echo -n "$FSLDIR/bin/imrm ${SubjFiles2Remove}; " >> $TmpFile
