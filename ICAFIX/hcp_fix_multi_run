@@ -388,7 +388,6 @@ for fmri in $fmris ; do
 	cifti_out=`remove_ext ${fmri}`_Atlas_hp${hp}_clean.dtseries.nii
 	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
 
-    # readme_for_cifti_out=`remove_ext ${fmri}`_Atlas_hp${hp}_clean.README.txt
 	readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	touch ${readme_for_cifti_out}
 	short_cifti_out=${cifti_out##*/}
