@@ -17,4 +17,9 @@ TR_vol=`fslval "$NameOffMRI" pixdim4 | cut -d " " -f 1`
 
 ${CARET7DIR}/wb_command -cifti-create-dense-timeseries "$OutputAtlasDenseTimeseries".dtseries.nii -volume "$NameOffMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz "$ROIFolder"/Atlas_ROIs."$GrayordinatesResolution".nii.gz -left-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.L."$LowResMesh"k_fs_LR.func.gii -roi-left "$DownSampleFolder"/"$Subject".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii -right-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii -roi-right "$DownSampleFolder"/"$Subject".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii -timestep "$TR_vol"
 
+#Basic Cleanup
+rm "$NameOffMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
+rm "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.L."$LowResMesh"k_fs_LR.func.gii
+rm "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii
+
 echo " END: CreateDenseTimeSeries"

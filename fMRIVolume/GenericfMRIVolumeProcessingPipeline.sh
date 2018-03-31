@@ -415,5 +415,13 @@ ${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}/Moveme
 ${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Movement_AbsoluteRMS_mean.txt
 ###Add stuff for RMS###
 
+#Basic Cleanup
+rm ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz
+
+#Econ
+#rm "$fMRIFolder"/"$OrigTCSName".nii.gz
+#rm "$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz
+#rm "$fMRIFolder"/"$NameOffMRI"_mc.nii.gz
+
 log_Msg "Completed"
 
