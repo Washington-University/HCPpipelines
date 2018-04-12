@@ -356,7 +356,7 @@ if [ "X${TrainingData}" != X ]; then
 	log_Inform "fix_cmd: ${fix_cmd}"
 	${fix_cmd}
 	return_code=$?
-	log_Msg "return_code from fix_cmd: ${return_code}"
+	log_Inform "return_code from fix_cmd: ${return_code}"
 	if [ "${return_code}" -ne "0" ]; then
 		exit ${return_code}
 	fi
