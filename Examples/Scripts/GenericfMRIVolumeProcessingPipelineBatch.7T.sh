@@ -172,36 +172,84 @@ do
 		fMRITimeSeries="${SubjectUnprocessedRootDir}/${Subject}_7T_${fMRIName}.nii.gz"
 		fMRISBRef="NONE"
 		
-		# Echo Spacing or Dwelltime of fMRI image
+		# Echo Spacing of fMRI image (here called 'DwellTime')
 		DwellTime="0.00032"
 
-		# To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match 
-		# the phase encoding direction of the EPI scan, and you must have used the correct images in 
-		# SpinEchoPhaseEncodeNegative and Positive variables.  If the distortion is twice as bad as in 
-		# the original images, flip either the order of the spin echo images or reverse the phase encoding 
-		# list flag.  The pipeline expects you to have used the same phase encoding axis in the fMRI data 
-		# as in the spin echo field map data (x/-x or y/-y).
+			echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
+	
+	for fMRIName in ${Tasklist}
+	do
+		echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
 
-		# Using Spin Echo Field Maps for Readout Distortion Correction
+		TaskName=`echo ${fMRIName} | sed 's/_[APLR]\+$//'`
+		echo "  ${SCRIPT_NAME}: TaskName: ${TaskName}"
+		
+		len=${#fMRIName}
+		echo "  ${SCRIPT_NAME}: len: $len"
+		start=$(( len - 2 ))
+		
+		PhaseEncodingDir=${fMRIName:start:2}
+		echo "  ${SCRIPT_NAME}: PhaseEncodingDir: ${PhaseEncodingDir}"
+		
+		case ${PhaseEncodingDir} in
+			"PA")
+				UnwarpDir="y"
+				;;
+			"AP")
+				UnwarpDir="y-"
+				;;
+			"RL")
+				UnwarpDir="x"
+				;;
+			"LR")
+				UnwarpDir="x-"
+				;;
+			*)
+				echo "${SCRIPT_NAME}: Unrecognized Phase Encoding Direction: ${PhaseEncodingDir}"
+				exit 1
+		esac
+		
+		echo "  ${SCRIPT_NAME}: UnwarpDir: ${UnwarpDir}"
+		
+		SubjectUnprocessedRootDir="${StudyFolder}/${Subject}/unprocessed/7T/${fMRIName}"
+		
+		fMRITimeSeries="${SubjectUnprocessedRootDir}/${Subject}_7T_${fMRIName}.nii.gz"
+		fMRISBRef="NONE"
+		
+		# Echo Spacing of fMRI image (here called 'DwellTime')
+		DwellTime="0.00032"
+
+		# To get accurate EPI distortion correction with TOPUP, the phase encoding
+		# direction encoded as part of the ${Tasklist} name must accurately reflect
+		# the PE direction of the EPI scan, and you must have used the correct images
+		# in SpinEchoPhaseEncodeNegative and Positive variables.  If the distortion
+		# is twice as bad as in the original images, either swap the
+		# SpinEchoPhaseEncode images or reverse the polarity in the logic for setting UnwarpDir.
+		# NOTE: The pipeline expects you to have used the same phase encoding axis
+		# and echo spacing in the fMRI data as in the spin echo field map acquisitions.
+
+		# Using Spin Echo Field Maps for susceptibility distortion correction
 		DistortionCorrection="TOPUP"
 		
-		# For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data)
+		# For the spin echo field map volume with a 'negative' phase encoding direction
+		# (LR in HCP-YA data; AP in 7T HCP-YA and HCP-D/A data)
 		# Set to NONE if using regular FIELDMAP
 		SpinEchoPhaseEncodeNegative="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_AP.nii.gz"
 		
-		# For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data)
+		# For the spin echo field map volume with a 'positive' phase encoding direction
+		# (RL in HCP-YA data; PA in 7T HCP-YA and HCP-D/A data)
 		# Set to NONE if using regular FIELDMAP
 		SpinEchoPhaseEncodePositive="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_PA.nii.gz"
 		
 		# Topup configuration file
 		TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 		
-		# Not using Siemens Gradient Echo Field Maps for Readout Distortion Correction
+		# Not using Siemens Gradient Echo Field Maps for susceptibility distortion correction
 		MagnitudeInputName="NONE"
 		PhaseInputName="NONE"
 		DeltaTE="NONE"
 		
-		# Not using General Electric Gradient Echo Field Maps for Readout Distortion Correction
+		# Not using General Electric Gradient Echo Field Maps for Distortion Correction
 		GEB0InputName="NONE"
 		
 		FinalFMRIResolution="1.60"
