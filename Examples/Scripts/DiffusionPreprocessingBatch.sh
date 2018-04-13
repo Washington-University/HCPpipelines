@@ -106,6 +106,9 @@ for Subject in $Subjlist ; do
   # The PosData files will come first in the merged data file that forms the input to ‘eddy’.
   # The particular PE polarity assigned to PosData/NegData is not relevant; the distortion and eddy 
   # current correction will be accurate either way.
+  # That said, on Siemens scanners, we typically use 'R>>L' ("RL") as the 'positive' direction
+  # for left-right PE data, and 'P>>A' ("PA") as the 'positive' direction for anterior-posterior PE data.
+  # And conversely, "LR" and "AP" are then the 'negative' direction data.
   #
   # Note that only volumes (gradient directions) that have matched Pos/Neg pairs are ultimately
   # propagated to the final output, *and* these pairs will be averaged to yield a single
