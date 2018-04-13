@@ -148,6 +148,9 @@ for Subject in $Subjlist ; do
 	# The PosData files will come first in the merged data file that forms the input to ‘eddy’.
 	# The particular PE polarity assigned to PosData/NegData is not relevant; the distortion and eddy 
 	# current correction will be accurate either way.
+	# That said, on Siemens scanners, we typically use 'R>>L' ("RL") as the 'positive' direction
+	# for left-right PE data, and 'P>>A' ("PA") as the 'positive' direction for anterior-posterior PE data.
+	# And conversely, "LR" and "AP" are then the 'negative' direction data.
 	#
 	# Note that only volumes (gradient directions) that have matched Pos/Neg pairs are ultimately
 	# propagated to the final output, *and* these pairs will be averaged to yield a single
@@ -170,8 +173,8 @@ for Subject in $Subjlist ; do
 			NegDataSeparator=""
 		fi
 
-		PosData="${PosData}${PosDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_AP.nii.gz"
-		NegData="${NegData}${NegDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_PA.nii.gz"
+		PosData="${PosData}${PosDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_PA.nii.gz"
+		NegData="${NegData}${NegDataSeparator}${RawDataDir}/${SubjectID}_${SCAN_STRENGTH_CODE}_DWI_dir${DirectionNumber}_AP.nii.gz"
 	done
 
 	echo "  ${SCRIPT_NAME}: PosData: ${PosData}"
