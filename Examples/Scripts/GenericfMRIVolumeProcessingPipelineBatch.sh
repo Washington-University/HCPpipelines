@@ -109,56 +109,59 @@ PRINTCOM=""
 #	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_AP/${Subject}_3T_SpinEchoFieldMap_AP.nii.gz
 #
 #
-# Change Scan Settings: Dwelltime, FieldMap Delta TE (if using), and $Tasklist to match your acquisitions
+# Change Scan Settings: EchoSpacing, FieldMap Delta TE (if using), and $TaskList to match your acquisitions
 # These are set to match the HCP-YA Protocol by default
 #
 # If using gradient distortion correction, use the coefficents from your scanner.
 # The HCP gradient distortion coefficents are only available through Siemens.
 # Gradient distortion in standard scanners like the Trio is much less than for the HCP 'Connectom' scanner.
 #
-# To get accurate EPI distortion correction with TOPUP, the phase encoding direction encoded as part of
-# the ${Tasklist} name must accurately reflect the PE direction of the EPI scan, and you must have used the
-# correct images in SpinEchoPhaseEncodeNegative and Positive variables.
-# If the distortion is twice as bad as in the original images, either swap the SpinEchoPhaseEncode images
-# or reverse the polarity in the logic for setting UnwarpDir.
-# NOTE: The pipeline expects you to have used the same phase encoding axis and echo spacing in the fMRI data 
-# as in the spin echo field map acquisitions.
+# To get accurate EPI distortion correction with TOPUP, the phase encoding direction
+# encoded as part of the ${TaskList} name must accurately reflect the PE direction of
+# the EPI scan, and you must have used the correct images in the
+# SpinEchoPhaseEncode{Negative,Positive} variables.  If the distortion is twice as
+# bad as in the original images, either swap the
+# SpinEchoPhaseEncode{Negative,Positive} definition or reverse the polarity in the
+# logic for setting UnwarpDir.
+# NOTE: The pipeline expects you to have used the same phase encoding axis and echo
+# spacing in the fMRI data as in the spin echo field map acquisitions.
 
 ######################################### DO WORK ##########################################
 
 SCRIPT_NAME=`basename ${0}`
 echo $SCRIPT_NAME
 
-Tasklist=""
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-Tasklist="${Tasklist} tfMRI_EMOTION_RL"
-Tasklist="${Tasklist} tfMRI_EMOTION_LR"
-Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
-Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
-Tasklist="${Tasklist} tfMRI_MOTOR_RL"
-Tasklist="${Tasklist} tfMRI_MOTOR_LR"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
-Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
-Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
-Tasklist="${Tasklist} tfMRI_WM_RL"
-Tasklist="${Tasklist} tfMRI_WM_LR"
+TaskList=""
+TaskList+=" rfMRI_REST1_RL"  #Include space as first character
+TaskList+=" rfMRI_REST1_LR"
+TaskList+=" rfMRI_REST2_RL"
+TaskList+=" rfMRI_REST2_LR"
+TaskList+=" tfMRI_EMOTION_RL"
+TaskList+=" tfMRI_EMOTION_LR"
+TaskList+=" tfMRI_GAMBLING_RL"
+TaskList+=" tfMRI_GAMBLING_LR"
+TaskList+=" tfMRI_LANGUAGE_RL"
+TaskList+=" tfMRI_LANGUAGE_LR"
+TaskList+=" tfMRI_MOTOR_RL"
+TaskList+=" tfMRI_MOTOR_LR"
+TaskList+=" tfMRI_RELATIONAL_RL"
+TaskList+=" tfMRI_RELATIONAL_LR"
+TaskList+=" tfMRI_SOCIAL_RL"
+TaskList+=" tfMRI_SOCIAL_LR"
+TaskList+=" tfMRI_WM_RL"
+TaskList+=" tfMRI_WM_LR"
 
 # Start or launch pipeline processing for each subject
 for Subject in $Subjlist ; do
   echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 
   i=1
-  for fMRIName in $Tasklist ; do
+  for fMRIName in $TaskList ; do
     echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
+	  
 	TaskName=`echo ${fMRIName} | sed 's/_[APLR]\+$//'`
-
 	echo "  ${SCRIPT_NAME}: TaskName: ${TaskName}"
+
 	len=${#fMRIName}
 	echo "  ${SCRIPT_NAME}: len: $len"
 	start=$(( len - 2 ))
@@ -192,13 +195,13 @@ for Subject in $Subjlist ; do
 	# Set to NONE if you want to use the first volume of the timeseries for motion correction
     fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz"
 	
-	# Echo Spacing of fMRI image (here called 'DwellTime')
+	# Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
 	# Set to NONE if not used
-	# Dwelltime = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
+	# EchoSpacing = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
 	#   where (for Siemens) BandwidthPerPixelPhaseEncode = DICOM field (0019,1028), and
 	#   NumberPhaseEncodingSamples = first value of DICOM field (0051,100b) ("AcquisitionMatrixText").
 	# On Siemens, iPAT/GRAPPA factors have already been accounted for.
-    DwellTime="0.00058" 
+    EchoSpacing="0.00058" 
 
 	# Susceptibility distortion correction method (required for accurate processing)
 	# Values: FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
@@ -274,7 +277,7 @@ for Subject in $Subjlist ; do
       --fmapmag=$MagnitudeInputName \
       --fmapphase=$PhaseInputName \
       --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
+      --echospacing=$EchoSpacing \
       --echodiff=$DeltaTE \
       --unwarpdir=$UnwarpDir \
       --fmrires=$FinalFMRIResolution \
@@ -297,7 +300,7 @@ for Subject in $Subjlist ; do
       --fmapmag=$MagnitudeInputName \
       --fmapphase=$PhaseInputName \
       --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
+      --echospacing=$EchoSpacing \
       --echodiff=$DeltaTE \
       --unwarpdir=$UnwarpDir \
       --fmrires=$FinalFMRIResolution \

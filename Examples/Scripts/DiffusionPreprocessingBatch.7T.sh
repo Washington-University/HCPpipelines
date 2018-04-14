@@ -148,17 +148,25 @@ for Subject in $Subjlist ; do
 	# The PosData files will come first in the merged data file that forms the input to ‘eddy’.
 	# The particular PE polarity assigned to PosData/NegData is not relevant; the distortion and eddy 
 	# current correction will be accurate either way.
-	# That said, on Siemens scanners, we typically use 'R>>L' ("RL") as the 'positive' direction
-	# for left-right PE data, and 'P>>A' ("PA") as the 'positive' direction for anterior-posterior PE data.
+	#
+	# NOTE that PosData defines the reference space in 'topup' and 'eddy' AND it is assumed that
+	# each scan series begins with a b=0 acquisition, so that the reference space in both
+	# 'topup' and 'eddy' will be defined by the same (initial b=0) volume.
+	#
+	# On Siemens scanners, we typically use 'R>>L' ("RL") as the 'positive' direction for left-right
+	# PE data, and 'P>>A' ("PA") as the 'positive' direction for anterior-posterior PE data.
 	# And conversely, "LR" and "AP" are then the 'negative' direction data.
+	# However, see preceding comment that PosData defines the reference space; so if you want the
+	# first temporally acquired volume to define the reference space, then that series needs to be
+	# the first listed series in PosData.
 	#
 	# Note that only volumes (gradient directions) that have matched Pos/Neg pairs are ultimately
 	# propagated to the final output, *and* these pairs will be averaged to yield a single
 	# volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
 	# avoids having volumes with different SNR features/ residual distortions.
-	#
 	# [This behavior can be changed through the hard-coded 'CombineDataFlag' variable in the 
 	# DiffPreprocPipeline_PostEddy.sh script if necessary].
+
 	PosData=""
 	NegData=""
 	for DirectionNumber in ${DIRECTIONS} ; do
@@ -180,15 +188,23 @@ for Subject in $Subjlist ; do
 	echo "  ${SCRIPT_NAME}: PosData: ${PosData}"
 	echo "  ${SCRIPT_NAME}: NegData: ${NegData}"
 
-	#Scan Setings
-	EchoSpacing=0.2733285956376756 #Echo Spacing or Dwelltime of dMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.
-	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing}"
+	# Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
+	# Set to NONE if not used
+	# EchoSpacing = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
+	#   where (for Siemens) BandwidthPerPixelPhaseEncode = DICOM field (0019,1028), and
+	#   NumberPhaseEncodingSamples = first value of DICOM field (0051,100b) ("AcquisitionMatrixText").
+	# On Siemens, iPAT/GRAPPA factors have already been accounted for.
+	EchoSpacing=0.2733285956376756
+	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing} (ms)"
+
 	PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 	echo "  ${SCRIPT_NAME}: PEdir: ${PEdir}"
 
-	#Config Settings
-	# Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Coefficients that describe spatial variations of the scanner gradients. Use NONE if not available.
-	Gdcoeffs="NONE" # Set to NONE to skip gradient distortion correction
+	# Gradient distortion correction
+	# Set to NONE to skip gradient distortion correction
+	# (These files are considered proprietary and therefore not provided as part of the HCP Pipelines -- contact Siemens to obtain)
+	# Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
+	Gdcoeffs="NONE"
 
 	if [ "${RunLocal}" == "TRUE" ] ; then
 		echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
