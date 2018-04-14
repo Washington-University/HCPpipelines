@@ -4,13 +4,13 @@ scriptName="basic_preproc.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
-echo_spacing=$2
+echo_spacing=$2  #in msec
 PEdir=$3
 b0dist=$4
 b0maxbval=$5
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
-echo "${scriptName}: Input Parameter: echo_spacing: ${echo_spacing}"
+echo "${scriptName}: Input Parameter: echo_spacing: ${echo_spacing}"  # *Effective* Echo Spacing, in msec
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
 echo "${scriptName}: Input Parameter: b0dist: ${b0dist}"
 echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
@@ -22,28 +22,29 @@ isodd(){
 rawdir=${workingdir}/rawdata
 topupdir=${workingdir}/topup
 eddydir=${workingdir}/eddy
-if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
-	basePos="RL"
-	baseNeg="LR"
-elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
-	basePos="PA"
-	baseNeg="AP"
-else
+
+if [[ ${PEdir} -ne 1 && ${PEdir} -ne 2 ]] ; then
 	echo -e "\n ${scriptName}: ERROR: basic_preproc: Unrecognized PEdir: ${PEdir}"
+	exit 1
 fi
 
+# Use same convention for basePos and baseNeg names as in DiffPreprocPipeline_PreEddy.sh
+basePos="Pos"
+baseNeg="Neg"
 
 #Compute Total_readout in secs with up to 6 decimal places
-any=`ls ${rawdir}/${basePos}*.nii* |head -n 1`
+any=`ls ${rawdir}/${basePos}*.nii* | head -n 1`
 if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
 	dimP=`${FSLDIR}/bin/fslval ${any} dim1`
 elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
 	dimP=`${FSLDIR}/bin/fslval ${any} dim2`
 fi
-nPEsteps=$(($dimP - 1))                         #If GRAPPA is used this needs to include the GRAPPA factor!
-#Total_readout=Echo_spacing*(#of_PE_steps-1)   
-ro_time=`echo "${echo_spacing} * ${nPEsteps}" | bc -l`
-ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`
+dimPminus1=$(($dimP - 1))
+#Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
+# Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+# must already be accounted for as part of the "EffectiveEchoSpacing"
+ro_time=`echo "${echo_spacing} * ${dimPminus1}" | bc -l`
+ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`  # Convert from ms to sec
 echo "${scriptName}: Total readout time is $ro_time secs"
 
 
@@ -129,7 +130,7 @@ do
 				tmp_ind=$((${indcount}+1))
 			fi
 			echo ${tmp_ind} >>${rawdir}/index.txt
-		else  #Consider a b=0 a volume that has a bvalue<50 and is at least 50 volumes away from the previous
+		else  #Consider a b=0 a volume that has a bvalue<${b0maxbval} and is at least ${b0dist} volumes away from the previous
 			if [ $i -lt ${b0maxbval} ] && [ ${count3} -gt ${b0dist} ]; then
 				cnt=`$FSLDIR/bin/zeropad $indcount 4`
 				echo "Extracting Pos Volume $count from ${entry} as a b=0. Measured b=$i" >>${rawdir}/extractedb0.txt
@@ -149,7 +150,7 @@ do
 	done
 	
 	#Create series file
-	sesdimt=`${FSLDIR}/bin/fslval ${entry} dim4` #Number of datapoints per Pos series
+	sesdimt=`${FSLDIR}/bin/fslval ${entry} dim4` #Number of data points per Pos series
 	for (( j=0; j<${sesdimt}; j++ ))
 	do
 		echo ${scount} >> ${rawdir}/series_index.txt
@@ -183,7 +184,7 @@ do
 				tmp_ind=$((${indcount}+1))
 			fi
 			echo $((${tmp_ind} + ${Poscount})) >>${rawdir}/index.txt
-		else #Consider a b=0 a volume that has a bvalue<50 and is at least 50 volumes away from the previous
+		else #Consider a b=0 a volume that has a bvalue<${b0maxbval} and is at least ${b0dist} volumes away from the previous
 			if [ $i -lt ${b0maxbval} ] && [ ${count3} -gt ${b0dist} ]; then
 				cnt=`$FSLDIR/bin/zeropad $indcount 4`
 				echo "Extracting Neg Volume $count from ${entry} as a b=0. Measured b=$i" >>${rawdir}/extractedb0.txt

@@ -77,7 +77,7 @@ log_Msg "PhaseInputName: ${PhaseInputName}"
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 log_Msg "GEB0InputName: ${GEB0InputName}"
 
-EchoSpacing=`opts_GetOpt1 "--echospacing" $@`  
+EchoSpacing=`opts_GetOpt1 "--echospacing" $@`  # *Effective* Echo Spacing of fMRI image, in seconds
 log_Msg "EchoSpacing: ${EchoSpacing}"
 
 deltaTE=`opts_GetOpt1 "--echodiff" $@`  

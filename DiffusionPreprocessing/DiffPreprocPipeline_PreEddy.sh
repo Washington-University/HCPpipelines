@@ -95,13 +95,17 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --PEdir=<phase-encoding-dir>
                           phase encoding direction specifier: 1=RL/LR, 2=PA/AP
   --posData=<positive-phase-encoding-data>
-                          @ symbol separated list of data with positive phase
-                          encoding direction (e.g. dataRL1@dataRL2@...dataRLn)
+                          @ symbol separated list of data with 'positive' phase
+                          encoding direction; e.g.,
+                            data_RL1@data_RL2@...data_RLn, or
+                            data_PA1@data_PA2@...data_PAn
   --negData=<negative-phase-encoding-data>
-                          @ symbol separated list of data with negative phase 
-                          encoding direction (e.g. dataLR1@dataLR2@...dataLRn)
+                          @ symbol separated list of data with 'negative' phase 
+                          encoding direction; e.g.,
+                            data_LR1@data_LR2@...data_LRn, or
+                            data_AP1@data_AP2@...data_APn
   --echospacing=<echo-spacing>
-                          Echo spacing in msecs
+                          Effective Echo Spacing in msecs
   [--dwiname=<DWIname>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--b0maxbval=<b0-max-bval>]
@@ -141,9 +145,9 @@ EOF
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
 #  ${PEdir}	              Phase Encoding Direction, 1=RL/LR, 2=PA/AP
-#  ${PosInputImages}      @ symbol separated list of data with positive phase 
+#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase 
 #                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with negative phase
+#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
 #                         encoding direction 
 #  ${echospacing}         Echo spacing in msecs
 #  ${DWIName}             Name to give DWI output directories
@@ -349,7 +353,7 @@ main()
 {
 	# Hard-Coded variables for the pipeline
 	MissingFileFlag="EMPTY"  # String used in the input arguments to indicate that a complete series is missing
-	b0dist=45                # Minimum distance in volums between b0s considered for preprocessing
+	b0dist=45                # Minimum distance in volumes between b0s considered for preprocessing
 	
 	# Get Command Line Options
 	get_options $@
@@ -383,18 +387,14 @@ main()
 	${runcmd} mkdir ${outdir}/eddy
 	${runcmd} mkdir ${outdir}/data
 	${runcmd} mkdir ${outdir}/reg
-	
-	if [ ${PEdir} -eq 1 ] ; then    # RL/LR phase encoding
-		basePos="RL"
-		baseNeg="LR"
-	elif [ ${PEdir} -eq 2 ] ; then  # PA/AP phase encoding
-		basePos="PA"
-		baseNeg="AP"
-	else
+
+	if [[ ${PEdir} -ne 1 && ${PEdir} -ne 2 ]] ; then
 		log_Msg "ERROR: Invalid Phase Encoding Directory (PEdir} specified: ${PEdir}"
 		exit 1
 	fi
-	
+
+	basePos="Pos"
+	baseNeg="Neg"
 	log_Msg "basePos: ${basePos}"
 	log_Msg "baseNeg: ${baseNeg}"
 	
@@ -452,13 +452,13 @@ main()
 	fi
 
 	# Create two files for each phase encoding direction, that for each series contain the number of 
-	# corresponding volumes and the number of actual volumes. The file e.g. RL_SeriesCorrespVolNum.txt
+	# corresponding volumes and the number of actual volumes. The file e.g. Pos_SeriesCorrespVolNum.txt
 	# will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M 
-	# from RLseries J has corresponding LR pairs. This file is used in basic_preproc to generate 
-	# topup/eddy indices and extract corresponding b0s for topup. The file e.g. Pos_SeriesVolNum.txt 
+	# from 'positive' series J has corresponding 'negative' polarity volumes. This file is used in basic_preproc
+	# to generate topup/eddy indices and extract corresponding b0s for topup. The file e.g. Pos_SeriesVolNum.txt 
 	# will have as many rows as maximum series pairs (even unmatched pairs). The entry M N in row J 
-	# indicates that the RLSeries J has its 0-M volumes corresponding to LRSeries J and RLJ has N 
-	# volumes in total. This file is used in eddy_combine.
+	# indicates that the 'positive' series J has its 0-M volumes corresponding to 'negative' series J and
+	# 'positive' series J has N volumes in total. This file is used in eddy_combine.
 	log_Msg "Create two files for each phase encoding direction"
 	
 	Paired_flag=0
