@@ -125,11 +125,15 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --PEdir=<phase-encoding-dir>
                           phase encoding direction specifier: 1=LR/RL, 2=AP/PA
   --posData=<positive-phase-encoding-data>
-                          @ symbol separated list of data with positive phase 
-                          encoding direction (e.g. dataRL1@dataRL2@...dataRLn)
+                          @ symbol separated list of data with 'positive' phase
+                          encoding direction; e.g.,
+                            data_RL1@data_RL2@...data_RLn, or
+                            data_PA1@data_PA2@...data_PAn
   --negData=<negative-phase-encoding-data>
-                          @ symbol separated list of data with negative phase
-                          encoding direction (e.g. dataLR1@dataLR2@...dataLRn)
+                          @ symbol separated list of data with 'negative' phase 
+                          encoding direction; e.g.,
+                            data_LR1@data_LR2@...data_LRn, or
+                            data_AP1@data_AP2@...data_APn
   --echospacing=<echo-spacing>
                           Echo spacing in msecs
   --gdcoeffs=<path-to-gradients-coefficients-file>
@@ -198,9 +202,9 @@ EOF
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
 #  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages}	  @ symbol separated list of data with positive phase 
+#  ${PosInputImages}	  @ symbol separated list of data with 'positive' phase 
 #                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with negative phase
+#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
 #                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
 #  ${GdCoeffs}			  Path to file containing coefficients that describe 

@@ -140,7 +140,7 @@ T1wRestoreImage=`getopt1 "--t1restore" $@`
 T1wBrainImage=`getopt1 "--t1brain" $@`
 SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`
 SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`
-DwellTime=`getopt1 "--echospacing" $@`
+EchoSpacing=`getopt1 "--echospacing" $@`
 MagnitudeInputName=`getopt1 "--fmapmag" $@`
 PhaseInputName=`getopt1 "--fmapphase" $@`
 GEB0InputName=`getopt1 "--fmapgeneralelectric" $@`
@@ -293,11 +293,11 @@ case $DistortionCorrection in
             fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
        
             # register scout to T1w image using fieldmap
-            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
 
         else
             # register scout to T1w image using fieldmap
-            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${DwellTime} --pedir=${UnwarpDir}
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
 
         fi
 
@@ -330,7 +330,7 @@ case $DistortionCorrection in
             --phaseone=${SpinEchoPhaseEncodeNegative} \
             --phasetwo=${SpinEchoPhaseEncodePositive} \
             --scoutin=${ScoutInputName} \
-            --echospacing=${DwellTime} \
+            --echospacing=${EchoSpacing} \
             --unwarpdir=${UnwarpDir} \
             --owarp=${WD}/WarpField \
             --ojacobian=${WD}/Jacobian \

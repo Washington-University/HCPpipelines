@@ -107,33 +107,43 @@ QUEUE="-q hcp_priority.q"
 #PRINTCOM="echo"
 PRINTCOM=""
 
+# To get accurate EPI distortion correction with TOPUP, the phase encoding direction
+# encoded as part of the ${TaskList} name must accurately reflect the PE direction of
+# the EPI scan, and you must have used the correct images in the
+# SpinEchoPhaseEncode{Negative,Positive} variables.  If the distortion is twice as
+# bad as in the original images, either swap the
+# SpinEchoPhaseEncode{Negative,Positive} definition or reverse the polarity in the
+# logic for setting UnwarpDir.
+# NOTE: The pipeline expects you to have used the same phase encoding axis and echo
+# spacing in the fMRI data as in the spin echo field map acquisitions.
+
 ######################################### DO WORK ##########################################
 
 SCRIPT_NAME=`basename ${0}`
 echo $SCRIPT_NAME
 
-Tasklist=""
-Tasklist="${Tasklist} rfMRI_REST1_PA"
-Tasklist="${Tasklist} rfMRI_REST2_AP"
-Tasklist="${Tasklist} rfMRI_REST3_PA"
-Tasklist="${Tasklist} rfMRI_REST4_AP"
-Tasklist="${Tasklist} tfMRI_MOVIE1_AP"
-Tasklist="${Tasklist} tfMRI_MOVIE2_PA"
-Tasklist="${Tasklist} tfMRI_MOVIE3_PA"
-Tasklist="${Tasklist} tfMRI_MOVIE4_AP"
-Tasklist="${Tasklist} tfMRI_RETBAR1_AP"
-Tasklist="${Tasklist} tfMRI_RETBAR2_PA"
-Tasklist="${Tasklist} tfMRI_RETCCW_AP"
-Tasklist="${Tasklist} tfMRI_RETCON_PA"
-Tasklist="${Tasklist} tfMRI_RETCW_PA"
-Tasklist="${Tasklist} tfMRI_RETEXP_AP"
+TaskList=""
+TaskList+=" rfMRI_REST1_PA"  #Include space as first character
+TaskList+=" rfMRI_REST2_AP"
+TaskList+=" rfMRI_REST3_PA"
+TaskList+=" rfMRI_REST4_AP"
+TaskList+=" tfMRI_MOVIE1_AP"
+TaskList+=" tfMRI_MOVIE2_PA"
+TaskList+=" tfMRI_MOVIE3_PA"
+TaskList+=" tfMRI_MOVIE4_AP"
+TaskList+=" tfMRI_RETBAR1_AP"
+TaskList+=" tfMRI_RETBAR2_PA"
+TaskList+=" tfMRI_RETCCW_AP"
+TaskList+=" tfMRI_RETCON_PA"
+TaskList+=" tfMRI_RETCW_PA"
+TaskList+=" tfMRI_RETEXP_AP"
 
 for Subject in $Subjlist
 do
 	
 	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 	
-	for fMRIName in ${Tasklist}
+	for fMRIName in ${TaskList}
 	do
 		echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
 
@@ -170,38 +180,44 @@ do
 		SubjectUnprocessedRootDir="${StudyFolder}/${Subject}/unprocessed/7T/${fMRIName}"
 		
 		fMRITimeSeries="${SubjectUnprocessedRootDir}/${Subject}_7T_${fMRIName}.nii.gz"
+
+		# A single band reference image (SBRef) is recommended if available
+		# Set to NONE if you want to use the first volume of the timeseries for motion correction
 		fMRISBRef="NONE"
 		
-		# Echo Spacing or Dwelltime of fMRI image
-		DwellTime="0.00032"
+		# "Effective" Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
+		# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+		#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+		#   ReconMatrixPE = size of the reconstructed image in the PE dimension
+		# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+		# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
+		EchoSpacing="0.00032"
 
-		# To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match 
-		# the phase encoding direction of the EPI scan, and you must have used the correct images in 
-		# SpinEchoPhaseEncodeNegative and Positive variables.  If the distortion is twice as bad as in 
-		# the original images, flip either the order of the spin echo images or reverse the phase encoding 
-		# list flag.  The pipeline expects you to have used the same phase encoding axis in the fMRI data 
-		# as in the spin echo field map data (x/-x or y/-y).
-
-		# Using Spin Echo Field Maps for Readout Distortion Correction
+		# Susceptibility distortion correction method (required for accurate processing)
+		# Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GeneralElectricFieldMap
 		DistortionCorrection="TOPUP"
 		
-		# For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data)
+		# For the spin echo field map volume with a 'negative' phase encoding direction
+		# (LR in HCP-YA data; AP in 7T HCP-YA and HCP-D/A data)
 		# Set to NONE if using regular FIELDMAP
 		SpinEchoPhaseEncodeNegative="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_AP.nii.gz"
 		
-		# For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data)
+		# For the spin echo field map volume with a 'positive' phase encoding direction
+		# (RL in HCP-YA data; PA in 7T HCP-YA and HCP-D/A data)
 		# Set to NONE if using regular FIELDMAP
 		SpinEchoPhaseEncodePositive="${SubjectUnprocessedRootDir}/${Subject}_7T_SpinEchoFieldMap_PA.nii.gz"
 		
-		# Topup configuration file
+		# Topup configuration file (if using TOPUP)
+		# Set to NONE if using regular FIELDMAP
 		TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 		
-		# Not using Siemens Gradient Echo Field Maps for Readout Distortion Correction
-		MagnitudeInputName="NONE"
-		PhaseInputName="NONE"
-		DeltaTE="NONE"
+		# Not using Siemens Gradient Echo Field Maps for susceptibility distortion correction
+		# Set following to NONE if using TOPUP
+		MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D volumes (differing echo times)
+		PhaseInputName="NONE" #Expects a 3D Phase difference volume (Siemen's style)
+		DeltaTE="NONE" #2.46ms for 3T, 1.02ms for 7T
 		
-		# Not using General Electric Gradient Echo Field Maps for Readout Distortion Correction
+		# Not using General Electric Gradient Echo Field Maps for Distortion Correction
 		GEB0InputName="NONE"
 		
 		FinalFMRIResolution="1.60"
@@ -237,7 +253,7 @@ do
 			--fmapmag=${MagnitudeInputName} \
 			--fmapphase=${PhaseInputName} \
 			--fmapgeneralelectric=${GEB0InputName} \
-			--echospacing=${DwellTime} \
+			--echospacing=${EchoSpacing} \
 			--echodiff=${DeltaTE} \
 			--unwarpdir=${UnwarpDir} \
 			--fmrires=${FinalFMRIResolution} \

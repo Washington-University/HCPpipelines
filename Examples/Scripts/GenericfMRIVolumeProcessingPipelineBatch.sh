@@ -109,112 +109,130 @@ PRINTCOM=""
 #	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_AP/${Subject}_3T_SpinEchoFieldMap_AP.nii.gz
 #
 #
-# Change Scan Settings: Dwelltime, FieldMap Delta TE (if using), and $PhaseEncodinglist to match your images
-# These are set to match the HCP Protocol by default
+# Change Scan Settings: EchoSpacing, FieldMap DeltaTE (if not using TOPUP),
+# and $TaskList to match your acquisitions
 #
-# If using gradient distortion correction, use the coefficents from your scanner
-# The HCP gradient distortion coefficents are only available through Siemens
-# Gradient distortion in standard scanners like the Trio is much less than for the HCP Skyra.
+# If using gradient distortion correction, use the coefficents from your scanner.
+# The HCP gradient distortion coefficents are only available through Siemens.
+# Gradient distortion in standard scanners like the Trio is much less than for the HCP 'Connectom' scanner.
 #
-# To get accurate EPI distortion correction with TOPUP, the flags in PhaseEncodinglist must match the phase encoding
-# direction of the EPI scan, and you must have used the correct images in SpinEchoPhaseEncodeNegative and Positive
-# variables.  If the distortion is twice as bad as in the original images, flip either the order of the spin echo
-# images or reverse the phase encoding list flag.  The pipeline expects you to have used the same phase encoding
-# axis in the fMRI data as in the spin echo field map data (x/-x or y/-y).  
+# To get accurate EPI distortion correction with TOPUP, the phase encoding direction
+# encoded as part of the ${TaskList} name must accurately reflect the PE direction of
+# the EPI scan, and you must have used the correct images in the
+# SpinEchoPhaseEncode{Negative,Positive} variables.  If the distortion is twice as
+# bad as in the original images, either swap the
+# SpinEchoPhaseEncode{Negative,Positive} definition or reverse the polarity in the
+# logic for setting UnwarpDir.
+# NOTE: The pipeline expects you to have used the same phase encoding axis and echo
+# spacing in the fMRI data as in the spin echo field map acquisitions.
 
 ######################################### DO WORK ##########################################
 
-# The PhaseEncodinglist contains phase encoding direction indicators for each corresponding
-# task in the Tasklist.  Therefore, the Tasklist and the PhaseEncodinglist should have the
-# same number of (space-delimited) elements.
-Tasklist=""
-PhaseEncodinglist=""
+SCRIPT_NAME=`basename ${0}`
+echo $SCRIPT_NAME
 
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_EMOTION_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_EMOTION_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_MOTOR_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_MOTOR_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_WM_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_WM_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-# Verify that Tasklist and PhaseEncodinglist have the same number of elements
-TaskArray=($Tasklist)
-PhaseEncodingArray=($PhaseEncodinglist)
-
-nTaskArray=${#TaskArray[@]}
-nPhaseEncodingArray=${#PhaseEncodingArray[@]}
-
-if [ "${nTaskArray}" -ne "${nPhaseEncodingArray}" ] ; then
-    echo "Tasklist and PhaseEncodinglist do not have the same number of elements."
-    echo "Exiting without processing"
-    exit 1
-fi
+TaskList=""
+TaskList+=" rfMRI_REST1_RL"  #Include space as first character
+TaskList+=" rfMRI_REST1_LR"
+TaskList+=" rfMRI_REST2_RL"
+TaskList+=" rfMRI_REST2_LR"
+TaskList+=" tfMRI_EMOTION_RL"
+TaskList+=" tfMRI_EMOTION_LR"
+TaskList+=" tfMRI_GAMBLING_RL"
+TaskList+=" tfMRI_GAMBLING_LR"
+TaskList+=" tfMRI_LANGUAGE_RL"
+TaskList+=" tfMRI_LANGUAGE_LR"
+TaskList+=" tfMRI_MOTOR_RL"
+TaskList+=" tfMRI_MOTOR_LR"
+TaskList+=" tfMRI_RELATIONAL_RL"
+TaskList+=" tfMRI_RELATIONAL_LR"
+TaskList+=" tfMRI_SOCIAL_RL"
+TaskList+=" tfMRI_SOCIAL_LR"
+TaskList+=" tfMRI_WM_RL"
+TaskList+=" tfMRI_WM_LR"
 
 # Start or launch pipeline processing for each subject
 for Subject in $Subjlist ; do
-  echo $Subject
+  echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 
   i=1
-  for fMRIName in $Tasklist ; do
-    echo "  ${fMRIName}"
-    UnwarpDir=`echo $PhaseEncodinglist | cut -d " " -f $i`
-    fMRITimeSeries="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}.nii.gz"
-    fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz" #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
-    DwellTime="0.00058" #Echo Spacing or Dwelltime of fMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.   
-    DistortionCorrection="TOPUP" # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP: distortion correction is required for accurate processing
-    BiasCorrection="SEBASED" #NONE, LEGACY, or SEBASED: LEGACY uses the T1w bias field, SEBASED calculates bias field from spin echo images (which requires TOPUP distortion correction)
-    SpinEchoPhaseEncodeNegative="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data), set to NONE if using regular FIELDMAP
-    SpinEchoPhaseEncodePositive="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data), set to NONE if using regular FIELDMAP
-    MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D timepoints, set to NONE if using TOPUP
-    PhaseInputName="NONE" #Expects a 3D Phase volume, set to NONE if using TOPUP
+  for fMRIName in $TaskList ; do
+    echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
+	  
+	TaskName=`echo ${fMRIName} | sed 's/_[APLR]\+$//'`
+	echo "  ${SCRIPT_NAME}: TaskName: ${TaskName}"
 
+	len=${#fMRIName}
+	echo "  ${SCRIPT_NAME}: len: $len"
+	start=$(( len - 2 ))
+		
+	PhaseEncodingDir=${fMRIName:start:2}
+	echo "  ${SCRIPT_NAME}: PhaseEncodingDir: ${PhaseEncodingDir}"
+		
+	case ${PhaseEncodingDir} in
+	  "PA")
+		UnwarpDir="y"
+		;;
+	  "AP")
+		UnwarpDir="y-"
+		;;
+	  "RL")
+		UnwarpDir="x"
+		;;
+	  "LR")
+		UnwarpDir="x-"
+		;;
+	  *)
+		echo "${SCRIPT_NAME}: Unrecognized Phase Encoding Direction: ${PhaseEncodingDir}"
+		exit 1
+	esac
+	
+	echo "  ${SCRIPT_NAME}: UnwarpDir: ${UnwarpDir}"
+		
+    fMRITimeSeries="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}.nii.gz"
+
+	# A single band reference image (SBRef) is recommended if available
+	# Set to NONE if you want to use the first volume of the timeseries for motion correction
+    fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz"
+	
+	# "Effective" Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
+	# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+	#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+	#   ReconMatrixPE = size of the reconstructed image in the PE dimension
+	# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+	# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
+    EchoSpacing="0.00058" 
+
+	# Susceptibility distortion correction method (required for accurate processing)
+	# Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GeneralElectricFieldMap
+    DistortionCorrection="TOPUP"
+
+	# Receive coil bias field correction method
+	# Values: NONE, LEGACY, or SEBASED
+	#   SEBASED calculates bias field from spin echo images (which requires TOPUP distortion correction)
+	#   LEGACY uses the T1w bias field (method used for 3T HCP-YA data, but non-optimal; no longer recommended).
+	BiasCorrection="SEBASED"
+
+	# For the spin echo field map volume with a 'negative' phase encoding direction
+	# (LR in HCP-YA data; AP in 7T HCP-YA and HCP-D/A data)
+	# Set to NONE if using regular FIELDMAP
+    SpinEchoPhaseEncodeNegative="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz"
+
+	# For the spin echo field map volume with a 'positive' phase encoding direction
+	# (RL in HCP-YA data; PA in 7T HCP-YA and HCP-D/A data)
+	# Set to NONE if using regular FIELDMAP
+    SpinEchoPhaseEncodePositive="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz"
+
+	# Topup configuration file (if using TOPUP)
+	# Set to NONE if using regular FIELDMAP
+    TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+
+	# Not using Siemens Gradient Echo Field Maps for susceptibility distortion correction
+	# Set following to NONE if using TOPUP
+	MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D volumes (differing echo times)
+    PhaseInputName="NONE" #Expects a 3D Phase difference volume (Siemen's style)
+    DeltaTE="NONE" #2.46ms for 3T, 1.02ms for 7T
+	
     # Path to General Electric style B0 fieldmap with two volumes
     #   1. field map in degrees
     #   2. magnitude
@@ -224,13 +242,20 @@ for Subject in $Subjlist ; do
     #  GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_GradientEchoFieldMap.nii.gz" 
     GEB0InputName="NONE"
 
-    DeltaTE="NONE" #2.46ms for 3T, 1.02ms for 7T, set to NONE if using TOPUP
-    FinalFMRIResolution="2" #Target final resolution of fMRI data. 2mm is recommended for 3T HCP data, 1.6mm for 7T HCP data (i.e. should match acquired resolution).  Use 2.0 or 1.0 to avoid standard FSL templates
-    # GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad" #Gradient distortion correction coefficents, set to NONE to turn off
-    GradientDistortionCoeffs="NONE" # Set to NONE to skip gradient distortion correction
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
+	# Target final resolution of fMRI data
+	# 2mm is recommended for 3T HCP data, 1.6mm for 7T HCP data (i.e. should match acquisition resolution)
+	# Use 2.0 or 1.0 to avoid standard FSL templates
+    FinalFMRIResolution="2"
 
-    # Use mcflirt motion correction
+	# Gradient distortion correction
+	# Set to NONE to skip gradient distortion correction
+	# (These files are considered proprietary and therefore not provided as part of the HCP Pipelines -- contact Siemens to obtain)
+    # GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
+    GradientDistortionCoeffs="NONE"
+
+    # Type of motion correction
+	# Values: MCFLIRT (default), FLIRT
+	# (3T HCP-YA processing used 'FLIRT', but 'MCFLIRT' now recommended)
     MCType="MCFLIRT"
 		
     if [ -n "${command_line_specified_run_local}" ] ; then
@@ -252,7 +277,7 @@ for Subject in $Subjlist ; do
       --fmapmag=$MagnitudeInputName \
       --fmapphase=$PhaseInputName \
       --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
+      --echospacing=$EchoSpacing \
       --echodiff=$DeltaTE \
       --unwarpdir=$UnwarpDir \
       --fmrires=$FinalFMRIResolution \
@@ -275,7 +300,7 @@ for Subject in $Subjlist ; do
       --fmapmag=$MagnitudeInputName \
       --fmapphase=$PhaseInputName \
       --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
+      --echospacing=$EchoSpacing \
       --echodiff=$DeltaTE \
       --unwarpdir=$UnwarpDir \
       --fmrires=$FinalFMRIResolution \

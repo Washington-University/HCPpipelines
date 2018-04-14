@@ -17,10 +17,10 @@ Usage() {
   echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"
   echo " "
   echo "Usage: `basename $0` [--workingdir=<working directory>]"
-  echo "            --phaseone=<first set of SE EPI images: with -x PE direction (LR)>"
-  echo "            --phasetwo=<second set of SE EPI images: with x PE direction (RL)>"
+  echo "            --phaseone=<first set of SE EPI images: assumed to be the 'negative' PE direction>"
+  echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
-  echo "            --echospacing=<effective echo spacing of EPI>"
+  echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
   echo "            --unwarpdir=<PE direction for unwarping: x/y/z/-x/-y/-z>"
   echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
@@ -77,10 +77,10 @@ if [ $# -lt 7 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
-PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT REQUIRES LR/X-/-1 VOLUME FIRST (SAME IS TRUE OF AP/PA)
-PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT REQUIRES RL/X/1 VOLUME SECOND (SAME IS TRUE OF AP/PA)
+PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT ASSUMES PhaseOne is the 'negative' direction when setting up the acqparams.txt file for TOPUP
+PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT ASSUMES PhaseTwo is the 'positive' direction when setting up the acqparams.txt file for TOPUP
 ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
-DwellTime=`getopt1 "--echospacing" $@`  # "$5"
+EchoSpacing=`getopt1 "--echospacing" $@`  # "$5"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
 DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
 DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
@@ -193,13 +193,15 @@ dimtOne=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim4`
 dimtTwo=`${FSLDIR}/bin/fslval ${WD}/PhaseTwo dim4`
 
 # Calculate the readout time and populate the parameter file appropriately
+# Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
+#  Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+#  must already be accounted for as part of the "EffectiveEchoSpacing"
+
 # X direction phase encode
 if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
-  dimx=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
-  nPEsteps=$(($dimx - 1))
-  #Total_readout=Echo_spacing*(#of_PE_steps-1)
-  #Note: the above calculation implies full k-space acquisition for SE EPI. In case of partial Fourier/k-space acquisition (though not recommended), $dimx-1 does not equal to nPEsteps. 
-  ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+  dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
+  dimPminus1=$(($dimP - 1))
+  ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   log_Msg "Total readout time is $ro_time secs"
   i=1
   while [ $i -le $dimtOne ] ; do
@@ -215,10 +217,9 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
   done
 # Y direction phase encode
 elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
-  dimy=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
-  nPEsteps=$(($dimy - 1))
-  #Total_readout=Echo_spacing*(#of_PE_steps-1)
-  ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+  dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
+  dimPminus1=$(($dimP - 1))
+  ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   i=1
   while [ $i -le $dimtOne ] ; do
     echo "0 -1 0 $ro_time" >> $txtfname
