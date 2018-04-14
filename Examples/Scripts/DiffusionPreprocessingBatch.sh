@@ -127,13 +127,13 @@ for Subject in $Subjlist ; do
   
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
-
-  # Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
-  # Set to NONE if not used
-  # EchoSpacing = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
-  #   where (for Siemens) BandwidthPerPixelPhaseEncode = DICOM field (0019,1028), and
-  #   NumberPhaseEncodingSamples = first value of DICOM field (0051,100b) ("AcquisitionMatrixText").
-  # On Siemens, iPAT/GRAPPA factors have already been accounted for.
+  
+  # "Effective" Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
+  # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+  #   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+  #   ReconMatrixPE = size of the reconstructed image in the PE dimension
+  # In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+  # all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
   EchoSpacing=0.78
   
   PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior

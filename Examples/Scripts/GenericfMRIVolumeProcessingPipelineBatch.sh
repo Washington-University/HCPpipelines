@@ -109,8 +109,8 @@ PRINTCOM=""
 #	${StudyFolder}/${Subject}/unprocessed/3T/tfMRI_EMOTION_AP/${Subject}_3T_SpinEchoFieldMap_AP.nii.gz
 #
 #
-# Change Scan Settings: EchoSpacing, FieldMap Delta TE (if using), and $TaskList to match your acquisitions
-# These are set to match the HCP-YA Protocol by default
+# Change Scan Settings: EchoSpacing, FieldMap DeltaTE (if not using TOPUP),
+# and $TaskList to match your acquisitions
 #
 # If using gradient distortion correction, use the coefficents from your scanner.
 # The HCP gradient distortion coefficents are only available through Siemens.
@@ -195,16 +195,16 @@ for Subject in $Subjlist ; do
 	# Set to NONE if you want to use the first volume of the timeseries for motion correction
     fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz"
 	
-	# Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
-	# Set to NONE if not used
-	# EchoSpacing = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
-	#   where (for Siemens) BandwidthPerPixelPhaseEncode = DICOM field (0019,1028), and
-	#   NumberPhaseEncodingSamples = first value of DICOM field (0051,100b) ("AcquisitionMatrixText").
-	# On Siemens, iPAT/GRAPPA factors have already been accounted for.
+	# "Effective" Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
+	# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+	#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+	#   ReconMatrixPE = size of the reconstructed image in the PE dimension
+	# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+	# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
     EchoSpacing="0.00058" 
 
 	# Susceptibility distortion correction method (required for accurate processing)
-	# Values: FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
+	# Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GeneralElectricFieldMap
     DistortionCorrection="TOPUP"
 
 	# Receive coil bias field correction method

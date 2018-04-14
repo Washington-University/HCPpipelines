@@ -188,12 +188,12 @@ for Subject in $Subjlist ; do
 	echo "  ${SCRIPT_NAME}: PosData: ${PosData}"
 	echo "  ${SCRIPT_NAME}: NegData: ${NegData}"
 
-	# Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
-	# Set to NONE if not used
-	# EchoSpacing = 1/(BandwidthPerPixelPhaseEncode * NumberPhaseEncodingSamples)
-	#   where (for Siemens) BandwidthPerPixelPhaseEncode = DICOM field (0019,1028), and
-	#   NumberPhaseEncodingSamples = first value of DICOM field (0051,100b) ("AcquisitionMatrixText").
-	# On Siemens, iPAT/GRAPPA factors have already been accounted for.
+	# "Effective" Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
+	# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+	#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+	#   ReconMatrixPE = size of the reconstructed image in the PE dimension
+	# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+	# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
 	EchoSpacing=0.2733285956376756
 	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing} (ms)"
 
