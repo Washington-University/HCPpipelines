@@ -77,8 +77,8 @@ log_Msg "PhaseInputName: ${PhaseInputName}"
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 log_Msg "GEB0InputName: ${GEB0InputName}"
 
-DwellTime=`opts_GetOpt1 "--echospacing" $@`  
-log_Msg "DwellTime: ${DwellTime}"
+EchoSpacing=`opts_GetOpt1 "--echospacing" $@`  
+log_Msg "EchoSpacing: ${EchoSpacing}"
 
 deltaTE=`opts_GetOpt1 "--echodiff" $@`  
 log_Msg "deltaTE: ${deltaTE}"
@@ -315,7 +315,7 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
        --echodiff=${deltaTE} \
        --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
        --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-       --echospacing=${DwellTime} \
+       --echospacing=${EchoSpacing} \
        --unwarpdir=${UnwarpDir} \
        --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
        --biasfield=${T1wFolder}/${BiasField} \

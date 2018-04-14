@@ -80,7 +80,7 @@ WD=`getopt1 "--workingdir" $@`  # "$1"
 PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT REQUIRES LR/X-/-1 VOLUME FIRST (SAME IS TRUE OF AP/PA)
 PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT REQUIRES RL/X/1 VOLUME SECOND (SAME IS TRUE OF AP/PA)
 ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
-DwellTime=`getopt1 "--echospacing" $@`  # "$5"
+EchoSpacing=`getopt1 "--echospacing" $@`  # "$5"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
 DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
 DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
@@ -199,7 +199,7 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
   nPEsteps=$(($dimx - 1))
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
   #Note: the above calculation implies full k-space acquisition for SE EPI. In case of partial Fourier/k-space acquisition (though not recommended), $dimx-1 does not equal to nPEsteps. 
-  ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+  ro_time=`echo "scale=6; ${EchoSpacing} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   log_Msg "Total readout time is $ro_time secs"
   i=1
   while [ $i -le $dimtOne ] ; do
@@ -218,7 +218,7 @@ elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
   dimy=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
   nPEsteps=$(($dimy - 1))
   #Total_readout=Echo_spacing*(#of_PE_steps-1)
-  ro_time=`echo "scale=6; ${DwellTime} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+  ro_time=`echo "scale=6; ${EchoSpacing} * ${nPEsteps}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   i=1
   while [ $i -le $dimtOne ] ; do
     echo "0 -1 0 $ro_time" >> $txtfname
