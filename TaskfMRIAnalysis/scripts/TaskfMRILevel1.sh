@@ -168,7 +168,7 @@ DesignfContrasts=${FEATDir}/design.fts
 
 # An F-test may not always be requested as part of the design.fsf
 ExtraArgs=""
-if [ -e ${DesignfContrasts ] ; then
+if [ -e ${DesignfContrasts} ] ; then
 	ExtraArgs="$ExtraArgs --fcon=${DesignfContrasts}"
 fi
 
@@ -183,6 +183,11 @@ fi
 
 #Add temporal filtering
 log_Msg "Add temporal filtering"
+# Temporal filtering is conducted by fslmaths. 
+# First, fslmaths is not CIFTI-compliant. 
+# So, convert CIFTI to fake NIFTI file, use fslmaths, then convert fake NIFTI back to CIFTI.
+# Second, fslmaths -bptf removes timeseries mean, which is expected by film_gls. 
+# So, save the mean to file, then add it back after -bptf.
 ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
 fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz -Tmean ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz
 fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
@@ -259,7 +264,11 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
   
   #Add temporal filtering
   log_Msg "Add temporal filtering"
-  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
+# Temporal filtering is conducted by fslmaths. 
+# fslmaths -bptf removes timeseries mean, which is expected by film_gls. 
+# So, save the mean to file, then add it back after -bptf.
+  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -Tmean ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"_mean.nii.gz
+  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 -add ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"_mean.nii.gz ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
 
   #Run film_gls on subcortical volume data
   log_Msg "Run film_gls on subcortical volume data"
