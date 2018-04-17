@@ -79,8 +79,9 @@ ${FSLDIR}/bin/imcp "$WorkingDirectory"/"$regimg"2T1w_restore "$RegOutput"
 ${FSLDIR}/bin/fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$regimg"2T1w_restore.nii.gz -sqrt "$QAImage"_"$regimg".nii.gz
 
 #Generate 1.25mm structural space for resampling the diffusion data into
-${FSLDIR}/bin/flirt -interp spline -in "$T1wRestoreImage" -ref "$T1wRestoreImage" -applyisoxfm ${DiffRes} -out "$T1wRestoreImage"_${DiffRes}
-${FSLDIR}/bin/applywarp --rel --interp=spline -i "$T1wRestoreImage" -r "$T1wRestoreImage"_${DiffRes} -o "$T1wRestoreImage"_${DiffRes}
+${FSLDIR}/bin/flirt -interp spline -in "$T1wRestoreImage" -ref "$T1wRestoreImage" -applyisoxfm ${DiffRes} -out "$WorkingDirectory"/T1w_restore_acpc_dc_${DiffRes}
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "$T1wRestoreImage" -r "$WorkingDirectory"/T1w_acpc_dc_restore_${DiffRes} -o "$WorkingDirectory"/T1w_restore_acpc_dc_${DiffRes}
+immv "$WorkingDirectory"/T1w_acpc_dc_restore_${DiffRes} "$T1wRestoreImage"_${DiffRes}
 
 #Generate 1.25mm mask in structural space
 ${FSLDIR}/bin/flirt -interp nearestneighbour -in "$InputBrainMask" -ref "$InputBrainMask" -applyisoxfm ${DiffRes} -out "$T1wOutputDirectory"/nodif_brain_mask
