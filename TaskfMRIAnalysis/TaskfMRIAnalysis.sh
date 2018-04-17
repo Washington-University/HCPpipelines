@@ -192,60 +192,73 @@ old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 
 if [ "${old_or_new_version}" == "OLD" ]
 then
-	log_Msg "INFO: Detected pre-5.0.7 version of FSL is in use. Invoking v1.0 of Task fMRI Analysis."
-	if [ "${RegName}" != "" ] 
-	then
-		log_Msg "INFO: V2.0 option: --regname=${RegName} ignored"
-	fi
-
- 	if [ "${Parcellation}" != "" ]
-	then
-		log_Msg "INFO: V2.0 option: --parcellation=${Parcellation} ignored"
-	fi
-
- 	if [ "${ParcellationFile}" != "" ]
-	then
-		log_Msg "INFO: V2.0 option: --parcellationfile=${ParcellationFile} ignored"
-	fi
-
-	${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.v1.0.sh \
-	    --path=${Path} \
-	    --subject=${Subject} \
-	    --lvl1tasks=${LevelOnefMRINames} \
-	    --lvl1fsfs=${LevelOnefsfNames} \
-	    --lvl2task=${LevelTwofMRIName} \
-	    --lvl2fsf=${LevelTwofsfNames} \
-	    --lowresmesh=${LowResMesh} \
-	    --grayordinatesres=${GrayordinatesResolution} \
-	    --origsmoothingFWHM=${OriginalSmoothingFWHM} \
-	    --confound=${Confound} \
-	    --finalsmoothingFWHM=${FinalSmoothingFWHM} \
-	    --temporalfilter=${TemporalFilter} \
-	    --vba=${VolumeBasedProcessing}
-
+	# Need to exit script due to incompatible FSL VERSION!!!!
+	log_Msg "ERROR: Detected pre-5.0.7 version of FSL is in use. Task fMRI Analysis not invoked."
+	exit 1
 else
-	log_Msg "INFO: Detected version 5.0.7 or newer of FSL is in use. Invoking v2.0 of Task fMRI Analysis."
+	log_Msg "INFO: Detected version 5.0.7 or newer of FSL is in use. Invoking Level1 and Level2 scripts."
 
-	${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.v2.0.sh \
-	    --path=${Path} \
-	    --subject=${Subject} \
-	    --lvl1tasks=${LevelOnefMRINames} \
-	    --lvl1fsfs=${LevelOnefsfNames} \
-	    --lvl2task=${LevelTwofMRIName} \
-	    --lvl2fsf=${LevelTwofsfNames} \
-	    --lowresmesh=${LowResMesh} \
-	    --grayordinatesres=${GrayordinatesResolution} \
-	    --origsmoothingFWHM=${OriginalSmoothingFWHM} \
-	    --confound=${Confound} \
-	    --finalsmoothingFWHM=${FinalSmoothingFWHM} \
-	    --temporalfilter=${TemporalFilter} \
-	    --vba=${VolumeBasedProcessing} \
-	    --regname=${RegName} \
-	    --parcellation=${Parcellation} \
-	    --parcellationfile=${ParcellationFile}
+	#Naming Conventions
+	AtlasFolder="${Path}/${Subject}/MNINonLinear"
+	ResultsFolder="${AtlasFolder}/Results"
+	ROIsFolder="${AtlasFolder}/ROIs"
+	DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 
+	#Run Level One Analysis for Both Phase Encoding Directions
+	log_Msg "Run Level One Analysis for Both Phase Encoding Directions"
+
+	LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
+	LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`
+
+	i=1
+	for LevelOnefMRIName in $LevelOnefMRINames ; do
+	  log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"	
+	  LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $i`
+	  log_Msg "Issued command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"
+	  ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
+		  $Subject \
+		  $ResultsFolder \
+		  $ROIsFolder \
+		  $DownSampleFolder \
+		  $LevelOnefMRIName \
+		  $LevelOnefsfName \
+		  $LowResMesh \
+		  $GrayordinatesResolution \
+		  $OriginalSmoothingFWHM \
+		  $Confound \
+		  $FinalSmoothingFWHM \
+		  $TemporalFilter \
+		  $VolumeBasedProcessing \
+		  $RegName \
+		  $Parcellation \
+		  $ParcellationFile
+	  i=$(($i+1))
+	done
+
+	if [ "$LevelTwofMRIName" != "NONE" ]
+	then
+		LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
+		LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
+
+		#Combine Data Across Phase Encoding Directions in the Level Two Analysis
+		log_Msg "Combine Data Across Phase Encoding Directions in the Level Two Analysis"
+		log_Msg "Issued command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
+		${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
+		  $Subject \
+		  $ResultsFolder \
+		  $DownSampleFolder \
+		  $LevelOnefMRINames \
+		  $LevelOnefsfNames \
+		  $LevelTwofMRIName \
+		  $LevelTwofsfNames \
+		  $LowResMesh \
+		  $FinalSmoothingFWHM \
+		  $TemporalFilter \
+		  $VolumeBasedProcessing \
+		  $RegName \
+		  $Parcellation
+	fi
 fi
 
 log_Msg "Completed"
-
 
