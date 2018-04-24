@@ -53,7 +53,7 @@ echo "${scriptName}: Total readout time is $ro_time secs"
 ################################################################################################
 echo "${scriptName}: Rescaling series to ensure consistency across baseline intensities"
 entry_cnt=0
-for entry in ${rawdir}/${basePos}*.nii* ${rawdir}/${baseNeg}*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
+for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
 do
 	basename=`imglob ${entry}`
 	echo "${scriptName}: Processing $basename"
@@ -115,7 +115,7 @@ done < ${rawdir}/${basePos}_SeriesCorrespVolNum.txt
 scount=1
 scount2=1
 indcount=0
-for entry in ${rawdir}/${basePos}*.nii*  #For each Pos volume
+for entry in ${rawdir}/${basePos}_[0-9]*.nii*  #For each Pos volume
 do
 	#Extract b0s and create index file
 	basename=`imglob ${entry}`
@@ -169,7 +169,7 @@ done < ${rawdir}/${baseNeg}_SeriesCorrespVolNum.txt
 Poscount=${indcount}
 indcount=0
 scount2=1
-for entry in ${rawdir}/${baseNeg}*.nii* #For each Neg volume
+for entry in ${rawdir}/${baseNeg}_[0-9]*.nii* #For each Neg volume
 do
 	#Extract b0s and create index file
 	basename=`imglob ${entry}`
@@ -221,8 +221,8 @@ ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_b0 `${FSLDIR}/bin/imglob ${rawdir}/Pos_b
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg_b0 `${FSLDIR}/bin/imglob ${rawdir}/Neg_b0_????.*`
 ${FSLDIR}/bin/imrm ${rawdir}/Pos_b0_????
 ${FSLDIR}/bin/imrm ${rawdir}/Neg_b0_????
-${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos `echo ${rawdir}/${basePos}*.nii*`
-${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg `echo ${rawdir}/${baseNeg}*.nii*`
+${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos `echo ${rawdir}/${basePos}_[0-9]*.nii*`
+${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg `echo ${rawdir}/${baseNeg}_[0-9]*.nii*`
 
 paste `echo ${rawdir}/${basePos}*.bval` >${rawdir}/Pos.bval
 paste `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
