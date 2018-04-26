@@ -2,10 +2,12 @@
 set -e
 g_script_name=`basename ${0}`
 
+# Load Function Libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
+# Establish tool name for logging
+log_SetToolName "${g_script_name}"
 
 show_tool_versions()
 {
@@ -187,7 +189,7 @@ for Analysis in ${Analyses} ; do
   log_Msg "NumContrasts: ${NumContrasts}"
   i=1
   while [ $i -le ${NumContrasts} ] ; do
-	log_Msg "i: ${i}"
+	log_Msg "Contrast Number i: ${i}"
     COPEMERGE=""
     VARCOPEMERGE=""
     j=1
@@ -198,7 +200,34 @@ for Analysis in ${Analyses} ; do
     done
     fslmerge -t ${LevelTwoFEATDir}/${Analysis}/cope${i}.nii.gz $COPEMERGE
     fslmerge -t ${LevelTwoFEATDir}/${Analysis}/varcope${i}.nii.gz $VARCOPEMERGE
-    flameo --cope=${LevelTwoFEATDir}/${Analysis}/cope${i}.nii.gz --vc=${LevelTwoFEATDir}/${Analysis}/varcope${i}.nii.gz --dvc=${LevelTwoFEATDir}/${Analysis}/dof.nii.gz --mask=${LevelTwoFEATDir}/${Analysis}/mask.nii.gz --ld=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat --dm=${LevelTwoFEATDir}/design.mat --cs=${LevelTwoFEATDir}/design.grp --tc=${LevelTwoFEATDir}/design.con --runmode=fe
+
+    log_Msg "About to use flameo"
+    which flameo
+	curdir=`pwd`
+	cd ${LevelTwoFEATDir}
+
+	log_Msg "Command: flameo --cope=${Analysis}/cope${i}.nii.gz \\"
+    log_Msg "  --vc=${Analysis}/varcope${i}.nii.gz \\"
+    log_Msg "  --dvc=${Analysis}/dof.nii.gz \\"
+    log_Msg "  --mask=${Analysis}/mask.nii.gz \\"
+    log_Msg "  --ld=${Analysis}/cope${i}.feat \\"
+    log_Msg "  --dm=design.mat \\"
+    log_Msg "  --cs=design.grp \\"
+    log_Msg "  --tc=design.con \\"
+    log_Msg "  --runmode=fe"
+
+	flameo --cope=${Analysis}/cope${i}.nii.gz \
+		   --vc=${Analysis}/varcope${i}.nii.gz \
+		   --dvc=${Analysis}/dof.nii.gz \
+		   --mask=${Analysis}/mask.nii.gz \
+		   --ld=${Analysis}/cope${i}.feat \
+		   --dm=design.mat \
+		   --cs=design.grp \
+		   --tc=design.con \
+		   --runmode=fe
+
+	log_Msg "Successfully completed flameo"
+    cd ${curdir}
     i=$(($i+1))
   done
 
@@ -272,4 +301,4 @@ if [ ${VolumeBasedProcessing} = "YES" ] ; then
   ${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol${TemporalFilterString}${SmoothingString}.dscalar.nii ${VolMergeSTRING}  
 fi
 
-
+log_Msg "Complete"
