@@ -2,10 +2,12 @@
 set -e
 g_script_name=`basename ${0}`
 
+# Load Function Libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
+
+# Establish tool name for logging
+log_SetToolName "${g_script_name}"
 
 show_tool_versions()
 {
@@ -101,7 +103,9 @@ fi
 TR_vol=`${CARET7DIR}/wb_command -file-information ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ParcellationString}.${Extension} -no-map-info -only-step-interval`
 log_Msg "TR_vol: ${TR_vol}"
 
-#Only do the additional smoothing required to hit the target final smoothing for CIFTI.  Additional smoothing is not recommended, if looking for area-sized effects use parcellation for greater sensitivity and satistical power
+#Only do the additional spatial smoothing required to hit the target (theoretical) final smoothing for CIFTI.
+#Additional smoothing is not recommended -- if looking for area-sized effects, use parcellation for
+#greater sensitivity and statistical power
 AdditionalSmoothingFWHM=`echo "sqrt(( $FinalSmoothingFWHM ^ 2 ) - ( $OriginalSmoothingFWHM ^ 2 ))" | bc -l`
 log_Msg "AdditionalSmoothingFWHM: ${AdditionalSmoothingFWHM}"
 
@@ -174,7 +178,9 @@ fi
 
 ###CIFTI Processing###
 log_Msg "CIFTI Processing"
-#Add any additional smoothing, does not do anything if parcellation has been specified. Additional smoothing is not recommended, if looking for area-sized effects use parcellation for greater sensitivity and satistical power
+#Add any additional spatial smoothing, does not do anything if parcellation has been specified.
+#Additional smoothing is not recommended -- if looking for area-sized effects, use parcellation for
+#greater sensitivity and statistical power
 if [[ ! $FinalSmoothingFWHM -eq $OriginalSmoothingFWHM && -z ${ParcellationString} ]] ; then
   ${CARET7DIR}/wb_command -cifti-smoothing ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}.dtseries.nii ${AdditionalSigma} ${AdditionalSigma} COLUMN ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}.dtseries.nii -left-surface "$DownSampleFolder"/"$Subject".L.midthickness."$LowResMesh"k_fs_LR.surf.gii -right-surface "$DownSampleFolder"/"$Subject".R.midthickness."$LowResMesh"k_fs_LR.surf.gii
 else
@@ -186,11 +192,14 @@ log_Msg "Add temporal filtering"
 # Temporal filtering is conducted by fslmaths. 
 # First, fslmaths is not CIFTI-compliant. 
 # So, convert CIFTI to fake NIFTI file, use fslmaths, then convert fake NIFTI back to CIFTI.
-# Second, fslmaths -bptf removes timeseries mean, which is expected by film_gls. 
+# Second, fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward), which is expected by film_gls. 
 # So, save the mean to file, then add it back after -bptf.
 ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
 fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz -Tmean ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz
-fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` 0 -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
+hp_sigma=`echo "0.5 * $TemporalFilter / $TR_vol" | bc -l`
+fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz -bptf ${hp_sigma} -1 \
+		 -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz \
+		 ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz
 ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$TemporalFilterString""$SmoothingString"${RegString}${ParcellationString}.${Extension}
 rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas"$SmoothingString"${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz
 
@@ -256,23 +265,94 @@ fi
 ###Standard NIFTI Volume-based Processsing###
 log_Msg "Standard NIFTI Volume-based Processsing"
 if [ $VolumeBasedProcessing = "YES" ] ; then
-  #Add volume smoothing
-  log_Msg "Add volume smoothing"
-  FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz -bin -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_weight -odt float
-  fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}.nii.gz -kernel gauss ${FinalSmoothingSigma} -fmean -div ${FEATDir}/mask_weight -mas ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -odt float
-  
-  #Add temporal filtering
-  log_Msg "Add temporal filtering"
-# Temporal filtering is conducted by fslmaths. 
-# fslmaths -bptf removes timeseries mean, which is expected by film_gls. 
-# So, save the mean to file, then add it back after -bptf.
-  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -Tmean ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"_mean.nii.gz
-  fslmaths ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz -bptf `echo "0.5 * $TemporalFilter / $TR_vol" | bc -l` -1 -add ${FEATDir}/${LevelOnefMRIName}"$SmoothingString"_mean.nii.gz ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
 
-  #Run film_gls on subcortical volume data
-  log_Msg "Run film_gls on subcortical volume data"
+  #Add edge-constrained volume smoothing
+  log_Msg "Add edge-constrained volume smoothing"
+  FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+  InputfMRI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}
+  InputSBRef=${InputfMRI}_SBRef
+  fslmaths ${InputSBRef} -bin ${FEATDir}/mask_orig
+  fslmaths ${FEATDir}/mask_orig -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_orig_weight -odt float
+  fslmaths ${InputfMRI} -kernel gauss ${FinalSmoothingSigma} -fmean \
+    -div ${FEATDir}/mask_orig_weight -mas ${FEATDir}/mask_orig \
+    ${FEATDir}/${LevelOnefMRIName}"$SmoothingString" -odt float
+
+  #Add volume dilation
+  #
+  # For some subjects, FreeSurfer-derived brain masks (applied to the time 
+  # series data in IntensityNormalization.sh as part of 
+  # GenericfMRIVolumeProcessingPipeline.sh) do not extend to the edge of brain
+  # in the MNI152 space template. This is due to the limitations of volume-based
+  # registration. So, to avoid a lack of coverage in a group analysis around the
+  # penumbra of cortex, we will add a single dilation step to the input prior to
+  # creating the Level1 maps.
+  #
+  # Ideally, we would condition this dilation on the resolution of the fMRI 
+  # data.  Empirically, a single round of dilation gives very good group 
+  # coverage of MNI brain for the 2 mm resolution of HCP fMRI data. So a single
+  # dilation is what we use below.
+  #
+  # Note that for many subjects, this dilation will result in signal extending
+  # BEYOND the limits of brain in the MNI152 template.  However, that is easily
+  # fixed by masking with the MNI space brain template mask if so desired.
+  #
+  # The specific implementation involves:
+  # a) Edge-constrained spatial smoothing on the input fMRI time series (and masking
+  #    that back to the original mask).  This step was completed above.
+  # b) Spatial dilation of the input fMRI time series, followed by edge constrained smoothing
+  # c) Adding the voxels from (b) that are NOT part of (a) into (a).
+  #
+  # The motivation for this implementation is that:
+  # 1) Identical voxel-wise results are obtained within the original mask.  So, users
+  #    that desire the original ("tight") FreeSurfer-defined brain mask (which is
+  #    implicitly represented as the non-zero voxels in the InputSBRef volume) can
+  #    mask back to that if they chose, with NO impact on the voxel-wise results.
+  # 2) A simpler possible approach of just dilating the result of step (a) results in 
+  #    an unnatural pattern of dark/light/dark intensities at the edge of brain,
+  #    whereas the combination of steps (b) and (c) yields a more natural looking 
+  #    transition of intensities in the added voxels.
+  log_Msg "Add volume dilation"
+
+  # Dilate the original BOLD time series, then do (edge-constrained) smoothing
+  fslmaths ${FEATDir}/mask_orig -dilM -bin ${FEATDir}/mask_dilM
+  fslmaths ${FEATDir}/mask_dilM \
+    -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_dilM_weight -odt float
+  fslmaths ${InputfMRI} -dilM -kernel gauss ${FinalSmoothingSigma} -fmean \
+    -div ${FEATDir}/mask_dilM_weight -mas ${FEATDir}/mask_dilM \
+    ${FEATDir}/${LevelOnefMRIName}_dilM"$SmoothingString" -odt float
+
+  # Take just the additional "rim" voxels from the dilated then smoothed time series, and add them
+  # into the smoothed time series (that didn't have any dilation)
+  SmoothedDilatedResultFile=${FEATDir}/${LevelOnefMRIName}"$SmoothingString"_dilMrim
+  fslmaths ${FEATDir}/mask_orig -binv ${FEATDir}/mask_orig_inv
+  fslmaths ${FEATDir}/${LevelOnefMRIName}_dilM"$SmoothingString" \
+    -mas ${FEATDir}/mask_orig_inv \
+    -add ${FEATDir}/${LevelOnefMRIName}"$SmoothingString" \
+    ${SmoothedDilatedResultFile}
+
+  #Add temporal filtering to the output from above
+  log_Msg "Add temporal filtering"
+  # Temporal filtering is conducted by fslmaths. 
+  # fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward), which is expected by film_gls. 
+  # So, save the mean to file, then add it back after -bptf.
+  # We drop the "dilMrim" string from the output file name, so as to avoid breaking
+  # any downstream scripts.
+  fslmaths ${SmoothedDilatedResultFile} -Tmean ${SmoothedDilatedResultFile}_mean
+  hp_sigma=`echo "0.5 * $TemporalFilter / $TR_vol" | bc -l`
+  fslmaths ${SmoothedDilatedResultFile} -bptf ${hp_sigma} -1 \
+	-add ${SmoothedDilatedResultFile}_mean \
+    ${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz
+
+  #Run film_gls on volume data
+  log_Msg "Run film_gls on volume data"
   film_gls --rn=${FEATDir}/StandardVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}"$TemporalFilterString""$SmoothingString".nii.gz --pd="$DesignMatrix" --con=${DesignContrasts} ${ExtraArgs} --thr=1000
+
+  #Cleanup
+  rm -f ${FEATDir}/mask_*.nii.gz
+  rm -f ${FEATDir}/${LevelOnefMRIName}"$SmoothingString".nii.gz
+  rm -f ${FEATDir}/${LevelOnefMRIName}_dilM"$SmoothingString".nii.gz
+  rm -f ${SmoothedDilatedResultFile}*.nii.gz
+
 fi
 
-
+log_Msg "Complete"
