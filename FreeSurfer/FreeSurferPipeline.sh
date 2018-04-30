@@ -323,13 +323,13 @@ main()
 	
 	popd 
 
-	log_Msg "Generating QC file"
-	log_Msg "cmd: fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
-	fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz
-	return_code=$?
-	if [ "${return_code}" -ne "0" ]; then
-		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
-	fi
+	# log_Msg "Generating QC file"
+	# log_Msg "cmd: fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
+	# fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz
+	# return_code=$?
+	# if [ "${return_code}" -ne "0" ]; then
+	# 	log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
+	# fi
 	
 	log_Msg "Completing main functionality"
 }
