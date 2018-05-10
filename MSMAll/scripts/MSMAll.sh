@@ -748,11 +748,12 @@ main()
 					1)
 						# Use interpreted MATLAB
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 
 						matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
+addpath '$mPath'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
 M_PROG
-						log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						log_Msg "addpath '$mPath'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
 						;;
 
 					*)
