@@ -41,42 +41,22 @@
 # and does not attempt any further processing.
 set -e
 
+
+########################################## PREPARE FUNCTIONS ########################################## 
+
 # Load function libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
-source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option funtions
+source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib	# Function for getting FSL version
 
-# Establish tool name for logging
-log_SetToolName "TaskfMRIAnalysis.sh"
 
-# Other utility functions
-
-get_fsl_version()
-{
-	local fsl_version_file
-	local fsl_version
-	local __functionResultVar=${1}
-
-	fsl_version_file="${FSLDIR}/etc/fslversion"
-
-	if [ -f ${fsl_version_file} ]
-	then
-		fsl_version=`cat ${fsl_version_file}`
-		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
-	else
-		log_Msg "ERROR: Cannot tell which version of FSL you are using."
-		exit 1
-	fi
-
-	eval $__functionResultVar="'${fsl_version}'"
-}
-
-#
-# NOTE: 
-#   Don't echo anything in this function other than the last echo
-#   that outputs the return value
-#   
+# function to test FSL versions
 determine_old_or_new_fsl()
 {
+	# NOTE: 
+	#   Don't echo anything in this function other than the last echo
+	#   that outputs the return value
+	#   
 	local fsl_version=${1}
 	local old_or_new
 	local fsl_version_array
@@ -130,135 +110,122 @@ determine_old_or_new_fsl()
 }
 
 
+########################################## READ_ARGS ##################################
+
+# Explcitly set tool name for logging
+log_SetToolName "TaskfMRIAnalysis.sh"
+
 # Show version of HCP Pipeline Scripts in use if requested
 opts_ShowVersionIfRequested $@
 
-log_Msg "Parsing Command Line Options"
-
+# Parse expected arguments from command-line array
+log_Msg "READ_ARGS: Parsing Command Line Options"
 Path=`opts_GetOpt1 "--path" $@`
-log_Msg "Path: ${Path}"
-
 Subject=`opts_GetOpt1 "--subject" $@`
-log_Msg "Subject: ${Subject}"
-
 LevelOnefMRINames=`opts_GetOpt1 "--lvl1tasks" $@`
-log_Msg "LevelOnefMRINames: ${LevelOnefMRINames}"
-
 LevelOnefsfNames=`opts_GetOpt1 "--lvl1fsfs" $@`
-log_Msg "LevelOnefsfNames: ${LevelOnefsfNames}"
-
 LevelTwofMRIName=`opts_GetOpt1 "--lvl2task" $@`
-log_Msg "LevelTwofMRIName: ${LevelTwofMRIName}"
-
 LevelTwofsfNames=`opts_GetOpt1 "--lvl2fsf" $@`
-log_Msg "LevelTwofsfNames: ${LevelTwofsfNames}"
-
 LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`
-log_Msg "LowResMesh: ${LowResMesh}"
-
 GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
-log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
-
 OriginalSmoothingFWHM=`opts_GetOpt1 "--origsmoothingFWHM" $@`
-log_Msg "OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
-
 Confound=`opts_GetOpt1 "--confound" $@`
-log_Msg "Confound: ${Confound}"
-
 FinalSmoothingFWHM=`opts_GetOpt1 "--finalsmoothingFWHM" $@`
-log_Msg "FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
-
 TemporalFilter=`opts_GetOpt1 "--temporalfilter" $@`
-log_Msg "TemporalFilter: ${TemporalFilter}"
-
 VolumeBasedProcessing=`opts_GetOpt1 "--vba" $@`
-log_Msg "VolumeBasedProcessing: ${VolumeBasedProcessing}"
-
 RegName=`opts_GetOpt1 "--regname" $@`
-log_Msg "RegName: ${RegName}"
-
 Parcellation=`opts_GetOpt1 "--parcellation" $@`
-log_Msg "Parcellation: ${Parcellation}"
-
 ParcellationFile=`opts_GetOpt1 "--parcellationfile" $@`
-log_Msg "ParcellationFile: ${ParcellationFile}"
 
-# Determine the version of FSL that is in use
-get_fsl_version fsl_ver
-log_Msg "FSL version: ${fsl_ver}"
+# Write command-line arguments to log file
+log_Msg "READ_ARGS: Path: ${Path}"
+log_Msg "READ_ARGS: Subject: ${Subject}"
+log_Msg "READ_ARGS: LevelOnefMRINames: ${LevelOnefMRINames}"
+log_Msg "READ_ARGS: LevelOnefsfNames: ${LevelOnefsfNames}"
+log_Msg "READ_ARGS: LevelTwofMRIName: ${LevelTwofMRIName}"
+log_Msg "READ_ARGS: LevelTwofsfNames: ${LevelTwofsfNames}"
+log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
+log_Msg "READ_ARGS: GrayordinatesResolution: ${GrayordinatesResolution}"
+log_Msg "READ_ARGS: OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
+log_Msg "READ_ARGS: Confound: ${Confound}"
+log_Msg "READ_ARGS: FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
+log_Msg "READ_ARGS: TemporalFilter: ${TemporalFilter}"
+log_Msg "READ_ARGS: VolumeBasedProcessing: ${VolumeBasedProcessing}"
+log_Msg "READ_ARGS: RegName: ${RegName}"
+log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
+log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}"
 
-# Determine whether to invoke the "OLD" (v1.0) or "NEW" (v2.0) version of Task fMRI Analysis
+
+########################################## MAIN #########################################
+
+# Determine if required FSL version is present
+fsl_version_get fsl_ver
 old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-
 if [ "${old_or_new_version}" == "OLD" ]
 then
 	# Need to exit script due to incompatible FSL VERSION!!!!
-	log_Msg "ERROR: Detected pre-5.0.7 version of FSL is in use. Task fMRI Analysis not invoked."
+	log_Msg "MAIN: TEST_FSL_VERSION: ERROR: Detected pre-5.0.7 version of FSL in use (version ${fsl_ver}). Task fMRI Analysis not invoked. Exiting."
 	exit 1
 else
-	log_Msg "INFO: Detected version 5.0.7 or newer of FSL is in use. Invoking Level1 and Level2 scripts."
-
-	#Naming Conventions
-	AtlasFolder="${Path}/${Subject}/MNINonLinear"
-	ResultsFolder="${AtlasFolder}/Results"
-	ROIsFolder="${AtlasFolder}/ROIs"
-	DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
-
-	#Run Level One Analysis for Both Phase Encoding Directions
-	log_Msg "Run Level One Analysis for Both Phase Encoding Directions"
-
-	LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
-	LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`
-
-	i=1
-	for LevelOnefMRIName in $LevelOnefMRINames ; do
-	  log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"	
-	  LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $i`
-	  log_Msg "Issued command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"
-	  ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
-		  $Subject \
-		  $ResultsFolder \
-		  $ROIsFolder \
-		  $DownSampleFolder \
-		  $LevelOnefMRIName \
-		  $LevelOnefsfName \
-		  $LowResMesh \
-		  $GrayordinatesResolution \
-		  $OriginalSmoothingFWHM \
-		  $Confound \
-		  $FinalSmoothingFWHM \
-		  $TemporalFilter \
-		  $VolumeBasedProcessing \
-		  $RegName \
-		  $Parcellation \
-		  $ParcellationFile
-	  i=$(($i+1))
-	done
-
-	if [ "$LevelTwofMRIName" != "NONE" ]
-	then
-		LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
-		LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
-
-		#Combine Data Across Phase Encoding Directions in the Level Two Analysis
-		log_Msg "Combine Data Across Phase Encoding Directions in the Level Two Analysis"
-		log_Msg "Issued command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
-		${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
-		  $Subject \
-		  $ResultsFolder \
-		  $DownSampleFolder \
-		  $LevelOnefMRINames \
-		  $LevelOnefsfNames \
-		  $LevelTwofMRIName \
-		  $LevelTwofsfNames \
-		  $LowResMesh \
-		  $FinalSmoothingFWHM \
-		  $TemporalFilter \
-		  $VolumeBasedProcessing \
-		  $RegName \
-		  $Parcellation
-	fi
+	log_Msg "MAIN: TEST_FSL_VERSION: Beginning analyses with FSL version ${fsl_ver}"
 fi
 
-log_Msg "Completed"
+# Determine locations of necessary directories (using expected naming convention)
+AtlasFolder="${Path}/${Subject}/MNINonLinear"
+ResultsFolder="${AtlasFolder}/Results"
+ROIsFolder="${AtlasFolder}/ROIs"
+DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
+
+
+# Run Level 1 analyses for each phase encoding direction (from command line arguments)
+log_Msg "MAIN: RUN_LEVEL1: Running Level 1 Analysis for Both Phase Encoding Directions"
+i=1
+# Level 1 analysis names were delimited by '@' in command-line; change to space in for loop
+for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
+	log_Msg "MAIN: RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"	
+	# Get corresponding fsf name from $LevelOnefsfNames list
+	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
+	log_Msg "MAIN: RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"
+	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
+	  $Subject \
+	  $ResultsFolder \
+	  $ROIsFolder \
+	  $DownSampleFolder \
+	  $LevelOnefMRIName \
+	  $LevelOnefsfName \
+	  $LowResMesh \
+	  $GrayordinatesResolution \
+	  $OriginalSmoothingFWHM \
+	  $Confound \
+	  $FinalSmoothingFWHM \
+	  $TemporalFilter \
+	  $VolumeBasedProcessing \
+	  $RegName \
+	  $Parcellation \
+	  $ParcellationFile
+	i=$(($i+1))
+done
+
+if [ "$LevelTwofMRIName" != "NONE" ]
+then
+	# Combine Data Across Phase Encoding Directions in the Level 2 Analysis
+	log_Msg "MAIN: RUN_LEVEL2: Combine Data Across Phase Encoding Directions in the Level 2 Analysis"
+	log_Msg "MAIN: RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
+	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
+	  $Subject \
+	  $ResultsFolder \
+	  $DownSampleFolder \
+	  $LevelOnefMRINames \
+	  $LevelOnefsfNames \
+	  $LevelTwofMRIName \
+	  $LevelTwofsfNames \
+	  $LowResMesh \
+	  $FinalSmoothingFWHM \
+	  $TemporalFilter \
+	  $VolumeBasedProcessing \
+	  $RegName \
+	  $Parcellation
+fi
+
+log_Msg "MAIN: Completed"
 
