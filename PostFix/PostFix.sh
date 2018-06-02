@@ -416,10 +416,10 @@ M_PROG
 	rm ${ComponentList}
 
 	log_Msg "Making dual screen scene"
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
+	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
 
 	log_Msg "Making single screen scene"
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
+	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
 
 	if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
 		touch ${ResultsFolder}/ReclassifyAsSignal.txt
