@@ -252,7 +252,7 @@ main()
 		#   "FIELDMAP"
 		#     This value is equivalent to the "SiemensFieldMap" value described
 		#     below. Use of the "SiemensFieldMap" value is prefered, but
-		#     "FIELDMAP" is included for backward compatibility with the versions
+		#     "FIELDMAP" is included for backward compatibility with earlier versions
 		#     of these scripts that only supported use of Siemens-specific
 		#     Gradient Echo Field Maps and did not support Gradient Echo Field
 		#     Maps from any other scanner vendor.
@@ -326,24 +326,24 @@ main()
 		#   ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_SpinEchoFieldMap_PA.nii.gz
 		SpinEchoPhaseEncodePositive="NONE"
 
-		# Echo Spacing or Dwelltime of spin echo EPI MRI image. Specified in seconds.
+		# "Effective" Echo Spacing of *Spin Echo Field Maps*. Specified in seconds.
 		# Set to "NONE" if not used.
+		# SEEchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+		#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
+		#   ReconMatrixPE = size of the reconstructed SEFM images in the PE dimension
+		# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+		# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
 		#
-		# Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples)
-		# DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode
-		# DICOM field (0051,100b) = AcquisitionMatrixText first value (# of phase encoding samples).
-		# On Siemens, iPAT/GRAPPA factors have already been accounted for.
-		#
-		# Example value for when using Spin Echo Field Maps:
+		# Example value for when using Spin Echo Field Maps from the HCP-YA
 		#   0.000580002668012
-		DwellTime="NONE"
+		SEEchoSpacing="NONE"
 
 		# Spin Echo Unwarping Direction
 		# x or y (minus or not does not matter)
 		# "NONE" if not used
 		#
 		# Example values for when using Spin Echo Field Maps: x, -x, y, -y
-		# Note: +x or +y are not supported. For positive values, DO NOT include the + sign
+		# Note: '+x' or '+y' are not supported. i.e., for positive values, DO NOT include the + sign
 		## MPH: Why do we say that "minus or not does not matter", but then list -x and -y as example values??
 		SEUnwarpDir="NONE"
 
@@ -470,7 +470,7 @@ main()
 			--echodiff="$TE" \
 			--SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
 			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
-			--echospacing="$DwellTime" \
+			--seechospacing="$SEEchoSpacing" \
 			--seunwarpdir="$SEUnwarpDir" \
 			--t1samplespacing="$T1wSampleSpacing" \
 			--t2samplespacing="$T2wSampleSpacing" \
