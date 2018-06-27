@@ -217,8 +217,8 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                     a positive phase encoding direction (RL in 
                                     HCP data), set to "NONE" if not using Spin 
                                     Echo Field Maps
-  --echospacing=<dwell time>        Echo Spacing or Dwelltime of Spin Echo Field
-                                    Map or "NONE" if not used
+  --seechospacing=<seconds>         Effective Echo Spacing of Spin Echo Field Map,
+                                    (in seconds) or "NONE" if not used
   --seunwarpdir={x, y, NONE}        Phase encoding direction of the spin echo 
                                     field map. (Only applies when using a spin echo
                                     field map.)
@@ -299,7 +299,7 @@ GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 TE=`opts_GetOpt1 "--echodiff" $@`
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
 SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
-DwellTime=`opts_GetOpt1 "--echospacing" $@`
+SEEchoSpacing=`opts_GetOpt1 "--seechospacing" $@`
 SEUnwarpDir=`opts_GetOpt1 "--seunwarpdir" $@`
 T1wSampleSpacing=`opts_GetOpt1 "--t1samplespacing" $@`
 T2wSampleSpacing=`opts_GetOpt1 "--t2samplespacing" $@`
@@ -346,7 +346,7 @@ log_Msg "GEB0InputName: ${GEB0InputName}"
 log_Msg "TE: ${TE}"
 log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
 log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
-log_Msg "DwellTime: ${DwellTime}"
+log_Msg "SEEchoSpacing: ${SEEchoSpacing}"
 log_Msg "SEUnwarpDir: ${SEUnwarpDir}"
 log_Msg "T1wSampleSpacing: ${T1wSampleSpacing}"
 log_Msg "T2wSampleSpacing: ${T2wSampleSpacing}"
@@ -550,7 +550,7 @@ case $AvgrdcSTRING in
             --echodiff=${TE} \
             --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
             --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-            --echospacing=${DwellTime} \
+            --seechospacing=${SEEchoSpacing} \
             --seunwarpdir=${SEUnwarpDir} \
             --t1sampspacing=${T1wSampleSpacing} \
             --t2sampspacing=${T2wSampleSpacing} \
