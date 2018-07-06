@@ -365,7 +365,7 @@ main()
 		preproc_pipeline_cmd+=" --subject=${Subject} "
 		preproc_pipeline_cmd+="${PassOnArguments}"
 		log_Msg "Invoking Preprocessing pipeline for positive/negative data pair ${pair}"
-		${preproc_pipeline_cmd}
+		echo ${preproc_pipeline_cmd}
 	done
 
     merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/scripts/merge_pairs.sh "

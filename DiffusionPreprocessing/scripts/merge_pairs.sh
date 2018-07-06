@@ -16,23 +16,29 @@ mkdir -p ${workingdir}/${DWIName}
 #
 # Merges the individual images
 #
-merge_image()
+echo "merging data"
+cmd="fslmerge -t ${workingdir}/${DWIName}/data"
+for ImageIndex in $(seq 1 ${NPairs} ) ; do
+    cmd+=" ${workingdir}/${DWIName}_scan${ImageIndex}/data"
+done
+${cmd}
+
+mean_image()
 {
-	echo "merging $1"
-	cmd="fslmerge -t ${workingdir}/${DWIName}/$1"
-	for ImageIndex in $(seq 1 ${NPairs} ) ; do
-		cmd+=" ${workingdir}/${DWIName}_scan${ImageIndex}/$1"
-	done
-	${cmd}
+    echo "computing mean of $1"
+    cmd="fsladd ${workingdir}/${DWIName}/$1 -m"
+    for ImageIndex in $(seq 1 ${NPairs} ) ; do
+        cmd+=" ${workingdir}/${DWIName}_scan${ImageIndex}/$1"
+    done
+    ${cmd}
 }
 
-merge_image data
-merge_image nodif_brain_mask
+mean_image nodif_brain_mask
 # include voxels based on majority voting (erring on the side of inclusion)
-fslmaths ${workingdir}/${DWIName}/nodif_brain_mask -Tmean -thr 0.49 -bin ${workingdir}/${DWIName}/nodif_brain_mask
+fslmaths ${workingdir}/${DWIName}/nodif_brain_mask -thr 0.49 -bin ${workingdir}/${DWIName}/nodif_brain_mask
+
 if [ -f ${workingdir}/${DWIName}_scan1/grad_dev.nii* ]; then
-    merge_image grad_dev
-    fslmaths ${workingdir}/${DWIName}/grad_dev -Tmean ${workingdir}/${DWIName}/grad_dev
+    mean_image grad_dev
 fi
 
 
