@@ -348,7 +348,10 @@ main()
 		SEUnwarpDir="NONE"
 
 		# Topup Configuration file
-		# "NONE" if not used
+		# Set to "NONE" if not using SEFMs
+		#
+		# Default file to use when using SEFMs
+		#   TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 		TopupConfig="NONE"
 
 		# ----------------------------------------------------------------------
