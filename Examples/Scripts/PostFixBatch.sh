@@ -85,8 +85,7 @@ ReUseHighPass="YES" #Use YES if using multi-run ICA-FIX, otherwise use NO
 DualScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
 SingleScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
 
-MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
-#MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
 for Subject in $Subjlist ; do
   for fMRIName in ${fMRINames} ; do

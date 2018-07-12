@@ -205,7 +205,7 @@ get_options()
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
-			1)
+			1 | 2)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
 				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
 					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
@@ -214,7 +214,7 @@ get_options()
 				fi
 				;;
 			*)
-				log_Err_Abort "MATLAB Run Mode value must be 0 or 1"
+				log_Err_Abort "MATLAB Run Mode value must be 0, 1 or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -386,15 +386,21 @@ main()
 			log_Msg "MATLAB command return code: $?"
 			;;
 
-		1)
-			# Use interpreted MATLAB
+		1 | 2)
+			# Use interpreted MATLAB or octave
+			if [[ ${MatlabRunMode} == '1' ]]
+			then
+			    interpreter=(matlab -nojvm -nodisplay -nosplash)
+			else
+			    interpreter=(octave -q --no-window-system)
+			fi
 
-			matlab -nojvm -nodisplay -nosplash <<M_PROG
+			"${interpreter[@]}" <<M_PROG
 addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
 M_PROG
 			log_Msg "addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
 			;;
-
+		
 		*)
 			log_Err_Abort "Unrecognized MATLAB run mode value: ${MatlabRunMode}"
 			;;
