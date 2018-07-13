@@ -56,9 +56,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --template-scene-dual-screen=<template scene file>
    --template-scene-single-screen=<template scene file>
    --reuse-high-pass=<YES | NO>
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)"
+  [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled Matlab)"
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use octave
 
 EOF
 }
