@@ -127,7 +127,7 @@ if [ X${ScoutInput} != X ] ; then
 fi
 
 #Basic Cleanup
-rm ${InputfMRI}
+rm ${InputfMRI}.nii.*
 
 echo " "
 echo "END: IntensityNormalization"

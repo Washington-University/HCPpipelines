@@ -5,7 +5,7 @@ echo "This script must be SOURCED to correctly setup the environment prior to ru
 # Set up FSL (if not already done so in the running environment)
 # Uncomment the following 2 lines (remove the leading #) and correct the FSLDIR setting for your setup
 #export FSLDIR=/usr/share/fsl/5.0
-#. ${FSLDIR}/etc/fslconf/fsl.sh
+#source ${FSLDIR}/etc/fslconf/fsl.sh
 
 # Let FreeSurfer know what version of FSL to use
 # FreeSurfer uses FSL_DIR instead of FSLDIR to determine the FSL version

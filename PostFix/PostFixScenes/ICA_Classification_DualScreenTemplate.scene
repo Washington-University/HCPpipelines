@@ -2630,7 +2630,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                       Version="1">
                                  <Object Type="enumeratedType" Name="dataFileType"><![CDATA[CONNECTIVITY_DENSE_SCALAR]]></Object>
                                  <Object Type="enumeratedType" Name="structure"><![CDATA[ALL]]></Object>
-                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                  <Object Type="boolean" Name="selected">true</Object>
                               </Object>
                            </Element>
@@ -2641,7 +2641,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                       Version="1">
                                  <Object Type="enumeratedType" Name="dataFileType"><![CDATA[CONNECTIVITY_DENSE_SCALAR]]></Object>
                                  <Object Type="enumeratedType" Name="structure"><![CDATA[ALL]]></Object>
-                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                  <Object Type="boolean" Name="selected">true</Object>
                               </Object>
                            </Element>
@@ -2652,7 +2652,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                       Version="1">
                                  <Object Type="enumeratedType" Name="dataFileType"><![CDATA[CONNECTIVITY_SCALAR_DATA_SERIES]]></Object>
                                  <Object Type="enumeratedType" Name="structure"><![CDATA[ALL]]></Object>
-                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                  <Object Type="boolean" Name="selected">true</Object>
                               </Object>
                            </Element>
@@ -2663,7 +2663,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                       Version="1">
                                  <Object Type="enumeratedType" Name="dataFileType"><![CDATA[CONNECTIVITY_SCALAR_DATA_SERIES]]></Object>
                                  <Object Type="enumeratedType" Name="structure"><![CDATA[ALL]]></Object>
-                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
+                                 <Object Type="pathName" Name="fileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
                                  <Object Type="boolean" Name="selected">true</Object>
                               </Object>
                            </Element>
@@ -4200,7 +4200,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_1]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -4806,7 +4806,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_1]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8588,7 +8588,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8604,7 +8604,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8654,7 +8654,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8670,7 +8670,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8720,7 +8720,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8736,7 +8736,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8786,7 +8786,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8802,7 +8802,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -8970,7 +8970,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                 <Element Index="2">0</Element>
                                              </ObjectArray>
                                              <Object Type="integer" Name="m_fileRowIndex">0</Object>
-                                             <Object Type="pathName" Name="m_chartableFileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
+                                             <Object Type="pathName" Name="m_chartableFileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
                                           </Object>
                                           <ObjectMap Type="boolean"
                                                      Name="m_selectionStatus">
@@ -9021,7 +9021,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                 <Element Index="2">0</Element>
                                              </ObjectArray>
                                              <Object Type="integer" Name="m_fileRowIndex">0</Object>
-                                             <Object Type="pathName" Name="m_chartableFileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                             <Object Type="pathName" Name="m_chartableFileName"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                           </Object>
                                           <ObjectMap Type="boolean"
                                                      Name="m_selectionStatus">
@@ -9061,7 +9061,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9070,7 +9070,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9079,7 +9079,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9088,7 +9088,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9100,7 +9100,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixSeriesFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9109,7 +9109,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixSeriesFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9118,7 +9118,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixSeriesFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_mix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_mix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9127,7 +9127,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                             Class="CaretDataFileSelectionModel"
                                             Name="m_chartableMatrixSeriesFileSelectionModel"
                                             Version="1">
-                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
+                                       <Object Type="pathName" Name="selectedFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_FTmix.sdseries.nii]]></Object>
                                        <Object Type="string" Name="selectedFileNameNoPath"><![CDATA[melodic_FTmix.sdseries.nii]]></Object>
                                     </Object>
                                  </Value>
@@ -9233,7 +9233,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_1]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -9299,7 +9299,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -9365,7 +9365,7 @@ Window2 Timeseries and Powerspectrum]]></Description>
                                                    <Object Type="boolean" Name="m_paletteDisplayedFlag">false</Object>
                                                    <Object Type="enumeratedType" Name="m_wholeBrainVoxelDrawingMode"><![CDATA[DRAW_VOXELS_ON_TWO_D_SLICES]]></Object>
                                                    <Object Type="enumeratedType" Name="m_mapYokingGroup"><![CDATA[MAP_YOKING_GROUP_OFF]]></Object>
-                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hp2000.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
+                                                   <Object Type="pathName" Name="selectedMapFileNameWithPath"><![CDATA[StudyFolder/SubjectID/MNINonLinear/Results/fMRIName/fMRIName_hpHighPass.ica/filtered_func_data.ica/melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapFile"><![CDATA[melodic_oIC_vol.dscalar.nii]]></Object>
                                                    <Object Type="string" Name="selectedMapName"><![CDATA[1: Noise]]></Object>
                                                    <Object Type="integer" Name="selectedMapIndex">0</Object>
