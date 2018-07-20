@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2017 The Human Connectome Project/Connectome Coordination Facility
+# Copyright (C) 2015-2018 The Human Connectome Project/Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -48,6 +48,14 @@ show_tool_versions()
 	# Show fslmaths version
 	log_Msg "Showing fslmaths version"
 	which fslmaths
+
+	# Show fslstats version
+	log_Msg "Showing fslstats version"
+	which fslstats
+
+	# Show mri_concatenate_lta version"
+	which mri_concatenate_lta
+	mri_concatenate_lta -version
 }
 
 # Show usage information 
@@ -217,9 +225,13 @@ get_options()
 
 main()
 {
+	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
+	# ----------------------------------------------------------------------
 
-	# Retrieve positional parameters
+	# ----------------------------------------------------------------------
+	log_Msg "Retrieve positional parameters"
+	# ----------------------------------------------------------------------
 	local SubjectDIR="${1}"
 	local SubjectID="${2}"
 	local T1wImage="${3}"
@@ -227,7 +239,9 @@ main()
 	local T2wImage="${5}"
 	local recon_all_seed="${6}"
 
+	# ----------------------------------------------------------------------
 	# Log values retrieved from positional parameters
+	# ----------------------------------------------------------------------
 	log_Msg "SubjectDIR: ${SubjectDIR}"
 	log_Msg "SubjectID: ${SubjectID}"
 	log_Msg "T1wImage: ${T1wImage}"
@@ -235,7 +249,9 @@ main()
 	log_Msg "T2wImage: ${T2wImage}"
 	log_Msg "recon_all_seed: ${recon_all_seed}"
 	
-	# Figure out the number of cores to use.
+	# ----------------------------------------------------------------------
+	log_Msg "Figure out the number of cores to use."
+	# ----------------------------------------------------------------------
 	# Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the
 	# number of cores a job will use. If this environment variable is set, we will use it to
 	# determine the number of cores to tell recon-all to use.
@@ -247,10 +263,30 @@ main()
 		num_cores="${NSLOTS}"
 	fi
 	log_Msg "num_cores: ${num_cores}"
+
+	# ----------------------------------------------------------------------
+	log_Msg "Correct T1w image to have mean in brain of 150"
+	# ----------------------------------------------------------------------
+	log_Msg "...This prevents FreeSurfer from scaling up background noise"
+	local Mean
+	Mean=$(fslstats $T1wImageBrain -M)
+	log_Msg "...Mean: ${Mean}"
+
+	local rescaled_T1wImage
+	rescaled_T1wImage=$(remove_ext ${T1wImage})_rescale.nii.gz
+	log_Msg "...This produces a new file named: ${rescaled_T1wImage}"
 	
-	# Call recon-all
+	fslmaths ${T1wImage} -div ${Mean} -mul 150 -abs ${rescaled_T1wImage}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
+	fi
+	
+	# ----------------------------------------------------------------------
+	log_Msg "Call FreeSurfer's recon-all"
+	# ----------------------------------------------------------------------
 	recon_all_cmd="recon-all.v6.hires"
-	recon_all_cmd+=" -i ${T1wImage}"
+	recon_all_cmd+=" -i ${rescaled_T1wImage}"
 	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -subjid ${SubjectID}"
@@ -264,34 +300,46 @@ main()
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
 
-	log_Msg "recon_all_cmd: ${recon_all_cmd}"
+	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	${recon_all_cmd}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 	fi
-	
+
+	# ----------------------------------------------------------------------
+	log_Msg "Creating eye.dat"
+	# ----------------------------------------------------------------------
+	local mridir
 	mridir=${SubjectDIR}/${SubjectID}/mri
-	log_Msg "Creating ${mridir}/transforms/eye.dat"
-	mkdir -p ${mridir}/transforms
 
-	echo "${SubjectID}" > "${mridir}"/transforms/eye.dat
-	echo "1" >> "${mridir}"/transforms/eye.dat
-	echo "1" >> "${mridir}"/transforms/eye.dat
-	echo "1" >> "${mridir}"/transforms/eye.dat
-	echo "1 0 0 0" >> "${mridir}"/transforms/eye.dat
-	echo "0 1 0 0" >> "${mridir}"/transforms/eye.dat
-	echo "0 0 1 0" >> "${mridir}"/transforms/eye.dat
-	echo "0 0 0 1" >> "${mridir}"/transforms/eye.dat
-	echo "round" >> "${mridir}"/transforms/eye.dat
+	local transformsdir
+	transformsdir=${mridir}/transforms
+	mkdir -p ${transformsdir}
 
+	local eye_dat
+	eye_dat=${transformsdir}/eye.dat
+
+	log_Msg "...This creates ${eye_dat}"
+	echo "${SubjectID}" > ${eye_dat}
+	echo "1" >> ${eye_dat}
+	echo "1" >> ${eye_dat}
+	echo "1" >> ${eye_dat}
+	echo "1 0 0 0" >> ${eye_dat}
+	echo "0 1 0 0" >> ${eye_dat}
+	echo "0 0 1 0" >> ${eye_dat}
+	echo "0 0 0 1" >> ${eye_dat}
+	echo "round" >> ${eye_dat}
+
+	# ----------------------------------------------------------------------
 	log_Msg "Making T1w to T2w registration available in FSL format"
+	# ----------------------------------------------------------------------
 	
 	pushd ${mridir}
 
 	log_Msg "...Create a registration between the original conformed space and the rawavg space"
-	# This produces deleteme.data and P.lta
-	log_Msg "cmd: tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit"
+	log_Msg "......This produces deleteme.data and P.lta"
+	log_Msg "......cmd: tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit"
 	tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
@@ -299,8 +347,8 @@ main()
 	fi
 
 	log_Msg "...Concatenate the T1raw-->orig transform with the T2raw-->orig transform"
-	# This concatenates transforms/T2raw.tla and P.lta to get Q.lta
-	log_Msg "cmd: mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta"
+	log_Msg "......This concatenates transforms/T2raw.tla and P.lta to get Q.lta"
+	log_Msg "......cmd: mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta"
 	mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
@@ -308,7 +356,7 @@ main()
 	fi
 
 	log_Msg "...Convert to FSL format"
-	# This produces the ${mridir}/transforms/T2wtoT1w.mat file that we need
+	# This produces the ${transformsdir}/T2wtoT1w.mat file that we need
 	log_Msg "cmd: tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit"
 	tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit
 	return_code=$?
@@ -316,14 +364,16 @@ main()
 		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
 	fi
 
-	log_Msg "...clean up"
+	log_Msg "...Clean up"
 	rm --verbose deleteme.dat
 	rm --verbose P.lta
 	rm --verbose Q.lta
 	
 	popd 
 
+	# ----------------------------------------------------------------------
 	# log_Msg "Generating QC file"
+	# ----------------------------------------------------------------------
 	# log_Msg "cmd: fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
 	# fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz
 	# return_code=$?
@@ -331,7 +381,9 @@ main()
 	# 	log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
 	# fi
 	
+	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
+	# ----------------------------------------------------------------------
 }
 
 # Global processing - everything above here should be in a function
@@ -358,6 +410,8 @@ if [[ ${1} == --* ]]; then
 	log_Msg "Using named parameters"
 
 	# Get command line options
+	# Sets the following parameter variables:
+	#   p_subject_dir, p_subject, p_t1w_image, p_t2w_image, p_seed (optional)
 	get_options "$@"
 
 	# Invoke main functionality using positional parameters
