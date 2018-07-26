@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-########################################## PREPARE FUNCTIONS ########################################## 
+########################################## PREPARE FUNCTIONS ##########################################
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
@@ -96,7 +96,7 @@ if [ $VolumeBasedProcessing = "YES" ] ; then
 	runVolume=true;
 	ExtensionList="${ExtensionList}nii.gz "
 	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
-	Analyses="${Analyses}StandardVolumeStats "; # space character at end to separate multiple analyses	
+	Analyses="${Analyses}StandardVolumeStats "; # space character at end to separate multiple analyses
 	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
 fi
 
@@ -129,7 +129,7 @@ LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`
 # Loop over list to make string with paths to the Level1 .feat directories
 LevelOneFEATDirSTRING=""
 NumFirstLevelFolders=0; # counter
-for LevelOnefMRIName in $LevelOnefMRINames ; do 
+for LevelOnefMRIName in $LevelOnefMRINames ; do
   NumFirstLevelFolders=$(($NumFirstLevelFolders+1));
   # get fsf name that corresponds to fMRI name
   LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $NumFirstLevelFolders`;
@@ -154,7 +154,7 @@ else
 fi
 
 # Edit template.fsf and place it in LevelTwoFEATDir
-cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf | sed s/_hp200_s4/${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}/g > ${LevelTwoFEATDir}/design.fsf
+cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf | sed s/_hp200_s4/${TemporalFilterString}${SmoothingString}/g > ${LevelTwoFEATDir}/design.fsf
 
 # Make additional design files required by flameo
 log_Msg "Make design files"
@@ -288,7 +288,7 @@ for Analysis in ${Analyses} ; do
 			rm $fakeNIFTI
 		done
 	fi
-	
+
 	### Generate Files for Viewing
 	log_Msg "Generate Files for Viewing"
 	# Initialize strings used for fslmerge command
@@ -344,7 +344,7 @@ for Analysis in ${Analyses} ; do
 	# Perform the merge into viewable scalar files
 	${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_zstat${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} ${zMergeSTRING}
 	${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_cope${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} ${bMergeSTRING}
-	
+
 	analysisCounter=$(($analysisCounter+1))
 done  # end loop: for Analysis in ${Analyses}
 
