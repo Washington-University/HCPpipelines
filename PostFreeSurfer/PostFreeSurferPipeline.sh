@@ -3,7 +3,27 @@ set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.1)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+#  environment: HCPPIPEDIR 
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_PostFS}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR_PostFS environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
+fi
 
 ########################################## PIPELINE OVERVIEW ########################################## 
 

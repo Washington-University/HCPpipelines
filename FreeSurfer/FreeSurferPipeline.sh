@@ -33,8 +33,8 @@ show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
-	cat "${HCPPIPEDIR}"/version.txt
-
+	${HCPPIPEDIR}/show_version
+	
 	# Show recon-all version
 	log_Msg "Showing recon-all.v6.hires version"
 	which recon-all.v6.hires

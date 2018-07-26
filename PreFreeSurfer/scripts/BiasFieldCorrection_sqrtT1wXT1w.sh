@@ -5,6 +5,26 @@ set -e
 #  installed versions of: FSL (version 5.0.6), caret7 (a.k.a. Connectome Workbench) (version 1.0)
 #  environment: FSLDIR  CARET7DIR
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${FSLDIR}" ]; then
+	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${CARET7DIR}" ]; then
+	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {

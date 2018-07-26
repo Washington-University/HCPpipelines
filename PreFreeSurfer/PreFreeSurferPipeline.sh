@@ -164,11 +164,45 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 
 # ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${FSLDIR}" ]; then
+	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_Global}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+fi
+
+if [ -z "${HCPPIPEDIR_PreFS}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
+fi
+
+# ------------------------------------------------------------------------------
 #  Load Function Libraries
 # ------------------------------------------------------------------------------
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
@@ -363,6 +397,7 @@ log_Msg "UseJacobian: ${UseJacobian}"
 
 log_Msg "FSLDIR: ${FSLDIR}"
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+${HCPPIPEDIR}/show_version
 log_Msg "HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
 log_Msg "HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
 

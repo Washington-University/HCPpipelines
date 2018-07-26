@@ -5,6 +5,15 @@ set -e
 #  installed versions of: FSL (version 5.0.6) (including python with numpy, needed to run aff2rigid - part of FSL)
 #  environment: FSLDIR
 
+script_name=$(basename "${0}")
+
+if [ -z "${FSLDIR}" ]; then
+	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {

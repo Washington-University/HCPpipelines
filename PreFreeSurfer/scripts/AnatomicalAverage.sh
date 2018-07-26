@@ -1,6 +1,21 @@
 #!/bin/bash 
 set -e
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${FSLDIR}" ]; then
+	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
+################################################ SUPPORT FUNCTIONS ##################################################
+
 Usage() {
     echo ""
     echo "Usage: `basename $0` [options] <image1> ... <imageN>"

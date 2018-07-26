@@ -1,16 +1,30 @@
 #!/bin/bash
 set -e
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${CARET7DIR}" ]; then
+	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+fi
+
 echo -e "\n START: CreateMyelinMaps"
 
-StudyFolder="$1"
-Subject="$2"
-AtlasSpaceFolder="$3"
-NativeFolder="$4"
-T1wFolder="$5"
-HighResMesh="$6"
-LowResMeshes="$7"
-OrginalT1wImage="$8"
-OrginalT2wImage="$9"
+StudyFolder="${1}"
+Subject="${2}"
+AtlasSpaceFolder="${3}"
+NativeFolder="${4}"
+T1wFolder="${5}"
+HighResMesh="${6}"
+LowResMeshes="${7}"
+OrginalT1wImage="${8}"
+OrginalT2wImage="${9}"
 T1wImageBrain="${10}"
 InitialT1wTransform="${11}"
 dcT1wTransform="${12}"

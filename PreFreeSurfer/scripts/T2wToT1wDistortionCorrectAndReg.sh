@@ -4,7 +4,25 @@ set -e
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR and PATH for gradient_unwarp.py
 
-SCRIPT_NAME="T2WToT1wDistortionCorrectAndReg.sh"
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+SCRIPT_NAME=$(basename "${0}")
+
+if [ -z "${FSLDIR}" ]; then
+	echo "${SCRIPT_NAME}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${SCRIPT_NAME}: FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_Global}" ]; then
+	echo "${SCRIPT_NAME}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
+	exit 1
+else
+	echo "${SCRIPT_NAME}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+fi
 
 # -----------------------------------------------------------------------------------
 #  Constants for specification of Averaging and Readout Distortion Correction Method

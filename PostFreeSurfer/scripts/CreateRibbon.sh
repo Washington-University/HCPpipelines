@@ -1,15 +1,29 @@
 #!/bin/bash
 set -e
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${CARET7DIR}" ]; then
+	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+fi
+
 echo -e "\n START: CreateRibbon"
 
-StudyFolder="$1"
-Subject="$2"
-T1wFolder="$3"
-AtlasSpaceFolder="$4"
-NativeFolder="$5"
-AtlasSpaceT1wImage="$6"
-T1wImage="$7"
-FreeSurferLabels="$8"
+StudyFolder="${1}"
+Subject="${2}"
+T1wFolder="${3}"
+AtlasSpaceFolder="${4}"
+NativeFolder="${5}"
+AtlasSpaceT1wImage="${6}"
+T1wImage="${7}"
+FreeSurferLabels="${8}"
 
 LeftGreyRibbonValue="3"
 LeftWhiteMaskValue="2"

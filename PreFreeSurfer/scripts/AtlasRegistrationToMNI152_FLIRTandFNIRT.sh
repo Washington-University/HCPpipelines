@@ -5,6 +5,19 @@ set -e
 #  installed versions of: FSL (version 5.0.6)
 #  environment: FSLDIR
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+	
+if [ -z "${FSLDIR}" ]; then
+	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 Usage() {
