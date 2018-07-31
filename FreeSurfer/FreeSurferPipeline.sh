@@ -265,18 +265,13 @@ main()
 	log_Msg "num_cores: ${num_cores}"
 
 	# ----------------------------------------------------------------------
-	log_Msg "Correct T1w image to have mean in brain of 150"
+	log_Msg "Thresholding T1w image to eliminate negative voxel values"
 	# ----------------------------------------------------------------------
-	log_Msg "...This prevents FreeSurfer from scaling up background noise"
-	local Mean
-	Mean=$(fslstats $T1wImageBrain -M)
-	log_Msg "...Mean: ${Mean}"
+	local zero_threshold_T1wImage
+	zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
+	log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
-	local rescaled_T1wImage
-	rescaled_T1wImage=$(remove_ext ${T1wImage})_rescale.nii.gz
-	log_Msg "...This produces a new file named: ${rescaled_T1wImage}"
-	
-	fslmaths ${T1wImage} -div ${Mean} -mul 150 -abs ${rescaled_T1wImage}
+	flsmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
@@ -286,7 +281,7 @@ main()
 	log_Msg "Call FreeSurfer's recon-all"
 	# ----------------------------------------------------------------------
 	recon_all_cmd="recon-all.v6.hires"
-	recon_all_cmd+=" -i ${rescaled_T1wImage}"
+	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
 	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -subjid ${SubjectID}"
