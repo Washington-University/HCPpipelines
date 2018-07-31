@@ -303,6 +303,15 @@ main()
 	fi
 
 	# ----------------------------------------------------------------------
+	log_Msg "Clean up file: ${zero_threshold_T1wImage}"
+	# ----------------------------------------------------------------------
+	rm ${zero_threshold_T1wImage}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
+	fi
+
+	# ----------------------------------------------------------------------
 	log_Msg "Creating eye.dat"
 	# ----------------------------------------------------------------------
 	local mridir
