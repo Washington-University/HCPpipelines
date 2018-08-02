@@ -271,7 +271,7 @@ main()
 	zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
 	log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
-	flsmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
+	fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
