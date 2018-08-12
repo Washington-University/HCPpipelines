@@ -245,6 +245,20 @@ show_tool_versions()
 #	log_Msg "FSL version: ${fsl_ver}"
 }
 
+# ------------------------------------------------------------------------------
+#  Check for whether or not we have hand reclassification files
+# ------------------------------------------------------------------------------
+
+have_hand_reclassification()
+{
+	local StudyFolder="${1}"
+	local Subject="${2}"
+	local fMRIName="${3}"
+	local HighPass="${4}"
+
+	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+}
+
 main()
 {
 	# Show tool versions
@@ -310,7 +324,13 @@ main()
 	local aggressive=0
 	local domot=1
 	local hp=${HighPass}
-	local fixlist=".fix"
+	#local fixlist=".fix"
+	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass} ; then
+		fixlist="HandNoise.txt"
+	else
+		fixlist=".fix"
+	fi
+	log_Msg "Use fixlist=$fixlist"
 	
 	local fmris=${fMRINames//@/ } # replaces the @ that combines the filenames with a space
 	log_Msg "fmris: ${fmris}"
@@ -319,7 +339,7 @@ main()
 	log_Msg "ConcatName: ${ConcatName}"
 
 	DIR=`pwd`
-
+	log_Msg "PWD : $DIR"
 	###LOOP HERE --> Since the files are being passed as a group
 
 	echo $fmris | tr ' ' '\n' #separates paths separated by ' '
@@ -338,10 +358,10 @@ main()
 		fmri=`$FSLDIR/bin/imglob $fmri`
 		#[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
 		fmri_orig=$fmri
-
+		echo $fmri
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 		hptr=`echo "10 k $hp 2 / $tr / p" | dc -` 
-
+		echo $fmri
 		echo $tr
 		log_Msg "processing FMRI file $fmri with highpass $hp"
     
@@ -424,6 +444,7 @@ main()
 			matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
+
 			;;
 
 		*)
@@ -484,7 +505,7 @@ G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Establish default low res mesh
 G_DEFAULT_LOW_RES_MESH=32
-
+	
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
