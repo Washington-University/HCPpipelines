@@ -4,10 +4,10 @@ set -e
 # Must first source SetUpHCPPipeline.sh to set up pipeline environment variables and software
 # Requirements for this script
 #  installed versions of FSL 5.0.7 or greater
-#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
+#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR
 
 
-########################################## PREPARE FUNCTIONS ########################################## 
+########################################## PREPARE FUNCTIONS ##########################################
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib			# Logging related functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib	# Function for getting FSL version
@@ -66,7 +66,7 @@ log_Msg "READ_ARGS: TemporalFilter: ${TemporalFilter}"
 log_Msg "READ_ARGS: VolumeBasedProcessing: ${VolumeBasedProcessing}"
 log_Msg "READ_ARGS: RegName: ${RegName}"
 log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
-log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}" 
+log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}"
 
 show_tool_versions
 
@@ -177,7 +177,7 @@ log_Msg "MAIN: MAKE_DESIGNS: Create design files, model confounds if desired"
 # Determine if there is a confound matrix text file (e.g., output of fsl_motion_outliers)
 confound_matrix="";
 if [ "$Confound" != "NONE" ] ; then
-	confound_matrix=$( ls -d ${ResultsFolder}/${LevelOnefMRIName}/${Confound} 2>/dev/null )
+	confound_matrix=$( ls ${ResultsFolder}/${LevelOnefMRIName}/${Confound} 2>/dev/null )
 fi
 
 # Run feat_model inside $FEATDir
@@ -201,7 +201,7 @@ fi
 
 ### Parcellate data if a Parcellation was provided
 # Parcellation may be better than adding spatial smoothing to dense time series.
-# Parcellation increases sensitivity and statistical power, but avoids blurring signal 
+# Parcellation increases sensitivity and statistical power, but avoids blurring signal
 # across region boundaries into adjacent, non-activated regions.
 log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Parcellate data if a Parcellation was provided"
 if $runParcellated; then
@@ -251,16 +251,16 @@ if $runVolume ; then
 
 	#Add volume dilation
 	#
-	# For some subjects, FreeSurfer-derived brain masks (applied to the time 
-	# series data in IntensityNormalization.sh as part of 
+	# For some subjects, FreeSurfer-derived brain masks (applied to the time
+	# series data in IntensityNormalization.sh as part of
 	# GenericfMRIVolumeProcessingPipeline.sh) do not extend to the edge of brain
 	# in the MNI152 space template. This is due to the limitations of volume-based
 	# registration. So, to avoid a lack of coverage in a group analysis around the
 	# penumbra of cortex, we will add a single dilation step to the input prior to
 	# creating the Level1 maps.
 	#
-	# Ideally, we would condition this dilation on the resolution of the fMRI 
-	# data.  Empirically, a single round of dilation gives very good group 
+	# Ideally, we would condition this dilation on the resolution of the fMRI
+	# data.  Empirically, a single round of dilation gives very good group
 	# coverage of MNI brain for the 2 mm resolution of HCP fMRI data. So a single
 	# dilation is what we use below.
 	#
@@ -279,9 +279,9 @@ if $runVolume ; then
 	#    that desire the original ("tight") FreeSurfer-defined brain mask (which is
 	#    implicitly represented as the non-zero voxels in the InputSBRef volume) can
 	#    mask back to that if they chose, with NO impact on the voxel-wise results.
-	# 2) A simpler possible approach of just dilating the result of step (a) results in 
+	# 2) A simpler possible approach of just dilating the result of step (a) results in
 	#    an unnatural pattern of dark/light/dark intensities at the edge of brain,
-	#    whereas the combination of steps (b) and (c) yields a more natural looking 
+	#    whereas the combination of steps (b) and (c) yields a more natural looking
 	#    transition of intensities in the added voxels.
 	log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_NIFTI: Add volume dilation"
 
@@ -307,9 +307,9 @@ fi # end Volume spatial smoothing
 
 ##### APPLY TEMPORAL FILTERING #####
 
-# Issue 1: Temporal filtering is conducted by fslmaths, but fslmaths is not CIFTI-compliant. 
+# Issue 1: Temporal filtering is conducted by fslmaths, but fslmaths is not CIFTI-compliant.
 # Convert CIFTI to "fake" NIFTI file, use FSL tools (fslmaths), then convert "fake" NIFTI back to CIFTI.
-# Issue 2: fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward). film_gls expects mean in image. 
+# Issue 2: fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward). film_gls expects mean in image.
 # So, save the mean to file, then add it back after -bptf.
 if [[ $runParcellated == true || $runDense == true ]]; then
 	log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to CIFTI file"
@@ -318,7 +318,7 @@ if [[ $runParcellated == true || $runDense == true ]]; then
 	# Save mean image
 	fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI.nii.gz -Tmean ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz
 	# Compute smoothing kernel sigma
-	hp_sigma=`echo "0.5 * $TemporalFilter / $TR_vol" | bc -l`; 
+	hp_sigma=`echo "0.5 * $TemporalFilter / $TR_vol" | bc -l`;
 	# Use fslmaths to apply high pass filter and then add mean back to image
 	fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI.nii.gz -bptf ${hp_sigma} -1 \
 	   -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz \
@@ -332,8 +332,8 @@ fi
 if $runVolume; then
 	#Add temporal filtering to the output from above
 	log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to NIFTI file"
-	# Temporal filtering is conducted by fslmaths. 
-	# fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward), which is expected by film_gls. 
+	# Temporal filtering is conducted by fslmaths.
+	# fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward), which is expected by film_gls.
 	# So, save the mean to file, then add it back after -bptf.
 	# We drop the "dilMrim" string from the output file name, so as to avoid breaking
 	# any downstream scripts.
@@ -360,10 +360,10 @@ if $runDense ; then
 	film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical${TemporalFilterString}${SmoothingString}.nii.gz --pd=${DesignMatrix} --con=${DesignContrasts} ${ExtraArgs} --thr=1 --mode=volumetric
 	rm ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical${TemporalFilterString}${SmoothingString}.nii.gz
 
-	#Run film_gls on cortical surface data 
+	#Run film_gls on cortical surface data
 	log_Msg "MAIN: RUN_GLM: Run film_gls on cortical surface data"
 	for Hemisphere in L R ; do
-		#Prepare for film_gls  
+		#Prepare for film_gls
 		log_Msg "MAIN: RUN_GLM: Prepare for film_gls"
 		${CARET7DIR}/wb_command -metric-dilate ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi.${Hemisphere}.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.midthickness.${LowResMesh}k_fs_LR.surf.gii 50 ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${RegString}.atlasroi_dil.${Hemisphere}.${LowResMesh}k_fs_LR.func.gii -nearest
 
