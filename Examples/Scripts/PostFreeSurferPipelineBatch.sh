@@ -90,9 +90,8 @@ for Subject in $Subjlist ; do
   SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
   FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
   ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
-  # RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-  RegName="FS" 
-
+  RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
+  
   if [ -n "${command_line_specified_run_local}" ] ; then
       echo "About to run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
       queuing_command=""
