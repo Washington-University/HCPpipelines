@@ -53,9 +53,14 @@ show_tool_versions()
 	log_Msg "Showing fslstats version"
 	which fslstats
 
-	# Show mri_concatenate_lta version"
+	# Show mri_concatenate_lta version
+	log_Msg "Showing mri_concatenate_lta version"
 	which mri_concatenate_lta
 	mri_concatenate_lta -version
+
+	# Show mri_surf2surf version
+	log_Msg "Showing mri_surf2surf version"
+	which mri_surf2surf --version
 }
 
 # Show usage information 
@@ -225,6 +230,25 @@ get_options()
 
 main()
 {
+	local SubjectDIR
+	local SubjectID
+	local T1wImage
+	local T1wImageBrain
+	local T2wImage
+	local recon_all_seed
+
+	local num_cores
+	local zero_threshold_T1wImage
+	local return_code
+	local recon_all_cmd
+	local mridir
+	local transformsdir
+	local eye_dat_file
+
+	local tkregister_cmd
+	local mri_concatenate_lta_cmd
+	local mri_surf2surf_cmd
+
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
 	# ----------------------------------------------------------------------
@@ -232,12 +256,12 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Retrieve positional parameters"
 	# ----------------------------------------------------------------------
-	local SubjectDIR="${1}"
-	local SubjectID="${2}"
-	local T1wImage="${3}"
-	local T1wImageBrain="${4}"
-	local T2wImage="${5}"
-	local recon_all_seed="${6}"
+	SubjectDIR="${1}"
+	SubjectID="${2}"
+	T1wImage="${3}"
+	T1wImageBrain="${4}"
+	T2wImage="${5}"
+	recon_all_seed="${6}"
 
 	# ----------------------------------------------------------------------
 	# Log values retrieved from positional parameters
@@ -256,7 +280,7 @@ main()
 	# number of cores a job will use. If this environment variable is set, we will use it to
 	# determine the number of cores to tell recon-all to use.
 
-	local num_cores=0
+	num_cores=0
 	if [[ -z ${NSLOTS} ]]; then
 		num_cores=8
 	else
@@ -267,7 +291,6 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Thresholding T1w image to eliminate negative voxel values"
 	# ----------------------------------------------------------------------
-	local zero_threshold_T1wImage
 	zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
 	log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
@@ -314,26 +337,23 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Creating eye.dat"
 	# ----------------------------------------------------------------------
-	local mridir
 	mridir=${SubjectDIR}/${SubjectID}/mri
 
-	local transformsdir
 	transformsdir=${mridir}/transforms
 	mkdir -p ${transformsdir}
 
-	local eye_dat
-	eye_dat=${transformsdir}/eye.dat
+	eye_dat_file=${transformsdir}/eye.dat
 
-	log_Msg "...This creates ${eye_dat}"
-	echo "${SubjectID}" > ${eye_dat}
-	echo "1" >> ${eye_dat}
-	echo "1" >> ${eye_dat}
-	echo "1" >> ${eye_dat}
-	echo "1 0 0 0" >> ${eye_dat}
-	echo "0 1 0 0" >> ${eye_dat}
-	echo "0 0 1 0" >> ${eye_dat}
-	echo "0 0 0 1" >> ${eye_dat}
-	echo "round" >> ${eye_dat}
+	log_Msg "...This creates ${eye_dat_file}"
+	echo "${SubjectID}" > ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1 0 0 0" >> ${eye_dat_file}
+	echo "0 1 0 0" >> ${eye_dat_file}
+	echo "0 0 1 0" >> ${eye_dat_file}
+	echo "0 0 0 1" >> ${eye_dat_file}
+	echo "round" >> ${eye_dat_file}
 
 	# ----------------------------------------------------------------------
 	log_Msg "Making T1w to T2w registration available in FSL format"
@@ -342,27 +362,50 @@ main()
 	pushd ${mridir}
 
 	log_Msg "...Create a registration between the original conformed space and the rawavg space"
-	log_Msg "......This produces deleteme.data and P.lta"
-	log_Msg "......cmd: tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit"
-	tkregister --targ rawavg.mgz --mov orig.mgz --regheader --reg deleteme.dat --ltaout P.lta --noedit
+	tkregister_cmd="tkregister"
+	tkregister_cmd+=" --mov orig.mgz"
+	tkregister_cmd+=" --targ rawavg.mgz"
+	tkregister_cmd+=" --regheader"
+	tkregister_cmd+=" --noedit"
+	tkregister_cmd+=" --reg deleteme.dat"
+	tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
+	tkregister_cmd+=" --s ${SubjectID}"
+
+	log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
+	log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+
+	${tkregister_cmd}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
 	fi
 
 	log_Msg "...Concatenate the T1raw-->orig transform with the T2raw-->orig transform"
-	log_Msg "......This concatenates transforms/T2raw.tla and P.lta to get Q.lta"
-	log_Msg "......cmd: mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta"
-	mri_concatenate_lta transforms/T2raw.lta P.lta Q.lta
+	mri_concatenate_lta_cmd="mri_concatenate_lta"
+	mri_concatenate_lta_cmd+=" transforms/T2raw.lta"
+	mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
+	mri_concatenate_lta_cmd+=" Q.lta"
+
+	log_Msg "......The following concatenates transforms/T2raw.tla and transforms/orig-to-rawavg.lta to get Q.lta"
+	log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
+	${mri_concatenate_lta_cmd}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
 	fi
 
 	log_Msg "...Convert to FSL format"
-	# This produces the ${transformsdir}/T2wtoT1w.mat file that we need
-	log_Msg "cmd: tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit"
-	tkregister --mov orig/T2raw.mgz --targ rawavg.mgz --reg Q.lta --fslregout transforms/T2wtoT1w.mat --noedit
+	tkregister_cmd="tkregister"
+	tkregister_cmd+=" --mov orig/T2raw.mgz"
+	tkregister_cmd+=" --targ rawavg.mgz"
+	tkregister_cmd+=" --reg Q.lta"
+	tkregister_cmd+=" --fslregout transforms/T2wtoT1w.mat"
+	tkregister_cmd+=" --noedit"
+
+	log_Msg "......The following produces the transforms/T2wtoT1w.mat file that we need"
+	log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+
+	${tkregister_cmd}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
@@ -370,10 +413,53 @@ main()
 
 	log_Msg "...Clean up"
 	rm --verbose deleteme.dat
-	rm --verbose P.lta
 	rm --verbose Q.lta
 	
 	popd 
+
+	# ----------------------------------------------------------------------
+	log_Msg "Creating white surface files in rawavg space"
+	# ----------------------------------------------------------------------
+
+	pushd ${mridir}
+
+	mri_surf2surf_cmd="mri_surf2surf"
+	mri_surf2surf_cmd+=" --s ${SubjectID}"
+	mri_surf2surf_cmd+=" --sval-xyz white"
+	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
+	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
+	mri_surf2surf_cmd+=" --tval white.deformed"
+	mri_surf2surf_cmd+=" --surfreg white"
+	mri_surf2surf_cmd+=" --hemi lh"
+
+	log_Msg "......The following produces the white left hemisphere surface in rawavg space"
+	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
+
+	${mri_surf2surf_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
+	fi
+	
+	mri_surf2surf_cmd="mri_surf2surf"
+	mri_surf2surf_cmd+=" --s ${SubjectID}"
+	mri_surf2surf_cmd+=" --sval-xyz white"
+	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
+	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
+	mri_surf2surf_cmd+=" --tval white.deformed"
+	mri_surf2surf_cmd+=" --surfreg white"
+	mri_surf2surf_cmd+=" --hemi rh"
+
+	log_Msg "......The following produces the white right hemisphere surface in rawavg space"
+	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
+
+	${mri_surf2surf_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
+	fi
+	
+	popd
 
 	# ----------------------------------------------------------------------
 	# log_Msg "Generating QC file"
