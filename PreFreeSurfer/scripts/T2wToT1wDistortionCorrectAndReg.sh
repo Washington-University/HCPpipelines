@@ -79,6 +79,8 @@ Usage() {
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
 }
 
+source ${HCPPIPEDIR_Global}/scripts/log.shlib # Logging related functions
+
 # function for parsing options
 getopt1() {
     sopt="$1"
@@ -167,8 +169,7 @@ T2wImageBasename=`basename "$T2wImage"`
 
 Modalities="T1w T2w"
 
-echo " "
-echo " START: ${SCRIPT_NAME}"
+log_Msg "START"
 
 mkdir -p $WD
 mkdir -p ${WD}/FieldMap
@@ -260,9 +261,8 @@ case $DistortionCorrection in
         ;;
 
     *)
-        echo "${SCRIPT_NAME} - ERROR - Unable to create FSL-suitable readout distortion correction field map"
-        echo "${SCRIPT_NAME}           Unrecognized distortion correction method: ${DistortionCorrection}"
-        exit 1
+        log_Err "Unable to create FSL-suitable readout distortion correction field map"
+        log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
 esac
 
 if [ "${UnwarpDir}" = "-x" ] ; then
@@ -312,9 +312,9 @@ for TXw in $Modalities ; do
             ;;
 
         *)
-            echo "${SCRIPT_NAME} - ERROR - Unable to apply readout distortion correction"
-            echo "${SCRIPT_NAME}           Unrecognized distortion correction method: ${DistortionCorrection}"
-            exit 1
+            log_Err "Unable to apply readout distortion correction"
+            log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
+			
     esac
     
     ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -out ${WD}/FieldMap2${TXwImageBasename}
@@ -361,8 +361,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
 
-echo " "
-echo " END: ${SCRIPT_NAME}"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 
