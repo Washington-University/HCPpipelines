@@ -522,8 +522,8 @@ for TXw in ${Modalities} ; do
         ${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
     fi
 
-    # ACPC align T1w or T2w image to 0.7mm MNI Template to create native volume space
-    log_Msg "Aligning ${TXw} image to 0.7mm MNI ${TXw}Template to create native volume space"
+    # ACPC align T1w or T2w image to specified MNI Template to create native volume space
+    log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
     log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
     mkdir -p ${TXwFolder}/ACPCAlignment
     ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
