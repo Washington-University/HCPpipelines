@@ -5,16 +5,23 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
 if [ -z "${CARET7DIR}" ]; then
-	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
 fi
 
-echo -e "\n START: CreateRibbon"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
+log_Msg "START: CreateRibbon"
 
 StudyFolder="${1}"
 Subject="${2}"
@@ -85,5 +92,5 @@ fslmaths "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".L.ribbon.nii.gz -add "$A
 rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".L.ribbon.nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject".R.ribbon.nii.gz
 ${CARET7DIR}/wb_command -volume-label-import "$AtlasSpaceFolder"/ribbon.nii.gz "$FreeSurferLabels" "$AtlasSpaceFolder"/ribbon.nii.gz -drop-unused-labels
 
-echo -e "\n END: CreateRibbon"
+log_Msg "END: CreateRibbon"
 

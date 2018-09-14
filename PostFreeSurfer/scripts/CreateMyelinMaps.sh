@@ -5,16 +5,23 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
 if [ -z "${CARET7DIR}" ]; then
-	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
 fi
 
-echo -e "\n START: CreateMyelinMaps"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
+log_Msg "START: CreateMyelinMaps"
 
 StudyFolder="${1}"
 Subject="${2}"
@@ -56,7 +63,7 @@ ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
 
-echo "CreateMyelinMaps.sh: RegName: ${RegName}"
+log_Msg "CreateMyelinMaps.sh: RegName: ${RegName}"
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
@@ -198,4 +205,4 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
   done
 done
 
-echo -e "\n END: CreateMyelinMaps"
+log_Msg "END: CreateMyelinMaps"

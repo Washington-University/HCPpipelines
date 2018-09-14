@@ -6,10 +6,10 @@ set -e
 #  environment: FSLDIR, PATH to be able to find gradient_unwarp.py
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "GradientDistortionUnwarp.sh: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 else
-	echo "GradientDistortionUnwarp.sh: HCPPIPEDIR: ${HCPPIPEDIR}"
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
@@ -17,9 +17,9 @@ fi
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 
 Usage() {
-  echo "`basename $0`: Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
+  echo "$(basename $0): Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>]"
+  echo "Usage: $(basename $0) [--workingdir=<working dir>]"
   echo "              --coeffs=<Siemens gradient coefficient file>"
   echo "              --in=<input image>"
   echo "              --out=<output image>"

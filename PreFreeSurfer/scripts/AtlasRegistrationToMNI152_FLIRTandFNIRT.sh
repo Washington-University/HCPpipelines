@@ -9,16 +9,23 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-	
-if [ -z "${FSLDIR}" ]; then
-	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: FSLDIR: ${FSLDIR}"
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 
 Usage() {
   echo "`basename $0`: Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)"
@@ -118,8 +125,7 @@ T1wRestoreBasename=`basename $T1wRestoreBasename`;
 T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
 T1wRestoreBrainBasename=`basename $T1wRestoreBrainBasename`;
 
-echo " "
-echo " START: AtlasRegistration to MNI152"
+log_Msg "START: AtlasRegistration to MNI152"
 
 mkdir -p $WD
 
@@ -151,8 +157,7 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
 ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrain} ${OutputT2wImageRestoreBrain}
 
-echo " "
-echo " END: AtlasRegistration to MNI152"
+log_Msg "END: AtlasRegistration to MNI152"
 echo " END: `date`" >> $WD/xfms/log.txt
 
 ########################################## QA STUFF ########################################## 

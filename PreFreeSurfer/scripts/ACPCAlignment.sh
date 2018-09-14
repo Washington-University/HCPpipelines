@@ -5,21 +5,28 @@ set -e
 #  installed versions of: FSL (version 5.0.6) (including python with numpy, needed to run aff2rigid - part of FSL)
 #  environment: FSLDIR
 
-script_name=$(basename "${0}")
-
-if [ -z "${FSLDIR}" ]; then
-	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: FSLDIR: ${FSLDIR}"
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
+  echo "$(basename $0): Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
   echo " "
-  echo "Usage: `basename $0` --workingdir=<working dir> --in=<input image> --ref=<reference image> --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>]"
+  echo "Usage: $(basename $0) --workingdir=<working dir> --in=<input image> --ref=<reference image> --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>]"
 }
 
 # function for parsing options
@@ -70,8 +77,7 @@ WD=`defaultopt $WD ${Output}.wdir`
 # make optional arguments truly optional  (as -b without a following argument would crash robustfov)
 if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
 
-echo " "
-echo " START: ACPCAlignment"
+log_Msg "START"
 
 mkdir -p $WD
 
@@ -101,8 +107,7 @@ ${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 # Create a resampled image (ACPC aligned) using spline interpolation
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
-echo " "
-echo " END: ACPCAlignment"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

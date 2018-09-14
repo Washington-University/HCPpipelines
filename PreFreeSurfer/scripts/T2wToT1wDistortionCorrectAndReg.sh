@@ -8,20 +8,25 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-SCRIPT_NAME=$(basename "${0}")
-
 if [ -z "${FSLDIR}" ]; then
-	echo "${SCRIPT_NAME}: ABORTING: FSLDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
 	exit 1
 else
-	echo "${SCRIPT_NAME}: FSLDIR: ${FSLDIR}"
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
 fi
 
 if [ -z "${HCPPIPEDIR_Global}" ]; then
-	echo "${SCRIPT_NAME}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Global environment variable must be set"
 	exit 1
 else
-	echo "${SCRIPT_NAME}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+	echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+fi
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 # -----------------------------------------------------------------------------------
@@ -35,10 +40,12 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
+  echo "$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working directory>]"
+  echo "Usage: $(basename ${0}) [--workingdir=<working directory>]"
   echo "            --t1=<input T1w image>"
   echo "            --t1brain=<input T1w brain-extracted image>"
   echo "            --t2=<input T2w image>"
@@ -78,8 +85,6 @@ Usage() {
   echo "            [--topupconfig=<topup config file>]"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
 }
-
-source ${HCPPIPEDIR_Global}/scripts/log.shlib # Logging related functions
 
 # function for parsing options
 getopt1() {

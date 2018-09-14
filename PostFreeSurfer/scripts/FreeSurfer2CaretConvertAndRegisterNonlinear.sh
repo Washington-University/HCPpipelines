@@ -6,11 +6,11 @@ set -e # If any commands exit with non-zero value, this script exits
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 # ------------------------------------------------------------------------------
@@ -18,7 +18,6 @@ fi
 # ------------------------------------------------------------------------------
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # ------------------------------------------------------------------------------
 #  Verify other needed environment variables are set

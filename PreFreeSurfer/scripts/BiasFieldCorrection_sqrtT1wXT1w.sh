@@ -9,28 +9,30 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+script_name=
 
 if [ -z "${FSLDIR}" ]; then
-	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: FSLDIR: ${FSLDIR}"
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
 fi
 
 if [ -z "${CARET7DIR}" ]; then
-	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Tool for bias field correction based on square root of T1w * T2w"
+  echo "$(basename $0): Tool for bias field correction based on square root of T1w * T2w"
   echo " "
-  echo "Usage: `basename $0` --workingdir=<working directory> --T1im=<input T1 image> --T1brain=<input T1 brain> --T2im=<input T2 image> --obias=<output bias field image> --oT1im=<output corrected T1 image> --oT1brain=<output corrected T1 brain> --oT2im=<output corrected T2 image> --oT2brain=<output corrected T2 brain>"
+  echo "Usage: $(basename $0) --workingdir=<working directory> --T1im=<input T1 image> --T1brain=<input T1 brain> --T2im=<input T2 image> --obias=<output bias field image> --oT1im=<output corrected T1 image> --oT1brain=<output corrected T1 brain> --oT2im=<output corrected T2 image> --oT2brain=<output corrected T2 brain>"
 }
 
 # function for parsing options
@@ -84,9 +86,7 @@ WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
 
-
-echo " "
-echo " START: BiasFieldCorrection"
+log_Msg "START: BiasFieldCorrection"
 
 mkdir -p $WD
 
@@ -131,8 +131,7 @@ ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField $OutputT1wRestoredImage -
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT2wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField $OutputT2wRestoredImage -odt float
 
-echo " "
-echo " END: BiasFieldCorrection"
+log_Msg "END: BiasFieldCorrection"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

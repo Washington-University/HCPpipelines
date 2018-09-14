@@ -6,13 +6,22 @@ set -e
 #  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
 #  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global and PATH for gradient_unwarp.py)
 
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Script for generating a fieldmap suitable for FSL from General Electric Gradient Echo field map,"
+  echo "$(basename $0): Script for generating a fieldmap suitable for FSL from General Electric Gradient Echo field map,"
   echo "               and also do gradient non-linearity distortion correction of these"
   echo " "
-  echo "Usage: `basename $0` "
+  echo "Usage: $(basename $0) "
   echo "            [--workingdir=<working directory>]"
   echo "            --fmap=<input General Electric fieldmap with fieldmap in deg and magnitude image>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
@@ -65,8 +74,8 @@ GlobalScripts=${HCPPIPEDIR_Global}
 WD=`defaultopt $WD .`
 GradientDistortionCoeffs=`defaultopt $GradientDistortionCoeffs "NONE"`
 
-echo " "
-echo " START: Field Map Preprocessing and Gradient Unwarping"
+log_Msg "Field Map Preprocessing and Gradient Unwarping"
+log_Msg "START"
 
 mkdir -p $WD
 
@@ -84,7 +93,7 @@ mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
 ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
 ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
 
-echo "DONE: preparing General Electric fieldmap"
+log_Msg "DONE: preparing General Electric fieldmap"
 
 if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
   ${GlobalScripts}/GradientDistortionUnwarp.sh \
@@ -110,8 +119,8 @@ else
   cp ${WD}/FieldMap.nii.gz ${FieldMapOutput}.nii.gz
 fi
 
-echo " "
-echo " END: Field Map Preprocessing and Gradient Unwarping"
+log_Msg "Field Map Preprocessing and Gradient Unwarping"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

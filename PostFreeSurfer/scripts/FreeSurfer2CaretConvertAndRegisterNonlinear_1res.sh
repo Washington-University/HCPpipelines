@@ -5,16 +5,23 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
 if [ -z "${CARET7DIR}" ]; then
-	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
 fi
 
-echo -e "\n START: FS2CaretConvertRegisterNonlinear_1res"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
+log_Msg "START: FS2CaretConvertRegisterNonlinear_1res"
 
 StudyFolder="${1}"
 Subject="${2}"
@@ -40,7 +47,8 @@ SubcorticalGrayLabels="${21}"
 RegName="${22}"
 InflateExtraScale="${23}"
 
-echo "FreeSurfer2CaretConvertAndRegisterNonLinear_1res.sh: RegName: ${RegName}"
+log_Msg "FreeSurfer2CaretConvertAndRegisterNonLinear_1res.sh: RegName: ${RegName}"
+
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 GrayordinatesResolutions=`echo ${GrayordinatesResolutions} | sed 's/@/ /g'`
 
@@ -223,6 +231,6 @@ for STRING in ${STRINGII} ; do
   done
 done
 
-echo -e "\n END: FS2CaretConvertRegisterNonlinear_1res"
+log_Msg "END: FS2CaretConvertRegisterNonlinear_1res"
 
 

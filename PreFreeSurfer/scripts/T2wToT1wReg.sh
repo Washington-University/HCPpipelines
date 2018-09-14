@@ -5,17 +5,23 @@ set -e
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
 if [ -z "${FSLDIR}" ]; then
-	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
 	exit 1
 else
-	echo "${script_name}: FSLDIR: ${FSLDIR}"
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
 fi
 
-echo " "
-echo " START: T2w2T1Reg"
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
+log_Msg "START: T2w2T1Reg"
 
 WD="$1"
 T1wImage="$2"
@@ -41,5 +47,4 @@ ${FSLDIR}/bin/fslmaths $OutputT1wTransform -mul 0 $OutputT1wTransform
 cp "$WD"/T2w2T1w.nii.gz "$OutputT2wImage".nii.gz
 ${FSLDIR}/bin/convertwarp --relout --rel -r "$OutputT2wImage".nii.gz -w $OutputT1wTransform --postmat="$WD"/T2w2T1w.mat --out="$OutputT2wTransform"
 
-echo " "
-echo " START: T2w2T1Reg"
+log_Msg "END: T2w2T1Reg"
