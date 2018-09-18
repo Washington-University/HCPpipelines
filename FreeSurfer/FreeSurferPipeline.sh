@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 #~ND~FORMAT~MARKDOWN~
 #~ND~START~
@@ -34,7 +34,7 @@ show_tool_versions()
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
 	${HCPPIPEDIR}/show_version
-	
+
 	# Show recon-all version
 	log_Msg "Showing recon-all.v6.hires version"
 	which recon-all.v6.hires
@@ -63,7 +63,7 @@ show_tool_versions()
 	which mri_surf2surf --version
 }
 
-# Show usage information 
+# Show usage information
 usage()
 {
 	cat <<EOF
@@ -75,28 +75,28 @@ Usage: ${g_script_name}: PARAMETER...
 PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--help] : show usage information and exit
-   
-  one from the following group is required 
-
-     --subject-dir=<path to subject directory>
-     --subjectDIR=<path to subject directory>
-
-  --subject=<subject ID>
-
-  one from the following group is required 
-
-     --t1w-image=<path to T1w image>
-     --t1=<path to T1w image>
 
   one from the following group is required
 
-     --t1brain=<path to T1w brain mask>
-     --t1w-brain=<path to T1w brain mask>
+	 --subject-dir=<path to subject directory>
+	 --subjectDIR=<path to subject directory>
 
-  one from the following group is required 
- 
-     --t2w-image=<path to T2w image>
-     --t2=<path to T2w image>
+  --subject=<subject ID>
+
+  one from the following group is required
+
+	 --t1w-image=<path to T1w image>
+	 --t1=<path to T1w image>
+
+  one from the following group is required
+
+	 --t1brain=<path to T1w brain mask>
+	 --t1w-brain=<path to T1w brain mask>
+
+  one from the following group is required
+
+	 --t2w-image=<path to T2w image>
+	 --t2=<path to T2w image>
 
   [--seed=<recon-all seed value>]
 
@@ -177,7 +177,7 @@ get_options()
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
-		
+
 	done
 
 	local error_count=0
@@ -210,7 +210,7 @@ get_options()
 	else
 		log_Msg "T1w Brain: ${p_t1w_brain}"
 	fi
-		
+
 	if [ -z "${p_t2w_image}" ]; then
 		log_Err "T2w Image (--t2w-image= or --t2=) required"
 		error_count=$(( error_count + 1 ))
@@ -222,7 +222,7 @@ get_options()
 	if [ ! -z "${p_seed}" ]; then
 		log_Msg "Seed: ${p_seed}"
 	fi
-	
+
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi
@@ -272,7 +272,7 @@ main()
 	log_Msg "T1wImageBrain: ${T1wImageBrain}"
 	log_Msg "T2wImage: ${T2wImage}"
 	log_Msg "recon_all_seed: ${recon_all_seed}"
-	
+
 	# ----------------------------------------------------------------------
 	log_Msg "Figure out the number of cores to use."
 	# ----------------------------------------------------------------------
@@ -299,7 +299,7 @@ main()
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
 	fi
-	
+
 	# ----------------------------------------------------------------------
 	log_Msg "Call FreeSurfer's recon-all"
 	# ----------------------------------------------------------------------
@@ -313,7 +313,7 @@ main()
 	recon_all_cmd+=" -openmp ${num_cores}"
 	recon_all_cmd+=" -all"
 	recon_all_cmd+=" -T2pial"
-	
+
 	if [ ! -z "${recon_all_seed}" ]; then
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
@@ -358,7 +358,7 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Making T1w to T2w registration available in FSL format"
 	# ----------------------------------------------------------------------
-	
+
 	pushd ${mridir}
 
 	log_Msg "...Create a registration between the original conformed space and the rawavg space"
@@ -414,8 +414,8 @@ main()
 	log_Msg "...Clean up"
 	rm --verbose deleteme.dat
 	rm --verbose Q.lta
-	
-	popd 
+
+	popd
 
 	# ----------------------------------------------------------------------
 	log_Msg "Creating white surface files in rawavg space"
@@ -431,6 +431,7 @@ main()
 	mri_surf2surf_cmd+=" --tval white.deformed"
 	mri_surf2surf_cmd+=" --surfreg white"
 	mri_surf2surf_cmd+=" --hemi lh"
+	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
 
 	log_Msg "......The following produces the white left hemisphere surface in rawavg space"
 	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
@@ -440,7 +441,7 @@ main()
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
 	fi
-	
+
 	mri_surf2surf_cmd="mri_surf2surf"
 	mri_surf2surf_cmd+=" --s ${SubjectID}"
 	mri_surf2surf_cmd+=" --sval-xyz white"
@@ -449,6 +450,7 @@ main()
 	mri_surf2surf_cmd+=" --tval white.deformed"
 	mri_surf2surf_cmd+=" --surfreg white"
 	mri_surf2surf_cmd+=" --hemi rh"
+	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
 
 	log_Msg "......The following produces the white right hemisphere surface in rawavg space"
 	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
@@ -458,7 +460,7 @@ main()
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
 	fi
-	
+
 	popd
 
 	# ----------------------------------------------------------------------
@@ -470,7 +472,7 @@ main()
 	# if [ "${return_code}" -ne "0" ]; then
 	# 	log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
 	# fi
-	
+
 	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
 	# ----------------------------------------------------------------------
@@ -507,7 +509,7 @@ if [[ ${1} == --* ]]; then
 	# Invoke main functionality using positional parameters
 	#     ${1}               ${2}           ${3}             ${4}             ${5}             ${6}
 	main "${p_subject_dir}" "${p_subject}" "${p_t1w_image}" "${p_t1w_brain}" "${p_t2w_image}" "${p_seed}"
-	
+
 else
 	# Positional parameters are used
 	log_Msg "Using positional parameters"
