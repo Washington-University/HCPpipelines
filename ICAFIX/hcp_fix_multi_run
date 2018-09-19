@@ -68,18 +68,23 @@ source ${FSL_FIXDIR}/settings.sh
 Usage() {
     cat <<EOF
 
-hcp_fix <4D_FMRI_data> <highpass> <concat_name> [<TrainingFile>]
-  with <highpass> being the temporal highpass full-width (2*sigma) in seconds
+hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>]
+  <highpass> is the temporal highpass full-width (2*sigma) in seconds
+  <do_motion_regression> must be specified, use TRUE or FALSE
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200
+e.g.   hcp_fix_multi_run BOLD_REST1_RL/BOLD_REST1_RL.nii.gz@BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 BOLD_REST1_RL_LR/BOLD_REST1_RL_LR.nii.gz TRUE
 
-for detrending-like behaviour, set <highpass> to 2000
+for detrending-like behaviour, set <highpass> to 2000, use 0 to disable highpass
 
 EOF
     exit 1
 }
 
-[ "$2" = "" ] && Usage
+if (( $# < 4 ))
+then
+    #Usage does an exit
+    Usage
+fi
 
 unset POSIXLY_CORRECT
 
@@ -127,14 +132,28 @@ hp=$2
 log_Inform "hp: ${hp}"
 
 unset TrainingData
-if [ $# -ge 4 ] ; then
-TrainingData=$4
+if [ $# -ge 5 ] ; then
+TrainingData=$5
 fi
 
 fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
 log_Inform "fmris: ${fmris}"
 ConcatName="${3}"
 log_Inform "ConcatName: ${ConcatName}"
+
+#this case logic could go in a helper function, interpret_as_bool or something
+case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
+    ( true | yes )
+        doMotionRegression=TRUE
+        ;;
+    ( false | no | none )
+        doMotionRegression=FALSE
+        ;;
+    ( * )
+        echo "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE" 1>&2
+        exit 1
+        ;;
+esac
 
 DIR=`pwd`
 
@@ -404,7 +423,12 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 	
 	# now run fix
-	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -m -h ${AlreadyHP}"
+	if [[ ${doMotionRegression} == "TRUE" ]]
+	then
+    	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -m -h ${AlreadyHP}"
+	else
+    	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -h ${AlreadyHP}"
+	fi
 	log_Inform "fix_cmd: ${fix_cmd}"
 	${fix_cmd}
 	return_code=$?
