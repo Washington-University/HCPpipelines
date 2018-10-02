@@ -421,6 +421,10 @@ main()
 	log_Msg "Creating white surface files in rawavg space"
 	# ----------------------------------------------------------------------
 
+	# Note: The orig-to-rawavg.lta file was created back in the previous
+	#       step when we are making the T1w to T2w registration available
+	#       in FSL format.
+	
 	pushd ${mridir}
 
 	mri_surf2surf_cmd="mri_surf2surf"
