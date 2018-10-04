@@ -248,6 +248,10 @@ main()
 	local tkregister_cmd
 	local mri_concatenate_lta_cmd
 	local mri_surf2surf_cmd
+	local mri_vol2vol_cmd
+	local t1w_input_file
+	local t2w_input_file
+	local fslmaths_cmd
 
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
@@ -468,15 +472,67 @@ main()
 	popd
 
 	# ----------------------------------------------------------------------
-	# log_Msg "Generating QC file"
+	log_Msg "Generating QC file"
 	# ----------------------------------------------------------------------
-	# log_Msg "cmd: fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz"
-	# fslmaths ${mridir}/T1w_hires.nii.gz -mul ${mridir}/T2w_hires.nii.gz -sqrt ${mridir}/T1wMulT2w_hires.nii.gz
-	# return_code=$?
-	# if [ "${return_code}" -ne "0" ]; then
-	# 	log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
-	# fi
 
+	pushd ${mridir}
+
+	# Generate T1w and T2w that have been aligned by BBR but not undergone FreeSurfer intensity
+	# normalization in NIFTIformat and in rawavg space
+
+	# T1w
+	
+	t1w_input_file="${SubjectDIR}/T1w.nii.gz"
+	mri_vol2vol_cmd="mri_vol2vol"
+	mri_vol2vol_cmd+=" --mov ${t1w_input_file}"
+	mri_vol2vol_cmd+=" --targ rawavg.mgz"
+	mri_vol2vol_cmd+=" --regheader"
+	mri_vol2vol_cmd+=" --o T1w_hires.nii.gz"
+
+	log_Msg "...Create T1w_hires.nii.gz"
+	log_Msg "...mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
+
+	${mri_vol2vol_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mir_vol2vol command failed with return code: ${return_code}"
+	fi
+
+	# T2w
+	
+	t2w_input_file="${SubjectDIR}/T2w_acpc_dc.nii.gz"
+	mri_vol2vol_cmd="mri_vol2vol"
+	mri_vol2vol_cmd+=" --mov ${t2w_input_file}"
+	mri_vol2vol_cmd+=" --targ rawavg.mgz"
+	mri_vol2vol_cmd+=" --regheader"
+	mri_vol2vol_cmd+=" --o T2w_hires.nii.gz"
+
+	log_Msg "...Create T2w_hires.nii.gz"
+	log_Msg "...mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
+
+	${mri_vol2vol_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mir_vol2vol command failed with return code: ${return_code}"
+	fi
+
+	# T1wMulT2w_hires
+	fslmaths_cmd="fslmaths"
+	fslmaths_cmd+=" T1w_hires.nii.gz"
+	fslmaths_cmd+=" -mul T2w_hires.nii.gz"
+	fslmaths_cmd+=" -sqrt T1wMulT2w_hires.nii.gz"
+
+	log_Msg "...Create T1wMulT2w_hires.nii.gz"
+	log_Msg "...fslmaths_cmd: ${fslmaths_cmd}"
+
+	${fslmaths_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "fslmaths command failed with return code: ${return_code}"
+	fi
+
+	popd
+	
 	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
 	# ----------------------------------------------------------------------
