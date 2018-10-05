@@ -500,7 +500,7 @@ main()
 
 	# T2w
 	
-	t2w_input_file="${SubjectDIR}/T2w_acpc_dc.nii.gz"
+	t2w_input_file="T2.prenorm.mgz"
 	mri_vol2vol_cmd="mri_vol2vol"
 	mri_vol2vol_cmd+=" --mov ${t2w_input_file}"
 	mri_vol2vol_cmd+=" --targ rawavg.mgz"
