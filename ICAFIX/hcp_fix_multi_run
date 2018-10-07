@@ -447,11 +447,13 @@ log_Inform "Done running FIX"
 
 log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
 $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
+$FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean_vn ${concatfmri}_clean_vnf
 
 log_Debug "Checking for existence of ${concatfmri}.ica/Atlas_clean.dtseries.nii"
 if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
 	log_Debug "Moving ${concatfmri}.ica to ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii"
 	/bin/mv ${concatfmri}.ica/Atlas_clean.dtseries.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
+	/bin/mv ${concatfmri}.ica/Atlas_clean_vn.dscalar.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
 
 #Cleaned volume and CIFTI have no mean and are intensity normalized by multiplying in the overall variance normalization
