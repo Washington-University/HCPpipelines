@@ -481,8 +481,8 @@ main()
 	# normalization in NIFTIformat and in rawavg space
 
 	# T1w
+	t1w_input_file="rawavg.mgz"
 	
-	t1w_input_file="${SubjectDIR}/T1w.nii.gz"
 	mri_vol2vol_cmd="mri_vol2vol"
 	mri_vol2vol_cmd+=" --mov ${t1w_input_file}"
 	mri_vol2vol_cmd+=" --targ rawavg.mgz"
