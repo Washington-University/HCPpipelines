@@ -228,6 +228,140 @@ get_options()
 	fi
 }
 
+#
+# Generate T1w in NIFTI format and in rawavg space
+# that has been aligned by BBR but not undergone
+# FreeSurfer intensity normalization
+# 
+make_t1w_hires_nifti_file()
+{
+	local working_dir
+	local t1w_input_file
+	local t1w_output_file
+	local mri_convert_cmd
+	local return_code
+	
+	working_dir="${1}"
+	
+	pushd "${working_dir}"
+
+	# We should already have the necessary T1w volume.
+	# It's the rawavg.mgz file. We just need to convert
+	# it to NIFTI format.
+
+	t1w_input_file="rawavg.mgz"
+	t1w_output_file="T1w_hires.nii.gz"
+	
+	if [ ! -e "${t1w_input_file}" ]; then
+		log_Err_Abort "Expected t1w_input_file: ${t1w_input_file} DOES NOT EXIST"
+	fi
+
+	mri_convert_cmd="mri_convert ${t1w_input_file} ${t1w_output_file}"
+
+	log_Msg "Creating ${t1w_output_file} with mri_convert_cmd: ${mri_convert_cmd}"
+	${mri_convert_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "mri_convert command failed with return code: ${return_code}"
+	fi
+		
+	popd 
+}
+
+#
+# Generate T2w in NIFTI format and in rawavg space
+# that has been aligned by BBR but not undergone
+# FreeSurfer intensity normalization
+#
+make_t2w_hires_nifti_file()
+{
+	local working_dir
+	local t2w_input_file
+	local target_volume
+	local t2w_output_file
+	local mri_vol2vol_cmd
+	local return_code
+	
+	working_dir="${1}"
+
+	pushd "${working_dir}"
+
+	# The T2.prenorm.mgz file must exist.
+	# Then we need to move (resample) it to
+	# the target volume and convert it to NIFTI format.
+
+	t2w_input_file="T2.prenorm.mgz"
+	target_volume="rawavg.mgz"
+	t2w_output_file="T2w_hires.nii.gz"
+	
+	if [ ! -e "${t2w_input_file}" ]; then
+		log_Err_Abort "Expected t2w_input_file: ${t2w_input_file} DOES NOT EXIST"
+	fi
+
+	if [ ! -e "${target_volume}" ]; then
+		log_Err_Abort "Expected target_volume: ${target_volume} DOES NOT EXIST"
+	fi
+	
+	mri_vol2vol_cmd="mri_vol2vol"
+	mri_vol2vol_cmd+=" --mov ${t2w_input_file}"
+	mri_vol2vol_cmd+=" --targ ${target_volume}"
+	mri_vol2vol_cmd+=" --regheader"
+	mri_vol2vol_cmd+=" --o ${t2w_output_file}"
+	
+	log_Msg "Creating ${t2w_output_file} with mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
+	${mri_vol2vol_cmd}
+	return_code=$?
+	if [ "${return_code}" != 0 ]; then
+		log_Err_Abort "mri_vol2vol command failed with return code: ${return_code}"
+	fi
+
+	popd
+}
+
+#
+# Generate QC file - T1w X T2w
+# 
+make_t1wxtw2_qc_file()
+{
+	local working_dir
+	local t1w_input_file
+	local t2w_input_file
+	local output_file
+	local fslmaths_cmd
+	local return_code
+	
+	working_dir="${1}"
+
+	pushd "${working_dir}"
+
+	# We should already have generated the T1w_hires.nii.gz and T2w_hires.nii.gz files
+	t1w_input_file="T1w_hires.nii.gz"
+	t2w_input_file="T2w_hires.nii.gz"
+	output_file="T1wMulT2w_hires.nii.gz"
+	
+ 	if [ ! -e "${t1w_input_file}" ]; then
+		log_Err_Abort "Expected t1w_input_file: ${t1w_input_file} DOES NOT EXIST"
+	fi
+
+ 	if [ ! -e "${t2w_input_file}" ]; then
+		log_Err_Abort "Expected t2w_input_file: ${t2w_input_file} DOES NOT EXIST"
+	fi
+
+	fslmaths_cmd="fslmaths"
+	fslmaths_cmd+=" ${t1w_input_file}"
+	fslmaths_cmd+=" -mul ${t2w_input_file}"
+	fslmaths_cmd+=" -sqrt ${output_file}"
+
+	log_Msg "Creating ${output_file} with fslmaths_cmd: ${fslmaths_cmd}" 
+	${fslmaths_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+		log_Err_Abort "fslmaths command failed with return code: ${return_code}"
+	fi
+	
+	popd
+}
+
 main()
 {
 	local SubjectDIR
@@ -248,10 +382,6 @@ main()
 	local tkregister_cmd
 	local mri_concatenate_lta_cmd
 	local mri_surf2surf_cmd
-	local mri_vol2vol_cmd
-	local t1w_input_file
-	local t2w_input_file
-	local fslmaths_cmd
 
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
@@ -475,63 +605,11 @@ main()
 	log_Msg "Generating QC file"
 	# ----------------------------------------------------------------------
 
-	pushd ${mridir}
+	make_t1w_hires_nifti_file "${mridir}"
 
-	# Generate T1w and T2w that have been aligned by BBR but not undergone FreeSurfer intensity
-	# normalization in NIFTIformat and in rawavg space
-
-	# T1w
-	t1w_input_file="rawavg.mgz"
+	make_t2w_hires_nifti_file "${mridir}"
 	
-	mri_vol2vol_cmd="mri_vol2vol"
-	mri_vol2vol_cmd+=" --mov ${t1w_input_file}"
-	mri_vol2vol_cmd+=" --targ rawavg.mgz"
-	mri_vol2vol_cmd+=" --regheader"
-	mri_vol2vol_cmd+=" --o T1w_hires.nii.gz"
-
-	log_Msg "...Create T1w_hires.nii.gz"
-	log_Msg "...mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
-
-	${mri_vol2vol_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "mir_vol2vol command failed with return code: ${return_code}"
-	fi
-
-	# T2w
-	
-	t2w_input_file="T2.prenorm.mgz"
-	mri_vol2vol_cmd="mri_vol2vol"
-	mri_vol2vol_cmd+=" --mov ${t2w_input_file}"
-	mri_vol2vol_cmd+=" --targ rawavg.mgz"
-	mri_vol2vol_cmd+=" --regheader"
-	mri_vol2vol_cmd+=" --o T2w_hires.nii.gz"
-
-	log_Msg "...Create T2w_hires.nii.gz"
-	log_Msg "...mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
-
-	${mri_vol2vol_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "mir_vol2vol command failed with return code: ${return_code}"
-	fi
-
-	# T1wMulT2w_hires
-	fslmaths_cmd="fslmaths"
-	fslmaths_cmd+=" T1w_hires.nii.gz"
-	fslmaths_cmd+=" -mul T2w_hires.nii.gz"
-	fslmaths_cmd+=" -sqrt T1wMulT2w_hires.nii.gz"
-
-	log_Msg "...Create T1wMulT2w_hires.nii.gz"
-	log_Msg "...fslmaths_cmd: ${fslmaths_cmd}"
-
-	${fslmaths_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "fslmaths command failed with return code: ${return_code}"
-	fi
-
-	popd
+	make_t1wxtw2_qc_file "${mridir}"
 	
 	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
