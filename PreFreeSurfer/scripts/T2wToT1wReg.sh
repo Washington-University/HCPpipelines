@@ -124,6 +124,7 @@ ${FSLDIR}/bin/imcp $T1wImage ${WD}/${T1wImageBasename}
 ${FSLDIR}/bin/imcp $T1wImageBrain $WD/$T1wImageBrainBasename
 ${FSLDIR}/bin/imcp $T2wImage ${WD}/${T2wImageBasename}
 ${FSLDIR}/bin/imcp $T2wImageBrain $WD/$T2wImageBrainBasename
+mkdir -p ${WD}/T2w2T1w
 if [[ $UseRegImages = "TRUE" ]] ; then
   ${FSLDIR}/bin/imcp $T1wImageReg ${WD}/${T1wImageBasenameReg}
   ${FSLDIR}/bin/imcp $T1wImageBrainReg $WD/$T1wImageBrainBasenameReg
