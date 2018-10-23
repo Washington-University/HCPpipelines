@@ -19,10 +19,7 @@ if [ -z "${g_fsl_dir}" ]; then
 fi
 
 g_cluster=${CLUSTER}
-if [ -z "${g_cluster}" ]; then
-	echo "ERROR: CLUSTER must be set!"
-	exit 1
-fi
+#TSC: don't test CLUSTER here, it only matters if we use compiled matlab, and there is already a better error message
 
 # load function libraries
 
@@ -238,6 +235,7 @@ main()
 				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
 				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
 				log_Msg "ERROR: using an environment variable's value."
+				exit 1
 			fi
 
 			matlab_function_arguments="'${OriginalFixSignal}' '${OriginalFixNoise}' '${ReclassifyAsSignal}' '${ReclassifyAsNoise}' '${HandSignalName}' '${HandNoiseName}' '${TrainingLabelsName}' ${NumICAs}"
@@ -262,7 +260,7 @@ main()
 				exit 1
 			fi
 			
-			${g_matlab_home}/bin/matlab <<M_PROG
+			${g_matlab_home}/bin/matlab -nojvm -nodisplay -nosplash <<M_PROG
 MergeEditClassifications('${OriginalFixSignal}','${OriginalFixNoise}','${ReclassifyAsSignal}','${ReclassifyAsNoise}','${HandSignalName}','${HandNoiseName}','${TrainingLabelsName}',${NumICAs});
 M_PROG
 
