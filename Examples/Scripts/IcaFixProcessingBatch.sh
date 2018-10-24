@@ -5,7 +5,7 @@ DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="100307"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
-DEFAULT_FIX_DIR="${HOME}/tools/fix1.06"
+#DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript
 
 #
 # Function Description
@@ -28,7 +28,7 @@ get_options() {
 	StudyFolder="${DEFAULT_STUDY_FOLDER}"
 	Subjlist="${DEFAULT_SUBJECT_LIST}"
 	EnvironmentScript="${DEFAULT_ENVIRONMENT_SCRIPT}"
-	FixDir="${DEFAULT_FIX_DIR}"
+	FixDir="${DEFAULT_FIXDIR}"
 	RunLocal="${DEFAULT_RUN_LOCAL}"
 
 	# parse arguments
@@ -87,11 +87,13 @@ get_options() {
 		exit 1
 	fi
 
-	if [ -z ${FixDir} ]
-	then
-		echo "ERROR: FixDir not specified"
-		exit 1
-	fi
+	# MPH: Allow FixDir to be empty at this point, so users can take advantage of the FSL_FIXDIR setting
+	# already in their EnvironmentScript
+#    if [ -z ${FixDir} ]
+#    then
+#        echo "ERROR: FixDir not specified"
+#        exit 1
+#    fi
 
 	if [ -z ${RunLocal} ]
 	then
@@ -104,10 +106,12 @@ get_options() {
 	echo "   StudyFolder: ${StudyFolder}"
 	echo "   Subjlist: ${Subjlist}"
 	echo "   EnvironmentScript: ${EnvironmentScript}"
-	echo "   FixDir: ${FixDir}"
+	if [ ! -z ${FixDir} ]; then
+		echo "   FixDir: ${FixDir}"
+	fi
 	echo "   RunLocal: ${RunLocal}"
 	echo "-- ${scriptName}: Specified Command-Line Options: -- End --"
-}
+}  # get_options()
 
 #
 # Function Description
@@ -122,7 +126,11 @@ main() {
 	# set up pipeline environment variables and software
 	source ${EnvironmentScript}
 
-	export FSL_FIXDIR=${FixDir}
+	# MPH: If DEFAULT_FIXDIR is set, or --FixDir argument was used, then use that to
+	# override the setting of FSL_FIXDIR in EnvironmentScript
+	if [ ! -z ${FixDir} ]; then
+		export FSL_FIXDIR=${FixDir}
+	fi
 	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 	TrainingData=HCP_hp2000.RData
 
@@ -133,14 +141,10 @@ main() {
 	QUEUE="-q hcp_priority.q"
 
 	# establish list of conditions on which to run ICA+FIX
-	CondList=""
-	CondList="${CondList} rfMRI_REST1"
-	CondList="${CondList} rfMRI_REST2"
+	CondList="rfMRI_REST1 rfMRI_REST2"
 
 	# establish list of directions on which to run ICA+FIX
-	DirectionList=""
-	DirectionList="${DirectionList} RL"
-	DirectionList="${DirectionList} LR"
+	DirectionList="RL LR"
 
 	for Subject in ${Subjlist}
 	do
@@ -162,11 +166,11 @@ main() {
 				
 				if [ "${RunLocal}" == "TRUE" ]
 				then
-					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 					queuing_command=""
+					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 				else
-					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+					echo "About to use ${queuing_command} to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 				fi
 
 				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}
@@ -175,7 +179,7 @@ main() {
 		done
 
 	done
-}
+}  # main()
 
 #
 # Invoke the main function to get things started
