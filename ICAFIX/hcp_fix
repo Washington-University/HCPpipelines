@@ -11,9 +11,8 @@
 #   Changes by Timothy B. Brown <tbbrown@wustl.edu>
 #
 #   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith jamison <kjamison@umn.edu>
-#   2) Changes to echo output messages to aid in debugging 
-#   3) Changes to call version 3.14a of melodic instead of melodic in FSL distribution based on changes
-#      originally made by Mohana Ramaratnam <mohanakannan9@gmail.com>
+#      (i.e., allow user to specify training file)
+#   2) Added DEBUG setting for more verbose output
 
 # Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
@@ -119,6 +118,11 @@ else
     #if it isn't even in $PATH, fall back on FSLDIR
     MELODIC="${FSLDIR}/bin/melodic"
 fi
+Debug "Beginning of melodic version log"
+if [ "${DEBUG}" = "TRUE" ] ; then
+	"${MELODIC}" --version
+fi
+Debug "End of melodic version log"
 
 ${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
 retCode=$?
@@ -161,7 +165,6 @@ Inform "functionmotionconfounds log file is to be named: .fix.functionmotionconf
 #${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
 
-
 mkdir -p reg
 cd reg
 
@@ -183,9 +186,8 @@ cd ../..
 Inform "running FIX"
 
 # Changes to handle user specified training data file
-if [ "X${TrainingData}" != X ]; then
-	# User has specified a training data file
-
+if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
+	
 	# add .RData suffix if not already there
 	if [[ "${TrainingData}" != *.RData ]]; then 
 		TrainingData=${TrainingData}.RData
