@@ -189,14 +189,17 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 
 	# now run fix
+	Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${TrainingData} 10 -m -h $hp"
 	${FSL_FIXDIR}/fix ${fmri}.ica ${TrainingData} 10 -m -h $hp
 
 else
 	# user has not specified a training data file
 	if [ $hp != 2000 ] ; then
 		Debug "since specified hp value (${hp}) is not 2000, we assume a value of 200"
+		Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp200.RData 10 -m -h 200"
 		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp200.RData 10 -m -h 200
 	else
+		Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h 2000"
 		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h 2000
 	fi
 
