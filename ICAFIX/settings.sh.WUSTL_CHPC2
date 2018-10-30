@@ -112,7 +112,6 @@ else
     exit 1
 fi
 
-echo "$0: FSL_FIX_WBC: ${FSL_FIX_WBC}"
 export FSL_FIX_CIFTIRW FSL_FIX_WBC
 
 # Set this to the location of the FSL MATLAB scripts
