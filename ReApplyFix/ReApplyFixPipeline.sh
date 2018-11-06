@@ -61,10 +61,12 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --fmri-name=<string> String to represent the ${fMRIName} variable
    --high-pass=<num> Number to represent the ${HighPass} variable used in ICA+FIX
    --reg-name=<string> String to represent the registration that was done (e.g. by DeDriftAndResamplePipeline).  
+   --motion-regression={TRUE, FALSE}
   [--low-res-mesh=<meshnum> String corresponding to low res mesh number]
-  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use interpreted Octave
 
 EOF
 }
@@ -75,7 +77,7 @@ EOF
 
 get_options()
 {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	unset p_StudyFolder
@@ -85,6 +87,7 @@ get_options()
 	unset p_RegName
 	unset p_LowResMesh
 	unset p_MatlabRunMode
+	unset p_MotionRegression
 
 	# set default values
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
@@ -133,6 +136,10 @@ get_options()
 				;;
 	  		--matlab-run-mode=*)
 				p_MatlabRunMode=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--motion-regression=*)
+				p_MotionRegression=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -203,8 +210,29 @@ get_options()
 			1)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
+			2)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted Octave"
+				;;
 			*)
-				log_Err "MATLAB Run Mode value must be 0 or 1"
+				log_Err "MATLAB Run Mode value must be 0, 1, or 2"
+				error_count=$(( error_count + 1 ))
+				;;
+		esac
+	fi
+
+	if [ -z "${p_MotionRegression}" ]; then
+		log_Err "motion correction setting (--motion-regression=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		case $(echo ${p_MotionRegression} | tr '[:upper:]' '[:lower:]') in
+            ( true | yes | 1)
+                p_MotionRegression=1
+                ;;
+            ( false | no | none | 0)
+                p_MotionRegression=0
+                ;;
+			*)
+				log_Err "motion correction setting must be TRUE or FALSE"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -277,6 +305,8 @@ main()
 	else
 		MatlabRunMode="${7}"
 	fi
+
+	local domot="${8}"
 	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
@@ -311,7 +341,6 @@ main()
 	# Make appropriate files if they don't exist
 
 	local aggressive=0
-	local domot=1
 	local hp=${HighPass}
 
 	local fixlist
@@ -365,7 +394,7 @@ main()
 				DoVol="0"
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
 			else
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} 0"
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
 			fi
 
 			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
@@ -399,6 +428,22 @@ M_PROG
 			fi
 			;;
 
+		2)
+			# Use interpreted Octave
+			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
+
+			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
+			  DoVol="0"
+				octave -q --no-window-system <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
+M_PROG
+			else
+				octave -q --no-window-system <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
+M_PROG
+			fi
+			;;
+
 		*)
 			# Unsupported MATLAB run mode
 			log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
@@ -409,10 +454,12 @@ M_PROG
 	fmri_orig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
 	if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+        /bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
 
 	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
 		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
+		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vnf
 	fi
 
 	cd ${DIR}
@@ -459,8 +506,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}"
+	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}                ${8}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
 
 else
 	# Positional parameters are used

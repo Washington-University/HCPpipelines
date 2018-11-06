@@ -27,7 +27,7 @@ DEBUG="TRUE"
 g_script_name=$(basename "${0}")
 
 log_Debug() {
-	local msg="${1}"
+	local msg="$*"
 	local date_time=$(date)
 	local output_msg
 	if [ "${DEBUG}" = "TRUE" ]; then
@@ -38,7 +38,7 @@ log_Debug() {
 }
 
 log_Inform() {
-	local msg="${1}"
+	local msg="$*"
 	local date_time=$(date)
 	local output_msg
 	output_msg="${date_time} - ${g_script_name} - INFORM - ${msg}"
@@ -47,7 +47,7 @@ log_Inform() {
 }
 
 log_Error() {
-	local msg="${1}"
+	local msg="$*"
 	local date_time=$(date)
 	local output_msg
 	output_msg="${date_time} - ${g_script_name} - ERROR - ${msg}"
@@ -69,12 +69,13 @@ Usage() {
     cat <<EOF
 
 hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>]
-  <highpass> is the temporal highpass full-width (2*sigma) in seconds
+  <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
   <do_motion_regression> must be specified, use TRUE or FALSE
 
 e.g.   hcp_fix_multi_run BOLD_REST1_RL/BOLD_REST1_RL.nii.gz@BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 BOLD_REST1_RL_LR/BOLD_REST1_RL_LR.nii.gz TRUE
 
-for detrending-like behaviour, set <highpass> to 2000, use 0 to disable highpass
+for detrending-like behaviour, set <highpass> to 2000
+use 0 to do only a linear detrend
 
 EOF
     exit 1
@@ -103,32 +104,32 @@ demeanMovementRegressors() {
 	
 	AllOut=""
 	c=1
-	while [ ${c} -le ${nCols} ] ; do
-		ColIn=`cat ${In} | sed 's/  / /g' | sed 's/  / /g' | sed 's/^ //g'| cut -d " " -f ${c}`
-		valsum=0
-		r=1
-		while [ ${r} -le ${nRows} ] ; do
-			val=`echo "${ColIn}" | head -${r} | tail -1`
-			valsum=`echo ${valsum} + ${val} | bc -l`
-			r=$((${r}+1))
-		done
-		valmean=`echo ${valsum} / ${r} | bc -l`
+	while (( c <= nCols )) ; do
+		ColIn=`cat ${In} | sed 's/  */ /g' | sed 's/^ //g' | cut -d " " -f ${c}`
+		bcstring=$(echo "$ColIn" | tr '\n' '+' | sed 's/\+*$//g')
+		valsum=$(echo "$bcstring" | bc -l)
+		valmean=$(echo "$valsum / $nRows" | bc -l)
 		ColOut=""
 		r=1
-		while [ ${r} -le ${nRows} ] ; do
+		while (( r <= nRows )) ; do
 			val=`echo "${ColIn}" | head -${r} | tail -1`
 			newval=`echo "${val} - ${valmean}" | bc -l`
 			ColOut=`echo ${ColOut} $(printf "%10.6f" $newval)`
-			r=$((${r}+1))
+			r=$((r+1))
 		done
 		ColOut=`echo ${ColOut} | tr ' ' '\n'`
-		AllOut=`paste <(echo "${AllOut}") <(echo "${ColOut}")` #Figure out how to do this paste
-		c=$((${c}+1))
+		AllOut=`paste <(echo "${AllOut}") <(echo "${ColOut}")`
+		c=$((c+1))
 	done
 	echo "${AllOut}" > ${Out}
 }
 
 hp=$2
+if [[ $(echo "${hp} < 0" | bc) == "1" ]]
+then
+    log_Error "highpass value must not be negative"
+    exit 1
+fi
 log_Inform "hp: ${hp}"
 
 unset TrainingData
@@ -150,7 +151,7 @@ case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
         doMotionRegression=FALSE
         ;;
     ( * )
-        echo "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE" 1>&2
+        log_Error "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
         exit 1
         ;;
 esac
@@ -163,16 +164,18 @@ echo $fmris | tr ' ' '\n' #separates paths separated by ' '
 log_Inform "Looping over files and doing highpass to each of them"
 
 NIFTIvolMergeSTRING=""
-NIFTIvolhpMergeSTRING=""
-CIFTIMergeSTRING=""
-CIFTIhpMergeSTRING=""
-MovementTXTMergeSTRING=""
-MovementNIFTIMergeSTRING=""
-MovementNIFTIhpMergeSTRING=""
+NIFTIvolhpVNMergeSTRING=""
 SBRefVolSTRING=""
 MeanVolSTRING=""
+VNVolSTRING=""
+CIFTIMergeSTRING=""
+CIFTIhpVNMergeSTRING=""
 MeanCIFTISTRING=""
-for fmri in $fmris ; do  
+VNCIFTISTRING=""
+MovementNIFTIMergeSTRING=""
+MovementNIFTIhpMergeSTRING=""
+MovementTXTMergeSTRING=""
+for fmri in $fmris ; do
 	log_Inform "Top of loop through fmris: fmri: ${fmri}"
 
 	NIFTIvolMergeSTRING=`echo "${NIFTIvolMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_demean "`
@@ -425,12 +428,13 @@ if [ "X${TrainingData}" != X ]; then
 	# now run fix
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
-    	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -m -h ${AlreadyHP}"
+	    #use array for whitespace safety, even if the rest of the script isn't
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10 -m -h "${AlreadyHP}")
 	else
-    	fix_cmd="${FSL_FIXDIR}/fix ${concatfmri}.ica ${TrainingData} 10 -h ${AlreadyHP}"
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10 -h "${AlreadyHP}")
 	fi
-	log_Inform "fix_cmd: ${fix_cmd}"
-	${fix_cmd}
+	log_Inform "fix_cmd: ${fix_cmd[*]}"
+	"${fix_cmd[@]}"
 	return_code=$?
 	log_Inform "return_code from fix_cmd: ${return_code}"
 	if [ "${return_code}" -ne "0" ]; then
@@ -438,9 +442,38 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 	
 else
+	# user has not specified a training data file
+	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
+	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
+	#TSC: exception: we will recommend hp 0 (linear) for performance, and hp 2000 is already trained, and largely indistinguishable
 	log_Inform "User has NOT specified a training data file"
-	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp2000.RData"
-	${FSL_FIXDIR}/fix ${concatfmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h ${AlreadyHP}
+	training_hp="${hp}"
+	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
+	then
+	    if (( hp == 0 ))
+	    then
+	        #hack: hp 2000 is close enough to a linear detrend only, but linear detrend is far faster
+	        #we know the hp 2000 training data exists, so use it if we don't see a hp 0 set
+	        training_hp=2000
+	    else
+    	    log_Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
+    	    exit 1
+	    fi
+	fi
+	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
+	if [[ ${doMotionRegression} == "TRUE" ]]
+	then
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${AlreadyHP}")
+    else
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -h "${AlreadyHP}")
+    fi
+	log_Inform "fix_cmd: ${fix_cmd[*]}"
+	"${fix_cmd[@]}"
+	return_code=$?
+	log_Inform "return_code from fix_cmd: ${return_code}"
+	if [ "${return_code}" -ne "0" ]; then
+		exit ${return_code}
+	fi
 fi
 
 log_Inform "Done running FIX"
