@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #   hcp_fix - wrapper script for FIX, for HCP pipelines
 #
@@ -174,7 +174,7 @@ $FSLDIR/bin/imln ../../../../wmparc wmparc
 $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
 $FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ${FSL_FIXDIR}/mask_files/hcp_0.7mm_brain_mask -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
+$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs.nii.gz -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
 $FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
 $FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 cd ../..
@@ -236,7 +236,8 @@ else
 	then
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${hp}"
     else
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -h "${hp}"
+        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10"
     fi
     Inform "About to run: ${fix_cmd[*]}"
     "${fix_cmd[@]}"

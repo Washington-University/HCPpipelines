@@ -393,7 +393,7 @@ $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
 if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 	$FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-	$FSLDIR/bin/flirt -in ${FSL_FIXDIR}/mask_files/hcp_0.7mm_brain_mask -ref veins -out veinbrainmask -applyxfm
+	$FSLDIR/bin/flirt -in ../../../../brainmask_fs.nii.gz -ref veins -out veinbrainmask -applyxfm
 	$FSLDIR/bin/fslmaths veinbrainmask -bin veinbrainmask
 	$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k veinbrainmask -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
 	$FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
@@ -431,7 +431,8 @@ if [ "X${TrainingData}" != X ]; then
 	    #use array for whitespace safety, even if the rest of the script isn't
     	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10 -m -h "${AlreadyHP}")
 	else
-    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10 -h "${AlreadyHP}")
+        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10)
 	fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -465,7 +466,8 @@ else
 	then
         fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${AlreadyHP}")
     else
-        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -h "${AlreadyHP}")
+        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
     fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
