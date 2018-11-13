@@ -50,7 +50,7 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
   <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
   <do_motion_regression> must be specified, use TRUE or FALSE
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200
+e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 TRUE
 
 for detrending-like behaviour, set <highpass> to 2000
 use 0 to do only a linear detrend
@@ -208,7 +208,7 @@ if [ "X${TrainingData}" != X ]; then
 	    #use array for whitespace safety, even if the rest of the script isn't
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10 -m -h "${hp}")
 	else
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10 -h "${hp}")
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10)
 	fi
 	Inform "About to run: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -234,10 +234,10 @@ else
 	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${hp}"
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${hp}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10"
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
     fi
     Inform "About to run: ${fix_cmd[*]}"
     "${fix_cmd[@]}"
