@@ -75,10 +75,12 @@ FSL_FIX_MLFILE="\<"
 #FSL_FIX_OCTAVE=/opt/local/bin/octave
 # Disable Octave mode
 #FSL_FIX_OCTAVE=
+FSL_FIX_OCTAVE=$(which octave-cli)
 
 # Set this to the Octave start-up options. Typically you will need to
-# enable 'MATLAB' mode (--traditional) and disable display output
-FSL_FIX_OCOPTS="--traditional -q --no-window-system"
+# disable display output - while --traditional is supposed to "feel" more
+# like matlab, it may break things, so try without it first
+FSL_FIX_OCOPTS="-q --no-window-system"
 
 # Set this to the Octave 'evaluate string' option
 FSL_FIX_OCEVAL="--eval"

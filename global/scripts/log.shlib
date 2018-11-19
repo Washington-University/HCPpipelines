@@ -199,8 +199,9 @@ log_File_Must_Exist()
 #
 # Description:
 #   Turn on debugging. Set a flag to indicate debugging messages
-#   should be logged
+#   should be logged - empty value means not on
 #
+log_debugOn=""
 log_Debug_On()
 {
 	log_debugOn="true"

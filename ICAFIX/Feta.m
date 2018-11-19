@@ -1,5 +1,5 @@
 function [Result] = Feta(eta,y,sig2);
-#Implemented by Christian Beckmann
+%Implemented by Christian Beckmann
    
    if nargin<3
       sig2=1;
