@@ -158,17 +158,18 @@ main() {
 				InputFile="${InputDir}/${Condition}_${Direction}.nii.gz"
 
 				bandpass=2000
+				domot=FALSE
 				
 				if [ "${RunLocal}" == "TRUE" ]
 				then
-					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 					queuing_command=""
 				else
-					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
 					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 				fi
 
-				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${TrainingData}
+				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}
 			done
 
 		done

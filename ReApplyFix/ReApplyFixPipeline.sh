@@ -334,20 +334,30 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 
-	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
+	#fix_3_clean looks at an environment variable for where to get ciftiopen, etc from, so for interpreted modes, it sources the fix settings.sh just for that step, which should point to a working copy
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
+
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
+
 
 	# Make appropriate files if they don't exist
 
 	local aggressive=0
 	local hp=${HighPass}
 
-	local fixlist
-	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+	local DoVol=0
+	local fixlist=".fix"
+	# if we have a hand classification and no regname, do volume
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass}
+	then
 		fixlist="HandNoise.txt"
-	else
-		fixlist=".fix"
+		#TSC: if regname (which is surface) isn't NONE, assume the hand classification was previously used with volume data?
+		if [[ "${RegName}" == "NONE" ]]
+		then
+			#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
+			DoVol=1
+		fi
 	fi
 	local fmri_orig="${fMRIName}"
 	local fmri=${fMRIName}
@@ -390,11 +400,10 @@ main()
 			local matlab_exe="${HCPPIPEDIR}/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 			local matlab_function_arguments
-			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
-				DoVol="0"
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
-			else
+			if (( DoVol )) ; then
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+			else
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
 			fi
 
 			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
@@ -414,33 +423,33 @@ main()
 
 		1)
 			# Use interpreted MATLAB
-			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
 
-			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
-			  DoVol="0"
-				matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
-M_PROG
-			else
-				matlab -nojvm -nodisplay -nosplash <<M_PROG
+			if (( DoVol )) ; then
+				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
 M_PROG
+)
+			else
+				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
+M_PROG
+)
 			fi
 			;;
 
 		2)
 			# Use interpreted Octave
-			ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}');"
 
-			if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then #Function above
-			  DoVol="0"
-				octave -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
-M_PROG
-			else
-				octave -q --no-window-system <<M_PROG
+			if (( DoVol )) ; then #Function above
+				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
 M_PROG
+)
+			else
+				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
+M_PROG
+)
 			fi
 			;;
 
@@ -457,7 +466,7 @@ M_PROG
         /bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
 
-	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass} ; then
+	if (( DoVol )) ; then
 		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
 		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vnf
 	fi
