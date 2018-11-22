@@ -87,7 +87,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--myelin-target-file=<path/to/myelin/target/file>] A myelin target file is required to run this 
        pipeline when using a different mesh resolution than the original MSMAll registration.
   [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
-  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
@@ -340,8 +340,11 @@ get_options()
 			1)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
+			2)
+				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted octave"
+				;;
 			*)
-				log_Err "MATLAB Run Mode value must be 0 or 1"
+				log_Err "MATLAB Run Mode value must be 0, 1, or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -846,15 +849,19 @@ main()
 	
 	# reapply multirun fix
 	
+	if [[ "${mrFIXConcatName}" != "" ]]
+	then
+	    log_Msg "ReApply MultiRun FIX Cleanup"
+	    log_Msg "mrFIXNames: ${mrFIXNames[@]}"
+	    log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
+	    #reconstruct the @-delimited list
+	    OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
+	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFixMultiRun/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
+	    "${reapply_mr_fix_cmd[@]}"
+    fi
+
 	log_Msg "Completing main functionality"
-	log_Msg "reapply multirun FIX Cleanup"
-	log_Msg "mrFIXNames: ${mrFIXNames[@]}"
-	log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
-	#reconstruct the @-delimited list
-	OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
-	reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFixMultiRun/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
-	log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
-	"${reapply_mr_fix_cmd[@]}"
 }
 
 # ------------------------------------------------------------------------------

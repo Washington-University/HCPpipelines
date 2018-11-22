@@ -55,6 +55,8 @@ log_Error() {
 	>&2 echo "${output_msg}"
 }
 
+this_script_dir=$(readlink -f "$(dirname "$0")")
+
 # Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
 #export FSL_FIXDIR
@@ -242,7 +244,7 @@ for fmri in $fmris ; do
   if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
     rm .fix.functionhighpassandvariancenormalize.log
   fi
-	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -f functionhighpassandvariancenormalize $tr $hp $fmri ${FSL_FIX_WBC}
+	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}');"
   #cd ..
   
   log_Inform "Dims: $(cat ${fmri}_dims.txt)"
@@ -333,7 +335,7 @@ log_Debug "End of melodic version log, help, and checksum"
 
 ###Run on concatenated file --
 
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -f functionhighpassandvariancenormalize $tr $AlreadyHP $concatfmri ${FSL_FIX_WBC}
+${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmri', '${FSL_FIX_WBC}');"
 Dim=`cat ${concatfmri}_dims.txt`
 
 log_Inform "Dim: ${Dim}"

@@ -70,6 +70,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
+this_script_dir=$(readlink -f "$(dirname "$0")")
+
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -381,28 +383,29 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 	
-	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
+	#fix_3_clean looks at an environment variable for where to get ciftiopen, etc from, so for interpreted modes, it sources the fix settings.sh just for that step, which should point to a working copy
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}'); addpath('${FSL_FIXDIR}');"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
 
 	# Make appropriate files if they don't exist
 
 	local aggressive=0
 	local newclassification=0
-	local DoVol=0
 	local hp=${HighPass}
-	#local fixlist=".fix"
+	local DoVol=0
+	local fixlist=".fix"
     # if we have a hand classification and no regname, do volume
-	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass} && [[ "${RegName}" == "NONE" ]]
+	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass}
 	then
 		fixlist="HandNoise.txt"
-		#TSC: assume a hand classification is not what was previously used?
-    	#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
-		DoVol=1
-	else
-		fixlist=".fix"
+		#TSC: if regname (which is surface) isn't NONE, assume the hand classification was previously used with volume data?
+		if [[ "${RegName}" == "NONE" ]]
+		then
+			#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
+			DoVol=1
+		fi
 	fi
 	log_Msg "Use fixlist=$fixlist"
 	
@@ -490,11 +493,11 @@ main()
                 ;;
             1)
                 # interpreted matlab
-                echo "${ML_PATHS} functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${FSL_FIX_CIFTIRW}'); addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash)
                 ;;
             2)
                 # interpreted octave
-                echo "${ML_PATHS} functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${FSL_FIX_CIFTIRW}'); addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
                 ;;
             esac
 	    fi
@@ -574,7 +577,7 @@ main()
 		log_Warn "FILE NOT FOUND: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
 	fi
 	
-	${FSLDIR}/bin/imln ../${concat_fmri_orig} filtered_func_data
+	${FSLDIR}/bin/imln ../${concatfmri} filtered_func_data
     
 	case ${MatlabRunMode} in
 		0)
@@ -602,13 +605,15 @@ main()
 			# Use interpreted MATLAB
             if [[ DoVol == 0 ]]
             then
-    			matlab -nojvm -nodisplay -nosplash <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
+)
             else
-    			matlab -nojvm -nodisplay -nosplash <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
 M_PROG
+)
             fi
 
 			;;
@@ -617,13 +622,15 @@ M_PROG
 			# Use interpreted OCTAVE
             if [[ DoVol == 0 ]]
             then
-    			octave-cli -q --no-window-system <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
+)
             else
-    			octave-cli -q --no-window-system <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
 M_PROG
+)
             fi
 
 			;;
