@@ -120,7 +120,7 @@ else
     MELODIC="${FSLDIR}/bin/melodic"
 fi
 
-${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
 retCode=$?
 Debug "melodic has been run: retCode = ${retCode}"
 Debug "melodic has been run: Contents of ${fmri}.ica follow"
