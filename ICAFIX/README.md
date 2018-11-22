@@ -1,25 +1,11 @@
 # HCP Pipelines ICAFIX subdirectory.
 
-This directory contains [HCP] and [Washington University] specific modifications 
-of the standard files distributed as part of the [FSL] [FIX] tool. 
+This directory contains [HCP] and [Washington University] official versions
+of scripts related to [FSL] [FIX].
 
-They are not necessarily intended to be run from this directory, but instead
-are intended to replace the corresponding files in the [FIX] distribution.
-They may need to be modified to fit your environment.
-
-## Files
-
-* `hcp_fix` 
-  * replacement for the `hcp_fix` script supplied with [FIX]
-  * adds a command line parameter to specify the training data file to use
-  * invokes an altered/corrected version of the `melodic` binary (v3.14a) instead
-    of the `melodic` binary in the [FSL] distribution
-
-* `settings.sh.WUSTL_CHPC2`
-  * replacement for the `settings.sh` script supplied with [FIX]
-  * very likely to need modified to fit your environment
-  * sets enviroment variables that are used by other [FIX] tools to invoke 
-    such things as Matlab or Octave
+They are intended to be run from this directory, but `FSL_FIXDIR` should be
+set to the standard [FIX] installation.  You may need to modify them to fit
+your environment.
 
 <!-- References -->
 

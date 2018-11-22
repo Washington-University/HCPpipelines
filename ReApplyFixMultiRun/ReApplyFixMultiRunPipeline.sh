@@ -59,7 +59,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --concat-fmri-name=<concatenated fMRI scan file name>
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_7T_RETCCW_AP_RETCW_PA/tfMRI_7T_RETCCW_AP_RETCW_PA.nii.gz)
    --high-pass=<num> the HighPass variable used in Multi-run ICA+FIX (e.g. 2000)
-   --reg-name=<registration name> (e.g. MSMAll)
+   [--reg-name=<registration name>] (e.g. MSMAll)
    --motion-regression={TRUE, FALSE}
   [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
@@ -70,12 +70,14 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
+this_script_dir=$(readlink -f "$(dirname "$0")")
+
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
 get_options()
 {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	unset p_StudyFolder      # ${1}
@@ -83,7 +85,7 @@ get_options()
 	unset p_fMRINames        # ${3}
 	unset p_ConcatfMRIName   # ${4}
 	unset p_HighPass         # ${5}
-	unset p_RegName          # ${6}
+	p_RegName="NONE"         # ${6}
 	unset p_LowResMesh       # ${7}
 	unset p_MatlabRunMode    # ${8}
 	unset p_MotionRegression # ${9}
@@ -187,15 +189,15 @@ get_options()
 		log_Err "High Pass (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
+	    if [[ $(echo "${p_HighPass} < 0" | bc) == "1" ]]
+	    then
+	        log_Err "highpass value must not be negative"
+	        error_count=$(( error_count + 1 ))
+	    fi
 		log_Msg "High Pass: ${p_HighPass}"
 	fi
 
-	if [ -z "${p_RegName}" ]; then
-		log_Err "Reg Name (--reg-name=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "Reg Name: ${p_RegName}"
-	fi
+	log_Msg "Reg Name: ${p_RegName}"
 
 	if [ -z "${p_LowResMesh}" ]; then
 		log_Err "Low Res Mesh (--low-res-mesh=) required"
@@ -302,19 +304,11 @@ demeanMovementRegressors() {
 	
 	AllOut=""
 	c=1
-	set +x
 	while (( c <= nCols )) ; do
-		ColIn=`cat ${In} | sed 's/  */ /g' | sed 's/^ //g'| cut -d " " -f ${c}`
-		#valsum=0
-		#r=1
-		#while (( r <= nRows )) ; do
-		#	val=`echo "${ColIn}" | head -${r} | tail -1`
-		#	valsum=`echo ${valsum} + ${val} | bc -l`
-		#	r=$((r+1))
-		#done
-		#valmean=`echo ${valsum} / ${r} | bc -l`
-		valsum=$(echo -n "$ColIn" | grep -v '^ *$' | tr '\n' '+' | bc -l)
-		valmean=$(echo "$valsum / $r" | bc -l)
+		ColIn=`cat ${In} | sed 's/  */ /g' | sed 's/^ //g' | cut -d " " -f ${c}`
+		bcstring=$(echo "$ColIn" | tr '\n' '+' | sed 's/\+*$//g')
+		valsum=$(echo "$bcstring" | bc -l)
+		valmean=$(echo "$valsum / $nRows" | bc -l)
 		ColOut=""
 		r=1
 		while (( r <= nRows )) ; do
@@ -341,7 +335,9 @@ main()
 	local StudyFolder="${1}"
 	local Subject="${2}"
 	local fMRINames="${3}"
-	local ConcatfMRIName="${4}"
+	local ConcatfMRINameOnly="${4}"
+	#script used to take absolute paths, so generate the absolute path and leave the old code
+	local ConcatfMRIName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatfMRINameOnly}/${ConcatfMRINameOnly}.nii.gz"
 	local HighPass="${5}"
 	local RegName="${6}"
 
@@ -387,27 +383,29 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 	
-	export FSL_FIX_CIFTIRW="${HCPPIPEDIR}/ReApplyFix/scripts"
+	#fix_3_clean looks at an environment variable for where to get ciftiopen, etc from, so for interpreted modes, it sources the fix settings.sh just for that step, which should point to a working copy
 	export FSL_FIX_WBC="${Caret7_Command}"
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIX_CIFTIRW}'); addpath('${FSL_FIXDIR}');"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
 
 	# Make appropriate files if they don't exist
 
 	local aggressive=0
 	local newclassification=0
-	local DoVol=0
 	local hp=${HighPass}
-	#local fixlist=".fix"
-    # if we have a hand classification, do volume
-	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass} ; then
+	local DoVol=0
+	local fixlist=".fix"
+    # if we have a hand classification and no regname, do volume
+	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass}
+	then
 		fixlist="HandNoise.txt"
-		#TSC: assume a hand classification is not what was previously used?
-    	#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
-		DoVol=1
-	else
-		fixlist=".fix"
+		#TSC: if regname (which is surface) isn't NONE, assume the hand classification was previously used with volume data?
+		if [[ "${RegName}" == "NONE" ]]
+		then
+			#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
+			DoVol=1
+		fi
 	fi
 	log_Msg "Use fixlist=$fixlist"
 	
@@ -437,7 +435,9 @@ main()
     MovementNIFTIhpMergeSTRING=""
     MovementTXTMergeSTRING=""
 
-	for fmri in $fmris ; do
+	for fmriname in $fmris ; do
+	    #script used to take absolute paths, so generate the absolute path and leave the old code
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
     	log_Msg "Top of loop through fmris: fmri: ${fmri}"
 	    NIFTIvolMergeSTRING=`echo "${NIFTIvolMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_demean "`
 	    NIFTIvolhpVNMergeSTRING=`echo "${NIFTIvolhpVNMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp${hp}_vn "`
@@ -454,24 +454,12 @@ main()
 		fmri=`basename $fmri`
 		fmri=`$FSLDIR/bin/imglob $fmri`
 		#[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
-		fmri_orig=$fmri
 		echo $fmri
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`
-		#hptr=`echo "10 k $hp 2 / $tr / p" | dc -` 
 		echo $fmri
 		echo $tr
 		log_Msg "processing FMRI file $fmri with highpass $hp"
     
-		#${FSL_FIX_WBC} -cifti-convert -to-nifti ${fmri}_Atlas${RegString}.dtseries.nii ${fmri}_Atlas${RegString}_FAKENIFTI.nii.gz
-		#${FSLDIR}/bin/fslmaths ${fmri}_Atlas${RegString}_FAKENIFTI.nii.gz -bptf $hptr -1 ${fmri}_Atlas${RegString}_hp$hp_FAKENIFTI.nii.gz
-		#${FSL_FIX_WBC} -cifti-convert -from-nifti ${fmri}_Atlas${RegString}_hp$hp_FAKENIFTI.nii.gz ${fmri}_Atlas${RegString}.dtseries.nii ${fmri}_Atlas${RegString}_hp$hp.dtseries.nii
-		#$FSLDIR/bin/imrm ${fmri}_Atlas${RegString}_FAKENIFTI ${fmri}_Atlas${RegString}_hp$hp_FAKENIFTI
-		#${FSL_FIX_WBC} -cifti-reduce $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}.dtseries.nii MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii
-		#${FSL_FIX_WBC} -cifti-math "TCS - MEAN" $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_demean.dtseries.nii -var TCS $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}.dtseries.nii -var MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
-		#fmri=${fmri}_hp$hp
-		#cd ${fmri}.ica
-		#cd ..
-		
 		if [[ ! -f ${fmri}_demean.nii.gz ]]
 		then
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
@@ -490,27 +478,26 @@ main()
 	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_demean.dtseries.nii -var TCS $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}.dtseries.nii -var MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
         fi
 
-        if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
-            rm .fix.functionhighpassandvariancenormalize.log
-        fi
-        # call_matlab expects env variables and results in a separate log, so do it manually to avoid this
-        # skip when both volume and cifti exist
-        if [[ ! -f "$($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || ! -f "$($FSLDIR/bin/remove_ext $fmri)_hp${hp}_vn.nii.gz" || \
+        if [[ ! -f "$($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
+              ! -f "$($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_vn.dscalar.nii" || \
+              ! -f "$($FSLDIR/bin/remove_ext $fmri)_hp${hp}_vn.nii.gz" || \
               ! -f "$($FSLDIR/bin/remove_ext $fmri)_vn.nii.gz" ]]
         then
-    	    #${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -f functionhighpassandvariancenormalize $tr $hp $fmri ${FSL_FIX_WBC}
+            if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
+                rm .fix.functionhighpassandvariancenormalize.log
+            fi
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
-                "${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${FSL_FIX_WBC}"
+                "${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${FSL_FIX_WBC}" "${RegString}"
                 ;;
             1)
                 # interpreted matlab
-                echo "${ML_PATHS} functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}');" | matlab -nojvm -nodisplay -nosplash
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${FSL_FIX_CIFTIRW}'); addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash)
                 ;;
             2)
                 # interpreted octave
-                echo "${ML_PATHS} functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}');" | octave-cli -q --no-window-system
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${FSL_FIX_CIFTIRW}'); addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
                 ;;
             esac
 	    fi
@@ -554,11 +541,6 @@ main()
     
     if [[ ! -f `remove_ext ${ConcatName}`_Atlas${RegString}_hp$hp.dtseries.nii ]]
     then
-	    #${FSL_FIX_WBC} -cifti-merge `remove_ext ${ConcatName}`_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
-	    #${FSL_FIX_WBC} -cifti-average `remove_ext ${ConcatName}`_Atlas${RegString}_mean.dscalar.nii ${CIFTIAverageMeanSTRING}
-	    #${FSL_FIX_WBC} -cifti-math "TCS + MEAN" `remove_ext ${ConcatName}`_Atlas${RegString}.dtseries.nii -var TCS `remove_ext ${ConcatName}`_Atlas${RegString}_demean.dtseries.nii -var MEAN `remove_ext ${ConcatName}`_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
-	    #${FSL_FIX_WBC} -cifti-merge `remove_ext ${ConcatName}`_Atlas${RegString}_hp$hp.dtseries.nii ${CIFTIMergeHpSTRING}
-	    
         ${FSL_FIX_WBC} -cifti-merge `remove_ext ${ConcatName}`_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
         ${FSL_FIX_WBC} -cifti-average `remove_ext ${ConcatName}`_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
         ${FSL_FIX_WBC} -cifti-average `remove_ext ${ConcatName}`_Atlas${RegString}_vn.dscalar.nii ${VNCIFTISTRING}
@@ -595,7 +577,7 @@ main()
 		log_Warn "FILE NOT FOUND: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
 	fi
 	
-	${FSLDIR}/bin/imln ../${concat_fmri_orig} filtered_func_data
+	${FSLDIR}/bin/imln ../${concatfmri} filtered_func_data
     
 	case ${MatlabRunMode} in
 		0)
@@ -623,13 +605,15 @@ main()
 			# Use interpreted MATLAB
             if [[ DoVol == 0 ]]
             then
-    			matlab -nojvm -nodisplay -nosplash <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
+)
             else
-    			matlab -nojvm -nodisplay -nosplash <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
 M_PROG
+)
             fi
 
 			;;
@@ -638,13 +622,15 @@ M_PROG
 			# Use interpreted OCTAVE
             if [[ DoVol == 0 ]]
             then
-    			octave-cli -q --no-window-system <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
 M_PROG
+)
             else
-    			octave-cli -q --no-window-system <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
 M_PROG
+)
             fi
 
 			;;
@@ -672,16 +658,9 @@ M_PROG
 	fi
 	
 	Start="1"
-	for fmri in $fmris ; do
-		#NumTPS=`${FSL_FIX_WBC} -file-information $(remove_ext ${fmri})_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
-		#Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
-		#echo "Start=${Start} Stop=${Stop}"
-		#${FSL_FIX_WBC} -cifti-merge `remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii -cifti ${concat_fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-		##${FSL_FIX_WBC} -cifti-reduce `remove_ext ${fmri}`_Atlas${RegString}.dtseries.nii MEAN `remove_ext ${fmri}`_Atlas${RegString}_mean.dscalar.nii
-		#${FSL_FIX_WBC} -cifti-math "TCS + Mean" `remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii -var TCS `remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii -var Mean `remove_ext ${fmri}`_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
-		#rm `remove_ext ${fmri}`_Atlas${RegString}_mean.dscalar.nii
-		#Start=`echo "${Start} + ${NumTPS}" | bc -l`
-		
+	for fmriname in $fmris ; do
+	    #script used to take absolute paths, so generate the absolute path and leave the old code
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
 		NumTPS=`${FSL_FIX_WBC} -file-information $(remove_ext ${fmri})_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
 	    Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	    log_Msg "Start=${Start} Stop=${Stop}"
@@ -696,7 +675,9 @@ M_PROG
 	    short_cifti_out=${cifti_out##*/}
 	    echo "${short_cifti_out} was generated by applying \"multi-run FIX\" (using 'ReApplyFixPipelineMultiRun.sh')" >> ${readme_for_cifti_out}
 	    echo "across the following individual runs:" >> ${readme_for_cifti_out}
-	    for readme_fmri in ${fmris} ; do
+	    for readme_fmri_name in ${fmris} ; do
+    	    #script used to take absolute paths, so generate the absolute path and leave the old code
+    	    readme_fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name}.nii.gz"
 		    echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	    done
 		

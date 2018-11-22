@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #   hcp_fix - wrapper script for FIX, for HCP pipelines
 #
@@ -27,29 +27,30 @@
 DEBUG="TRUE"
 
 Debug() {
-	msg="${1}"
+	msg="$*"
 	if [ "${DEBUG}" = "TRUE" ]; then
 		echo "hcp_fix: DEBUG: ${msg}"
 	fi
 }
 
 Inform() {
-	msg="${1}"
+	msg="$*"
 	echo "hcp_fix: INFORM: ${msg}"
 }
 
 Error() {
-	msg="${1}"
+	msg="$*"
 	echo "hcp_fix: ERROR: ${msg}"
 }
 
 Usage() {
     cat <<EOF
 
-hcp_fix <4D_FMRI_data> <highpass> [<TrainingFile>]
-  with <highpass> being the temporal highpass full-width (2*sigma) in seconds
+hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
+  <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
+  <do_motion_regression> must be specified, use TRUE or FALSE
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200
+e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 TRUE
 
 for detrending-like behaviour, set <highpass> to 2000
 
@@ -57,7 +58,11 @@ EOF
     exit 1
 }
 
-[ "$2" = "" ] && Usage
+if (( $# < 3 ))
+then
+    #Usage does an exit
+    Usage
+fi
 
 fmri=$1
 cd `dirname $fmri`
@@ -68,18 +73,32 @@ fmri_orig=$fmri
 
 hp=$2
 
+#this case logic could go in a helper function, interpret_as_bool or something
+case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
+    ( true | yes )
+        doMotionRegression=TRUE
+        ;;
+    ( false | no | none )
+        doMotionRegression=FALSE
+        ;;
+    ( * )
+        Error "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
+        exit 1
+        ;;
+esac
+
 unset TrainingData
-if [ $# -ge 3 ]; then
-	TrainingData=$3
+if [ $# -ge 4 ]; then
+	TrainingData=$4
 fi
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 
 Inform "processing FMRI file $fmri with highpass $hp"
 
-if [ $hp -gt 0 ] ; then
+if (( hp > 0 )) ; then
   Inform "running highpass"
-  hptr=`echo "10 k $hp 2 / $tr / p" | dc -`
+  hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
   ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
   fmri=${fmri}_hp$hp
 fi
@@ -91,19 +110,17 @@ if [ "${DEBUG}" = "TRUE" ] ; then
 	ls -lRa ${fmri}.ica
 fi
 
-Debug "Modified version of melodic in use"
-Debug "melodic located at: ${HOME}/pipeline_tools/fix1.06a/melodic used"
-Debug "instead of melodic located at: ${FSLDIR}/bin/melodic"
-Debug "Beginning of melodic version log"
-if [ "${DEBUG}" = "TRUE" ] ; then
-	${HOME}/pipeline_tools/fix1.06a/melodic --version
+#grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
+#we need to do "if which ..." because the script currently uses set -e
+if which melodic &> /dev/null
+then
+    MELODIC=$(which melodic 2> /dev/null)
+else
+    #if it isn't even in $PATH, fall back on FSLDIR
+    MELODIC="${FSLDIR}/bin/melodic"
 fi
-Debug "End of melodic version log"
 
-# "old" melodic command
-#$FSLDIR/bin/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
-#
-${HOME}/pipeline_tools/fix1.06a/melodic -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
+${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica -d -250 --nobet --report --Oall --tr=$tr
 retCode=$?
 Debug "melodic has been run: retCode = ${retCode}"
 Debug "melodic has been run: Contents of ${fmri}.ica follow"
@@ -155,10 +172,12 @@ $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
 $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
-$FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ${FSL_FIXDIR}/mask_files/hcp_0.7mm_brain_mask -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
-$FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
-$FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
+if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
+  $FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
+  $FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs.nii.gz -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
+  $FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
+  $FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
+fi
 cd ../..
 
 Inform "running FIX"
@@ -185,20 +204,44 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 
 	# now run fix
-	Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${TrainingData} 10 -m -h $hp"
-	${FSL_FIXDIR}/fix ${fmri}.ica ${TrainingData} 10 -m -h $hp
+	if [[ ${doMotionRegression} == "TRUE" ]]
+	then
+	    #use array for whitespace safety, even if the rest of the script isn't
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10 -m -h "${hp}")
+	else
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10)
+	fi
+	Inform "About to run: ${fix_cmd[*]}"
+	"${fix_cmd[@]}"
 
 else
 	# user has not specified a training data file
-	if [ $hp != 2000 ] ; then
-		Debug "since specified hp value (${hp}) is not 2000, we assume a value of 200"
-		Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp200.RData 10 -m -h 200"
-		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp200.RData 10 -m -h 200
-	else
-		Inform "About to run: ${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h 2000"
-		${FSL_FIXDIR}/fix ${fmri}.ica ${FSL_FIXDIR}/training_files/HCP_hp2000.RData 10 -m -h 2000
+	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
+	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
+	#TSC: exception: we will recommend hp 0 (linear) for performance, and hp 2000 is already trained, and largely indistinguishable
+	training_hp="${hp}"
+	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
+	then
+	    if (( hp == 0 ))
+	    then
+	        #hack: hp 2000 is close enough to a linear detrend only, but linear detrend is far faster
+	        #we know the hp 2000 training data exists, so use it if we don't see a hp 0 set
+	        training_hp=2000
+	    else
+    	    Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
+    	    exit 1
+	    fi
 	fi
-
+	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
+	if [[ ${doMotionRegression} == "TRUE" ]]
+	then
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${hp}")
+    else
+        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
+    fi
+    Inform "About to run: ${fix_cmd[*]}"
+    "${fix_cmd[@]}"
 fi
 
 $FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean

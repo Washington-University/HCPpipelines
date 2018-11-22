@@ -45,9 +45,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
    --subject=<subject ID>
    --fmri-name=<fMRI name>
    --high-pass=<high pass>
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled Matlab)
-    0 = Use compiled Matlab
-    1 = Use Matlab
 
 EOF
 }
@@ -140,21 +137,7 @@ get_options()
 		log_Msg "g_high_pass: ${g_high_pass}"
 	fi
 
-	if [ -z "${g_matlab_run_mode}" ]; then
-		echo "ERROR: matlab run mode value (--matlab-run-mode=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		case ${g_matlab_run_mode} in 
-			0)
-				;;
-			1)
-				;;
-			*)
-				echo "ERROR: matlab run mode value must be 0 or 1"
-				error_count=$(( error_count + 1 ))
-				;;
-		esac
-	fi
+	#--matlab-run-mode is now ignored, but still accepted, to make old scripts work without changes
 
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
@@ -172,6 +155,19 @@ show_tool_versions()
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
+}
+
+#arguments: filename, output variable name
+list_file_to_lookup()
+{
+    #bash arrays are 0-indexed, but since the components start at 1, we will just ignore the 0th position
+    local file_contents=$(cat "$1")
+    local component
+    unset "${2}"
+    for component in ${file_contents}
+    do
+        declare -g "${2}"["${component}"]=1
+    done
 }
 
 main()
@@ -217,61 +213,68 @@ main()
 	NumICAs=`${g_fsl_dir}/bin/fslval ${ICAFolder}/melodic_oIC.nii.gz dim4`
 	log_Msg "NumICAs: ${NumICAs}"
 
-	# Merge/edit Signal.txt with ReclassifyAsSignal.txt and ReclassifyAsNoise.txt
-	case ${g_matlab_run_mode} in
-		0)
-			# Use Compiled Matlab
-			matlab_exe="${g_hcppipedir}"
-			matlab_exe+="/ApplyHandReClassifications/MergeEditClassifications/distrib/run_MergeEditClassifications.sh"
+	echo "merging classifications start"
 
-			# TBD: Use environment variable instead of fixed path
-			if [ "${CLUSTER}" = "2.0" ]; then
-				matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+	list_file_to_lookup "${OriginalFixSignal}" orig_signal
+	list_file_to_lookup "${OriginalFixNoise}" orig_noise
+
+	list_file_to_lookup "${ReclassifyAsSignal}" reclass_signal
+	list_file_to_lookup "${ReclassifyAsNoise}" reclass_noise
+
+	fail=""
+	hand_signal=""
+	hand_noise=""
+	training_labels=""
+	for ((i = 1; i <= NumICAs; ++i))
+	do
+		if [[ ${reclass_signal[$i]} || (${orig_signal[$i]} && ! ${reclass_noise[$i]}) ]]
+		then
+			if [[ "$hand_signal" ]]
+			then
+				hand_signal+=" $i"
 			else
-				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-				log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-				log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-				log_Msg "ERROR: using an environment variable's value."
-				exit 1
+				hand_signal="$i"
 			fi
-
-			matlab_function_arguments="'${OriginalFixSignal}' '${OriginalFixNoise}' '${ReclassifyAsSignal}' '${ReclassifyAsNoise}' '${HandSignalName}' '${HandNoiseName}' '${TrainingLabelsName}' ${NumICAs}"
-
-			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.MergeEditClassifications.matlab.log 2>&1"
-
-			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-			log_Msg "Run matlab command: ${matlab_cmd}"
-
-			echo "${matlab_cmd}" | bash
-			echo $?
-
-			;;
-
-		1)
-			# Use Matlab
-
-			g_matlab_home=${MATLAB_HOME}
-			if [ -z "${g_matlab_home}" ]; then
-				echo "ERROR: MATLAB_HOME must be set!"
-				exit 1
+		else
+			if [[ "$hand_noise" ]]
+			then
+				hand_noise+=" $i"
+				training_labels+=", $i"
+			else
+				hand_noise="$i"
+				training_labels+="$i"
 			fi
-			
-			${g_matlab_home}/bin/matlab -nojvm -nodisplay -nosplash <<M_PROG
-MergeEditClassifications('${OriginalFixSignal}','${OriginalFixNoise}','${ReclassifyAsSignal}','${ReclassifyAsNoise}','${HandSignalName}','${HandNoiseName}','${TrainingLabelsName}',${NumICAs});
-M_PROG
+		fi
+		#error checking
+		if [[ ${reclass_noise[$i]} && ${reclass_signal[$i]} ]]
+		then
+			echo "Duplicate Component Error with Manual Classification on ICA: $i"
+			fail=1
+		fi
+		if [[ ! (${orig_noise[$i]} || ${orig_signal[$i]}) ]]
+		then
+			echo "Missing Component Error with Automatic Classification on ICA: $i"
+			fail=1
+		fi
+		if [[ ${orig_noise[$i]} && ${orig_signal[$i]} ]]
+		then
+			echo "Duplicate Component Error with Automatic Classification on ICA: $i"
+			fail=1
+		fi
+		#the hand check from the matlab version can't be tripped here without the above code being wrong
+	done
 
-			echo "MergeEditClassifications('${OriginalFixSignal}','${OriginalFixNoise}','${ReclassifyAsSignal}','${ReclassifyAsNoise}','${HandSignalName}','${HandNoiseName}','${TrainingLabelsName}',${NumICAs});"
-			;;
+	if [[ $fail ]]
+	then
+		echo "Sanity checks on input files failed, ABORTING"
+		exit 1
+	fi
 
-		*)
-			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
-			exit 1
+	echo "$hand_signal" > "${HandSignalName}"
+	echo "$hand_noise" > "${HandNoiseName}"
+	echo "[$training_labels]" > "${TrainingLabelsName}"
 
-	esac
+	echo "merging classifications complete"
 }
 
 # Invoke the main to get things started
