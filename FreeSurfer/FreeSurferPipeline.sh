@@ -437,17 +437,28 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Call FreeSurfer's recon-all"
 	# ----------------------------------------------------------------------
+#	recon_all_cmd="recon-all.v6.hires"
+#	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
+#	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
+#	recon_all_cmd+=" -T2 ${T2wImage}"
+#	recon_all_cmd+=" -subjid ${SubjectID}"
+#	recon_all_cmd+=" -sd ${SubjectDIR}"
+#	recon_all_cmd+=" -hires"
+#	recon_all_cmd+=" -openmp ${num_cores}"
+#	recon_all_cmd+=" -all"
+#	recon_all_cmd+=" -T2pial"
+
 	recon_all_cmd="recon-all.v6.hires"
-	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
-	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
-	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
-	recon_all_cmd+=" -hires"
-	recon_all_cmd+=" -openmp ${num_cores}"
 	recon_all_cmd+=" -all"
+	recon_all_cmd+=" -conf2hires"
+	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
+	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -T2pial"
-
+	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
+	recon_all_cmd+=" -openmp ${num_cores}"
+	
 	if [ ! -z "${recon_all_seed}" ]; then
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
