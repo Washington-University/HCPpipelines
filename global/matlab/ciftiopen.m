@@ -1,22 +1,45 @@
-function [ cifti ] = ciftiopen(filename,caret7command)
-%Open a CIFTI file by converting to GIFTI external binary first and then
-%using the GIFTI toolbox
+function [ cifti, cdata ] = ciftiopen(filename,wbcommand,verbose)
 
-grot=fileparts(filename);
-if (size(grot,1)==0)
-grot='.';
+% [CIFTI, CDATA] = CIFTIOPEN(FILENAME,WBCOMMAND,VERBOSE)
+%
+% Open a CIFTI file by converting to GIFTI external binary first and then
+% using the GIFTI toolbox
+%
+% FILENAME is string containing file name to open
+% WBCOMMAND is string containing the Workbench command.  
+%   (Necessary for the intermediate step of conversion to gifti.
+%    Matlab must be able to find this when it executes a 'system' command).
+% VERBOSE (optional; default is off): Set to 1 for more verbose output.
+%
+% To return only the actual CDATA component, can use the following syntax:
+% [~, cdata] = ciftiopen(filename,wbcommand,verbose)
+
+% MPH: Modified to use a temporary file location suitable
+% for that OS; added an explicit verbose flag; switched to
+% using matlabs 'delete' command for file removal and 'system'
+% command for executing 'wbcommand'.
+
+% Default is VERBOSE=0 (OFF)
+if (nargin < 3) 
+  verbose = 0;
 end
-tmpname = tempname(grot);
 
-tic
-unix([caret7command ' -cifti-convert -to-gifti-ext ' filename ' ' tmpname '.gii']);
-toc
+% Use Matlab 'tempname' to return a temporary file name and location appropriate for this system
+tmpfile = tempname;
 
-tic
-cifti = gifti([tmpname '.gii']);
-toc
+tstart=tic;
 
-unix(['rm ' tmpname '.gii ' tmpname '.gii.data']);
+% Do conversion and loading
+system([wbcommand ' -cifti-convert -to-gifti-ext ' filename ' ' tmpfile '.gii']);
+cifti = gifti([tmpfile '.gii']);
 
+if nargout > 1
+  cdata = cifti.cdata;
 end
 
+if (verbose)
+  fprintf(1,'%s: Elapsed time is %.2f seconds\n',filename,toc(tstart));
+end
+
+% Clean-up
+delete([tmpfile '.gii'],[tmpfile '.gii.data']);
