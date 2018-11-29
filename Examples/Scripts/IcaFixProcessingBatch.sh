@@ -131,20 +131,29 @@ main() {
 	if [ ! -z ${FixDir} ]; then
 		export FSL_FIXDIR=${FixDir}
 	fi
+
+	# Use the version of hcp_fix supplied with the HCPpipelines (which is extended
+	# relative to the version provided with the FIX distribution)
 	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
+
+	# establish temporal highpass full-width (2*sigma) to use, in seconds
+	bandpass=2000
+
+	# establish training data file
 	TrainingData=HCP_hp2000.RData
-
-	# validate environment variables
-	# validate_environment_vars $@
-
-	# establish queue for job submission
-	QUEUE="-q hcp_priority.q"
-
+	
+	# establish whether or not to regress motion parameters (24 regressors)
+	# out of the data as part of FIX (TRUE or FALSE)
+	domot=FALSE
+	
 	# establish list of conditions on which to run ICA+FIX
 	CondList="rfMRI_REST1 rfMRI_REST2"
 
 	# establish list of directions on which to run ICA+FIX
 	DirectionList="RL LR"
+
+	# establish queue for job submission
+	QUEUE="-q hcp_priority.q"
 
 	for Subject in ${Subjlist}
 	do
@@ -161,9 +170,6 @@ main() {
 				InputDir="${StudyFolder}/${Subject}/MNINonLinear/Results/${Condition}_${Direction}"
 				InputFile="${InputDir}/${Condition}_${Direction}.nii.gz"
 
-				bandpass=2000
-				domot=FALSE
-				
 				if [ "${RunLocal}" == "TRUE" ]
 				then
 					queuing_command=""
