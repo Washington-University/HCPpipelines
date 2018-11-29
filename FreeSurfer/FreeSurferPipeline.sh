@@ -286,11 +286,11 @@ make_t2w_hires_nifti_file()
 
 	pushd "${working_dir}"
 
-	# The T2.prenorm.mgz file must exist.
+	# The rawavg.T2.prenorm.mgz file must exist.
 	# Then we need to move (resample) it to
 	# the target volume and convert it to NIFTI format.
 
-	t2w_input_file="T2.prenorm.mgz"
+	t2w_input_file="rawavg.T2.prenorm.mgz"
 	target_volume="rawavg.mgz"
 	t2w_output_file="T2w_hires.nii.gz"
 	
@@ -615,9 +615,9 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Generating QC file"
 	# ----------------------------------------------------------------------
-
+	
 	make_t1w_hires_nifti_file "${mridir}"
-
+	
 	make_t2w_hires_nifti_file "${mridir}"
 	
 	make_t1wxtw2_qc_file "${mridir}"
