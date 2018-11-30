@@ -1,6 +1,7 @@
 # Settings file for FIX
 # Modify these settings based on your system setup
-FIXVERSION=1.067
+FIXVERSION=1.06
+#   (actually this version is 1.067 - see wiki page for details)
 
 # Get the OS and CPU type
 FSL_FIX_OS=`uname -s`
