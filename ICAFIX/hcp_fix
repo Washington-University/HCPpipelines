@@ -2,18 +2,25 @@
 
 #   hcp_fix - wrapper script for FIX, for HCP pipelines
 #
-#   Stephen Smith, FMRIB Analysis Group
+#   Original by Stephen Smith, FMRIB Analysis Group
 #
 #   Copyright (C) 2012-2013 University of Oxford
 #
 #   SHCOPYRIGHT
 #
-#   Changes by Timothy B. Brown <tbbrown@wustl.edu>
+#   Changes relative to the version of hcp_fix supplied by the FIX distribution:
+#    (Tim Coalson, Tim Brown, Keith Jamison, Michael Harms)
 #
-#   1) Changes to support 7T ICAFIX processing based on changes originally made by Keith jamison <kjamison@umn.edu>
-#   2) Changes to echo output messages to aid in debugging 
-#   3) Changes to call version 3.14a of melodic instead of melodic in FSL distribution based on changes
-#      originally made by Mohana Ramaratnam <mohanakannan9@gmail.com>
+#   1) Add a flag to to control whether motion regression is applied
+#      (and appropriate conditional code based on that choice)
+#   2) Defaults to using whatever version of 'melodic' is primary in $PATH,
+#      rather than the $FSLDIR/bin version.
+#   3) Remove the restriction on melodic to an upper-limit of 250 dimensions (no more "-d -250")
+#   4) Add flexibility for user to specify their own training date file
+#   5) Replaces the brainmask used as part of deriving the 'veins' image from one
+#      derived from $FSL_FIXDIR/mask_files/hcp_0.7mm_brain_mask to the subject's
+#      specific T1w/brainmask_fs.nii.gz
+#   6) Includes more verbose output 
 
 # Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
@@ -98,6 +105,7 @@ Inform "processing FMRI file $fmri with highpass $hp"
 
 if (( hp > 0 )) ; then
   Inform "running highpass"
+  #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
   ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
   fmri=${fmri}_hp$hp
@@ -119,6 +127,11 @@ else
     #if it isn't even in $PATH, fall back on FSLDIR
     MELODIC="${FSLDIR}/bin/melodic"
 fi
+Debug "Beginning of melodic version log"
+if [ "${DEBUG}" = "TRUE" ] ; then
+	"${MELODIC}" --version
+fi
+Debug "End of melodic version log"
 
 ${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
 retCode=$?
@@ -161,7 +174,6 @@ Inform "functionmotionconfounds log file is to be named: .fix.functionmotionconf
 #${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
 
-
 mkdir -p reg
 cd reg
 
@@ -183,9 +195,8 @@ cd ../..
 Inform "running FIX"
 
 # Changes to handle user specified training data file
-if [ "X${TrainingData}" != X ]; then
-	# User has specified a training data file
-
+if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
+	
 	# add .RData suffix if not already there
 	if [[ "${TrainingData}" != *.RData ]]; then 
 		TrainingData=${TrainingData}.RData
@@ -209,6 +220,7 @@ if [ "X${TrainingData}" != X ]; then
 	    #use array for whitespace safety, even if the rest of the script isn't
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10 -m -h "${hp}")
 	else
+		#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10)
 	fi
 	Inform "About to run: ${fix_cmd[*]}"

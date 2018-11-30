@@ -3,9 +3,15 @@
 This directory contains [HCP] and [Washington University] official versions
 of scripts related to [FSL] [FIX].
 
-They are intended to be run from this directory, but `FSL_FIXDIR` should be
-set to the standard [FIX] installation.  You may need to modify them to fit
-your environment.
+See Examples/Scripts/IcaFixProcessingBatch.sh for an example launching
+script.
+
+Note that `FSL_FIXDIR` should be set to the standard [FIX]
+installation. You may need to modify your FIX installation to fit your
+environment. In particular, the ${FSL_FIXDIR}/settings.sh file may
+need modification.  (The settings.sh.WUSTL_CHPC2 file in this
+directory is the settings.sh file that is used on the WUSTL "CHPC2"
+cluster).
 
 <!-- References -->
 
