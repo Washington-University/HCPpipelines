@@ -262,5 +262,3 @@ fi
 if [ -f ${fmri}.ica/Atlas_clean_vn.dscalar.nii ] ; then
 	/bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
-
-
