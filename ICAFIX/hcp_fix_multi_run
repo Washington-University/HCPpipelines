@@ -2,7 +2,7 @@
 
 #   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time (useful for cleaning shorter runs)
 #
-#   Requires FIX version 1.065 or later and FSL 6.0 melodic version
+#   Requires FIX version 1.067 or later and FSL 6.0 melodic version
 #
 #   Stephen Smith and Matthew F. Glasser
 #
