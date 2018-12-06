@@ -257,10 +257,18 @@ else
 fi
 
 $FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
-$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vnf
 
 if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
   /bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
-  /bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
+
+# The variance normalization ("_vn") outputs of fix (fix_3_clean) require use of fix1.067 or later
+# So check whether those files exist before moving/renaming them
+if [ `$FSLDIR/bin/imtest ${fmri}.ica/filtered_func_data_clean_vn` = 1 ] ; then
+	$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vn
+fi
+if [ -f ${fmri}.ica/Atlas_clean_vn.dscalar.nii ] ; then
+	/bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
+fi
+
 
