@@ -1,7 +1,7 @@
 # HCP Pipelines ICAFIX subdirectory.
 
 This directory contains [HCP] and [Washington University] official versions
-of scripts related to [FSL] [FIX].
+of scripts related to [FSL]'s [FIX].
 
 See Examples/Scripts/IcaFixProcessingBatch.sh for an example launching
 script.
@@ -15,12 +15,13 @@ cluster).
 
 # Supplemental instructions for installing fix
 
-Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of fix:
+Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of fix.  Note that [FIX]'s minimum supported version of R is 3.3.0.
 
 ### Ubuntu 14.04
 
 ```bash
 #superuser permissions are required for all steps as written, you can use "sudo -s" to obtain a root-privileged shell
+
 #cran includes packages of R for ubuntu (and other linux distros) which are in sync with cran
 #this repo should install a 3.4.x version - 3.5.x doesn't seem to be able to install the specified package versions
 echo deb http://cloud.r-project.org/bin/linux/ubuntu trusty/ >> /etc/apt/sources.list
@@ -40,6 +41,31 @@ echo '
   install_version("e1071", version = "1.6-7", repos = "http://cloud.r-project.org/");
   install_version("randomForest", version = "4.6-12", repos = "http://cloud.r-project.org/");
 ' | R --vanilla
+```
+
+### Generic approach, tested on 3.3.x and 3.4.x
+
+```bash
+#superuser permissions are required for most steps as written, you can use "sudo -s" to obtain a root-privileged shell
+
+#PICK ONE:
+#1) fedora/redhat/centos dependencies for R packages
+yum -y groupinstall 'Development Tools'
+yum -y install blas-devel lapack-devel qt-devel mesa-libGLU openssl-devel libssh-devel
+
+#2) debian/ubuntu dependencies
+apt-get update && apt-get install -y build-essential libblas-dev liblapack-dev qt5-default libglu1-mesa libcurl4-openssl-dev libssl-dev libssh2-1-dev --no-install-recommends
+
+#R and recommended R packages must already be installed
+PACKAGES="mvtnorm_1.0-8 modeltools_0.2-22 zoo_1.8-4 sandwich_2.5-0 strucchange_1.5-1 TH.data_1.0-9 survival_2.43-3 multcomp_1.4-8 coin_1.2-2 bitops_1.0-6 gtools_3.8.1 gdata_2.18.0 caTools_1.17.1.1 gplots_3.0.1 kernlab_0.9-24 ROCR_1.0-7 class_7.3-14 party_1.0-25 e1071_1.6-7 randomForest_4.6-12"
+MIRROR="http://cloud.r-project.org"
+
+for package in $PACKAGES
+do
+    wget "$MIRROR"/src/contrib/Archive/$(echo "$package" | cut -f1 -d_)/"$package".tar.gz || \
+        wget "$MIRROR"/src/contrib/"$package".tar.gz
+    R CMD INSTALL "$package".tar.gz
+done
 ```
 
 <!-- References -->
