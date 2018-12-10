@@ -36,7 +36,8 @@ if hp==0
         
         cts=detrend(cts')';
         save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '.nii.gz'],'f',[1 1 1 TR]);
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz']);
+		% Use -d flag in fslcpgeom even if not technically necessary to reduce possibility of mistakes when editing script
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz -d']);
     end
     
     BO.cdata=detrend(BO.cdata')';
@@ -51,7 +52,7 @@ if hp>0
         call_fsl(['fslmaths ' fmri '_hp' num2str(hp) '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri '_hp' num2str(hp) '.nii.gz']);
         cts=single(read_avw([fmri '_hp' num2str(hp) '.nii.gz']));
         cts=reshape(cts,ctsX*ctsY*ctsZ,ctsT);
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz']);
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz -d']);
     end
     
     BOdimX=size(BO.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(BO.cdata,2);
@@ -97,9 +98,11 @@ if dovol > 0
         save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '_vn.nii.gz'],'f',[1 1 1 1]); 
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '_vn.nii.gz -d']); 
     else
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_vnf.nii.gz'],'f',[1 1 1 1]); 
-        call_fsl(['fslmaths ' fmri '.nii.gz -sub ' fmri '.nii.gz -add ' fmri '_vnf.nii.gz ' fmri '_vnf.nii.gz']); 
-        %call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_vnf.nii.gz -d']); 
+        % Use '_vnts' (volume normalized time series) as the suffix for the volumetric VNed TCS
+        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_vnts.nii.gz'],'f',[1 1 1 1]);
+        % Following use of 'fslmaths' rather than 'fslcpgeom' is a hack due to FSL 6.0.0 version of the latter not being able to handle very large files.
+        call_fsl(['fslmaths ' fmri '.nii.gz -sub ' fmri '.nii.gz -add ' fmri '_vnts.nii.gz ' fmri '_vnts.nii.gz']); 
+        %call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_vnts.nii.gz -d']); 
     end
 end
 
