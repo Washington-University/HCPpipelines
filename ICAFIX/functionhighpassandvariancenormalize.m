@@ -77,6 +77,7 @@ else
 end
 
 %Save VN
+%% MPH: Shouldn't these VN maps in the hp>=0 condition have 'hp' as part of their file name???
 if hp>=0
     if dovol > 0
         save_avw(reshape(Outcts.noise_unst_std,ctsX,ctsY,ctsZ,1),[fmri '_vn.nii.gz'],'f',[1 1 1 1]);
@@ -94,11 +95,11 @@ end
 %Apply VN and Save HP_VN TCS
 if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
+	% Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
     if hp>=0
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '_vn.nii.gz'],'f',[1 1 1 1]); 
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '_vn.nii.gz -d']); 
+        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '_vnts.nii.gz'],'f',[1 1 1 1]); 
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '_vnts.nii.gz -d']); 
     else
-        % Use '_vnts' (volume normalized time series) as the suffix for the volumetric VNed TCS
         save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_vnts.nii.gz'],'f',[1 1 1 1]);
         % Following use of 'fslmaths' rather than 'fslcpgeom' is a hack due to FSL 6.0.0 version of the latter not being able to handle very large files.
         call_fsl(['fslmaths ' fmri '.nii.gz -sub ' fmri '.nii.gz -add ' fmri '_vnts.nii.gz ' fmri '_vnts.nii.gz']); 
@@ -106,6 +107,7 @@ if dovol > 0
     end
 end
 
+% For CIFTI, we'll can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
 if hp>=0
     BO.cdata=BO.cdata./repmat(OutBO.noise_unst_std,1,size(BO.cdata,2));
     ciftisave(BO,[fmri '_Atlas' regstring '_hp' num2str(hp) '_vn.dtseries.nii'],WBC); 
