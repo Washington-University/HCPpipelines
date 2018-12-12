@@ -234,6 +234,7 @@ for fmri in $fmris ; do
 	if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
 		rm .fix.functionhighpassandvariancenormalize.log
 	fi
+	# "1st pass" VN on the individual runs; high-pass gets done here as well
 	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}');"
 	
 	log_Inform "Dims: $(cat ${fmri}_dims.txt)"
@@ -251,8 +252,6 @@ for fmri in $fmris ; do
 	#cd ..
 	log_Inform "Bottom of loop through fmris: fmri: ${fmri}"
 done
-
-AlreadyHP="-1" #Don't run highpass on concatenated data
 
 #Make Concatenated Folder
 ConcatFolder=`dirname ${ConcatName}`
@@ -288,8 +287,8 @@ ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${C
 ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_vn.dscalar.nii -select 1 1 -repeat
 fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
 
-# Disambiguate the "1st level" vn map created above (as mean of the individual run VN maps)
-# from the VN map that will be output from running fix on the concatenated runs
+# Disambiguate the concatenated time series created following the "1st pass" VN from the _hp_vnts file
+# that will get created by running functionhighpassandvariancenormalize on the concatfmri file ("2nd pass")
 $FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
 cd ${ConcatFolder}
@@ -338,6 +337,9 @@ log_Debug "End of melodic version log, help, and checksum"
 
 ###Run on concatenated file --
 
+AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
+
+# "2nd pass" VN
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmri', '${FSL_FIX_WBC}');"
 Dim=`cat ${concatfmri}_dims.txt`
 
