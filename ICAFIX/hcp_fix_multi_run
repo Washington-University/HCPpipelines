@@ -189,10 +189,10 @@ for fmri in $fmris ; do
 
 	# Create necessary strings for merging across runs
 	NIFTIvolMergeSTRING+="${fmriNoExt}_demean "
-	NIFTIvolhpVNMergeSTRING+="${fmriNoExt}_hp${hp}_vn "
+	NIFTIvolhpVNMergeSTRING+="${fmriNoExt}_hp${hp}_vnts "  #These are the individual run, VN'ed *time series*
 	SBRefVolSTRING+="${fmriNoExt}_SBRef "
 	MeanVolSTRING+="${fmriNoExt}_mean "
-	VNVolSTRING+="${fmriNoExt}_vn "
+	VNVolSTRING+="${fmriNoExt}_vn "  #These are the individual run, VN'ed *maps*
 	CIFTIMergeSTRING+="-cifti ${fmriNoExt}_Atlas_demean.dtseries.nii "
 	CIFTIhpVNMergeSTRING+="-cifti ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii "
 	MeanCIFTISTRING+="-cifti ${fmriNoExt}_Atlas_mean.dscalar.nii "
@@ -268,15 +268,16 @@ ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)
 
 # Merge volumes from the individual runs
 fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
-fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vn ${NIFTIvolhpVNMergeSTRING} $tr
+fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
 fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
 fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
 fslmerge -t  ${ConcatNameNoExt}_vn ${VNVolSTRING}
 # Average across runs
 fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
 fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean
-fslmaths ${ConcatNameNoExt}_vn -Tmean ${ConcatNameNoExt}_vn
-fslmaths ${ConcatNameNoExt}_hp${hp}_vn -mul ${ConcatNameNoExt}_vn ${ConcatNameNoExt}_hp${hp} # Back out the mean VN map
+fslmaths ${ConcatNameNoExt}_vn -Tmean ${ConcatNameNoExt}_vn  # Mean VN map across the individual runs
+fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_vn ${ConcatNameNoExt}_hp${hp}
+  # Preceeding line restores the mean VN map; The resulting TCS becomes the input to a 2nd pass of VN, which then becomes the input to melodic
 fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
 # Same thing for the CIFTI
 ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_demean.dtseries.nii ${CIFTIMergeSTRING}
@@ -289,12 +290,12 @@ fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted 
 
 # Disambiguate the "1st level" vn map created above (as mean of the individual run VN maps)
 # from the VN map that will be output from running fix on the concatenated runs
-$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp}_vn0
+$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
 cd ${ConcatFolder}
 
-# CLARIFY FOLLOWING COMMENT, WHICH IS CONFUSING AS REGARDS THE VN
-#Concat fMRI is intensity normalized (not variance normalized) and has no overall mean
+# concatfmri is intensity normalized and has no overall mean.
+# It is also not variance normalized (the mean VN map *across runs* was "restored" above).
 # But is detrended and within run demeaned and variance normalized for both volume and CIFTI
 concatfmri=`basename ${ConcatNameNoExt}`_hp${hp}
 concat_fmri_orig=`basename ${ConcatNameNoExt}`
