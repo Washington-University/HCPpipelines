@@ -1,15 +1,18 @@
 # Settings file for FIX
 # Modify these settings based on your system setup
-FIXVERSION=1.06
-#   (actually this version is 1.062 - see wiki page for details)
+FIXVERSION=1.067
 
 # Get the OS and CPU type
 FSL_FIX_OS=`uname -s`
 FSL_FIX_ARCH=`uname -m`
 
 if [ -z "${FSL_FIXDIR}" ]; then
+    if [ "X$0" = "X-bash" ]; then
+	FSL_FIXDIR=$(pwd)
+    else
 	FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-	export FSL_FIXDIR
+    fi
+    export FSL_FIXDIR
 fi
 
 # edit the following variables according to your local setup
@@ -18,11 +21,11 @@ fi
 # =======================
 # Point this variable at your MATLAB install folder
 if [ -z "${FSL_FIX_MATLAB_ROOT}" ]; then
-       #FSL_FIX_MATLAB_ROOT=/opt/fmrib/matlab
-       # On OS X this will most likely be something like /Applications/MATLAB_R20XX.app
+    #FSL_FIX_MATLAB_ROOT=/opt/fmrib/matlab
+    # On OS X this will most likely be something like /Applications/MATLAB_R20XX.app
 
-       # WUSTL CHPC Cluster 2.0 setting	
-       FSL_FIX_MATLAB_ROOT=/export/matlab/MCR/R2012a/v717
+    # WUSTL CHPC Cluster 2.0 setting	
+    FSL_FIX_MATLAB_ROOT=/export/matlab/MCR/R2014a/v83
 fi
 # On OS X this will most likely be something like /Applications/MATLAB_R20XX.app
 
@@ -40,14 +43,14 @@ FSL_FIX_MCC=${FSL_FIX_MATLAB_ROOT}/bin/mcc
 #FSL_FIX_MCRROOT=/opt/fmrib/MATLAB/MATLAB_Compiler_Runtime
 
 # WUSTL CHPC Cluster 2.0 setting
-FSL_FIX_MCRROOT=/export/matlab/MCR/R2012a/v717
+FSL_FIX_MCRROOT=/export/matlab/MCR/R2014a
 
 if [ -f ${FSL_FIXDIR}/MCR.version ]; then
-	FSL_FIX_MCRV=`cat ${FSL_FIXDIR}/MCR.version`
+    FSL_FIX_MCRV=`cat ${FSL_FIXDIR}/MCR.version`
 fi
 
 if [ ! -z "${FSL_FIX_MCRV}" ]; then
-	FSL_FIX_MCR=${FSL_FIX_MCRROOT}/${FSL_FIX_MCRV}
+    FSL_FIX_MCR=${FSL_FIX_MCRROOT}/${FSL_FIX_MCRV}
 fi
 
 # This is name of the folder containing the compiled MATLAB functions
@@ -75,17 +78,24 @@ FSL_FIX_MLFILE="\<"
 #FSL_FIX_OCTAVE=/opt/local/bin/octave
 # Disable Octave mode
 #FSL_FIX_OCTAVE=
-FSL_FIX_OCTAVE=$(which octave-cli)
+FSL_FIX_OCTAVE=$(command -v octave-cli)
 
 # Set this to the Octave start-up options. Typically you will need to
-# disable display output - while --traditional is supposed to "feel" more
+# disable display output; while '--traditional' is supposed to "feel" more
 # like matlab, it may break things, so try without it first
-FSL_FIX_OCOPTS="-q --no-window-system"
+if [ -z "${FSL_FIX_OCOPTS}" ]; then
+    FSL_FIX_OCOPTS="-q --no-window-system"
+    #FSL_FIX_OCOPTS="--traditional -q --no-window-system"
+fi
 
 # Set this to the Octave 'evaluate string' option
-FSL_FIX_OCEVAL="--eval"
+if [ -z "${FSL_FIX_OCEVAL}" ]; then
+    FSL_FIX_OCEVAL="--eval"
+fi
 # Set this to the pass in file option
-FSL_FIX_OCFILE=""
+if [ -z "${FSL_FIX_OCFILE}" ]; then
+    FSL_FIX_OCFILE=""
+fi
 
 # Part III General settings
 # =========================
@@ -94,23 +104,30 @@ FSL_FIX_OCFILE=""
 #   0 - Try running the compiled version of the function
 #   1 - Use the MATLAB script version
 #   2 - Use Octave script version
-#FSL_FIX_MATLAB_MODE=1
-FSL_FIX_MATLAB_MODE=0
+if [ -z "${FSL_FIX_MATLAB_MODE}" ]; then
+    FSL_FIX_MATLAB_MODE=0
+fi
 
 # Set this to CIFTI Matlab Reader/Writer for use within HCP pipelines
 #FSL_FIX_CIFTIRW='/vols/Data/HCP/workbench/CIFTIMatlabReaderWriter';
-FSL_FIX_CIFTIRW='/export/matlab/MCR/R2012a/v717/toolbox/local';
+FSL_FIX_CIFTIRW='/export/matlab/MCR/R2014a/v83/toolbox/local';
 
 # Set this to the location of the HCP Workbench command for your platform
 #FSL_FIX_WBC='/vols/Data/HCP/workbench/bin_linux64/wb_command';
-FSL_FIX_WBC='/export/HCP/workbench-v1.1.1/bin_rh_linux64/wb_command'
+# MPH: Find wb_command without needing to add yet another environment variable
+if [ -x "$(command -v wb_command)" ]; then
+    FSL_FIX_WBC=$(command -v wb_command)
+else
+    echo "ERROR in $0: wb_command (Workbench) must be in your path"
+    exit 1
+fi
 
 export FSL_FIX_CIFTIRW FSL_FIX_WBC
 
 # Set this to the location of the FSL MATLAB scripts
 if [ -z "${FSLDIR}" ]; then
-	echo "FSLDIR is not set!"
-	exit 1
+    echo "FSLDIR is not set!"
+    exit 1
 fi
 FSL_FIX_FSLMATLAB=${FSLDIR}/etc/matlab
 
