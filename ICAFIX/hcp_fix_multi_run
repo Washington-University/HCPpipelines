@@ -202,9 +202,8 @@ for fmri in $fmris ; do
 	
 	cd `dirname $fmri`
 	log_Debug "pwd: "$(pwd)
-	fmri=`basename $fmri`
-	# Note: After the following 'imglob' command, $fmri will no longer have an extension
-	fmri=`$FSLDIR/bin/imglob $fmri`
+	fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
+	fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
 	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
 	fmri_orig=$fmri
 
