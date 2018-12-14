@@ -9,6 +9,12 @@ if length(varargin) > 0 && ~strcmp(varargin{1}, '')
     regstring = varargin{1};%this has the underscore on the front already
 end
 
+if hp>=0
+    hpstring = ['_hp' num2str(hp)];
+else
+    hpstring = '';
+end
+
 if dovol > 0
     cts=single(read_avw([fmri '.nii.gz']));
     ctsX=size(cts,1); ctsY=size(cts,2); ctsZ=size(cts,3); ctsT=size(cts,4); 
@@ -16,7 +22,7 @@ if dovol > 0
 end
 
 if hp>=0
-    confounds=load([fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf.par']);
+    confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
     confounds=confounds(:,1:6);
     confounds=functionnormalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
     confounds=functionnormalise([confounds confounds.*confounds]);
@@ -30,29 +36,29 @@ end
 
 if hp==0
     if dovol > 0
-        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
+        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         confounds=detrend(confounds);
-        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
+        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
         
         cts=detrend(cts')';
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '.nii.gz'],'f',[1 1 1 TR]);
+        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]);
 		% Use -d flag in fslcpgeom even if not technically necessary to reduce possibility of mistakes when editing script
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz -d']);
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
     end
     
     BO.cdata=detrend(BO.cdata')';
-    ciftisave(BO,[fmri '_Atlas' regstring '_hp' num2str(hp) '.dtseries.nii'],WBC);
+    ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
 end
 if hp>0
     if dovol > 0
-        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
-        call_fsl(sprintf(['fslmaths ' fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri '_hp' num2str(hp) '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
+        save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
+        call_fsl(sprintf(['fslmaths ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
 
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '.nii.gz'],'f',[1 1 1 TR]);
-        call_fsl(['fslmaths ' fmri '_hp' num2str(hp) '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri '_hp' num2str(hp) '.nii.gz']);
-        cts=single(read_avw([fmri '_hp' num2str(hp) '.nii.gz']));
+        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]);
+        call_fsl(['fslmaths ' fmri hpstring '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
+        cts=single(read_avw([fmri hpstring '.nii.gz']));
         cts=reshape(cts,ctsX*ctsY*ctsZ,ctsT);
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '.nii.gz -d']);
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
     end
     
     BOdimX=size(BO.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(BO.cdata,2);
@@ -60,7 +66,7 @@ if hp>0
     call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
     grot=reshape(single(read_avw('Atlas')),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot;
     call_fsl('rm Atlas.nii.gz');
-    ciftisave(BO,[fmri '_Atlas' regstring '_hp' num2str(hp) '.dtseries.nii'],WBC);
+    ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
 end
 
 %Compute VN
@@ -96,20 +102,15 @@ end
 if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
 	% Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
-    if hp>=0
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_hp' num2str(hp) '_vnts.nii.gz'],'f',[1 1 1 1]); 
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '_vnts.nii.gz -d']); 
-    else
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_vnts.nii.gz'],'f',[1 1 1 1]);
-        % N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_vnts.nii.gz -d']); 
-    end
+	save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '_vnts.nii.gz'],'f',[1 1 1 1]); 
+	% N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
+	call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '_vnts.nii.gz -d']); 
 end
 
 % For CIFTI, we'll can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
 if hp>=0
     BO.cdata=BO.cdata./repmat(OutBO.noise_unst_std,1,size(BO.cdata,2));
-    ciftisave(BO,[fmri '_Atlas' regstring '_hp' num2str(hp) '_vn.dtseries.nii'],WBC); 
+    ciftisave(BO,[fmri '_Atlas' regstring hpstring '_vn.dtseries.nii'],WBC); 
 end
 
 %Echo Dims
