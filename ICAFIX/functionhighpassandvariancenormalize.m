@@ -101,9 +101,8 @@ if dovol > 0
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_hp' num2str(hp) '_vnts.nii.gz -d']); 
     else
         save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri '_vnts.nii.gz'],'f',[1 1 1 1]);
-        % Following use of 'fslmaths' rather than 'fslcpgeom' is a hack due to FSL 6.0.0 version of the latter not being able to handle very large files.
-        call_fsl(['fslmaths ' fmri '.nii.gz -sub ' fmri '.nii.gz -add ' fmri '_vnts.nii.gz ' fmri '_vnts.nii.gz']); 
-        %call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_vnts.nii.gz -d']); 
+        % N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri '_vnts.nii.gz -d']); 
     end
 end
 
