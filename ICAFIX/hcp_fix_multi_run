@@ -239,7 +239,7 @@ for fmri in $fmris ; do
 	
 	log_Inform "Dims: $(cat ${fmri}_dims.txt)"
 
-	# ADD COMMENT: Why are the following 3 lines necessary?
+	# Demean the movement regressors
 	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
 	$FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
@@ -287,9 +287,11 @@ ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${C
 ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_vn.dscalar.nii -select 1 1 -repeat
 fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
 
-# Disambiguate the concatenated time series created following the "1st pass" VN from the _hp_vnts file
-# that will get created by running functionhighpassandvariancenormalize on the concatfmri file ("2nd pass")
-$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
+# At this point the concatenated VN'ed time series (following the "1st pass" VN) can be deleted
+$FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
+# Alternatively, if it is needed for some reason, need to rename it to avoid conflict with same named file
+# that will get created by running functionhighpassandvariancenormalize on the concatfmri file ("2nd pass" VN below)
+#$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
 cd ${ConcatFolder}
 
@@ -369,6 +371,10 @@ if [ "${return_code}" -ne "0" ] ; then
 	exit -1
 fi
 
+# At this point (following melodic), ${concatfmri}_vnts is no longer necessary
+$FSLDIR/bin/imrm ${concatfmri}_vnts
+
+# Some housekeeping related to files expected for FIX
 cd ${concatfmri}.ica
 
 $FSLDIR/bin/imln ../$concatfmri filtered_func_data
