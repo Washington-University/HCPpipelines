@@ -188,6 +188,7 @@ for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
 
 	# Create necessary strings for merging across runs
+	# N.B. Some of these files don't exist yet, and are about to get created
 	NIFTIvolMergeSTRING+="${fmriNoExt}_demean "
 	NIFTIvolhpVNMergeSTRING+="${fmriNoExt}_hp${hp}_vnts "  #These are the individual run, VN'ed *time series*
 	SBRefVolSTRING+="${fmriNoExt}_SBRef "
@@ -272,11 +273,11 @@ fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
 fslmerge -t  ${ConcatNameNoExt}_vn ${VNVolSTRING}
 # Average across runs
 fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
-fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean
+fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean  # "Grand" mean across runs
 fslmaths ${ConcatNameNoExt}_vn -Tmean ${ConcatNameNoExt}_vn  # Mean VN map across the individual runs
 fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_vn ${ConcatNameNoExt}_hp${hp}
   # Preceeding line restores the mean VN map; The resulting TCS becomes the input to a 2nd pass of VN, which then becomes the input to melodic
-fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
+fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}  # Add back in the "grand" mean
 # Same thing for the CIFTI
 ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_demean.dtseries.nii ${CIFTIMergeSTRING}
 ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_mean.dscalar.nii ${MeanCIFTISTRING}
@@ -291,6 +292,18 @@ $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 # Alternatively, if it is needed for some reason, need to rename it to avoid conflict with same named file
 # that will get created by running functionhighpassandvariancenormalize on the concatfmri file ("2nd pass" VN below)
 #$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
+
+# At this point, we no longer need the individual run demeaned time series (either volume or CIFTI); delete to save space
+for fmri in $fmris ; do
+	log_Inform "Removing the individual run demeaned time series for ${fmri}"
+	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+	$FSLDIR/bin/imrm ${fmriNoExt}_demean
+	/bin/rm ${fmriNoExt}_Atlas_demean.dtseries.nii
+done
+# Nor do we need the concatenated demeaned time series (either volume or CIFTI)
+log_Inform "Removing the concatenated demeaned time series"
+$FSLDIR/bin/imrm ${ConcatNameNoExt}_demean
+/bin/rm ${ConcatNameNoExt}_Atlas_demean.dtseries.nii
 
 cd ${ConcatFolder}
 
