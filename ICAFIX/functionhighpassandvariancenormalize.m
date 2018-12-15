@@ -83,31 +83,31 @@ else
 end
 
 %Save VN
-%% MPH: Shouldn't these VN maps in the hp>=0 condition have 'hp' as part of their file name???
 if hp>=0
     if dovol > 0
-        save_avw(reshape(Outcts.noise_unst_std,ctsX,ctsY,ctsZ,1),[fmri '_vn.nii.gz'],'f',[1 1 1 1]);
+	    fname=[fmri hpstring '_vn.nii.gz'];
+        save_avw(reshape(Outcts.noise_unst_std,ctsX,ctsY,ctsZ,1),fname,'f',[1 1 1 1]);
+		call_fsl(['fslcpgeom ' fmri '_mean.nii.gz ' fname ' -d']);
     end
-    call_fsl(['fslcpgeom ' fmri '_mean.nii.gz ' fmri '_vn.nii.gz -d']);
-end
 
-if hp>=0
     VN=BO;
     VN.cdata=OutBO.noise_unst_std;
-    disp(['saving ' fmri '_Atlas' regstring '_vn.dscalar.nii']);
-    ciftisavereset(VN,[fmri '_Atlas' regstring '_vn.dscalar.nii'],WBC);    
+	fname=[fmri '_Atlas' regstring hpstring '_vn.dscalar.nii'];
+    disp(['saving ' fname]);
+    ciftisavereset(VN,fname,WBC);    
 end
 
 %Apply VN and Save HP_VN TCS
+% Note that NIFTI VN'ed TCS gets saved regardless of whether hp>=0
 if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
 	% Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
-	save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '_vnts.nii.gz'],'f',[1 1 1 1]); 
+	fname=[fmri hpstring '_vnts.nii.gz'];
+	save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 1]); 
 	% N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
-	call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '_vnts.nii.gz -d']); 
+	call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']); 
 end
-
-% For CIFTI, we'll can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
+% For CIFTI, we can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
 if hp>=0
     BO.cdata=BO.cdata./repmat(OutBO.noise_unst_std,1,size(BO.cdata,2));
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '_vn.dtseries.nii'],WBC); 
