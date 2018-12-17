@@ -287,23 +287,29 @@ ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${C
 ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
 fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
 
-# At this point the concatenated VN'ed time series (following the "1st pass" VN) can be deleted
+# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
+log_Inform "Removing the concatenated VN'ed time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
-# Alternatively, if it is needed for some reason, need to rename it to avoid conflict with same named file
-# that will get created by running functionhighpassandvariancenormalize on the concatfmri file ("2nd pass" VN below)
+/bin/rm ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii
+# Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
+# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmri file
+# during the "2nd pass" VN (below)
 #$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
-# At this point, we no longer need the individual run demeaned time series (either volume or CIFTI); delete to save space
-for fmri in $fmris ; do
-	log_Inform "Removing the individual run demeaned time series for ${fmri}"
-	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
-	$FSLDIR/bin/imrm ${fmriNoExt}_demean
-	/bin/rm ${fmriNoExt}_Atlas_demean.dtseries.nii
-done
 # Nor do we need the concatenated demeaned time series (either volume or CIFTI)
 log_Inform "Removing the concatenated demeaned time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_demean
 /bin/rm ${ConcatNameNoExt}_Atlas_demean.dtseries.nii
+
+# Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
+for fmri in $fmris ; do
+	log_Inform "Removing the individual run VN'ed and demeaned time series for ${fmri}"
+	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}_vnts
+	$FSLDIR/bin/imrm ${fmriNoExt}_demean
+	/bin/rm ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii
+	/bin/rm ${fmriNoExt}_Atlas_demean.dtseries.nii
+done
 
 cd ${ConcatFolder}
 
