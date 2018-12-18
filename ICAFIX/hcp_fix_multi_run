@@ -360,6 +360,8 @@ log_Debug "End of melodic version log, help, and checksum"
 AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
 # "2nd pass" VN
+# This is solely so that we can apply our own variance normalization as part of the spatial ICA, rather than using the VN algorithm internal to melodic
+# (The resulting ${concatfmri}_vnts time series is NOT the one that gets cleaned by FIX).
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmri', '${FSL_FIX_WBC}');"
 Dim=`cat ${concatfmri}_dims.txt`
 
@@ -395,7 +397,7 @@ $FSLDIR/bin/imrm ${concatfmri}_vnts
 # Some housekeeping related to files expected for FIX
 cd ${concatfmri}.ica
 
-$FSLDIR/bin/imln ../$concatfmri filtered_func_data
+$FSLDIR/bin/imln ../$concatfmri filtered_func_data  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
 $FSLDIR/bin/imln filtered_func_data.ica/mask mask
 
 if [ `$FSLDIR/bin/imtest ../${concat_fmri_orig}_SBRef` = 1 ] ; then
@@ -405,7 +407,7 @@ else
 fi
 
 if [ -f ../${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii ] ; then
-	$FSLDIR/bin/imln ../${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii
+	$FSLDIR/bin/imln ../${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
 fi
 
 mkdir -p reg
@@ -518,10 +520,13 @@ if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
 	/bin/mv ${concatfmri}.ica/Atlas_clean_vn.dscalar.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
 
-#Cleaned volume and CIFTI have no mean and are intensity normalized by multiplying in the overall variance normalization
-#This must be divided back out and the original variance normalization multipled back in
-#Then the mean is added back in to return the timeseries to its original state minus the noise
-
+## Splitting the cleaned volume and CIFTI back into individual runs.
+## The cleaned volume and CIFTI have no mean.
+## The time series of the individual runs were variance normalized via the 1st pass through functionhighpassandvariancenormalize.
+## The mean VN map (across runs) was then multiplied into the concatenated time series, and that became the input to FIX.
+## We now reverse that process.
+## i.e., the mean VN (across runs) is divided back out, and the VN map for the individual run multiplied back in.
+## Then the mean is added back in to return the timeseries to its original state minus the noise (as estimated by FIX).
 Start="1"
 for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
@@ -529,10 +534,10 @@ for fmri in $fmris ; do
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	log_Inform "Start=${Start} Stop=${Stop}"
 	
-	log_Debug "cifti merging"
+	log_Debug "Splitting cifti back into individual runs"
 	cifti_out=${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii
 	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii -var TCS ${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii -var VNA `remove_ext ${concat_fmri_orig}`_Atlas_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
+	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concat_fmri_orig}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 
 	readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	touch ${readme_for_cifti_out}
@@ -543,9 +548,10 @@ for fmri in $fmris ; do
 		echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	done
 		
-	log_Debug "volume merging"
-	${FSL_FIX_WBC} -volume-merge ${fmriNoExt}_hp${hp}_clean.nii.gz -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-	fslmaths ${fmriNoExt}_hp${hp}_clean.nii.gz -div `remove_ext ${concat_fmri_orig}`_vn -mul ${fmriNoExt}_vn -add ${fmriNoExt}_mean ${fmriNoExt}_hp${hp}_clean.nii.gz
+	log_Debug "Splitting volumes (nifti) back into individual runs"
+	volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
+	${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	fslmaths ${volume_out} -div ${concatfmri}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
 
