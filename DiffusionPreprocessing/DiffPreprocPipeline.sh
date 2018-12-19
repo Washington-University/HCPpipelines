@@ -153,11 +153,37 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           output the commands that would be executed instead of
                           actually running them. --printcom=echo is intended to 
                           be used for testing purposes
-  [--extra-eddy-args=<value>]
-                          Generic string of arguments to be passed to the 
-                          DiffPreprocPipeline_Eddy.sh script and and subsequently
-                          to the run_eddy.sh script and finally to the command 
-                          that actually invokes the eddy binary
+  [--extra-eddy-arg=<value>]
+                          Generic single token (no whitespace) argument to pass
+                          to the DiffPreprocPipeline_Eddy.sh script and subsequently
+                          to the run_eddy.sh script and finally to the command
+                          that actually invokes the eddy binary. 
+
+                          The following will work:
+
+                            --extra-eddy-arg=--val=1
+
+                          because "--val=1" is a single token containing no whitespace.
+
+                          The following will not work:
+
+                            --extra-eddy-arg="--val1=1 --val2=2"
+
+                          because "--val1=1 --val2=2" is NOT a single token.
+
+                          To build a multi-token series of arguments, you can
+                          specify this --extra-eddy-arg= parameter several times.
+
+                          e.g., 
+
+                            --extra-eddy-arg=--val1=1 --extra-eddy-arg=--val2=2
+
+                          To get an argument like "-flag value" (where there is no
+                          '=' between the flag and the value) passed to the 
+                          eddy binary, the following sequence will work:
+
+                            --extra-eddy-arg=-flag --extra-eddy-arg=value
+
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
                           for the eddy_postproc.sh script.
