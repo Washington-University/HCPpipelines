@@ -112,7 +112,7 @@ usage()
 	echo "    [--extra-eddy-arg=token] : Generic single token (no whitespace) argument to pass"
 	echo "                               to the eddy binary. To build a multi-token series of"
 	echo "                               arguments, you can specify this --extra-eddy-arg= "
-	echo "                               parameter serveral times. E.g."
+	echo "                               parameter several times. E.g."
 	echo "                               --extra-eddy-arg=--verbose --extra-eddy-arg=T"
 	echo "                               will ultimately be translated to --verbose T when"
 	echo "                               passed to the eddy binary"

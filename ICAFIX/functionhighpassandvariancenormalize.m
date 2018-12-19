@@ -2,6 +2,9 @@ function [ output_args ] = functionhighpassandvariancenormalize(TR,hp,fmri,WBC,v
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
 
+CIFTI=getenv('FSL_FIX_CIFTIRW');
+addpath(CIFTI);
+
 regstring = '';
 dovol = 1;
 if length(varargin) > 0 && ~strcmp(varargin{1}, '')
