@@ -100,9 +100,36 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--seed=<recon-all seed value>]
 
+  [--existing-subject]
+      Indicates that the script is to be run on top of an already existing analysis/subject.
+      This excludes the '-i' flag from the invocation of recon-all.
+      It also excludes the -all' flag from the invocation of recon-all.
+      Consequently, need to specify which recon-all stage(s) to run using the --extra-reconall-arg flag.
+      This allows for the application of FreeSurfer edits.
+
+  [--extra-reconall-arg=token] (repeatable)
+      Generic single token (no whitespace) argument to pass to recon-all.
+      Provides a mechanism to:
+         (i) customize the recon-all command
+         (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)
+      If you want to avoid running all the stages inherent to the '-all' flag in recon-all,
+         you also need to include the --existing-subject flag.
+      The token itself may include dashes and equal signs (although Freesurfer doesn't currently use
+         equal signs in its argument specification).
+         e.g., [--extra-reconall-arg=-3T] is the correct syntax for adding the stand-alone "-3T" flag to recon-all.
+               But, [--extra-reconall-arg="-norm3diters 3"] is NOT acceptable.
+      For recon-all flags that themselves require an argument, you can handle that by specifying
+         --extra-reconall-arg multiple times (in the proper sequential fashion).
+         e.g., [--extra-reconall-arg=-norm3diters --extra-reconall-arg=3]
+         will be translated to "-norm3diters 3" when passed to recon-all
+            
+
 PARAMETERs can also be specified positionally as:
 
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
+  
+  Note that the positional approach to specifying parameters does NOT support the --existing-subject and --extra-reconall-arg options.
+  The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
 }
@@ -110,6 +137,7 @@ EOF
 get_options()
 {
 	local arguments=($@)
+	# Note that the ($@) construction parses the arguments into an array of values using spaces as the delimiter
 
 	# initialize global output variables
 	unset p_subject_dir
@@ -118,11 +146,14 @@ get_options()
 	unset p_t1w_brain
 	unset p_t2w_image
 	unset p_seed
+	unset p_existing_subject
+	unset p_extra_reconall_args
 
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
 	local index=0
+	local extra_reconall_arg
 
 	while [ "${index}" -lt "${num_args}" ]; do
 		argument=${arguments[index]}
@@ -170,6 +201,15 @@ get_options()
 				;;
 			--seed=*)
 				p_seed=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--existing-subject)
+				p_existing_subject="TRUE"
+				index=$(( index + 1 ))
+				;;
+			--extra-reconall-arg=*)
+				extra_reconall_arg=${argument#*=}
+				p_extra_reconall_args+="${extra_reconall_arg} "
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -221,6 +261,12 @@ get_options()
 	# show optional parameters if specified
 	if [ ! -z "${p_seed}" ]; then
 		log_Msg "Seed: ${p_seed}"
+	fi
+	if [ ! -z "${p_existing_subject}" ]; then
+		log_Msg "Existing subject (exclude -i and -all flags from recon-all): ${p_existing_subject}"
+	fi
+	if [ ! -z "${p_extra_reconall_args}" ]; then
+		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -370,7 +416,9 @@ main()
 	local T1wImageBrain
 	local T2wImage
 	local recon_all_seed
-
+	local existing_subject
+	local extra_reconall_args
+	
 	local num_cores
 	local zero_threshold_T1wImage
 	local return_code
@@ -397,6 +445,19 @@ main()
 	T2wImage="${5}"
 	recon_all_seed="${6}"
 
+	## MPH: Hack!
+	# For backwards compatibility, continue to allow positional specification of parameters for the above set of 6 parameters.
+	# But any new parameters/options in the script will only be accessible via a named parameter/flag.
+	# Here, we retrieve those from the global variable that was set in get_options()
+	if [ "${p_existing_subject}" = "TRUE" ]; then
+		existing_subject="TRUE"
+	else
+		existing_subject="FALSE"
+	fi
+	if [ ! -z "${p_extra_reconall_args}" ]; then
+		extra_reconall_args="${p_extra_reconall_args}"
+	fi
+	
 	# ----------------------------------------------------------------------
 	# Log values retrieved from positional parameters
 	# ----------------------------------------------------------------------
@@ -406,6 +467,8 @@ main()
 	log_Msg "T1wImageBrain: ${T1wImageBrain}"
 	log_Msg "T2wImage: ${T2wImage}"
 	log_Msg "recon_all_seed: ${recon_all_seed}"
+	log_Msg "existing_subject: ${existing_subject}"
+	log_Msg "extra_reconall_args: ${extra_reconall_args}"
 
 	# ----------------------------------------------------------------------
 	log_Msg "Figure out the number of cores to use."
@@ -422,38 +485,31 @@ main()
 	fi
 	log_Msg "num_cores: ${num_cores}"
 
-	# ----------------------------------------------------------------------
-	log_Msg "Thresholding T1w image to eliminate negative voxel values"
-	# ----------------------------------------------------------------------
-	zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
-	log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
+	if [ "${existing_subject}" != "TRUE" ]; then
+		# ----------------------------------------------------------------------
+		log_Msg "Thresholding T1w image to eliminate negative voxel values"
+		# ----------------------------------------------------------------------
+		zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
+		log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
-	fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
+		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
+		return_code=$?
+		if [ "${return_code}" != "0" ]; then
+			log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
+		fi
 	fi
 
 	# ----------------------------------------------------------------------
 	log_Msg "Call FreeSurfer's recon-all"
 	# ----------------------------------------------------------------------
-#	recon_all_cmd="recon-all.v6.hires"
-#	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
-#	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
-#	recon_all_cmd+=" -T2 ${T2wImage}"
-#	recon_all_cmd+=" -subjid ${SubjectID}"
-#	recon_all_cmd+=" -sd ${SubjectDIR}"
-#	recon_all_cmd+=" -hires"
-#	recon_all_cmd+=" -openmp ${num_cores}"
-#	recon_all_cmd+=" -all"
-#	recon_all_cmd+=" -T2pial"
 
 	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
-	recon_all_cmd+=" -all"
-	recon_all_cmd+=" -conf2hires"
-	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
+	if [ "${existing_subject}" != "TRUE" ]; then
+		recon_all_cmd+=" -all"
+		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
+	fi
 	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -T2pial"
 	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
@@ -463,6 +519,14 @@ main()
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
 
+	if [ ! -z "${extra_reconall_args}" ]; then
+		recon_all_cmd+=" ${extra_reconall_args}"
+	fi
+
+	# The -conf2hires flag needs to come after the ${extra_reconall_args} string, since it needs
+	# to have the "final say" over a couple settings within recon-all
+	recon_all_cmd+=" -conf2hires"
+
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	${recon_all_cmd}
 	return_code=$?
@@ -470,15 +534,22 @@ main()
 		log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 	fi
 
-	# ----------------------------------------------------------------------
-	log_Msg "Clean up file: ${zero_threshold_T1wImage}"
-	# ----------------------------------------------------------------------
-	rm ${zero_threshold_T1wImage}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
+	if [ "${existing_subject}" != "TRUE" ]; then
+		# ----------------------------------------------------------------------
+		log_Msg "Clean up file: ${zero_threshold_T1wImage}"
+		# ----------------------------------------------------------------------
+		rm ${zero_threshold_T1wImage}
+		return_code=$?
+		if [ "${return_code}" != "0" ]; then
+			log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
+		fi
+
 	fi
 
+	## MPH: Portions of the following are unnecesary in the case of ${existing_subject} = "TRUE"
+	## but rather than identify what is and isn't strictly necessary (which itself may interact
+	## with the specific stages run in recon-all), we'll simply run it all to be safe that all
+	## files created following recon-all are appropriately updated
 	# ----------------------------------------------------------------------
 	log_Msg "Creating eye.dat"
 	# ----------------------------------------------------------------------
