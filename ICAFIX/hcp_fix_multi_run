@@ -274,23 +274,24 @@ fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}
 # Average across runs
 fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
 fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean  # "Grand" mean across runs
+fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}  # Add back in the "grand" mean; not used below, but want this concatenated version (without HP or VN) to exist
 fslmaths ${ConcatNameNoExt}_hp${hp}_vn -Tmean ${ConcatNameNoExt}_hp${hp}_vn  # Mean VN map across the individual runs
 fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp}
   # Preceeding line restores the mean VN map; The resulting TCS becomes the input to a 2nd pass of VN, which then becomes the input to melodic
-fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}  # Add back in the "grand" mean
+
 # Same thing for the CIFTI
 ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_demean.dtseries.nii ${CIFTIMergeSTRING}
 ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_mean.dscalar.nii ${MeanCIFTISTRING}
-${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
 ${FSL_FIX_WBC} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
+${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
 ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
 fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
 
 # At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
 log_Inform "Removing the concatenated VN'ed time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
-/bin/rm ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii
+/bin/rm -f ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii
 # Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
 # same named file that will get created by running functionhighpassandvariancenormalize on the concatfmri file
 # during the "2nd pass" VN (below)
@@ -299,7 +300,7 @@ $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 # Nor do we need the concatenated demeaned time series (either volume or CIFTI)
 log_Inform "Removing the concatenated demeaned time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_demean
-/bin/rm ${ConcatNameNoExt}_Atlas_demean.dtseries.nii
+/bin/rm -f ${ConcatNameNoExt}_Atlas_demean.dtseries.nii
 
 # Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
 for fmri in $fmris ; do
@@ -307,8 +308,14 @@ for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
 	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}_vnts
 	$FSLDIR/bin/imrm ${fmriNoExt}_demean
-	/bin/rm ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii
-	/bin/rm ${fmriNoExt}_Atlas_demean.dtseries.nii
+	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii
+	/bin/rm -f ${fmriNoExt}_Atlas_demean.dtseries.nii
+
+	# Following removes the individual run hp'ed time series
+	# MPH, 12/21/2018: Leaving them for now
+	#	log_Inform "Removing the individual run HP'ed time series for ${fmri}"
+	#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
+	#	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}.dtseries.nii
 done
 
 cd ${ConcatFolder}
@@ -367,7 +374,10 @@ Dim=`cat ${concatfmri}_dims.txt`
 
 log_Inform "Dim: ${Dim}"
 
+## ---------------------------------------------------------------------------
 ## Run melodic on concatenated file
+## ---------------------------------------------------------------------------
+
 # Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
 # Added "-m ${ConcatNameNoExt}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
@@ -399,7 +409,10 @@ $FSLDIR/bin/imrm ${concatfmri}_vnts
 $FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/alldat
 $FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/concat_data
 
-# Some housekeeping related to files expected for FIX
+## ---------------------------------------------------------------------------
+## Housekeeping related to files expected for FIX
+## ---------------------------------------------------------------------------
+
 cd ${concatfmri}.ica
 
 $FSLDIR/bin/imln ../$concatfmri filtered_func_data  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
@@ -433,7 +446,12 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 	$FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
 	$FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 fi
-cd ../..
+
+## ---------------------------------------------------------------------------
+## Actually run FIX
+## ---------------------------------------------------------------------------
+
+cd ${ConcatFolder}
 
 log_Inform "running FIX"
 
@@ -514,6 +532,10 @@ fi
 
 log_Inform "Done running FIX"
 
+## ---------------------------------------------------------------------------
+## Rename some files (relative to the default names coded in fix_3_clean)
+## ---------------------------------------------------------------------------
+
 log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
 $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
 $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean_vn ${concatfmri}_clean_vn
@@ -525,13 +547,17 @@ if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
 	/bin/mv ${concatfmri}.ica/Atlas_clean_vn.dscalar.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
 
-## Splitting the cleaned volume and CIFTI back into individual runs.
+## ---------------------------------------------------------------------------
+## Split the cleaned volume and CIFTI back into individual runs.
+## ---------------------------------------------------------------------------
+
 ## The cleaned volume and CIFTI have no mean.
 ## The time series of the individual runs were variance normalized via the 1st pass through functionhighpassandvariancenormalize.
 ## The mean VN map (across runs) was then multiplied into the concatenated time series, and that became the input to FIX.
 ## We now reverse that process.
 ## i.e., the mean VN (across runs) is divided back out, and the VN map for the individual run multiplied back in.
 ## Then the mean is added back in to return the timeseries to its original state minus the noise (as estimated by FIX).
+
 Start="1"
 for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
