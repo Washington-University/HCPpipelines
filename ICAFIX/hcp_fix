@@ -147,6 +147,11 @@ if [ "${retCode}" -ne "0" ] ; then
 	exit -1
 fi
 
+# Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
+# (these may only get created in the context of MIGP)
+$FSLDIR/bin/imrm ${fmri}.ica/filtered_func_data.ica/alldat
+$FSLDIR/bin/imrm ${fmri}.ica/filtered_func_data.ica/concat_data
+
 cd ${fmri}.ica
 
 $FSLDIR/bin/imln ../$fmri filtered_func_data

@@ -394,6 +394,11 @@ fi
 # At this point (following melodic), ${concatfmri}_vnts is no longer necessary
 $FSLDIR/bin/imrm ${concatfmri}_vnts
 
+# Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
+# (these may only get created in the context of MIGP)
+$FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/alldat
+$FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/concat_data
+
 # Some housekeeping related to files expected for FIX
 cd ${concatfmri}.ica
 
