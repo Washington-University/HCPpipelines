@@ -206,7 +206,6 @@ for fmri in $fmris ; do
 	fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 	fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
 	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
-	fmri_orig=$fmri
 
 	mkdir -p ${fmri}_hp$hp.ica/mc
 	if [ -f Movement_Regressors.txt ] ; then
@@ -293,7 +292,7 @@ log_Inform "Removing the concatenated VN'ed time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 /bin/rm -f ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii
 # Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
-# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmri file
+# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmrihp file
 # during the "2nd pass" VN (below)
 #$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
@@ -323,21 +322,21 @@ cd ${ConcatFolder}
 # concatfmri is intensity normalized and has no overall mean.
 # It is also not variance normalized (the mean VN map *across runs* was "restored" above).
 # But is detrended and within run demeaned and variance normalized for both volume and CIFTI
-concatfmri=`basename ${ConcatNameNoExt}`_hp${hp}
-concat_fmri_orig=`basename ${ConcatNameNoExt}`
+concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
+concatfmrihp=${concatfmri}_hp${hp}
 
-mkdir -p ${concatfmri}.ica
+mkdir -p ${concatfmrihp}.ica
 log_Debug "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
 cat ${MovementTXTMergeSTRING} > Movement_Regressors_demean.txt
-mkdir ${concatfmri}.ica/mc
-fslmerge -tr ${concatfmri}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
-fslmerge -tr ${concatfmri}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
+mkdir ${concatfmrihp}.ica/mc
+fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
+fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
 
 
 log_Inform "running MELODIC"
-log_Debug "About to run melodic: Contents of ${concatfmri}.ica follow"
+log_Debug "About to run melodic: Contents of ${concatfmrihp}.ica follow"
 if [ "${DEBUG}" = "TRUE" ] ; then
-	ls -lRa ${concatfmri}.ica
+	ls -lRa ${concatfmrihp}.ica
 fi
 
 #grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
@@ -368,9 +367,9 @@ AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on th
 
 # "2nd pass" VN
 # This is solely so that we can apply our own variance normalization as part of the spatial ICA, rather than using the VN algorithm internal to melodic
-# (The resulting ${concatfmri}_vnts time series is NOT the one that gets cleaned by FIX).
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmri', '${FSL_FIX_WBC}');"
-Dim=`cat ${concatfmri}_dims.txt`
+# (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
+${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
+Dim=`cat ${concatfmrihp}_dims.txt`
 
 log_Inform "Dim: ${Dim}"
 
@@ -381,7 +380,7 @@ log_Inform "Dim: ${Dim}"
 # Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
 # Added "-m ${ConcatNameNoExt}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
-melodic_cmd="${MELODIC} -i ${concatfmri}_vnts -o ${concatfmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${ConcatNameNoExt}_brain_mask"
+melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${ConcatNameNoExt}_brain_mask"
 if [ "${DEBUG}" = "TRUE" ] ; then
 	melodic_cmd="${melodic_cmd} --verbose --debug"
 fi
@@ -390,9 +389,9 @@ log_Inform "melodic_cmd: ${melodic_cmd}"
 ${melodic_cmd}
 return_code=$?
 log_Inform "melodic has been run: return_code = ${return_code}"
-log_Debug "melodic has been run: Contents of ${concatfmri}.ica follow"
+log_Debug "melodic has been run: Contents of ${concatfmrihp}.ica follow"
 if [ "${DEBUG}" = "TRUE" ] ; then
-	ls -lRa ${concatfmri}.ica
+	ls -lRa ${concatfmrihp}.ica
 fi
 
 if [ "${return_code}" -ne "0" ] ; then
@@ -401,31 +400,31 @@ if [ "${return_code}" -ne "0" ] ; then
 	exit -1
 fi
 
-# At this point (following melodic), ${concatfmri}_vnts is no longer necessary
-$FSLDIR/bin/imrm ${concatfmri}_vnts
+# At this point (following melodic), ${concatfmrihp}_vnts is no longer necessary
+$FSLDIR/bin/imrm ${concatfmrihp}_vnts
 
 # Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
 # (these may only get created in the context of MIGP)
-$FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/alldat
-$FSLDIR/bin/imrm ${concatfmri}.ica/filtered_func_data.ica/concat_data
+$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/alldat
+$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/concat_data
 
 ## ---------------------------------------------------------------------------
 ## Housekeeping related to files expected for FIX
 ## ---------------------------------------------------------------------------
 
-cd ${concatfmri}.ica
+cd ${concatfmrihp}.ica
 
-$FSLDIR/bin/imln ../$concatfmri filtered_func_data  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
+$FSLDIR/bin/imln ../$concatfmrihp filtered_func_data  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
 $FSLDIR/bin/imln filtered_func_data.ica/mask mask
 
-if [ `$FSLDIR/bin/imtest ../${concat_fmri_orig}_SBRef` = 1 ] ; then
-	$FSLDIR/bin/imln ../${concat_fmri_orig}_SBRef mean_func
+if [ `$FSLDIR/bin/imtest ../${concatfmri}_SBRef` = 1 ] ; then
+	$FSLDIR/bin/imln ../${concatfmri}_SBRef mean_func
 else
 	$FSLDIR/bin/imln filtered_func_data.ica/mean mean_func
 fi
 
-if [ -f ../${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii ] ; then
-	$FSLDIR/bin/imln ../${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
+if [ -f ../${concatfmri}_Atlas_hp${hp}.dtseries.nii ] ; then
+	$FSLDIR/bin/imln ../${concatfmri}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii  #This is concated time series from the 1st pass VN, with the mean VN map multiplied back in
 fi
 
 mkdir -p reg
@@ -481,10 +480,10 @@ if [ "X${TrainingData}" != X ]; then
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
 	    #use array for whitespace safety, even if the rest of the script isn't
-    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10 -m -h "${AlreadyHP}")
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" 10 -m -h "${AlreadyHP}")
 	else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${TrainingData}" 10)
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" 10)
 	fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -516,10 +515,10 @@ else
 	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
-        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${AlreadyHP}")
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${AlreadyHP}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
     fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -536,15 +535,15 @@ log_Inform "Done running FIX"
 ## Rename some files (relative to the default names coded in fix_3_clean.m)
 ## ---------------------------------------------------------------------------
 
-log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
-$FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
-$FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean_vn ${concatfmri}_clean_vn
+log_Debug "Moving ${concatfmrihp}.ica/filtered_func_data_clean to ${concatfmrihp}_clean"
+$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
+$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
 
-log_Debug "Checking for existence of ${concatfmri}.ica/Atlas_clean.dtseries.nii"
-if [ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ] ; then
-	log_Debug "Moving ${concatfmri}.ica to ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii"
-	/bin/mv ${concatfmri}.ica/Atlas_clean.dtseries.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
-	/bin/mv ${concatfmri}.ica/Atlas_clean_vn.dscalar.nii ${concat_fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
+log_Debug "Checking for existence of ${concatfmrihp}.ica/Atlas_clean.dtseries.nii"
+if [ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
+	log_Debug "Moving ${concatfmrihp}.ica/Atlas_clean.dtseries.nii to ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii"
+	/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
+	/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
 
 ## ---------------------------------------------------------------------------
@@ -567,8 +566,8 @@ for fmri in $fmris ; do
 	
 	log_Debug "Splitting cifti back into individual runs"
 	cifti_out=${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii
-	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concat_fmri_orig}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
+	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concatfmri}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 
 	readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	touch ${readme_for_cifti_out}
@@ -581,8 +580,8 @@ for fmri in $fmris ; do
 		
 	log_Debug "Splitting volumes (nifti) back into individual runs"
 	volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
-	${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-	fslmaths ${volume_out} -div ${concatfmri}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
+	${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	fslmaths ${volume_out} -div ${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
 
@@ -594,12 +593,12 @@ done
 ## But downstream scripts (e.g., RestingStateStats) assume they exist, and
 ## if deleted they would therefore need to be re-created "on the fly" later
 
-# $FSLDIR/bin/imrm ${concat_fmri_orig}
-# $FSLDIR/bin/imrm ${concat_fmri_orig}_hp${hp}
-# $FSLDIR/bin/imrm ${concat_fmri_orig}_hp${hp}_clean
-# /bin/rm -f ${concat_fmri_orig}_Atlas.dtseries.nii
-# /bin/rm -f ${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii
-# /bin/rm -f ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
+# $FSLDIR/bin/imrm ${concatfmri}
+# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
+# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
+# /bin/rm -f ${concatfmri}_Atlas.dtseries.nii
+# /bin/rm -f ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+# /bin/rm -f ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
 
 cd ${DIR}
 
