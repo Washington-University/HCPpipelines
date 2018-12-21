@@ -533,7 +533,7 @@ fi
 log_Inform "Done running FIX"
 
 ## ---------------------------------------------------------------------------
-## Rename some files (relative to the default names coded in fix_3_clean)
+## Rename some files (relative to the default names coded in fix_3_clean.m)
 ## ---------------------------------------------------------------------------
 
 log_Debug "Moving ${concatfmri}.ica/filtered_func_data_clean to ${concatfmri}_clean"
