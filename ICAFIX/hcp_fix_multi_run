@@ -263,7 +263,7 @@ else
 	mkdir ${ConcatFolder}
 fi
 
-ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)
+ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
 # Merge volumes from the individual runs
 fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
@@ -586,6 +586,20 @@ for fmri in $fmris ; do
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
 
+## ---------------------------------------------------------------------------
+## Remove all the large time series files in ${ConcatFolder}
+## ---------------------------------------------------------------------------
+
+## Deleting these files would save a lot of space.
+## But downstream scripts (e.g., RestingStateStats) assume they exist, and
+## if deleted they would therefore need to be re-created "on the fly" later
+
+# $FSLDIR/bin/imrm ${concat_fmri_orig}
+# $FSLDIR/bin/imrm ${concat_fmri_orig}_hp${hp}
+# $FSLDIR/bin/imrm ${concat_fmri_orig}_hp${hp}_clean
+# /bin/rm -f ${concat_fmri_orig}_Atlas.dtseries.nii
+# /bin/rm -f ${concat_fmri_orig}_Atlas_hp${hp}.dtseries.nii
+# /bin/rm -f ${concat_fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
 
 cd ${DIR}
 
