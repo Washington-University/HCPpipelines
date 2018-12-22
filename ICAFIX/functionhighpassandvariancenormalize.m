@@ -1,6 +1,6 @@
 function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 %
-% FUNCTIONHIGHPASSANDVARIANCENORMALIZE(TR,HP,FMRI,WBC,[REGSTRING],[POLYDETREND])
+% FUNCTIONHIGHPASSANDVARIANCENORMALIZE(TR,HP,FMRI,WBC,[REGSTRING])
 % 
 % This function:
 % (1) Detrends / high-pass filters motion confounds, NIFTI (volume) and CIFTI files
@@ -11,27 +11,25 @@ function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 %
 % TR: repetition time between frames, in sec
 % HP: determines what high-pass filtering to apply to the motion confounds and data
-%     HP<0: No highpass applied (demeaning only). No "hp" string will be added as part of the file names.
-%     HP>0: If POLYDETREND flag is not set (see below), then HP specifies the full-width (2*sigma), in sec,
-%           to apply using 'fslmaths -bptf'.
-%           If POLYDETREND flag is set, then HP specifies the order of a polynomial detrending, 
-%           and needs to be an integer.
-%     HP=0: If POLYDETREND flag is not set, HP=0 gets interpreted as a linear (1st order) detrend
+%     HP<0: No highpass applied (demeaning only). No 'hp' string will be added as part of the file names.
+%     HP>0: The full-width (2*sigma), in sec, to apply using 'fslmaths -bptf'.
+%     HP='pd#': If HP is a string, in which the first two characters are 'pd', followed by an integer value,
+%               then polynomial detrending is applied, with the order specified by the integer value 
+%               embedded at the end of the string.
+%               The output files will include the string '_hppd#'
+%     HP=0: Gets interpreted as a linear (1st order) detrend
 %           (this is consistent with the convention in FIX of using HP=0 to specify a linear detrend), 
 %           but the output file names will be named consistent with a 1st order polynomial detrend.
-%           [i.e., "_hppd1", rather than "_hp0"]
-%           If POLYDETREND flag is set, HP=0 gets interpreted as a true 0th order detrend, which is 
-%           the same as demeaning. Mathematically, this is the same as the HP<0 condition,
-%           but the output file will be named differently (i.e., "_hppd0"), and additional
-%           output files will be written.
+%           (i.e., '_hppd1', rather than '_hp0')
 % FMRI: The base string of the fmri time series (no extensions)
 % WBC: wb_command (full path)
 % [REGSTRING]: Additional registration-related string to add to output file names. OPTIONAL.
-% [POLYDETREND]: Controls whether value of HP should be interpreted as specifying the order
-%                for a polynomial detrend.  See above for how it impacts the interpretation of HP.
-%                Values: true (or 1) or false (or 0).
-%                OPTIONAL. (Default: false).
   
+% Note: HP='pd0' would be interpreted as a true 0th order detrend, which is 
+% the same as demeaning. Mathematically, this is the same as the HP<0 condition,
+% but the output files will be named differently (i.e., include '_hppd0'), and additional
+% output files will be written relative to the HP<0 condition.
+
 % Authors: M. Glasser and M. Harms
 
 CIFTIMatlabReaderWriter=getenv('FSL_FIX_CIFTIRW');
@@ -41,57 +39,48 @@ addpath(CIFTIMatlabReaderWriter);
 dovol = 1;
 regstring = '';
 pdflag = false;  % Polynomial detrend
+pdstring = 'pd';  % Expected string at start of HP variable to request a "polynomial detrend"
 
 %% Parse varargin
 if length(varargin) >= 1 && ~isempty(varargin{1})
   dovol = 0; %regname is only used for a new surface registration, so will never require redoing volume
   regstring = varargin{1}; %this has the underscore on the front already
   if ~ischar(regstring)
-	error('REGSTRING should be a string');
-  end
-end
-if length(varargin) >= 2 && ~isempty(varargin{2})
-  pdflag = varargin{2};
-end
-if ischar(pdflag)
-  if strcmp(lower(pdflag),'true')
-	pdflag = true;
-  elseif strcmp(lower(pdflag),'false')
-	pdflag = false;
-  else error('Invalid specification of POLYDETREND flag')
+	error('%s: REGSTRING should be a string', mfilename);
   end
 end
 
-%% Allow for compiled matlab
+% Check whether polynomial detrend is being requested for the high-pass filtering.
+if ischar(hp)
+  hp = lower(hp);
+  if strncmp(hp,pdstring,numel(pdstring))
+	pdflag = true;
+	hp = str2num(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
+  elseif ~isempty(str2num(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
+	hp = str2num(hp);
+  else error('%s: Invalid specification for the high-pass filter', mfilename);
+  end
+end
+
+%% Allow for compiled matlab (hp as a string is already handled above)
 if (isdeployed)
   tr = str2num(tr);
-  hp = str2num(hp);
-end
-
-if pdflag < 0
-  error('Invalid specification of POLYDETREND flag')
 end
 
 %% Argument checking
 if hp==0 && ~pdflag
-  fprintf('hp=0 will be interpreted as polynomial detrending of order 1');
+  warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename);
   pdflag=true;
   hp=1;
 end
 if pdflag
   if (~isscalar(hp) || hp < 0 || hp ~= fix(hp))
-	error('hp must be a non-negative integer when requesting polynomial detrending');
+	error('%s: hp must be a non-negative integer when requesting polynomial detrending', mfilename);
   end
 end
-%% N.B. The above allows for users to specify hp=0, pdflag=true as their input, in which case
-%% a polynomial detrend of order 0 (i.e., remove the mean) will be executed.
-%% That isn't necessary, since demeaning is always performed, but would impact the manner
-%% in which the files are named.
 
 %% Set up the hp string to use in file names
-if pdflag
-  pdstring = 'pd';  % For "polynomial detrend"
-else
+if ~pdflag
   pdstring = '';
 end
 if hp>=0
