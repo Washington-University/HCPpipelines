@@ -75,13 +75,32 @@ Usage() {
     cat <<EOF
 
 hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>]
-  <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
-  <do_motion_regression> must be specified, use TRUE or FALSE
 
-e.g.   hcp_fix_multi_run BOLD_REST1_RL/BOLD_REST1_RL.nii.gz@BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 BOLD_REST1_RL_LR/BOLD_REST1_RL_LR.nii.gz TRUE
+   Apply FIX cleaning to a concatenated set of input files.
 
-for detrending-like behaviour, set <highpass> to 2000
-use 0 to do only a linear detrend
+  <4D_FMRI_data>:
+     List of the individual runs to concatenate, joined with '@' symbol (no whitespace)
+
+  <highpass>: 
+     If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'
+     If a string "pd#", where # is an integer, applies polynomial detrending of order #
+     
+     Use "dp1" for a linear detrend, "dp2" for a quadratic detrend, etc
+     To mimic detrending-like behaviour using the fslmaths approach, set <highpass> to 2000
+     (Note that 'fslmaths -bptf' is much slower than the regression based polynomial detrending).
+
+  <concat_name>:
+     Root name to give to the concatenated output files
+
+  <do_motion_regression>:
+     Controls whether to regress motion parameters as part of the cleaning.
+     Must be specified, use TRUE or FALSE
+
+  [<TrainingFile>] (optional)
+     Defaults to "HCP_hp${hp}.RData"
+     In the case of polynomial detrending, will use HCP_hp2000.RData
+
+e.g.   hcp_fix_multi_run BOLD_REST1_RL/BOLD_REST1_RL.nii.gz@BOLD_REST1_RL/BOLD_REST1_RL.nii.gz pd2 BOLD_REST1_RL_LR/BOLD_REST1_RL_LR TRUE
 
 EOF
     exit 1
@@ -131,11 +150,25 @@ demeanMovementRegressors() {
 }
 
 hp=$2
-if [[ $(echo "${hp} < 0" | bc) == "1" ]]
-then
-    log_Error "highpass value must not be negative"
-    exit 1
+if [[ "${hp}" == pd* ]]; then
+	hpNum=${hp:2}
+else
+	hpNum=${hp}
 fi
+if [[ "${hp}" == "0" ]]; then
+	log_Inform "hp=${hp} corresponds to a linear detrend; setting hp=pd1"
+	hp=pd1
+	hpNum=1
+fi
+if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
+	log_Error "Highpass argument does not contain a properly specified numeric value"
+	exit -1
+fi
+if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then
+    log_Error "highpass value must not be negative"
+	exit -1
+fi
+
 log_Inform "hp: ${hp}"
 
 unset TrainingData
@@ -158,7 +191,7 @@ case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
         ;;
     ( * )
         log_Error "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        exit 1
+        exit -1
         ;;
 esac
 
@@ -205,9 +238,9 @@ for fmri in $fmris ; do
 	log_Debug "pwd: "$(pwd)
 	fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 	fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
-	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
+	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit -1
 
-	mkdir -p ${fmri}_hp$hp.ica/mc
+	mkdir -p ${fmri}_hp${hp}.ica/mc
 	if [ -f Movement_Regressors.txt ] ; then
 		log_Debug "About to create ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par file"
 		cat Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par
@@ -244,7 +277,7 @@ for fmri in $fmris ; do
 	$FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 
 	# Rename $fmri to include the hp string
-	fmri=${fmri}_hp$hp
+	fmri=${fmri}_hp${hp}
 	#cd ${fmri}.ica
 	# Per https://github.com/Washington-University/Pipelines/issues/60, the following line doesn't appear to be necessary
 	#$FSLDIR/bin/imln ../$fmri filtered_func_data
@@ -497,19 +530,19 @@ else
 	# user has not specified a training data file
 	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
-	#TSC: exception: we will recommend hp 0 (linear) for performance, and hp 2000 is already trained, and largely indistinguishable
+	#TSC: exception: we will recommend polynomial detrending for performance, and hp 2000 is already trained, and largely indistinguishable
 	log_Inform "User has NOT specified a training data file"
 	training_hp="${hp}"
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
 	then
-	    if (( hp == 0 ))
+	    if (( hpNum != 0 )) && [[ "${hp}" == pd* ]]
 	    then
-	        #hack: hp 2000 is close enough to a linear detrend only, but linear detrend is far faster
-	        #we know the hp 2000 training data exists, so use it if we don't see a hp 0 set
+	        #hack: hp 2000 is close enough to a polynomial detrend, but the latter is far faster
+	        #we know the hp 2000 training data exists, so use it if we don't see an explicit hppd# set
 	        training_hp=2000
 	    else
     	    log_Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
-    	    exit 1
+    	    exit -1
 	    fi
 	fi
 	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
