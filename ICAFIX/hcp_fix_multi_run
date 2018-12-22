@@ -277,7 +277,7 @@ for fmri in $fmris ; do
 		rm .fix.functionhighpassandvariancenormalize.log
 	fi
 	# "1st pass" VN on the individual runs; high-pass gets done here as well
-	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}');"
+	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
 	
 	log_Inform "Dims: $(cat ${fmri}_dims.txt)"
 
