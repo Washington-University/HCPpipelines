@@ -54,12 +54,20 @@ Usage() {
     cat <<EOF
 
 hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
-  <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
-  <do_motion_regression> must be specified, use TRUE or FALSE
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 TRUE
+  <highpass>: 
+     If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'
 
-for detrending-like behaviour, set <highpass> to 2000
+     For detrending-like behaviour, set <highpass> to 2000
+
+  <do_motion_regression>:
+     Controls whether to regress motion parameters as part of the cleaning.
+     Must be specified, use TRUE or FALSE
+
+  [<TrainingFile>] (optional)
+     Defaults to "HCP_hp${hp}.RData"
+
+e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 2000 TRUE
 
 EOF
     exit 1
@@ -236,7 +244,7 @@ else
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
 	then
-		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in _multi_run
+		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in hcp_fix_multi_run
 		Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 		exit 1
 	fi
