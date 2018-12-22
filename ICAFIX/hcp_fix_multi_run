@@ -74,7 +74,7 @@ source ${FSL_FIXDIR}/settings.sh
 Usage() {
     cat <<EOF
 
-hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>]
+hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
 
    Apply FIX cleaning to a concatenated set of input files.
 
@@ -99,6 +99,11 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
   [<TrainingFile>] (optional)
      Defaults to "HCP_hp${hp}.RData"
      In the case of polynomial detrending, will use HCP_hp2000.RData
+
+  [<FixThreshold>] (optional)
+     Threshold setting in FIX that controls the sensitivity/specificity tradeoff.
+     Default = 10.
+     To specify a threshold, <TrainingFile> becomes a mandatory argument.
 
 e.g.   hcp_fix_multi_run BOLD_REST1_RL/BOLD_REST1_RL.nii.gz@BOLD_REST1_RL/BOLD_REST1_RL.nii.gz pd2 BOLD_REST1_RL_LR/BOLD_REST1_RL_LR TRUE
 
@@ -172,8 +177,13 @@ fi
 log_Inform "hp: ${hp}"
 
 unset TrainingData
+unset FixThresh
 if [ $# -ge 5 ] ; then
-TrainingData=$5
+	TrainingData=$5
+	FixThresh=$6
+fi
+if [ -z "${FixThresh}" ]; then
+	FixThresh=10
 fi
 
 fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
@@ -513,10 +523,10 @@ if [ "X${TrainingData}" != X ]; then
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
 	    #use array for whitespace safety, even if the rest of the script isn't
-    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" 10 -m -h "${AlreadyHP}")
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 	else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" 10)
+    	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 	fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -548,10 +558,10 @@ else
 	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
-        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10 -m -h "${AlreadyHP}")
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}" -m -h "${AlreadyHP}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" 10)
+        fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}")
     fi
 	log_Inform "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"

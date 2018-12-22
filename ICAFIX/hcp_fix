@@ -53,7 +53,7 @@ Error() {
 Usage() {
     cat <<EOF
 
-hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
+hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
 
   <highpass>: 
      If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'
@@ -66,6 +66,11 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
 
   [<TrainingFile>] (optional)
      Defaults to "HCP_hp${hp}.RData"
+
+  [<FixThreshold>] (optional)
+     Threshold setting in FIX that controls the sensitivity/specificity tradeoff.
+     Default = 10.
+     To specify a threshold, <TrainingFile> becomes a mandatory argument.
 
 e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 2000 TRUE
 
@@ -102,8 +107,13 @@ case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
 esac
 
 unset TrainingData
-if [ $# -ge 4 ]; then
+unset FixThresh
+if [ $# -ge 4 ] ; then
 	TrainingData=$4
+	FixThresh=$5
+fi
+if [ -z "${FixThresh}" ]; then
+	FixThresh=10
 fi
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
@@ -230,10 +240,10 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
 	    #use array for whitespace safety, even if the rest of the script isn't
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" 10 -m -h "${hp}")
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
 	else
 		#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" 10)
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
 	fi
 	Inform "About to run: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
@@ -251,10 +261,10 @@ else
 	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]
 	then
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" 10 -m -h "${hp}")
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}" -m -h "${hp}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" 10)
+	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}")
     fi
     Inform "About to run: ${fix_cmd[*]}"
     "${fix_cmd[@]}"
