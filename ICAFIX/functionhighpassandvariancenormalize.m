@@ -18,9 +18,8 @@ function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 %               embedded at the end of the string.
 %               The output files will include the string '_hppd#'
 %     HP=0: Gets interpreted as a linear (1st order) detrend
-%           (this is consistent with the convention in FIX of using HP=0 to specify a linear detrend), 
-%           but the output file names will be named consistent with a 1st order polynomial detrend.
-%           (i.e., '_hppd1', rather than '_hp0')
+%           This is consistent with the convention in FIX of using HP=0 to specify a linear detrend.
+%           The output file names will include the string '_hp0'.
 % FMRI: The base string of the fmri time series (no extensions)
 % WBC: wb_command (full path)
 % [REGSTRING]: Additional registration-related string to add to output file names. OPTIONAL.
@@ -40,6 +39,7 @@ dovol = 1;
 regstring = '';
 pdflag = false;  % Polynomial detrend
 pdstring = 'pd';  % Expected string at start of HP variable to request a "polynomial detrend"
+hpstring = '';
 
 %% Parse varargin
 if length(varargin) >= 1 && ~isempty(varargin{1})
@@ -72,21 +72,22 @@ if hp==0 && ~pdflag
   warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename);
   pdflag=true;
   hp=1;
+  % But in this case, preserve use of "_hp0" in the filename to indicate a linear detrend (for backwards compatibility in file naming)
+  hpstring = '_hp0';
 end
 if pdflag
   if (~isscalar(hp) || hp < 0 || hp ~= fix(hp))
-	error('%s: hp must be a non-negative integer when requesting polynomial detrending', mfilename);
+  else 
+	error('%s: Invalid specification for the order of the polynomial detrending', mfilename);
   end
 end
 
-%% Set up the hp string to use in file names
+%% Finish setting up hpstring to use in file names
 if ~pdflag
   pdstring = '';
 end
-if hp>=0
+if ~isempty(hpstring) && hp>=0
     hpstring = ['_hp' pdstring num2str(hp)];
-else
-    hpstring = '';
 end
 
 %% Load volume time series
@@ -220,6 +221,10 @@ end
 
 %% Polynomial detrending function
 function Y = detrendpoly(X,p);
+
+% X: Input data (column major order)
+% p: Order of polynomial to remove
+% Y: Detrended output
   
   % Check data, must be in column order
   [m, n] = size(X);
@@ -234,8 +239,8 @@ function Y = detrendpoly(X,p);
 	error('order of polynomial (p) must be a non-negative integer');
   end
   
-  b = ((1 : r)' * ones (1, p + 1)) .^ (ones (r, 1) * (0 : p))
-  Y = X - b * (b \ X);
+  b = ((1 : r)' * ones (1, p + 1)) .^ (ones (r, 1) * (0 : p));  % Design matrix
+  Y = X - b * (b \ X);  % Remove polynomial fit
   
 end
   
