@@ -85,7 +85,7 @@ end
 if ~pdflag
   pdstring = '';
 end
-if ~isempty(hpstring) && hp>=0
+if isempty(hpstring) && hp>=0
     hpstring = ['_hp' pdstring num2str(hp)];
 end
 
