@@ -237,8 +237,7 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 	fi
 
 	# now run fix
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
+	if [[ ${doMotionRegression} == "TRUE" ]]; then
 	    #use array for whitespace safety, even if the rest of the script isn't
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
 	else
@@ -252,15 +251,13 @@ else
 	# user has not specified a training data file
 	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
-	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
-	then
+	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
 		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in hcp_fix_multi_run
 		Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 		exit 1
 	fi
 	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
+	if [[ ${doMotionRegression} == "TRUE" ]]; then
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}" -m -h "${hp}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m

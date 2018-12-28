@@ -521,8 +521,7 @@ if [ "X${TrainingData}" != X ]; then
 	fi
 	
 	# now run fix
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
+	if [[ ${doMotionRegression} == "TRUE" ]]; then
 	    #use array for whitespace safety, even if the rest of the script isn't
     	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 	else
@@ -544,10 +543,8 @@ else
 	#TSC: exception: we will recommend polynomial detrending for performance, and hp 2000 is already trained, and largely indistinguishable
 	log_Inform "User has NOT specified a training data file"
 	training_hp="${hp}"
-	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
-	then
+	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
 	    if [[ "${pdFlag}" == "TRUE" && "${hp}" != "pd0" ]]; then  # "hp=pd0" would be a demeaning only, so doesn't qualify here
-	    then
 	        #hack: hp 2000 is close enough to a polynomial detrend, but the latter is far faster
 	        #we know the hp 2000 training data exists, so use it if we don't see an explicit hppd# set
 	        training_hp=2000
@@ -557,8 +554,7 @@ else
 	    fi
 	fi
 	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
+	if [[ ${doMotionRegression} == "TRUE" ]]; then
         fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}" -m -h "${AlreadyHP}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
