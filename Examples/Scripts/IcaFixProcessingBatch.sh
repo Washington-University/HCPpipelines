@@ -132,25 +132,29 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# Use the version of hcp_fix supplied with the HCPpipelines (which is extended
-	# relative to the version provided with the FIX distribution)
-	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
+	# set list of conditions on which to run ICA+FIX
+	CondList="rfMRI_REST1 rfMRI_REST2"
 
-	# establish temporal highpass full-width (2*sigma) to use, in seconds
+	# set list of directions on which to run ICA+FIX
+	DirectionList="RL LR"
+
+	# set temporal highpass full-width (2*sigma) to use, in seconds
 	bandpass=2000
 
-	# establish training data file
-	TrainingData=HCP_hp2000.RData
-	
-	# establish whether or not to regress motion parameters (24 regressors)
+	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
 	
-	# establish list of conditions on which to run ICA+FIX
-	CondList="rfMRI_REST1 rfMRI_REST2"
+	# set training data file
+	TrainingData=HCP_hp2000.RData
 
-	# establish list of directions on which to run ICA+FIX
-	DirectionList="RL LR"
+	# set FIX threshold (controls sensitivity/specificity tradeoff)
+	FixThreshold=10
+	
+	# select specific version of hcp_fix to use
+	# here, we use the one supplied with the HCPpipelines (which is extended
+	# relative to the version provided with the FIX distribution)
+	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 
 	# establish queue for job submission
 	QUEUE="-q hcp_priority.q"
@@ -173,13 +177,13 @@ main() {
 				if [ "${RunLocal}" == "TRUE" ]
 				then
 					queuing_command=""
-					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
+					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
 				else
 					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-					echo "About to use ${queuing_command} to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}"
+					echo "About to use ${queuing_command} to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
 				fi
 
-				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData}
+				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}
 			done
 
 		done
