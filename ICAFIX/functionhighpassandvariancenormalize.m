@@ -77,7 +77,6 @@ if hp==0 && ~pdflag
 end
 if pdflag
   if (~isscalar(hp) || hp < 0 || hp ~= fix(hp))
-  else 
 	error('%s: Invalid specification for the order of the polynomial detrending', mfilename);
   end
 end
