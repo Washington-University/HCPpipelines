@@ -155,15 +155,15 @@ demeanMovementRegressors() {
 }
 
 hp=$2
+if [[ "${hp}" == "0" ]]; then
+	log_Inform "hp=0 corresponds to a linear detrend"
+	pdFlag=TRUE
+fi
 if [[ "${hp}" == pd* ]]; then
 	hpNum=${hp:2}
+	pdFlag=TRUE
 else
 	hpNum=${hp}
-fi
-if [[ "${hp}" == "0" ]]; then
-	log_Inform "hp=${hp} corresponds to a linear detrend; setting hp=pd1"
-	hp=pd1
-	hpNum=1
 fi
 if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
 	log_Error "Highpass argument does not contain a properly specified numeric value"
@@ -545,7 +545,7 @@ else
 	training_hp="${hp}"
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
 	then
-	    if (( hpNum != 0 )) && [[ "${hp}" == pd* ]]
+	    if [[ "${pdFlag}" == "TRUE" && "${hp}" != "pd0" ]]; then  # "hp=pd0" would be a demeaning only, so doesn't qualify here
 	    then
 	        #hack: hp 2000 is close enough to a polynomial detrend, but the latter is far faster
 	        #we know the hp 2000 training data exists, so use it if we don't see an explicit hppd# set
