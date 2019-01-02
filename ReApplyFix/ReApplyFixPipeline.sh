@@ -59,7 +59,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
    --fmri-name=<string> String to represent the ${fMRIName} variable
-   --high-pass=<num> Number to represent the ${HighPass} variable used in ICA+FIX
+   --high-pass=<high-pass filter used in ICA+FIX>
    --reg-name=<string> String to represent the registration that was done (e.g. by DeDriftAndResamplePipeline).  
    --motion-regression={TRUE, FALSE}
   [--low-res-mesh=<meshnum> String corresponding to low res mesh number]
@@ -359,25 +359,24 @@ main()
 			DoVol=1
 		fi
 	fi
-	local fmri_orig="${fMRIName}"
-	local fmri=${fMRIName}
+	local fmri="${fMRIName}"
 
 	DIR=$(pwd)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
 
-	if [ -f ../${fmri_orig}_Atlas${RegString}.dtseries.nii ] ; then
-		log_Msg "FOUND FILE: ../${fmri_orig}_Atlas${RegString}.dtseries.nii"
+	if [ -f ../${fmri}_Atlas${RegString}.dtseries.nii ] ; then
+		log_Msg "FOUND FILE: ../${fmri}_Atlas${RegString}.dtseries.nii"
 		log_Msg "Performing imln"
 
 		rm -f Atlas.dtseries.nii
-		$FSLDIR/bin/imln ../${fmri_orig}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
+		$FSLDIR/bin/imln ../${fmri}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
 		log_Msg "START: Showing linked files"
-		ls -l ../${fmri_orig}_Atlas${RegString}.dtseries.nii
+		ls -l ../${fmri}_Atlas${RegString}.dtseries.nii
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
 	else
-		log_Warn "FILE NOT FOUND: ../${fmri_orig}_Atlas${RegString}.dtseries.nii"
+		log_Warn "FILE NOT FOUND: ../${fmri}_Atlas${RegString}.dtseries.nii"
 	fi
 
 	$FSLDIR/bin/imln ../$fmri filtered_func_data
@@ -459,16 +458,16 @@ M_PROG
 			;;
 	esac
 
-	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
-	fmri_orig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
-	if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
-		/bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-        /bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
+	fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
+	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
+		/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+        /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
 
 	if (( DoVol )) ; then
-		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
-		$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vnf
+		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
+		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vnf
 	fi
 
 	cd ${DIR}
