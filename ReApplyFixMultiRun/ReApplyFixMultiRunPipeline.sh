@@ -45,7 +45,7 @@ Usage: ${script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
-  Note: The PARAMETERs can be specified positinally (i.e. without using the --param=value
+  Note: The PARAMETERs can be specified positionally (i.e. without using the --param=value
         form) by simply specifying all values on the command line in the order they are
 		listed below.
 
@@ -59,13 +59,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --concat-fmri-name=<concatenated fMRI scan file name>
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_7T_RETCCW_AP_RETCW_PA/tfMRI_7T_RETCCW_AP_RETCW_PA.nii.gz)
    --high-pass=<high-pass filter used in multi-run ICA+FIX>
-   [--reg-name=<registration name>] (e.g. MSMAll)
+   [--reg-name=<registration name>] (e.g. MSMAll) defaults to NONE
    [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
    [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
-   --motion-regression={TRUE, FALSE}
+   [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
 
 EOF
 }
@@ -93,6 +93,7 @@ get_options()
 	# set default values
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
+	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -233,21 +234,10 @@ get_options()
 	fi
 
 	if [ -z "${p_MotionRegression}" ]; then
-		log_Err "motion correction setting (--motion-regression=) required"
+		log_Err "motion regression setting (--motion-regression=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case $(echo ${p_MotionRegression} | tr '[:upper:]' '[:lower:]') in
-            ( true | yes | 1)
-                p_MotionRegression=1
-                ;;
-            ( false | no | none | 0)
-                p_MotionRegression=0
-                ;;
-			*)
-				log_Err "motion correction setting must be TRUE or FALSE"
-				error_count=$(( error_count + 1 ))
-				;;
-		esac
+		log_Msg "Motion Regression: ${p_MotionRegression}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -355,7 +345,26 @@ main()
 		MatlabRunMode="${8}"
 	fi
 
-	local domot="${9}"
+	local MotionRegression
+	if [ -z "${9}" ]; then
+		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
+	else
+		MotionRegression="${9}"
+	fi
+
+	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
+	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
+        ( true | yes | 1)
+            MotionRegression=1
+            ;;
+        ( false | no | none | 0)
+            MotionRegression=0
+            ;;
+		*)
+			log_Err_Abort "motion regression setting must be TRUE or FALSE"
+			;;
+	esac
+		
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -365,6 +374,7 @@ main()
 	log_Msg "RegName: ${RegName}"
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+	log_Msg "MotionRegression: ${MotionRegression}"
 
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
@@ -587,7 +597,7 @@ main()
 			matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
 			#matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
-			local matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${domot}" "${AlreadyHP}")
+			local matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
 			if [[ DoVol == 0 ]]
 			then
     			matlab_function_arguments+=("${DoVol}")
@@ -606,12 +616,12 @@ main()
             if [[ DoVol == 0 ]]
             then
     			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
 M_PROG
 )
             else
     			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
             fi
@@ -623,12 +633,12 @@ M_PROG
             if [[ DoVol == 0 ]]
             then
     			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP},${DoVol});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
 M_PROG
 )
             else
     			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${AlreadyHP});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
             fi
@@ -722,6 +732,9 @@ G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Establish default low res mesh
 G_DEFAULT_LOW_RES_MESH=32
+
+# Establish default for motion parameter regression
+G_DEFAULT_MOTION_REGRESSION="FALSE"
 	
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then

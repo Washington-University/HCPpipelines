@@ -49,24 +49,20 @@ PARAMETERs are [ ] = optional; < > = user supplied value
         form) by simply specifying all values on the command line in the order they are
         listed below.
 
-        E.g. ${script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
-
-        When using this technique, if the optional low res mesh value is not specified, then 
-        the default low res mesh value is used (${G_DEFAULT_LOW_RES_MESH}) and the default
-        MATLAB run mode (${G_DEFAULT_MATLAB_RUN_MODE}) are used.
+        e.g. ${script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
 
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name=<string> String to represent the ${fMRIName} variable
+   --fmri-name=<fMRI name>
    --high-pass=<high-pass filter used in ICA+FIX>
    --reg-name=<string> String to represent the registration that was done (e.g. by DeDriftAndResamplePipeline).  
-   --motion-regression={TRUE, FALSE}
-  [--low-res-mesh=<meshnum> String corresponding to low res mesh number]
+  [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
+  [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
 
 EOF
 }
@@ -80,19 +76,20 @@ get_options()
 	local arguments=("$@")
 
 	# initialize global output variables
-	unset p_StudyFolder
-	unset p_Subject
-	unset p_fMRIName
-	unset p_HighPass
-	unset p_RegName
-	unset p_LowResMesh
-	unset p_MatlabRunMode
-	unset p_MotionRegression
+	unset p_StudyFolder      # ${1}
+	unset p_Subject          # ${2}
+	unset p_fMRIName         # ${3}
+	unset p_HighPass         # ${4}
+	unset p_RegName          # ${5}
+	unset p_LowResMesh       # ${6}
+	unset p_MatlabRunMode    # ${7}
+	unset p_MotionRegression # ${8}
 
 	# set default values
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
-
+	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
+	
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
@@ -221,21 +218,10 @@ get_options()
 	fi
 
 	if [ -z "${p_MotionRegression}" ]; then
-		log_Err "motion correction setting (--motion-regression=) required"
+		log_Err "motion regression setting (--motion-regression=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		case $(echo ${p_MotionRegression} | tr '[:upper:]' '[:lower:]') in
-            ( true | yes | 1)
-                p_MotionRegression=1
-                ;;
-            ( false | no | none | 0)
-                p_MotionRegression=0
-                ;;
-			*)
-				log_Err "motion correction setting must be TRUE or FALSE"
-				error_count=$(( error_count + 1 ))
-				;;
-		esac
+		log_Msg "Motion Regression: ${p_MotionRegression}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -306,7 +292,25 @@ main()
 		MatlabRunMode="${7}"
 	fi
 
-	local domot="${8}"
+	local MotionRegression
+	if [ -z "${8}" ]; then
+		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
+	else
+		MotionRegression="${8}"
+	fi
+
+	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
+	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
+        ( true | yes | 1)
+            MotionRegression=1
+            ;;
+        ( false | no | none | 0)
+            MotionRegression=0
+            ;;
+		*)
+			log_Err_Abort "motion regression setting must be TRUE or FALSE"
+			;;
+	esac
 	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
@@ -316,7 +320,8 @@ main()
 	log_Msg "RegName: ${RegName}"
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
-
+	log_Msg "MotionRegression: ${MotionRegression}"
+	
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
@@ -411,9 +416,9 @@ main()
 
 			local matlab_function_arguments
 			if (( DoVol )) ; then
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp}"
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${MotionRegression} ${hp}"
 			else
-				matlab_function_arguments="'${fixlist}' ${aggressive} ${domot} ${hp} ${DoVol}"
+				matlab_function_arguments="'${fixlist}' ${aggressive} ${MotionRegression} ${hp} ${DoVol}"
 			fi
 
 			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
@@ -436,12 +441,12 @@ main()
 
 			if (( DoVol )) ; then
 				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
 M_PROG
 )
 			else
 				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
 M_PROG
 )
 			fi
@@ -452,12 +457,12 @@ M_PROG
 
 			if (( DoVol )) ; then #Function above
 				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
 M_PROG
 )
 			else
 				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${domot},${hp},${DoVol});
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
 M_PROG
 )
 			fi
@@ -522,6 +527,9 @@ G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Establish default low res mesh
 G_DEFAULT_LOW_RES_MESH=32
+
+# Establish default for motion parameter regression
+G_DEFAULT_MOTION_REGRESSION="FALSE"
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
