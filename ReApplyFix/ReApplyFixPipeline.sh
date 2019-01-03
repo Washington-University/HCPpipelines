@@ -356,27 +356,26 @@ main()
 			DoVol=1
 		fi
 	fi
-	local fmri="${fMRIName}"
 
 	DIR=$(pwd)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
 
-	if [ -f ../${fmri}_Atlas${RegString}.dtseries.nii ] ; then
-		log_Msg "FOUND FILE: ../${fmri}_Atlas${RegString}.dtseries.nii"
+	if [ -f ../${fMRIName}_Atlas${RegString}.dtseries.nii ] ; then
+		log_Msg "FOUND FILE: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
 		log_Msg "Performing imln"
 
 		rm -f Atlas.dtseries.nii
-		$FSLDIR/bin/imln ../${fmri}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
+		$FSLDIR/bin/imln ../${fMRIName}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
 		log_Msg "START: Showing linked files"
-		ls -l ../${fmri}_Atlas${RegString}.dtseries.nii
+		ls -l ../${fMRIName}_Atlas${RegString}.dtseries.nii
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
 	else
-		log_Warn "FILE NOT FOUND: ../${fmri}_Atlas${RegString}.dtseries.nii"
+		log_Warn "FILE NOT FOUND: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
 	fi
 
-	$FSLDIR/bin/imln ../$fmri filtered_func_data
+	$FSLDIR/bin/imln ../$fMRIName filtered_func_data
 
 	mkdir -p mc
 	if [ -f ../Movement_Regressors.txt ] ; then
@@ -477,8 +476,8 @@ M_PROG
 	# Rename some of the outputs from fix_3_clean.
 	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 	# So check whether those files exist before moving/renaming them
-	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
-	fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
+	local fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
+	local fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
