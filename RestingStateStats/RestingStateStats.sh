@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2016 The Human Connectome Project
+# Copyright (C) 2015 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -29,8 +29,6 @@
 # ## Description
 #
 # TBW
-#
-# ### NB: This script (RestingStateStats.sh) is not currently equipped to handle multiple resolutions.
 #
 # ## Prerequisites
 #
@@ -83,6 +81,7 @@
 
 # If any commands exit with non-zero value, this script exits
 set -e
+hostname
 g_script_name=`basename ${0}`
 
 # ------------------------------------------------------------------------------
@@ -149,6 +148,10 @@ usage()
 	echo "   [--out-string=<out-string> defaults to 'stats'"
 	echo "   [--wm=<NONE | FreeSurfer Label Config File>]"
 	echo "   [--csf=<NONE | FreeSurfer Label Config File>]"
+	echo "   [--ticatcleanup=<NONE | Noise Component File/Name of file containing tICA tcs>]"
+	echo "   [--ticatscleanup=<NONE | Sleep Component File/Name of file containing tICA tcs>]"
+	echo "   [--physio=<FALSE | TRUE: missing data defaults to zeros>]"
+	echo "   --reuse-high-pass=<YES | NO> Do not recompute highpass, use existing"
 	echo ""
 }
 
@@ -180,6 +183,10 @@ usage()
 #  ${g_out_string} - name string of output files
 #  ${g_wm} - Switch that turns on white matter timeseries related stats
 #  ${g_csf} - Switch that turns on csf timeseries related stats
+#  ${g_ticat} - Switch that turns on tICA Noise cleanup and related stats
+#  ${g_ticats} - Switch that turns on tICA Sleep cleanup and related stats
+#  ${g_physio} - Switch that turns on Physio timeseries related stats
+#  ${g_reuse_high_pass} - Switch that determines whether to recompute high pass
 #
 get_options()
 {
@@ -202,6 +209,10 @@ get_options()
 	unset g_out_string
 	unset g_wm
 	unset g_csf
+	unset g_ticat
+	unset g_ticats
+	unset g_physio
+	unset g_reuse_high_pass
 
 	# set default values 
 	g_reg_name="NONE"
@@ -211,6 +222,10 @@ get_options()
 	g_out_string="stats"
 	g_wm="NONE"
 	g_csf="NONE"
+	g_ticat="NONE"
+	g_ticats="NONE"
+	g_physio="FALSE"
+	g_reuse_high_pass="NO"
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -226,71 +241,87 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
+				g_path_to_study_folder=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
+				g_path_to_study_folder=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument#*=}
+				g_subject=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument#*=}
+				g_fmri_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument#*=}
+				g_high_pass=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--reg-name=*)
-				g_reg_name=${argument#*=}
+				g_reg_name=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument#*=}
+				g_low_res_mesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--final-fmri-res=*)
-				g_final_fmri_res=${argument#*=}
+				g_final_fmri_res=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;				
 			--brain-ordinates-res=*)
-				g_brain_ordinates_res=${argument#*=}
+				g_brain_ordinates_res=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;				
 			--smoothing-fwhm=*)
-				g_smoothing_fwhm=${argument#*=}
+				g_smoothing_fwhm=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;				
 			--output-proc-string=*)
-				g_output_proc_string=${argument#*=}
+				g_output_proc_string=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--dlabel-file=*)
-				g_dlabel_file=${argument#*=}
+				g_dlabel_file=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
-				g_matlab_run_mode=${argument#*=}
+				g_matlab_run_mode=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--bc-mode=*)
-				g_bc_mode=${argument#*=}
+				g_bc_mode=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--out-string=*)
-				g_out_string=${argument#*=}
+				g_out_string=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			--wm=*)
-				g_wm=${argument#*=}
+		  --wm=*)
+				g_wm=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			--csf=*)
-				g_csf=${argument#*=}
+				g_csf=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--ticatcleanup=*)
+				g_ticat=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--ticatscleanup=*)
+				g_ticats=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--physio=*)
+				g_physio=${argument/*=/""}
+				index=$(( index + 1 ))
+				;;
+			--reuse-high-pass=*)
+				g_reuse_high_pass=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -438,24 +469,37 @@ get_options()
 		log_Msg "g_csf: ${g_csf}"
 	fi
 
+	if [ -z "${g_ticat}" ]; then
+		echo "ERROR: TICA Noise switch required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_ticat: ${g_ticat}"
+	fi
+
+	if [ -z "${g_ticats}" ]; then
+		echo "ERROR: TICA Sleep switch required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_ticats: ${g_ticats}"
+	fi
+
+	if [ -z "${g_physio}" ]; then
+		echo "ERROR: Physio switch required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_physio: ${g_physio}"
+	fi
+
+	if [ -z "${g_reuse_high_pass}" ]; then
+		echo "ERROR: Reuse high pass switch required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "g_reuse_high_pass: ${g_reuse_high_pass}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		echo "For usage information, use --help"
 		exit 1
-	fi
-}
-
-#
-# Function Description:
-#  move the specified file to the new path if the
-#  specified file exists, otherwise, do nothing
-#
-mv_if_exists()
-{
-	local from="${1}"
-	local to="${2}"
-
-	if [ -e "${from}" ] ; then
-		mv --verbose "${from}" "${to}"
 	fi
 }
 
@@ -504,377 +548,371 @@ main()
 		RegString=""
 		g_reg_name="MSMSulc"
 	fi
-
-	if [ ! ${g_low_res_mesh} = "32" ] ; then
-		RegString="${RegString}.${g_low_res_mesh}k"
+  if [ ! ${g_low_res_mesh} = "32" ] ; then
+	  RegString="${RegString}.${g_low_res_mesh}k"
 	fi
 
-	if [ ! "${g_bc_mode}" = "NONE" ]; then
+	ReUseHighPass="${g_reuse_high_pass}"
+	log_Msg "ReUseHighPass: ${ReUseHighPass}"  
 
-		### This whole section (the creation of a CIFTI version of the bias field) is contingent on the use
-		### of --biascorrection=LEGACY in the GenericfMRIVolumeProcessingPipeline.sh script.
-		### i.e. the code does not current support "reverting" the bias field if it was originally applied
-		### via --biascorrection=SEBASED back in GenericfMRIVolumeProcessingPipeline.sh.
+	if [ ! "${g_bc_mode}" = "NONE" ] ; then
+	  if [ ! -e ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii ] ; then
+	    ### Calculate CIFTI version of the bias field (which is removed as part of the fMRI minimal pre-processing)
+	    ### so that the bias field can be "restored" prior to the variance decomposition
+	    ### i.e., so that the estimate variance at each grayordinate reflects the scaling of the original data
+	    ### MG: Note that bias field correction and variance normalization are two incompatible goals
+	    log_Msg "Calculate CIFTI version of the bias field"
 
-		### Calculate CIFTI version of the bias field (which is removed as part of the fMRI minimal pre-processing)
-		### so that the bias field can be "restored" prior to the variance decomposition
-		### i.e., so that the estimate variance at each grayordinate reflects the scaling of the original data
-		### MG: Note that bias field correction and variance normalization are two incompatible goals
-		log_Msg "Calculate CIFTI version of the bias field"
+	    Sigma=`echo "$g_smoothing_fwhm / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
-		Sigma=`echo "$g_smoothing_fwhm / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+	    # ----------------------------------------
+	    # Input File(s)
+	    # ----------------------------------------
 
-		# ----------------------------------------
-		# Input File(s)
-		# ----------------------------------------
+	    # input image - Result of Structural Preprocessing
+	    inputImage="${AtlasFolder}/BiasField.nii.gz"
 
-		# input image - Result of Structural Preprocessing
-		inputImage="${AtlasFolder}/BiasField.nii.gz"
+	    # reference image - Collected File, retrieved from Functional Preprocessing
+	    referenceImage="${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz"
 
-		# reference image - Collected File, retrieved from Functional Preprocessing
-		referenceImage="${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz"
+	    # pre-transform - identity matrix from FSL distribution
+	    preTransform="${FSLDIR}/etc/flirtsch/ident.mat"
 
-		# pre-transform - identity matrix from FSL distribution
-		preTransform="${FSLDIR}/etc/flirtsch/ident.mat"
+	    # ----------------------------------------
+	    # Ouput File(s)
+	    # ----------------------------------------
 
-		# ----------------------------------------
-		# Ouput File(s)
-		# ----------------------------------------
+	    # newBiasField - newly created file
+	    newBiasField="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
 
-		# newBiasField - newly created file
-		newBiasField="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+	    ${FSLDIR}/bin/applywarp \
+		    --rel \
+		    --interp=spline \
+		    -i ${inputImage} \
+		    -r ${referenceImage} \
+		    --premat=${preTransform} \
+		    -o ${newBiasField}
 
-		${FSLDIR}/bin/applywarp \
-			--rel \
-			--interp=spline \
-			-i ${inputImage} \
-			-r ${referenceImage} \
-			--premat=${preTransform} \
-			-o ${newBiasField}
+	    # ----------------------------------------
+	    # Input File(s) 
+	    # ----------------------------------------
 
-		# ----------------------------------------
-		# Input File(s) 
-		# ----------------------------------------
+	    # input image - Result of previous step
+	    inputImage="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
 
-		# input image - Result of previous step
-		inputImage="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+	    # ----------------------------------------
+	    # Output Files(s)
+	    # ----------------------------------------
 
-		# ----------------------------------------
-		# Output Files(s)
-		# ----------------------------------------
+	    # output image - same as input - modifies file
+	    outputImage="${inputImage}"
 
-		# output image - same as input - modifies file
-		outputImage="${inputImage}"
+	    ${FSLDIR}/bin/fslmaths \
+		    ${inputImage} \
+		    -thr 0.1 \
+		    ${outputImage}
 
-		${FSLDIR}/bin/fslmaths \
-			${inputImage} \
-			-thr 0.1 \
-			${outputImage}
+     	for Hemisphere in L R ; do
 
-		for Hemisphere in L R ; do
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Working on Hemisphere: ${Hemisphere}"
+     		log_Msg "Map bias field volume to surface using the same approach as when fMRI"
+		    log_Msg " data are projected to the surface"
+		    # --------------------------------------------------------------------------------
 
-			# --------------------------------------------------------------------------------
-			log_Msg "Working on Hemisphere: ${Hemisphere}"
-			log_Msg "Map bias field volume to surface using the same approach as when fMRI"
-			log_Msg " data are projected to the surface"
-			# --------------------------------------------------------------------------------
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
 
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
+		    # volume - Result of previous step
+     		volume="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
 
-			# volume - Result of previous step
-			volume="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+		    # surface - From Structural Preprocessing
+     		surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
 
-			# surface - From Structural Preprocessing
-			surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
-
-			# ribbon constraint inner ribbon - From Structural Preprocessing
-			ribbonInner="${NativeFolder}/${g_subject}.${Hemisphere}.white.native.surf.gii"
-			
-			# ribbon constraint outter ribbon - From Structural Preprocessing
-			ribbonOutter="${NativeFolder}/${g_subject}.${Hemisphere}.pial.native.surf.gii"
-
-			# ribbon constraint ROI volume - From Functional Preprocessing
-			roiVolume="${ResultsFolder}/RibbonVolumeToSurfaceMapping/goodvoxels.nii.gz"
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - newly created file
-			metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-			
-			${CARET7DIR}/wb_command \
-				-volume-to-surface-mapping ${volume} ${surface} ${metricOut} \
-				-ribbon-constrained ${ribbonInner} ${ribbonOutter} \
-				-volume-roi ${roiVolume}
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Fill in any small holes with dilation again as is done with fMRI"
-			# --------------------------------------------------------------------------------
-
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
-
-			# metric - From Previous Step
-			metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-
-			# surface - From Structural Preprocessing
-			surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"		
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - same as metric input - modifies file
-			metricOut="${metric}"
-
-			distance="10"
-			${CARET7DIR}/wb_command -metric-dilate ${metric} ${surface} ${distance} ${metricOut} -nearest
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Mask out the medial wall of dilated file"
-			# --------------------------------------------------------------------------------
-
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
-
-			# metric - From Previous Step
-			metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-
-			# mask - From Structural Preprocessing
-			mask="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - same as metric input - modifies file
-			metricOut="${metric}"
-
-			${CARET7DIR}/wb_command -metric-mask $metric $mask $metricOut
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Resample the surface data from the native mesh to the standard mesh"
-			# --------------------------------------------------------------------------------
-
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
-
-			# metricIn - From Previous Step
-			metricIn="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
-
-			# currentSphere - From Structural Preprocessing
-			currentSphere="${NativeFolder}/${g_subject}.${Hemisphere}.sphere.${g_reg_name}.native.surf.gii"
-
-			# newSphere - From Structural Preprocessing
-			newSphere="${DownsampleFolder}/${g_subject}.${Hemisphere}.sphere.${g_low_res_mesh}k_fs_LR.surf.gii"
-
-			# area-surfs: currentArea - From Structural Preprocessing
-			currentArea="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
-
-			# area-surfs: newArea - From Structural Preprocessing
-			newArea="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
-
-			# current-roi: roiMetric - From Structural Preprocessing
-			roiMetric="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - newly created file
-			metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-
-			method="ADAP_BARY_AREA"
-			${CARET7DIR}/wb_command \
-				-metric-resample ${metricIn} ${currentSphere} ${newSphere} ${method} ${metricOut} \
-				-area-surfs ${currentArea} ${newArea} \
-				-current-roi ${roiMetric}
+		    # ribbon constraint inner ribbon - From Structural Preprocessing
+     		ribbonInner="${NativeFolder}/${g_subject}.${Hemisphere}.white.native.surf.gii"
 		
-			# --------------------------------------------------------------------------------
-			log_Msg "Make sure the medial wall is zeros"
-			# --------------------------------------------------------------------------------
+		    # ribbon constraint outter ribbon - From Structural Preprocessing
+     		ribbonOutter="${NativeFolder}/${g_subject}.${Hemisphere}.pial.native.surf.gii"
 
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
+		    # ribbon constraint ROI volume - From Functional Preprocessing
+     		roiVolume="${ResultsFolder}/RibbonVolumeToSurfaceMapping/goodvoxels.nii.gz"
 
-			# metric - From Previous Step
-			metric="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
 
-			# mask - From Structural Preprocessing
-			mask="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - same as input metric - modifies file
-			metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-
-			${CARET7DIR}/wb_command -metric-mask ${metric} ${mask} ${metricOut}
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Smooth the surface bias field the same as the fMRI"
-			# --------------------------------------------------------------------------------
-
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
-
-			# surface - From Structural Preprocessing
-			surface="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
-
-			# metricIn - From Previous Step
-			metricIn="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-
-			# roiMetric - roi to smooth within - From Structural Preprocessing
-			roiMetric="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
-
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
-
-			# metricOut - same as input metric - modifies file
-			metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
-
-			smoothingKernel="${Sigma}"
-			${CARET7DIR}/wb_command \
-				-metric-smoothing ${surface} ${metricIn} ${smoothingKernel} ${metricOut} -roi ${roiMetric}
-
-		done
-
-		# --------------------------------------------------------------------------------
-		log_Msg "Project bias field into subcortical CIFTI space"
-		# --------------------------------------------------------------------------------
+		    # metricOut - newly created file
+     		metricOut="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
 		
-		unset POSIXLY_CORRECT
+     		${CARET7DIR}/wb_command \
+     			-volume-to-surface-mapping ${volume} ${surface} ${metricOut} \
+     			-ribbon-constrained ${ribbonInner} ${ribbonOutter} \
+     			-volume-roi ${roiVolume}
 
-		if [ 1 -eq `echo "$g_brain_ordinates_res == $g_final_fmri_res" | bc -l` ] ; then
-			log_Msg "Using the same fMRI and grayordinates space resolution"
-			log_Msg "Use the simple algorithm to project bias field into subcortical CIFTI space like fMRI"
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Fill in any small holes with dilation again as is done with fMRI"
+		    # --------------------------------------------------------------------------------
 
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
 
-			# volumeIn - From Functional Preprocessing
-			volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+		    # metric - From Previous Step
+		    metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
 
-			# currentParcel - From Structural Preprocessing
-			currentParcel="${ROIFolder}/ROIs.${g_brain_ordinates_res}.nii.gz"
+		    # surface - From Structural Preprocessing
+		    surface="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"		
 
-			# newParcel - From Structural Preprocessing
-			newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
 
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
+		    # metricOut - same as metric input - modifies file
+		    metricOut="${metric}"
 
-			# volumeOut - newly created file
-			volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+		    distance="20"
+		    ${CARET7DIR}/wb_command -metric-dilate ${metric} ${surface} ${distance} ${metricOut} -nearest
 
-			kernel="${Sigma}"
-			${CARET7DIR}/wb_command \
-				-volume-parcel-resampling ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
-				${volumeOut} -fix-zeros
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Mask out the medial wall of dilated file"
+		    # --------------------------------------------------------------------------------
 
-		else
-			log_Msg "Using different fMRI and grayordinates space resolutions"
-			log_Msg "Use the generic algorithm to project bias field into subcortical CIFTI space like fMRI"
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
 
-			# ----------------------------------------
-			# Input File(s)
-			# ----------------------------------------
+		    # metric - From Previous Step
+		    metric="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
 
-			# volumeIn - From Functional Preprocessing
-			volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+		    # mask - From Structural Preprocessing
+		    mask="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
 
-			# currentParcel - From Structural Preprocessing
-			currentParcel="${ResultsFolder}/ROIs.${g_final_fmri_res}.nii.gz"
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
 
-			# newParcel - From Structural Preprocessing
-			newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+		    # metricOut - same as metric input - modifies file
+		    metricOut="${metric}"
 
-			# ----------------------------------------
-			# Output File(s)
-			# ----------------------------------------
+		    ${CARET7DIR}/wb_command -metric-mask $metric $mask $metricOut
 
-			# volumeOut - newly created file
-			volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Resample the surface data from the native mesh to the standard mesh"
+		    # --------------------------------------------------------------------------------
 
-			kernel="${Sigma}"
-			${CARET7DIR}/wb_command \
-				-volume-parcel-resampling-generic ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
-				${volumeOut} -fix-zeros
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
 
-		fi
+		    # metricIn - From Previous Step
+		    metricIn="${ResultsFolder}/BiasField.${Hemisphere}.native.func.gii"
 
-		# --------------------------------------------------------------------------------
-		log_Msg "Create CIFTI file of bias field as was done with fMRI"
-		# --------------------------------------------------------------------------------
+		    # currentSphere - From Structural Preprocessing
+		    currentSphere="${NativeFolder}/${g_subject}.${Hemisphere}.sphere.${g_reg_name}.native.surf.gii"
 
-		# ----------------------------------------
-		# Input File(s)
-		# ----------------------------------------
+		    # newSphere - From Structural Preprocessing
+		    newSphere="${DownsampleFolder}/${g_subject}.${Hemisphere}.sphere.${g_low_res_mesh}k_fs_LR.surf.gii"
 
-		# volumeData - From Previous Step
-		volumeData="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+		    # area-surfs: currentArea - From Structural Preprocessing
+		    currentArea="${NativeFolder}/${g_subject}.${Hemisphere}.midthickness.native.surf.gii"
 
-		# labelVolume - From Structural Preprocessing
-		labelVolume="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+		    # area-surfs: newArea - From Structural Preprocessing
+		    newArea="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
 
-		# lMetric - Created in loop above
-		lMetric="${ResultsFolder}/BiasField.L.${g_low_res_mesh}k_fs_LR.func.gii"
+		    # current-roi: roiMetric - From Structural Preprocessing
+		    roiMetric="${NativeFolder}/${g_subject}.${Hemisphere}.roi.native.shape.gii"
 
-		# lRoiMetric - From Structural Preprocessing
-		lRoiMetric="${DownsampleFolder}/${g_subject}.L.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
 
-		# rMetric - Created in loop above
-		rMetric="${ResultsFolder}/BiasField.R.${g_low_res_mesh}k_fs_LR.func.gii"
+		    # metricOut - newly created file
+		    metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
 
-		# rRoiMetric - From Structural Preprocessing
-		rRoiMetric="${DownsampleFolder}/${g_subject}.R.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+		    method="ADAP_BARY_AREA"
+		    ${CARET7DIR}/wb_command \
+			    -metric-resample ${metricIn} ${currentSphere} ${newSphere} ${method} ${metricOut} \
+			    -area-surfs ${currentArea} ${newArea} \
+			    -current-roi ${roiMetric}
+	
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Make sure the medial wall is zeros"
+		    # --------------------------------------------------------------------------------
 
-		# ----------------------------------------
-		# Output File(s)
-		# ----------------------------------------
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
 
-		# ciftiOut - newly created file
-		ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
+		    # metric - From Previous Step
+		    metric="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
 
-		${CARET7DIR}/wb_command \
-			-cifti-create-dense-scalar ${ciftiOut} \
-			-volume ${volumeData} ${labelVolume} \
-			-left-metric ${lMetric} -roi-left ${lRoiMetric} \
-			-right-metric ${rMetric} -roi-right ${rRoiMetric}
+		    # mask - From Structural Preprocessing
+		    mask="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
 
-		# --------------------------------------------------------------------------------
-		log_Msg "Final step in creation of CIFTI bias field"
-		# --------------------------------------------------------------------------------
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
 
-		Mean=`fslstats ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz -k ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz -M`
+		    # metricOut - same as input metric - modifies file
+		    metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
 
-		#Someone: don't paramaterize this, it messes up Var and -var Var structure somehow
-		#MG: Not sure why unless you tried to change the math expression, question for Tim Coalson
-		${CARET7DIR}/wb_command -cifti-math "Var / ${Mean}" ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
-			-var Var ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii
-		
-		# --------------------------------------------------------------------------------
-		log_Msg "End creation of CIFTI bias field"
-		# --------------------------------------------------------------------------------
+		    ${CARET7DIR}/wb_command -metric-mask ${metric} ${mask} ${metricOut}
 
-	else
-		log_Msg "Not calculating CIFTI version of the bias field since --bc-mode=${g_bc_mode}"
-	fi
+		    # --------------------------------------------------------------------------------
+		    log_Msg "Smooth the surface bias field the same as the fMRI"
+		    # --------------------------------------------------------------------------------
+
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
+
+		    # surface - From Structural Preprocessing
+		    surface="${DownsampleFolder}/${g_subject}.${Hemisphere}.midthickness.${g_low_res_mesh}k_fs_LR.surf.gii"
+
+		    # metricIn - From Previous Step
+		    metricIn="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		    # roiMetric - roi to smooth within - From Structural Preprocessing
+		    roiMetric="${DownsampleFolder}/${g_subject}.${Hemisphere}.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
+
+		    # metricOut - same as input metric - modifies file
+		    metricOut="${ResultsFolder}/BiasField.${Hemisphere}.${g_low_res_mesh}k_fs_LR.func.gii"
+
+		    smoothingKernel="${Sigma}"
+		    ${CARET7DIR}/wb_command \
+			    -metric-smoothing ${surface} ${metricIn} ${smoothingKernel} ${metricOut} -roi ${roiMetric}
+
+     	done
+
+	    # --------------------------------------------------------------------------------
+	    log_Msg "Project bias field into subcortical CIFTI space"
+	    # --------------------------------------------------------------------------------
+	
+	    unset POSIXLY_CORRECT
+
+	    if [ 1 -eq `echo "$g_brain_ordinates_res == $g_final_fmri_res" | bc -l` ] ; then
+		    log_Msg "Using the same fMRI and grayordinates space resolution"
+		    log_Msg "Use the simple algorithm to project bias field into subcortical CIFTI space like fMRI"
+
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
+
+		    # volumeIn - From Functional Preprocessing
+		    volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+
+		    # currentParcel - From Structural Preprocessing
+		    currentParcel="${ROIFolder}/ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		    # newParcel - From Structural Preprocessing
+		    newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
+
+		    # volumeOut - newly created file
+		    volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+		    kernel="${Sigma}"
+		    ${CARET7DIR}/wb_command \
+			    -volume-parcel-resampling ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
+			    ${volumeOut} -fix-zeros
+
+	    else
+		    log_Msg "Using different fMRI and grayordinates space resolutions"
+		    log_Msg "Use the generic algorithm to project bias field into subcortical CIFTI space like fMRI"
+
+		    # ----------------------------------------
+		    # Input File(s)
+		    # ----------------------------------------
+
+		    # volumeIn - From Functional Preprocessing
+		    volumeIn="${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz"
+
+		    # currentParcel - From Structural Preprocessing
+		    currentParcel="${ResultsFolder}/ROIs.${g_final_fmri_res}.nii.gz"
+
+		    # newParcel - From Structural Preprocessing
+		    newParcel="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+		    # ----------------------------------------
+		    # Output File(s)
+		    # ----------------------------------------
+
+		    # volumeOut - newly created file
+		    volumeOut="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+		    kernel="${Sigma}"
+		    ${CARET7DIR}/wb_command \
+			    -volume-parcel-resampling-generic ${volumeIn} ${currentParcel} ${newParcel} ${kernel} \
+		     	${volumeOut} -fix-zeros
+
+	    fi
+
+	    # --------------------------------------------------------------------------------
+	    log_Msg "Create CIFTI file of bias field as was done with fMRI"
+	    # --------------------------------------------------------------------------------
+
+	    # ----------------------------------------
+	    # Input File(s)
+	    # ----------------------------------------
+
+	    # volumeData - From Previous Step
+	    volumeData="${ResultsFolder}/BiasField_AtlasSubcortical.nii.gz"
+
+	    # labelVolume - From Structural Preprocessing
+	    labelVolume="${ROIFolder}/Atlas_ROIs.${g_brain_ordinates_res}.nii.gz"
+
+	    # lMetric - Created in loop above
+	    lMetric="${ResultsFolder}/BiasField.L.${g_low_res_mesh}k_fs_LR.func.gii"
+
+	    # lRoiMetric - From Structural Preprocessing
+	    lRoiMetric="${DownsampleFolder}/${g_subject}.L.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+	    # rMetric - Created in loop above
+	    rMetric="${ResultsFolder}/BiasField.R.${g_low_res_mesh}k_fs_LR.func.gii"
+
+	    # rRoiMetric - From Structural Preprocessing
+	    rRoiMetric="${DownsampleFolder}/${g_subject}.R.atlasroi.${g_low_res_mesh}k_fs_LR.shape.gii"
+
+	    # ----------------------------------------
+	    # Output File(s)
+	    # ----------------------------------------
+
+	    # ciftiOut - newly created file
+	    ciftiOut="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii"
+
+	    ${CARET7DIR}/wb_command \
+		    -cifti-create-dense-scalar ${ciftiOut} \
+		    -volume ${volumeData} ${labelVolume} \
+		    -left-metric ${lMetric} -roi-left ${lRoiMetric} \
+		    -right-metric ${rMetric} -roi-right ${rRoiMetric}
+
+	    # --------------------------------------------------------------------------------
+	    log_Msg "Final step in creation of CIFTI bias field"
+	    # --------------------------------------------------------------------------------
+
+	    Mean=`fslstats ${ResultsFolder}/BiasField.${g_final_fmri_res}.nii.gz -k ${ResultsFolder}/${g_fmri_name}_SBRef.nii.gz -M`
+
+	    #Someone: don't paramaterize this, it messes up Var and -var Var structure somehow
+	    #MG: Not sure why unless you tried to change the math expression, question for Tim Coalson
+	    ${CARET7DIR}/wb_command -cifti-math "Var / ${Mean}" ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii \
+		    -var Var ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii
+	
+	    # --------------------------------------------------------------------------------
+	    log_Msg "End creation of CIFTI bias field"
+	    # --------------------------------------------------------------------------------
+    fi
+  fi
 
 	if [ ! ${g_wm} = "NONE" ] ; then
-
 		# --------------------------------------------------------------------------------
 		log_Msg "Create white matter timeseries related stats"
 		# --------------------------------------------------------------------------------
@@ -896,14 +934,21 @@ main()
 		${FSLDIR}/bin/fslmaths ${ROIFolder}/ROIs.${g_final_fmri_res}.nii.gz -add ${ROIFolder}/L.${g_final_fmri_res}.nii.gz -add ${ROIFolder}/R.${g_final_fmri_res}.nii.gz -dilD -dilD ${ROIFolder}/WMRegAvoid.${g_final_fmri_res}.nii.gz
 		${FSLDIR}/bin/fslmaths ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz -bin -sub ${ROIFolder}/WMRegAvoid.${g_final_fmri_res}.nii.gz -thr 1 ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz
 		rm ${ROIFolder}/L.${g_final_fmri_res}.nii.gz ${ROIFolder}/R.${g_final_fmri_res}.nii.gz ${ROIFolder}/WMRegAvoid.${g_final_fmri_res}.nii.gz
-		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_WM.txt -m ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz
-		WM="${ResultsFolder}/${g_fmri_name}_WM.txt"
+		if [ ${ReUseHighPass} = "YES" ] ; then
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_WM.txt -m ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_WM_hp.txt -m ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz
+		  WM="${ResultsFolder}/${g_fmri_name}_WM_Params"
+      echo "${ResultsFolder}/${g_fmri_name}_WM.txt" > ${WM}.txt
+      echo "${ResultsFolder}/${g_fmri_name}_WM_hp.txt" >> ${WM}.txt
+		else
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_WM.txt -m ${ROIFolder}/WMReg.${g_final_fmri_res}.nii.gz
+	  	WM="${ResultsFolder}/${g_fmri_name}_WM.txt"
+	  fi
 	else
 		WM="NONE"
 	fi
 	
 	if [ ! ${g_csf} = "NONE" ] ; then
-
 		# --------------------------------------------------------------------------------
 		log_Msg "Create CSF timeseries related stats"
 		# --------------------------------------------------------------------------------
@@ -925,22 +970,56 @@ main()
 		${FSLDIR}/bin/fslmaths ${ROIFolder}/ROIs.${g_final_fmri_res}.nii.gz -add ${ROIFolder}/L.${g_final_fmri_res}.nii.gz -add ${ROIFolder}/R.${g_final_fmri_res}.nii.gz -dilD -dilD ${ROIFolder}/CSFRegAvoid.${g_final_fmri_res}.nii.gz
 		${FSLDIR}/bin/fslmaths ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz -bin -sub ${ROIFolder}/CSFRegAvoid.${g_final_fmri_res}.nii.gz -thr 1 ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz
 		rm ${ROIFolder}/L.${g_final_fmri_res}.nii.gz ${ROIFolder}/R.${g_final_fmri_res}.nii.gz ${ROIFolder}/CSFRegAvoid.${g_final_fmri_res}.nii.gz
-		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_CSF.txt -m ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz
-		CSF="${ResultsFolder}/${g_fmri_name}_CSF.txt"
+		if [ ${ReUseHighPass} = "YES" ] ; then
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_CSF.txt -m ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_CSF_hp.txt -m ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz
+		  CSF="${ResultsFolder}/${g_fmri_name}_CSF_Params"
+      echo "${ResultsFolder}/${g_fmri_name}_CSF.txt" > ${CSF}.txt
+      echo "${ResultsFolder}/${g_fmri_name}_CSF_hp.txt" >> ${CSF}.txt
+		else
+  		${FSLDIR}/bin/fslmeants -i ${ResultsFolder}/${g_fmri_name}.nii.gz -o ${ResultsFolder}/${g_fmri_name}_CSF.txt -m ${ROIFolder}/CSFReg.${g_final_fmri_res}.nii.gz
+	  	CSF="${ResultsFolder}/${g_fmri_name}_CSF.txt"
+	  fi
 	else
 		CSF="NONE"
 	fi
+  
+  if [ ${ReUseHighPass} = "YES" ] ; then
+    motionparameters="${ResultsFolder}/Movement_Regressors_Params"
+    echo "${FIXFolder}/mc/prefiltered_func_data_mcf_conf.nii.gz" > ${motionparameters}.txt
+    echo "${FIXFolder}/mc/prefiltered_func_data_mcf_conf_hp.nii.gz" >> ${motionparameters}.txt
+    fslval ${FIXFolder}/mc/prefiltered_func_data_mcf_conf.nii.gz dim1 >> ${motionparameters}.txt
+    fslval ${FIXFolder}/mc/prefiltered_func_data_mcf_conf.nii.gz dim4 >> ${motionparameters}.txt
+    echo "${ResultsFolder}/Movement_Regressors_demean.txt" >> ${motionparameters}.txt
+  else
+   	motionparameters="${ResultsFolder}/Movement_Regressors" #No .txt
+  fi
 
-	motionparameters="${ResultsFolder}/Movement_Regressors" #No .txt
-	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
+  if [ ${ReUseHighPass} = "YES" ] ; then
+	  TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name}_hp${g_high_pass} pixdim4`  
+  else  
+	  TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
+  fi
 	ICAs="${ICAFolder}/melodic_mix"
 	if [ -e ${FIXFolder}/HandNoise.txt ] ; then
 		noise="${FIXFolder}/HandNoise.txt"
 	else
 		noise="${FIXFolder}/.fix"
 	fi
-	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
-	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
+	
+	if [ ${ReUseHighPass} = "YES" ] ; then
+    dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
+    echo "${ResultsFolder}/${g_fmri_name}_Atlas${RegString}" > ${dtseries}.txt
+    echo "${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_hp${g_high_pass}" >> ${dtseries}.txt
+  else
+  	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
+  fi
+
+	if [ ! "${g_bc_mode}" = "NONE" ]; then
+  	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii"
+  else
+    bias="NONE"
+  fi
 	if [ ${g_bc_mode} = "REVERT" ] ; then
 	  g_bc_mode="REVERT"
 	elif [ ${g_bc_mode} = "NONE" ] ; then
@@ -948,6 +1027,44 @@ main()
 	elif [ ${g_bc_mode} = "CORRECT" ] ; then
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
+
+  if [ ! ${g_ticat} = "NONE" ] ; then
+    tICAtNoiseList="${g_ticat}"
+    tICAtcs="${ResultsFolder}/`basename ${g_ticat}`"
+    sICAtcs="${ResultsFolder}/sICAtcs.txt"
+    if [ ! ${g_ticats} = "NONE" ] ; then
+      tICAtsNoiseList="${g_ticats}"
+    else
+      tICAtsNoiseList="NONE"
+    fi
+  else
+    tICANoiseList="NONE"
+    tICAtcs="NONE"
+    sICAtcs="NONE"
+    tICAtsNoiseList="NONE"
+  fi
+
+  if [ ! ${g_physio} = "FALSE" ] ; then
+  	if [ ${ReUseHighPass} = "YES" ] ; then
+  	  Physio="${FIXFolder}/physio/${g_fmri_name}_Params"
+  	  echo "${FIXFolder}/physio/prefiltered_func_data_physio_conf.nii.gz" > ${Physio}.txt
+  	  echo "${FIXFolder}/physio/prefiltered_func_data_physio_conf_hp.nii.gz" >> ${Physio}.txt
+  	  echo "${FIXFolder}/physio/prefiltered_func_data_physio_mask_conf.nii.gz" >> ${Physio}.txt
+  	  echo "${FIXFolder}/physio/prefiltered_func_data_physio_raw_conf.txt" >> ${Physio}.txt
+  	  echo "${FIXFolder}/physio/prefiltered_func_data_physio_mask_raw_conf.txt" >> ${Physio}.txt
+  	  #echo "${ResultsFolder}/Movement_Regressors_demean.txt" >> ${Physio}.txt
+    else
+      if [ -e ${ResultsFolder}/${g_fmri_name}_PNM ] ; then
+        Physio="${ResultsFolder}/${g_fmri_name}_PNM/${g_fmri_name}_PNM_files.txt"
+        echo "${ResultsFolder}/${g_fmri_name}_PNM/${g_fmri_name}_PNM_evs.txt" > ${ResultsFolder}/${g_fmri_name}_PNM/${g_fmri_name}_PNM_files.txt
+        echo "${ResultsFolder}/${g_fmri_name}_PNM/${g_fmri_name}_PNM_resp.txt" >> ${ResultsFolder}/${g_fmri_name}_PNM/${g_fmri_name}_PNM_files.txt
+      else
+        Physio="${g_physio}"
+      fi
+    fi
+  else
+    Physio="${g_physio}"
+  fi
 
 	RssFolder="${ResultsFolder}/RestingStateStats"
 	RssPrefix="${RssFolder}/${g_fmri_name}_Atlas${RegString}"
@@ -959,23 +1076,11 @@ main()
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
 
-			# TBD: Use environment variable instead of fixed path
-			if [ "${CLUSTER}" = "1.0" ]; then
-				matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-			elif [ "${CLUSTER}" = "2.0" ]; then
-				matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
-			else
-				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-				log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-				log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-				log_Msg "ERROR: using an environment variable's value."
-			fi
+			# TBD: Use environment variable instead of fixed path?
+			matlab_compiler_runtime="/export/matlab/R2013a/MCR"
 
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
-			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
+			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}' '${tICAtNoiseList}' '${tICAtcs}' '${tICAtsNoiseList}' '${sICAtcs}' '${Physio}' '${ReUseHighPass}'"
 
 			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
@@ -1005,11 +1110,12 @@ main()
 			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${matlab_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}','${tICAtNoiseList}','${tICAtcs}','${tICAtsNoiseList}','${sICAtcs}','${Physio}','${ReUseHighPass}');" >> ${matlab_script_file_name}
 
 			log_Msg "About to execute the following Matlab script"
 
 			cat ${matlab_script_file_name}
+			#read -p "Press enter to continue"
 			cat ${matlab_script_file_name} | matlab -nodisplay -nosplash
 
 			;;
@@ -1029,7 +1135,7 @@ main()
 			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${octave_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${octave_script_file_name}
+			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}','${tICAtNoiseList}','${tICAtcs}','${tICAtsNoiseList}','${Physio}','${ReUseHighPass}');" >> ${octave_script_file_name}
 
 			log_Msg "About to execute the following Octave script"
 
@@ -1047,11 +1153,20 @@ main()
 	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
 	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
 	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
+	mv --verbose ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}_betas.dscalar.nii ${ResultsFolder}
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
 	fi
 
+	if [ ${ReUseHighPass} = "YES" ] ; then
+    rm ${dtseries}.txt
+    rm ${motionparameters}.txt
+    rm ${WM}.txt
+    rm ${CSF}.txt
+    rm ${Physio}.txt
+  fi
+  
 	Names=`cat ${dtseries}_${g_out_string}.txt | head -1 | sed 's/,/ /g'`
 	
 	i=1
@@ -1117,14 +1232,15 @@ main()
 	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
 	# --------------------------------------------------------------------------------
 
-	mv \
+	cp \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
 
-	mv_if_exists \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
-
+	if [ ! "${g_bc_mode}" = "NONE" ]; then
+	  cp \
+		  ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_bias.dscalar.nii \
+		  ${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_bias.dscalar.nii
+  fi
 	# --------------------------------------------------------------------------------
 	log_Msg "Remove unneeded intermediate files"
 	# --------------------------------------------------------------------------------
