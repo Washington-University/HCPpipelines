@@ -56,8 +56,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject=<subject ID> (e.g. 100610)
    --fmri-names=<fMRI names> an '@' symbol separated list of fMRI scan names (no whitespace)
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_RETCCW_7T_AP/tfMRI_RETCCW_7T_AP.nii.gz@/path/to/study/100610/MNINonLinear/Results/tfMRI_RETCW_7T_PA/tfMRI_RETCW_7T_PA.nii.gz)
-   --concat-fmri-name=<concatenated fMRI scan file name>
-     (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_7T_RETCCW_AP_RETCW_PA/tfMRI_7T_RETCCW_AP_RETCW_PA.nii.gz)
+   --concat-fmri-name=<root name of the concatenated fMRI scan file> [Do not include path, extension, or any 'hp' string]
    --high-pass=<high-pass filter used in multi-run ICA+FIX>
    [--reg-name=<registration name>] (e.g. MSMAll) defaults to NONE
    [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
@@ -83,7 +82,7 @@ get_options()
 	unset p_StudyFolder      # ${1}
 	unset p_Subject          # ${2}
 	unset p_fMRINames        # ${3}
-	unset p_ConcatfMRIName   # ${4}
+	unset p_ConcatName   # ${4}
 	unset p_HighPass         # ${5}
 	p_RegName="NONE"         # ${6}
 	unset p_LowResMesh       # ${7}
@@ -125,7 +124,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			--concat-fmri-name=*)
-				p_ConcatfMRIName=${argument#*=}
+				p_ConcatName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
@@ -179,11 +178,11 @@ get_options()
 		log_Msg "fMRI Names: ${p_fMRINames}"
 	fi
 
-	if [ -z "${p_ConcatfMRIName}" ]; then
+	if [ -z "${p_ConcatName}" ]; then
 		log_Err "Concatenated fMRI scan name (--concat-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "Concatenated fMRI scan name: ${p_ConcatfMRIName}"
+		log_Msg "Concatenated fMRI scan name: ${p_ConcatName}"
 	fi
 	
 	if [ -z "${p_HighPass}" ]; then
@@ -325,9 +324,11 @@ main()
 	local StudyFolder="${1}"
 	local Subject="${2}"
 	local fMRINames="${3}"
-	local ConcatfMRINameOnly="${4}"
-	#script used to take absolute paths, so generate the absolute path and leave the old code
-	local ConcatfMRIName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatfMRINameOnly}/${ConcatfMRINameOnly}.nii.gz"
+	local ConcatNameOnly="${4}"
+	# Make sure that ${4} is indeed without path or extension
+	ConcatNameOnly=$(basename $($FSLDIR/bin/remove_ext $ConcatNameOnly))
+	#hcp_fix_multi-run takes absolute paths, so generate the absolute path and reuse that code
+	local ConcatName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatNameOnly}/${ConcatNameOnly}"
 	local HighPass="${5}"
 	local RegName="${6}"
 
@@ -369,7 +370,7 @@ main()
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
 	log_Msg "fMRINames: ${fMRINames}"
-	log_Msg "ConcatfMRIName: ${ConcatfMRIName}"
+	log_Msg "ConcatName: ${ConcatName}"
 	log_Msg "HighPass: ${HighPass}"
 	log_Msg "RegName: ${RegName}"
 	log_Msg "LowResMesh: ${LowResMesh}"
@@ -407,7 +408,7 @@ main()
 	local DoVol=0
 	local fixlist=".fix"
     # if we have a hand classification and no regname, do volume
-	if have_hand_reclassification ${StudyFolder} ${Subject} `basename ${ConcatfMRIName}` ${HighPass}
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${ConcatNameOnly} ${HighPass}
 	then
 		fixlist="HandNoise.txt"
 		#TSC: if regname (which is surface) isn't NONE, assume the hand classification was previously used with volume data?
@@ -421,9 +422,6 @@ main()
 	
 	local fmris=${fMRINames//@/ } # replaces the @ that combines the filenames with a space
 	log_Msg "fmris: ${fmris}"
-
-	local ConcatName=${ConcatfMRIName}
-	log_Msg "ConcatName: ${ConcatName}"
 
 	DIR=`pwd`
 	log_Msg "PWD : $DIR"
@@ -533,30 +531,32 @@ main()
 
 	AlreadyHP="-1"
 
-    if [[ ! -f `remove_ext ${ConcatName}`.nii.gz ]]
+	ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
+	
+    if [[ ! -f ${ConcatNameNoExt}.nii.gz ]]
     then
-        fslmerge -tr `remove_ext ${ConcatName}`_demean ${NIFTIvolMergeSTRING} $tr
-        fslmerge -tr `remove_ext ${ConcatName}`_hp${hp}_vn ${NIFTIvolhpVNMergeSTRING} $tr
-        fslmerge -t  `remove_ext ${ConcatName}`_SBRef ${SBRefVolSTRING}
-        fslmerge -t  `remove_ext ${ConcatName}`_mean ${MeanVolSTRING}
-        fslmerge -t  `remove_ext ${ConcatName}`_vn ${VNVolSTRING}
-        fslmaths `remove_ext ${ConcatName}`_SBRef -Tmean `remove_ext ${ConcatName}`_SBRef
-        fslmaths `remove_ext ${ConcatName}`_mean -Tmean `remove_ext ${ConcatName}`_mean
-        fslmaths `remove_ext ${ConcatName}`_vn -Tmean `remove_ext ${ConcatName}`_vn
-        fslmaths `remove_ext ${ConcatName}`_hp${hp}_vn -mul `remove_ext ${ConcatName}`_vn `remove_ext ${ConcatName}`_hp${hp} 
-        fslmaths `remove_ext ${ConcatName}`_demean -add `remove_ext ${ConcatName}`_mean `remove_ext ${ConcatName}`
+        fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
+        fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vn ${NIFTIvolhpVNMergeSTRING} $tr
+        fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
+        fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
+        fslmerge -t  ${ConcatNameNoExt}_vn ${VNVolSTRING}
+        fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
+        fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean
+        fslmaths ${ConcatNameNoExt}_vn -Tmean ${ConcatNameNoExt}_vn
+        fslmaths ${ConcatNameNoExt}_hp${hp}_vn -mul ${ConcatNameNoExt}_vn ${ConcatNameNoExt}_hp${hp} 
+        fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
         
-        fslmaths `remove_ext ${ConcatName}`_SBRef -bin `remove_ext ${ConcatName}`_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
+        fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
     fi
     
-    if [[ ! -f `remove_ext ${ConcatName}`_Atlas${RegString}_hp$hp.dtseries.nii ]]
+    if [[ ! -f ${ConcatNameNoExt}_Atlas${RegString}_hp$hp.dtseries.nii ]]
     then
-        ${FSL_FIX_WBC} -cifti-merge `remove_ext ${ConcatName}`_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
-        ${FSL_FIX_WBC} -cifti-average `remove_ext ${ConcatName}`_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
-        ${FSL_FIX_WBC} -cifti-average `remove_ext ${ConcatName}`_Atlas${RegString}_vn.dscalar.nii ${VNCIFTISTRING}
-        ${FSL_FIX_WBC} -cifti-math "TCS + MEAN" `remove_ext ${ConcatName}`_Atlas${RegString}.dtseries.nii -var TCS `remove_ext ${ConcatName}`_Atlas${RegString}_demean.dtseries.nii -var MEAN `remove_ext ${ConcatName}`_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
-        ${FSL_FIX_WBC} -cifti-merge `remove_ext ${ConcatName}`_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
-        ${FSL_FIX_WBC} -cifti-math "TCS * VN" `remove_ext ${ConcatName}`_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS `remove_ext ${ConcatName}`_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN `remove_ext ${ConcatName}`_Atlas${RegString}_vn.dscalar.nii -select 1 1 -repeat
+        ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
+        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
+        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_vn.dscalar.nii ${VNCIFTISTRING}
+        ${FSL_FIX_WBC} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas${RegString}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+        ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
+        ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_vn.dscalar.nii -select 1 1 -repeat
     fi
 	
 	ConcatFolder=`dirname ${ConcatName}`
@@ -746,7 +746,7 @@ if [[ ${1} == --* ]]; then
 
 	# Invoke main functionality
 	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}           ${7}              ${8}                ${9}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatfMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
 
 else
 	# Positional parameters are used
