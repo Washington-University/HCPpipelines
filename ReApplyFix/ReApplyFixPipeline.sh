@@ -334,13 +334,6 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 
-	#fix_3_clean looks at an environment variable for where to get ciftiopen, etc from, so for interpreted modes, it sources the fix settings.sh just for that step, which should point to a working copy
-	export FSL_FIX_WBC="${Caret7_Command}"
-	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
-
-
 	# Make appropriate files if they don't exist
 
 	local aggressive=0
@@ -348,14 +341,13 @@ main()
 
 	local DoVol=0
 	local fixlist=".fix"
-	# if we have a hand classification and no regname, do volume
+	# if we have a hand classification and no regname, reapply fix to the volume as well
 	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass}
 	then
 		fixlist="HandNoise.txt"
-		#TSC: if regname (which is surface) isn't NONE, assume the hand classification was previously used with volume data?
+		#TSC: if regname (which applies to the surface) isn't NONE, assume the hand classification was previously already applied to the volume data
 		if [[ "${RegName}" == "NONE" ]]
 		then
-			#WARNING: fix 1.067 and earlier doesn't actually look at the value of DoVol - if the argument exists, it doesn't do volume
 			DoVol=1
 		fi
 	fi
@@ -388,6 +380,25 @@ main()
 	else
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly."
 	fi
+
+	# For interpreted modes, make sure that fix_3_clean has access to the functions it needs
+	# (e.g., read_avw, save_avw, ciftiopen, ciftisave)
+	# Several environment variables are set in FSL_FIXDIR/settings.sh, which is sourced below for interpreted modes
+	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
+
+	# MPH: FSL_FIX_WBC is needed by fix_3_clean, and is set via FSL_FIXDIR/settings.sh for interpreted modes,
+	# so the following is probably only relevant for compiled matlab mode.
+	# [Note that FSL_FIXDIR/settings.sh doesn't currently check whether FSL_FIX_WBC is already defined, and thus
+	# the value specified for FSL_FIX_WBC in FSL_FIXDIR/settings.sh will take precedence for interpreted modes].
+	export FSL_FIX_WBC="${Caret7_Command}"
+
+	#WARNING: fix_3_clean doesn't actually do anything different based on the value of DoVol (its 5th argument).
+	# Rather, if a 5th argument is present, fix_3_clean does NOT apply cleanup to the volume, *regardless* of whether
+	# that 5th argument is 0 or 1 (or even a non-sensical string such as 'foo').
+	# It is for that reason that the code below needs to use separate calls to fix_3_clean, with and without DoVol
+	# as an argument, rather than simply passing in the value of DoVol as set within this script.
+	# Not sure if/when this non-intuitive behavior of fix_3_clean will change, but this is accurate as of fix1.067
 
 	log_Msg "About to run fix_3_clean"
 
