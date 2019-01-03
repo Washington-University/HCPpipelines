@@ -469,16 +469,23 @@ M_PROG
 			;;
 	esac
 
+	# Rename some of the outputs from fix_3_clean.
+	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
+	# So check whether those files exist before moving/renaming them
 	fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
 	fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-        /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	fi
+	if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ] ; then
+		/bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
 
 	if (( DoVol )) ; then
 		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
-		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vnf
+		if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ] ; then
+			$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
+		fi
 	fi
 
 	cd ${DIR}
