@@ -54,18 +54,18 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID> (e.g. 100610)
-   --fmri-names=<fMRI Names> @-separated list of fMRI file names 
+   --fmri-names=<fMRI names> an '@' symbol separated list of fMRI scan names (no whitespace)
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_RETCCW_7T_AP/tfMRI_RETCCW_7T_AP.nii.gz@/path/to/study/100610/MNINonLinear/Results/tfMRI_RETCW_7T_PA/tfMRI_RETCW_7T_PA.nii.gz)
    --concat-fmri-name=<concatenated fMRI scan file name>
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_7T_RETCCW_AP_RETCW_PA/tfMRI_7T_RETCCW_AP_RETCW_PA.nii.gz)
-   --high-pass=<num> the HighPass variable used in Multi-run ICA+FIX (e.g. 2000)
+   --high-pass=<high-pass filter used in multi-run ICA+FIX>
    [--reg-name=<registration name>] (e.g. MSMAll)
+   [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
+   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+     0 = Use compiled MATLAB
+     1 = Use interpreted MATLAB
+     2 = Use interpreted Octave
    --motion-regression={TRUE, FALSE}
-  [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
-  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
-    0 = Use compiled MATLAB
-    1 = Use interpreted MATLAB
-    2 = Use interpreted Octave
 
 EOF
 }
