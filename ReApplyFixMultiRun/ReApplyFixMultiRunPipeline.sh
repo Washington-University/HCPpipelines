@@ -280,16 +280,16 @@ have_hand_reclassification()
 
 demeanMovementRegressors() {
 	In=${1}
-	log_Debug "demeanMovementRegressors: In: ${In}"
+	log_Debug_Msg "demeanMovementRegressors: In: ${In}"
 	Out=${2}
-	log_Debug "demeanMovementRegressors: Out: ${Out}"
-	log_Debug "demeanMovementRegressors: getting nCols"
+	log_Debug_Msg "demeanMovementRegressors: Out: ${Out}"
+	log_Debug_Msg "demeanMovementRegressors: getting nCols"
 	nCols=$(head -1 ${In} | wc -w)
 	
-	log_Debug "demeanMovementRegressors: nCols: ${nCols}"
-	log_Debug "demeanMovementRegressors: getting nRows"
+	log_Debug_Msg "demeanMovementRegressors: nCols: ${nCols}"
+	log_Debug_Msg "demeanMovementRegressors: getting nRows"
 	nRows=$(wc -l < ${In})
-	log_Debug "demeanMovementRegressors: nRows: ${nRows}"
+	log_Debug_Msg "demeanMovementRegressors: nRows: ${nRows}"
 	
 	AllOut=""
 	c=1
@@ -327,7 +327,7 @@ main()
 	local ConcatNameOnly="${4}"
 	# Make sure that ${4} is indeed without path or extension
 	ConcatNameOnly=$(basename $($FSLDIR/bin/remove_ext $ConcatNameOnly))
-	#hcp_fix_multi-run takes absolute paths, so generate the absolute path and reuse that code
+	#script used to take absolute paths, so generate the absolute path and leave the old code
 	local ConcatName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatNameOnly}/${ConcatNameOnly}"
 	local HighPass="${5}"
 	local RegName="${6}"
@@ -429,7 +429,13 @@ main()
 
 	echo $fmris | tr ' ' '\n' #separates paths separated by ' '
 
-	#Loops over the files and does highpass to each of them
+	## ---------------------------------------------------------------------------
+	## Preparation (highpass) on the individual runs
+	## ---------------------------------------------------------------------------
+
+	#Loops over the runs and do highpass on each of them
+	log_Msg "Looping over files and doing highpass to each of them"
+	
     NIFTIvolMergeSTRING=""
     NIFTIvolhpVNMergeSTRING=""
     SBRefVolSTRING=""
@@ -444,52 +450,60 @@ main()
     MovementTXTMergeSTRING=""
 
 	for fmriname in $fmris ; do
+		# Make sure that fmriname is indeed without path or extension
+		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 	    #script used to take absolute paths, so generate the absolute path and leave the old code
 	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
-    	log_Msg "Top of loop through fmris: fmri: ${fmri}"
-	    NIFTIvolMergeSTRING=`echo "${NIFTIvolMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_demean "`
-	    NIFTIvolhpVNMergeSTRING=`echo "${NIFTIvolhpVNMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp${hp}_vn "`
-	    SBRefVolSTRING=`echo "${SBRefVolSTRING}$($FSLDIR/bin/remove_ext $fmri)_SBRef "`
-	    MeanVolSTRING=`echo "${MeanVolSTRING}$($FSLDIR/bin/remove_ext $fmri)_mean "`
-    	VNVolSTRING=`echo "${VNVolSTRING}$($FSLDIR/bin/remove_ext $fmri)_vn "`
-		CIFTIMergeSTRING=`echo "${CIFTIMergeSTRING} -cifti $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_demean.dtseries.nii"`
-	    CIFTIhpVNMergeSTRING=`echo "${CIFTIhpVNMergeSTRING} -cifti $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_hp${hp}_vn.dtseries.nii"`
-	    MeanCIFTISTRING=`echo "${MeanCIFTISTRING} -cifti $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii "`
-    	VNCIFTISTRING=`echo "${VNCIFTISTRING} -cifti $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_vn.dscalar.nii "`
-    	MovementNIFTIMergeSTRING=`echo "${MovementNIFTIMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp$hp.ica/mc/prefiltered_func_data_mcf_conf.nii.gz "`
-    	MovementNIFTIhpMergeSTRING=`echo "${MovementNIFTIhpMergeSTRING}$($FSLDIR/bin/remove_ext $fmri)_hp$hp.ica/mc/prefiltered_func_data_mcf_conf_hp.nii.gz "`
+
+		log_Msg "Top of loop through fmris: fmri: ${fmri}"
+
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+
+		# Create necessary strings for merging across runs
+		# N.B. Some of these files don't exist yet, and are about to get created
+		NIFTIvolMergeSTRING+="${fmriNoExt}_demean "
+		NIFTIvolhpVNMergeSTRING+="${fmriNoExt}_hp${hp}_vnts "  #These are the individual run, VN'ed *time series*
+		SBRefVolSTRING+="${fmriNoExt}_SBRef "
+		MeanVolSTRING+="${fmriNoExt}_mean "
+		VNVolSTRING+="${fmriNoExt}_hp${hp}_vn "  #These are the individual run, VN'ed NIFTI *maps* (created by functionhighpassandvariancenormalize)
+		CIFTIMergeSTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii "
+		CIFTIhpVNMergeSTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii "
+		MeanCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii "
+		VNCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii "  #These are the individual run, VN'ed CIFTI *maps* (created by functionhighpassandvariancenormalize)
+		MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz "
+		MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp.nii.gz "
+
 		cd `dirname $fmri`
-		fmri=`basename $fmri`
-		fmri=`$FSLDIR/bin/imglob $fmri`
-		#[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
-		echo $fmri
+		fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
+		fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
+		log_Msg "fmri: $fmri"
+		[ `imtest $fmri` != 1 ] && echo Invalid FMRI file && exit 1
+
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`
-		echo $fmri
-		echo $tr
+		log_Msg "tr: $tr"
 		log_Msg "processing FMRI file $fmri with highpass $hp"
-    
-		if [[ ! -f ${fmri}_demean.nii.gz ]]
-		then
+
+		#Demean movement regressors, volumes, and CIFTI data
+        if [[ ! -f Movement_Regressors_demean.txt ]]; then
+    	    demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
+	    fi
+	    MovementTXTMergeSTRING+="$(pwd)/Movement_Regressors_demean.txt "
+	    
+		if [[ ! -f ${fmri}_demean.nii.gz ]]; then
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
 	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
         fi
 
-        if [[ ! -f Movement_Regressors_demean.txt ]]
-        then
-    	    demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
-	    fi
-	    MovementTXTMergeSTRING=`echo "${MovementTXTMergeSTRING}$(pwd)/Movement_Regressors_demean.txt "`
-	    
-	    if [[ ! -f $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_demean.dtseries.nii ]]
-	    then
-	        ${FSL_FIX_WBC} -cifti-reduce $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}.dtseries.nii MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii
-	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_demean.dtseries.nii -var TCS $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}.dtseries.nii -var MEAN $($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+	    if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
+	        ${FSL_FIX_WBC} -cifti-reduce ${fmriNoExt}_Atlas${RegString}.dtseries.nii MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii
+	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
         fi
 
-        if [[ ! -f "$($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
-              ! -f "$($FSLDIR/bin/remove_ext $fmri)_Atlas${RegString}_vn.dscalar.nii" || \
-              ! -f "$($FSLDIR/bin/remove_ext $fmri)_hp${hp}_vn.nii.gz" || \
-              ! -f "$($FSLDIR/bin/remove_ext $fmri)_vn.nii.gz" ]]
+		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
+        if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
+              ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
+              ! -f "${fmriNoExt}_hp${hp}_vnts.nii.gz" || \
+              ! -f "${fmriNoExt}_hp${hp}_vn.nii.gz" ]]
         then
             if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
                 rm .fix.functionhighpassandvariancenormalize.log
@@ -511,84 +525,118 @@ main()
 	    fi
 
         log_Msg "Dims: $(cat ${fmri}_dims.txt)"
-        
-        if [[ ! -f $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf.nii.gz ]]
-        then
-	        fslmaths $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
-	        fslmaths $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
-	        $FSLDIR/bin/imrm $(pwd)/${fmri}_hp$hp.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+
+		# Demean the movement regressors
+        if [[ ! -f $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz ]]; then
+	        fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	        fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
+	        $FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	    fi
 
-	    fmri=${fmri}_hp$hp
-	    #cd ${fmri}.ica
-	    # Per https://github.com/Washington-University/Pipelines/issues/60, the following line doesn't appear to be necessary
-	    #$FSLDIR/bin/imln ../$fmri filtered_func_data
-	    #cd ..
 	    log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 
-	done
-	###END LOOP
+	done  ###END LOOP (for fmriname in $fmris; do)
 
-	AlreadyHP="-1"
+	## ---------------------------------------------------------------------------
+	## Concatenate the individual runs and create necessary files
+	## ---------------------------------------------------------------------------
 
 	ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 	
-    if [[ ! -f ${ConcatNameNoExt}.nii.gz ]]
-    then
+    if [[ ! -f ${ConcatNameNoExt}.nii.gz ]]; then
+		# Merge volumes from the individual runs
         fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
-        fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vn ${NIFTIvolhpVNMergeSTRING} $tr
+        fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
         fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
         fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
-        fslmerge -t  ${ConcatNameNoExt}_vn ${VNVolSTRING}
+        fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}
+		# Average across runs
         fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
-        fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean
-        fslmaths ${ConcatNameNoExt}_vn -Tmean ${ConcatNameNoExt}_vn
-        fslmaths ${ConcatNameNoExt}_hp${hp}_vn -mul ${ConcatNameNoExt}_vn ${ConcatNameNoExt}_hp${hp} 
-        fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
-        
+        fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean  # "Grand" mean across runs
+		fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
+		  # Preceeding line adds back in the "grand" mean; resulting file not used below, but want this concatenated version (without HP or VN) to exist
+        fslmaths ${ConcatNameNoExt}_hp${hp}_vn -Tmean ${ConcatNameNoExt}_hp${hp}_vn  # Mean VN map across the individual runs
+        fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp} 
+          # Preceeding line restores the mean VN map; The resulting TCS becomes the input to a 2nd pass of VN
         fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
     fi
-    
-    if [[ ! -f ${ConcatNameNoExt}_Atlas${RegString}_hp$hp.dtseries.nii ]]
-    then
+
+	# Same thing for the CIFTI
+    if [[ ! -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
         ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
         ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
-        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_vn.dscalar.nii ${VNCIFTISTRING}
         ${FSL_FIX_WBC} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas${RegString}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
         ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
-        ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_vn.dscalar.nii -select 1 1 -repeat
+        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
+        ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
     fi
 	
-	ConcatFolder=`dirname ${ConcatName}`
+	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
+	log_Msg "Removing the concatenated VN'ed time series"
+	$FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
+	/bin/rm -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
+	# Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
+	# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmrihp file
+	# during the "2nd pass" VN (below)
+	#$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
+
+	# Nor do we need the concatenated demeaned time series (either volume or CIFTI)
+	log_Msg "Removing the concatenated demeaned time series"
+	$FSLDIR/bin/imrm ${ConcatNameNoExt}_demean
+	/bin/rm -f ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii
+
+	# Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
+	for fmri in $fmris ; do
+		log_Msg "Removing the individual run VN'ed and demeaned time series for ${fmri}"
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+		$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}_vnts
+		$FSLDIR/bin/imrm ${fmriNoExt}_demean
+		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
+		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii
+
+		# Following removes the individual run hp'ed time series
+		# MPH, 12/21/2018: Leaving them for now
+		#	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
+		#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
+		#	/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
+	done
+
+	## ---------------------------------------------------------------------------
+	## Housekeeping related to files expected for fix_3_clean
+	## ---------------------------------------------------------------------------
+
+	local ConcatFolder=`dirname ${ConcatName}`
 	cd ${ConcatFolder}
 	##Check to see if concatination occured
 
-	local concat_fmri_orig=`basename $(remove_ext ${ConcatName})`
-	local concatfmri=`basename $(remove_ext ${ConcatName})`_hp$hp
+	local concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
+	local concatfmrihp=${concatfmri}_hp${hp}
 
-    #this directory should exist and not be empty
-	cd `remove_ext ${concatfmri}`.ica
+    #this directory should exist and not be empty (i.e., melodic has already been run)
+	cd ${concatfmrihp}.ica
 
-	pwd
-	echo ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii
+	#This is the concated volume time series from the 1st pass VN, with the mean VN map multiplied back in
+	${FSLDIR}/bin/imrm filtered_func_data
+	${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
 
-	if [[ -f ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii ]] ; then
-		log_Msg "FOUND FILE: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
+	#This is the concated CIFTI time series from the 1st pass VN, with the mean VN map multiplied back in
+	if [[ -f ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii ]] ; then
+		log_Msg "FOUND FILE: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 		log_Msg "Performing imln"
 
 		rm -f Atlas.dtseries.nii
-		$FSLDIR/bin/imln ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii Atlas.dtseries.nii
+		$FSLDIR/bin/imln ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii Atlas.dtseries.nii
 		
 		log_Msg "START: Showing linked files"
-		ls -l ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii
+		ls -l ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii
 		ls -l Atlas.dtseries.nii
 		log_Msg "END: Showing linked files"
 	else
-		log_Warn "FILE NOT FOUND: ../${concat_fmri_orig}_Atlas${RegString}_hp$hp.dtseries.nii"
+		log_Err_Abort "FILE NOT FOUND: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 	fi
 	
-	${FSLDIR}/bin/imln ../${concatfmri} filtered_func_data
-    
+	AlreadyHP="-1"
+
 	case ${MatlabRunMode} in
 		0)
 			# Use Compiled Matlab
@@ -602,7 +650,7 @@ main()
 			then
     			matlab_function_arguments+=("${DoVol}")
 			fi
-			local matlab_logfile="${StudyFolder}/${Subject}_${concat_fmri_orig}_${HighPass}${RegString}.matlab.log"
+			local matlab_logfile="${StudyFolder}/${Subject}_${concatfmri}_${HighPass}${RegString}.matlab.log"
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -653,32 +701,47 @@ M_PROG
 
 	cd ..
 
-	pwd
-	echo ${concatfmri}.ica/Atlas_clean.dtseries.nii
-	
-	if [[ -f ${concatfmri}.ica/filtered_func_data_clean.nii.gz ]]
+	## ---------------------------------------------------------------------------
+	## Rename some files (relative to the default names coded in fix_3_clean.m)
+	## ---------------------------------------------------------------------------
+
+	if [[ -f ${concatfmrihp}.ica/filtered_func_data_clean.nii.gz ]]
 	then
-	    $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean ${concatfmri}_clean
-        $FSLDIR/bin/immv ${concatfmri}.ica/filtered_func_data_clean_vn ${concatfmri}_clean_vnf
+	    $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
+        $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
 	fi
 
-	if [[ -f ${concatfmri}.ica/Atlas_clean.dtseries.nii ]] ; then
-		/bin/mv ${concatfmri}.ica/Atlas_clean.dtseries.nii ${concat_fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-		/bin/mv ${concatfmri}.ica/Atlas_clean_vn.dscalar.nii ${concat_fmri_orig}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	if [[ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]] ; then
+		/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+		/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
+
+	## ---------------------------------------------------------------------------
+	## Split the cleaned volume and CIFTI back into individual runs.
+	## ---------------------------------------------------------------------------
+
+	## The cleaned volume and CIFTI have no mean.
+	## The time series of the individual runs were variance normalized via the 1st pass through functionhighpassandvariancenormalize.
+	## The mean VN map (across runs) was then multiplied into the concatenated time series, and that became the input to FIX.
+	## We now reverse that process.
+	## i.e., the mean VN (across runs) is divided back out, and the VN map for the individual run multiplied back in.
+	## Then the mean is added back in to return the timeseries to its original state minus the noise (as estimated by FIX).
 	
 	Start="1"
 	for fmriname in $fmris ; do
+	    # Make sure that fmriname is indeed without path or extension
+		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 	    #script used to take absolute paths, so generate the absolute path and leave the old code
 	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
-		NumTPS=`${FSL_FIX_WBC} -file-information $(remove_ext ${fmri})_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+		NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
 	    Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	    log_Msg "Start=${Start} Stop=${Stop}"
 	
-	    log_Debug_Msg "cifti merging"
-	    cifti_out=`remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	    ${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concat_fmri_orig}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	    ${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" `remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii -var TCS `remove_ext ${fmri}`_Atlas${RegString}_hp${hp}_clean.dtseries.nii -var VNA `remove_ext ${concat_fmri_orig}`_Atlas${RegString}_vn.dscalar.nii -select 1 1 -repeat -var VN `remove_ext ${fmri}`_Atlas${RegString}_vn.dscalar.nii -select 1 1 -repeat -var Mean `remove_ext ${fmri}`_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+	    log_Debug_Msg "Splitting cifti back into individual runs"
+	    cifti_out=${fmriNoExt}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	    ${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	    ${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 
 	    readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	    touch ${readme_for_cifti_out}
@@ -686,19 +749,37 @@ M_PROG
 	    echo "${short_cifti_out} was generated by applying \"multi-run FIX\" (using 'ReApplyFixPipelineMultiRun.sh')" >> ${readme_for_cifti_out}
 	    echo "across the following individual runs:" >> ${readme_for_cifti_out}
 	    for readme_fmri_name in ${fmris} ; do
-    	    #script used to take absolute paths, so generate the absolute path and leave the old code
+    	    # Make sure that readme_fmri_name is indeed without path or extension
+			readme_fmri_name=$(basename $($FSLDIR/bin/remove_ext $readme_fmri_name))
+			#script used to take absolute paths, so generate the absolute path and leave the old code
     	    readme_fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name}.nii.gz"
 		    echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	    done
 		
 		if (( DoVol == 1 ))
 		then
-	        log_Debug_Msg "volume merging"
-	        ${FSL_FIX_WBC} -volume-merge `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -volume ${concatfmri}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-	        fslmaths `remove_ext ${fmri}`_hp${hp}_clean.nii.gz -div `remove_ext ${concat_fmri_orig}`_vn -mul `remove_ext ${fmri}`_vn -add `remove_ext ${fmri}`_mean `remove_ext ${fmri}`_hp${hp}_clean.nii.gz
+	        log_Debug_Msg "Splitting volumes (nifti) back into individual runs"
+			volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
+	        ${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	        fslmaths ${volume_out} -div ${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
         fi
 	    Start=`echo "${Start} + ${NumTPS}" | bc -l`
 	done
+
+	## ---------------------------------------------------------------------------
+	## Remove all the large time series files in ${ConcatFolder}
+	## ---------------------------------------------------------------------------
+
+	## Deleting these files would save a lot of space.
+	## But downstream scripts (e.g., RestingStateStats) assume they exist, and
+	## if deleted they would therefore need to be re-created "on the fly" later
+	
+	# $FSLDIR/bin/imrm ${concatfmri}
+	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
+	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
+	# /bin/rm -f ${concatfmri}_Atlas.dtseries.nii
+	# /bin/rm -f ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+	# /bin/rm -f ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
 
 	cd ${DIR}
 
