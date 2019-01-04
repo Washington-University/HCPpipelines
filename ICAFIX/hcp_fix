@@ -22,33 +22,31 @@
 #      specific T1w/brainmask_fs.nii.gz
 #   6) Includes more verbose output 
 
+#############################################################
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+               # Set to empty string to disable debugging related output
+
 # Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
 #export FSL_FIXDIR
+log_Msg "FSL_FIXDIR: ${FSL_FIXDIR}"
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
 . ${FSL_FIXDIR}/settings.sh
 
 #############################################################
-
-DEBUG="FALSE"  ## TRUE or FALSE
-
-Debug() {
-	msg="$*"
-	if [ "${DEBUG}" = "TRUE" ]; then
-		echo "hcp_fix: DEBUG: ${msg}"
-	fi
-}
-
-Inform() {
-	msg="$*"
-	echo "hcp_fix: INFORM: ${msg}"
-}
-
-Error() {
-	msg="$*"
-	echo "hcp_fix: ERROR: ${msg}"
-}
 
 Usage() {
     cat <<EOF
@@ -101,8 +99,7 @@ case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
         doMotionRegression=FALSE
         ;;
     ( * )
-        Error "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        exit 1
+        log_Err_Abort "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
         ;;
 esac
 
@@ -118,20 +115,20 @@ fi
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 
-Inform "processing FMRI file $fmri with highpass $hp"
+log_Msg "processing FMRI file $fmri with highpass $hp"
 
 if (( hp > 0 )) ; then
-  Inform "running highpass"
+  log_Msg "running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
   ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
   fmrihp=${fmri}_hp$hp
 fi
 
-Inform "running MELODIC"
+log_Msg "running MELODIC"
 mkdir -p ${fmrihp}.ica
-Debug "About to run melodic: Contents of ${fmrihp}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
+log_Debug_Msg "About to run melodic: Contents of ${fmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${fmrihp}.ica
 fi
 
@@ -144,24 +141,22 @@ else
     #if it isn't even in $PATH, fall back on FSLDIR
     MELODIC="${FSLDIR}/bin/melodic"
 fi
-Debug "Beginning of melodic version log"
-if [ "${DEBUG}" = "TRUE" ] ; then
+log_Debug_Msg "Beginning of melodic version log"
+if [ ! -z "${log_debugOn}" ] ; then
 	"${MELODIC}" --version
 fi
-Debug "End of melodic version log"
+log_Debug_Msg "End of melodic version log"
 
 ${MELODIC} -i $fmrihp -o ${fmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
-retCode=$?
-Debug "melodic has been run: retCode = ${retCode}"
-Debug "melodic has been run: Contents of ${fmrihp}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
+return_code=$?
+log_Debug_Msg "melodic has been run: return_code = ${return_code}"
+log_Debug_Msg "melodic has been run: Contents of ${fmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${fmrihp}.ica
 fi
 
-if [ "${retCode}" -ne "0" ] ; then
-    Error "melodic has returned a non-zero code"
-	Error "Exiting this script with -1 return value."
-	exit -1
+if [ "${return_code}" -ne "0" ] ; then
+    log_Err_Abort "melodic has returned a non-zero code"
 fi
 
 # Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
@@ -188,11 +183,10 @@ mkdir -p mc
 if [ -f ../Movement_Regressors.txt ] ; then
   cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 else
-  Error "Movement_Regressors.txt not retrieved properly." 
-  exit -1
+  log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 fi 
 
-Inform "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
+log_Msg "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
 #${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
 
@@ -200,7 +194,7 @@ mkdir -p reg
 cd reg
 
 i_am_at=`pwd`
-Debug "current folder ${i_am_at}"
+log_Debug_Msg "current folder ${i_am_at}"
 
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
@@ -214,7 +208,7 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 fi
 cd ../..
 
-Inform "running FIX"
+log_Msg "running FIX"
 
 # Changes to handle user specified training data file
 if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
@@ -232,8 +226,7 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 
 	# finally, if the TrainingData file is not found, report an error and get out of here
 	if [ ! -f "${TrainingData}" ]; then
-		Error "FIX training data not found: ${TrainingData}"
-		exit -1
+		log_Err_Abort "FIX training data not found: ${TrainingData}"
 	fi
 
 	# now run fix
@@ -244,7 +237,7 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 		#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
 	fi
-	Inform "About to run: ${fix_cmd[*]}"
+	log_Msg "About to run: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
 
 else
@@ -253,17 +246,16 @@ else
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
 		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in hcp_fix_multi_run
-		Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
-		exit 1
+		log_Err_Abort "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 	fi
-	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
+	log_Msg "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]; then
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}" -m -h "${hp}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
 	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}")
     fi
-    Inform "About to run: ${fix_cmd[*]}"
+    log_Msg "About to run: ${fix_cmd[*]}"
     "${fix_cmd[@]}"
 fi
 

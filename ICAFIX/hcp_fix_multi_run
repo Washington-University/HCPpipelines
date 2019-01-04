@@ -25,53 +25,36 @@
 #
 #   1) Improvements to script readability 
 
+#############################################################
+
 set -e
 
-DEBUG="TRUE"
-g_script_name=$(basename "${0}")
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
 
-log_Debug() {
-	local msg="$*"
-	local date_time=$(date)
-	local output_msg
-	if [ "${DEBUG}" = "TRUE" ]; then
-		output_msg="${date_time} - ${g_script_name} - DEBUG - ${msg}"
-		echo "${output_msg}"
-		>&2 echo "${output_msg}"
-	fi
-}
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-log_Inform() {
-	local msg="$*"
-	local date_time=$(date)
-	local output_msg
-	output_msg="${date_time} - ${g_script_name} - INFORM - ${msg}"
-	echo "${output_msg}"
-	>&2 echo "${output_msg}"
-}
-
-log_Error() {
-	local msg="$*"
-	local date_time=$(date)
-	local output_msg
-	output_msg="${date_time} - ${g_script_name} - ERROR - ${msg}"
-	echo ${output_msg}
-	>&2 echo "${output_msg}"
-}
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+               # Set to empty string to disable debugging related output
 
 this_script_dir=$(readlink -f "$(dirname "$0")")
 
 # Set this before calling hcp_fix instead, to make it more flexible
 #FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
 #export FSL_FIXDIR
-log_Inform "FSL_FIXDIR: ${FSL_FIXDIR}"
+log_Msg "FSL_FIXDIR: ${FSL_FIXDIR}"
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
 source ${FSL_FIXDIR}/settings.sh
 
 if [ "${FSL_FIX_MATLAB_MODE}" = "0" ]; then
-	log_Error "Compiled matlab mode not currently supported"
-	exit -1
+	log_Err_Abort "Compiled matlab mode not currently supported"
 fi
 
 #############################################################
@@ -127,16 +110,16 @@ unset POSIXLY_CORRECT
 
 demeanMovementRegressors() {
 	In=${1}
-	log_Debug "demeanMovementRegressors: In: ${In}"
+	log_Debug_Msg "demeanMovementRegressors: In: ${In}"
 	Out=${2}
-	log_Debug "demeanMovementRegressors: Out: ${Out}"
-	log_Debug "demeanMovementRegressors: getting nCols"
+	log_Debug_Msg "demeanMovementRegressors: Out: ${Out}"
+	log_Debug_Msg "demeanMovementRegressors: getting nCols"
 	nCols=$(head -1 ${In} | wc -w)
 	
-	log_Debug "demeanMovementRegressors: nCols: ${nCols}"
-	log_Debug "demeanMovementRegressors: getting nRows"
+	log_Debug_Msg "demeanMovementRegressors: nCols: ${nCols}"
+	log_Debug_Msg "demeanMovementRegressors: getting nRows"
 	nRows=$(wc -l < ${In})
-	log_Debug "demeanMovementRegressors: nRows: ${nRows}"
+	log_Debug_Msg "demeanMovementRegressors: nRows: ${nRows}"
 	
 	AllOut=""
 	c=1
@@ -162,7 +145,7 @@ demeanMovementRegressors() {
 
 hp=$2
 if [[ "${hp}" == "0" ]]; then
-	log_Inform "hp=0 corresponds to a linear detrend"
+	log_Msg "hp=0 corresponds to a linear detrend"
 	pdFlag=TRUE
 fi
 if [[ "${hp}" == pd* ]]; then
@@ -172,15 +155,13 @@ else
 	hpNum=${hp}
 fi
 if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
-	log_Error "Highpass argument does not contain a properly specified numeric value"
-	exit -1
+	log_Err_Abort "Highpass argument does not contain a properly specified numeric value"
 fi
 if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then
-    log_Error "highpass value must not be negative"
-	exit -1
+    log_Err_Abort "highpass value must not be negative"
 fi
 
-log_Inform "hp: ${hp}"
+log_Msg "hp: ${hp}"
 
 unset TrainingData
 unset FixThresh
@@ -193,9 +174,9 @@ if [ -z "${FixThresh}" ]; then
 fi
 
 fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
-log_Inform "fmris: ${fmris}"
+log_Msg "fmris: ${fmris}"
 ConcatName="${3}"
-log_Inform "ConcatName: ${ConcatName}"
+log_Msg "ConcatName: ${ConcatName}"
 
 #this case logic could go in a helper function, interpret_as_bool or something
 case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
@@ -206,8 +187,7 @@ case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
         doMotionRegression=FALSE
         ;;
     ( * )
-        log_Error "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        exit -1
+        log_Err_Abort "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
         ;;
 esac
 
@@ -220,7 +200,7 @@ echo $fmris | tr ' ' '\n' #separates paths separated by ' '
 ## ---------------------------------------------------------------------------
 
 #Loops over the runs and do highpass on each of them
-log_Inform "Looping over files and doing highpass to each of them"
+log_Msg "Looping over files and doing highpass to each of them"
 
 NIFTIvolMergeSTRING=""
 NIFTIvolhpVNMergeSTRING=""
@@ -236,7 +216,7 @@ MovementNIFTIhpMergeSTRING=""
 MovementTXTMergeSTRING=""
 
 for fmri in $fmris ; do
-	log_Inform "Top of loop through fmris: fmri: ${fmri}"
+	log_Msg "Top of loop through fmris: fmri: ${fmri}"
 
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
 
@@ -255,23 +235,22 @@ for fmri in $fmris ; do
 	MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp.nii.gz "
 	
 	cd `dirname $fmri`
-	log_Debug "pwd: "$(pwd)
+	log_Debug_Msg "pwd: "$(pwd)
 	fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 	fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
-	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit -1
+	[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
 
 	mkdir -p ${fmri}_hp${hp}.ica/mc
 	if [ -f Movement_Regressors.txt ] ; then
-		log_Debug "About to create ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par file"
+		log_Debug_Msg "About to create ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par file"
 		cat Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par
 	else
-		log_Error "Movement_Regressors.txt not retrieved properly." 
-		exit -1
+		log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 	fi
 
 	tr=`$FSLDIR/bin/fslval $fmri pixdim4` 
-	log_Inform "tr: $tr"
-	log_Inform "processing FMRI file $fmri with highpass $hp"
+	log_Msg "tr: $tr"
+	log_Msg "processing FMRI file $fmri with highpass $hp"
 
 	#Demean movement regressors, volumes, and CIFTI data
 	demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
@@ -289,14 +268,14 @@ for fmri in $fmris ; do
 	# "1st pass" VN on the individual runs; high-pass gets done here as well
 	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
 	
-	log_Inform "Dims: $(cat ${fmri}_dims.txt)"
+	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 	# Demean the movement regressors
 	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
 	$FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 
-	log_Inform "Bottom of loop through fmris: fmri: ${fmri}"
+	log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 done  ### END LOOP (for fmri in $fmris; do)
 
 ## ---------------------------------------------------------------------------
@@ -305,7 +284,7 @@ done  ### END LOOP (for fmri in $fmris; do)
 
 #Make Concatenated Folder
 ConcatFolder=`dirname ${ConcatName}`
-log_Inform "Making concatenated folder: ${ConcatFolder}"
+log_Msg "Making concatenated folder: ${ConcatFolder}"
 if [ ! -e ${ConcatFolder} ] ; then  
 	mkdir ${ConcatFolder} 
 else
@@ -340,7 +319,7 @@ ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii ${
 ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
 
 # At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
-log_Inform "Removing the concatenated VN'ed time series"
+log_Msg "Removing the concatenated VN'ed time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 /bin/rm -f ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii
 # Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
@@ -349,13 +328,13 @@ $FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 #$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
 # Nor do we need the concatenated demeaned time series (either volume or CIFTI)
-log_Inform "Removing the concatenated demeaned time series"
+log_Msg "Removing the concatenated demeaned time series"
 $FSLDIR/bin/imrm ${ConcatNameNoExt}_demean
 /bin/rm -f ${ConcatNameNoExt}_Atlas_demean.dtseries.nii
 
 # Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
 for fmri in $fmris ; do
-	log_Inform "Removing the individual run VN'ed and demeaned time series for ${fmri}"
+	log_Msg "Removing the individual run VN'ed and demeaned time series for ${fmri}"
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
 	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}_vnts
 	$FSLDIR/bin/imrm ${fmriNoExt}_demean
@@ -364,7 +343,7 @@ for fmri in $fmris ; do
 
 	# Following removes the individual run hp'ed time series
 	# MPH, 12/21/2018: Leaving them for now
-	#	log_Inform "Removing the individual run HP'ed time series for ${fmri}"
+	#	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
 	#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
 	#	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}.dtseries.nii
 done
@@ -382,15 +361,15 @@ concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
 concatfmrihp=${concatfmri}_hp${hp}
 
 mkdir -p ${concatfmrihp}.ica
-log_Debug "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
+log_Debug_Msg "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
 cat ${MovementTXTMergeSTRING} > Movement_Regressors_demean.txt
 mkdir ${concatfmrihp}.ica/mc
 fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
 fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
 
-log_Inform "running MELODIC"
-log_Debug "About to run melodic: Contents of ${concatfmrihp}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
+log_Msg "running MELODIC"
+log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${concatfmrihp}.ica
 fi
 
@@ -404,17 +383,17 @@ else
     MELODIC="${FSLDIR}/bin/melodic"
 fi
 
-log_Inform "Running melodic located at: $MELODIC"
-log_Debug "Beginning of melodic version log, help, and checksum"
-if [ "${DEBUG}" = "TRUE" ] ; then
-	log_Debug "$MELODIC --version"
+log_Msg "Running melodic located at: $MELODIC"
+log_Debug_Msg "Beginning of melodic version log, help, and checksum"
+if [ ! -z "${log_debugOn}" ] ; then
+	log_Debug_Msg "$MELODIC --version"
 	$MELODIC --version
-	log_Debug "$MELODIC --help"
+	log_Debug_Msg "$MELODIC --help"
 	$MELODIC --help
-	log_Debug "md5sum $MELODIC"
+	log_Debug_Msg "md5sum $MELODIC"
 	md5sum $MELODIC
 fi
-log_Debug "End of melodic version log, help, and checksum"
+log_Debug_Msg "End of melodic version log, help, and checksum"
 
 AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
@@ -424,7 +403,7 @@ AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on th
 ${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
 Dim=`cat ${concatfmrihp}_dims.txt`
 
-log_Inform "Dim: ${Dim}"
+log_Msg "Dim: ${Dim}"
 
 ## ---------------------------------------------------------------------------
 ## Run melodic on concatenated file
@@ -434,23 +413,21 @@ log_Inform "Dim: ${Dim}"
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
 # Added "-m ${ConcatNameNoExt}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
 melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${ConcatNameNoExt}_brain_mask"
-if [ "${DEBUG}" = "TRUE" ] ; then
+if [ ! -z "${log_debugOn}" ] ; then
 	melodic_cmd="${melodic_cmd} --verbose --debug"
 fi
 
-log_Inform "melodic_cmd: ${melodic_cmd}"
+log_Msg "melodic_cmd: ${melodic_cmd}"
 ${melodic_cmd}
 return_code=$?
-log_Inform "melodic has been run: return_code = ${return_code}"
-log_Debug "melodic has been run: Contents of ${concatfmrihp}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
+log_Msg "melodic has been run: return_code = ${return_code}"
+log_Debug_Msg "melodic has been run: Contents of ${concatfmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${concatfmrihp}.ica
 fi
 
 if [ "${return_code}" -ne "0" ] ; then
-    log_Error "melodic has returned a non-zero code"
-	log_Error "Exiting this script with -1 return value."
-	exit -1
+    log_Err_Abort "melodic has returned a non-zero code"
 fi
 
 # At this point (following melodic), ${concatfmrihp}_vnts is no longer necessary
@@ -486,7 +463,7 @@ mkdir -p reg
 cd reg
 
 i_am_at=`pwd`
-log_Debug "current folder ${i_am_at}"
+log_Debug_Msg "current folder ${i_am_at}"
 
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
@@ -507,7 +484,7 @@ fi
 
 cd ${ConcatFolder}
 
-log_Inform "running FIX"
+log_Msg "running FIX"
 
 # Changes to handle user specified training data file
 if [ "X${TrainingData}" != X ]; then
@@ -523,12 +500,11 @@ if [ "X${TrainingData}" != X ]; then
 	if [ ! -f "${TrainingData}" ]; then 
 		TrainingData=${FSL_FIXDIR}/training_files/${TrainingData}
 	fi
-	log_Inform "User has specified a training data file: ${TrainingData}"
+	log_Msg "User has specified a training data file: ${TrainingData}"
 	
 	# finally, if the TrainingData file is not found, report an error and get out of here
 	if [ ! -f "${TrainingData}" ]; then
-		log_Error "FIX training data not found: ${TrainingData}"
-		exit -1
+		log_Err_Abort "FIX training data not found: ${TrainingData}"
 	fi
 	
 	# now run fix
@@ -539,12 +515,11 @@ if [ "X${TrainingData}" != X ]; then
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
     	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 	fi
-	log_Inform "fix_cmd: ${fix_cmd[*]}"
+	log_Msg "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
 	return_code=$?
-	log_Inform "return_code from fix_cmd: ${return_code}"
 	if [ "${return_code}" -ne "0" ]; then
-		exit ${return_code}
+		log_Err_Abort "return_code from fix_cmd: ${return_code}"
 	fi
 	
 else
@@ -552,7 +527,7 @@ else
 	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
 	#TSC: exception: we will recommend polynomial detrending for performance, and hp 2000 is already trained, and largely indistinguishable
-	log_Inform "User has NOT specified a training data file"
+	log_Msg "User has NOT specified a training data file"
 	training_hp="${hp}"
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
 	    if [[ "${pdFlag}" == "TRUE" && "${hp}" != "pd0" ]]; then  # "hp=pd0" would be a demeaning only, so doesn't qualify here
@@ -560,39 +535,37 @@ else
 	        #we know the hp 2000 training data exists, so use it if we don't see an explicit hppd# set
 	        training_hp=2000
 	    else
-    	    log_Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
-    	    exit -1
+    	    log_Err_Abort "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 	    fi
 	fi
-	log_Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
+	log_Msg "using training data ${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData"
 	if [[ ${doMotionRegression} == "TRUE" ]]; then
         fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}" -m -h "${AlreadyHP}")
     else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
         fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}")
     fi
-	log_Inform "fix_cmd: ${fix_cmd[*]}"
+	log_Msg "fix_cmd: ${fix_cmd[*]}"
 	"${fix_cmd[@]}"
 	return_code=$?
-	log_Inform "return_code from fix_cmd: ${return_code}"
 	if [ "${return_code}" -ne "0" ]; then
-		exit ${return_code}
+		log_Err_Abort "return_code from fix_cmd: ${return_code}"
 	fi
 fi
 
-log_Inform "Done running FIX"
+log_Msg "Done running FIX"
 
 ## ---------------------------------------------------------------------------
 ## Rename some files (relative to the default names coded in fix_3_clean.m)
 ## ---------------------------------------------------------------------------
 
-log_Debug "Moving ${concatfmrihp}.ica/filtered_func_data_clean to ${concatfmrihp}_clean"
+log_Debug_Msg "Moving ${concatfmrihp}.ica/filtered_func_data_clean to ${concatfmrihp}_clean"
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
 
-log_Debug "Checking for existence of ${concatfmrihp}.ica/Atlas_clean.dtseries.nii"
+log_Debug_Msg "Checking for existence of ${concatfmrihp}.ica/Atlas_clean.dtseries.nii"
 if [ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
-	log_Debug "Moving ${concatfmrihp}.ica/Atlas_clean.dtseries.nii to ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii"
+	log_Debug_Msg "Moving ${concatfmrihp}.ica/Atlas_clean.dtseries.nii to ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii"
 	/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
 	/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
@@ -613,9 +586,9 @@ for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
 	NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
-	log_Inform "Start=${Start} Stop=${Stop}"
+	log_Msg "Start=${Start} Stop=${Stop}"
 	
-	log_Debug "Splitting cifti back into individual runs"
+	log_Debug_Msg "Splitting cifti back into individual runs"
 	cifti_out=${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii
 	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
 	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concatfmri}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
@@ -629,7 +602,7 @@ for fmri in $fmris ; do
 		echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	done
 		
-	log_Debug "Splitting volumes (nifti) back into individual runs"
+	log_Debug_Msg "Splitting volumes (nifti) back into individual runs"
 	volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
 	${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths ${volume_out} -div ${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
