@@ -856,7 +856,7 @@ main()
 	    log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
 	    #reconstruct the @-delimited list
 	    OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFixMultiRun/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFix/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
     fi
