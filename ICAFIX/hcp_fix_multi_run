@@ -192,6 +192,7 @@ case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
 esac
 
 DIR=`pwd`
+log_Msg "PWD : $DIR"
 
 echo $fmris | tr ' ' '\n' #separates paths separated by ' '
 
