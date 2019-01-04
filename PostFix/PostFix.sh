@@ -51,7 +51,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name=<fMRI_name>
+   --fmri-name=<fMRI name>
               In the case of applying PostFix to the output of multi-run FIX,
               <fMRI name> should be the <concat_name> used in multi-run FIX.
    --high-pass=<high-pass filter used in ICA+FIX>
@@ -284,9 +284,7 @@ main()
 	# Polynomial detrending is not supported in prepareICAs.m currently
 	# Must use an already existing hp'ed time-series in that case
 	if [[ "${HighPass}" == pd* && "${ReuseHighPass}" != "YES" ]]; then
-		log_Msg "If using polynomial detrending, must use an already existing high-passed time-series (i.e., --reuse-high-pass must be set to YES)"
-		usage
-		exit 1
+		log_Err_Abort "If using polynomial detrending, must use an already existing high-passed time-series (i.e., --reuse-high-pass must be set to YES)"
 	fi
 
 	# Naming Conventions and other variables
