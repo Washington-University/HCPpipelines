@@ -61,15 +61,15 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name=<fMRI name> [Do not include path, extension, or the 'hp' string]
+   --fmri-name=<fMRI name> (Do not include path, extension, or the 'hp' string).
    --high-pass=<high-pass filter used in ICA+FIX>
-   --reg-name=<string> String to represent the registration that was done (e.g. by DeDriftAndResamplePipeline).  
-  [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
-  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+   [--reg-name=<surface registration name> defaults to ${G_DEFAULT_REG_NAME}. (Use NONE for MSMSulc registration)
+   [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
+   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
-  [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
+   [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
 
 EOF
 }
@@ -93,6 +93,7 @@ get_options()
 	unset p_MotionRegression # ${8}
 
 	# set default values
+	p_RegName=${G_DEFAULT_REG_NAME}
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
@@ -283,8 +284,14 @@ main()
 	local Subject="${2}"
 	local fMRIName="${3}"
 	local HighPass="${4}"
-	local RegName="${5}"
 
+	local RegName
+	if [ -z "${5}" ]; then
+		RegName=${G_DEFAULT_REG_NAME}
+	else
+		RegName="${5}"
+	fi
+	
 	local LowResMesh
 	if [ -z "${6}" ]; then
 		LowResMesh=${G_DEFAULT_LOW_RES_MESH}
@@ -535,13 +542,10 @@ log_Check_Env_Var FSLDIR
 # Show tool versions
 show_tool_versions
 
-# Establish default MATLAB run mode
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-
-# Establish default low res mesh
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
 G_DEFAULT_LOW_RES_MESH=32
-
-# Establish default for motion parameter regression
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
 
 # Determine whether named or positional parameters are used
