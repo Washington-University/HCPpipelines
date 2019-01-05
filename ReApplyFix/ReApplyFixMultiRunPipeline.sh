@@ -65,7 +65,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_RETCCW_7T_AP/tfMRI_RETCCW_7T_AP.nii.gz@/path/to/study/100610/MNINonLinear/Results/tfMRI_RETCW_7T_PA/tfMRI_RETCW_7T_PA.nii.gz)
    --concat-fmri-name=<root name of the concatenated fMRI scan file> [Do not include path, extension, or any 'hp' string]
    --high-pass=<high-pass filter used in multi-run ICA+FIX>
-   [--reg-name=<registration name>] (e.g. MSMAll) defaults to NONE
+   [--reg-name=<surface registration name> defaults to ${G_DEFAULT_REG_NAME}. (Use NONE for MSMSulc registration)
    [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
    [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
@@ -89,14 +89,15 @@ get_options()
 	unset p_StudyFolder      # ${1}
 	unset p_Subject          # ${2}
 	unset p_fMRINames        # ${3}
-	unset p_ConcatName   # ${4}
+	unset p_ConcatName       # ${4}
 	unset p_HighPass         # ${5}
-	p_RegName="NONE"         # ${6}
+	unset p_RegName          # ${6}
 	unset p_LowResMesh       # ${7}
 	unset p_MatlabRunMode    # ${8}
 	unset p_MotionRegression # ${9}
 
 	# set default values
+	p_RegName=${G_DEFAULT_REG_NAME}
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
@@ -204,8 +205,13 @@ get_options()
 		log_Msg "High Pass: ${p_HighPass}"
 	fi
 
-	log_Msg "Reg Name: ${p_RegName}"
-
+	if [ -z "${p_RegName}" ]; then
+		log_Err "Reg Name (--reg-name=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Reg Name: ${p_RegName}"
+	fi
+		
 	if [ -z "${p_LowResMesh}" ]; then
 		log_Err "Low Res Mesh (--low-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
@@ -345,8 +351,14 @@ main()
 	#script used to take absolute paths, so generate the absolute path and leave the old code
 	local ConcatName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatNameOnly}/${ConcatNameOnly}"
 	local HighPass="${5}"
-	local RegName="${6}"
 
+	local RegName
+	if [ -z "${6}" ]; then
+		RegName=${G_DEFAULT_REG_NAME}
+	else
+		RegName="${6}"
+	fi
+	
 	local LowResMesh
 	if [ -z "${7}" ]; then
 		LowResMesh=${G_DEFAULT_LOW_RES_MESH}
@@ -837,13 +849,10 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 
-# Establish default MATLAB run mode
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-
-# Establish default low res mesh
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
 G_DEFAULT_LOW_RES_MESH=32
-
-# Establish default for motion parameter regression
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
 	
 # Determine whether named or positional parameters are used
