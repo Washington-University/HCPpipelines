@@ -41,6 +41,13 @@ usage()
 
 ${script_name}: ReApplyFix Pipeline
 
+This script has two purposes:
+1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
+following manual reclassification of the FIX signal/noise components (see ApplyHandReClassifications.sh).
+2) Apply FIX cleanup to the CIFTI from an alternative surface registration (e.g., MSMAll)
+(either for the first time, or following manual reclassification of the components).
+Only one of these two purposes can be accomplished per invocation.
+
 Usage: ${script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
