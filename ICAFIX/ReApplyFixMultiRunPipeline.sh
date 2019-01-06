@@ -195,11 +195,23 @@ get_options()
 		log_Err "High Pass (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-	    if [[ $(echo "${p_HighPass} < 0" | bc) == "1" ]]
-	    then
-	        log_Err "highpass value must not be negative"
-	        error_count=$(( error_count + 1 ))
-	    fi
+		# Checks on the validity of the --high-pass argument
+		if [[ "${p_HighPass}" == "0" ]]; then
+			log_Msg "--high-pass=0 corresponds to a linear detrend"
+		fi
+		if [[ "${p_HighPass}" == pd* ]]; then
+			local hpNum=${p_HighPass:2}
+		else
+			local hpNum=${p_HighPass}
+		fi
+		if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
+			log_Err "--high-pass argument does not contain a properly specified numeric value"
+			error_count=$(( error_count + 1 ))
+		fi
+		if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then
+			log_Err "--high-pass value must not be negative"
+			error_count=$(( error_count + 1 ))
+		fi
 		log_Msg "High Pass: ${p_HighPass}"
 	fi
 
