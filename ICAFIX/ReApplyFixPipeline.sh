@@ -432,7 +432,7 @@ main()
 		0)
 			# Use Compiled MATLAB
 
-			local matlab_exe="${HCPPIPEDIR}/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
+			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 			local matlab_function_arguments
 			if (( DoVol )) ; then

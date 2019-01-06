@@ -82,8 +82,8 @@ fMRINames="tfMRI_WM_GAMBLING_MOTOR_LR tfMRI_WM_GAMBLING_MOTOR_RL tfMRI_LANGUAGE_
 HighPass="2000"
 ReUseHighPass="YES" #Use YES if using multi-run ICA-FIX, otherwise use NO
 
-DualScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
-SingleScene=${HCPPIPEDIR}/PostFix/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
+DualScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
+SingleScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
 
 MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
@@ -92,14 +92,14 @@ for Subject in $Subjlist ; do
 	  echo "    ${Subject}"
 	
 	  if [ -n "${command_line_specified_run_local}" ] ; then
-	      echo "About to run ${HCPPIPEDIR}/PostFix/PostFix.sh"
+	      echo "About to run ${HCPPIPEDIR}/ICAFIX/PostFix.sh"
 	      queuing_command=""
 	  else
-	      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PostFix/PostFix.sh"
+	      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/ICAFIX/PostFix.sh"
 	      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 	  fi
 
-	  ${queuing_command} ${HCPPIPEDIR}/PostFix/PostFix.sh \
+	  ${queuing_command} ${HCPPIPEDIR}/ICAFIX/PostFix.sh \
     --study-folder=${StudyFolder} \
     --subject=${Subject} \
     --fmri-name=${fMRIName} \

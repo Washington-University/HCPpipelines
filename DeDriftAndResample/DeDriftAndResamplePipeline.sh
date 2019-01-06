@@ -842,7 +842,7 @@ main()
 	log_Msg "rfMRINames: ${rfMRINames[@]}"
 	for fMRIName in "${rfMRINames[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		reapply_fix_cmd=("${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+		reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 		log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
 		"${reapply_fix_cmd[@]}"
 	done
@@ -856,7 +856,7 @@ main()
 	    log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
 	    #reconstruct the @-delimited list
 	    OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFix/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
     fi

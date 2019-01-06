@@ -66,6 +66,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
+this_script_dir=$(readlink -f "$(dirname "$0")")
+
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -253,6 +255,8 @@ show_tool_versions() {
 
 main()
 {
+	local this_script_dir=$(readlink -f "$(dirname "$0")")
+	
 	log_Msg "main functionality begin"
 	
 	# Retrieve positional parameters
@@ -359,14 +363,17 @@ main()
 		rm ${ComponentList}
 	fi
 
+	# For interpreted modes, make sure that matlab/octave have access to the functions they need
+	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${MATLAB_GIFTI_LIB}'); addpath('${this_script_dir}/scripts');"
+	
 	# run MATLAB prepareICAs function
 	case ${MatlabRunMode} in
 
 		0)
 			# Use Compiled Matlab
 			local matlab_exe
-			matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/PostFix/Compiled_prepareICAs/run_prepareICAs.sh"
+			matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_prepareICAs/run_prepareICAs.sh"
 			
 			local matlab_compiler_runtime
 			matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
@@ -411,9 +418,9 @@ main()
 			fi
 
 			"${interpreter[@]}" <<M_PROG
-addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
+${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
 M_PROG
-			log_Msg "addpath '${HCPPIPEDIR}/PostFix'; addpath '${MATLAB_GIFTI_LIB}'; addpath '${FSLDIR}/etc/matlab'; prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
+			log_Msg "${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
 			;;
 		
 		*)

@@ -267,7 +267,7 @@ for fmri in $fmris ; do
 		rm .fix.functionhighpassandvariancenormalize.log
 	fi
 	# "1st pass" VN on the individual runs; high-pass gets done here as well
-	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
+	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
 	
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
@@ -401,7 +401,7 @@ AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on th
 # "2nd pass" VN
 # This is solely so that we can apply our own variance normalization as part of the spatial ICA, rather than using the VN algorithm internal to melodic
 # (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
+${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
 Dim=`cat ${concatfmrihp}_dims.txt`
 
 log_Msg "Dim: ${Dim}"

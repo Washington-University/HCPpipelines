@@ -76,8 +76,6 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
-this_script_dir=$(readlink -f "$(dirname "$0")")
-
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -336,6 +334,8 @@ demeanMovementRegressors() {
 
 main()
 {
+	local this_script_dir=$(readlink -f "$(dirname "$0")")
+
 	# Show tool versions
 	show_tool_versions
 
@@ -552,15 +552,18 @@ main()
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
+				# MPH: Current version of fix (fix1.067) does not have a compiled version of run_functionhighpassandvariancenormalize
+				log_Err_Abort "MATLAB run mode of ${MatlabRunMode} not currently supported"
+				
                 "${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${FSL_FIX_WBC}" "${RegString}"
                 ;;
             1)
                 # interpreted matlab
-                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash)
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash)
                 ;;
             2)
                 # interpreted octave
-                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/../ICAFIX'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
                 ;;
             esac
 	    fi
@@ -682,8 +685,7 @@ main()
 		0)
 			# Use Compiled Matlab
 			
-			local matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/ReApplyFix/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
+			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
 			#matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
 			local matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
