@@ -442,7 +442,7 @@ main()
 	local fixlist=".fix"
 
     # If we have a hand classification and no regname, reapply fix to the volume as well
-	if have_hand_reclassification ${StudyFolder} ${Subject} ${ConcatNameOnly} ${HighPass}
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${ConcatNameOnly} ${hp}
 	then
 		fixlist="HandNoise.txt"
 		#TSC: if regname (which applies to the surface) isn't NONE, assume the hand classification was previously already applied to the volume data
@@ -693,7 +693,9 @@ main()
 			then
     			matlab_function_arguments+=("${DoVol}")
 			fi
-			local matlab_logfile="${StudyFolder}/${Subject}_${concatfmri}_${HighPass}${RegString}.matlab.log"
+			local matlab_logfile="${StudyFolder}/${Subject}_${concatfmri}${RegString}_hp${hp}.matlab.log"
+			#MPH: This logfile should go in a different location (probably in the .ica directory)
+
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable

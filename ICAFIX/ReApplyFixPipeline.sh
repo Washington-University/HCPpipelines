@@ -379,7 +379,7 @@ main()
 	local fixlist=".fix"
 	
 	# If we have a hand classification and no regname, reapply fix to the volume as well
-	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${HighPass}
+	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${hp}
 	then
 		fixlist="HandNoise.txt"
 		#TSC: if regname (which applies to the surface) isn't NONE, assume the hand classification was previously already applied to the volume data
@@ -398,7 +398,7 @@ main()
 	log_Msg "Use fixlist=$fixlist"
 
 	DIR=$(pwd)
-	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica
+	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${hp}.ica
 
 	if [ -f ../${fMRIName}_Atlas${RegString}.dtseries.nii ] ; then
 		log_Msg "FOUND FILE: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
@@ -441,7 +441,9 @@ main()
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${MotionRegression} ${hp} ${DoVol}"
 			fi
 
-			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}_${HighPass}${RegString}.fix_3_clean.matlab.log 2>&1"
+			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}${RegString}_${hp}.fix_3_clean.matlab.log 2>&1"
+			#MPH: This logfile should go in a different location (probably in the .ica directory)
+			
 			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
 			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
@@ -498,7 +500,7 @@ M_PROG
 	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 	# So check whether those files exist before moving/renaming them
 	local fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}"
-	local fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}"
+	local fmrihp="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${hp}"
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
 		/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	fi
