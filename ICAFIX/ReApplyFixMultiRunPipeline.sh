@@ -540,6 +540,10 @@ main()
 	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
         fi
 
+		# MPH: ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
+		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
+		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN
+		
 		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
@@ -601,7 +605,7 @@ main()
 		  # Preceeding line adds back in the "grand" mean; resulting file not used below, but want this concatenated version (without HP or VN) to exist
         fslmaths ${ConcatNameNoExt}_hp${hp}_vn -Tmean ${ConcatNameNoExt}_hp${hp}_vn  # Mean VN map across the individual runs
         fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp} 
-          # Preceeding line restores the mean VN map; The resulting TCS becomes the input to a 2nd pass of VN
+          # Preceeding line restores the mean VN map
         fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
     fi
 
@@ -619,10 +623,6 @@ main()
 	log_Msg "Removing the concatenated VN'ed time series"
 	$FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 	/bin/rm -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
-	# Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
-	# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmrihp file
-	# during the "2nd pass" VN (below)
-	#$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
 
 	# Nor do we need the concatenated demeaned time series (either volume or CIFTI)
 	log_Msg "Removing the concatenated demeaned time series"
@@ -820,9 +820,9 @@ M_PROG
 	# $FSLDIR/bin/imrm ${concatfmri}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
-	# /bin/rm -f ${concatfmri}_Atlas.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas_hp${hp}.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
+	# /bin/rm -f ${concatfmri}_Atlas${RegString}.dtseries.nii
+	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii
+	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 
 	cd ${DIR}
 
