@@ -531,7 +531,7 @@ main()
 		fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 		fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
 		log_Msg "fmri: $fmri"
-		if [ `imtest $fmri` != 1 ]; then
+		if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
 			log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 		fi
 

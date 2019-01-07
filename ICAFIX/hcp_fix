@@ -91,7 +91,9 @@ fmri=$1
 cd `dirname $fmri`
 fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
-[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
+if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
+	log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
+fi
 
 hp=$2
 
