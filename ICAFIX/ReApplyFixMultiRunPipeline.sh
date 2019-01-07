@@ -588,16 +588,17 @@ main()
                 (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
                 ;;
             esac
+
+			# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
+			if (( DoVol )); then
+				fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+				fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
+				$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+			fi
+			
 	    fi
 
         log_Msg "Dims: $(cat ${fmri}_dims.txt)"
-
-		# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
-        if (( DoVol )); then
-	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
-	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
-	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
-	    fi
 
 		cd ${DIR}  # Return to directory where script was launched
 		
