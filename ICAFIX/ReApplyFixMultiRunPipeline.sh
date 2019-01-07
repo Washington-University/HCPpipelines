@@ -558,6 +558,8 @@ main()
 		# MPH: ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
 		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
 		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN
+		# Note that functionhighpassandvariancenormalize does NOT filter the movement regressors unless
+		# ${RegString} is empty (i.e., if DoVol = 1)
 		
 		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
@@ -590,7 +592,7 @@ main()
         log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 		# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
-        if [[ ! -f ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz ]]; then
+        if (( DoVol == 1 )); then
 	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
 	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
@@ -710,7 +712,7 @@ main()
 			
 			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
-			#matlab_compiler_runtime=${MATLAB_COMPILER_RUNTIME}
+			# See important WARNING regarding intrepretation of DoVol above!!
 			local matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
 			if [[ DoVol == 0 ]]
 			then

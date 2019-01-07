@@ -433,6 +433,7 @@ main()
 
 			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
+			# See important WARNING regarding intrepretation of DoVol above!!
 			local matlab_function_arguments
 			if (( DoVol )) ; then
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${MotionRegression} ${hp}"
