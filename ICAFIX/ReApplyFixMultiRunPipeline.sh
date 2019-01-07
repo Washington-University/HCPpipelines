@@ -567,10 +567,7 @@ main()
               `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vnts"` != 1 || \
               `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vn"` != 1 ]]
         then
-			# MPH: Keep existing .log files, because we don't have any capturing of the matlab ouput currently
-#            if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
-#                rm .fix.functionhighpassandvariancenormalize.log
-#            fi
+
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
@@ -724,13 +721,16 @@ main()
 			else
     			matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${DoVol}")
 			fi
-			local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
 
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
-			log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
-			"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
+			#local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
+			#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
+			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+			log_Msg "Run MATLAB command: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
 			log_Msg "MATLAB command return code $?"
 			;;
 		

@@ -441,13 +441,16 @@ main()
 			else
 				matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${hp}" "${DoVol}")
 			fi
-			local matlab_logfile=".reapplyfix.${fMRIName}${RegString}.fix_3_clean.matlab.log"
 			
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
-			log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
-			"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
+			#local matlab_logfile=".reapplyfix.${fMRIName}${RegString}.fix_3_clean.matlab.log"
+			#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
+			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+			log_Msg "Run MATLAB command: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
 			log_Msg "MATLAB command return code $?"
 			;;
 		
