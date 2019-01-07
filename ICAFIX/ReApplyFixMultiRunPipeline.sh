@@ -545,7 +545,7 @@ main()
 	    fi
 	    MovementTXTMergeSTRING+="$(pwd)/Movement_Regressors_demean.txt "
 	    
-		if [[ ! -f ${fmri}_demean.nii.gz ]]; then
+		if [ `$FSLDIR/bin/imtest ${fmri}_demean` != 1 ]; then
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
 	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
         fi
@@ -564,8 +564,8 @@ main()
 		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
-              ! -f "${fmriNoExt}_hp${hp}_vnts.nii.gz" || \
-              ! -f "${fmriNoExt}_hp${hp}_vn.nii.gz" ]]
+              `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vnts"` != 1 || \
+              `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vn"` != 1 ]]
         then
 			# MPH: Keep existing .log files, because we don't have any capturing of the matlab ouput currently
 #            if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
@@ -611,7 +611,7 @@ main()
 
 	ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 	
-    if [[ ! -f ${ConcatNameNoExt}.nii.gz ]]; then
+    if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
 		# Merge volumes from the individual runs
         fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
         fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
@@ -775,13 +775,12 @@ M_PROG
 	## Rename some files (relative to the default names coded in fix_3_clean.m)
 	## ---------------------------------------------------------------------------
 
-	if [[ -f ${concatfmrihp}.ica/filtered_func_data_clean.nii.gz ]]
-	then
+	if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean` = 1 ]; then
 	    $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
         $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
 	fi
 
-	if [[ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]] ; then
+	if [[ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]]; then
 		/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 		/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
