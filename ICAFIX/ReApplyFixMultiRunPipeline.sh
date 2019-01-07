@@ -524,8 +524,8 @@ main()
 		CIFTIhpVNMergeSTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii "
 		MeanCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii "
 		VNCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii "  #These are the individual run, VN'ed CIFTI *maps* (created by functionhighpassandvariancenormalize)
-		MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz "
-		MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp.nii.gz "
+		MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf "
+		MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp "
 
 		cd `dirname $fmri`
 		fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
@@ -594,9 +594,9 @@ main()
 
 		# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
         if (( DoVol )); then
-	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
-	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
-	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
+	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
 	    fi
 
 		cd ${DIR}  # Return to directory where script was launched
@@ -832,7 +832,7 @@ M_PROG
 		    echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	    done
 		
-		if (( DoVol == 1 )); then
+		if (( DoVol )); then
 			volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
 	        ${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	        fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}

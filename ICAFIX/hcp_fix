@@ -210,7 +210,7 @@ $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
 if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
   $FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-  $FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs.nii.gz -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
+  $FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
   $FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
   $FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 fi

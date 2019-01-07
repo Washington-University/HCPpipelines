@@ -236,8 +236,8 @@ for fmri in $fmris ; do
 	CIFTIhpVNMergeSTRING+="-cifti ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii "
 	MeanCIFTISTRING+="-cifti ${fmriNoExt}_Atlas_mean.dscalar.nii "
 	VNCIFTISTRING+="-cifti ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii "  #These are the individual run, VN'ed CIFTI *maps* (created by functionhighpassandvariancenormalize)
-	MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz "
-	MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp.nii.gz "
+	MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf "
+	MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp "
 	
 	cd `dirname $fmri`
 	log_Debug_Msg "pwd: "$(pwd)
@@ -279,9 +279,9 @@ for fmri in $fmris ; do
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 	# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
-	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
-	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
-	$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
+	$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
 
 	cd ${DIR}  # Return to directory where script was launched
 	
@@ -482,7 +482,7 @@ $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
 if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 	$FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-	$FSLDIR/bin/flirt -in ../../../../brainmask_fs.nii.gz -ref veins -out veinbrainmask -applyxfm
+	$FSLDIR/bin/flirt -in ../../../../brainmask_fs -ref veins -out veinbrainmask -applyxfm
 	$FSLDIR/bin/fslmaths veinbrainmask -bin veinbrainmask
 	$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k veinbrainmask -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
 	$FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
