@@ -184,6 +184,7 @@ if [ -f ../${fmri}_Atlas.dtseries.nii ] ; then
   $FSLDIR/bin/imln ../${fmri}_Atlas.dtseries.nii Atlas.dtseries.nii
 fi
 
+# Get Movement_Regressors.txt into the format expected by functionmotionconfounds.m
 mkdir -p mc
 if [ -f ../Movement_Regressors.txt ] ; then
   cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par

@@ -247,6 +247,7 @@ for fmri in $fmris ; do
 		log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 	fi
 
+	# Get Movement_Regressors.txt into the format expected by functionhighpassandvariancenormalize.m
 	mkdir -p ${fmri}_hp${hp}.ica/mc
 	if [ -f Movement_Regressors.txt ] ; then
 		log_Debug_Msg "About to create ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf.par file"
@@ -277,10 +278,10 @@ for fmri in $fmris ; do
 	
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
-	# Demean the movement regressors
-	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
-	fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
-	$FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
+	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
+	$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 
 	cd ${DIR}  # Return to directory where script was launched
 	

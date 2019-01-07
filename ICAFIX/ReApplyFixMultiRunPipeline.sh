@@ -589,11 +589,11 @@ main()
 
         log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
-		# Demean the movement regressors
-        if [[ ! -f $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz ]]; then
-	        fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
-	        fslmaths $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
-	        $FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+		# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
+        if [[ ! -f ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz ]]; then
+	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
+	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
+	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	    fi
 
 		cd ${DIR}  # Return to directory where script was launched
