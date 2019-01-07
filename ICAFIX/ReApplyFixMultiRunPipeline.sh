@@ -567,9 +567,10 @@ main()
               ! -f "${fmriNoExt}_hp${hp}_vnts.nii.gz" || \
               ! -f "${fmriNoExt}_hp${hp}_vn.nii.gz" ]]
         then
-            if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
-                rm .fix.functionhighpassandvariancenormalize.log
-            fi
+			# MPH: Keep existing .log files, because we don't have any capturing of the matlab ouput currently
+#            if [[ -e .fix.functionhighpassandvariancenormalize.log ]] ; then
+#                rm .fix.functionhighpassandvariancenormalize.log
+#            fi
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
@@ -676,7 +677,6 @@ main()
 
 	local ConcatFolder=`dirname ${ConcatName}`
 	cd ${ConcatFolder}
-	##Check to see if concatination occured
 
 	local concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
 	local concatfmrihp=${concatfmri}_hp${hp}
@@ -718,7 +718,7 @@ main()
 			then
     			matlab_function_arguments+=("${DoVol}")
 			fi
-			local matlab_logfile="${StudyFolder}/${Subject}_${concatfmri}${RegString}_hp${hp}.matlab.log"
+			local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
 			#MPH: This logfile should go in a different location (probably in the .ica directory)
 
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -769,7 +769,7 @@ M_PROG
 			;;
 	esac
 
-	cd ..
+	cd ${ConcatFolder}
 
 	## ---------------------------------------------------------------------------
 	## Rename some files (relative to the default names coded in fix_3_clean.m)

@@ -441,8 +441,7 @@ main()
 				matlab_function_arguments="'${fixlist}' ${aggressive} ${MotionRegression} ${hp} ${DoVol}"
 			fi
 
-			local matlab_logging=">> ${StudyFolder}/${Subject}_${fMRIName}${RegString}_${hp}.fix_3_clean.matlab.log 2>&1"
-			#MPH: This logfile should go in a different location (probably in the .ica directory)
+			local matlab_logging=">> .reapplyfix.${fMRIName}${RegString}.fix_3_clean.matlab.log 2>&1"
 			
 			local matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
