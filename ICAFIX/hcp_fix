@@ -53,6 +53,10 @@ Usage() {
 
 hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
 
+  Apply FIX cleaning to a single file
+
+  <4D_FMRI_data>: fMRI run to be processed (nifti extension optional)
+
   <highpass>: 
      If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'
 
@@ -70,7 +74,8 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixT
      Default = 10.
      To specify a threshold, <TrainingFile> becomes a mandatory argument.
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 2000 TRUE
+e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 TRUE
+        (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF
     exit 1
@@ -84,8 +89,8 @@ fi
 
 fmri=$1
 cd `dirname $fmri`
-fmri=`basename $fmri`
-fmri=`$FSLDIR/bin/imglob $fmri`
+fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
+fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
 [ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
 
 hp=$2

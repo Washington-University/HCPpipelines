@@ -62,8 +62,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID> (e.g. 100610)
    --fmri-names=<fMRI names> an '@' symbol separated list of fMRI scan names (no whitespace)
-     (e.g. /path/to/study/100610/MNINonLinear/Results/tfMRI_RETCCW_7T_AP/tfMRI_RETCCW_7T_AP.nii.gz@/path/to/study/100610/MNINonLinear/Results/tfMRI_RETCW_7T_PA/tfMRI_RETCW_7T_PA.nii.gz)
-   --concat-fmri-name=<root name of the concatenated fMRI scan file> [Do not include path, extension, or any 'hp' string]
+     (e.g. rfMRI_REST1_LR@rfMRI_REST1_RL) (Do not include path, nifti extension, or the 'hp' string)
+   --concat-fmri-name=<root name of the concatenated fMRI scan file> (Do not include path, nifti extension, or the 'hp' string)
    --high-pass=<high-pass filter used in multi-run ICA+FIX>
    [--reg-name=<surface registration name> defaults to ${G_DEFAULT_REG_NAME}. (Use NONE for MSMSulc registration)
    [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
@@ -357,11 +357,7 @@ main()
 	local StudyFolder="${1}"
 	local Subject="${2}"
 	local fMRINames="${3}"
-	local ConcatNameOnly="${4}"
-	# Make sure that ${4} is indeed without path or extension
-	ConcatNameOnly=$(basename $($FSLDIR/bin/remove_ext $ConcatNameOnly))
-	#script used to take absolute paths, so generate the absolute path and leave the old code
-	local ConcatName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatNameOnly}/${ConcatNameOnly}"
+	local ConcatName="${4}"
 	local HighPass="${5}"
 
 	local RegName
@@ -453,6 +449,11 @@ main()
 	local DoVol=0
 	local fixlist=".fix"
 
+	# ConcatName (${4}) is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
+	ConcatNameOnly=$(basename $($FSLDIR/bin/remove_ext $ConcatName))
+	# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
+	ConcatName="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatNameOnly}/${ConcatNameOnly}"
+
     # If we have a hand classification and no regname, reapply fix to the volume as well
 	if have_hand_reclassification ${StudyFolder} ${Subject} ${ConcatNameOnly} ${hp}
 	then
@@ -503,14 +504,14 @@ main()
     MovementTXTMergeSTRING=""
 
 	for fmriname in $fmris ; do
-		# Make sure that fmriname is indeed without path or extension
+		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
-	    #script used to take absolute paths, so generate the absolute path and leave the old code
+		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
 	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
 
 		log_Msg "Top of loop through fmris: fmri: ${fmri}"
 
-		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
 
 		# Create necessary strings for merging across runs
 		# N.B. Some of these files don't exist yet, and are about to get created
@@ -530,7 +531,9 @@ main()
 		fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
 		fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
 		log_Msg "fmri: $fmri"
-		[ `imtest $fmri` != 1 ] && echo Invalid FMRI file && exit 1
+		if [ `imtest $fmri` != 1 ]; then
+			log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
+		fi
 
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 		log_Msg "tr: $tr"
@@ -593,6 +596,8 @@ main()
 	        $FSLDIR/bin/imrm $(pwd)/${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	    fi
 
+		cd ${DIR}  # Return to directory where script was launched
+		
 	    log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 
 	done  ###END LOOP (for fmriname in $fmris; do)
@@ -642,9 +647,15 @@ main()
 	/bin/rm -f ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii
 
 	# Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
-	for fmri in $fmris ; do
+	for fmriname in $fmris ; do
+		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
+		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
+		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
+
 		log_Msg "Removing the individual run VN'ed and demeaned time series for ${fmri}"
-		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
 		$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}_vnts
 		$FSLDIR/bin/imrm ${fmriNoExt}_demean
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
@@ -783,22 +794,28 @@ M_PROG
 	## We now reverse that process.
 	## i.e., the mean VN (across runs) is divided back out, and the VN map for the individual run multiplied back in.
 	## Then the mean is added back in to return the timeseries to its original state minus the noise (as estimated by FIX).
+
+	cd ${DIR}  # Return to directory where script was launched
 	
+	log_Msg "Splitting cifti back into individual runs"
+	if (( DoVol == 1 )); then
+	   log_Msg "Also splitting nifti back into individual runs"
+	fi
 	Start="1"
 	for fmriname in $fmris ; do
-	    # Make sure that fmriname is indeed without path or extension
+		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
-	    #script used to take absolute paths, so generate the absolute path and leave the old code
+		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
 	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
-		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)
+
+		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
 		NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
 	    Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
-	    log_Msg "Start=${Start} Stop=${Stop}"
+	    log_Msg "${fmriNoExt}: Start=${Start} Stop=${Stop}"
 	
-	    log_Debug_Msg "Splitting cifti back into individual runs"
 	    cifti_out=${fmriNoExt}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	    ${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	    ${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+	    ${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	    ${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 
 	    readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	    touch ${readme_for_cifti_out}
@@ -808,17 +825,15 @@ M_PROG
 	    for readme_fmri_name in ${fmris} ; do
     	    # Make sure that readme_fmri_name is indeed without path or extension
 			readme_fmri_name=$(basename $($FSLDIR/bin/remove_ext $readme_fmri_name))
-			#script used to take absolute paths, so generate the absolute path and leave the old code
+			# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
     	    readme_fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name}.nii.gz"
 		    echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	    done
 		
-		if (( DoVol == 1 ))
-		then
-	        log_Debug_Msg "Splitting volumes (nifti) back into individual runs"
+		if (( DoVol == 1 )); then
 			volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
-	        ${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-	        fslmaths ${volume_out} -div ${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
+	        ${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	        fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
         fi
 	    Start=`echo "${Start} + ${NumTPS}" | bc -l`
 	done
@@ -830,7 +845,8 @@ M_PROG
 	## Deleting these files would save a lot of space.
 	## But downstream scripts (e.g., RestingStateStats) assume they exist, and
 	## if deleted they would therefore need to be re-created "on the fly" later
-	
+
+	# cd ${ConcatFolder}
 	# $FSLDIR/bin/imrm ${concatfmri}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean

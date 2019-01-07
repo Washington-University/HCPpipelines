@@ -61,7 +61,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-name=<fMRI name> (Do not include path, extension, or the 'hp' string).
+   --fmri-name=<fMRI name> (Do not include path, nifti extension, or the 'hp' string).
    --high-pass=<high-pass filter used in ICA+FIX>
    [--reg-name=<surface registration name> defaults to ${G_DEFAULT_REG_NAME}. (Use NONE for MSMSulc registration)
    [--low-res-mesh=<low res mesh number>] defaults to ${G_DEFAULT_LOW_RES_MESH}
@@ -313,11 +313,6 @@ main()
 		MotionRegression="${8}"
 	fi
 
-	# Throughout this script, fMRIName is expected to NOT include an absolute path or a .nii or .nii.gz extension
-	# Make sure that is indeed the case
-	# (although if someone includes the hp string as part fMRIName itself, this still isn't sufficient)
-	fMRIName=$(basename $($FSLDIR/bin/remove_ext $fMRIName))
-	
 	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
 	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
         ( true | yes | 1)
@@ -377,6 +372,10 @@ main()
 	local hp=${HighPass}
 	local DoVol=0
 	local fixlist=".fix"
+	
+	# fMRIName is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
+	# (although if someone includes the hp string as part fMRIName itself, the script will still break)
+	fMRIName=$(basename $($FSLDIR/bin/remove_ext $fMRIName))
 	
 	# If we have a hand classification and no regname, reapply fix to the volume as well
 	if have_hand_reclassification ${StudyFolder} ${Subject} ${fMRIName} ${hp}
