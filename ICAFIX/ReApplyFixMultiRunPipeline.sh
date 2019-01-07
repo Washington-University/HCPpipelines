@@ -593,7 +593,7 @@ main()
         log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 		# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
-        if (( DoVol == 1 )); then
+        if (( DoVol )); then
 	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
 	        fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf.nii.gz
 	        $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean.nii.gz
@@ -707,19 +707,23 @@ main()
 	AlreadyHP="-1"
 
 	case ${MatlabRunMode} in
+
+		# See important WARNING above regarding why ${DoVol} is NOT included as an argument when DoVol=1 !!
+		
 		0)
 			# Use Compiled Matlab
 			
 			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
-			# See important WARNING regarding intrepretation of DoVol above!!
-			local matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
-			if [[ DoVol == 0 ]]
-			then
-    			matlab_function_arguments+=("${DoVol}")
+			# See important WARNING above regarding why ${DoVol} is NOT included as a parameter when DoVol=1 !!
+			
+			local matlab_function_arguments
+			if (( DoVol )); then
+				matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
+			else
+    			matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${DoVol}")
 			fi
 			local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
-			#MPH: This logfile should go in a different location (probably in the .ica directory)
 
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
@@ -731,36 +735,32 @@ main()
 		
 		1)
 			# Use interpreted MATLAB
-            if [[ DoVol == 0 ]]
-            then
-    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
-M_PROG
-)
-            else
+            if (( DoVol )); then
     			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
+            else
+    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
+M_PROG
+)
             fi
-
 			;;
 
 		2)
 			# Use interpreted OCTAVE
-            if [[ DoVol == 0 ]]
-            then
-    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
-M_PROG
-)
-            else
+            if (( DoVol )); then
     			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
+            else
+    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
+${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
+M_PROG
+)
             fi
-
 			;;
 
 		*)
