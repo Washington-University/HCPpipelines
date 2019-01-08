@@ -524,6 +524,7 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 # Verify any other needed environment variables are set
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
+log_Check_Env_Var FSL_FIXDIR
 
 # Show tool versions
 show_tool_versions

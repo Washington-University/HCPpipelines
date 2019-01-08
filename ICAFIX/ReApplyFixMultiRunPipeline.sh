@@ -884,6 +884,7 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 # Verify any other needed environment variables are set
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
+log_Check_Env_Var FSL_FIXDIR
 
 # Establish defaults
 G_DEFAULT_REG_NAME="NONE"
