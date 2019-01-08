@@ -63,6 +63,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject=<subject ID> (e.g. 100610)
    --fmri-names=<fMRI names> an '@' symbol separated list of fMRI scan names (no whitespace)
      (e.g. rfMRI_REST1_LR@rfMRI_REST1_RL) (Do not include path, nifti extension, or the 'hp' string)
+     All runs are assumed to have the same repetition time (TR).
    --concat-fmri-name=<root name of the concatenated fMRI scan file> (Do not include path, nifti extension, or the 'hp' string)
    --high-pass=<high-pass filter used in multi-run ICA+FIX>
    [--reg-name=<surface registration name> defaults to ${G_DEFAULT_REG_NAME}. (Use NONE for MSMSulc registration)
@@ -535,10 +536,6 @@ main()
 			log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 		fi
 
-		tr=`$FSLDIR/bin/fslval $fmri pixdim4`
-		log_Msg "tr: $tr"
-		log_Msg "processing FMRI file $fmri with highpass $hp"
-
 		#Demean movement regressors, volumes, and CIFTI data
         if [[ ! -f Movement_Regressors_demean.txt ]]; then
     	    demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
@@ -555,12 +552,15 @@ main()
 	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
         fi
 
-		# MPH: ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
+		# ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
 		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
 		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN
 		# Note that functionhighpassandvariancenormalize does NOT filter the movement regressors unless
 		# ${RegString} is empty (i.e., if DoVol = 1)
 		
+		tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
+		log_Msg "tr: $tr"
+
 		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
@@ -568,6 +568,7 @@ main()
               `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vn"` != 1 ]]
         then
 
+			log_Msg "processing FMRI file $fmri with highpass $hp"
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
@@ -601,9 +602,12 @@ main()
 				$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
 			fi
 			
-	    fi
+			log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
-        log_Msg "Dims: $(cat ${fmri}_dims.txt)"
+		else
+			log_Msg "Skipping functionhighpassandvariancenormalize because expected files for ${fmri} already exist"
+
+	    fi
 
 		cd ${DIR}  # Return to directory where script was launched
 		

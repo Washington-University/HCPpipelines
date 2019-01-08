@@ -71,6 +71,7 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
   <4D_FMRI_data>:
      List of the individual fMRI runs to concatenate, joined with '@' symbol (no whitespace)
      Relative path (from launching directory) allowed (nifti extension optional)
+     All runs are assumed to have the same repetition time (TR).
 
   <highpass>: 
      If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'.
@@ -256,10 +257,6 @@ for fmri in $fmris ; do
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 	fi
 
-	tr=`$FSLDIR/bin/fslval $fmri pixdim4` 
-	log_Msg "tr: $tr"
-	log_Msg "processing FMRI file $fmri with highpass $hp"
-
 	#Demean movement regressors, volumes, and CIFTI data
 	demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
 	MovementTXTMergeSTRING+="$(pwd)/Movement_Regressors_demean.txt "
@@ -270,10 +267,14 @@ for fmri in $fmris ; do
 	${FSL_FIX_WBC} -cifti-reduce ${fmri}_Atlas.dtseries.nii MEAN ${fmri}_Atlas_mean.dscalar.nii
 	${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmri}_Atlas_demean.dtseries.nii -var TCS ${fmri}_Atlas.dtseries.nii -var MEAN ${fmri}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 	
+	# "1st pass" VN on the individual runs; high-pass gets done here as well
+	tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
+	log_Msg "tr: $tr"  
+	log_Msg "processing FMRI file $fmri with highpass $hp"
+
 	if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
 		rm .fix.functionhighpassandvariancenormalize.log
 	fi
-	# "1st pass" VN on the individual runs; high-pass gets done here as well
 	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
 	
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
