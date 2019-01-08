@@ -478,16 +478,9 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
 
-# Verify that other needed environment variables are set
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
-
-if [ -z "${FSLDIR}" ]; then
-	log_Err_Abort "FSLDIR environment variable must be set"
-fi
-log_Msg "FSLDIR: ${FSLDIR}"
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
 
 # Show tool versions
 show_tool_versions

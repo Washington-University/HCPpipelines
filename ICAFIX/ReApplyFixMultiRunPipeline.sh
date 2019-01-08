@@ -283,9 +283,9 @@ show_tool_versions()
 	${CARET7DIR}/wb_command -version
 
 	# Show fsl version
-#	log_Msg "Showing FSL version"
-#	fsl_version_get fsl_ver
-#	log_Msg "FSL version: ${fsl_ver}"
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
 }
 
 # ------------------------------------------------------------------------------
@@ -874,9 +874,8 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Functions for getting FSL version
-log_SetToolName "ReApplyFixPipelineMultiRun.sh"
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify any other needed environment variables are set
