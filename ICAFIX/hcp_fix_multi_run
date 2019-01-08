@@ -160,9 +160,9 @@ else
 	hpNum=${hp}
 fi
 if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
-	log_Err_Abort "Highpass argument does not contain a properly specified numeric value"
+	log_Err_Abort "highpass value of ${hp} is not valid"
 fi
-if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then
+if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then  #Logic of this script does not support negative hp values
     log_Err_Abort "highpass value must not be negative"
 fi
 

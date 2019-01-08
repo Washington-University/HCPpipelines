@@ -206,10 +206,10 @@ get_options()
 			local hpNum=${p_HighPass}
 		fi
 		if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
-			log_Err "--high-pass argument does not contain a properly specified numeric value"
+			log_Err "--high-pass value of ${p_HighPass} is not valid"
 			error_count=$(( error_count + 1 ))
 		fi
-		if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then
+		if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then  #Logic of this script does not support negative hp values
 			log_Err "--high-pass value must not be negative"
 			error_count=$(( error_count + 1 ))
 		fi
