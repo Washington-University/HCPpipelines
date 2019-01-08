@@ -375,9 +375,6 @@ main()
 			local matlab_exe
 			matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_prepareICAs/run_prepareICAs.sh"
 			
-			local matlab_compiler_runtime
-			matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
-
 			local matlab_function_arguments
 			matlab_function_arguments="'${dtseriesName}'"
 			matlab_function_arguments+=" '${ICAs}'"
@@ -391,10 +388,12 @@ main()
 			matlab_function_arguments+=" ${TR} "
 
 			local matlab_logging
-			matlab_logging=">> ${FIXFolder}/.postfix.${fMRIName}.prepareICAs.matlab.log 2>&1"
+			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
+			#matlab_logging=">> ${FIXFolder}/.postfix.${fMRIName}.prepareICAs.matlab.log 2>&1"
+			matlab_logging=""
 
 			local matlab_cmd
-			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+			matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
 			# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
 			#       does NOT work. The output redirects that are part of the ${matlab_logging}
