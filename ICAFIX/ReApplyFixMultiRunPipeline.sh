@@ -768,7 +768,9 @@ M_PROG
 			;;
 	esac
 
-	cd ${ConcatFolder}
+	# Return to ${ConcatFolder}
+	# Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
+	cd ..
 
 	## ---------------------------------------------------------------------------
 	## Rename some files (relative to the default names coded in fix_3_clean.m)

@@ -493,11 +493,13 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 	$FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 fi
 
+# Return to ${ConcatFolder}
+# Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
+cd ../..
+
 ## ---------------------------------------------------------------------------
 ## Actually run FIX
 ## ---------------------------------------------------------------------------
-
-cd ${ConcatFolder}
 
 log_Msg "running FIX"
 
