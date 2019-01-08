@@ -364,20 +364,23 @@ done
 ## Prepare for melodic on concatenated file
 ## ---------------------------------------------------------------------------
 
-cd ${ConcatFolder}
-
 # concatfmri is intensity normalized and has no overall mean.
 # It is also not variance normalized (the mean VN map *across runs* was "restored" above).
 # But is detrended and within run demeaned and variance normalized for both volume and CIFTI
 concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
 concatfmrihp=${concatfmri}_hp${hp}
 
-mkdir -p ${concatfmrihp}.ica
+#MPH: Need to be in original directory here, for the ${MovementNIFTI*STRING} variables to work
+#if user did not use absolute paths for input arguments
+mkdir -p ${ConcatFolder}/${concatfmrihp}.ica
 log_Debug_Msg "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
-cat ${MovementTXTMergeSTRING} > Movement_Regressors_demean.txt
-mkdir ${concatfmrihp}.ica/mc
-fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
-fslmerge -tr ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
+cat ${MovementTXTMergeSTRING} > ${ConcatFolder}/Movement_Regressors_demean.txt
+mkdir ${ConcatFolder}/${concatfmrihp}.ica/mc
+fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
+fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
+
+#MPH: Now we can switch to ${ConcatFolder}
+cd ${ConcatFolder}
 
 log_Msg "running MELODIC"
 log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
