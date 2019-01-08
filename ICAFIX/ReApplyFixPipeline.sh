@@ -454,30 +454,20 @@ main()
 			log_Msg "MATLAB command return code $?"
 			;;
 		
-		1)
-			# Use interpreted MATLAB
-			if (( DoVol )); then
-				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
-M_PROG
-)
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			if [[ ${MatlabRunMode} == "1" ]]; then
+				local interpreter=(matlab -nojvm -nodisplay -nosplash)
 			else
-				(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
-M_PROG
-)
+				local interpreter=(octave-cli -q --no-window-system)
 			fi
-			;;
-
-		2)
-			# Use interpreted Octave
 			if (( DoVol )); then
-				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
+				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
 M_PROG
 )
 			else
-				(source "${FSL_FIXDIR}/settings.sh"; octave -q --no-window-system <<M_PROG
+				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
 M_PROG
 )

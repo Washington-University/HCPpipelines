@@ -576,15 +576,23 @@ main()
 				
                 "${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${FSL_FIX_WBC}" "${RegString}"
                 ;;
-            1)
-                # interpreted matlab
-                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | matlab -nojvm -nodisplay -nosplash)
+
+            1 | 2)
+                # Use interpreted MATLAB or Octave
+				if [[ ${MatlabRunMode} == "1" ]]; then
+					local interpreter=(matlab -nojvm -nodisplay -nosplash)
+				else
+					local interpreter=(octave-cli -q --no-window-system)
+				fi
+                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | "${interpreter[@]}")
                 ;;
-            2)
-                # interpreted octave
-                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | octave-cli -q --no-window-system)
-                ;;
-            esac
+
+			*)
+				# Unsupported MATLAB run mode
+				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+				;;
+			
+			esac
 
 			# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
 			if (( DoVol )); then
@@ -734,30 +742,20 @@ main()
 			log_Msg "MATLAB command return code $?"
 			;;
 		
-		1)
-			# Use interpreted MATLAB
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			if [[ ${MatlabRunMode} == "1" ]]; then
+				local interpreter=(matlab -nojvm -nodisplay -nosplash)
+			else
+				local interpreter=(octave-cli -q --no-window-system)
+			fi
             if (( DoVol )); then
-    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
             else
-    			(source "${FSL_FIXDIR}/settings.sh"; matlab -nojvm -nodisplay -nosplash <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
-M_PROG
-)
-            fi
-			;;
-
-		2)
-			# Use interpreted OCTAVE
-            if (( DoVol )); then
-    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
-M_PROG
-)
-            else
-    			(source "${FSL_FIXDIR}/settings.sh"; octave-cli -q --no-window-system <<M_PROG
+    			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
 M_PROG
 )
