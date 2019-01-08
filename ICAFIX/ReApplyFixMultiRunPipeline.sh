@@ -500,8 +500,6 @@ main()
     CIFTIhpVNMergeSTRING=""
     MeanCIFTISTRING=""
     VNCIFTISTRING=""
-    MovementNIFTIMergeSTRING=""
-    MovementNIFTIhpMergeSTRING=""
     MovementTXTMergeSTRING=""
 
 	for fmriname in $fmris ; do
@@ -525,8 +523,6 @@ main()
 		CIFTIhpVNMergeSTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii "
 		MeanCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii "
 		VNCIFTISTRING+="-cifti ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii "  #These are the individual run, VN'ed CIFTI *maps* (created by functionhighpassandvariancenormalize)
-		MovementNIFTIMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf "
-		MovementNIFTIhpMergeSTRING+="${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp "
 
 		cd `dirname $fmri`
 		fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
