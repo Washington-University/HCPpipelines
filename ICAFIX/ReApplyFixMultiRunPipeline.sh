@@ -570,8 +570,20 @@ main()
 			    # Use Compiled Matlab
 				# MPH: Current version of fix (fix1.067) does not have a compiled version of run_functionhighpassandvariancenormalize
 				log_Err_Abort "MATLAB run mode of ${MatlabRunMode} not currently supported"
-				
-                "${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${FSL_FIX_WBC}" "${RegString}"
+
+				# Following code, with appropriate setting of matlab_exe, should work if/when a compiled version is created
+				local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh"
+				local matlab_function_arguments=("${tr}" "${hp}" "'${fmri}'" "'${FSL_FIX_WBC}'" "'${RegString}'")
+
+				local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+
+				# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
+				# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
+				#local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.functionhighpassandvariancenormalize.log"
+				#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+				log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+				"${matlab_cmd[@]}"
+				log_Msg "Compiled MATLAB return code $?"
                 ;;
 
             1 | 2)
@@ -581,7 +593,12 @@ main()
 				else
 					local interpreter=(octave-cli -q --no-window-system)
 				fi
-                (source "${FSL_FIXDIR}/settings.sh"; echo "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $hp, '$fmri', '${FSL_FIX_WBC}', '${RegString}');" | "${interpreter[@]}")
+				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+				log_Msg "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
+                (source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');
+M_PROG
+)
                 ;;
 
 			*)
@@ -737,9 +754,9 @@ main()
 			#local matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
 			#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
 			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
-			log_Msg "Run MATLAB command: ${matlab_cmd[*]}"
+			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
-			log_Msg "MATLAB command return code $?"
+			log_Msg "Compiled MATLAB return code $?"
 			;;
 		
 		1 | 2)
@@ -749,12 +766,15 @@ main()
 			else
 				local interpreter=(octave-cli -q --no-window-system)
 			fi
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
             if (( DoVol )); then
+				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
     			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
 M_PROG
 )
             else
+				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
     			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
 M_PROG

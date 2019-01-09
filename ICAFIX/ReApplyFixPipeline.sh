@@ -449,9 +449,9 @@ main()
 			#local matlab_logfile=".reapplyfix.${fMRIName}${RegString}.fix_3_clean.matlab.log"
 			#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
 			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
-			log_Msg "Run MATLAB command: ${matlab_cmd[*]}"
+			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
-			log_Msg "MATLAB command return code $?"
+			log_Msg "Compiled MATLAB return code $?"
 			;;
 		
 		1 | 2)
@@ -461,12 +461,16 @@ main()
 			else
 				local interpreter=(octave-cli -q --no-window-system)
 			fi
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+			
 			if (( DoVol )); then
+				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});"
 				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
 M_PROG
 )
 			else
+				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});"
 				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
 ${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
 M_PROG
