@@ -430,11 +430,11 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 	
-	# For interpreted modes, make sure that fix_3_clean has access to the functions it needs
+	# For interpreted modes, make sure that matlab/octave have access to the functions they need
 	# (e.g., read_avw, save_avw, ciftiopen, ciftisave)
 	# Several environment variables are set in FSL_FIXDIR/settings.sh, which is sourced below for interpreted modes
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}'); addpath('${this_script_dir}/scripts');"
 
 	export FSL_FIX_WBC="${Caret7_Command}"
 	# WARNING: FSL_FIXDIR/settings.sh doesn't currently check whether FSL_FIX_WBC is already defined.
@@ -568,12 +568,15 @@ main()
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
+
 				# MPH: Current version of fix (fix1.067) does not have a compiled version of run_functionhighpassandvariancenormalize
 				log_Err_Abort "MATLAB run mode of ${MatlabRunMode} not currently supported"
 
 				# Following code, with appropriate setting of matlab_exe, should work if/when a compiled version is created
+				# Do NOT enclose string variables inside an additional single quote because all
+				# variables are already passed into the compiled binary as strings
 				local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh"
-				local matlab_function_arguments=("${tr}" "${hp}" "'${fmri}'" "'${FSL_FIX_WBC}'" "'${RegString}'")
+				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${FSL_FIX_WBC}" "${RegString}")
 
 				local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
@@ -593,10 +596,18 @@ main()
 				else
 					local interpreter=(octave-cli -q --no-window-system)
 				fi
+
+				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
+				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-				log_Msg "${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
-                (source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
-${ML_PATHS} addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');
+				log_Msg "${matlab_cmd}"
+
+				# Use bash redirection ("here-document") to pass multiple commands into matlab
+				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+				# get interpreted as separating different bash shell commands)
+				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
+${matlab_cmd}
 M_PROG
 )
                 ;;
@@ -738,15 +749,13 @@ M_PROG
 			
 			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 	
-			# See important WARNING above regarding why ${DoVol} is NOT included as a parameter when DoVol=1 !!
-			
-			local matlab_function_arguments
-			if (( DoVol )); then
-				matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
-			else
-    			matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${DoVol}")
+			# Do NOT enclose string variables inside an additional single quote because all
+			# variables are already passed into the compiled binary as strings
+			local matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
+			if (( ! DoVol )); then
+				matlab_function_arguments+=("${DoVol}")
 			fi
-
+			
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -766,20 +775,24 @@ M_PROG
 			else
 				local interpreter=(octave-cli -q --no-window-system)
 			fi
+
+			if (( DoVol )); then
+				local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
+			else
+				local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
+			fi
+			
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-            if (( DoVol )); then
-				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
-    			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});
+			log_Msg "${matlab_cmd}"
+			
+            # Use bash redirection ("here-document") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
+			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
+${matlab_cmd}
 M_PROG
 )
-            else
-				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
-    			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});
-M_PROG
-)
-            fi
 			;;
 
 		*)

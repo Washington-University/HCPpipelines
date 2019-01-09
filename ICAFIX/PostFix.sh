@@ -66,8 +66,6 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 EOF
 }
 
-this_script_dir=$(readlink -f "$(dirname "$0")")
-
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
 # ------------------------------------------------------------------------------
@@ -372,8 +370,7 @@ main()
 
 		0)
 			# Use Compiled Matlab
-			local matlab_exe
-			matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_prepareICAs/run_prepareICAs.sh"
+			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_prepareICAs/run_prepareICAs.sh"
 			
 			# Do NOT enclose string variables inside an additional single quote because all
 			# variables are already passed into the compiled binary as strings

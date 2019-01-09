@@ -435,11 +435,11 @@ main()
 
 			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
-			local matlab_function_arguments
-			if (( DoVol )); then
-				matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${hp}")
-			else
-				matlab_function_arguments=("'${fixlist}'" "${aggressive}" "${MotionRegression}" "${hp}" "${DoVol}")
+			# Do NOT enclose string variables inside an additional single quote because all
+			# variables are already passed into the compiled binary as strings
+			local matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${hp}")
+			if (( ! DoVol )); then
+				matlab_function_arguments+=("${DoVol}")
 			fi
 			
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -461,21 +461,24 @@ main()
 			else
 				local interpreter=(octave-cli -q --no-window-system)
 			fi
-			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-			
+
 			if (( DoVol )); then
-				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});"
-				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});
-M_PROG
-)
+				local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});"
 			else
-				log_Msg "${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});"
-				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
-${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});
+				local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});"
+			fi
+			
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+			log_Msg "${matlab_cmd}"
+
+			# Use bash redirection ("here-document") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
+			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
+${matlab_cmd}
 M_PROG
 )
-			fi
 			;;
 
 		*)
