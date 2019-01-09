@@ -396,16 +396,18 @@ main()
 			# Use interpreted MATLAB or octave
 			if [[ ${MatlabRunMode} == '1' ]]
 			then
-			    interpreter=(matlab -nojvm -nodisplay -nosplash)
+			    local interpreter=(matlab -nojvm -nodisplay -nosplash)
 			else
-			    interpreter=(octave -q --no-window-system)
+			    local interpreter=(octave -q --no-window-system)
 			fi
-			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-			log_Msg "${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
 
-			"${interpreter[@]}" <<M_PROG
-${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
-M_PROG
+			local matlab_cmd="${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
+			
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+			log_Msg "${matlab_cmd}"
+
+			"${interpreter[@]}" "${matlab_cmd}"
+
 			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;
 		
