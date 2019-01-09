@@ -426,8 +426,8 @@ log_Msg "Dim: ${Dim}"
 
 # Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
-# Added "-m ${ConcatNameNoExt}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
-melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${ConcatNameNoExt}_brain_mask"
+# Added "-m ${concatfmri}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
+melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${concatfmri}_brain_mask"
 if [ ! -z "${log_debugOn}" ] ; then
 	melodic_cmd="${melodic_cmd} --verbose --debug"
 fi
