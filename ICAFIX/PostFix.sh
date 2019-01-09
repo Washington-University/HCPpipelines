@@ -402,9 +402,9 @@ main()
 			#       So ">>" gets passed as a parameter to the executable as does the
 			#       log file name and the "2>&1" redirection. This causes the executable
 			#       to die with a "too many parameters" error message.
-			log_Msg "Run MATLAB command: ${matlab_cmd}"
+			log_Msg "Run compiled MATLAB: ${matlab_cmd}"
 			echo "${matlab_cmd}" | bash
-			log_Msg "MATLAB command return code: $?"
+			log_Msg "Compiled MATLAB return code: $?"
 			;;
 
 		1 | 2)
@@ -416,10 +416,13 @@ main()
 			    interpreter=(octave -q --no-window-system)
 			fi
 
+			log_Msg "Run interpreted MATLAB/Octave ('$interpreter[@]}') with command..."
+			log_Msg "${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
+
 			"${interpreter[@]}" <<M_PROG
 ${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});
 M_PROG
-			log_Msg "${ML_PATHS} prepareICAs('${dtseriesName}','${ICAs}','${CARET7DIR}/wb_command','${ICAdtseries}','${NoiseICAs}','${Noise}','${Signal}','${ComponentList}',${HighPassUse},${TR});"
+			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;
 		
 		*)
