@@ -382,7 +382,6 @@ fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_co
 #MPH: Now we can switch to ${ConcatFolder}
 cd ${ConcatFolder}
 
-log_Msg "running MELODIC"
 log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
 if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${concatfmrihp}.ica
@@ -398,7 +397,7 @@ else
     MELODIC="${FSLDIR}/bin/melodic"
 fi
 
-log_Msg "Running melodic located at: $MELODIC"
+log_Msg "Running MELODIC located at: $MELODIC"
 log_Debug_Msg "Beginning of melodic version log, help, and checksum"
 if [ ! -z "${log_debugOn}" ] ; then
 	log_Debug_Msg "$MELODIC --version"
@@ -427,7 +426,7 @@ log_Msg "Dim: ${Dim}"
 # Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
 # Added "-m ${concatfmri}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
-melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr --vn --dim=${Dim} -m ${concatfmri}_brain_mask"
+melodic_cmd="${MELODIC} -i ${concatfmrihp}_vnts -o ${concatfmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=${tr} --vn --dim=${Dim} -m ${concatfmri}_brain_mask"
 if [ ! -z "${log_debugOn}" ] ; then
 	melodic_cmd="${melodic_cmd} --verbose --debug"
 fi
@@ -501,7 +500,7 @@ cd ../..
 ## Actually run FIX
 ## ---------------------------------------------------------------------------
 
-log_Msg "running FIX"
+log_Msg "Running FIX"
 
 # Changes to handle user specified training data file
 if [ "X${TrainingData}" != X ]; then
@@ -562,8 +561,8 @@ else
         #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
         fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData" "${FixThresh}")
     fi
-	log_Msg "fix_cmd: ${fix_cmd[*]}"
-	"${fix_cmd[@]}"
+	log_Msg "About to run: ${fix_cmd[*]}"
+    "${fix_cmd[@]}"
 	return_code=$?
 	if [ "${return_code}" -ne "0" ]; then
 		log_Err_Abort "return_code from fix_cmd: ${return_code}"

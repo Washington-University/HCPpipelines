@@ -24,6 +24,8 @@
 
 #############################################################
 
+set -e
+
 # Verify HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
 	script_name=$(basename "${0}")
@@ -125,14 +127,13 @@ tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 log_Msg "processing FMRI file $fmri with highpass $hp"
 
 if (( hp > 0 )) ; then
-  log_Msg "running highpass"
+  log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
   ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
   fmrihp=${fmri}_hp$hp
 fi
 
-log_Msg "running MELODIC"
 mkdir -p ${fmrihp}.ica
 log_Debug_Msg "About to run melodic: Contents of ${fmrihp}.ica follow"
 if [ ! -z "${log_debugOn}" ] ; then
@@ -148,15 +149,28 @@ else
     #if it isn't even in $PATH, fall back on FSLDIR
     MELODIC="${FSLDIR}/bin/melodic"
 fi
-log_Debug_Msg "Beginning of melodic version log"
-if [ ! -z "${log_debugOn}" ] ; then
-	"${MELODIC}" --version
-fi
-log_Debug_Msg "End of melodic version log"
 
-${MELODIC} -i $fmrihp -o ${fmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
+log_Msg "Running MELODIC located at: $MELODIC"
+log_Debug_Msg "Beginning of melodic version log, help, and checksum"
+if [ ! -z "${log_debugOn}" ] ; then
+	log_Debug_Msg "$MELODIC --version"
+	$MELODIC --version
+	log_Debug_Msg "$MELODIC --help"
+	$MELODIC --help
+	log_Debug_Msg "md5sum $MELODIC"
+	md5sum $MELODIC
+fi
+log_Debug_Msg "End of melodic version log, help, and checksum"
+
+melodic_cmd="${MELODIC} -i ${fmrihp} -o ${fmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=${tr}"
+if [ ! -z "${log_debugOn}" ] ; then
+	melodic_cmd="${melodic_cmd} --verbose --debug"
+fi
+
+log_Msg "melodic_cmd: ${melodic_cmd}"
+${melodic_cmd}
 return_code=$?
-log_Debug_Msg "melodic has been run: return_code = ${return_code}"
+log_Msg "melodic has been run: return_code = ${return_code}"
 log_Debug_Msg "melodic has been run: Contents of ${fmrihp}.ica follow"
 if [ ! -z "${log_debugOn}" ] ; then
 	ls -lRa ${fmrihp}.ica
@@ -216,7 +230,7 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 fi
 cd ../..
 
-log_Msg "running FIX"
+log_Msg "Running FIX"
 
 # Changes to handle user specified training data file
 if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
@@ -265,7 +279,13 @@ else
     fi
     log_Msg "About to run: ${fix_cmd[*]}"
     "${fix_cmd[@]}"
+	return_code=$?
+	if [ "${return_code}" -ne "0" ]; then
+		log_Err_Abort "return_code from fix_cmd: ${return_code}"
+	fi
 fi
+
+log_Msg "Done running FIX"
 
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
 
