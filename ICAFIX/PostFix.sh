@@ -375,9 +375,11 @@ main()
 			local matlab_exe
 			matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_prepareICAs/run_prepareICAs.sh"
 			
-			local matlab_function_arguments=("'${dtseriesName}'" "'${ICAs}'" "'${CARET7DIR}/wb_command'")
-			matlab_function_arguments+=("'${ICAdtseries}'" "'${NoiseICAs}'" " '${Noise}'")
-			matlab_function_arguments+=("'${Signal}'" "'${ComponentList}'" "${HighPassUse}")
+			# Do NOT enclose string variables inside an additional single quote because all
+			# variables are already passed into the compiled binary as strings
+			local matlab_function_arguments=("${dtseriesName}" "${ICAs}" "${CARET7DIR}/wb_command")
+			matlab_function_arguments+=("${ICAdtseries}" "${NoiseICAs}" "${Noise}")
+			matlab_function_arguments+=("${Signal}" "${ComponentList}" "${HighPassUse}")
 			matlab_function_arguments+=("${TR}")
 
 			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -393,9 +395,8 @@ main()
 			;;
 
 		1 | 2)
-			# Use interpreted MATLAB or octave
-			if [[ ${MatlabRunMode} == '1' ]]
-			then
+			# Use interpreted MATLAB or Octave
+			if [[ ${MatlabRunMode} == '1' ]]; then
 			    local interpreter=(matlab -nojvm -nodisplay -nosplash)
 			else
 			    local interpreter=(octave -q --no-window-system)
@@ -406,7 +407,13 @@ main()
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "${matlab_cmd}"
 
-			"${interpreter[@]}" "${matlab_cmd}"
+			# Use bash redirection ("here-document") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
+			"${interpreter[@]}" <<M_PROG
+# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
+${matlab_cmd}
+M_PROG
 
 			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;
