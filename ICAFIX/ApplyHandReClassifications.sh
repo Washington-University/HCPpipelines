@@ -152,7 +152,10 @@ list_file_to_lookup()
     unset "${2}"
     for component in ${file_contents}
     do
-        declare -g "${2}"["${component}"]=1
+	#MPH: When used in a function, declare creates local variables, unless -g (global) option is used
+	# BUT, -g option is not supported in all bash versions, so use an eval statement instead.
+        #declare -g "${2}"["${component}"]=1
+        eval "${2}[${component}]=1"
     done
 }
 
@@ -215,6 +218,14 @@ main()
 	hand_signal=""
 	hand_noise=""
 	training_labels=""
+
+	# Make sure that there is something to do (i.e., ReclassifyAs*.txt files are not BOTH empty)
+	if (( ! ${#reclass_signal[@]} && ! ${#reclass_noise[@]} )); then
+	    log_Warn "${ReclassifyAsNoise} and ${ReclassifyAsSignal} are both empty; nothing to do"
+	    log_Msg "Completed!"
+	    exit
+	fi
+
 	for ((i = 1; i <= NumICAs; ++i))
 	do
 		if [[ ${reclass_signal[$i]} || (${orig_signal[$i]} && ! ${reclass_noise[$i]}) ]]
