@@ -1,63 +1,44 @@
 #!/bin/bash
 
-# if any commands exit with non-zero value, this script exits
-set -e
-
-# Set global variables from environment variables
-g_script_name=`basename ${0}`
-
-g_hcppipedir=${HCPPIPEDIR}
-if [ -z "${g_hcppipedir}" ]; then
-	echo "ERROR: HCPPIPEDIR must be set!"
-	exit 1
-fi
-
-g_fsl_dir=${FSLDIR}
-if [ -z "${g_fsl_dir}" ]; then
-	echo "ERROR: FSLDIR must be set!"
-	exit 1
-fi
-
-g_cluster=${CLUSTER}
-#TSC: don't test CLUSTER here, it only matters if we use compiled matlab, and there is already a better error message
-
-# load function libraries
-
-# Logging related functions
-source ${g_hcppipedir}/global/scripts/log.shlib
-log_SetToolName "${g_script_name}"
-
-# Function for getting FSL version
-source ${g_hcppipedir}/global/scripts/fsl_version.shlib 
+# ------------------------------------------------------------------------------
+#  Show usage information for this script
+# ------------------------------------------------------------------------------
 
 usage()
 {
 	cat << EOF
 
-Apply Hand Reclassifications of Noise and Signal components using the ReclassifyAsNoise.txt 
-and ReclassifyAsSignal.txt input files.
+${g_script_name}: Apply Hand Reclassifications of Noise and Signal components
+from FIX using the ReclassifyAsNoise.txt and ReclassifyAsSignal.txt input files.
+
+Generates HandNoise.txt and HandSignal.txt as output.
+Script does NOT reapply the FIX cleanup.
+For that, use the ReApplyFix scripts.
 
 Usage: ${g_script_name} PARAMETER..."
 
 PARAMETERs are: [ ] = optional; < > = user supplied value
-  [--help] : show usage information and exite with non-zero return code
+  [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
    --fmri-name=<fMRI name>
-   --high-pass=<high pass>
+   --high-pass=<high-pass filter used in ICA+FIX>
 
 EOF
 }
 
+# ------------------------------------------------------------------------------
+#  Get the command line options for this script.
+# ------------------------------------------------------------------------------
 get_options()
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder
-	unset g_subject
-	unset g_fmri_name
-	unset g_high_pass
+	unset p_StudyFolder
+	unset p_Subject
+	unset p_fMRIName
+	unset p_HighPass
 	g_matlab_run_mode=0
 
 	# parse arguments
@@ -74,23 +55,23 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
+				p_StudyFolder=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--subject=*)
-				g_subject=${argument#*=}
+				p_Subject=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fmri-name=*)
-				g_fmri_name=${argument#*=}
+				p_fMRIName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
-				g_high_pass=${argument#*=}
+				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
@@ -99,9 +80,7 @@ get_options()
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
@@ -109,53 +88,60 @@ get_options()
 	local error_count=0
 
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
+	if [ -z "${p_StudyFolder}" ]; then
 		echo "ERROR: path to study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "p_StudyFolder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject}" ]; then
+	if [ -z "${p_Subject}" ]; then
 		echo "ERROR: subject ID required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject: ${g_subject}"
+		log_Msg "p_Subject: ${p_Subject}"
 	fi
 
-	if [ -z "${g_fmri_name}" ]; then
+	if [ -z "${p_fMRIName}" ]; then
 		echo "ERROR: fMRI name required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_fmri_name: ${g_fmri_name}"
+		log_Msg "p_fMRIName: ${p_fMRIName}"
 	fi
 
-	if [ -z "${g_high_pass}" ]; then
+	if [ -z "${p_HighPass}" ]; then
 		echo "ERROR: high pass required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_pass: ${g_high_pass}"
+		log_Msg "p_HighPass: ${p_HighPass}"
 	fi
 
 	#--matlab-run-mode is now ignored, but still accepted, to make old scripts work without changes
 
 	if [ ${error_count} -gt 0 ]; then
-		echo "For usage information, use --help"
-		exit 1
+	    log_Err_Abort "For usage information, use --help"
 	fi
 }
+
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
 	# Show HCP Pipelines Version
 	log_Msg "Showing HCP Pipelines version"
-	cat ${g_hcppipedir}/version.txt
+	cat ${HCPPIPEDIR}/version.txt
 
 	# Show FSL version
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 }
+
+# ------------------------------------------------------------------------------
+#  List lookup helper function for this script
+# ------------------------------------------------------------------------------
 
 #arguments: filename, output variable name
 list_file_to_lookup()
@@ -170,22 +156,26 @@ list_file_to_lookup()
     done
 }
 
+# ------------------------------------------------------------------------------
+#  Main processing of script.
+# ------------------------------------------------------------------------------
+
 main()
 {
 	get_options $@
 	show_tool_versions
 
 	# Naming Conventions
-	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
+	AtlasFolder="${p_StudyFolder}/${p_Subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
-	ResultsFolder="${AtlasFolder}/Results/${g_fmri_name}"
+	ResultsFolder="${AtlasFolder}/Results/${p_fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
-	ICAFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica/filtered_func_data.ica"
+	ICAFolder="${ResultsFolder}/${p_fMRIName}_hp${p_HighPass}.ica/filtered_func_data.ica"
 	log_Msg "ICAFolder: ${ICAFolder}"
 
-	FIXFolder="${ResultsFolder}/${g_fmri_name}_hp${g_high_pass}.ica"
+	FIXFolder="${ResultsFolder}/${p_fMRIName}_hp${p_HighPass}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 	
 	OriginalFixSignal="${FIXFolder}/Signal.txt"
@@ -210,7 +200,7 @@ main()
 	log_Msg "TrainingLabelsName: ${TrainingLabelsName}"
 
 	# Retrieve number of ICAs
-	NumICAs=`${g_fsl_dir}/bin/fslval ${ICAFolder}/melodic_oIC.nii.gz dim4`
+	NumICAs=`${FSLDIR}/bin/fslval ${ICAFolder}/melodic_oIC.nii.gz dim4`
 	log_Msg "NumICAs: ${NumICAs}"
 
 	echo "merging classifications start"
@@ -266,8 +256,7 @@ main()
 
 	if [[ $fail ]]
 	then
-		echo "Sanity checks on input files failed, ABORTING"
-		exit 1
+		log_Err_Abort "Sanity checks on input files failed"
 	fi
 
 	echo "$hand_signal" > "${HandSignalName}"
@@ -276,6 +265,29 @@ main()
 
 	echo "merging classifications complete"
 }
+
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any command exits with non-zero value, this script exits
+
+# Set global variables from environment variables
+g_script_name=`basename ${0}`
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var FSLDIR
 
 # Invoke the main to get things started
 main $@
