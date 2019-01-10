@@ -809,14 +809,25 @@ M_PROG
 	## Rename some files (relative to the default names coded in fix_3_clean.m)
 	## ---------------------------------------------------------------------------
 
-	if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean` = 1 ]; then
-	    $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
-        $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
+	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
+	# So check whether those files exist before moving/renaming them
+	if [ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]; then
+	    /bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	else
+	    log_Err_Abort "Something went wrong; ${concatfmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
+	fi
+	if [ -f ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
+	    /bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
 
-	if [[ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]]; then
-		/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-		/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	if (( DoVol )); then
+	    $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
+	    if [ "$?" -ne "0" ]; then
+		log_Err_Abort "Something went wrong; ${concatfmrihp}.ica/filtered_func_data_clean wasn't created"
+	    fi
+	    if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
+		$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
+	    fi
 	fi
 	log_Msg "Done renaming files"
 
@@ -834,7 +845,7 @@ M_PROG
 	cd ${DIR}  # Return to directory where script was launched
 	
 	log_Msg "Splitting cifti back into individual runs"
-	if (( DoVol == 1 )); then
+	if (( DoVol )); then
 	   log_Msg "Also splitting nifti back into individual runs"
 	fi
 	Start="1"

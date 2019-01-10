@@ -306,19 +306,23 @@ log_Msg "Done running FIX"
 ## ---------------------------------------------------------------------------
 
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
-
-if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ] ; then
-  /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas_hp${hp}_clean.dtseries.nii
+if [ "$?" -ne "0" ]; then
+    log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
+fi
+if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
+    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas_hp${hp}_clean.dtseries.nii
+else
+    log_Err_Abort "Something went wrong;  ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
 
 # The variance normalization ("_vn") outputs of fix (fix_3_clean) require use of fix1.067 or later
 # So check whether those files exist before moving/renaming them
 if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ] ; then
-	$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
+    $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 fi
-if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ] ; then
-	/bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
+if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
+    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
-
 log_Msg "Done renaming files"
+
 log_Msg "Completed!"
