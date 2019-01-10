@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time (useful for cleaning shorter runs)
+#   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time
+#   (useful for cleaning shorter runs)
 #
 #   Requires FIX version 1.067 or later and FSL 6.0 melodic version
 #
@@ -26,38 +27,6 @@
 #   1) Improvements to script readability and consistency
 #   2) Addition of a polynomial detrend option
 #   3) Addition of FIX threshold as optional parameter
-
-#############################################################
-
-set -e
-
-# Verify HCPPIPEDIR environment variable is set
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-#  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
-               # Set to empty string to disable debugging related output
-
-this_script_dir=$(readlink -f "$(dirname "$0")")
-
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-log_Check_Env_Var FSL_FIXDIR
-
-# All fix settings are held in the settings.sh file - edit this file to suit your setup
-source ${FSL_FIXDIR}/settings.sh
-
-if [ "${FSL_FIX_MATLAB_MODE}" = "0" ]; then
-	log_Err_Abort "Compiled matlab mode not currently supported"
-fi
 
 #############################################################
 
@@ -111,7 +80,40 @@ then
     Usage
 fi
 
+#############################################################
+
+set -e
 unset POSIXLY_CORRECT
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+               # Set to empty string to disable debugging related output
+
+this_script_dir=$(readlink -f "$(dirname "$0")")
+
+# Set this before calling hcp_fix instead, to make it more flexible
+#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
+#export FSL_FIXDIR
+log_Check_Env_Var FSL_FIXDIR
+
+# All fix settings are held in the settings.sh file - edit this file to suit your setup
+source ${FSL_FIXDIR}/settings.sh
+
+if [ "${FSL_FIX_MATLAB_MODE}" = "0" ]; then
+	log_Err_Abort "Compiled matlab mode not currently supported"
+fi
+
+#############################################################
 
 demeanMovementRegressors() {
 	In=${1}

@@ -24,32 +24,6 @@
 
 #############################################################
 
-set -e
-
-# Verify HCPPIPEDIR environment variable is set
-if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-#  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
-               # Set to empty string to disable debugging related output
-
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-log_Check_Env_Var FSL_FIXDIR
-
-# All fix settings are held in the settings.sh file - edit this file to suit your setup
-. ${FSL_FIXDIR}/settings.sh
-
-#############################################################
-
 Usage() {
     cat <<EOF
 
@@ -88,6 +62,34 @@ then
     #Usage does an exit
     Usage
 fi
+
+#############################################################
+
+set -e
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	script_name=$(basename "${0}")
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+               # Set to empty string to disable debugging related output
+
+# Set this before calling hcp_fix instead, to make it more flexible
+#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
+#export FSL_FIXDIR
+log_Check_Env_Var FSL_FIXDIR
+
+# All fix settings are held in the settings.sh file - edit this file to suit your setup
+. ${FSL_FIXDIR}/settings.sh
+
+#############################################################
 
 fmri=$1
 cd `dirname $fmri`
