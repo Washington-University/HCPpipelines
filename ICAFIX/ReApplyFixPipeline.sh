@@ -525,6 +525,12 @@ M_PROG
 
 set -e # If any command exits with non-zero value, this script exits
 
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"

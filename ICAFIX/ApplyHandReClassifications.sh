@@ -275,6 +275,12 @@ set -e # If any command exits with non-zero value, this script exits
 # Set global variables from environment variables
 g_script_name=`basename ${0}`
 
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
