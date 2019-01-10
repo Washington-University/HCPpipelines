@@ -18,7 +18,8 @@ if [ -z "${g_fsl_dir}" ]; then
 	exit 1
 fi
 
-g_cluster=${CLUSTER}
+#TSC: obsolete, this script no longer uses matlab, which was the only part that cared about CLUSTER
+#g_cluster=${CLUSTER}
 #TSC: don't test CLUSTER here, it only matters if we use compiled matlab, and there is already a better error message
 
 # load function libraries
@@ -163,10 +164,19 @@ list_file_to_lookup()
     #bash arrays are 0-indexed, but since the components start at 1, we will just ignore the 0th position
     local file_contents=$(cat "$1")
     local component
-    unset "${2}"
+    #older bash doesn't have "declare -g", which may be the only way to indirect to a global array from a function
+    #so, use a hardcoded array name for the return, and copy from it afterwards
+    unset lookup_result
+    #bash does something weird if you skip indices, which ends up compacting when you do "${a[@]}"
+    #so preinitialize
+    #use 0 and 1, so we can use math syntax instead of empty string or "== 1"
+    for ((i = 0; i < $2; ++i))
+    do
+        lookup_result[$i]=0
+    done
     for component in ${file_contents}
     do
-        declare -g "${2}"["${component}"]=1
+        lookup_result["${component}"]=1
     done
 }
 
@@ -215,11 +225,15 @@ main()
 
 	echo "merging classifications start"
 
-	list_file_to_lookup "${OriginalFixSignal}" orig_signal
-	list_file_to_lookup "${OriginalFixNoise}" orig_noise
+	list_file_to_lookup "${OriginalFixSignal}" "$NumICAs"
+	orig_signal=("${lookup_result[@]}")
+	list_file_to_lookup "${OriginalFixNoise}" "$NumICAs"
+	orig_noise=("${lookup_result[@]}")
 
-	list_file_to_lookup "${ReclassifyAsSignal}" reclass_signal
-	list_file_to_lookup "${ReclassifyAsNoise}" reclass_noise
+	list_file_to_lookup "${ReclassifyAsSignal}" "$NumICAs"
+	reclass_signal=("${lookup_result[@]}")
+	list_file_to_lookup "${ReclassifyAsNoise}" "$NumICAs"
+	reclass_noise=("${lookup_result[@]}")
 
 	fail=""
 	hand_signal=""
@@ -227,7 +241,7 @@ main()
 	training_labels=""
 	for ((i = 1; i <= NumICAs; ++i))
 	do
-		if [[ ${reclass_signal[$i]} || (${orig_signal[$i]} && ! ${reclass_noise[$i]}) ]]
+		if (( reclass_signal[i] || (orig_signal[i] && ! reclass_noise[i]) ))
 		then
 			if [[ "$hand_signal" ]]
 			then
@@ -246,17 +260,17 @@ main()
 			fi
 		fi
 		#error checking
-		if [[ ${reclass_noise[$i]} && ${reclass_signal[$i]} ]]
+		if (( reclass_noise[i] && reclass_signal[i] ))
 		then
 			echo "Duplicate Component Error with Manual Classification on ICA: $i"
 			fail=1
 		fi
-		if [[ ! (${orig_noise[$i]} || ${orig_signal[$i]}) ]]
+		if (( ! (orig_noise[i] || orig_signal[i]) ))
 		then
 			echo "Missing Component Error with Automatic Classification on ICA: $i"
 			fail=1
 		fi
-		if [[ ${orig_noise[$i]} && ${orig_signal[$i]} ]]
+		if (( orig_noise[i] && orig_signal[i] ))
 		then
 			echo "Duplicate Component Error with Automatic Classification on ICA: $i"
 			fail=1
