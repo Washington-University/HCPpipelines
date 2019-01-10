@@ -450,7 +450,7 @@ M_PROG
 		touch ${ResultsFolder}/ReclassifyAsNoise.txt
 	fi
 
-	log_Msg "main functionality end"
+	log_Msg "Completed!"
 }
 
 # ------------------------------------------------------------------------------

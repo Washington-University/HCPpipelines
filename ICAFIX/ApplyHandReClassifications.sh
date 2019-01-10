@@ -89,31 +89,31 @@ get_options()
 
 	# check required parameters
 	if [ -z "${p_StudyFolder}" ]; then
-		echo "ERROR: path to study folder (--path= or --study-folder=) required"
-		error_count=$(( error_count + 1 ))
+	    log_Err "Study Folder (--path= or --study-folder=) required"
+	    error_count=$(( error_count + 1 ))
 	else
-		log_Msg "p_StudyFolder: ${p_StudyFolder}"
+	    log_Msg "p_StudyFolder: ${p_StudyFolder}"
 	fi
 
 	if [ -z "${p_Subject}" ]; then
-		echo "ERROR: subject ID required"
-		error_count=$(( error_count + 1 ))
+	    log_Err "Subject ID (--subject=) required"
+	    error_count=$(( error_count + 1 ))
 	else
-		log_Msg "p_Subject: ${p_Subject}"
+	    log_Msg "p_Subject: ${p_Subject}"
 	fi
 
 	if [ -z "${p_fMRIName}" ]; then
-		echo "ERROR: fMRI name required"
-		error_count=$(( error_count + 1 ))
+	    log_Err "fMRI Name (--fmri-name=) required"
+	    error_count=$(( error_count + 1 ))
 	else
-		log_Msg "p_fMRIName: ${p_fMRIName}"
+	    log_Msg "p_fMRIName: ${p_fMRIName}"
 	fi
 
 	if [ -z "${p_HighPass}" ]; then
-		echo "ERROR: high pass required"
-		error_count=$(( error_count + 1 ))
+	    log_Err "High Pass: (--high-pass=) required"
+	    error_count=$(( error_count + 1 ))
 	else
-		log_Msg "p_HighPass: ${p_HighPass}"
+	    log_Msg "p_HighPass: ${p_HighPass}"
 	fi
 
 	#--matlab-run-mode is now ignored, but still accepted, to make old scripts work without changes
@@ -203,7 +203,7 @@ main()
 	NumICAs=`${FSLDIR}/bin/fslval ${ICAFolder}/melodic_oIC.nii.gz dim4`
 	log_Msg "NumICAs: ${NumICAs}"
 
-	echo "merging classifications start"
+	log_Msg "merging classifications start"
 
 	list_file_to_lookup "${OriginalFixSignal}" orig_signal
 	list_file_to_lookup "${OriginalFixNoise}" orig_noise
@@ -238,17 +238,17 @@ main()
 		#error checking
 		if [[ ${reclass_noise[$i]} && ${reclass_signal[$i]} ]]
 		then
-			echo "Duplicate Component Error with Manual Classification on ICA: $i"
+			log_Msg "Duplicate Component Error with Manual Classification on ICA: $i"
 			fail=1
 		fi
 		if [[ ! (${orig_noise[$i]} || ${orig_signal[$i]}) ]]
 		then
-			echo "Missing Component Error with Automatic Classification on ICA: $i"
+			log_Msg "Missing Component Error with Automatic Classification on ICA: $i"
 			fail=1
 		fi
 		if [[ ${orig_noise[$i]} && ${orig_signal[$i]} ]]
 		then
-			echo "Duplicate Component Error with Automatic Classification on ICA: $i"
+			log_Msg "Duplicate Component Error with Automatic Classification on ICA: $i"
 			fail=1
 		fi
 		#the hand check from the matlab version can't be tripped here without the above code being wrong
@@ -263,7 +263,9 @@ main()
 	echo "$hand_noise" > "${HandNoiseName}"
 	echo "[$training_labels]" > "${TrainingLabelsName}"
 
-	echo "merging classifications complete"
+	log_Msg "merging classifications complete"
+	log_Msg "Completed!"
+
 }
 
 # ------------------------------------------------------------------------------
@@ -283,8 +285,8 @@ fi
 
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+    echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+    exit 1
 fi
 
 # Load function libraries

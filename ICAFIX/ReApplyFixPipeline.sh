@@ -516,7 +516,7 @@ M_PROG
 
 	cd ${DIR}
 
-	log_Msg "Completing main functionality"
+	log_Msg "Completed!"
 }
 
 # ------------------------------------------------------------------------------
