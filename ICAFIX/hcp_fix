@@ -124,16 +124,22 @@ if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
 
-tr=`$FSLDIR/bin/fslval $fmri pixdim4`
+## ---------------------------------------------------------------------------
+## Preparation (highpass)
+## ---------------------------------------------------------------------------
 
-log_Msg "processing FMRI file $fmri with highpass $hp"
+tr=`$FSLDIR/bin/fslval $fmri pixdim4`
+log_Msg "tr: ${tr}"
+log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 if (( hp > 0 )) ; then
   log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
-  ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
-  fmrihp=${fmri}_hp$hp
+  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -bptf ${hptr} -1 ${fmri}_hp${hp}"
+  log_Msg "highpass_cmd: ${highpass_cmd}"
+  ${highpass_cmd}
+  fmrihp=${fmri}_hp${hp}
 fi
 
 mkdir -p ${fmrihp}.ica
@@ -164,6 +170,10 @@ if [ ! -z "${log_debugOn}" ] ; then
 fi
 log_Debug_Msg "End of melodic version log, help, and checksum"
 
+## ---------------------------------------------------------------------------
+## Run melodic on concatenated file
+## ---------------------------------------------------------------------------
+
 melodic_cmd="${MELODIC} -i ${fmrihp} -o ${fmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=${tr}"
 if [ ! -z "${log_debugOn}" ] ; then
 	melodic_cmd="${melodic_cmd} --verbose --debug"
@@ -186,6 +196,10 @@ fi
 # (these may only get created in the context of MIGP)
 $FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data.ica/alldat
 $FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data.ica/concat_data
+
+## ---------------------------------------------------------------------------
+## Housekeeping related to files expected for FIX
+## ---------------------------------------------------------------------------
 
 cd ${fmrihp}.ica
 
@@ -232,10 +246,15 @@ if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
 fi
 cd ../..
 
+## ---------------------------------------------------------------------------
+## Actually run FIX
+## ---------------------------------------------------------------------------
+
 log_Msg "Running FIX"
 
 # Changes to handle user specified training data file
-if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
+if [ "X${TrainingData}" != X ]; then  
+        # User has specified a training data file
 	
 	# add .RData suffix if not already there
 	if [[ "${TrainingData}" != *.RData ]]; then 
@@ -253,41 +272,38 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 		log_Err_Abort "FIX training data not found: ${TrainingData}"
 	fi
 
-	# now run fix
-	if [[ ${doMotionRegression} == "TRUE" ]]; then
-	    #use array for whitespace safety, even if the rest of the script isn't
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
-	else
-		#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
-	fi
-	log_Msg "About to run: ${fix_cmd[*]}"
-	"${fix_cmd[@]}"
-
 else
-	# user has not specified a training data file
+	# User has not specified a training data file
 	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
+	log_Msg "training data file not specified"
 	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
 		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in hcp_fix_multi_run
 		log_Err_Abort "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 	fi
-	log_Msg "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
-	if [[ ${doMotionRegression} == "TRUE" ]]; then
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}" -m -h "${hp}")
-    else
-        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" "${FixThresh}")
-    fi
-    log_Msg "About to run: ${fix_cmd[*]}"
-    "${fix_cmd[@]}"
-	return_code=$?
-	if [ "${return_code}" -ne "0" ]; then
-		log_Err_Abort "return_code from fix_cmd: ${return_code}"
-	fi
+	TrainingData=${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData
 fi
+log_Msg "using training data file: ${TrainingData}"
 
+# set up fix command
+if [[ ${doMotionRegression} == "TRUE" ]]; then
+    #use array for whitespace safety, even if the rest of the script isn't
+    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
+else
+    #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
+fi
+log_Msg "fix_cmd: ${fix_cmd[*]}"
+"${fix_cmd[@]}"
+return_code=$?
+if [ "${return_code}" -ne "0" ]; then
+    log_Err_Abort "return_code from fix_cmd: ${return_code}"
+fi
 log_Msg "Done running FIX"
+
+## ---------------------------------------------------------------------------
+## Rename some files (relative to the default names coded in fix_3_clean.m)
+## ---------------------------------------------------------------------------
 
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
 
@@ -303,3 +319,6 @@ fi
 if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ] ; then
 	/bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
+
+log_Msg "Done renaming files"
+log_Msg "Completed!"

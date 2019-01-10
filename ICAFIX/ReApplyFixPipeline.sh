@@ -505,6 +505,7 @@ M_PROG
 			$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 		fi
 	fi
+	log_Msg "Done renaming files"
 
 	cd ${DIR}
 

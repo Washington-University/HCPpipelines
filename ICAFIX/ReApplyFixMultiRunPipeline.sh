@@ -818,6 +818,7 @@ M_PROG
 		/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 		/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 	fi
+	log_Msg "Done renaming files"
 
 	## ---------------------------------------------------------------------------
 	## Split the cleaned volume and CIFTI back into individual runs.
@@ -882,6 +883,7 @@ M_PROG
 	## if deleted they would therefore need to be re-created "on the fly" later
 
 	# cd ${ConcatFolder}
+        # log_Msg "Removing large (concatenated) time series files from ${ConcatFolder}"
 	# $FSLDIR/bin/imrm ${concatfmri}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
 	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
