@@ -728,7 +728,7 @@ M_PROG
 		log_Msg "FOUND FILE: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 		log_Msg "Performing imln"
 
-		rm -f Atlas.dtseries.nii
+		/bin/rm -f Atlas.dtseries.nii
 		$FSLDIR/bin/imln ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii Atlas.dtseries.nii
 		
 		log_Msg "START: Showing linked files"
@@ -739,6 +739,12 @@ M_PROG
 		log_Err_Abort "FILE NOT FOUND: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 	fi
 	
+	## ---------------------------------------------------------------------------
+	## Run fix_3_clean
+	## ---------------------------------------------------------------------------
+
+	log_Msg "Running fix_3_clean"
+
 	AlreadyHP="-1"
 
 	case ${MatlabRunMode} in
@@ -802,14 +808,27 @@ M_PROG
 			;;
 	esac
 
+	log_Msg "Done running fix_3_clean"
+
 	# Return to ${ConcatFolder}
 	# Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
 	cd ..
 
 	## ---------------------------------------------------------------------------
-	## Rename some files (relative to the default names coded in fix_3_clean.m)
+	## Rename some files (relative to the default names coded in fix_3_clean)
 	## ---------------------------------------------------------------------------
 
+	# Remove any existing old versions of the cleaned data (normally they should be overwritten
+	# in the renaming that follows, but this ensures that any old versions don't linger)
+	/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+
+	if (( DoVol )); then
+	    $FSLDIR/bin/imrm  ${concatfmrihp}_clean
+	    $FSLDIR/bin/imrm  ${concatfmrihp}_clean_vn
+	fi
+
+	# Rename some of the outputs from fix_3_clean.
 	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 	# So check whether those files exist before moving/renaming them
 	if [ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]; then

@@ -403,7 +403,7 @@ main()
 		log_Msg "FOUND FILE: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
 		log_Msg "Performing imln"
 
-		rm -f Atlas.dtseries.nii
+		/bin/rm -f Atlas.dtseries.nii
 		$FSLDIR/bin/imln ../${fMRIName}_Atlas${RegString}.dtseries.nii Atlas.dtseries.nii
 
 		log_Msg "START: Showing linked files"
@@ -424,7 +424,11 @@ main()
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly."
 	fi
 
-	log_Msg "About to run fix_3_clean"
+	## ---------------------------------------------------------------------------
+	## Run fix_3_clean
+	## ---------------------------------------------------------------------------
+
+	log_Msg "Running fix_3_clean"
 
 	case ${MatlabRunMode} in
 
@@ -487,13 +491,29 @@ M_PROG
 			;;
 	esac
 
-	# Rename some of the outputs from fix_3_clean.
-	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
-	# So check whether those files exist before moving/renaming them
+	log_Msg "Done running fix_3_clean"
+
+	## ---------------------------------------------------------------------------
+	## Rename some files (relative to the default names coded in fix_3_clean)
+	## ---------------------------------------------------------------------------
+
+	# Remove any existing old versions of the cleaned data (normally they should be overwritten
+	# in the renaming that follows, but this ensures that any old versions don't linger)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
 	local fmri=${fMRIName}
 	local fmrihp=${fMRIName}_hp${hp}
 	
+	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+
+	if (( DoVol )); then
+	    $FSLDIR/bin/imrm ${fmrihp}_clean
+	    $FSLDIR/bin/imrm ${fmrihp}_clean_vn
+	fi
+
+	# Rename some of the outputs from fix_3_clean.
+	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
+	# So check whether those files exist before moving/renaming them
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
 	    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
 	else
