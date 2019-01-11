@@ -67,7 +67,7 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
      Default = 10.
      To specify a threshold, <TrainingFile> becomes a mandatory argument.
 
-e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR TRUE
+e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF

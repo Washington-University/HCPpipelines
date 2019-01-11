@@ -50,7 +50,7 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixT
      Default = 10.
      To specify a threshold, <TrainingFile> becomes a mandatory argument.
 
-e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 TRUE
+e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF
