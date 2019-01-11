@@ -249,6 +249,31 @@ show_tool_versions() {
 }
 
 # ------------------------------------------------------------------------------
+#  Create symlinks, but only if file doesn't already exist in ResultsFolder
+# ------------------------------------------------------------------------------
+
+create_symlink_if_appropriate() {
+    
+    local file="${1}"
+    local ResultsFolder="${2}"
+    local FIXFolder="${3}"
+    local DIR
+
+    if [[ -e ${ResultsFolder}/${file} && ! -L ${ResultsFolder}/${file} ]]; then
+	log_Warn "Script now creates ${file} in ${FIXFolder}"
+	log_Warn "NOT creating a symlink from ${ResultsFolder}, because ${file} already exists there"
+	log_Warn "Be careful in any future use that you are using the version of ${file} corresponding to the intended high-pass filter!"
+    else
+	# Need to force the symlink (-f) in case one already exists
+	# Make sure to create the symlink as a relative path!
+	DIR=$(pwd)
+	cd ${ResultsFolder}
+	ln -sf $(basename "${FIXFolder}")/${file}
+	cd ${DIR}
+    fi
+}
+
+# ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
@@ -436,19 +461,35 @@ M_PROG
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
 	rm ${ComponentList}
 
+	# 1/11/2019, MPH: Going to place the scene and ReclassifyAs*.txt files into FIXFolder
+	# to avoid name collision if user runs FIX with a different highpass filter
+	# But then symlink to them from ResultsFolder for compatibility with previous code and downstream scripts
 	log_Msg "Making dual screen scene"
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
+	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${FIXFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
 
 	log_Msg "Making single screen scene"
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${ResultsFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
+	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${FIXFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
 
-	if [ ! -e ${ResultsFolder}/ReclassifyAsSignal.txt ] ; then
-		touch ${ResultsFolder}/ReclassifyAsSignal.txt
+	if [ ! -e ${FIXFolder}/ReclassifyAsSignal.txt ] ; then
+		touch ${FIXFolder}/ReclassifyAsSignal.txt
 	fi
 
-	if [ ! -e ${ResultsFolder}/ReclassifyAsNoise.txt ] ; then
-		touch ${ResultsFolder}/ReclassifyAsNoise.txt
+	if [ ! -e ${FIXFolder}/ReclassifyAsNoise.txt ] ; then
+		touch ${FIXFolder}/ReclassifyAsNoise.txt
 	fi
+
+	# For legacy compatibility, we symlink the scene and ReclassifyAs*.txt files into ResultsFolder
+	# If physical scene or ReclassifyAs*.txt files already exist in ResultsFolder, then those
+	# need to be preserved (but with a warning generated)!
+	# If file exists as a symlink, force creation of a new symlink pointing to the FIXFolder files
+	local file=${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
+	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
+	local file=${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
+	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
+	local file=ReclassifyAsSignal.txt
+	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
+	local file=ReclassifyAsNoise.txt
+	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
 
 	log_Msg "Completed!"
 }
