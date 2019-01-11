@@ -525,6 +525,12 @@ M_PROG
 
 set -e # If any command exits with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
+G_DEFAULT_LOW_RES_MESH=32
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+G_DEFAULT_MOTION_REGRESSION="FALSE"
+
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
     usage
@@ -549,12 +555,6 @@ log_Check_Env_Var FSL_FIXDIR
 
 # Show tool versions
 show_tool_versions
-
-# Establish defaults
-G_DEFAULT_REG_NAME="NONE"
-G_DEFAULT_LOW_RES_MESH=32
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-G_DEFAULT_MOTION_REGRESSION="FALSE"
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
