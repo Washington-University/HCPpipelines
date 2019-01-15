@@ -59,7 +59,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --template-scene-dual-screen=<template scene file>
    --template-scene-single-screen=<template scene file>
    --reuse-high-pass=<YES | NO>
-  [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled Matlab)"
+   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use octave
@@ -86,7 +86,7 @@ get_options()
 	unset p_MatlabRunMode
 
 	# set default values
-	p_MatlabRunMode=0
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -294,9 +294,9 @@ main()
 
 	local MatlabRunMode
 	if [ -z "${8}" ]; then
-		MatlabRunMode=0
+	    MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
-		MatlabRunMode="${8}"
+	    MatlabRunMode="${8}"
 	fi
 	
 	# Log values retrieved from positional parameters
@@ -499,6 +499,9 @@ M_PROG
 # ------------------------------------------------------------------------------
 
 set -e # If any commands exit with non-zero value, this script exits
+
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
