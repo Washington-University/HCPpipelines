@@ -437,7 +437,7 @@ main()
 		0)
 			# Use Compiled MATLAB
 
-			local matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
+			local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
 
 			# Do NOT enclose string variables inside an additional single quote because all
 			# variables are already passed into the compiled binary as strings
