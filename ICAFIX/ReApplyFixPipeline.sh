@@ -428,6 +428,11 @@ main()
 	## Run fix_3_clean
 	## ---------------------------------------------------------------------------
 
+	# MPH: We need to invoke fix_3_clean directly, rather than through 'fix -a <options>' because
+	# the latter does not provide access to the "DoVol" option within the former.
+	# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
+	# could be worked around).
+
 	log_Msg "Running fix_3_clean"
 
 	case ${MatlabRunMode} in
@@ -455,7 +460,6 @@ main()
 			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
 			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
-			log_Msg "Compiled MATLAB return code $?"
 			;;
 		
 		1 | 2)

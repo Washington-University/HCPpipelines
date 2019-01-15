@@ -274,11 +274,19 @@ for fmri in $fmris ; do
 	log_Msg "tr: ${tr}"  
 	log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
-	if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
-		rm .fix.functionhighpassandvariancenormalize.log
-	fi
-	${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
-	
+	## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionhighpassandvariancenormalize.log file
+	## Also, note that the -r argument of call_matlab (used here to allow addition of 'addpath' as a command)
+	## does not support the use of compiled matlab
+
+	#if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
+	#	rm .fix.functionhighpassandvariancenormalize.log
+	#fi
+	#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
+	matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${FSL_FIX_WBC}');"
+	log_Msg "Run MATLAB/Octave with command..."
+	log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
+	${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"
+
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 	# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
@@ -413,10 +421,20 @@ log_Debug_Msg "End of melodic version log, help, and checksum"
 
 AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
-# "2nd pass" VN
-# This is solely so that we can apply our own variance normalization as part of the spatial ICA, rather than using the VN algorithm internal to melodic
-# (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
+## "2nd pass" VN
+## This is solely so that we can apply our own variance normalization as part of the spatial ICA, 
+## rather than using the VN algorithm internal to melodic
+## (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
+## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionmotionconfounds.log file
+## Also, note that the -r argument of call_matlab (used here to allow addition of 'addpath' as a command)
+## does not support the use of compiled matlab
+
+#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
+matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${FSL_FIX_WBC}');"
+log_Msg "Run MATLAB/Octave with command..."
+log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
+${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"
+
 Dim=`cat ${concatfmrihp}_dims.txt`
 
 log_Msg "Dim: ${Dim}"
@@ -553,6 +571,11 @@ else
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
 log_Msg "fix_cmd: ${fix_cmd[*]}"
+## MPH: The 'fix' script itself will continue to log to its own custom files
+## Alert user to where those are
+log_Msg "Check ${concatfmrihp}.ica/fix/logMatlab.txt for log output from feature extraction"
+log_Msg "Check ${concatfmrihp}.ica/.fix_2b_predict.log for log output from component classification"
+log_Msg "Check ${concatfmrihp}.ica/.fix.log for log output from cleanup stage"
 "${fix_cmd[@]}"
 return_code=$?
 if [ "${return_code}" -ne "0" ]; then

@@ -224,9 +224,13 @@ else
   log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 fi 
 
-log_Msg "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
-#${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
+## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionmotionconfounds.log file
+#log_Msg "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
+#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
+matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -f functionmotionconfounds ${tr} ${hp}"
+log_Msg "Run MATLAB/Octave with command..."
+log_Msg "${matlab_cmd}"
+${matlab_cmd}
 
 mkdir -p reg
 cd reg
@@ -294,6 +298,11 @@ else
     fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
 log_Msg "fix_cmd: ${fix_cmd[*]}"
+## MPH: The 'fix' script itself will continue to log to its own custom files
+## Alert user to where those are
+log_Msg "Check ${fmrihp}.ica/fix/logMatlab.txt for log output from feature extraction"
+log_Msg "Check ${fmrihp}.ica/.fix_2b_predict.log for log output from component classification"
+log_Msg "Check ${fmrihp}.ica/.fix.log for log output from cleanup stage"
 "${fix_cmd[@]}"
 return_code=$?
 if [ "${return_code}" -ne "0" ]; then
