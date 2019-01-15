@@ -597,8 +597,9 @@ main()
 				else
 					local interpreter=(octave-cli -q --no-window-system)
 				fi
-
-				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${hp}, '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
+				
+				# MPH: ${hp} needs to be passed in as a string, to handle the hp=pd* case
+				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
 				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 				log_Msg "${matlab_cmd}"
@@ -850,6 +851,9 @@ M_PROG
 	    fi
 	fi
 	log_Msg "Done renaming files"
+
+        # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+	$FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
 
 	## ---------------------------------------------------------------------------
 	## Split the cleaned volume and CIFTI back into individual runs.

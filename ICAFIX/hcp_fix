@@ -302,7 +302,7 @@ fi
 log_Msg "Done running FIX"
 
 ## ---------------------------------------------------------------------------
-## Rename some files (relative to the default names coded in fix_3_clean.m)
+## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
@@ -324,5 +324,8 @@ if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
     /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
 fi
 log_Msg "Done renaming files"
+
+# Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 
 log_Msg "Completed!"

@@ -534,6 +534,9 @@ M_PROG
 	fi
 	log_Msg "Done renaming files"
 
+        # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
+	
 	cd ${DIR}
 
 	log_Msg "Completed!"
