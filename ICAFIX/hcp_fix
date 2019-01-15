@@ -89,6 +89,9 @@ log_Check_Env_Var FSL_FIXDIR
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
 . ${FSL_FIXDIR}/settings.sh
 
+# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
+log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
+
 #############################################################
 
 fmri=$1
