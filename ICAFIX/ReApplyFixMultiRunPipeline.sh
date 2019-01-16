@@ -304,45 +304,6 @@ have_hand_reclassification()
 }
 
 # ------------------------------------------------------------------------------
-#  Function for demeaning the movement regressors
-# ------------------------------------------------------------------------------
-
-demeanMovementRegressors() {
-	In=${1}
-	log_Debug_Msg "demeanMovementRegressors: In: ${In}"
-	Out=${2}
-	log_Debug_Msg "demeanMovementRegressors: Out: ${Out}"
-	log_Debug_Msg "demeanMovementRegressors: getting nCols"
-	nCols=$(head -1 ${In} | wc -w)
-	
-	log_Debug_Msg "demeanMovementRegressors: nCols: ${nCols}"
-	log_Debug_Msg "demeanMovementRegressors: getting nRows"
-	nRows=$(wc -l < ${In})
-	log_Debug_Msg "demeanMovementRegressors: nRows: ${nRows}"
-	
-	AllOut=""
-	c=1
-	while (( c <= nCols )) ; do
-		ColIn=`cat ${In} | sed 's/  */ /g' | sed 's/^ //g' | cut -d " " -f ${c}`
-		bcstring=$(echo "$ColIn" | tr '\n' '+' | sed 's/\+*$//g')
-		valsum=$(echo "$bcstring" | bc -l)
-		valmean=$(echo "$valsum / $nRows" | bc -l)
-		ColOut=""
-		r=1
-		while (( r <= nRows )) ; do
-			val=`echo "${ColIn}" | head -${r} | tail -1`
-			newval=`echo "${val} - ${valmean}" | bc -l`
-			ColOut=`echo ${ColOut} $(printf "%10.6f" $newval)`
-			r=$((r+1))
-		done
-		ColOut=`echo ${ColOut} | tr ' ' '\n'`
-		AllOut=`paste <(echo "${AllOut}") <(echo "${ColOut}")`
-		c=$((c+1))
-	done
-	echo "${AllOut}" > ${Out}
-}
-
-# ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
@@ -501,7 +462,6 @@ main()
     CIFTIhpVNMergeSTRING=""
     MeanCIFTISTRING=""
     VNCIFTISTRING=""
-    MovementTXTMergeSTRING=""
 
 	for fmriname in $fmris ; do
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
@@ -533,14 +493,7 @@ main()
 			log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 		fi
 
-		#Demean movement regressors, volumes, and CIFTI data
-        if [[ ! -f Movement_Regressors_demean.txt ]]; then
-    	    demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
-		else
-			log_Warn "Movement_Regressors_demean.txt already exists. Using existing version"
-	    fi
-	    MovementTXTMergeSTRING+="$(pwd)/Movement_Regressors_demean.txt "
-	    
+		#Demean volumes and CIFTI data
 		if [ `$FSLDIR/bin/imtest ${fmri}_demean` != 1 ]; then
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
 	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
@@ -558,7 +511,7 @@ main()
 		# ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
 		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
 		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN
-		# Note that functionhighpassandvariancenormalize does NOT filter the movement regressors unless
+		# Note that functionhighpassandvariancenormalize will re-filter the movement regressors if
 		# ${RegString} is empty (i.e., if DoVol = 1)
 		
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
@@ -627,6 +580,9 @@ M_PROG
 			esac
 
 			# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
+			# MPH: This is irrelevant, since we aren't doing anything with these files.
+			# (i.e,. not regenerating ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf)
+			# But do it anyway, just to ensure that the files left behind are demeaned in the DoVol case
 			if (( DoVol )); then
 				fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
 				fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
