@@ -450,6 +450,11 @@ main()
 	## Preparation (highpass) on the individual runs
 	## ---------------------------------------------------------------------------
 
+	## MPH: Probably could have a 'master' conditional here that checks whether the files
+	## necessary for fix_3_clean already exist, and if so, skip all the following looping
+	## through individual runs and concatenation, and resume at the
+	## "Housekeeping related to files expected for fix_3_clean" section
+
 	#Loops over the runs and do highpass on each of them
 	log_Msg "Looping over files and doing highpass to each of them"
 	
@@ -520,8 +525,9 @@ main()
 		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
-              `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vnts"` != 1 || \
-              `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vn"` != 1 ]]
+              ( $DoVol == "1" && \
+			    ( `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vnts"` != 1 || \
+                  `$FSLDIR/bin/imtest "${fmriNoExt}_hp${hp}_vn"` != 1 )) ]]
         then
 
 			log_Msg "processing FMRI file $fmri with highpass $hp"
