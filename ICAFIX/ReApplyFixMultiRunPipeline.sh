@@ -536,17 +536,23 @@ main()
 		#Demean movement regressors, volumes, and CIFTI data
         if [[ ! -f Movement_Regressors_demean.txt ]]; then
     	    demeanMovementRegressors Movement_Regressors.txt Movement_Regressors_demean.txt
+		else
+			log_Warn "Movement_Regressors_demean.txt already exists. Using existing version"
 	    fi
 	    MovementTXTMergeSTRING+="$(pwd)/Movement_Regressors_demean.txt "
 	    
 		if [ `$FSLDIR/bin/imtest ${fmri}_demean` != 1 ]; then
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
 	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
+		else
+			log_Warn "${fmri}_demean already exists. Using existing version"
         fi
 
 	    if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
 	        ${FSL_FIX_WBC} -cifti-reduce ${fmriNoExt}_Atlas${RegString}.dtseries.nii MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii
 	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+		else
+			log_Warn "${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii already exists. Using existing version"
         fi
 
 		# ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
@@ -630,7 +636,7 @@ M_PROG
 			log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 		else
-			log_Msg "Skipping functionhighpassandvariancenormalize because expected files for ${fmri} already exist"
+			log_Warn "Skipping functionhighpassandvariancenormalize because expected files for ${fmri} already exist"
 
 	    fi
 
@@ -662,6 +668,8 @@ M_PROG
         fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp} 
           # Preceeding line restores the mean VN map
         fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
+	else
+		log_Warn "${ConcatNameNoExt} already exists. Using existing version"
     fi
 
 	# Same thing for the CIFTI
@@ -672,7 +680,9 @@ M_PROG
         ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
         ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
         ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
-    fi
+    else
+		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists. Using existing version"
+	fi
 	
 	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
 	log_Msg "Removing the concatenated VN'ed time series"
