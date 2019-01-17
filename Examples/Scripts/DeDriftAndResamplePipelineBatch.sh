@@ -120,7 +120,7 @@ for Subject in $Subjlist ; do
   --rfmri-names=${rfMRINames} \
   --tfmri-names=${tfMRINames} \
   --smoothing-fwhm=${SmoothingFWHM} \
-  --highpass=${HighPass} \
+  --high-pass=${HighPass} \
   --matlab-run-mode=${MatlabMode}
 done
 

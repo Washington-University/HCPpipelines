@@ -199,7 +199,7 @@ get_options()
 				p_SmoothingFWHM=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--high-pass=* | --high-pass=*)
+			--high-pass=* | --highpass=*)
 				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
