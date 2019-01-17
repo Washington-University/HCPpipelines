@@ -295,8 +295,8 @@ main()
 
 set -e # If any command exits with non-zero value, this script exits
 
-# Set global variables from environment variables
-g_script_name=`basename ${0}`
+# Set global variables
+g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then

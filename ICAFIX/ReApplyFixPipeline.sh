@@ -34,12 +34,9 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: ReApplyFix Pipeline
+${g_script_name}: ReApplyFix Pipeline
 
 This script has two purposes:
 1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
@@ -48,7 +45,7 @@ following manual reclassification of the FIX signal/noise components (see ApplyH
 (either for the first time, or following manual reclassification of the components).
 Only one of these two purposes can be accomplished per invocation.
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -56,7 +53,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
         form) by simply specifying all values on the command line in the order they are
         listed below.
 
-        e.g. ${script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
+        e.g. ${g_script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
 
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
@@ -558,6 +555,9 @@ G_DEFAULT_LOW_RES_MESH=32
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
 
+# Set global variables
+g_script_name=$(basename "${0}")
+
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
     usage
@@ -566,8 +566,8 @@ fi
 
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-    exit 1
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
 fi
 
 # Load function libraries
