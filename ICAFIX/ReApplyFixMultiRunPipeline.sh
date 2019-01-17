@@ -442,18 +442,31 @@ main()
 	DIR=`pwd`
 	log_Msg "PWD : $DIR"
 
+	## MPH: High level "master" conditional that checks whether the files necessary for fix_3_clean
+	## already exist (i.e., reapplying FIX cleanup following manual classification).
+	## If so, we can skip all the following looping through individual runs and concatenation, 
+	## and resume at the "Housekeeping related to files expected for fix_3_clean" section
+
+	local ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
+
+	if [[ -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
+		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists."
+		if (( DoVol && $(${FSLDIR}/bin/imtest "${ConcatNameNoExt}_hp${hp}") )); then
+			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}_hp${hp}) already exists."
+		fi
+		log_Warn "Using preceding existing concatenated file(s) for recleaning."
+	else  # bash GOTO construct would be helpful here, to skip a bunch of code
+		# NOT RE-INDENTING ALL THE FOLLOWING CODE
+		# This 'else' clause terminates at the start of the
+		# "Housekeeping related to files expected for fix_3_clean" section
+
 	###LOOP HERE --> Since the files are being passed as a group
 
-	echo $fmris | tr ' ' '\n' #separates paths separated by ' '
+	#echo $fmris | tr ' ' '\n' #separates paths separated by ' '
 
 	## ---------------------------------------------------------------------------
 	## Preparation (highpass) on the individual runs
 	## ---------------------------------------------------------------------------
-
-	## MPH: Probably could have a 'master' conditional here that checks whether the files
-	## necessary for fix_3_clean already exist, and if so, skip all the following looping
-	## through individual runs and concatenation, and resume at the
-	## "Housekeeping related to files expected for fix_3_clean" section
 
 	#Loops over the runs and do highpass on each of them
 	log_Msg "Looping over files and doing highpass to each of them"
@@ -472,7 +485,7 @@ main()
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}"
 
 		log_Msg "Top of loop through fmris: fmri: ${fmri}"
 
@@ -503,7 +516,7 @@ main()
 		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
 	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
 		else
-			log_Warn "${fmri}_demean already exists. Using existing version"
+			log_Warn "$($FSLDIR/bin/imglob -extension ${fmri}_demean) already exists. Using existing version"
         fi
 
 	    if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
@@ -513,11 +526,12 @@ main()
 			log_Warn "${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii already exists. Using existing version"
         fi
 
-		# ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize
+		# ReApplyFixMultiRunPipeline has only a single pass through functionhighpassandvariancenormalize.
 		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
-		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN
-		# Note that functionhighpassandvariancenormalize will re-filter the movement regressors if
-		# ${RegString} is empty (i.e., if DoVol = 1)
+		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN.
+		# Note that functionhighpassandvariancenormalize internally determines whether to process
+		# the volume based on whether ${RegString} is empty.
+		# If ${RegString} is empty, the movement regressors will also automatically get re-filtered.
 		
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
 		log_Msg "tr: $tr"
@@ -612,8 +626,6 @@ M_PROG
 	## Concatenate the individual runs and create necessary files
 	## ---------------------------------------------------------------------------
 
-	ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
-	
     if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
 		# Merge volumes from the individual runs
         fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
@@ -631,7 +643,7 @@ M_PROG
           # Preceeding line restores the mean VN map
         fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
 	else
-		log_Warn "${ConcatNameNoExt} already exists. Using existing version"
+		log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}) already exists. Using existing version"
     fi
 
 	# Same thing for the CIFTI
@@ -661,7 +673,7 @@ M_PROG
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}"
 
 		log_Msg "Removing the individual run VN'ed and demeaned time series for ${fmri}"
 
@@ -677,6 +689,10 @@ M_PROG
 		#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
 		#	/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
 	done
+
+	## Terminate the 'else' clause of the "master" conditional that checked whether
+	## the preceding code needed to be run.
+	fi
 
 	## ---------------------------------------------------------------------------
 	## Housekeeping related to files expected for fix_3_clean
@@ -710,7 +726,7 @@ M_PROG
 	else
 		log_Err_Abort "FILE NOT FOUND: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 	fi
-	
+
 	## ---------------------------------------------------------------------------
 	## Run fix_3_clean
 	## ---------------------------------------------------------------------------
@@ -827,9 +843,9 @@ M_PROG
 	fi
 	log_Msg "Done renaming files"
 
-        # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+    # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
-
+ 
 	## ---------------------------------------------------------------------------
 	## Split the cleaned volume and CIFTI back into individual runs.
 	## ---------------------------------------------------------------------------
@@ -852,7 +868,7 @@ M_PROG
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}.nii.gz"
+	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}"
 
 		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
 		NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
@@ -866,13 +882,14 @@ M_PROG
 	    readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	    touch ${readme_for_cifti_out}
 	    short_cifti_out=${cifti_out##*/}
-	    echo "${short_cifti_out} was generated by applying \"multi-run FIX\" (using 'ReApplyFixPipelineMultiRun.sh')" >> ${readme_for_cifti_out}
+		# MPH: Overwrite file, if it already exists
+	    echo "${short_cifti_out} was generated by applying \"multi-run FIX\" (using 'ReApplyFixMultiRunMultiRun.sh')" >| ${readme_for_cifti_out}
 	    echo "across the following individual runs:" >> ${readme_for_cifti_out}
 	    for readme_fmri_name in ${fmris} ; do
     	    # Make sure that readme_fmri_name is indeed without path or extension
 			readme_fmri_name=$(basename $($FSLDIR/bin/remove_ext $readme_fmri_name))
 			# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-    	    readme_fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name}.nii.gz"
+    	    readme_fmri=$($FSLDIR/bin/imglob -extension ${StudyFolder}/${Subject}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name})
 		    echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	    done
 		
