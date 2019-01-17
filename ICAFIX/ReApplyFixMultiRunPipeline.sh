@@ -508,15 +508,18 @@ main()
 			log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 		fi
 
-		#Demean volumes and CIFTI data
-		if [ `$FSLDIR/bin/imtest ${fmri}_demean` != 1 ]; then
-		    ${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
-	        ${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
-		else
-			log_Warn "$($FSLDIR/bin/imglob -extension ${fmri}_demean) already exists. Using existing version"
-        fi
+		#Demean volumes
+		if (( DoVol )); then
+			if [ `$FSLDIR/bin/imtest ${fmri}_demean` != 1 ]; then
+				${FSLDIR}/bin/fslmaths $fmri -Tmean ${fmri}_mean
+				${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
+			else
+				log_Warn "$($FSLDIR/bin/imglob -extension ${fmri}_demean) already exists. Using existing version"
+			fi
+		fi
 
-	    if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
+	    #Demean CIFTI
+		if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
 	        ${FSL_FIX_WBC} -cifti-reduce ${fmriNoExt}_Atlas${RegString}.dtseries.nii MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii
 	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 		else
@@ -527,13 +530,14 @@ main()
 		# whereas hcp_fix_multi_run has two (because it runs melodic, which is not re-run here).
 		# So, the "1st pass" VN is the only-pass, and there is no "2nd pass" VN.
 		# Note that functionhighpassandvariancenormalize internally determines whether to process
-		# the volume based on whether ${RegString} is empty.
+		# the volume based on whether ${RegString} is empty. (Thus no explicit DoVol conditional
+		# in the following).
 		# If ${RegString} is empty, the movement regressors will also automatically get re-filtered.
 		
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
 		log_Msg "tr: $tr"
 
-		# Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
+		## Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
               ( $DoVol == "1" && \
@@ -623,25 +627,29 @@ M_PROG
 	## Concatenate the individual runs and create necessary files
 	## ---------------------------------------------------------------------------
 
-    if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
-		# Merge volumes from the individual runs
-        fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
-        fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
-        fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
-        fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
-        fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}
-		# Average across runs
-        fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
-        fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean  # "Grand" mean across runs
-		fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
-		  # Preceeding line adds back in the "grand" mean; resulting file not used below, but want this concatenated version (without HP or VN) to exist
-        fslmaths ${ConcatNameNoExt}_hp${hp}_vn -Tmean ${ConcatNameNoExt}_hp${hp}_vn  # Mean VN map across the individual runs
-        fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp} 
-          # Preceeding line restores the mean VN map
-        fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask # Inserted to create mask to be used in melodic for suppressing memory error - Takuya Hayashi
-	else
-		log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}) already exists. Using existing version"
-    fi
+	if (( DoVol )); then
+		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
+		    # Merge volumes from the individual runs
+			fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
+			fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
+			fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
+			fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
+			fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}
+		    # Average across runs
+			fslmaths ${ConcatNameNoExt}_SBRef -Tmean ${ConcatNameNoExt}_SBRef
+			fslmaths ${ConcatNameNoExt}_mean -Tmean ${ConcatNameNoExt}_mean  # "Grand" mean across runs
+			fslmaths ${ConcatNameNoExt}_demean -add ${ConcatNameNoExt}_mean ${ConcatNameNoExt}
+		      # Preceding line adds back in the "grand" mean
+			  # Resulting file not used below, but want this concatenated version (without HP or VN) to exist
+			fslmaths ${ConcatNameNoExt}_hp${hp}_vn -Tmean ${ConcatNameNoExt}_hp${hp}_vn  # Mean VN map across the individual runs
+			fslmaths ${ConcatNameNoExt}_hp${hp}_vnts -mul ${ConcatNameNoExt}_hp${hp}_vn ${ConcatNameNoExt}_hp${hp} 
+              # Preceding line restores the mean VN map
+			fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask
+              # Preceding line creates mask to be used in melodic for suppressing memory error - Takuya Hayashi
+		else
+			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}) already exists. Using existing version"
+		fi
+	fi
 
 	# Same thing for the CIFTI
     if [[ ! -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
@@ -656,6 +664,7 @@ M_PROG
 	fi
 	
 	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
+	# MPH: Conditional on DoVol not needed in the following, since at worst, we'll try removing a file that doesn't exist
 	log_Msg "Removing the concatenated VN'ed time series"
 	$FSLDIR/bin/imrm ${ConcatNameNoExt}_hp${hp}_vnts
 	/bin/rm -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
