@@ -73,14 +73,16 @@ PRINTCOM=""
 
 ########################################## INPUTS ########################################## 
 
-#Scripts called by this script assume they run on the results of the HCP minimal preprocesing pipelines
+# This script runs on the outputs from ICAFIX
 
 ######################################### DO WORK ##########################################
 
-fMRINames="tfMRI_WM_GAMBLING_MOTOR_LR tfMRI_WM_GAMBLING_MOTOR_RL tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL"
+# List of fMRI runs
+# If running on output from multi-run FIX, use ConcatName as value for fMRINames
+fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
 
 HighPass="2000"
-ReUseHighPass="YES" #Use YES if using multi-run ICA-FIX, otherwise use NO
+ReUseHighPass="NO" #Use YES if running on output from multi-run FIX, otherwise use NO
 
 DualScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
 SingleScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
