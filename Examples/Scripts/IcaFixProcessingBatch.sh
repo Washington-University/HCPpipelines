@@ -132,11 +132,14 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# set list of conditions on which to run ICA+FIX
-	CondList="rfMRI_REST1 rfMRI_REST2"
+	# set list of fMRI on which to run ICA+FIX
+	fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
 
-	# set list of directions on which to run ICA+FIX
-	DirectionList="RL LR"
+	# If you wish to run "multi-run" (concatenated) FIX, specify the name to give the concatenated output files
+	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
+	# Otherwise, leave ConcatName empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
+	ConcatName=""
+	# ConcatName="rfMRI_REST1_2_LR_RL"  ## Do NOT include spaces!
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds
 	bandpass=2000
@@ -151,42 +154,55 @@ main() {
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
 	
-	# select specific version of hcp_fix to use
-	# here, we use the one supplied with the HCPpipelines (which is extended
-	# relative to the version provided with the FIX distribution)
-	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
-
 	# establish queue for job submission
 	QUEUE="-q hcp_priority.q"
+	if [ "${RunLocal}" == "TRUE" ]; then
+		queuing_command=""
+	else
+		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+	fi
 
-	for Subject in ${Subjlist}
-	do
+	DIR=$(pwd)
+	
+	for Subject in ${Subjlist}; do
 		echo ${Subject}
 
-		for Condition in ${CondList}
-		do
-			echo "  ${Condition}"
+		ResultsFolder="${StudyFolder}/${Subject}/MNINonLinear/Results"
+		cd ${ResultsFolder}
+		
+		if [ -z ${ConcatName} ]; then
+			# single-run FIX
+			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
+			
+			for fMRIName in ${fMRINames}; do
+				echo "  ${fMRIName}"
 
-			for Direction in ${DirectionList}
-			do
-				echo "    ${Direction}"
-				
-				InputDir="${StudyFolder}/${Subject}/MNINonLinear/Results/${Condition}_${Direction}"
-				InputFile="${InputDir}/${Condition}_${Direction}.nii.gz"
+				InputFile="${fMRIName}/${fMRIName}"
 
-				if [ "${RunLocal}" == "TRUE" ]
-				then
-					queuing_command=""
-					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
-				else
-					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
-					echo "About to use ${queuing_command} to run ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
-				fi
-
-				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}
+				cmd="${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
+				echo "About to run: ${cmd}"
+				${cmd}
 			done
 
-		done
+		else
+			# multi-run FIX
+			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
+			ConcatNameFile="${ConcatName}/${ConcatName}"
+
+			InputFile=""			
+			for fMRIName in ${fMRINames}; do
+				InputFile+="${fMRIName}/${fMRIName}@"
+			done
+			
+			echo "  InputFile: ${InputFile}"
+
+			cmd="${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${ConcatFileName} ${domot} ${TrainingData} ${FixThreshold}"
+			echo "About to run: ${cmd}"
+			${cmd}
+
+		fi
+
+		cd ${DIR}
 
 	done
 }  # main()
