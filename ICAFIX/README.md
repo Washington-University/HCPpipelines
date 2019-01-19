@@ -1,8 +1,8 @@
-# HCP Pipelines ICAFIX subdirectory.
+# HCP Pipelines ICAFIX subdirectory
 
 This directory contains [HCP] and [Washington University] official versions of
 scripts related to [FSL]'s [FIX], a tool for denoising of fMRI data using
-spatial ICA (melodic) followed by automatic classification of components into
+spatial ICA (i.e., melodic) followed by automatic classification of components into
 'signal' and 'noise' components.
 
 The scripts here support both "single-run" FIX and "multi-run" FIX (MR-FIX).
@@ -11,55 +11,52 @@ spatial ICA, to yield better separation of 'signal' and 'noise' components.
 
 A typical workflow would be:
 * Run single or multi-run FIX (see Examples/Scripts/IcaFixProcessingBatch.sh)
-* Run "PostFix" to generate scenes for reviewing the FIX classification (see
+* Run "PostFix" to generate Workbench scenes for reviewing the FIX classification (see
   Examples/Scripts/PostFixBatch.sh)
 * Review those scenes to QC the quality of the FIX classification. If you are
   satisfied with the quality, proceed to use the cleaned data.
 * If you feel reclassification of certain components is necessary, enter the
   appropriate component numbers that you feel were mis-classified into the
   ReclassifyAsSignal.txt or ReclassifyAsNoise.txt files (as appropriate).
-* Run ApplyHandReClassifications.sh (see
+  * Run ApplyHandReClassifications.sh (see
   Examples/Scripts/ApplyHandReClassificationsBatch.sh)
-* Run ReApplyFixPipeline.sh (for single-run FIX) or
+  * Run ReApplyFixPipeline.sh (for single-run FIX) or
   ReApplyFixMultiRunPipeline.sh (for multi-run FIX) to re-clean the data using
   the manual ("hand") reclassification. These scripts are also the mechanism
-  by which one generates cleaned files for an alternative surface registration
-  (e.g., 'MSMAll')
+  by which cleaned files are generated for an alternative surface registration
+  (e.g., 'MSMAll') (although in that case, the ReApplyFix scripts are invoked automatically 
+  by the DeDriftAndResamplePipeline)
   
-Note that `FSL_FIXDIR` should be set to the standard [FIX] installation. You
-may need to modify your FIX installation to fit your environment. In
-particular, the `${FSL_FIXDIR}/settings.sh` file may need modification.  (The
-settings.sh.WUSTL_CHPC2 file in this directory is the settings.sh file that is
+Note that `FSL_FIXDIR` environment variable needs to be set to the location of 
+your [FIX] installation. You may need to modify your FIX installation to fit your 
+compute environment. In particular, the `${FSL_FIXDIR}/settings.sh` file may need modification. 
+(The settings.sh.WUSTL_CHPC2 file in this directory is the settings.sh file that is
 used on the WUSTL "CHPC2" cluster).
 
 # Notes on MATLAB usage
 
 Most of the scripts in this directory at some point rely on functions written
 in MATLAB. This MATLAB code can be executed in 3 possible modes:
+
 0. Compiled Matlab -- more on this below
 1. Interpreted Matlab -- probably easiest to use, if it is an option for you
 2. Interpreted Octave -- an alternative to Matlab, although:
-   i. You'll need to configure various helper functions (such as
-	  `${HCPPIPEDIR/global/matlab/{ciftiopen.m, ciftisave.m}` and
-	  `$FSLDIR/etc/matlab/{read_avw.m, save_avw.m}`) to work within your Octave
-	  environment.
-  ii. Default builds of Octave are limited in the amount of memory and array
-dimensions that are supported. Especially in the context of multi-run FIX, you
-will likely need to build a version of Octave that supports increased memory.
+	1. You'll need to configure various helper functions (such as `${HCPPIPEDIR/global/matlab/{ciftiopen.m, ciftisave.m}` and `$FSLDIR/etc/matlab/{read_avw.m, save_avw.m}`) to work within your Octave environment.
+	2. Default builds of Octave are limited in the amount of memory and array dimensions that are supported. Especially in the context of multi-run FIX, you will likely need to build a version of Octave that supports increased memory.
 
 ### Control of Matlab mode within specific scripts
 
-##### hcp_fix and hcp_fix_multi_run
+#### hcp_fix and hcp_fix_multi_run
 
-The Matlab mode is controlled by the `FSL_FIX_MATLAB_MODE` variable within the
-`${FSL_FIXDIR}/settings.sh` file. The `FSL_FIX_MCRROOT` variable in that file.
+The Matlab mode is controlled by the `FSL_FIX_MATLAB_MODE` environment variable within the
+`${FSL_FIXDIR}/settings.sh` file.
 
-##### ReApplyFixPipeline, ReApplyFixMultiRunPipeline, and PostFix
+#### ReApplyFixPipeline, ReApplyFixMultiRunPipeline, and PostFix
 
 The Matlab mode is controlled via the `--matlab-run-mode` input argument
-(defaults to mode 1, interpreted Matlab) and the `MATLAB_COMPILER_RUNTIME`.
+(defaults to mode 1, interpreted Matlab).
 
-##### ApplyHandReClassifications
+#### ApplyHandReClassifications
 
 Does not use any Matlab code.
 
@@ -71,19 +68,19 @@ Unfortunately, due to different development paths, the availability
 and setup of compiled MATLAB differs across the different scripts in this
 directory. We hope to be able to harmonize this in the future.
 
-##### hcp_fix
+#### hcp_fix
 
-The `FSL_FIX_MCRROOT` variable in the `${FSL_FIXDIR}/settings.sh` file must be
+The `FSL_FIX_MCRROOT` environment variable in the `${FSL_FIXDIR}/settings.sh` file must be
 set to the "root" of the directory containing the "MATLAB Compiler Runtime"
 (MCR) version for the MATLAB release under which the FIX distribution was
 compiled (which is 'R2014a' as of FIX version 1.067).
 [Note that the `${FSL_FIXDIR}/settings.sh` file automatically determines the MCR version number (i.e., 'v83')].
 
-##### hcp_fix_multi_run
+#### hcp_fix_multi_run
 
 Compiled Matlab mode not currently supported.
 
-##### ReApplyFixPipeline, ReApplyFixMultiRunPipeline
+#### ReApplyFixPipeline, ReApplyFixMultiRunPipeline
 
 The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
 directory containing the "MATLAB Compiler Runtime" (MCR) version for the
@@ -94,7 +91,7 @@ For example,
 
 	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2014a/v83
 
-##### PostFix
+#### PostFix
 
 The `prepareICAs` MATLAB function that is used by PostFix was compiled under a
 different version of the MCR. Specifically, the `MATLAB_COMPILER_RUNTIME`
@@ -105,9 +102,9 @@ For example,
 	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
 
 
-# Supplemental instructions for installing fix
+# Supplemental instructions for installing FIX
 
-Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of fix.  Note that [FIX]'s minimum supported version of R is 3.3.0.
+Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of FIX.  Note that [FIX]'s minimum supported version of R is 3.3.0.
 
 ### Ubuntu 14.04
 
