@@ -41,7 +41,7 @@ compile_prepareICAs()
 	local app_name=prepareICAs
 	local output_directory=Compiled_${app_name}
 
-	pushd ${HCPPIPEDIR}/PostFix > /dev/null
+	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
 	log_Msg "Working in ${PWD}"
 
 	log_Msg "Creating output directory: ${output_directory}"
