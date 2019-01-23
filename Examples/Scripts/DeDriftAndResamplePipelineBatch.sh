@@ -82,19 +82,23 @@ DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.
 ConcatRegName="MSMAll_Test"
 Maps="sulc curvature corrThickness thickness"
 MyelinMaps="MyelinMap SmoothedMyelinMap" #No _BC, this will be reapplied
-rfMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL" #Space delimited list or NONE
-rfMRINames="rfMRI_REST1_LR" #Space delimited list or NONE
-tfMRINames="tfMRI_WM_LR tfMRI_WM_RL tfMRI_GAMBLING_LR tfMRI_GAMBLING_RL tfMRI_MOTOR_LR tfMRI_MOTOR_RL tfMRI_LANGUAGE_LR tfMRI_LANGUAGE_RL tfMRI_SOCIAL_LR tfMRI_SOCIAL_RL tfMRI_RELATIONAL_LR tfMRI_RELATIONAL_RL tfMRI_EMOTION_LR tfMRI_EMOTION_RL" #Space delimited list or NONE
-tfMRINames="NONE"
-SmoothingFWHM="2" #Should equal previous grayordiantes smoothing (because we are resampling from unsmoothed native mesh timeseries
+MRFixConcatName="NONE"
+MRFixNames="NONE"
+fixNames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL" #Space delimited list or NONE
+fixNames="rfMRI_REST1_LR" #Space delimited list or NONE
+dontFixNames="tfMRI_WM_LR tfMRI_WM_RL tfMRI_GAMBLING_LR tfMRI_GAMBLING_RL tfMRI_MOTOR_LR tfMRI_MOTOR_RL tfMRI_LANGUAGE_LR tfMRI_LANGUAGE_RL tfMRI_SOCIAL_LR tfMRI_SOCIAL_RL tfMRI_RELATIONAL_LR tfMRI_RELATIONAL_RL tfMRI_EMOTION_LR tfMRI_EMOTION_RL" #Space delimited list or NONE
+dontFixNames="NONE"
+SmoothingFWHM="2" #Should equal previous grayordinates smoothing (because we are resampling from unsmoothed native mesh timeseries)
 HighPass="2000"
-MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
-MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab
+MotionRegression=FALSE
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
+MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
 Maps=`echo "$Maps" | sed s/" "/"@"/g`
 MyelinMaps=`echo "$MyelinMaps" | sed s/" "/"@"/g`
-rfMRINames=`echo "$rfMRINames" | sed s/" "/"@"/g`
-tfMRINames=`echo "$tfMRINames" | sed s/" "/"@"/g`
+MRFixNames=`echo "$MRFixNames" | sed s/" "/"@"/g`
+fixNames=`echo "$fixNames" | sed s/" "/"@"/g`
+dontFixNames=`echo "$dontFixNames" | sed s/" "/"@"/g`
 
 for Subject in $Subjlist ; do
 	echo "    ${Subject}"
@@ -108,20 +112,23 @@ for Subject in $Subjlist ; do
 	fi
 
 	${queuing_command} ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
-  --path=${StudyFolder} \
-  --subject=${Subject} \
-  --high-res-mesh=${HighResMesh} \
-  --low-res-meshes=${LowResMesh} \
-  --registration-name=${RegName} \
-  --dedrift-reg-files=${DeDriftRegFiles} \
-  --concat-reg-name=${ConcatRegName} \
-  --maps=${Maps} \
-  --myelin-maps=${MyelinMaps} \
-  --rfmri-names=${rfMRINames} \
-  --tfmri-names=${tfMRINames} \
-  --smoothing-fwhm=${SmoothingFWHM} \
-  --high-pass=${HighPass} \
-  --matlab-run-mode=${MatlabMode}
+        --path=${StudyFolder} \
+        --subject=${Subject} \
+        --high-res-mesh=${HighResMesh} \
+        --low-res-meshes=${LowResMesh} \
+        --registration-name=${RegName} \
+        --dedrift-reg-files=${DeDriftRegFiles} \
+        --concat-reg-name=${ConcatRegName} \
+        --maps=${Maps} \
+        --myelin-maps=${MyelinMaps} \
+        --multirun-fix-concat-name=${MRFixConcatName} \
+        --multirun-fix-names=${MRFixNames} \
+        --fix-names=${fixNames} \
+        --dont-fix-names=${dontFixNames} \
+        --smoothing-fwhm=${SmoothingFWHM} \
+        --highpass=${HighPass} \
+        --matlab-run-mode=${MatlabMode} \
+        --motion-regression=${MotionRegression}
 done
 
 

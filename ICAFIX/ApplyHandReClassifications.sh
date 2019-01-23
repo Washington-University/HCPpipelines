@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# If any command exits with non-zero value, this script exits
+set -e
+
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
@@ -89,37 +92,37 @@ get_options()
 
 	# check required parameters
 	if [ -z "${p_StudyFolder}" ]; then
-	    log_Err "Study Folder (--path= or --study-folder=) required"
-	    error_count=$(( error_count + 1 ))
+		log_Err "Study Folder (--path= or --study-folder=) required"
+		error_count=$(( error_count + 1 ))
 	else
-	    log_Msg "p_StudyFolder: ${p_StudyFolder}"
+		log_Msg "p_StudyFolder: ${p_StudyFolder}"
 	fi
 
 	if [ -z "${p_Subject}" ]; then
-	    log_Err "Subject ID (--subject=) required"
-	    error_count=$(( error_count + 1 ))
+		log_Err "Subject ID (--subject=) required"
+		error_count=$(( error_count + 1 ))
 	else
-	    log_Msg "p_Subject: ${p_Subject}"
+		log_Msg "p_Subject: ${p_Subject}"
 	fi
 
 	if [ -z "${p_fMRIName}" ]; then
-	    log_Err "fMRI Name (--fmri-name=) required"
-	    error_count=$(( error_count + 1 ))
+		log_Err "fMRI Name (--fmri-name=) required"
+		error_count=$(( error_count + 1 ))
 	else
-	    log_Msg "p_fMRIName: ${p_fMRIName}"
+		log_Msg "p_fMRIName: ${p_fMRIName}"
 	fi
 
 	if [ -z "${p_HighPass}" ]; then
-	    log_Err "High Pass: (--high-pass=) required"
-	    error_count=$(( error_count + 1 ))
+		log_Err "High Pass: (--high-pass=) required"
+		error_count=$(( error_count + 1 ))
 	else
-	    log_Msg "p_HighPass: ${p_HighPass}"
+		log_Msg "p_HighPass: ${p_HighPass}"
 	fi
 
 	#--matlab-run-mode is now ignored, but still accepted, to make old scripts work without changes
 
 	if [ ${error_count} -gt 0 ]; then
-	    log_Err_Abort "For usage information, use --help"
+		log_Err_Abort "For usage information, use --help"
 	fi
 }
 
@@ -230,54 +233,55 @@ main()
 	training_labels=""
 
 	# Make sure that there is something to do (i.e., ReclassifyAs*.txt files are not BOTH empty)
-	if (( ! ${#reclass_signal[@]} && ! ${#reclass_noise[@]} )); then
-	    log_Warn "${ReclassifyAsNoise} and ${ReclassifyAsSignal} are both empty; nothing to do"
-	    log_Msg "Completed!"
-	    exit
+	if (( ! ${#reclass_signal[@]} && ! ${#reclass_noise[@]} ))
+	then
+		log_Warn "${ReclassifyAsNoise} and ${ReclassifyAsSignal} are both empty; nothing to do"
+		log_Msg "Completed!"
+		exit
 	fi
 
 	for ((i = 1; i <= NumICAs; ++i))
 	do
-	    if (( reclass_signal[i] || (orig_signal[i] && ! reclass_noise[i]) ))
-	    then
-		if [[ "$hand_signal" ]]
+		if (( reclass_signal[i] || (orig_signal[i] && ! reclass_noise[i]) ))
 		then
-		    hand_signal+=" $i"
+			if [[ "$hand_signal" ]]
+			then
+				hand_signal+=" $i"
+			else
+				hand_signal="$i"
+			fi
 		else
-		    hand_signal="$i"
+			if [[ "$hand_noise" ]]
+			then
+				hand_noise+=" $i"
+				training_labels+=", $i"
+			else
+				hand_noise="$i"
+				training_labels+="$i"
+			fi
 		fi
-	    else
-		if [[ "$hand_noise" ]]
+		#error checking
+		if (( reclass_noise[i] && reclass_signal[i] ))
 		then
-		    hand_noise+=" $i"
-		    training_labels+=", $i"
-		else
-		    hand_noise="$i"
-		    training_labels+="$i"
+			log_Msg "Duplicate Component Error with Manual Classification on ICA: $i"
+			fail=1
 		fi
-	    fi
-            #error checking
-	    if (( reclass_noise[i] && reclass_signal[i] ))
-	    then
-		log_Msg "Duplicate Component Error with Manual Classification on ICA: $i"
-		fail=1
-	    fi
-	    if (( ! (orig_noise[i] || orig_signal[i]) ))
-	    then
-		log_Msg "Missing Component Error with Automatic Classification on ICA: $i"
-		fail=1
-	    fi
-	    if (( orig_noise[i] && orig_signal[i] ))
-	    then
-		log_Msg "Duplicate Component Error with Automatic Classification on ICA: $i"
-		fail=1
-	    fi
-	    #the hand check from the matlab version can't be tripped here without the above code being wrong
+		if (( ! (orig_noise[i] || orig_signal[i]) ))
+		then
+			log_Msg "Missing Component Error with Automatic Classification on ICA: $i"
+			fail=1
+		fi
+		if (( orig_noise[i] && orig_signal[i] ))
+		then
+			log_Msg "Duplicate Component Error with Automatic Classification on ICA: $i"
+			fail=1
+		fi
+		#the hand check from the matlab version can't be tripped here without the above code being wrong
 	done
 
 	if [[ $fail ]]
 	then
-	    log_Err_Abort "Sanity checks on input files failed"
+		log_Err_Abort "Sanity checks on input files failed"
 	fi
 
 	echo "$hand_signal" > "${HandSignalName}"
@@ -292,8 +296,6 @@ main()
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
-
-set -e # If any command exits with non-zero value, this script exits
 
 # Set global variables
 g_script_name=$(basename "${0}")
@@ -312,6 +314,7 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_SetToolName "${g_script_name}"
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
