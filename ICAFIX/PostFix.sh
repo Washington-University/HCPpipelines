@@ -461,15 +461,11 @@ M_PROG
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
 	rm ${ComponentList}
 
-	# 1/11/2019, MPH: Going to place the scene and ReclassifyAs*.txt files into FIXFolder
-	# to avoid name collision if user runs FIX with a different highpass filter
+	# 1/28/2019, MPH: Going to place the ReclassifyAs*.txt files into FIXFolder
+	# to avoid name collision if user runs FIX with a different highpass filter.
 	# But then symlink to them from ResultsFolder for compatibility with previous code and downstream scripts
-	log_Msg "Making dual screen scene"
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${FIXFolder}/${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
-
-	log_Msg "Making single screen scene"
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g > ${FIXFolder}/${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
-
+	# The .scene files need to stay in ResultsFolder (so the paths to the files still work), but
+	# we'll add the highpass filter to the file name.
 	if [ ! -e ${FIXFolder}/ReclassifyAsSignal.txt ] ; then
 		touch ${FIXFolder}/ReclassifyAsSignal.txt
 	fi
@@ -478,14 +474,20 @@ M_PROG
 		touch ${FIXFolder}/ReclassifyAsNoise.txt
 	fi
 
-	# For legacy compatibility, we symlink the scene and ReclassifyAs*.txt files into ResultsFolder
-	# If physical scene or ReclassifyAs*.txt files already exist in ResultsFolder, then those
+	log_Msg "Making dual screen scene"
+	local sceneFileDual=${ResultsFolder}/${Subject}_${fMRIName}_hp${HighPass}_ICA_Classification_dualscreen.scene
+	# MPH: Overwrite file, if it already exists
+	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g >| ${sceneFileDual}
+
+	log_Msg "Making single screen scene"
+	local sceneFileSingle=${ResultsFolder}/${Subject}_${fMRIName}_hp${HighPass}_ICA_Classification_singlescreen.scene
+	# MPH: Overwrite file, if it already exists
+	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g >| ${sceneFileSingle}
+
+	# For legacy compatibility, we symlink the ReclassifyAs*.txt files into ResultsFolder.
+	# If ReclassifyAs*.txt files already exist in ResultsFolder, then those
 	# need to be preserved (but with a warning generated)!
 	# If file exists as a symlink, force creation of a new symlink pointing to the FIXFolder files
-	local file=${Subject}_${fMRIName}_ICA_Classification_dualscreen.scene
-	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
-	local file=${Subject}_${fMRIName}_ICA_Classification_singlescreen.scene
-	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
 	local file=ReclassifyAsSignal.txt
 	create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
 	local file=ReclassifyAsNoise.txt
