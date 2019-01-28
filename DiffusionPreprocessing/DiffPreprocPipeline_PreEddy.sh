@@ -147,7 +147,7 @@ EOF
 #  ${PEdir}	              Phase Encoding Direction, 1=RL/LR, 2=PA/AP
 #  ${PosInputImages}      @ symbol separated list of data with 'positive' phase 
 #                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
+#  ${NegInputImages}      @ symbol separated list of data with 'negative' phase
 #                         encoding direction 
 #  ${echospacing}         Echo spacing in msecs
 #  ${DWIName}             Name to give DWI output directories
