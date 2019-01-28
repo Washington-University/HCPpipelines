@@ -1,6 +1,7 @@
 # Settings file for FIX
 # Modify these settings based on your system setup
-FIXVERSION=1.067
+FIXVERSION=1.06
+#   (actually this version is 1.067 - see wiki page for details)
 
 # Get the OS and CPU type
 FSL_FIX_OS=`uname -s`
@@ -109,8 +110,14 @@ if [ -z "${FSL_FIX_MATLAB_MODE}" ]; then
 fi
 
 # Set this to CIFTI Matlab Reader/Writer for use within HCP pipelines
-#FSL_FIX_CIFTIRW='/vols/Data/HCP/workbench/CIFTIMatlabReaderWriter';
-FSL_FIX_CIFTIRW='/export/matlab/MCR/R2014a/v83/toolbox/local';
+# i.e., location of the ciftiopen.m, ciftisave.m, and ciftisavereset.m functions
+# https://wiki.humanconnectome.org/display/PublicData/HCP+Users+FAQ#HCPUsersFAQ-2.HowdoyougetCIFTIfilesintoMATLAB?
+# Note that the GIFTI library will need to be in your matlab/octave path as well (see previous link)
+# This variable is only relevant if using FSL_FIX_MATLAB_MODE of 1 or 2. 
+# [If using the compiled version of FIX, the CIFTI I/O functionality is already part of the compiled executables].
+if [ -z "${FSL_FIX_CIFTIRW}" ]; then
+    FSL_FIX_CIFTIRW="$HOME/matlab/CIFTIMatlabReaderWriter"
+fi
 
 # Set this to the location of the HCP Workbench command for your platform
 #FSL_FIX_WBC='/vols/Data/HCP/workbench/bin_linux64/wb_command';

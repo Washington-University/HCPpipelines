@@ -22,44 +22,36 @@
 #      specific T1w/brainmask_fs.nii.gz
 #   6) Includes more verbose output 
 
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-
-# All fix settings are held in the settings.sh file - edit this file to suit your setup
-. ${FSL_FIXDIR}/settings.sh
-
 #############################################################
-
-DEBUG="TRUE"
-
-Debug() {
-	msg="$*"
-	if [ "${DEBUG}" = "TRUE" ]; then
-		echo "hcp_fix: DEBUG: ${msg}"
-	fi
-}
-
-Inform() {
-	msg="$*"
-	echo "hcp_fix: INFORM: ${msg}"
-}
-
-Error() {
-	msg="$*"
-	echo "hcp_fix: ERROR: ${msg}"
-}
 
 Usage() {
     cat <<EOF
 
-hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>]
-  <highpass> is the temporal highpass full-width (2*sigma) to use, in seconds
-  <do_motion_regression> must be specified, use TRUE or FALSE
+hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
 
-e.g.   hcp_fix BOLD_REST1_RL/BOLD_REST1_RL.nii.gz 200 TRUE
+  Apply FIX cleaning to a single file
 
-for detrending-like behaviour, set <highpass> to 2000
+  <4D_FMRI_data>: fMRI run to be processed (nifti extension optional)
+
+  <highpass>: 
+     If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'
+
+     For detrending-like behaviour, set <highpass> to 2000
+
+  <do_motion_regression>:
+     Controls whether to regress motion parameters as part of the cleaning.
+     Must be specified, use TRUE or FALSE
+
+  [<TrainingFile>] (optional)
+     Defaults to "HCP_hp${hp}.RData"
+
+  [<FixThreshold>] (optional)
+     Threshold setting in FIX that controls the sensitivity/specificity tradeoff.
+     Default = 10.
+     To specify a threshold, <TrainingFile> becomes a mandatory argument.
+
+e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 FALSE
+        (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF
     exit 1
@@ -71,12 +63,46 @@ then
     Usage
 fi
 
+#############################################################
+
+set -e
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+#  Load function libraries
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+               # Set to empty string to disable debugging related output
+
+# Set this before calling hcp_fix instead, to make it more flexible
+#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
+#export FSL_FIXDIR
+log_Check_Env_Var FSL_FIXDIR
+
+# All fix settings are held in the settings.sh file - edit this file to suit your setup
+. ${FSL_FIXDIR}/settings.sh
+
+# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
+log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
+
+#############################################################
+
 fmri=$1
 cd `dirname $fmri`
-fmri=`basename $fmri`
-fmri=`$FSLDIR/bin/imglob $fmri`
-[ `imtest $fmri` != 1 ] && echo No valid 4D_FMRI input file specified && exit 1
-fmri_orig=$fmri
+fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
+fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
+if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
+	log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
+fi
 
 hp=$2
 
@@ -89,33 +115,42 @@ case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
         doMotionRegression=FALSE
         ;;
     ( * )
-        Error "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        exit 1
+        log_Err_Abort "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
         ;;
 esac
 
 unset TrainingData
-if [ $# -ge 4 ]; then
+unset FixThresh
+if [ $# -ge 4 ] ; then
 	TrainingData=$4
+	FixThresh=$5
 fi
+if [ -z "${FixThresh}" ]; then
+	FixThresh=10
+fi
+
+## ---------------------------------------------------------------------------
+## Preparation (highpass)
+## ---------------------------------------------------------------------------
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
-
-Inform "processing FMRI file $fmri with highpass $hp"
+log_Msg "tr: ${tr}"
+log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 if (( hp > 0 )) ; then
-  Inform "running highpass"
+  log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
-  ${FSLDIR}/bin/fslmaths $fmri -bptf $hptr -1 ${fmri}_hp$hp
-  fmri=${fmri}_hp$hp
+  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -bptf ${hptr} -1 ${fmri}_hp${hp}"
+  log_Msg "highpass_cmd: ${highpass_cmd}"
+  ${highpass_cmd}
+  fmrihp=${fmri}_hp${hp}
 fi
 
-Inform "running MELODIC"
-mkdir -p ${fmri}.ica
-Debug "About to run melodic: Contents of ${fmri}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
-	ls -lRa ${fmri}.ica
+mkdir -p ${fmrihp}.ica
+log_Debug_Msg "About to run melodic: Contents of ${fmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
+	ls -lRa ${fmrihp}.ica
 fi
 
 #grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
@@ -127,58 +162,95 @@ else
     #if it isn't even in $PATH, fall back on FSLDIR
     MELODIC="${FSLDIR}/bin/melodic"
 fi
-Debug "Beginning of melodic version log"
-if [ "${DEBUG}" = "TRUE" ] ; then
-	"${MELODIC}" --version
+
+log_Msg "Running MELODIC located at: $MELODIC"
+log_Debug_Msg "Beginning of melodic version log, help, and checksum"
+if [ ! -z "${log_debugOn}" ] ; then
+	log_Debug_Msg "$MELODIC --version"
+	$MELODIC --version
+	log_Debug_Msg "$MELODIC --help"
+	$MELODIC --help
+	log_Debug_Msg "md5sum $MELODIC"
+	md5sum $MELODIC
 fi
-Debug "End of melodic version log"
+log_Debug_Msg "End of melodic version log, help, and checksum"
 
-${MELODIC} -i $fmri -o ${fmri}.ica/filtered_func_data.ica --nobet --report --Oall --tr=$tr
-retCode=$?
-Debug "melodic has been run: retCode = ${retCode}"
-Debug "melodic has been run: Contents of ${fmri}.ica follow"
-if [ "${DEBUG}" = "TRUE" ] ; then
-	ls -lRa ${fmri}.ica
+## ---------------------------------------------------------------------------
+## Run melodic
+## ---------------------------------------------------------------------------
+
+melodic_cmd="${MELODIC} -i ${fmrihp} -o ${fmrihp}.ica/filtered_func_data.ica --nobet --report --Oall --tr=${tr}"
+if [ ! -z "${log_debugOn}" ] ; then
+	melodic_cmd="${melodic_cmd} --verbose --debug"
 fi
 
-if [ "${retCode}" -ne "0" ] ; then
-    Error "melodic has returned a non-zero code"
-	Error "Exiting this script with -1 return value."
-	exit -1
+log_Msg "melodic_cmd: ${melodic_cmd}"
+${melodic_cmd}
+return_code=$?
+log_Msg "melodic has been run: return_code = ${return_code}"
+log_Debug_Msg "melodic has been run: Contents of ${fmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
+	ls -lRa ${fmrihp}.ica
 fi
 
-cd ${fmri}.ica
+if [ "${return_code}" -ne "0" ] ; then
+    log_Err_Abort "melodic has returned a non-zero code"
+fi
 
-$FSLDIR/bin/imln ../$fmri filtered_func_data
+# Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
+# (these may only get created in the context of MIGP)
+$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data.ica/alldat
+$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data.ica/concat_data
+
+## ---------------------------------------------------------------------------
+## Housekeeping related to files expected for FIX
+## ---------------------------------------------------------------------------
+
+cd ${fmrihp}.ica
+
+$FSLDIR/bin/imln ../$fmrihp filtered_func_data
 $FSLDIR/bin/imln filtered_func_data.ica/mask mask
 
-if [ `$FSLDIR/bin/imtest ../${fmri_orig}_SBRef` = 1 ] ; then
-  $FSLDIR/bin/imln ../${fmri_orig}_SBRef mean_func
+if [ `$FSLDIR/bin/imtest ../${fmri}_SBRef` = 1 ] ; then
+  $FSLDIR/bin/imln ../${fmri}_SBRef mean_func
 else
   $FSLDIR/bin/imln filtered_func_data.ica/mean mean_func
 fi
 
-if [ -f ../${fmri_orig}_Atlas.dtseries.nii ] ; then
-  $FSLDIR/bin/imln ../${fmri_orig}_Atlas.dtseries.nii Atlas.dtseries.nii
+if [ -f ../${fmri}_Atlas.dtseries.nii ] ; then
+  $FSLDIR/bin/imln ../${fmri}_Atlas.dtseries.nii Atlas.dtseries.nii
 fi
 
+# Get Movement_Regressors.txt into the format expected by functionmotionconfounds.m
 mkdir -p mc
 if [ -f ../Movement_Regressors.txt ] ; then
-  cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
+  	log_Msg "Creating mc/prefiltered_func_data_mcf.par file"
+	cat ../Movement_Regressors.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > mc/prefiltered_func_data_mcf.par
 else
-  Error "Movement_Regressors.txt not retrieved properly." 
-  exit -1
+  log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 fi 
 
-Inform "functionmotionconfounds log file is to be named: .fix.functionmotionconfounds.log instead of .fix.log"
-#${FSL_FIXDIR}/call_matlab.sh -l .fix.log -f functionmotionconfounds $tr $hp 
-${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
+## MPH: Not clear to me why we need to invoke functionmotionconfounds to "pre-create" the
+## mc/prefiltered_func_data_mcf_conf_hp file when fix_3_clean calls functionmotionconfounds itself,
+## and the file could therefore get created instead as part of the fix_3_clean stage.
+## MPH: Note that we need to use the -f form of call_matlab.sh, since the -r and -m forms do not support
+## the use of compiled matlab. But the -f form doesn't include a semicolon at the end of invoking the
+## function (as of fix1.067), and thus the call ends up returning the entire contents of the 'confounds' matrix.
+## Thus, to avoid cluttering the stdout with the listing of the 'confounds' matrix, we are going to 
+## continue capturing this output in its own specific log file
+
+#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
+matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds ${tr} ${hp}"
+log_Msg "Run MATLAB/Octave with command..."
+log_Msg "${matlab_cmd}"
+log_Msg "Check ${fmrihp}.ica/.fix.functionmotionconfounds.log for log output from functionmotionconfounds"
+${matlab_cmd}
 
 mkdir -p reg
 cd reg
 
 i_am_at=`pwd`
-Debug "current folder ${i_am_at}"
+log_Debug_Msg "current folder ${i_am_at}"
 
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
@@ -186,16 +258,21 @@ $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
 if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
   $FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
-  $FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs.nii.gz -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
+  $FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k ../../../../brainmask_fs -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
   $FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
   $FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 fi
 cd ../..
 
-Inform "running FIX"
+## ---------------------------------------------------------------------------
+## Actually run FIX
+## ---------------------------------------------------------------------------
+
+log_Msg "Running FIX"
 
 # Changes to handle user specified training data file
-if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
+if [ "X${TrainingData}" != X ]; then  
+        # User has specified a training data file
 	
 	# add .RData suffix if not already there
 	if [[ "${TrainingData}" != *.RData ]]; then 
@@ -210,49 +287,68 @@ if [ "X${TrainingData}" != X ]; then  # User has specified a training data file
 
 	# finally, if the TrainingData file is not found, report an error and get out of here
 	if [ ! -f "${TrainingData}" ]; then
-		Error "FIX training data not found: ${TrainingData}"
-		exit -1
+		log_Err_Abort "FIX training data not found: ${TrainingData}"
 	fi
-
-	# now run fix
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
-	    #use array for whitespace safety, even if the rest of the script isn't
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10 -m -h "${hp}")
-	else
-		#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${TrainingData}" 10)
-	fi
-	Inform "About to run: ${fix_cmd[*]}"
-	"${fix_cmd[@]}"
 
 else
-	# user has not specified a training data file
+	# User has not specified a training data file
 	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
 	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
-	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]
-	then
-		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in _multi_run
-		Error "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
-		exit 1
+	log_Msg "training data file not specified"
+	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
+		#currently, hp 0 doesn't do detrend in hcp_fix, so we can't use the same logic as in hcp_fix_multi_run
+		log_Err_Abort "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
 	fi
-	Inform "using training data ${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData"
-	if [[ ${doMotionRegression} == "TRUE" ]]
-	then
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" 10 -m -h "${hp}")
-    else
-        #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	    fix_cmd=("${FSL_FIXDIR}/fix" "${fmri}.ica" "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" 10)
-    fi
-    Inform "About to run: ${fix_cmd[*]}"
-    "${fix_cmd[@]}"
+	TrainingData=${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData
+fi
+log_Msg "using training data file: ${TrainingData}"
+
+# set up fix command
+if [[ ${doMotionRegression} == "TRUE" ]]; then
+    #use array for whitespace safety, even if the rest of the script isn't
+    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
+else
+    #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
+fi
+log_Msg "fix_cmd: ${fix_cmd[*]}"
+## MPH: The 'fix' script itself will continue to log to its own custom files
+## Alert user to where those are
+log_Msg "Check ${fmrihp}.ica/fix/logMatlab.txt for log output from feature extraction"
+log_Msg "Check ${fmrihp}.ica/.fix_2b_predict.log for log output from component classification"
+log_Msg "Check ${fmrihp}.ica/.fix.log for log output from cleanup stage"
+"${fix_cmd[@]}"
+return_code=$?
+if [ "${return_code}" -ne "0" ]; then
+    log_Err_Abort "return_code from fix_cmd: ${return_code}"
+fi
+log_Msg "Done running FIX"
+
+## ---------------------------------------------------------------------------
+## Rename some files (relative to the default names coded in fix_3_clean)
+## ---------------------------------------------------------------------------
+
+$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
+if [ "$?" -ne "0" ]; then
+    log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
+fi
+if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
+    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas_hp${hp}_clean.dtseries.nii
+else
+    log_Err_Abort "Something went wrong;  ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
 
-$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean ${fmri}_clean
-$FSLDIR/bin/immv ${fmri}.ica/filtered_func_data_clean_vn ${fmri}_clean_vnf
-
-if [ -f ${fmri}.ica/Atlas_clean.dtseries.nii ] ; then
-  /bin/mv ${fmri}.ica/Atlas_clean.dtseries.nii ${fmri_orig}_Atlas_hp${hp}_clean.dtseries.nii
-  /bin/mv ${fmri}.ica/Atlas_clean_vn.dscalar.nii ${fmri_orig}_Atlas_hp${hp}_clean_vn.dscalar.nii
+# The variance normalization ("_vn") outputs of fix (fix_3_clean) require use of fix1.067 or later
+# So check whether those files exist before moving/renaming them
+if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ] ; then
+    $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 fi
+if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
+    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
+fi
+log_Msg "Done renaming files"
 
+# Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
+
+log_Msg "Completed!"

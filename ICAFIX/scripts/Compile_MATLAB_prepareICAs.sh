@@ -1,9 +1,11 @@
 #!/bin/bash
 
+#~ND~FORMAT~MARKDOWN~
+#~ND~START~
 #
 # # Compile_MATLAB_code.sh
 #
-# Compile the MATLAB code necessary for running the ReApplyFix Pipeline
+# Compile the MATLAB code necessary for running the PostFix Pipeline
 #
 # ## Copyright Notice
 #
@@ -28,31 +30,30 @@
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 #
+#~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Compile the fix_3_clean MATLAB code
+#  Compile the prepareICAs MATLAB code
 # ------------------------------------------------------------------------------
 
-compile_fix_3_clean()
+compile_prepareICAs()
 {
-	local app_name=fix_3_clean
+	local app_name=prepareICAs
 	local output_directory=Compiled_${app_name}
 
-	pushd ${HCPPIPEDIR}/ReApplyFix/scripts > /dev/null
+	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
+	log_Msg "Working in ${PWD}"
+
 	log_Msg "Creating output directory: ${output_directory}"
 	mkdir --parents ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${ICAFIX}/${app_name}.m \
-				  -a ${ICAFIX}/functionmotionconfounds.m \
-				  -a ${ICAFIX}/functionnormalise.m \
+	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
 				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
-	
+
 	popd > /dev/null
 }
 
@@ -62,7 +63,7 @@ compile_fix_3_clean()
 
 main()
 {
-	compile_fix_3_clean
+	compile_prepareICAs
 }
 
 # ------------------------------------------------------------------------------
@@ -87,11 +88,6 @@ if [ -z "${MATLAB_HOME}" ]; then
 	log_Err_Abort "MATLAB_HOME environment variable must be set"
 fi
 log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
-
-if [ -z "${ICAFIX}" ]; then
-	log_Err_Abort "ICAFIX environment variable must be set to where FIX MATLAB files (*.m files) are to be found"
-fi
-log_Msg "ICAFIX: ${ICAFIX}"
 
 # Invoke the main processing
 main "$@"
