@@ -112,7 +112,9 @@ usage()
 {
 	cat << EOF
 
-Perform the steps of the HCP Diffusion Preprocessing Pipeline for each positive/negative data pair separately
+Perform the steps of the HCP Diffusion Preprocessing Pipeline separately for each shim group
+
+The resulting files are merged into a single dataset using DiffPreprocPipeline_Merge.sh.
 
 Usage: ${SCRIPT_NAME} PARAMETER...
 
@@ -130,12 +132,24 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           encoding direction; e.g.,
                             data_LR1@data_LR2@...data_LRn, or
                             data_AP1@data_AP2@...data_APn
+  --posDataShimGroup=<shim-group-for-positive-phase-encoding-data>
+                          @ symbol separated list of the shim groups that
+                          each dataset with 'positive' phase encoding
+                          belongs to; e.g.,
+                            A@A@...B@C
+                          Note that the shim groups can have any non-empty name
+  --negDataShimGroup=<shim-group-for-negative-phase-encoding-data>
+                          @ symbol separated list of the shim groups that
+                          each dataset with 'negative' phase encoding
+                          belongs to; e.g.,
+                            A@A@...B@C
+                          Note that the shim groups can have any non-empty name
   [--dwiname=<DWIName>]   basename to give DWI output directories.
                           will be appended with "_scanA", "_scanB", etc.
                           Defaults to Diffusion
 
   All other parameters are passed on to DiffPreprocPipeline.sh without alteration
-  Run DiffPreprocPipeline.sh for more details
+  Run DiffPreprocPipeline.sh for more details on these flags
 
 Return Status Value:
 
@@ -314,67 +328,38 @@ main()
 	log_SetToolName "${SCRIPT_NAME}"
 
 
-	PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
-	log_Msg "PosInputImages: ${PosInputImages}"
-	Pos_count=`echo ${PosInputImages} | wc -w`
-	echo ${Pos_count}
+    input_dwinames=""
+    for Label_text in `python ${HCPPIPEDIR_dMRI}/scripts/split_shimgroups.py ${PosInputImages} ${PosShimLabels} ${NegInputImages} ${NegShimLabels}` ; do
+        ShimLabel=$(echo ${Label_text} | cut -f1 -d" ")
+        ShimPosInputImages=$(echo ${Label_text} | cut -f2 -d" ")
+        ShimNegInputImages=$(echo ${Label_text} | cut -f3 -d" ")
 
-	NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
-	log_Msg "NegInputImages: ${NegInputImages}"
-	Neg_count=`echo ${NegInputImages} | wc -w`
-	echo ${Neg_count}
-
-	# verify positive and negative datasets are provided in pairs
-	if [ ${Pos_count} -ne ${Neg_count} ] ; then
-		log_Msg "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
-		exit 1
-	fi
-
-	# verify that none of the files are empty
-	for Image in ${PosInputImages} ; do
-		if [ ${Image} = EMPTY ] ; then
-			log_Msg "EMPTY filename found in positive images"
-			log_Msg "EMPTY filenames are not supported when splitting the data into individual pairs"
-			log_Msg "Either remove the --split flag or only supply complete pairs"
-			exit 1
-		fi
-	done
-
-	for Image in ${NegInputImages} ; do
-		if [ ${Image} = EMPTY ] ; then
-			log_Msg "EMPTY filename found in negative images"
-			log_Msg "EMPTY filenames are not supported when splitting the data into individual pairs"
-			log_Msg "Either remove the --split flag or only supply complete pairs"
-			exit 1
-		fi
-	done
-
-	for ImageIndex in $(seq 1 ${Pos_count} ) ; do
-
-		split_DWIName=${DWIName}_scan${ImageIndex}
-		arr=($PosInputImages)
-		PosImage=${arr[ImageIndex-1]}
-		arr=($NegInputImages)
-		NegImage=${arr[ImageIndex-1]}
+		ShimDWIName=${DWIName}_${ImageIndex}
 
 		preproc_pipeline_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh "
-		preproc_pipeline_cmd+=" --posData=${PosImage} "
-		preproc_pipeline_cmd+=" --negData=${NegImage} "
-		preproc_pipeline_cmd+=" --dwiname=${split_DWIName} "
+		preproc_pipeline_cmd+=" --posData=${ShimPosInputImages} "
+		preproc_pipeline_cmd+=" --negData=${ShimNegInputImages} "
+		preproc_pipeline_cmd+=" --dwiname=${ShimDWIName} "
 		preproc_pipeline_cmd+=" --path=${StudyFolder} "
 		preproc_pipeline_cmd+=" --subject=${Subject} "
-		preproc_pipeline_cmd+="${PassOnArguments}"
-		log_Msg "Invoking Preprocessing pipeline for positive/negative data pair ${pair}"
+		preproc_pipeline_cmd+=" ${PassOnArguments}"
+
+        input_dwinames=${input_dwinames}@${ShimDWIName}
+		log_Msg "Invoking Preprocessing pipeline for data in shim group ${ShimLabel}"
 		echo ${preproc_pipeline_cmd}
 	done
 
-    merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/scripts/merge_pairs.sh "
-    merge_cmd+=" ${StudyFolder}/${Subject}/T1w"
-    merge_cmd+=" ${DWIName}"
-    merge_cmd+=" ${Pos_count}"
-	log_Msg "Merging all the positive/negative data pairs"
+    # get rid of the leading @
+    input_dwinames=${input_dwinames:1}
+
+    merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing_Merge.sh "
+    merge_cmd+=" --path=${StudyFolder} "
+    merge_cmd+=" --subject=${Subject} "
+    merge_cmd+=" --dwiname=${DWIName} "
+    merge_cmd+=" --input_dwiname=${input_dwinames} "
+	log_Msg "Merging all the shim groups"
 	${merge_cmd}
-	log_Msg "Completed all positive/negative data pairs"
+	log_Msg "Completed all the shim groups"
 	exit 0
 }
 
