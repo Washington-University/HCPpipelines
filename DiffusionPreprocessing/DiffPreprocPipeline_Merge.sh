@@ -115,7 +115,7 @@ get_options()
 				InputNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--output_dwiname=*)
+			--dwiname=*)
 				OutputName=${argument#*=}
 				index=$(( index + 1 ))
 				;;
@@ -211,7 +211,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --path=<study-path>     path to subject's data folder
   --subject=<subject-id>  subject ID
   --input_dwinames=<input_names>    @-seperated list of the DWI output directories.
-  [--output_dwiname=<output_name>]
+  [--dwiname=<output_name>]
                           Name of the directory containing the merged diffusion data
                           Defaults to Diffusion
   [--printcom=<print-command>]
