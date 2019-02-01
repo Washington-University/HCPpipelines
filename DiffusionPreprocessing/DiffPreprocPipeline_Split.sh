@@ -185,6 +185,8 @@ EOF
 #                         encoding direction
 #  ${DWIName}             Basename to give DWI output directories
 #
+set -e
+
 get_options()
 {
 	local arguments=($@)
@@ -192,6 +194,8 @@ get_options()
 	# initialize global output variables
 	unset PosInputImages
 	unset NegInputImages
+	unset PosShimLabels
+	unset NegShimLabels
 	unset PassOnArguments
 	unset StudyFolder
 	unset Subject
@@ -231,6 +235,14 @@ get_options()
 				NegInputImages=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+			--posDataShimGroup=*)
+				PosShimLabels=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--negDataShimGroup=*)
+				NegShimLabels=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			--dwiname=*)
 				DWIName=${argument#*=}
 				index=$(( index + 1 ))
@@ -251,6 +263,14 @@ get_options()
 	
 	if [ -z ${NegInputImages} ] ; then
 		error_msgs+="\nERROR: <negative-phase-encoded-data> not specified"
+	fi
+
+	if [ -z ${PosShimLabels} ] ; then
+		error_msgs+="\nERROR: <shim-group-for-positive-phase-encoding-data> not specified"
+	fi
+	
+	if [ -z ${NegShimLabels} ] ; then
+		error_msgs+="\nERROR: <shim-group-for-negative-phase-encoding-data> not specified"
 	fi
 
 	if [ -z ${StudyFolder} ] ; then
@@ -329,38 +349,38 @@ main()
 
 
     input_dwinames=""
-    for Label_text in `python ${HCPPIPEDIR_dMRI}/scripts/split_shimgroups.py ${PosInputImages} ${PosShimLabels} ${NegInputImages} ${NegShimLabels}` ; do
-        ShimLabel=$(echo ${Label_text} | cut -f1 -d" ")
-        ShimPosInputImages=$(echo ${Label_text} | cut -f2 -d" ")
-        ShimNegInputImages=$(echo ${Label_text} | cut -f3 -d" ")
+    while read -r line ; do
+        ShimLabel=$(echo ${line} | cut -f1 -d" ")
+        ShimPosInputImages=$(echo ${line} | cut -f2 -d" ")
+        ShimNegInputImages=$(echo ${line} | cut -f3 -d" ")
 
-		ShimDWIName=${DWIName}_${ImageIndex}
+        ShimDWIName=${DWIName}_${ShimLabel}
 
-		preproc_pipeline_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh "
-		preproc_pipeline_cmd+=" --posData=${ShimPosInputImages} "
-		preproc_pipeline_cmd+=" --negData=${ShimNegInputImages} "
-		preproc_pipeline_cmd+=" --dwiname=${ShimDWIName} "
-		preproc_pipeline_cmd+=" --path=${StudyFolder} "
-		preproc_pipeline_cmd+=" --subject=${Subject} "
-		preproc_pipeline_cmd+=" ${PassOnArguments}"
+        preproc_pipeline_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh "
+        preproc_pipeline_cmd+=" --posData=${ShimPosInputImages} "
+        preproc_pipeline_cmd+=" --negData=${ShimNegInputImages} "
+        preproc_pipeline_cmd+=" --dwiname=${ShimDWIName} "
+        preproc_pipeline_cmd+=" --path=${StudyFolder} "
+        preproc_pipeline_cmd+=" --subject=${Subject} "
+        preproc_pipeline_cmd+=" ${PassOnArguments}"
 
-        input_dwinames=${input_dwinames}@${ShimDWIName}
-		log_Msg "Invoking Preprocessing pipeline for data in shim group ${ShimLabel}"
-		echo ${preproc_pipeline_cmd}
-	done
+        input_dwinames+=@${ShimDWIName}
+        log_Msg "Invoking Preprocessing pipeline for data in shim group ${ShimLabel}"
+        ${preproc_pipeline_cmd}
+    done < <(${HCPPIPEDIR_dMRI}/split_shimgroups.py ${PosInputImages} ${PosShimLabels} ${NegInputImages} ${NegShimLabels})
 
     # get rid of the leading @
     input_dwinames=${input_dwinames:1}
 
-    merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing_Merge.sh "
+    merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Merge.sh "
     merge_cmd+=" --path=${StudyFolder} "
     merge_cmd+=" --subject=${Subject} "
     merge_cmd+=" --dwiname=${DWIName} "
     merge_cmd+=" --input_dwiname=${input_dwinames} "
-	log_Msg "Merging all the shim groups"
-	${merge_cmd}
-	log_Msg "Completed all the shim groups"
-	exit 0
+    log_Msg "Merging all the shim groups"
+    ${merge_cmd}
+    log_Msg "Completed all the shim groups"
+    exit 0
 }
 
 #
