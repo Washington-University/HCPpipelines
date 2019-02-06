@@ -82,7 +82,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        will not have ICA+FIX reapplied to them (not recommended, ICA+FIX is recommended for all fMRI
        data). Previously known as --tfmri-names.
    --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
-   --highpass=<number> Highpass filter sigma that matches what was used in the ICA+FIX pipeline
+   --high-pass=<high-pass filter used in ICA+FIX>
    --motion-regression={TRUE, FALSE} whether FIX should do motion regression
   [--myelin-target-file=<path/to/myelin/target/file>] A myelin target file is required to run this 
        pipeline when using a different mesh resolution than the original MSMAll registration.
@@ -199,7 +199,7 @@ get_options()
 				p_SmoothingFWHM=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--highpass=* | --high-pass=*)
+			--high-pass=* | --highpass=*)
 				p_HighPass=${argument#*=}
 				index=$(( index + 1 ))
 				;;
@@ -304,10 +304,10 @@ get_options()
 	fi
 
 	if [ -z "${p_HighPass}" ]; then
-		log_Err "highpass value (--highpass=) required"
+		log_Err "HighPass value (--high-pass=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "highpass value: ${p_HighPass}"
+		log_Msg "HighPass value: ${p_HighPass}"
 	fi
 
 	if [ -z "${p_MyelinTargetFile}" ]; then
@@ -842,7 +842,7 @@ main()
 	log_Msg "rfMRINames: ${rfMRINames[@]}"
 	for fMRIName in "${rfMRINames[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		reapply_fix_cmd=("${HCPPIPEDIR}/ReApplyFix/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+		reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 		log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
 		"${reapply_fix_cmd[@]}"
 	done
@@ -856,7 +856,7 @@ main()
 	    log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
 	    #reconstruct the @-delimited list
 	    OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ReApplyFixMultiRun/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
     fi
