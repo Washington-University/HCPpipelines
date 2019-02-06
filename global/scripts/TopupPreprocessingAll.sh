@@ -21,7 +21,7 @@ Usage() {
   echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
   echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
-  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-,}>"
+  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
   echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
