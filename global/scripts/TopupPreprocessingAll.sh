@@ -233,6 +233,9 @@ elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
     ShiftTwo="y"
     i=`echo "$i + 1" | bc`
   done
+else
+	log_Msg "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
+    exit 1
 fi
 
 #Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
