@@ -62,7 +62,7 @@
 #
 #~ND~END~
 #
-# Merges the individually processed data pairs into a single diffusion image
+# Merges the individually processed diffusion MRI data into a single diffusion image
 #
 
 # Set up this script such that if any command exits with a non-zero value, the
@@ -170,8 +170,8 @@ validate_environment_vars()
 		error_msgs+="\nERROR: HCPPIPEDIR_dMRI environment variable not set"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/merge_pairs.sh ] ; then
-		error_msgs+="\nERROR: HCPPIPEDIR_dMRI/merge_pairs.sh not found"
+	if [ ! -e ${HCPPIPEDIR_dMRI}/merge_split.sh ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR_dMRI/merge_split.sh not found"
 	fi
 
 	if [ -z ${FSLDIR} ] ; then
@@ -247,10 +247,9 @@ main()
     validate_environment_vars
 
     set -e
-    echo -e "\n START: merge_split"
 
-	# Establish tool name for logging
-	log_SetToolName "${SCRIPT_NAME}"
+    # Establish tool name for logging
+    log_SetToolName "${SCRIPT_NAME}"
 
     outdir=${StudyFolder}/${Subject}/T1w/${OutputName}
 
@@ -259,7 +258,7 @@ main()
 
     log_Msg "merging ${indirs} into ${outdir}"
 
-	${runcmd} ${HCPPIPEDIR_dMRI}/merge_pairs.sh ${outdir} ${indirs}
+    ${runcmd} ${HCPPIPEDIR_dMRI}/merge_split.sh ${outdir} ${indirs}
 }
 
 

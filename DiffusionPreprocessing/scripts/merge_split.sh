@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# Merges the individually processed data pairs into a single diffusion image
+# Merges the individually processed diffusion datasets into a single diffusion image
 # Called from DiffusionPreprocessing/DiffPreprocPipeline_Merge.sh
 #
 
 set -e
+echo -e "\n START: merge_split"
 
 outdir=$1
 indirs="${@:2}"
@@ -46,16 +47,16 @@ fi
 #
 merge_text()
 {
-	echo "merging $1"
-	cmd="paste"
+    echo "merging $1"
+    cmd="paste"
     for indir in ${indirs} ; do
-		cmd+=" ${indir}/$1"
-	done
-	${cmd} >${indir}/$1
+        cmd+=" ${indir}/$1"
+    done
+    ${cmd} >${outdir}/$1
 }
 
 merge_text bvals
 merge_text bvecs
 
-echo -e "\n END: merge_pairs"
+echo -e "\n END: merge_split"
 
