@@ -234,6 +234,7 @@ elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
     i=`echo "$i + 1" | bc`
   done
 else
+	# Per Jesper Anderson, topup does NOT allow PE dir to be along Z (no good reason, other than that made implementation easier)
 	log_Msg "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
     exit 1
 fi
@@ -254,7 +255,7 @@ fi
 ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # RUN TOPUP
-# Needs FSL (version 5.0.6)
+# Needs FSL (version 5.0.6 or later)
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
