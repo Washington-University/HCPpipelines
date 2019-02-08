@@ -37,7 +37,7 @@ Usage() {
   echo "             --SEPhaseNeg=<input spin echo negative phase encoding image>"
   echo "             --SEPhasePos=<input spin echo positive phase encoding image>"
   echo "             --echospacing=<effective echo spacing of fMRI image, in seconds>"
-  echo "             --unwarpdir=<unwarping direction: x/y/z/-x/-y/-z>"
+  echo "             --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>"
   echo "             --owarp=<output filename for warp of EPI to T1w>"
   echo "             --biasfield=<input T1w bias field estimate image, in fMRI space>"
   echo "             --oregim=<output registered image (EPI to T1w)>"
@@ -232,6 +232,28 @@ fi
 ########################################## DO WORK ########################################## 
 
 cp ${T1wBrainImage}.nii.gz ${WD}/${T1wBrainImageFile}.nii.gz
+
+# Explicit check on the allowed values of UnwarpDir
+if [[ ${UnwarpDir} != [xyzijk] && ${UnwarpDir} != -[xyzijk] && ${UnwarpDir} != [xyzijk]- ]]; then
+	log_Msg "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
+	exit 1
+fi
+	
+# FSL's naming convention for 'epi_reg --pedir' is {x,y,z,-x,-y,-z}
+# So, swap out any {i,j,k} for {x,y,z} (using bash pattern replacement)
+# and then make sure any '-' sign is preceding
+UnwarpDir=${UnwarpDir//i/x}
+UnwarpDir=${UnwarpDir//j/y}
+UnwarpDir=${UnwarpDir//k/z}
+if [ "${UnwarpDir}" = "x-" ] ; then
+  UnwarpDir="-x"
+fi
+if [ "${UnwarpDir}" = "y-" ] ; then
+  UnwarpDir="-y"
+fi
+if [ "${UnwarpDir}" = "z-" ] ; then
+  UnwarpDir="-z"
+fi
 
 case $DistortionCorrection in
 
