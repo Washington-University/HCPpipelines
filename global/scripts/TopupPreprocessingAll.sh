@@ -21,7 +21,7 @@ Usage() {
   echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
   echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
-  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>"
+  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
   echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
@@ -182,20 +182,6 @@ else
   fslmaths ${WD}/PhaseOne_gdc.nii.gz -mul 0 -add 1 ${WD}/Mask
 fi
 
-#Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
-numslice=`fslval ${WD}/BothPhases dim3`
-if [ ! $(($numslice % 2)) -eq "0" ] ; then
-  log_Msg "Padding Z by one slice"
-  for Image in ${WD}/BothPhases ${WD}/Mask ; do
-    fslroi ${Image} ${WD}/slice.nii.gz 0 -1 0 -1 0 1 0 -1
-    fslmaths ${WD}/slice.nii.gz -mul 0 ${WD}/slice.nii.gz
-    fslmerge -z ${Image} ${Image} ${WD}/slice.nii.gz
-    rm ${WD}/slice.nii.gz
-  done
-fi
-
-# Extrapolate the existing values beyond the mask (adding 1 just to avoid smoothing inside the mask)
-${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # Set up text files with all necessary parameters
 txtfname=${WD}/acqparams.txt
@@ -211,54 +197,40 @@ dimtTwo=`${FSLDIR}/bin/fslval ${WD}/PhaseTwo dim4`
 #  Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 #  must already be accounted for as part of the "EffectiveEchoSpacing"
 
-# For UnwarpDir, allow for both {x,y,z} and {i,j,k} nomenclature
+# For UnwarpDir, allow for both {x,y} and {i,j} nomenclature
 # X direction phase encode
 if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
-  dimP=`${FSLDIR}/bin/fslval ${WD}/BothPhases dim1`
+  dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
   dimPminus1=$(($dimP - 1))
   ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   log_Msg "Total readout time is $ro_time secs"
   i=1
   while [ $i -le $dimtOne ] ; do
     echo "-1 0 0 $ro_time" >> $txtfname
+    ShiftOne="x-"
     i=`echo "$i + 1" | bc`
   done
   i=1
   while [ $i -le $dimtTwo ] ; do
     echo "1 0 0 $ro_time" >> $txtfname
+    ShiftTwo="x"
     i=`echo "$i + 1" | bc`
   done
 # Y direction phase encode
 elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
-  dimP=`${FSLDIR}/bin/fslval ${WD}/BothPhases dim2`
+  dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
   dimPminus1=$(($dimP - 1))
   ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
   i=1
   while [ $i -le $dimtOne ] ; do
     echo "0 -1 0 $ro_time" >> $txtfname
+    ShiftOne="y-"
     i=`echo "$i + 1" | bc`
   done
   i=1
   while [ $i -le $dimtTwo ] ; do
     echo "0 1 0 $ro_time" >> $txtfname
-    i=`echo "$i + 1" | bc`
-  done
-# Z direction phase encode (added 2/7/2019)
-# MPH: We don't typically expect that the unwarpdir will be the z (k) voxel axis (at least for 2D EPI converted with 'dcm2niix')  
-# but we'll allow it in case someone converts their data with some other tool (or, e.g., acquired 2D EPI with a sagittal
-# slices, and then ran 'fslreorient2std' to reorient the voxel axes into LAS/RAS space ordering)
-elif [[ $UnwarpDir = [zk] || $UnwarpDir = [zk]- || $UnwarpDir = -[zk] ]] ; then
-  dimP=`${FSLDIR}/bin/fslval ${WD}/BothPhases dim3`
-  dimPminus1=$(($dimP - 1))
-  ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
-  i=1
-  while [ $i -le $dimtOne ] ; do
-    echo "0 0 -1 $ro_time" >> $txtfname
-    i=`echo "$i + 1" | bc`
-  done
-  i=1
-  while [ $i -le $dimtTwo ] ; do
-    echo "0 0 1 $ro_time" >> $txtfname
+    ShiftTwo="y"
     i=`echo "$i + 1" | bc`
   done
 else
@@ -266,8 +238,23 @@ else
     exit 1
 fi
 
+#Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
+numslice=`fslval ${WD}/BothPhases dim3`
+if [ ! $(($numslice % 2)) -eq "0" ] ; then
+  log_Msg "Padding Z by one slice"
+  for Image in ${WD}/BothPhases ${WD}/Mask ; do
+    fslroi ${Image} ${WD}/slice.nii.gz 0 -1 0 -1 0 1 0 -1
+    fslmaths ${WD}/slice.nii.gz -mul 0 ${WD}/slice.nii.gz
+    fslmerge -z ${Image} ${Image} ${WD}/slice.nii.gz
+    rm ${WD}/slice.nii.gz
+  done
+fi
+
+# Extrapolate the existing values beyond the mask (adding 1 just to avoid smoothing inside the mask)
+${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
+
 # RUN TOPUP
-# Needs FSL (version 5.0.6 or later)
+# Needs FSL (version 5.0.6)
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
@@ -278,8 +265,8 @@ if [ ! $(($numslice % 2)) -eq "0" ] ; then
   done
 fi
 
-# UNWARP DIR = x,y,z
-if [[ $UnwarpDir = [xyzijk] ]] ; then
+# UNWARP DIR = x,y
+if [[ $UnwarpDir = [xyij] ]] ; then
   # select the first volume from PhaseTwo
   VolumeNumber=$(($dimtOne + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
@@ -289,8 +276,8 @@ if [[ $UnwarpDir = [xyzijk] ]] ; then
   ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseTwo_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
   ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
   SBRefPhase=Two
-# UNWARP DIR = x-, y-, z-
-elif [[ $UnwarpDir = [xyzijk]- || $UnwarpDir = -[xyzijk] ]] ; then
+# UNWARP DIR = -x,-y
+elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
   # select the first volume from PhaseOne
   VolumeNumber=$((0 + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
