@@ -376,7 +376,7 @@ main()
     merge_cmd+=" --path=${StudyFolder} "
     merge_cmd+=" --subject=${Subject} "
     merge_cmd+=" --dwiname=${DWIName} "
-    merge_cmd+=" --input_dwiname=${input_dwinames} "
+    merge_cmd+=" --input_dwinames=${input_dwinames} "
     log_Msg "Merging all the shim groups"
     ${merge_cmd}
     log_Msg "Completed all the shim groups"
