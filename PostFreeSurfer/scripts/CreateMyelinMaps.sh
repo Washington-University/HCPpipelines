@@ -32,7 +32,7 @@ HighResMesh="${6}"
 LowResMeshes="${7}"
 OrginalT1wImage="${8}"
 OrginalT2wImage="${9}"
-T1wImageBrain="${10}"
+T1wImageBrainMask="${10}"
 InitialT1wTransform="${11}"
 dcT1wTransform="${12}"
 InitialT2wTransform="${13}"
@@ -57,7 +57,7 @@ OutputOrigT1wToStandard="${31}"
 OutputOrigT2wToT1w="${32}"
 OutputOrigT2wToStandard="${33}"
 BiasFieldOutput="${34}"
-T1wMNIImageBrain="${35}"
+T1wMNIImageBrainMask="${35}"
 Jacobian="${36}"
 ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
@@ -76,34 +76,34 @@ LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
 ${CARET7DIR}/wb_command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate true -disp-pos true -disp-neg false -disp-zero false -palette-name HSB8_clrmid -thresholding THRESHOLD_TYPE_NORMAL THRESHOLD_TEST_SHOW_OUTSIDE 0.5 2
 
-convertwarp --relout --rel --ref="$T1wImageBrain" --premat="$InitialT1wTransform" --warp1="$dcT1wTransform" --out="$OutputOrigT1wToT1w"
-convertwarp --relout --rel --ref="$T1wImageBrain" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --premat="$InitialT1wTransform" --warp1="$dcT1wTransform" --out="$OutputOrigT1wToT1w"
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
 
-convertwarp --relout --rel --ref="$T1wImageBrain" --premat="$InitialT2wTransform" --warp1="$dcT2wTransform" --postmat="$FinalT2wTransform" --out="$OutputOrigT2wToT1w"
-convertwarp --relout --rel --ref="$T1wImageBrain" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --premat="$InitialT2wTransform" --warp1="$dcT2wTransform" --postmat="$FinalT2wTransform" --out="$OutputOrigT2wToT1w"
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
 
-applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrain" -w "$OutputOrigT1wToT1w" -o "$OutputT1wImage"
+applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT1wToT1w" -o "$OutputT1wImage"
 fslmaths "$OutputT1wImage" -abs "$OutputT1wImage" -odt float
 fslmaths "$OutputT1wImage" -div "$BiasField" "$OutputT1wImageRestore"
-fslmaths "$OutputT1wImageRestore" -mas "$T1wImageBrain" "$OutputT1wImageRestoreBrain"
+fslmaths "$OutputT1wImageRestore" -mas "$T1wImageBrainMask" "$OutputT1wImageRestoreBrain"
 
-applywarp --rel --interp=spline -i "$BiasField" -r "$T1wImageBrain" -w "$AtlasTransform" -o "$BiasFieldOutput"
+applywarp --rel --interp=spline -i "$BiasField" -r "$T1wImageBrainMask" -w "$AtlasTransform" -o "$BiasFieldOutput"
 fslmaths "$BiasFieldOutput" -thr 0.1 "$BiasFieldOutput"
 
-applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrain" -w "$OutputOrigT1wToStandard" -o "$OutputMNIT1wImage"
+applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT1wToStandard" -o "$OutputMNIT1wImage"
 fslmaths "$OutputMNIT1wImage" -abs "$OutputMNIT1wImage" -odt float
 fslmaths "$OutputMNIT1wImage" -div "$BiasFieldOutput" "$OutputMNIT1wImageRestore"
-fslmaths "$OutputMNIT1wImageRestore" -mas "$T1wMNIImageBrain" "$OutputMNIT1wImageRestoreBrain"
+fslmaths "$OutputMNIT1wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT1wImageRestoreBrain"
 
-applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$T1wImageBrain" -w "$OutputOrigT2wToT1w" -o "$OutputT2wImage"
+applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT2wToT1w" -o "$OutputT2wImage"
 fslmaths "$OutputT2wImage" -abs "$OutputT2wImage" -odt float
 fslmaths "$OutputT2wImage" -div "$BiasField" "$OutputT2wImageRestore"
-fslmaths "$OutputT2wImageRestore" -mas "$T1wImageBrain" "$OutputT2wImageRestoreBrain"
+fslmaths "$OutputT2wImageRestore" -mas "$T1wImageBrainMask" "$OutputT2wImageRestoreBrain"
 
-applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$T1wImageBrain" -w "$OutputOrigT2wToStandard" -o "$OutputMNIT2wImage"
+applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT2wToStandard" -o "$OutputMNIT2wImage"
 fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
 fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
-fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrain" "$OutputMNIT2wImageRestoreBrain"
+fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
 
 ${CARET7DIR}/wb_command -volume-math "clamp((T1w / T2w), 0, 100)" "$T1wFolder"/T1wDividedByT2w.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -fixnan 0
 ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
