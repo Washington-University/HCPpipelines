@@ -83,7 +83,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   --subject=<subject ID>
 
-  one from the following group is required
+  one from the following group is required, unless --existing-subject is set
 
 	 --t1w-image=<path to T1w image>
 	 --t1=<path to T1w image>
@@ -93,7 +93,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 	 --t1brain=<path to T1w brain mask>
 	 --t1w-brain=<path to T1w brain mask>
 
-  one from the following group is required
+  one from the following group is required, unless --existing-subject is set
 
 	 --t2w-image=<path to T2w image>
 	 --t2=<path to T2w image>
@@ -102,10 +102,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--existing-subject]
       Indicates that the script is to be run on top of an already existing analysis/subject.
-      This excludes the '-i' flag from the invocation of recon-all.
+      This excludes the '-i' and '-T2' flags from the invocation of recon-all (i.e., uses previous input volumes).
+      [The --t1w-image and --t2w-image arguments, if provided, are ignored].
       It also excludes the -all' flag from the invocation of recon-all.
-      Consequently, need to specify which recon-all stage(s) to run using the --extra-reconall-arg flag.
-      This allows for the application of FreeSurfer edits.
+      Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.
+      This flag allows for the application of FreeSurfer edits.
 
   [--extra-reconall-arg=token] (repeatable)
       Generic single token (no whitespace) argument to pass to recon-all.
@@ -238,8 +239,12 @@ get_options()
 	fi
 
 	if [ -z "${p_t1w_image}" ]; then
-		log_Err "T1w Image (--t1w-image= or --t1=) required"
-		error_count=$(( error_count + 1 ))
+		if [ -z "{p_existing_subject}" ]; then
+			log_Err "T1w Image (--t1w-image= or --t1=) required"
+			error_count=$(( error_count + 1 ))
+		else
+			p_t1w_image="NONE"  # Need something assigned as a placeholder for positional parameters
+		fi
 	else
 		log_Msg "T1w Image: ${p_t1w_image}"
 	fi
@@ -252,8 +257,12 @@ get_options()
 	fi
 
 	if [ -z "${p_t2w_image}" ]; then
-		log_Err "T2w Image (--t2w-image= or --t2=) required"
-		error_count=$(( error_count + 1 ))
+		if [ -z "{p_existing_subject}" ]; then
+			log_Err "T2w Image (--t2w-image= or --t2=) required"
+			error_count=$(( error_count + 1 ))
+		else
+			p_t2w_image="NONE"  # Need something assigned as a placeholder for positional parameters
+		fi
 	else
 		log_Msg "T2w Image: ${p_t2w_image}"
 	fi
@@ -263,7 +272,7 @@ get_options()
 		log_Msg "Seed: ${p_seed}"
 	fi
 	if [ ! -z "${p_existing_subject}" ]; then
-		log_Msg "Existing subject (exclude -i and -all flags from recon-all): ${p_existing_subject}"
+		log_Msg "Existing subject (exclude -i, -T2, and -all flags from recon-all): ${p_existing_subject}"
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
@@ -440,9 +449,9 @@ main()
 	# ----------------------------------------------------------------------
 	SubjectDIR="${1}"
 	SubjectID="${2}"
-	T1wImage="${3}"
+	T1wImage="${3}"  # Irrelevant if '--existing-subject' flag is set
 	T1wImageBrain="${4}"
-	T2wImage="${5}"
+	T2wImage="${5}"  # Irrelevant if '--existing-subject' flag is set
 	recon_all_seed="${6}"
 
 	## MPH: Hack!
@@ -506,11 +515,11 @@ main()
 	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
-	if [ "${existing_subject}" != "TRUE" ]; then
+	if [ "${existing_subject}" != "TRUE" ]; then  # T1 and T2 input volumes only necessary first time through
 		recon_all_cmd+=" -all"
 		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
+		recon_all_cmd+=" -T2 ${T2wImage}"
 	fi
-	recon_all_cmd+=" -T2 ${T2wImage}"
 	recon_all_cmd+=" -T2pial"
 	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	recon_all_cmd+=" -openmp ${num_cores}"
