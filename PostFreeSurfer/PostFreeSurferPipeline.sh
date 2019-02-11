@@ -144,16 +144,89 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
 log_Msg "RegName: ${RegName}"
 
-"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$FreeSurferFolder" "$FreeSurferInput" "$T1wRestoreImage" "$T2wRestoreImage" "$SurfaceAtlasDIR" "$HighResMesh" "$LowResMeshes" "$AtlasTransform" "$InverseAtlasTransform" "$AtlasSpaceT1wImage" "$AtlasSpaceT2wImage" "$T1wImageBrainMask" "$FreeSurferLabels" "$GrayordinatesSpaceDIR" "$GrayordinatesResolutions" "$SubcorticalGrayLabels" "$RegName" "$InflateExtraScale"
+argList="$StudyFolder "                # ${1}
+argList+="$Subject "                   # ${2}
+argList+="$T1wFolder "                 # ${3}
+argList+="$AtlasSpaceFolder "          # ${4}
+argList+="$NativeFolder "              # ${5}
+argList+="$FreeSurferFolder "          # ${6}
+argList+="$FreeSurferInput "           # ${7}
+argList+="$T1wRestoreImage "           # ${8}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+argList+="$T2wRestoreImage "           # ${9}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+argList+="$SurfaceAtlasDIR "           # ${10}
+argList+="$HighResMesh "               # ${11}
+argList+="$LowResMeshes "              # ${12}
+argList+="$AtlasTransform "            # ${13}
+argList+="$InverseAtlasTransform "     # ${14}
+argList+="$AtlasSpaceT1wImage "        # ${15}
+argList+="$AtlasSpaceT2wImage "        # ${16}
+argList+="$T1wImageBrainMask "         # ${17}
+argList+="$FreeSurferLabels "          # ${18}
+argList+="$GrayordinatesSpaceDIR "     # ${19}
+argList+="$GrayordinatesResolutions "  # ${20}
+argList+="$SubcorticalGrayLabels "     # ${21}
+argList+="$RegName "                   # ${22}
+argList+="$InflateExtraScale "         # ${23}
+"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList}"
+
 
 #Create FreeSurfer ribbon file at full resolution
 log_Msg "Create FreeSurfer ribbon file at full resolution"
-"$PipelineScripts"/CreateRibbon.sh "$StudyFolder" "$Subject" "$T1wFolder" "$AtlasSpaceFolder" "$NativeFolder" "$AtlasSpaceT1wImage" "$T1wRestoreImage" "$FreeSurferLabels"
+
+argList="$StudyFolder "                # ${1} 
+argList+="$Subject "                   # ${2}
+argList+="$T1wFolder "                 # ${3}
+argList+="$AtlasSpaceFolder "          # ${4}
+argList+="$NativeFolder "              # ${5}
+argList+="$AtlasSpaceT1wImage "        # ${6}
+argList+="$T1wRestoreImage "           # ${7}  Called T1wImage in CreateRibbon.sh
+argList+="$FreeSurferLabels "          # ${8}
+"$PipelineScripts"/CreateRibbon.sh "${argList}"
+
 
 #Myelin Mapping
 log_Msg "Myelin Mapping"
 log_Msg "RegName: ${RegName}"
 
-"$PipelineScripts"/CreateMyelinMaps.sh "$StudyFolder" "$Subject" "$AtlasSpaceFolder" "$NativeFolder" "$T1wFolder" "$HighResMesh" "$LowResMeshes" "$T1wFolder"/"$OrginalT1wImage" "$T2wFolder"/"$OrginalT2wImage" "$T1wFolder"/"$T1wImageBrainMask" "$T1wFolder"/xfms/"$InitialT1wTransform" "$T1wFolder"/xfms/"$dcT1wTransform" "$T2wFolder"/xfms/"$InitialT2wTransform" "$T1wFolder"/xfms/"$dcT2wTransform" "$T1wFolder"/"$FinalT2wTransform" "$AtlasTransform" "$T1wFolder"/"$BiasField" "$T1wFolder"/"$OutputT1wImage" "$T1wFolder"/"$OutputT1wImageRestore" "$T1wFolder"/"$OutputT1wImageRestoreBrain" "$AtlasSpaceFolder"/"$OutputMNIT1wImage" "$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore" "$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain" "$T1wFolder"/"$OutputT2wImage" "$T1wFolder"/"$OutputT2wImageRestore" "$T1wFolder"/"$OutputT2wImageRestoreBrain" "$AtlasSpaceFolder"/"$OutputMNIT2wImage" "$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore" "$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain" "$T1wFolder"/xfms/"$OutputOrigT1wToT1w" "$T1wFolder"/xfms/"$OutputOrigT1wToStandard" "$T1wFolder"/xfms/"$OutputOrigT2wToT1w" "$T1wFolder"/xfms/"$OutputOrigT2wToStandard" "$AtlasSpaceFolder"/"$BiasFieldOutput" "$AtlasSpaceFolder"/"$T1wImageBrainMask" "$AtlasSpaceFolder"/xfms/"$Jacobian" "$ReferenceMyelinMaps" "$CorrectionSigma" "$RegName" 
+argList="$StudyFolder "                # ${1}
+argList+="$Subject "
+argList+="$AtlasSpaceFolder "
+argList+="$NativeFolder "
+argList+="$T1wFolder "                 # ${5}
+argList+="$HighResMesh "
+argList+="$LowResMeshes "
+argList+="$T1wFolder"/"$OrginalT1wImage "
+argList+="$T2wFolder"/"$OrginalT2wImage "
+argList+="$T1wFolder"/"$T1wImageBrainMask "           # ${10}
+argList+="$T1wFolder"/xfms/"$InitialT1wTransform "
+argList+="$T1wFolder"/xfms/"$dcT1wTransform "
+argList+="$T2wFolder"/xfms/"$InitialT2wTransform "
+argList+="$T1wFolder"/xfms/"$dcT2wTransform "
+argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15} 
+argList+="$AtlasTransform "
+argList+="$T1wFolder"/"$BiasField "
+argList+="$T1wFolder"/"$OutputT1wImage "
+argList+="$T1wFolder"/"$OutputT1wImageRestore "
+argList+="$T1wFolder"/"$OutputT1wImageRestoreBrain "  # ${20}
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImage "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain "
+argList+="$T1wFolder"/"$OutputT2wImage "
+argList+="$T1wFolder"/"$OutputT2wImageRestore "       # ${25}
+argList+="$T1wFolder"/"$OutputT2wImageRestoreBrain "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImage "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain "
+argList+="$T1wFolder"/xfms/"$OutputOrigT1wToT1w "     # {30}
+argList+="$T1wFolder"/xfms/"$OutputOrigT1wToStandard "
+argList+="$T1wFolder"/xfms/"$OutputOrigT2wToT1w "
+argList+="$T1wFolder"/xfms/"$OutputOrigT2wToStandard "
+argList+="$AtlasSpaceFolder"/"$BiasFieldOutput "
+argList+="$AtlasSpaceFolder"/"$T1wImageBrainMask "    # {35}
+argList+="$AtlasSpaceFolder"/xfms/"$Jacobian "
+argList+="$ReferenceMyelinMaps "
+argList+="$CorrectionSigma "
+argList+="$RegName "                                  # ${39}
+"$PipelineScripts"/CreateMyelinMaps.sh "${argList}"
 
 log_Msg "Completed"
