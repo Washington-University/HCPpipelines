@@ -167,7 +167,7 @@ argList+="$GrayordinatesResolutions "  # ${20}
 argList+="$SubcorticalGrayLabels "     # ${21}
 argList+="$RegName "                   # ${22}
 argList+="$InflateExtraScale "         # ${23}
-"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList}"
+"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh ${argList}
 
 
 #Create FreeSurfer ribbon file at full resolution
@@ -181,7 +181,7 @@ argList+="$NativeFolder "              # ${5}
 argList+="$AtlasSpaceT1wImage "        # ${6}
 argList+="$T1wRestoreImage "           # ${7}  Called T1wImage in CreateRibbon.sh
 argList+="$FreeSurferLabels "          # ${8}
-"$PipelineScripts"/CreateRibbon.sh "${argList}"
+"$PipelineScripts"/CreateRibbon.sh ${argList}
 
 
 #Myelin Mapping
@@ -227,6 +227,6 @@ argList+="$AtlasSpaceFolder"/xfms/"$Jacobian "
 argList+="$ReferenceMyelinMaps "
 argList+="$CorrectionSigma "
 argList+="$RegName "                                  # ${39}
-"$PipelineScripts"/CreateMyelinMaps.sh "${argList}"
+"$PipelineScripts"/CreateMyelinMaps.sh ${argList}
 
 log_Msg "Completed"
