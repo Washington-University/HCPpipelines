@@ -239,7 +239,7 @@ get_options()
 	fi
 
 	if [ -z "${p_t1w_image}" ]; then
-		if [ -z "{p_existing_subject}" ]; then
+		if [ -z "${p_existing_subject}" ]; then
 			log_Err "T1w Image (--t1w-image= or --t1=) required"
 			error_count=$(( error_count + 1 ))
 		else
@@ -257,7 +257,7 @@ get_options()
 	fi
 
 	if [ -z "${p_t2w_image}" ]; then
-		if [ -z "{p_existing_subject}" ]; then
+		if [ -z "${p_existing_subject}" ]; then
 			log_Err "T2w Image (--t2w-image= or --t2=) required"
 			error_count=$(( error_count + 1 ))
 		else
