@@ -2,8 +2,8 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.1)
-#  environment: HCPPIPEDIR 
+#  installed versions of: FSL (version 5.0.6 or later)
+#  environment: HCPPIPEDIR
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
@@ -25,11 +25,11 @@ else
 	echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
 fi
 
-########################################## PIPELINE OVERVIEW ########################################## 
+########################################## PIPELINE OVERVIEW ##########################################
 
 #TODO
 
-########################################## OUTPUT DIRECTORIES ########################################## 
+########################################## OUTPUT DIRECTORIES ##########################################
 
 #TODO
 
@@ -40,7 +40,7 @@ fi
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
 
-########################################## SUPPORT FUNCTIONS ########################################## 
+########################################## SUPPORT FUNCTIONS ##########################################
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -94,7 +94,7 @@ PipelineScripts=${HCPPIPEDIR_PostFS}
 T1wImage="T1w_acpc_dc"
 T1wFolder="T1w" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
-T2wImage="T2w_acpc_dc" 
+T2wImage="T2w_acpc_dc"
 AtlasSpaceFolder="MNINonLinear"
 NativeFolder="Native"
 FreeSurferFolder="$Subject"
@@ -133,8 +133,8 @@ OutputOrigT2wToStandard="OrigT2w2standard.nii.gz"
 BiasFieldOutput="BiasField"
 Jacobian="NonlinearRegJacobians.nii.gz"
 
-T1wFolder="$StudyFolder"/"$Subject"/"$T1wFolder" 
-T2wFolder="$StudyFolder"/"$Subject"/"$T2wFolder" 
+T1wFolder="$StudyFolder"/"$Subject"/"$T1wFolder"
+T2wFolder="$StudyFolder"/"$Subject"/"$T2wFolder"
 AtlasSpaceFolder="$StudyFolder"/"$Subject"/"$AtlasSpaceFolder"
 FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
@@ -173,7 +173,7 @@ argList+="$InflateExtraScale "         # ${23}
 #Create FreeSurfer ribbon file at full resolution
 log_Msg "Create FreeSurfer ribbon file at full resolution"
 
-argList="$StudyFolder "                # ${1} 
+argList="$StudyFolder "                # ${1}
 argList+="$Subject "                   # ${2}
 argList+="$T1wFolder "                 # ${3}
 argList+="$AtlasSpaceFolder "          # ${4}
@@ -202,7 +202,7 @@ argList+="$T1wFolder"/xfms/"$InitialT1wTransform "
 argList+="$T1wFolder"/xfms/"$dcT1wTransform "
 argList+="$T2wFolder"/xfms/"$InitialT2wTransform "
 argList+="$T1wFolder"/xfms/"$dcT2wTransform "
-argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15} 
+argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15}
 argList+="$AtlasTransform "
 argList+="$T1wFolder"/"$BiasField "
 argList+="$T1wFolder"/"$OutputT1wImage "
