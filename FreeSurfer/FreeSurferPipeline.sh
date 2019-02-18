@@ -49,10 +49,6 @@ show_tool_versions()
 	log_Msg "Showing fslmaths version"
 	which fslmaths
 
-	# Show fslstats version
-	log_Msg "Showing fslstats version"
-	which fslstats
-
 	# Show mri_concatenate_lta version
 	log_Msg "Showing mri_concatenate_lta version"
 	which mri_concatenate_lta
@@ -445,7 +441,7 @@ main()
 	local mri_surf2surf_cmd
 
 	local T2wtoT1wFile="T2wtoT1w.mat"
-	local OutputOrigT2wToT1w="OrigT2w2T1w"
+	local OutputOrigT2wToT1w="OrigT2w2T1w"  #Needs to match name used in PostFreeSurfer (this is NOT the FreeSurfer "orig" space)
 
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
@@ -597,7 +593,7 @@ main()
 	echo "round" >> ${eye_dat_file}
 
 	# ----------------------------------------------------------------------
-	log_Msg "Making T1w to T2w registration available in FSL format"
+	log_Msg "Making T2w to T1w registration available in FSL format"
 	# ----------------------------------------------------------------------
 
 	pushd ${mridir}
@@ -663,7 +659,7 @@ main()
 	# ----------------------------------------------------------------------
 
 	# Note: The orig-to-rawavg.lta file was created back in the previous
-	#       step when we are making the T1w to T2w registration available
+	#       step when we are making the T2w to T1w registration available
 	#       in FSL format.
 
 	pushd ${mridir}
@@ -733,10 +729,11 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load Function Libraries
-
-# Logging related functions
 source ${HCPPIPEDIR}/global/scripts/log.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var FSLDIR
 
 # Show tool versions
 show_tool_versions
