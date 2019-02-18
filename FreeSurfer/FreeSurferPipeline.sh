@@ -444,6 +444,9 @@ main()
 	local mri_concatenate_lta_cmd
 	local mri_surf2surf_cmd
 
+	local T2wtoT1wFile="T2wtoT1w.mat"
+	local OutputOrigT2wToT1w="OrigT2w2T1w"
+
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
 	# ----------------------------------------------------------------------
@@ -499,6 +502,15 @@ main()
 	log_Msg "num_cores: ${num_cores}"
 
 	if [ "${existing_subject}" != "TRUE" ]; then
+
+		# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
+		# certain files need to be reverted to their PreFreeSurfer output versions
+		if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ]; then
+			log_Err "The --existing-subject flag was not invoked AND PostFreeSurfer has already been run."
+			log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <subj>/T1w/{T1w,T2w}_acpc*) need to be reverted to their PreFreeSurfer outputs."
+			log_Err_Abort "If this is the goal, delete ${SubjectDIR}/${SubjectID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
+		fi
+
 		# ----------------------------------------------------------------------
 		log_Msg "Thresholding T1w image to eliminate negative voxel values"
 		# ----------------------------------------------------------------------
@@ -628,10 +640,10 @@ main()
 	tkregister_cmd+=" --mov orig/T2raw.mgz"
 	tkregister_cmd+=" --targ rawavg.mgz"
 	tkregister_cmd+=" --reg Q.lta"
-	tkregister_cmd+=" --fslregout transforms/T2wtoT1w.mat"
+	tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
 	tkregister_cmd+=" --noedit"
 
-	log_Msg "......The following produces the transforms/T2wtoT1w.mat file that we need"
+	log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
 	log_Msg "......tkregister_cmd: ${tkregister_cmd}"
 
 	${tkregister_cmd}
