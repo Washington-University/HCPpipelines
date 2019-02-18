@@ -88,10 +88,10 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 	 --t1w-image=<path to T1w image>
 	 --t1=<path to T1w image>
 
-  one from the following group is required
+  one from the following group is required, unless --existing-subject is set
 
-	 --t1brain=<path to T1w brain mask>
 	 --t1w-brain=<path to T1w brain mask>
+	 --t1brain=<path to T1w brain mask>
 
   one from the following group is required, unless --existing-subject is set
 
@@ -103,7 +103,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--existing-subject]
       Indicates that the script is to be run on top of an already existing analysis/subject.
       This excludes the '-i' and '-T2' flags from the invocation of recon-all (i.e., uses previous input volumes).
-      [The --t1w-image and --t2w-image arguments, if provided, are ignored].
+      [The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored].
       It also excludes the -all' flag from the invocation of recon-all.
       Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.
       This flag allows for the application of FreeSurfer edits.
@@ -123,12 +123,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
          --extra-reconall-arg multiple times (in the proper sequential fashion).
          e.g., [--extra-reconall-arg=-norm3diters --extra-reconall-arg=3]
          will be translated to "-norm3diters 3" when passed to recon-all
-            
+
 
 PARAMETERs can also be specified positionally as:
 
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
-  
+
   Note that the positional approach to specifying parameters does NOT support the --existing-subject and --extra-reconall-arg options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
@@ -250,8 +250,12 @@ get_options()
 	fi
 
 	if [ -z "${p_t1w_brain}" ]; then
-		log_Err "T1w Brain (--t1brain= or --t1w-brain=) required"
-		error_count=$(( error_count + 1 ))
+		if [ -z "${p_existing_subject}" ]; then
+			log_Err "T1w Brain (--t1w-brain= or --t1brain=) required"
+			error_count=$(( error_count + 1 ))
+		else
+			p_t1w_brain="NONE"  # Need something assigned as a placeholder for positional parameters
+		fi
 	else
 		log_Msg "T1w Brain: ${p_t1w_brain}"
 	fi
@@ -272,7 +276,7 @@ get_options()
 		log_Msg "Seed: ${p_seed}"
 	fi
 	if [ ! -z "${p_existing_subject}" ]; then
-		log_Msg "Existing subject (exclude -i, -T2, and -all flags from recon-all): ${p_existing_subject}"
+		log_Msg "Existing subject (exclude -all, -i, -T2, and -emregmask flags from recon-all): ${p_existing_subject}"
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
@@ -287,7 +291,7 @@ get_options()
 # Generate T1w in NIFTI format and in rawavg space
 # that has been aligned by BBR but not undergone
 # FreeSurfer intensity normalization
-# 
+#
 make_t1w_hires_nifti_file()
 {
 	local working_dir
@@ -295,9 +299,9 @@ make_t1w_hires_nifti_file()
 	local t1w_output_file
 	local mri_convert_cmd
 	local return_code
-	
+
 	working_dir="${1}"
-	
+
 	pushd "${working_dir}"
 
 	# We should already have the necessary T1w volume.
@@ -306,7 +310,7 @@ make_t1w_hires_nifti_file()
 
 	t1w_input_file="rawavg.mgz"
 	t1w_output_file="T1w_hires.nii.gz"
-	
+
 	if [ ! -e "${t1w_input_file}" ]; then
 		log_Err_Abort "Expected t1w_input_file: ${t1w_input_file} DOES NOT EXIST"
 	fi
@@ -319,8 +323,8 @@ make_t1w_hires_nifti_file()
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "mri_convert command failed with return code: ${return_code}"
 	fi
-		
-	popd 
+
+	popd
 }
 
 #
@@ -336,7 +340,7 @@ make_t2w_hires_nifti_file()
 	local t2w_output_file
 	local mri_vol2vol_cmd
 	local return_code
-	
+
 	working_dir="${1}"
 
 	pushd "${working_dir}"
@@ -348,7 +352,7 @@ make_t2w_hires_nifti_file()
 	t2w_input_file="rawavg.T2.prenorm.mgz"
 	target_volume="rawavg.mgz"
 	t2w_output_file="T2w_hires.nii.gz"
-	
+
 	if [ ! -e "${t2w_input_file}" ]; then
 		log_Err_Abort "Expected t2w_input_file: ${t2w_input_file} DOES NOT EXIST"
 	fi
@@ -356,13 +360,13 @@ make_t2w_hires_nifti_file()
 	if [ ! -e "${target_volume}" ]; then
 		log_Err_Abort "Expected target_volume: ${target_volume} DOES NOT EXIST"
 	fi
-	
+
 	mri_vol2vol_cmd="mri_vol2vol"
 	mri_vol2vol_cmd+=" --mov ${t2w_input_file}"
 	mri_vol2vol_cmd+=" --targ ${target_volume}"
 	mri_vol2vol_cmd+=" --regheader"
 	mri_vol2vol_cmd+=" --o ${t2w_output_file}"
-	
+
 	log_Msg "Creating ${t2w_output_file} with mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
 	${mri_vol2vol_cmd}
 	return_code=$?
@@ -375,7 +379,7 @@ make_t2w_hires_nifti_file()
 
 #
 # Generate QC file - T1w X T2w
-# 
+#
 make_t1wxtw2_qc_file()
 {
 	local working_dir
@@ -384,7 +388,7 @@ make_t1wxtw2_qc_file()
 	local output_file
 	local fslmaths_cmd
 	local return_code
-	
+
 	working_dir="${1}"
 
 	pushd "${working_dir}"
@@ -393,7 +397,7 @@ make_t1wxtw2_qc_file()
 	t1w_input_file="T1w_hires.nii.gz"
 	t2w_input_file="T2w_hires.nii.gz"
 	output_file="T1wMulT2w_hires.nii.gz"
-	
+
  	if [ ! -e "${t1w_input_file}" ]; then
 		log_Err_Abort "Expected t1w_input_file: ${t1w_input_file} DOES NOT EXIST"
 	fi
@@ -407,13 +411,13 @@ make_t1wxtw2_qc_file()
 	fslmaths_cmd+=" -mul ${t2w_input_file}"
 	fslmaths_cmd+=" -sqrt ${output_file}"
 
-	log_Msg "Creating ${output_file} with fslmaths_cmd: ${fslmaths_cmd}" 
+	log_Msg "Creating ${output_file} with fslmaths_cmd: ${fslmaths_cmd}"
 	${fslmaths_cmd}
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
 		log_Err_Abort "fslmaths command failed with return code: ${return_code}"
 	fi
-	
+
 	popd
 }
 
@@ -427,7 +431,7 @@ main()
 	local recon_all_seed
 	local existing_subject
 	local extra_reconall_args
-	
+
 	local num_cores
 	local zero_threshold_T1wImage
 	local return_code
@@ -466,7 +470,7 @@ main()
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		extra_reconall_args="${p_extra_reconall_args}"
 	fi
-	
+
 	# ----------------------------------------------------------------------
 	# Log values retrieved from positional parameters
 	# ----------------------------------------------------------------------
@@ -515,15 +519,15 @@ main()
 	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
-	if [ "${existing_subject}" != "TRUE" ]; then  # T1 and T2 input volumes only necessary first time through
+	if [ "${existing_subject}" != "TRUE" ]; then  # input volumes only necessary first time through
 		recon_all_cmd+=" -all"
 		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
 		recon_all_cmd+=" -T2 ${T2wImage}"
+		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	fi
 	recon_all_cmd+=" -T2pial"
-	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	recon_all_cmd+=" -openmp ${num_cores}"
-	
+
 	if [ ! -z "${recon_all_seed}" ]; then
 		recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
@@ -605,13 +609,13 @@ main()
 		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
 	fi
 
-	log_Msg "...Concatenate the T1raw-->orig transform with the T2raw-->orig transform"
+	log_Msg "...Concatenate the T2raw->orig and orig->rawavg transforms"
 	mri_concatenate_lta_cmd="mri_concatenate_lta"
 	mri_concatenate_lta_cmd+=" transforms/T2raw.lta"
 	mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
 	mri_concatenate_lta_cmd+=" Q.lta"
 
-	log_Msg "......The following concatenates transforms/T2raw.tla and transforms/orig-to-rawavg.lta to get Q.lta"
+	log_Msg "......The following concatenates transforms/T2raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
 	log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
 	${mri_concatenate_lta_cmd}
 	return_code=$?
@@ -649,7 +653,7 @@ main()
 	# Note: The orig-to-rawavg.lta file was created back in the previous
 	#       step when we are making the T1w to T2w registration available
 	#       in FSL format.
-	
+
 	pushd ${mridir}
 
 	mri_surf2surf_cmd="mri_surf2surf"
@@ -695,13 +699,13 @@ main()
 	# ----------------------------------------------------------------------
 	log_Msg "Generating QC file"
 	# ----------------------------------------------------------------------
-	
+
 	make_t1w_hires_nifti_file "${mridir}"
-	
+
 	make_t2w_hires_nifti_file "${mridir}"
-	
+
 	make_t1wxtw2_qc_file "${mridir}"
-	
+
 	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
 	# ----------------------------------------------------------------------
