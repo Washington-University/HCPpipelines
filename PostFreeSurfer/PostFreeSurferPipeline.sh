@@ -91,6 +91,7 @@ InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
 #Naming Conventions
+# Do NOT include spaces in any of these names
 T1wImage="T1w_acpc_dc"
 T1wFolder="T1w" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
