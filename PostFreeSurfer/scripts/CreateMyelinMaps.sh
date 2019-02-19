@@ -78,10 +78,7 @@ ${CARET7DIR}/wb_command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate t
 
 # Create one-step resampled versions of the {T1w,T2w}_acpc_dc and {T1w,T2w}_acpc_dc_restore volumes (in T1w space)
 convertwarp --relout --rel --ref="$T1wImageBrainMask" --premat="$InitialT1wTransform" --warp1="$dcT1wTransform" --out="$OutputOrigT1wToT1w"
-convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
-
 convertwarp --relout --rel --ref="$T1wImageBrainMask" --premat="$InitialT2wTransform" --warp1="$dcT2wTransform" --postmat="$FinalT2wTransform" --out="$OutputOrigT2wToT1w"
-convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
 
 applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT1wToT1w" -o "$OutputT1wImage"
 fslmaths "$OutputT1wImage" -abs "$OutputT1wImage" -odt float
@@ -94,6 +91,9 @@ fslmaths "$OutputT2wImage" -div "$BiasField" "$OutputT2wImageRestore"
 fslmaths "$OutputT2wImageRestore" -mas "$T1wImageBrainMask" "$OutputT2wImageRestoreBrain"
 
 # Do the same for the equivalents in MNINonLinear space
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
+convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
+
 applywarp --rel --interp=spline -i "$BiasField" -r "$T1wImageBrainMask" -w "$AtlasTransform" -o "$BiasFieldOutput"
 fslmaths "$BiasFieldOutput" -thr 0.1 "$BiasFieldOutput"
 
