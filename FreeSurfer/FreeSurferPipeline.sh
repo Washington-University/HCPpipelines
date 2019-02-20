@@ -661,6 +661,7 @@ main()
 	# Note: The orig-to-rawavg.lta file was created back in the previous
 	#       step when we are making the T2w to T1w registration available
 	#       in FSL format.
+	# These white.deformed surfaces get used in fMRIVolume and DiffusionPreprocessing
 
 	pushd ${mridir}
 
