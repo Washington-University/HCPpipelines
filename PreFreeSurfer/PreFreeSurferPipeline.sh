@@ -321,7 +321,7 @@ T1wTemplate=`opts_GetOpt1 "--t1template" $@`
 T1wTemplateBrain=`opts_GetOpt1 "--t1templatebrain" $@`
 T1wTemplate2mm=`opts_GetOpt1 "--t1template2mm" $@`
 T2wTemplate=`opts_GetOpt1 "--t2template" $@`
-T2wTemplateBrain=`opts_GetOpt1 "--t2templatebrain" $@`
+T2wTemplateBrain=`opts_GetOpt1 "--t2templatebrain" $@`  # This file/argument not used anywhere
 T2wTemplate2mm=`opts_GetOpt1 "--t2template2mm" $@`
 TemplateMask=`opts_GetOpt1 "--templatemask" $@`
 Template2mmMask=`opts_GetOpt1 "--template2mmmask" $@`
@@ -368,7 +368,7 @@ log_Msg "T1wTemplate: ${T1wTemplate}"
 log_Msg "T1wTemplateBrain: ${T1wTemplateBrain}"
 log_Msg "T1wTemplate2mm: ${T1wTemplate2mm}"
 log_Msg "T2wTemplate: ${T2wTemplate}"
-log_Msg "T2wTemplateBrain: ${T2wTemplateBrain}"
+log_Msg "T2wTemplateBrain: ${T2wTemplateBrain}"  # This variable not used anywhere
 log_Msg "T2wTemplate2mm: ${T2wTemplate2mm}"
 log_Msg "TemplateMask: ${TemplateMask}"
 log_Msg "Template2mmMask: ${Template2mmMask}"
@@ -448,7 +448,7 @@ log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 #  - Gradient Nonlinearity Correction (Unless no gradient distortion
 #    coefficients are available)
 #  - Average same modality images (if more than one is available)
-#  - Rigidly align images to 0.7mm MNI Template to create native volume space
+#  - Rigidly align images to specified MNI Template to create native volume space
 #  - Perform Brain Extraction(FNIRT-based Masking)
 # ------------------------------------------------------------------------------
 
@@ -656,8 +656,50 @@ ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
 	${BiasFieldSmoothingSigma}
 
 # ------------------------------------------------------------------------------
+# Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
+# (applied after GDC, which we don't bundle in, because of the possible need
+# to average multiple T1/T2 inputs).
+
+# This overwrites the {T1w,T2w}_acpc_dc outputs created above, and mimics what
+# occurs at the beginning of PostFreeSurfer/CreateMyelinMaps.sh.
+# Note that the CreateMyelinMaps equivalent is still needed though because
+# (1) T1w_acpc_dc_restore_brain is (re)generated with a better estimate of
+#     the brain mask, provided by FreeSurfer
+# (2) the entire set of T2w_acpc_dc outputs needs to be regenerated, using the
+#     refinement to the "T2wtoT1w" registration that FreeSurfer provides.
+
+# Just implement inline, rather than writing a separate script
+# Added 2/19/2019
+# ------------------------------------------------------------------------------
+
+log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
+
+# T1w
+OutputOrigT1wToT1w=OrigT1w2T1w  # Name for one-step resample warpfield
+convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T1wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T1wImage}_dc --out=${T1wFolder}/xfms/${OutputOrigT1wToT1w}
+
+OutputT1wImage=${T1wFolder}/${T1wImage}_acpc_dc
+applywarp --rel --interp=spline -i ${T1wFolder}/${T1wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT1wToT1w} -o ${OutputT1wImage}
+fslmaths ${OutputT1wImage} -thr 0 ${OutputT1wImage} -odt float  # Should we use -abs here instead?
+fslmaths ${OutputT1wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT1wImage}_restore
+fslmaths ${OutputT1wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT1wImage}_restore_brain
+
+#T2w
+OutputOrigT2wToT1w=OrigT2w2T1w_PreFreeSurfer  # Name for one-step resample warpfield
+convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T2wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T2wImage}_reg_dc --out=${T1wFolder}/xfms/${OutputOrigT2wToT1w}
+
+OutputT2wImage=${T1wFolder}/${T2wImage}_acpc_dc
+applywarp --rel --interp=spline -i ${T2wFolder}/${T2wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT2wToT1w} -o ${OutputT2wImage}
+fslmaths ${OutputT2wImage} -thr 0 ${OutputT2wImage} -odt float  # Should we use -abs here instead?
+fslmaths ${OutputT2wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT2wImage}_restore
+fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
+
+# ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
-#  Also applies registration to T1w and T2w images
+#  Also applies the MNI registration to T1w and T2w images
+#  (although, these will be overwritten, and the final versions generated via
+#  a one-step resampling equivalent in PostFreeSurfer/CreateMyelinMaps.sh;
+#  so, the primary purpose of the following is to generate the Atlas Registration itself).
 # ------------------------------------------------------------------------------
 
 log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
