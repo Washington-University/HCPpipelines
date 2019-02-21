@@ -32,7 +32,7 @@ HighResMesh="${6}"
 LowResMeshes="${7}"
 OrginalT1wImage="${8}"
 OrginalT2wImage="${9}"
-T1wImageBrain="${10}"
+T1wImageBrainMask="${10}"
 InitialT1wTransform="${11}"
 dcT1wTransform="${12}"
 InitialT2wTransform="${13}"
@@ -57,7 +57,7 @@ OutputOrigT1wToStandard="${31}"
 OutputOrigT2wToT1w="${32}"
 OutputOrigT2wToStandard="${33}"
 BiasFieldOutput="${34}"
-T1wMNIImageBrain="${35}"
+T1wMNIImageBrainMask="${35}"
 Jacobian="${36}"
 ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
@@ -74,10 +74,10 @@ SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
 for Hemisphere in L R ; do
-  if [ $Hemisphere = "L" ] ; then 
+  if [ $Hemisphere = "L" ] ; then
     Structure="CORTEX_LEFT"
     ribbon="$LeftGreyRibbonValue"
-  elif [ $Hemisphere = "R" ] ; then 
+  elif [ $Hemisphere = "R" ] ; then
     Structure="CORTEX_RIGHT"
     ribbon="$RightGreyRibbonValue"
   fi
