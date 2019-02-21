@@ -694,6 +694,12 @@ fslmaths ${OutputT2wImage} -abs ${OutputT2wImage} -odt float  # Use -abs (rather
 fslmaths ${OutputT2wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT2wImage}_restore
 fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
 
+# Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
+# i.e., whether the T1w/T2w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
+# or the PostFreeSurferPipeline versions
+OutputOrigT2wToT1wPostFS=OrigT2w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
+imrm ${OutputOrigT2wToT1wPostFS}
+
 # ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
 #  Also applies the MNI registration to T1w and T2w images
