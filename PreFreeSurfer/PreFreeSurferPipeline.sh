@@ -675,22 +675,22 @@ ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
 log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
 
 # T1w
-OutputOrigT1wToT1w=OrigT1w2T1w  # Name for one-step resample warpfield
+OutputOrigT1wToT1w=OrigT1w2T1w_PreFS  # Name for one-step resample warpfield
 convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T1wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T1wImage}_dc --out=${T1wFolder}/xfms/${OutputOrigT1wToT1w}
 
 OutputT1wImage=${T1wFolder}/${T1wImage}_acpc_dc
 applywarp --rel --interp=spline -i ${T1wFolder}/${T1wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT1wToT1w} -o ${OutputT1wImage}
-fslmaths ${OutputT1wImage} -thr 0 ${OutputT1wImage} -odt float  # Should we use -abs here instead?
+fslmaths ${OutputT1wImage} -abs ${OutputT1wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
 fslmaths ${OutputT1wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT1wImage}_restore
 fslmaths ${OutputT1wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT1wImage}_restore_brain
 
 #T2w
-OutputOrigT2wToT1w=OrigT2w2T1w_PreFreeSurfer  # Name for one-step resample warpfield
+OutputOrigT2wToT1w=OrigT2w2T1w_PreFS  # Name for one-step resample warpfield
 convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T2wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T2wImage}_reg_dc --out=${T1wFolder}/xfms/${OutputOrigT2wToT1w}
 
 OutputT2wImage=${T1wFolder}/${T2wImage}_acpc_dc
 applywarp --rel --interp=spline -i ${T2wFolder}/${T2wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT2wToT1w} -o ${OutputT2wImage}
-fslmaths ${OutputT2wImage} -thr 0 ${OutputT2wImage} -odt float  # Should we use -abs here instead?
+fslmaths ${OutputT2wImage} -abs ${OutputT2wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
 fslmaths ${OutputT2wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT2wImage}_restore
 fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
 
