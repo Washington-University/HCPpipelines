@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+set -e # If any commands exit with non-zero value, this script exits
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
