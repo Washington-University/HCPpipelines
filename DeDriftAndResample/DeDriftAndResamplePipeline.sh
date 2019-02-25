@@ -557,7 +557,7 @@ main()
 
 		${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${ConcatRegName}.native.shape.gii -edge-method
 		
-		${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -local-affine-method
+		${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.${ConcatRegName}.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -local-affine-method
 	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -column 1
 	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${ConcatRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -column 2
 	    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii
@@ -576,6 +576,18 @@ main()
 	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_EdgeDistortion_${ConcatRegName}
 	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 	rm ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dtseries.nii 
+
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainJ_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainJ_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_StrainJ_${ConcatRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii
+	
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainR_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainR_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_StrainR_${ConcatRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii
 
 	DownSampleFolder=`echo ${DownSampleFolderNames} | cut -d " " -f 1`
 	log_Msg "DownSampleFolder: ${DownSampleFolder}"
@@ -692,7 +704,7 @@ main()
 		# Resample scalar maps and apply new bias field
 		log_Msg "Resample scalar maps and apply new bias field"
 
-		for Map in ${Maps} ${MyelinMaps} SphericalDistortion ArealDistortion EdgeDistortion ; do
+		for Map in ${Maps} ${MyelinMaps} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
 			log_Msg "Map: ${Map}"
 
 			for MapMap in ${MyelinMaps} ; do
@@ -766,7 +778,7 @@ main()
 
 			log_Debug_Msg "Point 2.0"
 
-			if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "MyelinMap_BC" || ${Map} = "SmoothedMyelinMap_BC" ]] ; then
+			if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "StrainJ" || ${Map} = "StrainR" || ${Map} = "MyelinMap_BC" || ${Map} = "SmoothedMyelinMap_BC" ]] ; then
 				NativeMap="${Map}_${ConcatRegName}"
 			else
 				NativeMap="${Map}"

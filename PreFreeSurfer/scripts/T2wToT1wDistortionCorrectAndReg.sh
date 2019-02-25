@@ -57,10 +57,10 @@ Usage() {
   echo "            [--SEPhaseNeg=<input spin echo negative phase encoding image>]"
   echo "            [--SEPhasePos=<input spin echo positive phase encoding image>]"
   echo "            [--seechospacing=<effective echo spacing of SEPhaseNeg and SEPhasePos, in seconds>]"
-  echo "            [--seunwarpdir=<direction of distortion of the SEPhase images according to voxel axes>]"
+  echo "            [--seunwarpdir=<direction of distortion of the SEPhase images according to *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>]"
   echo "            --t1sampspacing=<sample spacing (readout direction) of T1w image - in seconds>"
   echo "            --t2sampspacing=<sample spacing (readout direction) of T2w image - in seconds>"
-  echo "            --unwarpdir=<direction of distortion of T1 and T2 according to voxel axes (post reorient2std)>"
+  echo "            --unwarpdir=<direction of distortion of T1 and T2 according to *voxel* axes (post fslreorient2std): {x,y,z,x-,y-,z-}, or {i,j,k,i-,j-,k-}>"
   echo "            --ot1=<output corrected T1w image>"
   echo "            --ot1brain=<output corrected, brain-extracted T1w image>"
   echo "            --ot1warp=<output warpfield for distortion correction of T1w image>"
@@ -240,10 +240,12 @@ case $DistortionCorrection in
         # -- Spin Echo Field Maps --  
         # --------------------------
 
-        if [[ ${SEUnwarpDir} = "x" || ${SEUnwarpDir} = "y" ]] ; then
+        if [[ ${SEUnwarpDir} = [xyij] ]] ; then
           ScoutInputName="${SpinEchoPhaseEncodePositive}"
-        elif [[ ${SEUnwarpDir} = "-x" || ${SEUnwarpDir} = "-y" || ${SEUnwarpDir} = "x-" || ${SEUnwarpDir} = "y-" ]] ; then
+        elif [[ ${SEUnwarpDir} = -[xyij] || ${SEUnwarpDir} = [xyij]- ]] ; then
           ScoutInputName="${SpinEchoPhaseEncodeNegative}"
+		else
+			log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
         fi
 
         # Use topup to distortion correct the scout scans
@@ -270,14 +272,18 @@ case $DistortionCorrection in
         log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
 esac
 
+# FSL's naming convention for 'convertwarp --shiftdir' is {x,y,z,x-,y-,z-}
+# So, swap out any {i,j,k} for {x,y,z} (using bash pattern replacement)
+# and then make sure any '-' sign is trailing
+UnwarpDir=${UnwarpDir//i/x}
+UnwarpDir=${UnwarpDir//j/y}
+UnwarpDir=${UnwarpDir//k/z}
 if [ "${UnwarpDir}" = "-x" ] ; then
   UnwarpDir="x-"
 fi
-
 if [ "${UnwarpDir}" = "-y" ] ; then
   UnwarpDir="y-"
 fi
-
 if [ "${UnwarpDir}" = "-z" ] ; then
   UnwarpDir="z-"
 fi

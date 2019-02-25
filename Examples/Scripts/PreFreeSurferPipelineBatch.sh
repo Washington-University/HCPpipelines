@@ -338,13 +338,13 @@ main()
 		#   0.000580002668012
 		SEEchoSpacing="NONE"
 
-		# Spin Echo Unwarping Direction
-		# x or y (minus or not does not matter)
-		# "NONE" if not used
+		# Spin Echo Unwarping Direction (according to the *voxel* axes)
+		# {x,y} (FSL nomenclature), or alternatively, {i,j} (BIDS nomenclature for the voxel axes)
+		# Set to "NONE" if not used.
 		#
-		# Example values for when using Spin Echo Field Maps: x, -x, y, -y
-		# Note: '+x' or '+y' are not supported. i.e., for positive values, DO NOT include the + sign
-		## MPH: Why do we say that "minus or not does not matter", but then list -x and -y as example values??
+		# Example values for when using Spin Echo Field Maps: {x,y} or {i,j}
+		# Note: '+x' or '+y' are not supported. i.e., for positive values, DO NOT include the '+' sign
+		# Note: Polarity not important here [i.e., don't use {x-,y-} or {i-,j-}]
 		SEUnwarpDir="NONE"
 
 		# Topup Configuration file
@@ -402,9 +402,12 @@ main()
 
 		# Structural Scan Settings
 		#
-		# Note that "UnwarpDir" is the *readout* direction of the *structural* (T1w,T2w)
-		# images, and should not be confused with "SEUnwarpDir" which is the *phase* encoding direction
+		# "UnwarpDir" is the *readout* direction of the *structural* (T1w,T2w) images,
+		# *after* the application of 'fslreorient2std' (which is built into PreFreeSurferPipeline.sh)
+		# Do NOT confuse with "SEUnwarpDir" which is the *phase* encoding direction
 		# of the Spin Echo Field Maps (if using them).
+		# Note that polarity of UnwarpDir DOES matter.
+		# Allowed values: {x,y,z,x-,y-,z-} (FSL nomenclature) or {i,j,k,i-,j-,k-} (BIDS nomenclature)
 		#
 		# set all these values to NONE if not doing readout distortion correction
 		#
@@ -423,7 +426,6 @@ main()
 		T2wSampleSpacing="0.0000021"
 
 		# z appears to be the appropriate polarity for the 3D structurals collected on Siemens scanners
-		# or "NONE" if not used
 		UnwarpDir="z"
 
 		# Other Config Settings

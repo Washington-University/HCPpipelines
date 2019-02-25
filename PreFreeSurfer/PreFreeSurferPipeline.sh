@@ -253,13 +253,13 @@ Usage: PreeFreeSurferPipeline.sh [options]
 									Echo Field Maps
   --seechospacing=<seconds>         Effective Echo Spacing of Spin Echo Field Map,
 									(in seconds) or "NONE" if not used
-  --seunwarpdir={x, y, NONE}        Phase encoding direction of the spin echo
-									field map. (Only applies when using a spin echo
-									field map.)
+  --seunwarpdir={x,y,NONE}          Phase encoding direction (according to the *voxel* axes)
+             or={i,j,NONE}          of the spin echo field map. 
+                                    (Only applies when using a spin echo field map.)
   --t1samplespacing=<seconds>       T1 image sample spacing, "NONE" if not used
   --t2samplespacing=<seconds>       T2 image sample spacing, "NONE" if not used
-  --unwarpdir={x, y, z}             Readout direction of the T1w and T2w images
-									(Used with either a gradient echo field map
+  --unwarpdir={x,y,z,x-,y-,z-}      Readout direction of the T1w and T2w images (according to the *voxel axes)
+           or={i,j,k,i-,j-,k-}      (Used with either a gradient echo field map 
 									 or a spin echo field map)
   --gdcoeffs=<file path>            File containing gradient distortion
 									coefficients, Set to "NONE" to turn off

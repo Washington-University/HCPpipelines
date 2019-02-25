@@ -35,7 +35,7 @@ Usage() {
   echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
   echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
-  echo "            --unwarpdir=<PE direction for unwarping: x/y/z/-x/-y/-z>"
+  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
   echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
@@ -211,8 +211,9 @@ dimtTwo=`${FSLDIR}/bin/fslval ${WD}/PhaseTwo dim4`
 #  Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 #  must already be accounted for as part of the "EffectiveEchoSpacing"
 
+# For UnwarpDir, allow for both {x,y} and {i,j} nomenclature
 # X direction phase encode
-if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
+if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
   dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
   dimPminus1=$(($dimP - 1))
   ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
@@ -230,7 +231,7 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "x-" || $UnwarpDir = "-x" ]] ; then
     i=`echo "$i + 1" | bc`
   done
 # Y direction phase encode
-elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
+elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
   dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
   dimPminus1=$(($dimP - 1))
   ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
@@ -246,6 +247,10 @@ elif [[ $UnwarpDir = "y" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
     ShiftTwo="y"
     i=`echo "$i + 1" | bc`
   done
+else
+	# Per Jesper Anderson, topup does NOT allow PE dir to be along Z (no good reason, other than that made implementation easier)
+	log_Msg "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
+    exit 1
 fi
 
 #Pad in Z by one slice if odd so that topup does not complain (slice consists of zeros that will be dilated by following step)
@@ -264,7 +269,7 @@ fi
 ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM -dilM -dilM -dilM ${WD}/BothPhases
 
 # RUN TOPUP
-# Needs FSL (version 5.0.6)
+# Needs FSL (version 5.0.6 or later)
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
@@ -276,7 +281,7 @@ if [ ! $(($numslice % 2)) -eq "0" ] ; then
 fi
 
 # UNWARP DIR = x,y
-if [[ $UnwarpDir = "x" || $UnwarpDir = "y" ]] ; then
+if [[ $UnwarpDir = [xyij] ]] ; then
   # select the first volume from PhaseTwo
   VolumeNumber=$(($dimtOne + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
@@ -287,7 +292,7 @@ if [[ $UnwarpDir = "x" || $UnwarpDir = "y" ]] ; then
   ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
   SBRefPhase=Two
 # UNWARP DIR = -x,-y
-elif [[ $UnwarpDir = "x-" || $UnwarpDir = "-x" || $UnwarpDir = "y-" || $UnwarpDir = "-y" ]] ; then
+elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
   # select the first volume from PhaseOne
   VolumeNumber=$((0 + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
