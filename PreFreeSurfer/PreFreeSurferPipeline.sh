@@ -260,7 +260,7 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --t2samplespacing=<seconds>       T2 image sample spacing, "NONE" if not used
   --unwarpdir={x,y,z,x-,y-,z-}      Readout direction of the T1w and T2w images (according to the *voxel axes)
            or={i,j,k,i-,j-,k-}      (Used with either a gradient echo field map 
-									 or a spin echo field map)
+									or a spin echo field map)
   --gdcoeffs=<file path>            File containing gradient distortion
 									coefficients, Set to "NONE" to turn off
   --avgrdcmethod=<avgrdcmethod>     Averaging and readout distortion correction

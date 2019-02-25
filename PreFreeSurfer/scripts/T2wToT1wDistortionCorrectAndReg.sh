@@ -241,9 +241,9 @@ case $DistortionCorrection in
         # --------------------------
 
         if [[ ${SEUnwarpDir} = [xyij] ]] ; then
-          ScoutInputName="${SpinEchoPhaseEncodePositive}"
+			ScoutInputName="${SpinEchoPhaseEncodePositive}"
         elif [[ ${SEUnwarpDir} = -[xyij] || ${SEUnwarpDir} = [xyij]- ]] ; then
-          ScoutInputName="${SpinEchoPhaseEncodeNegative}"
+			ScoutInputName="${SpinEchoPhaseEncodeNegative}"
 		else
 			log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
         fi
