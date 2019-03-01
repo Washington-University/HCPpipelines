@@ -1,0 +1,7 @@
+These are scripts that can be used to get better performance out of
+FreeSurfer version 6 on high resolution data (with or without a T2
+scan). Make sure the directory that these files are in,
+${HCPPIPEDIR}/FreeSurfer/custom, is on your PATH before running
+FreeSurferPipeline.sh. Run recon-all.v6.hires as you normally would
+WITHOUT -hires or -cm but adding -conf2hires.
+

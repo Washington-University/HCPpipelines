@@ -6,7 +6,7 @@
 # 
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2016 The Human Connectome Project
+# Copyright (C) 2012-2019 The Human Connectome Project
 # 
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -341,27 +341,27 @@ determine_old_or_new_fsl()
 	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
 
 	# determine whether we are using "OLD" or "NEW" FSL 
-	# 5.0.8 and below is "OLD"
-	# 5.0.9 and above is "NEW"
-
-	if [[ $(( ${fsl_primary_version} )) -lt 5 ]] ; then
-		# e.g. 4.x.x
+	# 6.0.0 and below is "OLD"
+	# 6.0.1 and above is "NEW"
+	
+	if [[ $(( ${fsl_primary_version} )) -lt 6 ]] ; then
+		# e.g. 4.x.x, 5.x.x
 		old_or_new="OLD"
-	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]] ; then
-		# e.g. 6.x.x
+	elif [[ $(( ${fsl_primary_version} )) -gt 6 ]] ; then
+		# e.g. 7.x.x
 		old_or_new="NEW"
 	else
-		# e.g. 5.x.x
+		# e.g. 6.x.x
 		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
-			# e.g. 5.1.x
+			# e.g. 6.1.x
 			old_or_new="NEW"
 		else
-			# e.g. 5.0.x
-			if [[ $(( ${fsl_tertiary_version} )) -le 8 ]] ; then
-				# e.g. 5.0.1, 5.0.2, 5.0.3, 5.0.4 ... 5.0.8
+			# e.g. 6.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -lt 1 ]] ; then
+				# e.g. 6.0.0
 				old_or_new="OLD"
 			else
-				# e.g. 5.0.9 or 5.0.10 ...
+				# e.g. 6.0.1, 6.0.2, 6.0.3 ...
 				old_or_new="NEW"
 			fi
 		fi
@@ -396,27 +396,17 @@ main()
 
 	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 
-	# Set values for stdEddy (non-GPU-enabled version of eddy binary)
-	# and gpuEnabledEddy (GPU-enabled version of eddy binary) 
-	# based upon version of FSL being used.
-	# 
-	# stdEddy is "eddy" for FSL versions prior to FSL 5.0.9
-	#         is "eddy_openmp" for FSL versions starting with FSL 5.0.9
-	#
-	# gpuEnabledEddy is "eddy.gpu" for FSL versions prior to FSL 5.0.9 (may not exist)
-	#                is "eddy_cuda" for FSL versions starting with FSL 5.0.9
-	
+	# If FSL version is "OLD" (prior to 6.0.1) error out
 	if [ "${old_or_new_version}" == "OLD" ] ; then
-		log_Msg "INFO: Detected pre-5.0.9 version of FSL is in use."
-		gpuEnabledEddy="${FSLDIR}/bin/eddy.gpu"
-		stdEddy="${FSLDIR}/bin/eddy"
-	else
-		log_Msg "INFO: Detected 5.0.9 or newer version of FSL is in use."
-		gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
-		stdEddy="${FSLDIR}/bin/eddy_openmp"
+		log_Err_Abort "FSL version 6.0.1 or greater is required."
 	fi
-	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
+
+	# Set values for stdEddy (non-GPU-enabled version of eddy binary)
+	# and gpuEnabledEddy (GPU-enabled version of eddy binary)
+	stdEddy="${FSLDIR}/bin/eddy_openmp"
 	log_Msg "stdEddy: ${stdEddy}"
+	gpuEnabledEddy="${FSLDIR}/bin/eddy"
+	log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
 
 	# Determine which eddy executable to use based upon whether 
 	# the user requested use of the GPU-enabled version of eddy
@@ -428,9 +418,16 @@ main()
 			log_Msg "GPU-enabled version of eddy found: ${gpuEnabledEddy}"
 			eddyExec="${gpuEnabledEddy}"
 		else
-			log_Msg "GPU-enabled version of eddy NOT found: ${gpuEnabledEddy}"
-			log_Msg "ABORTING"
-			exit 1
+			log_Err "GPU-enabled version of eddy NOT found: ${gpuEnabledEddy}"
+			log_Err "Starting with FSL version 6.0.1, various GPU-enabled versions"
+			log_Err "of the eddy binary are included in an FSL distribution."
+			log_Err "They are named eddy_cudaX.Y where X.Y represents the version"
+			log_Err "of the CUDA libraries that each one is compiled to work with."
+			log_Err "You, or your systems administrator, will need to create a "
+			log_Err "symbolic link from ${FSLDIR}/bin/eddy to the eddy_cudaX.Y "
+			log_Err "that is appropriate for your environment before this script"
+			log_Err "can be successfully run."
+			log_Err_Abort "Please correct this FSL configuration issue and try again."
 		fi
 	else
 		log_Msg "User did not request GPU-enabled version of eddy"
@@ -438,9 +435,7 @@ main()
 			log_Msg "Non-GPU-enabled version of eddy found: ${stdEddy}"
 			eddyExec="${stdEddy}"
 		else
-			log_Msg "Non-GPU-enabled version of eddy NOT found: ${stdEddy}"
-			log_Msg "ABORTING"
-			exit 1
+			log_Err_Abort "Non-GPU-enabled version of eddy NOT found: ${stdEddy}"
 		fi
 	fi
 	

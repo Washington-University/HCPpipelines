@@ -37,9 +37,14 @@ show_tool_versions()
 
 	# Show recon-all version
 	log_Msg "Showing recon-all.v6.hires version"
-	which recon-all.v6.hires
-	recon-all.v6.hires -version
-
+	local which_recon_all=$(which recon-all.v6.hires)
+	if [ "${which_recon_all}" = "" ] ; then
+		log_Err_Abort "Cannot locate recon-all.v6.hires to run. Your PATH should include a directory containing recon-all.v6.hires"
+	else
+		log_Msg ${which_recon_all}
+		recon-all.v6.hires -version
+	fi
+	
 	# Show tkregister version
 	log_Msg "Showing tkregister version"
 	which tkregister
@@ -521,7 +526,7 @@ main()
 	fi
 
 	# ----------------------------------------------------------------------
-	log_Msg "Call FreeSurfer's recon-all"
+	log_Msg "Call custom recon-all: recon-all.v6.hires"
 	# ----------------------------------------------------------------------
 
 	recon_all_cmd="recon-all.v6.hires"
