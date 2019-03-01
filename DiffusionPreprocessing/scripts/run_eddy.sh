@@ -35,7 +35,7 @@
 # 
 # ## Prerequisite Installed Software
 # 
-# * [FSL][FSL] - FMRIB's Software Library (version 5.0.6)
+# * [FSL][FSL] - FMRIB's Software Library (version 6.0.1 or later)
 # 
 #   FSL's environment setup script must also be sourced
 # 

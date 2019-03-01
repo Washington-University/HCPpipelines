@@ -5,7 +5,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2017 The Human Connectome Project/Connectome Coordination Facility
+# Copyright (C) 2017-2019 The Human Connectome Project/Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -266,6 +266,62 @@ get_options()
 	fi	
 }
 
+#
+# NOTE:
+#   Don't echo anything in this function other than the last echo
+#   that outputs the return value
+#
+determine_old_or_new_fsl()
+{
+	local fsl_version=${1}
+	local old_or_new
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+
+	# parse the FSL version information into primary, secondary, and tertiary parts
+	fsl_version_array=(${fsl_version//./ })
+
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+	
+	fsl_secondary_version="${fsl_version_array[1]}"
+	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+	
+	fsl_tertiary_version="${fsl_version_array[2]}"
+	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# determine whether we are using "OLD" or "NEW" FSL 
+	# 6.0.0 and below is "OLD"
+	# 6.0.1 and above is "NEW"
+	
+	if [[ $(( ${fsl_primary_version} )) -lt 6 ]] ; then
+		# e.g. 4.x.x, 5.x.x
+		old_or_new="OLD"
+	elif [[ $(( ${fsl_primary_version} )) -gt 6 ]] ; then
+		# e.g. 7.x.x
+		old_or_new="NEW"
+	else
+		# e.g. 6.x.x
+		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
+			# e.g. 6.1.x
+			old_or_new="NEW"
+		else
+			# e.g. 6.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -lt 1 ]] ; then
+				# e.g. 6.0.0
+				old_or_new="OLD"
+			else
+				# e.g. 6.0.1, 6.0.2, 6.0.3 ...
+				old_or_new="NEW"
+			fi
+		fi
+	fi
+
+	echo ${old_or_new}
+}
+
 # ------------------------------------------------------------------------------
 #  Show Tool Versions
 # ------------------------------------------------------------------------------
@@ -284,6 +340,11 @@ show_tool_versions()
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
+
+	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
+	if [ "${old_or_new_version}" == "OLD" ] ; then
+		log_Err_Abort "FSL version 6.0.1 or greater is required."
+	fi
 }
 
 # ------------------------------------------------------------------------------
