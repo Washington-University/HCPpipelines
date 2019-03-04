@@ -28,6 +28,36 @@
 #
 #~ND~END~
 
+# Configure custom tools
+# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
+#   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
+#   are found on the PATH. If all such custom scripts are found, then we do nothing here.
+#   If any one of them is not found on the PATH, then we change the PATH so that the
+#   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
+configure_custom_tools()
+{
+	local which_recon_all
+	local which_conf2hires
+	local which_longmc
+
+	which_recon_all=$(which recon-all.v6.hires)
+	which_conf2hires=$(which conf2hires)
+	which_longmc=$(which longmc)
+
+	if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
+		export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
+		log_Warn "We were not able to locate one of the following required tools:"
+		log_Warn "recon-all.v6.hires, conf2hires, or longmc"
+		log_Warn ""
+		log_Warn "To be able to run this script using the standard versions of these tools,"
+		log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
+		log_Warn ""
+		log_Warn "If you intended to use some other version of these tools, please configure"
+		log_Warn "your PATH before invoking this script, such that the tools you intended to"
+		log_Warn "use can be found on the PATH."
+	fi	
+}
+
 # Show tool versions
 show_tool_versions()
 {
@@ -38,12 +68,8 @@ show_tool_versions()
 	# Show recon-all version
 	log_Msg "Showing recon-all.v6.hires version"
 	local which_recon_all=$(which recon-all.v6.hires)
-	if [ "${which_recon_all}" = "" ] ; then
-		log_Err_Abort "Cannot locate recon-all.v6.hires to run. Your PATH should include a directory containing recon-all.v6.hires"
-	else
-		log_Msg ${which_recon_all}
-		recon-all.v6.hires -version
-	fi
+	log_Msg ${which_recon_all}
+	recon-all.v6.hires -version
 	
 	# Show tkregister version
 	log_Msg "Showing tkregister version"
@@ -740,6 +766,9 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify any other needed environment variables are set
 log_Check_Env_Var FSLDIR
+
+# Configure the use of FreeSurfer v6 custom tools
+configure_custom_tools
 
 # Show tool versions
 show_tool_versions
