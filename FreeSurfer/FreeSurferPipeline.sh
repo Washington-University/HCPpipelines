@@ -151,12 +151,21 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
          e.g., [--extra-reconall-arg=-norm3diters --extra-reconall-arg=3]
          will be translated to "-norm3diters 3" when passed to recon-all
 
+  [--no-conf2hires]
+      Indicates that the script should NOT include -conf2hires as an argument to recon-all.
+         By default, -conf2hires *IS* included, so that recon-all will place the surfaces on the 
+         hires T1 (and T2).
+         This is an advanced option, intended for situations where:
+            (i) the original T1 and T2 are NOT "hires" (i.e., they are 1 mm isotropic or worse), or
+            (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
+                 e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
 PARAMETERs can also be specified positionally as:
 
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
-  Note that the positional approach to specifying parameters does NOT support the --existing-subject and --extra-reconall-arg options.
+  Note that the positional approach to specifying parameters does NOT support the 
+      --existing-subject, --extra-reconall-arg, and --no-conf2hires options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
@@ -176,6 +185,7 @@ get_options()
 	unset p_seed
 	unset p_existing_subject
 	unset p_extra_reconall_args
+	p_conf2hires="TRUE"  # Default is to include -conf2hires flag; do NOT make this variable 'local'
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -238,6 +248,10 @@ get_options()
 			--extra-reconall-arg=*)
 				extra_reconall_arg=${argument#*=}
 				p_extra_reconall_args+="${extra_reconall_arg} "
+				index=$(( index + 1 ))
+				;;
+			--no-conf2hires)
+				p_conf2hires="FALSE"
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -307,6 +321,9 @@ get_options()
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
+	fi
+	if [ ! -z "${p_conf2hires}" ]; then
+		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -456,8 +473,9 @@ main()
 	local T1wImageBrain
 	local T2wImage
 	local recon_all_seed
-	local existing_subject
+	local existing_subject="FALSE"
 	local extra_reconall_args
+	local conf2hires="TRUE"
 
 	local num_cores
 	local zero_threshold_T1wImage
@@ -483,9 +501,9 @@ main()
 	# ----------------------------------------------------------------------
 	SubjectDIR="${1}"
 	SubjectID="${2}"
-	T1wImage="${3}"  # Irrelevant if '--existing-subject' flag is set
-	T1wImageBrain="${4}"
-	T2wImage="${5}"  # Irrelevant if '--existing-subject' flag is set
+	T1wImage="${3}"       # Irrelevant if '--existing-subject' flag is set
+	T1wImageBrain="${4}"  # Irrelevant if '--existing-subject' flag is set
+	T2wImage="${5}"       # Irrelevant if '--existing-subject' flag is set
 	recon_all_seed="${6}"
 
 	## MPH: Hack!
@@ -493,12 +511,13 @@ main()
 	# But any new parameters/options in the script will only be accessible via a named parameter/flag.
 	# Here, we retrieve those from the global variable that was set in get_options()
 	if [ "${p_existing_subject}" = "TRUE" ]; then
-		existing_subject="TRUE"
-	else
-		existing_subject="FALSE"
+		existing_subject=${p_existing_subject}
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		extra_reconall_args="${p_extra_reconall_args}"
+	fi
+	if [ ! -z "${p_conf2hires}" ]; then
+		conf2hires=${p_conf2hires}
 	fi
 
 	# ----------------------------------------------------------------------
@@ -512,6 +531,7 @@ main()
 	log_Msg "recon_all_seed: ${recon_all_seed}"
 	log_Msg "existing_subject: ${existing_subject}"
 	log_Msg "extra_reconall_args: ${extra_reconall_args}"
+	log_Msg "conf2hires: ${conf2hires}"
 
 	# ----------------------------------------------------------------------
 	log_Msg "Figure out the number of cores to use."
@@ -564,7 +584,12 @@ main()
 		recon_all_cmd+=" -T2 ${T2wImage}"
 		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	fi
+
+	# By default, refine pial surfaces using T2.
+	# If for some reason the -T2pial flag needs to be excluded from recon-all, this can be
+	# accomplished using --extra-reconall-arg=-noT2pial
 	recon_all_cmd+=" -T2pial"
+
 	recon_all_cmd+=" -openmp ${num_cores}"
 
 	if [ ! -z "${recon_all_seed}" ]; then
@@ -575,10 +600,12 @@ main()
 		recon_all_cmd+=" ${extra_reconall_args}"
 	fi
 
-	# The -conf2hires flag needs to come after the ${extra_reconall_args} string, since it needs
+	# The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 	# to have the "final say" over a couple settings within recon-all
-	recon_all_cmd+=" -conf2hires"
-
+	if [ "${conf2hires}" = "TRUE" ]; then
+		recon_all_cmd+=" -conf2hires"
+	fi
+	
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	${recon_all_cmd}
 	return_code=$?
