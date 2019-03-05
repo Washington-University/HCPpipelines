@@ -501,9 +501,9 @@ main()
 	# ----------------------------------------------------------------------
 	SubjectDIR="${1}"
 	SubjectID="${2}"
-	T1wImage="${3}"  # Irrelevant if '--existing-subject' flag is set
-	T1wImageBrain="${4}"
-	T2wImage="${5}"  # Irrelevant if '--existing-subject' flag is set
+	T1wImage="${3}"       # Irrelevant if '--existing-subject' flag is set
+	T1wImageBrain="${4}"  # Irrelevant if '--existing-subject' flag is set
+	T2wImage="${5}"       # Irrelevant if '--existing-subject' flag is set
 	recon_all_seed="${6}"
 
 	## MPH: Hack!
