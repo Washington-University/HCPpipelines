@@ -55,6 +55,8 @@ configure_custom_tools()
 		log_Warn "If you intended to use some other version of these tools, please configure"
 		log_Warn "your PATH before invoking this script, such that the tools you intended to"
 		log_Warn "use can be found on the PATH."
+		log_Warn ""
+		log_Warn "PATH set to: ${PATH}"
 	fi	
 }
 

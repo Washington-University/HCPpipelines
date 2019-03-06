@@ -156,6 +156,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           --extra-eddy-arg=--verbose --extra-eddy-arg=T 
                           will ultimately be translated to --verbose T when
                           passed to the eddy binary.
+  [--no-gpu]              If specified, use the non-GPU-enabled version of eddy.
+                          Defaults to using the GPU-enabled version of eddy.
+  [--cuda-version=X.Y]    If using the GPU-enabled version of eddy, then this
+                          option can be used to specify which eddy_cuda binary
+                          version to use. If specified, FSLDIR/bin/eddy_cudaX.Y 
+                          will be used.
 
 Return Status Value:
 
@@ -205,6 +211,11 @@ EOF
 #  ${ol_nstd_value}        Value of user specified --ol_nstd= parameter
 #  ${extra_eddy_args}      Value of user specified --extra-eddy-arg parameters, space 
 #                          separated tokens
+#  ${no_gpu}               TRUE if we should use the non-GPU-enabled version of eddy
+#                          Anything else or unset means use the GPU-enabled version of eddy
+#  ${cuda_version}         If using the GPU-enabled version, this value _may_ be
+#                          given to specify the version of the CUDA libraries in use.
+#                        
 #
 get_options()
 {
@@ -226,6 +237,8 @@ get_options()
 	resamp_value=""
 	unset ol_nstd_value
 	extra_eddy_args=""
+    no_gpu=""
+	cuda_version=""
 	
 	# parse arguments
 	local index=0
@@ -325,6 +338,14 @@ get_options()
 				extra_eddy_args+=" ${extra_eddy_arg} "
 				index=$(( index + 1 ))
 				;;
+			--no-gpu)
+				no_gpu="TRUE"
+				index=$(( index + 1 ))
+				;;
+			--cuda-version=*)
+				cuda_version=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			*)
 				usage
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -372,6 +393,8 @@ get_options()
 	echo "   resamp_value: ${resamp_value}"
 	echo "   ol_nstd_value: ${ol_nstd_value}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
+	echo "   no_gpu: ${no_gpu}"
+	echo "   cuda-version: ${cuda_version}"
 	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - End --"
 }
 
@@ -484,7 +507,15 @@ main()
 	run_eddy_cmd+=" ${rms_option} "
 	run_eddy_cmd+=" ${ff_option} "
 	run_eddy_cmd+=" ${ol_nstd_value_option} "
-	run_eddy_cmd+=" -g "
+
+	if [ "${no_gpu}" != "TRUE" ]; then
+		# default is to use the GPU-enabled version
+		run_eddy_cmd+=" -g "
+		if [ ! -z "${cuda_version}" ]; then
+			run_eddy_cmd+=" --cuda-version=${cuda_version}"
+		fi
+	fi
+	
 	run_eddy_cmd+=" -w ${outdir}/eddy "
 
 	if [ ! -z "${dont_peas}" ] ; then

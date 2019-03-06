@@ -307,81 +307,6 @@ validate_environment_vars()
 	echo "-- ${scriptName}: Environment Variables Used - End --"
 }
 
-get_fsl_version()
-{
-	local fsl_version_file
-	local fsl_version
-	local __functionResultVar=${1}
-
-	fsl_version_file="${FSLDIR}/etc/fslversion"
-
-	if [ -f ${fsl_version_file} ]; then
-		fsl_version=`cat ${fsl_version_file}`
-		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
-	else
-		log_Msg "ERROR: Cannot tell which version of FSL you are using."
-		exit 1
-	fi
-
-	eval $__functionResultVar="'${fsl_version}'"
-}
-
-# #
-# # NOTE:
-# #   Don't echo anything in this function other than the last echo
-# #   that outputs the return value
-# #
-# determine_old_or_new_fsl()
-# {
-# 	local fsl_version=${1}
-# 	local old_or_new
-# 	local fsl_version_array
-# 	local fsl_primary_version
-# 	local fsl_secondary_version
-# 	local fsl_tertiary_version
-
-# 	# parse the FSL version information into primary, secondary, and tertiary parts
-# 	fsl_version_array=(${fsl_version//./ })
-
-# 	fsl_primary_version="${fsl_version_array[0]}"
-# 	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-	
-# 	fsl_secondary_version="${fsl_version_array[1]}"
-# 	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-	
-# 	fsl_tertiary_version="${fsl_version_array[2]}"
-# 	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
-
-# 	# determine whether we are using "OLD" or "NEW" FSL 
-# 	# 6.0.0 and below is "OLD"
-# 	# 6.0.1 and above is "NEW"
-	
-# 	if [[ $(( ${fsl_primary_version} )) -lt 6 ]] ; then
-# 		# e.g. 4.x.x, 5.x.x
-# 		old_or_new="OLD"
-# 	elif [[ $(( ${fsl_primary_version} )) -gt 6 ]] ; then
-# 		# e.g. 7.x.x
-# 		old_or_new="NEW"
-# 	else
-# 		# e.g. 6.x.x
-# 		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
-# 			# e.g. 6.1.x
-# 			old_or_new="NEW"
-# 		else
-# 			# e.g. 6.0.x
-# 			if [[ $(( ${fsl_tertiary_version} )) -lt 1 ]] ; then
-# 				# e.g. 6.0.0
-# 				old_or_new="OLD"
-# 			else
-# 				# e.g. 6.0.1, 6.0.2, 6.0.3 ...
-# 				old_or_new="NEW"
-# 			fi
-# 		fi
-# 	fi
-
-# 	echo ${old_or_new}
-# }
-
 #
 # Determine g_stdEddy and g_gpuEnabledEddy for a supported
 # "6-series" version of FSL (e.g. 6.0.1, 6.0.2, ... 7.x.x ...)
@@ -398,41 +323,41 @@ determine_eddy_tools_for_supported_six_series()
 {
 	g_stdEddy="${FSLDIR}/bin/eddy_openmp"
 
-	# If FSL is configured as will likely be recommended by the FSL team,
-	# with ${FSLDIR}/bin/eddy existing as a symbolic link to the
-	# version of the FSL binary compatible with the CUDA libraries
-	# installed on the system, (e.g. eddy -> eddy_cuda8.0 or eddy -> eddy_cuda9.1),
-	# then we'll just use that symbolic link to let us run ${FSLDIR}/bin/eddy
-	# as the GPU-enabled version
-
-	if [ -e ${FSLDIR}/bin/eddy ]; then
-		g_gpuEnabledEddy=${FSLDIR}/bin/eddy
-	elif [ "${useGpuVersion}" != "True" ]; then
-		# If FSL is not configured with an ${FSLDIR}/bin/eddy file,
-		# BUT the user hasn't even requested to use the GPU enabled
-		# version of eddy, then it really doesn't matter what
-		# g_gpuEnabledEddy is set to. It's not going to be used
-		# anyhow.
-		g_gpuEnabledEddy="nothing"
-	else
-		# If FSL is not configured with an ${FSLDIR}/bin/eddy file,
-		# AND the user HAS requested to use the GPU enabled
-	    # version of eddy, then we'll determine which of the
-		# eddy_cudaX.Y binaries in the ${FSLDIR}/bin directory
-		# to use, based on the optionally specified g_cuda_version
-		# value (--cuda-version=).
-		if [ -z "${g_cuda_version}" ]; then
-			log_Err "Since you have requested the use of GPU-enabled eddy,"
-			log_Err "you must either have ${FSLDIR}/bin/eddy as a symbolic"
-			log_Err "link to the version of eddy_cudaX.Y that is appropriate"
-			log_Err "for the CUDA libraries installed on your system OR"
-			log_Err "you must specify the --cuda-version=X.Y option to"
-			log_Err "this script in order to explicitly force the use of"
-			log_Err "${FSLDIR}/bin/eddy_cudaX.Y"
-			log_Err_Abort ""
-		else
+	if [ "${useGpuVersion}" = "True" ]; then
+		if [ ! -z "${g_cuda_version}" ]; then
+			# The user has asked to use the GPU-enabled version and
+			# explicitly specified the CUDA version to use (via
+			# the --cuda-version= option). So set things up to
+			# use that version of eddy.
 			g_gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda${g_cuda_version}"
+		else
+			# The user has asked to use the GPU-enabled version but
+			# has not explicitly specified the CUDA version to use.
+			# So they need to have used the FSL recommended approach
+			# of having ${FSLDIR}/bin/eddy as a symbolic link to
+			# the appropriate eddy to run (e.g. eddy -> eddy_cuda8.0,
+			# or eddy -> eddy_cuda9.1).
+			# 
+			# If they have an ${FSLDIR}/bin/eddy, then use it. If not,
+			# tell them that we can't figure out what eddy to use.
+			if [ -e ${FSLDIR}/bin/eddy ]; then
+				g_gpuEnabledEddy="${FSLDIR}/bin/eddy"
+			else
+				log_Err "Since you have requested the use of GPU-enabled eddy,"
+				log_Err "you must either have ${FSLDIR}/bin/eddy as a symbolic"
+				log_Err "link to the version of eddy_cudaX.Y in ${FSLDIR}/bin"
+				log_Err "that you want to use and is appropriate for the CUDA"
+				log_Err "libraries installed on your system OR you must specify"
+				log_Err "the --cuda-version=X.Y option to this script in order"
+				log_Err "to explicitly force the use of ${FSLDIR}/bin/eddy_cudaX.Y"
+				log_Err_Abort ""
+			fi
 		fi
+
+	else
+		# User hasn't requested to use the GPU-enabled version.
+		# So, it really doesn't matter what we set g_gpuEnabledEddy to.
+		g_gpuEnabledEddy="nothing"
 	fi
 }
 
@@ -443,13 +368,22 @@ determine_eddy_tools_for_supported_six_series()
 #
 determine_eddy_tools_to_use()
 {
+	local fsl_version_file
 	local fsl_version
 	local fsl_version_array
 	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
 	
 	# get the current version of FSL in use
-	get_fsl_version fsl_version
-	log_Msg "FSL version: ${fsl_version}"
+	fsl_version_file="${FSLDIR}/etc/fslversion"
+
+	if [ -f ${fsl_version_file} ]; then
+		fsl_version=$(cat ${fsl_version_file})
+		log_Msg "INFO: Determined that the FSL vrsion in use is ${fsl_version}"
+	else
+		log_Err_Abort "Cannot tell which version of FSL you are using."
+	fi
 
 	# break FSL version string into components
 	# primary, seconday, and tertiary
@@ -537,7 +471,7 @@ determine_eddy_tools_to_use()
 		# This should be impossible. So we better report an error if it actually happens
 		# because that means the above logic has some fatal flaw in it or the
 		# FSL version number has some very expected value.
-		log_Err_Abort "Can not figure out how to handle an FSL version like: ${fsl_version}"
+		log_Err_Abort "Cannot figure out how to handle an FSL version like: ${fsl_version}"
 	fi
 }
 
@@ -564,26 +498,8 @@ main()
 	# Determine the eddy tools to use
 	determine_eddy_tools_to_use
 
-	# # Determine whether FSL version is "OLD" or "NEW"
-	# get_fsl_version fsl_ver
-	# log_Msg "FSL version: ${fsl_ver}"
-
-	# old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-
-	# # If FSL version is "OLD" (prior to 6.0.1) error out
-	# if [ "${old_or_new_version}" == "OLD" ] ; then
-	# 	log_Err_Abort "FSL version 6.0.1 or greater is required."
-	# fi
-
-	# # Set values for stdEddy (non-GPU-enabled version of eddy binary)
-	# # and gpuEnabledEddy (GPU-enabled version of eddy binary)
-	# stdEddy="${FSLDIR}/bin/eddy_openmp"
-	# log_Msg "stdEddy: ${stdEddy}"
-	# gpuEnabledEddy="${FSLDIR}/bin/eddy"
-	# log_Msg "gpuEnabledEddy: ${gpuEnabledEddy}"
-
-	stdEddy="${g_stdEddy}"
-	gpuEnabledEddy="${g_gpuEnabledEddy}"
+	local stdEddy="${g_stdEddy}"
+	local gpuEnabledEddy="${g_gpuEnabledEddy}"
 	
 	# Determine which eddy executable to use based upon whether 
 	# the user requested use of the GPU-enabled version of eddy
