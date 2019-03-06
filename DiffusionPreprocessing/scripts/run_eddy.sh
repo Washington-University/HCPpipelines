@@ -336,20 +336,28 @@ determine_eddy_tools_for_supported_six_series()
 			# So they need to have used the FSL recommended approach
 			# of having ${FSLDIR}/bin/eddy as a symbolic link to
 			# the appropriate eddy to run (e.g. eddy -> eddy_cuda8.0,
-			# or eddy -> eddy_cuda9.1).
-			# 
-			# If they have an ${FSLDIR}/bin/eddy, then use it. If not,
-			# tell them that we can't figure out what eddy to use.
+			# or eddy -> eddy_cuda9.1) or having ${FSLDIR}/bin/eddy_cuda
+			# as a symbolic link to the appropriate eddy to run.
 			if [ -e ${FSLDIR}/bin/eddy ]; then
+				# They have an ${FSLDIR}/bin/eddy. So use it.
 				g_gpuEnabledEddy="${FSLDIR}/bin/eddy"
+			elif [ -e ${FSLDIR}/bin/eddy_cuda ]; then
+				# They have an ${FSLDIR}/bin/eddy_cuda. So use it. 
+				g_gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
 			else
+				# If they have neither an FSLDIR/bin/eddy or FSLDIR/bin/eddy_cuda,
+				# tell them that we can't figure out what eddy to use.
 				log_Err "Since you have requested the use of GPU-enabled eddy,"
-				log_Err "you must either have ${FSLDIR}/bin/eddy as a symbolic"
-				log_Err "link to the version of eddy_cudaX.Y in ${FSLDIR}/bin"
-				log_Err "that you want to use and is appropriate for the CUDA"
-				log_Err "libraries installed on your system OR you must specify"
-				log_Err "the --cuda-version=X.Y option to this script in order"
-				log_Err "to explicitly force the use of ${FSLDIR}/bin/eddy_cudaX.Y"
+				log_Err "you must either have:"
+				log_Err "1. ${FSLDIR}/bin/eddy as a symbolic link to the version of"
+				log_Err "   eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
+				log_Err "   and is appropriate for the CUDA libraries installed"
+				log_Err "   on your system OR "
+				log_Err "2. ${FSLDIR}/bin/eddy_cuda as a symbolic link to the version"
+				log_Err "   of eddy_cudaX.Y in ${FSLDIR}/bin that you want to use OR"
+				log_Err "3. You must specify the --cuda-version=X.Y option to this "
+				log_Err "   script in order to explicitly force the use of "
+				log_Err "   ${FSLDIR}/bin/eddy_cudaX.Y"
 				log_Err_Abort ""
 			fi
 		fi
