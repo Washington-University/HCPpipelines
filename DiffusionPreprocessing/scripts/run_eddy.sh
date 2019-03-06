@@ -380,13 +380,13 @@ determine_eddy_tools_to_use()
 
 	if [ -f ${fsl_version_file} ]; then
 		fsl_version=$(cat ${fsl_version_file})
-		log_Msg "INFO: Determined that the FSL vrsion in use is ${fsl_version}"
+		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
 	else
 		log_Err_Abort "Cannot tell which version of FSL you are using."
 	fi
 
 	# break FSL version string into components
-	# primary, seconday, and tertiary
+	# primary, secondary, and tertiary
 	# FSL X.Y.Z would have X as primary, Y as secondary, and Z as tertiary versions
 
 	fsl_version_array=(${fsl_version//./ })
