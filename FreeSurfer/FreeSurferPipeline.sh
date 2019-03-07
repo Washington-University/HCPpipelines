@@ -55,6 +55,8 @@ configure_custom_tools()
 		log_Warn "If you intended to use some other version of these tools, please configure"
 		log_Warn "your PATH before invoking this script, such that the tools you intended to"
 		log_Warn "use can be found on the PATH."
+		log_Warn ""
+		log_Warn "PATH set to: ${PATH}"
 	fi	
 }
 
@@ -88,6 +90,48 @@ show_tool_versions()
 	# Show mri_surf2surf version
 	log_Msg "Showing mri_surf2surf version"
 	which mri_surf2surf --version
+}
+
+validate_freesurfer_version()
+{
+	if [ -z "${FREESURFER_HOME}" ]; then
+		log_Err_Abort "FREESURFER_HOME must be set"
+	fi
+	
+	freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
+
+	if [ -f "${freesurfer_version_file}" ]; then
+		freesurfer_version_string=$(cat "${freesurfer_version_file}")
+		log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
+	else
+		log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
+	fi
+
+	# strip out extraneous stuff from FreeSurfer version string
+	freesurfer_version_string_array=(${freesurfer_version_string//-/ })
+	freesurfer_version=${freesurfer_version_string_array[5]}
+	freesurfer_version=${freesurfer_version#v} # strip leading "v"
+
+	log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
+
+	# break FreeSurfer version into components
+	# primary, secondary, and tertiary
+	# version X.Y.Z ==> X primary, Y secondary, Z tertiary
+	freesurfer_version_array=(${freesurfer_version//./ })
+
+	freesurfer_primary_version="${freesurfer_version_array[0]}"
+	freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
+
+	freesurfer_secondary_version="${freesurfer_version_array[1]}"
+	freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
+
+	freesurfer_tertiary_version="${freesurfer_version_array[2]}"
+	freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
+
+	if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
+		# e.g. 4.y.z, 5.y.z
+		log_Err_Abort "FreeSurfer version 6.0.0 or greater is required."
+	fi
 }
 
 # Show usage information
@@ -799,6 +843,9 @@ configure_custom_tools
 
 # Show tool versions
 show_tool_versions
+
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
