@@ -130,7 +130,7 @@ validate_freesurfer_version()
 
 	if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
 		# e.g. 4.y.z, 5.y.z
-		log_Err_Abort "FreeSurfer version 6.0.0 or greater is required."
+		log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
 	fi
 }
 
