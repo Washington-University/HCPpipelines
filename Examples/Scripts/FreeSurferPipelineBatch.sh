@@ -52,8 +52,11 @@ if [ -n "${command_line_specified_subj}" ]; then
 fi
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP), gradunwarp (HCP version 1.0.2)
+#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 6.0.0), gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+# If you want to use FreeSurfer 5.3, change the ${queuing_command} line below to use
+# ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline-v5.3.0-HCP.sh
 
 #Set up pipeline environment variables and software
 source ${EnvironmentScript}
