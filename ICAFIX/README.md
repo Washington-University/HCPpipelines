@@ -42,7 +42,22 @@ in MATLAB. This MATLAB code can be executed in 3 possible modes:
 1. Interpreted Matlab -- probably easiest to use, if it is an option for you
 2. Interpreted Octave -- an alternative to Matlab, although:
 	1. You'll need to configure various helper functions (such as `${HCPPIPEDIR/global/matlab/{ciftiopen.m, ciftisave.m}` and `$FSLDIR/etc/matlab/{read_avw.m, save_avw.m}`) to work within your Octave environment.
-	2. Default builds of Octave are limited in the amount of memory and array dimensions that are supported. Especially in the context of multi-run FIX, you will likely need to build a version of Octave that supports increased memory.
+	2. Default builds of Octave are limited in the amount of memory and array dimensions that are supported. Especially in the context of multi-run FIX, you will likely need to build a version of Octave that supports increased memory, more on this below.
+
+### Building Octave with support for large matrices
+
+Several dependencies of octave also need to be built with nonstandard options to enable large matrices.  Other people have already made build recipes that automate most of this, our slightly altered version of one is here:
+
+https://github.com/coalsont/GNU-Octave-enable-64
+
+You will need to install most of the build dependencies of octave before using it (however, having a default build of libsuitesparse installed can result in a non-working octave executable, one effective solution is to uninstall the libsuitesparse headers):
+
+```bash
+#ubuntu 14.04 recipe
+apt-add-repository ppa:ubuntu-toolchain-r/test
+apt-get update && apt-get build-dep -y --no-install-recommends octave && apt-get install -y --no-install-recommends git cmake libpq-dev gcc-6 gfortran-6 g++-6 zip libosmesa6-dev libsundials-serial-dev bison && apt-get remove -y libsuitesparse-dev && apt-get autoremove -y
+git clone https://github.com/coalsont/GNU-Octave-enable-64.git && cd GNU-Octave-enable-64 && make INSTALL_DIR=/usr/local CC=gcc-6 FC=gfortran-6 CXX=g++-6 && ldconfig
+```
 
 ### Control of Matlab mode within specific scripts
 
