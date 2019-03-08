@@ -71,11 +71,12 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        (e.g. sulc@curvature@corrThickness@thickness)
    [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps 
        (e.g. MyelinMap@SmoothedMyelinMap). No _BC, this will be reapplied.
-   [--multirun-fix-names=<MRFIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
-       will have multi-run ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Requires
-       specifying --multirun-fix-concat-name also.
-   [--multirun-fix-concat-name=<ConcatName>] the name of the concatenated multi-run fix timeseries, only
-       required when using --multirun-fix-names.
+   [--multirun-fix-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+       fMRIName strings that will have multi-run ICA+FIX reapplied to them (could be either rfMRI or
+       tfMRI). Requires specifying --multirun-fix-concat-names also, with same number of concat names as
+       lists of runs in this option.
+   [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
+       timeseries, only required when using --multirun-fix-names.
    [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will 
        have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Previously known as --rfmri-names.
    [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
@@ -113,8 +114,8 @@ get_options()
 	unset p_ConcatRegName
 	unset p_Maps					# @ delimited
 	p_MyelinMaps=NONE				# @ delimited
-	p_mrFIXConcatName=NONE
-	p_mrFIXNames=NONE				# @ delimited
+	p_mrFIXConcatNames=NONE			# @ delimited
+	p_mrFIXNames=NONE				# @ and % delimited, % is top-level and must match number of @s in ConcatNames
 	p_rfMRINames=NONE				# @ delimited
 	p_tfMRINames=NONE				# @ delimited
 	unset p_SmoothingFWHM
@@ -179,8 +180,8 @@ get_options()
 				p_MyelinMaps=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--multirun-fix-concat-name=*)
-				p_mrFIXConcatName=${argument#*=}
+			--multirun-fix-concat-names=*)
+				p_mrFIXConcatNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--multirun-fix-names=*)
@@ -409,7 +410,7 @@ main()
 	local rfMRINames="${10}"
 	local tfMRINames="${11}"
 	local mrFIXNames="${12}"
-	local mrFIXConcatName="${13}"
+	local mrFIXConcatNames="${13}"
 	local SmoothingFWHM="${14}"
 	local HighPass="${15}"
 	local MotionRegression="${16}"
@@ -442,7 +443,7 @@ main()
 	log_Msg "Maps: ${Maps}"
 	log_Msg "MyelinMaps: ${MyelinMaps}"
 	log_Msg "mrFIXNames: ${mrFIXNames}"
-	log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
+	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames}"
 	log_Msg "rfMRINames: ${rfMRINames}"
 	log_Msg "tfMRINames: ${tfMRINames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
@@ -491,16 +492,26 @@ main()
 	if [[ "${mrFIXNames}" == "NONE" ]] ; then
 		mrFIXNames=()
 	else
-		#mrFIXNames=`echo "$mrFIXNames" | sed s/"@"/" "/g`
-		IFS=@ read -a mrFIXNames <<< "${mrFIXNames}"
+		#need a flat list of all the names in order to resample - do this before we destroy the original value of the variable
+		IFS=@% read -a mrFIXNamesAll <<< "${mrFIXNames}"
+		#two-level list, % and @, parse only one stage here
+		IFS=% read -a mrFIXNames <<< "${mrFIXNames}"
 	fi
 	log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[@]}"
 	
-	if [[ "$mrFIXConcatName" == "NONE" ]]
+	if [[ "$mrFIXConcatNames" == "NONE" ]]
 	then
-		mrFIXConcatName=""
+		mrFIXConcatNames=()
+	else
+		IFS=@ read -a mrFIXConcatNames <<< "$mrFIXConcatNames"
 	fi
-
+	log_Msg "After delimiter substitution, mrFIXConcatNames: ${mrFIXConcatNames[@]}"
+	
+	if (( ${#mrFIXNames[@]} != ${#mrFIXConcatNames[@]} ))
+	then
+		log_Err_Abort "number of MR FIX concat names and run groups are different"
+	fi
+	
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
 	log_Msg "CorrectionSigma: ${CorrectionSigma}"
 
@@ -827,7 +838,7 @@ main()
 
 	# Resample (and resmooth) TS from Native 
 	log_Msg "Resample (and resmooth) TS from Native"
-	for fMRIName in "${rfMRINames[@]}" "${tfMRINames[@]}" "${mrFIXNames[@]}" ; do
+	for fMRIName in "${rfMRINames[@]}" "${tfMRINames[@]}" "${mrFIXNamesAll[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
 		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
 		for Hemisphere in L R ; do
@@ -861,17 +872,16 @@ main()
 	
 	# reapply multirun fix
 	
-	if [[ "${mrFIXConcatName}" != "" ]]
-	then
+	for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
+	do
 	    log_Msg "ReApply MultiRun FIX Cleanup"
-	    log_Msg "mrFIXNames: ${mrFIXNames[@]}"
-	    log_Msg "mrFIXConcatName: ${mrFIXConcatName}"
-	    #reconstruct the @-delimited list
-	    OIFS="$IFS"; IFS=@ filesat="${mrFIXNames[*]}" IFS="$OIFS"
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${filesat}" --concat-fmri-name="${mrFIXConcatName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	    log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
+	    log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
+	    #stage 2 parsing is done by reapply script
+	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
-    fi
+    done
 
 	log_Msg "Completing main functionality"
 }
@@ -913,7 +923,7 @@ if [[ ${1} == --* ]]; then
 
 	# Invoke main functionality use positional parameters
 	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_mrFIXNames}" "${p_mrFIXConcatName}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
 	
 else
 	# Positional parameters are used
