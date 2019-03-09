@@ -351,14 +351,6 @@ main()
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
 
-	export FSL_FIX_WBC="${Caret7_Command}"
-	# WARNING: FSL_FIXDIR/settings.sh doesn't currently check whether FSL_FIX_WBC is already defined.
-	# Thus, when that settings.sh file gets sourced as part of the invocation of the intepreted matlab
-	# and octave modes (below), there is a possibility that the version of wb_command used within
-	# interpreted matlab/octave may not be the same.
-	# (It all depends on how the user has set up their FSL_FIXDIR/settings.sh file).
-	# Therefore, it is likely that the value of FSL_FIX_WBC as set above is only relevant for compiled matlab mode.
-
 	# Some defaults
 	local aggressive=0
 	local hp=${HighPass}
@@ -425,6 +417,15 @@ main()
 	# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
 	# could be worked around).
 
+	export FSL_FIX_WBC="${Caret7_Command}"
+	# WARNING: fix_3_clean uses the environment variable FSL_FIX_WBC, but most previous
+	# versions of FSL_FIXDIR/settings.sh (v1.067 and earlier) have a hard-coded value for
+	# FSL_FIX_WBC, and don't check whether it is already defined in the environment.
+	# Thus, when settings.sh file gets sourced, there is a possibility that the version of
+	# wb_command is no longer the same as that specified by ${Caret7_Command}.  So, after
+	# sourcing settings.sh below, we explicitly set FSL_FIX_WBC back to value of ${Caret7_Command}.
+	# (This may only be relevant for interpreted matlab/octave modes).
+
 	log_Msg "Running fix_3_clean"
 
 	case ${MatlabRunMode} in
@@ -448,13 +449,11 @@ main()
 			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
 			if [ -z "${FSL_FIX_MCR}" ]; then
 				source ${FSL_FIXDIR}/settings.sh
+				export FSL_FIX_WBC="${Caret7_Command}"
 				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
 				if [ -z "${FSL_FIX_MCR}" ]; then
 					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
 				fi
-				# Many versions of ${FSL_FIXDIR}/settings.sh have a hard-coded value for FSL_FIX_WBC, so restore to the value set
-				# earlier in this script
-				export FSL_FIX_WBC="${Caret7_Command}"
 			fi
 			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
 
@@ -489,7 +488,7 @@ main()
 			# Use bash redirection ("here-document") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+			(source "${FSL_FIXDIR}/settings.sh"; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
 # Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
 ${matlab_cmd}
 M_PROG
