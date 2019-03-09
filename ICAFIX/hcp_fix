@@ -77,19 +77,28 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 #  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FSL_FIXDIR
 
 log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
                # Set to empty string to disable debugging related output
 
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-log_Check_Env_Var FSL_FIXDIR
-
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
 . ${FSL_FIXDIR}/settings.sh
+
+# Show HCP pipelines version
+log_Msg "Showing HCP Pipelines version"
+cat ${HCPPIPEDIR}/version.txt
+
+# Show FSL version
+log_Msg "Showing FSL version"
+fsl_version_get fsl_ver
+log_Msg "FSL version: ${fsl_ver}"
 
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
