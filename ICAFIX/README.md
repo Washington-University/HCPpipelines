@@ -49,7 +49,9 @@ in MATLAB. This MATLAB code can be executed in 3 possible modes:
 #### hcp_fix and hcp_fix_multi_run
 
 The Matlab mode is controlled by the `FSL_FIX_MATLAB_MODE` environment variable within the
-`${FSL_FIXDIR}/settings.sh` file.
+`${FSL_FIXDIR}/settings.sh` file. 
+[Note: If the `${FSL_FIXDIR}/settings.sh` file is set up appropriately (i.e., FIX v1.068 or later), 
+it should respect the value of `FSL_FIX_MATLAB_MODE` in your current environment].
 
 #### ReApplyFixPipeline, ReApplyFixMultiRunPipeline, and PostFix
 
@@ -64,42 +66,35 @@ Does not use any Matlab code.
 
 If your cluster compute environment doesn't support the use of interpreted
 MATLAB, your options are either to use compiled MATLAB or Octave.
-Unfortunately, due to different development paths, the availability
-and setup of compiled MATLAB differs across the different scripts in this
-directory. We hope to be able to harmonize this in the future.
+Unfortunately, due to different development paths, the setup of compiled
+MATLAB differs across the different scripts in this directory. We hope to be
+able to harmonize this in the future.
 
-#### hcp_fix
+#### hcp_fix, ReApplyFixPipeline
 
-The `FSL_FIX_MCRROOT` environment variable in the `${FSL_FIXDIR}/settings.sh` file must be
-set to the "root" of the directory containing the "MATLAB Compiler Runtime"
-(MCR) version for the MATLAB release under which the FIX distribution was
-compiled (which is 'R2014a' as of FIX version 1.067).
+The `FSL_FIX_MCRROOT` environment variable in the `${FSL_FIXDIR}/settings.sh`
+file must be set to the "root" of the directory containing the "MATLAB
+Compiler Runtime" (MCR) version for the MATLAB release under which the FIX
+distribution was compiled (which is 'R2014a' as of FIX version 1.068).
 [Note that the `${FSL_FIXDIR}/settings.sh` file automatically determines the MCR version number (i.e., 'v83')].
 
-#### hcp_fix_multi_run
+#### hcp_fix_multi_run, ReApplyFixMultiRunPipeline
 
-Compiled Matlab mode not currently supported.
+* First, `${FSL_FIXDIR}/settings.sh` must be set up correctly.
+* Second, because some MATLAB functions (that are part of the HCPpipelines, rather
+than the FIX distribution) were compiled under a different version of the MCR,
+the `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
+directory containing the 'R2016b/v91' MCR.
 
-#### ReApplyFixPipeline, ReApplyFixMultiRunPipeline
+i.e.,
 
-The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
-directory containing the "MATLAB Compiler Runtime" (MCR) version for the
-compiled binaries supplied as part of the FIX distribution (i.e.,
-'R2014a/v83', as of FIX version 1.067).
-
-For example,
-
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2014a/v83
+	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
 
 #### PostFix
 
-The `prepareICAs` MATLAB function that is used by PostFix was compiled under a
-different version of the MCR. Specifically, the `MATLAB_COMPILER_RUNTIME`
-environment variable must be set to the directory containing the 'R2016b/v91' MCR.
-
-For example,
-
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
+The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
+directory containing the 'R2016b/v91' MCR (i.e., same as with
+`hcp_fix_multi_run` and `ReApplyFixMultiRunPipeline`.
 
 
 # Supplemental instructions for installing FIX

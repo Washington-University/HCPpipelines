@@ -203,11 +203,6 @@ get_options()
 		case ${p_MatlabRunMode} in
 			0)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use compiled MATLAB"
-				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-				else
-					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-				fi
 				;;
 			1)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
@@ -448,7 +443,22 @@ main()
 				matlab_function_arguments+=("${DoVol}")
 			fi
 			
-			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+			# fix_3_clean is part of the FIX distribution.
+			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
+			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
+			if [ -z "${FSL_FIX_MCR}" ]; then
+				source ${FSL_FIXDIR}/settings.sh
+				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
+				if [ -z "${FSL_FIX_MCR}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+				fi
+				# Many versions of ${FSL_FIXDIR}/settings.sh have a hard-coded value for FSL_FIX_WBC, so restore to the value set
+				# earlier in this script
+				export FSL_FIX_WBC="${Caret7_Command}"
+			fi
+			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
+
+			local matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file

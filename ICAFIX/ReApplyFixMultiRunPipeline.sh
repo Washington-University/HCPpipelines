@@ -610,16 +610,14 @@ main()
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
+				local matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh"
 
-				# MPH: Current version of fix (fix1.067) does not have a compiled version of run_functionhighpassandvariancenormalize
-				log_Err_Abort "MATLAB run mode of ${MatlabRunMode} not currently supported"
-
-				# Following code, with appropriate setting of matlab_exe, should work if/when a compiled version is created
 				# Do NOT enclose string variables inside an additional single quote because all
 				# variables are already passed into the compiled binary as strings
-				local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh"
 				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${FSL_FIX_WBC}" "${RegString}")
 
+				# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 				local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 				# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -638,7 +636,7 @@ main()
 					local interpreter=(octave-cli -q --no-window-system)
 				fi
 				
-				# MPH: ${hp} needs to be passed in as a string, to handle the hp=pd* case
+				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
 				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
@@ -813,7 +811,7 @@ M_PROG
 		
 		0)
 			# Use Compiled Matlab
-			
+
 			local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
 
 			# Do NOT enclose string variables inside an additional single quote because all
@@ -823,7 +821,22 @@ M_PROG
 				matlab_function_arguments+=("${DoVol}")
 			fi
 			
-			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+			# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
+			# If ${FSL_FIX_MCR} is already defined in the environment, use that.
+			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
+			if [ -z "${FSL_FIX_MCR}" ]; then
+				source ${FSL_FIXDIR}/settings.sh
+				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
+				if [ -z "${FSL_FIX_MCR}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+				fi
+				# Many versions of ${FSL_FIXDIR}/settings.sh have a hard-coded value for FSL_FIX_WBC, so restore to the value set
+				# earlier in this script
+				export FSL_FIX_WBC="${Caret7_Command}"
+			fi
+			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
+							
+			local matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
