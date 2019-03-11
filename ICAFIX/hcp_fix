@@ -250,22 +250,6 @@ else
   log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 fi 
 
-## MPH: Not clear to me why we need to invoke functionmotionconfounds to "pre-create" the
-## mc/prefiltered_func_data_mcf_conf_hp file when fix_3_clean calls functionmotionconfounds itself,
-## and the file could therefore get created instead as part of the fix_3_clean stage.
-## MPH: Note that we need to use the -f form of call_matlab.sh, since the -r and -m forms do not support
-## the use of compiled matlab. But the -f form doesn't include a semicolon at the end of invoking the
-## function (as of fix1.067), and thus the call ends up returning the entire contents of the 'confounds' matrix.
-## Thus, to avoid cluttering the stdout with the listing of the 'confounds' matrix, we are going to 
-## continue capturing this output in its own specific log file
-
-#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
-matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds ${tr} ${hp}"
-log_Msg "Run MATLAB/Octave with command..."
-log_Msg "${matlab_cmd}"
-log_Msg "Check ${fmrihp}.ica/.fix.functionmotionconfounds.log for log output from functionmotionconfounds"
-${matlab_cmd}
-
 mkdir -p reg
 cd reg
 
