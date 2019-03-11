@@ -756,56 +756,64 @@ main()
 
 	popd
 
-	# ----------------------------------------------------------------------
-	log_Msg "Creating white surface files in rawavg space"
-	# ----------------------------------------------------------------------
+export SUBJECTS_DIR="$SubjectDIR"
 
-	# Note: The orig-to-rawavg.lta file was created back in the previous
-	#       step when we are making the T2w to T1w registration available
-	#       in FSL format.
-	# These white.deformed surfaces get used in fMRIVolume and DiffusionPreprocessing
+reg=$mridir/transforms/hires21mm.dat
+tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 
-	pushd ${mridir}
+mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg ${mridir}/rawavg.mgz --tval-xyz --tval white.deformed --surfreg white --hemi lh
+mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg ${mridir}/rawavg.mgz --tval-xyz --tval white.deformed --surfreg white --hemi rh
 
-	mri_surf2surf_cmd="mri_surf2surf"
-	mri_surf2surf_cmd+=" --s ${SubjectID}"
-	mri_surf2surf_cmd+=" --sval-xyz white"
-	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
-	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
-	mri_surf2surf_cmd+=" --tval white.deformed"
-	mri_surf2surf_cmd+=" --surfreg white"
-	mri_surf2surf_cmd+=" --hemi lh"
-	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
+#	# ----------------------------------------------------------------------
+#	log_Msg "Creating white surface files in rawavg space"
+#	# ----------------------------------------------------------------------
+#
+#	# Note: The orig-to-rawavg.lta file was created back in the previous
+#	#       step when we are making the T2w to T1w registration available
+#	#       in FSL format.
+#	# These white.deformed surfaces get used in fMRIVolume and DiffusionPreprocessing
 
-	log_Msg "......The following produces the white left hemisphere surface in rawavg space"
-	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
+#	pushd ${mridir}
 
-	${mri_surf2surf_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
-	fi
+#	mri_surf2surf_cmd="mri_surf2surf"
+#	mri_surf2surf_cmd+=" --s ${SubjectID}"
+#	mri_surf2surf_cmd+=" --sval-xyz white"
+#	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
+#	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
+#	mri_surf2surf_cmd+=" --tval white.deformed"
+#	mri_surf2surf_cmd+=" --surfreg white"
+#	mri_surf2surf_cmd+=" --hemi lh"
+#	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
 
-	mri_surf2surf_cmd="mri_surf2surf"
-	mri_surf2surf_cmd+=" --s ${SubjectID}"
-	mri_surf2surf_cmd+=" --sval-xyz white"
-	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
-	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
-	mri_surf2surf_cmd+=" --tval white.deformed"
-	mri_surf2surf_cmd+=" --surfreg white"
-	mri_surf2surf_cmd+=" --hemi rh"
-	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
+#	log_Msg "......The following produces the white left hemisphere surface in rawavg space"
+#	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
 
-	log_Msg "......The following produces the white right hemisphere surface in rawavg space"
-	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
-
-	${mri_surf2surf_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
-	fi
-
-	popd
+#	${mri_surf2surf_cmd}
+#	return_code=$?
+#	if [ "${return_code}" != "0" ]; then
+#		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
+#	fi
+#
+#	mri_surf2surf_cmd="mri_surf2surf"
+#	mri_surf2surf_cmd+=" --s ${SubjectID}"
+#	mri_surf2surf_cmd+=" --sval-xyz white"
+#	mri_surf2surf_cmd+=" --reg transforms/orig-to-rawavg.lta"
+#	mri_surf2surf_cmd+=" --tval-xyz rawavg.mgz"
+#	mri_surf2surf_cmd+=" --tval white.deformed"
+#	mri_surf2surf_cmd+=" --surfreg white"
+#	mri_surf2surf_cmd+=" --hemi rh"
+#	mri_surf2surf_cmd+=" --sd ${SubjectDIR}"
+#
+#	log_Msg "......The following produces the white right hemisphere surface in rawavg space"
+#	log_Msg "......mri_surf2surf_cmd: ${mri_surf2surf_cmd}"
+#
+#	${mri_surf2surf_cmd}
+#	return_code=$?
+#	if [ "${return_code}" != "0" ]; then
+#		log_Err_Abort "mri_surf2surf command failed with return_code: ${return_code}"
+#	fi
+#
+#	popd
 
 	# ----------------------------------------------------------------------
 	log_Msg "Generating QC file"
