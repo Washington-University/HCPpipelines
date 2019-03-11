@@ -79,7 +79,9 @@ FSL_FIX_MLFILE="\<"
 #FSL_FIX_OCTAVE=/opt/local/bin/octave
 # Disable Octave mode
 #FSL_FIX_OCTAVE=
-FSL_FIX_OCTAVE=$(command -v octave-cli)
+if [ -x "$(command -v octave-cli)" ]; then
+	FSL_FIX_OCTAVE=$(command -v octave-cli)
+fi
 
 # Set this to the Octave start-up options. Typically you will need to
 # disable display output; while '--traditional' is supposed to "feel" more
@@ -107,6 +109,10 @@ fi
 #   2 - Use Octave script version
 if [ -z "${FSL_FIX_MATLAB_MODE}" ]; then
     FSL_FIX_MATLAB_MODE=0
+fi
+if [[ ${FSL_FIX_MATLAB_MODE} = 2 && -z ${FSL_FIX_OCTAVE} ]]; then
+    echo "ERROR in $0: Can't find Octave command"
+    exit 1
 fi
 
 # Set this to CIFTI Matlab Reader/Writer for use within HCP pipelines
