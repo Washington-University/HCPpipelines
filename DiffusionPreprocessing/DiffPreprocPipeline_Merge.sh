@@ -29,14 +29,14 @@
 #
 # ## Description
 #
-# This script, <code>DiffPreprocPipeline_Eddy.sh</code>, implements the second
-# part of the Preprocessing Pipeline for diffusion MRI describe in
-# [Glasser et al. 2013][GlasserEtAl]. The entire Preprocessing Pipeline for
-# diffusion MRI is split into pre-eddy, eddy, and post-eddy scripts so that
-# the running of eddy processing can be submitted to a cluster scheduler to
-# take advantage of running on a set of GPUs without forcing the entire diffusion
-# preprocessing to occur on a GPU enabled system.  This particular script
-# implements the eddy part of the diffusion preprocessing.
+# This script, <code>DiffPreprocPipeline_Merge.sh</code>, merges the output
+# of the Preprocessing Pipeline for diffusion MRI as described in
+# [Glasser et al. 2013][GlasserEtAl]. This script will usually
+# not be called as part of the diffusion preprocessing pipeline. However,
+# if the scanner reshimmed between the acquisition of different parts of
+# the diffusion MRI data, it can be advantageous to run the pipeline on
+# each shim group separately.
+# This script merges the output for each shim group in a single dataset.
 #
 # ## Prerequisite Installed Software for the entire Diffusion Preprocessing Pipeline
 #
@@ -50,7 +50,7 @@
 #
 # ## Prerequisite Environment Variables
 #
-# See output of usage function: e.g. <code>$ ./DiffPreprocPipeline_Eddy.sh --help</code>
+# See output of usage function: e.g. <code>$ ./DiffPreprocPipeline_Merge.sh --help</code>
 #
 # <!-- References -->
 #

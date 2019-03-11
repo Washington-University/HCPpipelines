@@ -30,11 +30,14 @@
 # 
 # ## Description 
 #
-# This script, <code>DiffPreprocPipeline.sh</code>, implements the Diffusion 
-# MRI Preprocessing Pipeline described in [Glasser et al. 2013][GlasserEtAl]. 
-# It generates the "data" directory that can be used as input to the fibre 
-# orientation estimation scripts.
-#  
+# This script, <code>DiffPreprocPipeline_Split.sh</code>, implements the Diffusion
+# MRI Preprocessing Pipeline described in [Glasser et al. 2013][GlasserEtAl] for the
+# specific case where the scanner reshimmed between the acquisitions of different parts
+# of the diffusion MRI dataset. If all diffusion MRI data was acquired with the same shim,
+# use <code>DiffPreprocPipeline.sh</code> instead. This script runs the diffusion
+# preprocessing pipeline for each shim group independently and then merges the results
+# using <code>DiffPreprocPipeline_Merge.sh</code>.
+#
 # ## Prerequisite Installed Software
 # 
 # * [FSL][FSL] - FMRIB's Software Library (version 6.0.1)
@@ -48,7 +51,7 @@
 # ## Prerequisite Environment Variables
 # 
 # See output of usage function: 
-# e.g. <code>$ ./DiffPreprocPipeline.sh --help</code>
+# e.g. <code>$ ./DiffPreprocPipeline_Split.sh --help</code>
 # 
 # ## Output Directories
 # 
@@ -62,19 +65,23 @@
 # * <code>${Subject}</code> is an input parameter
 # 
 # Main output directories
-# 
-# * <code>DiffFolder=${StudyFolder}/${Subject}/Diffusion</code>
+#
+# For each shim group:
+# * <code>ShimDiffFolder=${StudyFolder}/${Subject}/Diffusion_${ShimGroup}</code>
+# * <code>ShimT1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion_${ShimGroup}</code>
+# For the final merged dataset:
 # * <code>T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion</code>
-# 
+#
 # All outputs are within the directory: <code>${StudyFolder}/${Subject}</code>
 # 
 # The full list of output directories are the following
 # 
-# * <code>$DiffFolder/rawdata</code>
-# * <code>$DiffFolder/topup</code>
-# * <code>$DiffFolder/eddy</code>
-# * <code>$DiffFolder/data</code>
-# * <code>$DiffFolder/reg</code>
+# * <code>$ShimDiffFolder/rawdata</code>
+# * <code>$ShimDiffFolder/topup</code>
+# * <code>$ShimDiffFolder/eddy</code>
+# * <code>$ShimDiffFolder/data</code>
+# * <code>$ShimDiffFolder/reg</code>
+# * <code>$ShimT1wDiffFolder</code>
 # * <code>$T1wDiffFolder</code>
 # 
 # Also assumes that T1 preprocessing has been carried out with results in 
@@ -179,11 +186,18 @@ EOF
 #  Get the command line options for this script
 #
 # Global Output Variables
+#  ${StudyFolder}         Path to subject's data folder
+#  ${Subject}             Subject ID
 #  ${PosInputImages}	  @ symbol separated list of data with 'positive' phase
 #                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
+#  ${PosShimLabels}	      @ symbol separated list of the shim group of data with
+#                         'positive' phase encoding direction
+#  ${NegInputImages}      @ symbol separated list of data with 'negative' phase
 #                         encoding direction
+#  ${NegShimLabels}	      @ symbol separated list of the shim group of data with
+#                         'negative' phase encoding direction
 #  ${DWIName}             Basename to give DWI output directories
+#  ${PassOnArguments}     Any arguments to be passed on to the DiffPreprocPipeline.sh script
 #
 set -e
 
@@ -348,8 +362,9 @@ main()
 	log_SetToolName "${SCRIPT_NAME}"
 
 
+    # Runs the diffusion preprocessing pipeline for each shim group independently
     input_dwinames=""
-    while read -r line ; do
+    while read -r line ; do  # reads the stdout from split_shimgroups.py, which produces one line per shim group
         ShimLabel=$(echo ${line} | cut -f1 -d" ")
         ShimPosInputImages=$(echo ${line} | cut -f2 -d" ")
         ShimNegInputImages=$(echo ${line} | cut -f3 -d" ")
@@ -372,6 +387,7 @@ main()
     # get rid of the leading @
     input_dwinames=${input_dwinames:1}
 
+    # merges the result from each shim group
     merge_cmd="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Merge.sh "
     merge_cmd+=" --path=${StudyFolder} "
     merge_cmd+=" --subject=${Subject} "
