@@ -17,12 +17,12 @@ export FSL_DIR="${FSLDIR}"
 #source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
-export HCPPIPEDIR=/media/myelin/brainmappers/Connectome_Project/Pipelines
-export CARET7DIR=/home/brainmappers/workbench
-export MSMBINDIR=${HOME}/pipeline_tools/MSM-2015.01.14
+export HCPPIPEDIR=/home/somebody/Pipelines
+export CARET7DIR=/usr/local/workbench
+export MSMBINDIR=${HOME}/pipeline_tools/MSM
 export MSMCONFIGDIR=${HCPPIPEDIR}/MSMConfig
-export MATLAB_COMPILER_RUNTIME=/media/myelin/brainmappers/HardDrives/1TB/MATLAB_Runtime/v901
-export FSL_FIXDIR=/media/myelin/aahana/fix1.06
+export MATLAB_COMPILER_RUNTIME=/usr/local/MATLAB_Runtime/v901
+export FSL_FIXDIR=/usr/local/fix1.067
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
