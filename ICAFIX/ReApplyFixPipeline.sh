@@ -260,7 +260,11 @@ have_hand_reclassification()
 	local fMRIName="${3}"
 	local HighPass="${4}"
 
-	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+	if (( HighPass >= 0 )); then
+		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+	else
+		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
+	fi
 }
 
 # ------------------------------------------------------------------------------
@@ -356,6 +360,12 @@ main()
 	local hp=${HighPass}
 	local DoVol=0
 	local fixlist=".fix"
+
+	if (( hp >= 0 )); then
+		hpStr="_hp${hp}"
+	else
+		hpStr=""
+	fi
 	
 	# fMRIName is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 	# (although if someone includes the hp string as part fMRIName itself, the script will still break)
@@ -381,7 +391,7 @@ main()
 	log_Msg "Use fixlist=$fixlist"
 
 	DIR=$(pwd)
-	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${hp}.ica
+	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica
 
 	if [ -f ../${fMRIName}_Atlas${RegString}.dtseries.nii ] ; then
 		log_Msg "FOUND FILE: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
@@ -511,10 +521,14 @@ M_PROG
 	# in the renaming that follows, but this ensures that any old versions don't linger)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
 	local fmri=${fMRIName}
-	local fmrihp=${fMRIName}_hp${hp}
+	if (( hp >= 0 )); then
+		local fmrihp=${fmri}_hp${hp}
+	else
+		local fmrihp=${fmri}
+	fi
 	
-	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
+	/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
 
 	if (( DoVol )); then
 	    $FSLDIR/bin/imrm ${fmrihp}_clean
@@ -525,12 +539,12 @@ M_PROG
 	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 	# So check whether those files exist before moving/renaming them
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-	    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
 	else
 	    log_Err_Abort "Something went wrong; ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 	fi
 	if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-	    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
 	fi
 
 	if (( DoVol )); then
@@ -544,7 +558,7 @@ M_PROG
 	fi
 	log_Msg "Done renaming files"
 
-        # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+    # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 	
 	cd ${DIR}
