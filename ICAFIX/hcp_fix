@@ -147,7 +147,7 @@ log_Msg "tr: ${tr}"
 log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 fmrihp=${fmri}_hp${hp}
-if (( hp > 0 )) ; then
+if (( hp > 0 )); then
   log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
@@ -348,12 +348,18 @@ log_Msg "Done running FIX"
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
+if (( hp >= 0 )); then
+	hpStr="_hp${hp}"
+else
+	hpStr=""
+fi
+
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
 if [ "$?" -ne "0" ]; then
     log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
 fi
 if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas_hp${hp}_clean.dtseries.nii
+    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${hpStr}_clean.dtseries.nii
 else
     log_Err_Abort "Something went wrong;  ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
@@ -364,7 +370,7 @@ if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ] ; then
     $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 fi
 if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
+    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${hpStr}_clean_vn.dscalar.nii
 fi
 log_Msg "Done renaming files"
 
