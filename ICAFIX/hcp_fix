@@ -146,14 +146,25 @@ tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 log_Msg "tr: ${tr}"
 log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
+fmrihp=${fmri}_hp${hp}
 if (( hp > 0 )) ; then
   log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
-  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -bptf ${hptr} -1 ${fmri}_hp${hp}"
+
+  # Starting with FSL 5.0.7, 'fslmaths -bptf' no longer includes the temporal mean in its output.
+  # A work-around to this, which works with both the pre- and post-5.0.7 behavior is to compute
+  # the temporal mean, remove it, run -bptf, and then add the mean back in.
+  ${FSLDIR}/bin/fslmaths ${fmri} -Tmean ${fmrihp}
+  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -sub ${fmrihp} -bptf ${hptr} -1 -add ${fmrihp} ${fmrihp}"
   log_Msg "highpass_cmd: ${highpass_cmd}"
   ${highpass_cmd}
-  fmrihp=${fmri}_hp${hp}
+elif (( hp == 0 )); then
+  # Nothing in script currently detrends the volume if hp=0 is requested (which is the intended meaning of hp=0)
+  log_Err_Abort "hp = ${hp} not currently supported"
+else
+  # Reset $fmrihp variable in this case to not include an "_hp${hp}" string in the outputs
+  fmrihp=${fmri}
 fi
 
 mkdir -p ${fmrihp}.ica
