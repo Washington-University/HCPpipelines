@@ -761,8 +761,8 @@ export SUBJECTS_DIR="$SubjectDIR"
 reg=$mridir/transforms/hires21mm.dat
 tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 
-mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg ${mridir}/rawavg.mgz --tval-xyz --tval white.deformed --surfreg white --hemi lh
-mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg ${mridir}/rawavg.mgz --tval-xyz --tval white.deformed --surfreg white --hemi rh
+mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
+mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi rh
 
 #	# ----------------------------------------------------------------------
 #	log_Msg "Creating white surface files in rawavg space"
