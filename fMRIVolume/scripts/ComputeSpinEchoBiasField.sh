@@ -47,14 +47,14 @@ Upper=`echo "${Median}+${STDev}/3" | bc -l`
 echo "Median=${Median}, STDev=${STDev}, Lower=${Lower}, Upper=${Upper}"
 fslmaths ${WD}/SEdivGRE_brain.nii.gz -thr ${Lower} -uthr ${Upper} ${WD}/SEdivGRE_brain_thr.nii.gz
 
-fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -ero -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM ${WD}/pseudo_transmit_raw.nii.gz
+fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -ero -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM ${WD}/${fMRIName}_pseudo_transmit_raw.nii.gz
 
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -bin ${WD}/SEdivGRE_brain_thr_roi.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -s 5 ${WD}/SEdivGRE_brain_thr_s5.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr_roi.nii.gz -s 5 ${WD}/SEdivGRE_brain_thr_roi_s5.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr_s5.nii.gz -div ${WD}/SEdivGRE_brain_thr_roi_s5.nii.gz -mas ${T1wFolder}/brainmask_fs.nii.gz ${WD}/SEdivGRE_brain_bias.nii.gz
 
-${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_bias.nii.gz -dilM -dilM ${WD}/pseudo_transmit_field.nii.gz
+${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_bias.nii.gz -dilM -dilM ${WD}/${fMRIName}_pseudo_transmit_field.nii.gz
 
 ${FSLDIR}/bin/fslmaths ${WD}/SpinEchoMean.nii.gz -mas ${T1wFolder}/brainmask_fs.nii.gz -div ${WD}/SEdivGRE_brain_bias.nii.gz ${WD}/SpinEchoMean_brain_BC.nii.gz
 
