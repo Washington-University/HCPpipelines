@@ -193,7 +193,7 @@ main() {
         	    exit 1
         	fi
 
-		    for ((i = 1; i < ${#concatarray[@]}; ++i))
+		    for ((i = 0; i < ${#concatarray[@]}; ++i))
 		    do
 		        ConcatName="${concatarray[$i]}"
 		        fMRINamesGroup="${fmriarray[$i]}"
