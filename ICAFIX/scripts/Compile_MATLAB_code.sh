@@ -50,6 +50,7 @@ compile_prepareICAs()
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
 				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
