@@ -193,7 +193,6 @@ main() {
         	    exit 1
         	fi
 
-		    i=1
 		    for ((i = 1; i < ${#concatarray[@]}; ++i))
 		    do
 		        ConcatName="${concatarray[$i]}"
@@ -216,7 +215,6 @@ main() {
 			    cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${ConcatFileName} ${domot} "${TrainingData}" ${FixThreshold})
 			    echo "About to run: ${cmd[*]}"
 			    "${cmd[@]}"
-			    ((++i))
 			done
 
 		fi
