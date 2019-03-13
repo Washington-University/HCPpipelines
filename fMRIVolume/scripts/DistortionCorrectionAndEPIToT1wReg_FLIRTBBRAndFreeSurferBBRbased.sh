@@ -587,11 +587,12 @@ then
             #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SubjectFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
         
-        #copy bias field and dropouts, etc to results dir
+        #copy recieve field, pseudo transmit field, and dropouts, etc to results dir
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_dropouts"
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
-        
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_raw" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_raw"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field" "$SubjectFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_field"
     else
         #don't need to do anything more with scout, it is 1-step resampled and bias correction, jacobians reapplied
         Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc"
