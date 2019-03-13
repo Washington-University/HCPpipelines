@@ -119,5 +119,6 @@ ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/t
 ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
+${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
 
 echo " END: DiffusionToStructural"
