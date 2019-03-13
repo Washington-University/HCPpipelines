@@ -211,11 +211,15 @@ get_options()
 				;;
 			1 | 2)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
+				# ${MATLAB_GIFTI_LIB} should contain the cifti{open,save,savereset}.m functions AND
+				# the definition of the gifti class (i.e., the '@gifti' directory (or a symlink to it)
+				# from the GIfTI library (https://www.artefact.tk/software/matlab/gifti)
+				# If not defined in the environment, we'll use what is provided within the HCPpipelines
 				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
-				else
-					log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
+					MATLAB_GIFTI_LIB=${HCPPIPEDIR}/global/matlab
+					#log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
 				fi
+				log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
 				;;
 			*)
 				log_Err_Abort "MATLAB Run Mode value must be 0, 1 or 2"
@@ -309,10 +313,32 @@ main()
 	log_Msg "ReuseHighPass: ${ReuseHighPass}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 
-	# Polynomial detrending is not supported in prepareICAs.m currently
+	# NOTE: HighPass flag may be "pd*", if polynomial detrending was requested in 
+	# hcp_fix_multi_run (not supported in hcp_fix currently)
+
+    # Polynomial detrending is not supported in prepareICAs.m currently
 	# Must use an already existing hp'ed time-series in that case
 	if [[ "${HighPass}" == pd* && "${ReuseHighPass}" != "YES" ]]; then
 		log_Err_Abort "If using polynomial detrending, must use an already existing high-passed time-series (i.e., --reuse-high-pass must be set to YES)"
+	fi
+
+	if [[ "${HighPass}" == pd* ]]; then
+		hpNum=${HighPass:2}
+	else
+		hpNum=${HighPass}
+	fi
+
+	# Confirm that $hpNum is a valid numeric
+	if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
+		log_Err_Abort "Invalid value for --high-pass (${HighPass})"
+	fi
+
+	# If HighPass < 0, then no high-pass was applied and directories/filenames
+    # will not include an "_hp" string
+	if (( hpNum < 0 )); then
+		hpStr=""
+	else
+		hpStr="_hp${HighPass}"
 	fi
 
 	# Naming Conventions and other variables
@@ -322,10 +348,10 @@ main()
 	local ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
-	local ICAFolder="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica"
+	local ICAFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica/filtered_func_data.ica"
 	log_Msg "ICAFolder: ${ICAFolder}"
 
-	local FIXFolder="${ResultsFolder}/${fMRIName}_hp${HighPass}.ica"
+	local FIXFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 
 	log_Msg "Creating ${ICAFolder}/ICAVolumeSpace.txt file"
@@ -337,13 +363,14 @@ main()
 
 	${CARET7DIR}/wb_command -volume-label-import ${ICAFolder}/mask.nii.gz ${ICAFolder}/ICAVolumeSpace.txt ${ICAFolder}/mask.nii.gz
 
-	log_Msg "Creating dense timeseries"
+	log_Msg "Creating dense timeseries from melodic volume maps"
 	${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ICAFolder}/melodic_oIC_vol.dtseries.nii -volume ${ICAFolder}/melodic_oIC.nii.gz ${ICAFolder}/mask.nii.gz -timestep 1 -timestart 1
 
+	## Prep variables for prepareICAs
 	log_Msg "Set up for prepareICAs MATLAB code"
 	local HighPassUse
 	if [ ${ReuseHighPass} = "YES" ] ; then
-		dtseriesName="${ResultsFolder}/${fMRIName}_Atlas_hp${HighPass}" #No Extension Here
+		dtseriesName="${ResultsFolder}/${fMRIName}_Atlas${hpStr}" #No Extension Here
 		log_Msg "dtseriesName: ${dtseriesName}"
 		HighPassUse="-1"
 	else
@@ -352,37 +379,33 @@ main()
 		HighPassUse="${HighPass}"
 	fi
 
-	# Make sure that $HighPassUse is a valid numeric at this point
+	# Confirm that $HighPassUse is a valid numeric at this point
 	if ! [[ "${HighPassUse}" =~ ^[-]?[0-9]+$ ]]; then
-		log_Msg "Invalid value for --high-pass"
-		exit 1
+		log_Err_Abort "Invalid value for --high-pass (${HighPass})"
 	fi
 	
-	local ICAs="${ICAFolder}/melodic_mix"
+	local ICAs="${ICAFolder}/melodic_mix"  # Input to prepareICAs
 	log_Msg "ICAs: ${ICAs}"
 
-	local ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"
+	local ICAdtseries="${ICAFolder}/melodic_oIC.dtseries.nii"  # Output of prepareICAs
 	log_Msg "ICAdtseries: ${ICAdtseries}"
 
-	local NoiseICAs="${FIXFolder}/.fix"
+	local NoiseICAs="${FIXFolder}/.fix"  # Input to prepareICAs
 	log_Msg "NoiseICAs: ${NoiseICAs}"
 
-	local Noise="${FIXFolder}/Noise.txt"
+	local Noise="${FIXFolder}/Noise.txt"  # Output of prepareICAs
 	log_Msg "Noise: ${Noise}"
 
-	local Signal="${FIXFolder}/Signal.txt"
+	local Signal="${FIXFolder}/Signal.txt"  # Output of prepareICAs
 	log_Msg "Signal: ${Signal}"
 
-	local ComponentList="${FIXFolder}/ComponentList.txt"
+	local ComponentList="${FIXFolder}/ComponentList.txt"  # Output of prepareICAs
 	log_Msg "ComponentList: ${ComponentList}"
 
-	local TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}_hp${HighPass}_clean pixdim4)
+	local TR=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}${hpStr}_clean pixdim4)  # Input to prepareICAs
 	log_Msg "TR: ${TR}"
 
-	local NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}_hp${HighPass}_clean dim4)
-	log_Msg "NumTimePoints: ${NumTimePoints}"
-
-	if [ -e ${ComponentList} ] ; then
+	if [ -e ${ComponentList} ] ; then  # Output of prepareICAs
 		log_Msg "Removing ComponentList: ${ComponentList}"
 		rm ${ComponentList}
 	fi
@@ -446,16 +469,22 @@ M_PROG
 			;;
 	esac
 
-	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
+	# N.B. ${ComponentList} doesn't exist until after prepareICAs
+	log_Msg "Convert melodic volume maps to dscalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
 	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC_vol.dtseries.nii ROW ${ICAFolder}/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
 
-	log_Msg "Convert dense time series to scalar. Output ${ICAFolder}/melodic_oIC.dscalar.nii"
+	log_Msg "Convert melodic cifti maps to dscalar. Output ${ICAFolder}/melodic_oIC.dscalar.nii"
 	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC.dtseries.nii ROW ${ICAFolder}/melodic_oIC.dscalar.nii -name-file ${ComponentList}
+	
+    # Remove the intermediate .dtseries versions of the melodic maps
+	rm ${ICAFolder}/melodic_oIC_vol.dtseries.nii ${ICAFolder}/melodic_oIC.dtseries.nii
 
-	log_Msg "Create scaler series"
+	log_Msg "Create scaler series of ICA timecourses"
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAs} ${ICAs}.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
 
 	# TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
+	local NumTimePoints=$(${FSLDIR}/bin/fslval ${ResultsFolder}/${fMRIName}${hpStr}_clean dim4)
+	log_Msg "NumTimePoints: ${NumTimePoints}"
 	local FTmixStep=$(echo "scale=7 ; 1/(${NumTimePoints}*${TR})" | bc -l)
 	log_Msg "FTmixStep: ${FTmixStep}"
 	${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAFolder}/melodic_FTmix ${ICAFolder}/melodic_FTmix.sdseries.nii -transpose -name-file ${ComponentList} -series HERTZ 0 ${FTmixStep}
@@ -475,14 +504,14 @@ M_PROG
 	fi
 
 	log_Msg "Making dual screen scene"
-	local sceneFileDual=${ResultsFolder}/${Subject}_${fMRIName}_hp${HighPass}_ICA_Classification_dualscreen.scene
+	local sceneFileDual=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_dualscreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g >| ${sceneFileDual}
+	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileDual}
 
 	log_Msg "Making single screen scene"
-	local sceneFileSingle=${ResultsFolder}/${Subject}_${fMRIName}_hp${HighPass}_ICA_Classification_singlescreen.scene
+	local sceneFileSingle=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_singlescreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@HighPass@${HighPass}@g >| ${sceneFileSingle}
+	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileSingle}
 
 	# For legacy compatibility, we symlink the ReclassifyAs*.txt files into ResultsFolder.
 	# If ReclassifyAs*.txt files already exist in ResultsFolder, then those
@@ -519,10 +548,9 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 #  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
 
 # Verify any other needed environment variables are set
 log_Check_Env_Var CARET7DIR

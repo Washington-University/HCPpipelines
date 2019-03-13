@@ -77,19 +77,29 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 #  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FSL_FIXDIR
 
 log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
                # Set to empty string to disable debugging related output
 
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-log_Check_Env_Var FSL_FIXDIR
-
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
+log_Msg "Sourcing ${FSL_FIXDIR}/settings.sh"
 . ${FSL_FIXDIR}/settings.sh
+
+# Show HCP pipelines version
+log_Msg "Showing HCP Pipelines version"
+cat ${HCPPIPEDIR}/version.txt
+
+# Show FSL version
+log_Msg "Showing FSL version"
+fsl_version_get fsl_ver
+log_Msg "FSL version: ${fsl_ver}"
 
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
@@ -137,14 +147,25 @@ tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 log_Msg "tr: ${tr}"
 log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
-if (( hp > 0 )) ; then
+fmrihp=${fmri}_hp${hp}
+if (( hp > 0 )); then
   log_Msg "Running highpass"
   #convert to sigma in volumes (not seconds)
   hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
-  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -bptf ${hptr} -1 ${fmri}_hp${hp}"
+
+  # Starting with FSL 5.0.7, 'fslmaths -bptf' no longer includes the temporal mean in its output.
+  # A work-around to this, which works with both the pre- and post-5.0.7 behavior is to compute
+  # the temporal mean, remove it, run -bptf, and then add the mean back in.
+  ${FSLDIR}/bin/fslmaths ${fmri} -Tmean ${fmrihp}
+  highpass_cmd="${FSLDIR}/bin/fslmaths ${fmri} -sub ${fmrihp} -bptf ${hptr} -1 -add ${fmrihp} ${fmrihp}"
   log_Msg "highpass_cmd: ${highpass_cmd}"
   ${highpass_cmd}
-  fmrihp=${fmri}_hp${hp}
+elif (( hp == 0 )); then
+  # Nothing in script currently detrends the volume if hp=0 is requested (which is the intended meaning of hp=0)
+  log_Err_Abort "hp = ${hp} not currently supported"
+else
+  # Reset $fmrihp variable in this case to not include an "_hp${hp}" string in the outputs
+  fmrihp=${fmri}
 fi
 
 mkdir -p ${fmrihp}.ica
@@ -230,22 +251,6 @@ else
   log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 fi 
 
-## MPH: Not clear to me why we need to invoke functionmotionconfounds to "pre-create" the
-## mc/prefiltered_func_data_mcf_conf_hp file when fix_3_clean calls functionmotionconfounds itself,
-## and the file could therefore get created instead as part of the fix_3_clean stage.
-## MPH: Note that we need to use the -f form of call_matlab.sh, since the -r and -m forms do not support
-## the use of compiled matlab. But the -f form doesn't include a semicolon at the end of invoking the
-## function (as of fix1.067), and thus the call ends up returning the entire contents of the 'confounds' matrix.
-## Thus, to avoid cluttering the stdout with the listing of the 'confounds' matrix, we are going to 
-## continue capturing this output in its own specific log file
-
-#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds $tr $hp 
-matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -l .fix.functionmotionconfounds.log -f functionmotionconfounds ${tr} ${hp}"
-log_Msg "Run MATLAB/Octave with command..."
-log_Msg "${matlab_cmd}"
-log_Msg "Check ${fmrihp}.ica/.fix.functionmotionconfounds.log for log output from functionmotionconfounds"
-${matlab_cmd}
-
 mkdir -p reg
 cd reg
 
@@ -328,12 +333,18 @@ log_Msg "Done running FIX"
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
+if (( hp >= 0 )); then
+	hpStr="_hp${hp}"
+else
+	hpStr=""
+fi
+
 $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
 if [ "$?" -ne "0" ]; then
     log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
 fi
 if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas_hp${hp}_clean.dtseries.nii
+    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${hpStr}_clean.dtseries.nii
 else
     log_Err_Abort "Something went wrong;  ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
@@ -344,7 +355,7 @@ if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ] ; then
     $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 fi
 if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas_hp${hp}_clean_vn.dscalar.nii
+    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${hpStr}_clean_vn.dscalar.nii
 fi
 log_Msg "Done renaming files"
 
