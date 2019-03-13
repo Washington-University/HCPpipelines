@@ -132,14 +132,14 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# set list of fMRI on which to run ICA+FIX
+	# set list of fMRI on which to run ICA+FIX, separate groups with @ (for MR FIX concatenation)
 	fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
 
-	# If you wish to run "multi-run" (concatenated) FIX, specify the name to give the concatenated output files
+	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
-	# Otherwise, leave ConcatName empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
-	ConcatName=""
-	# ConcatName="rfMRI_REST1_2_LR_RL"  ## Do NOT include spaces!
+	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
+	ConcatNames=""
+	#ConcatNames="rfMRI_REST1_2_LR_RL"  ## Use space to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds
 	bandpass=2000
@@ -157,52 +157,69 @@ main() {
 	# establish queue for job submission
 	QUEUE="-q hcp_priority.q"
 	if [ "${RunLocal}" == "TRUE" ]; then
-		queuing_command=""
+		queuing_command=()
 	else
-		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+		queuing_command=("${FSLDIR}/bin/fsl_sub" "${QUEUE}")
 	fi
 
-	DIR=$(pwd)
-	
 	for Subject in ${Subjlist}; do
 		echo ${Subject}
 
 		ResultsFolder="${StudyFolder}/${Subject}/MNINonLinear/Results"
-		cd ${ResultsFolder}
 		
-		if [ -z ${ConcatName} ]; then
+		if [ -z ${ConcatNames} ]; then
 			# single-run FIX
 			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 			
-			for fMRIName in ${fMRINames}; do
+			fMRINamesFlat=$(echo ${fMRINames} | sed 's/@/ /g')
+			
+			for fMRIName in ${fMRINamesFlat}; do
 				echo "  ${fMRIName}"
 
-				InputFile="${fMRIName}/${fMRIName}"
+				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd="${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${domot} ${TrainingData} ${FixThreshold}"
-				echo "About to run: ${cmd}"
-				${cmd}
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${TrainingData}" ${FixThreshold})
+				echo "About to run: ${cmd[*]}"
+				"${cmd[@]}"
 			done
 
 		else
-			# multi-run FIX
-			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
-			ConcatNameFile="${ConcatName}/${ConcatName}"
+        	#need arrays to sanity check number of concat groups
+        	IFS=' ' read -a concatarray <<< "${ConcatNames}"
+        	IFS=@ read -a fmriarray <<< "${fMRINames}"
+        	
+        	if ((${#concatarray[@]} != ${#fmriarray[@]})); then
+        	    echo "ERROR: number of names in ConcatNames does not match number of fMRINames groups"
+        	    exit 1
+        	fi
 
-			InputFile=""			
-			for fMRIName in ${fMRINames}; do
-				InputFile+="${fMRIName}/${fMRIName}@"
-			done
+		    i=1
+		    for ((i = 1; i < ${#concatarray[@]}; ++i))
+		    do
+		        ConcatName="${concatarray[$i]}"
+		        fMRINamesGroup="${fmriarray[$i]}"
+			    # multi-run FIX
+			    FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
+			    ConcatFileName="${ConcatName}/${ConcatName}"
+
+			    InputFile=""
+			    for fMRIName in ${fMRINamesGroup}; do
+			        if [[ "$InputFile" == "" ]]; then
+			            InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
+		            else
+    				    InputFile+="@${ResultsFolder}/${fMRIName}/${fMRIName}"
+				    fi
+			    done
 			
-			echo "  InputFile: ${InputFile}"
+			    echo "  InputFile: ${InputFile}"
 
-			cmd="${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${ConcatFileName} ${domot} ${TrainingData} ${FixThreshold}"
-			echo "About to run: ${cmd}"
-			${cmd}
+			    cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${ConcatFileName} ${domot} "${TrainingData}" ${FixThreshold})
+			    echo "About to run: ${cmd[*]}"
+			    "${cmd[@]}"
+			    ((++i))
+			done
 
 		fi
-
-		cd ${DIR}
 
 	done
 }  # main()
