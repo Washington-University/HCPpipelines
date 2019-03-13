@@ -100,8 +100,8 @@ end
 if hp>=0
     confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
     confounds=confounds(:,1:6);
-    confounds=functionnormalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
-    confounds=functionnormalise([confounds confounds.*confounds]);
+    confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
+    confounds=normalise([confounds confounds.*confounds]);
 
     BO=ciftiopen([fmri '_Atlas' regstring '.dtseries.nii'],WBC);
 end
