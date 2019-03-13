@@ -195,7 +195,7 @@ main() {
 
 		    for ((i = 0; i < ${#concatarray[@]}; ++i))
 		    do
-		        ConcatName="${concatarray[$i]}"
+		        ConcatName="${ResultsFolder}/${concatarray[$i]}/${concatarray[$i]}.nii.gz"
 		        fMRINamesGroup="${fmriarray[$i]}"
 			    # multi-run FIX
 			    FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
