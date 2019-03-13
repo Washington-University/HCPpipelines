@@ -64,7 +64,7 @@ end
 
 %% Allow for compiled matlab (hp as a string is already handled above)
 if (isdeployed)
-  tr = str2double(tr);
+  TR = str2double(TR);
 end
 
 %% Argument checking
