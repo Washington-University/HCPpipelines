@@ -129,6 +129,7 @@ log_Msg "FSL version: ${fsl_ver}"
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
 # Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
+Caret7_Command="${CARET7DIR}/wb_command"
 FSL_FIX_WBC=${Caret7_Command}  # Used by fix_3_clean in interpreted matlab/octave mode
 
 	
