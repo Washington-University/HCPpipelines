@@ -79,6 +79,8 @@ compile_functionhighpassandvariancenormalize()
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
 				  -d ${output_directory}
 	
 	popd > /dev/null
