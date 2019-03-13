@@ -55,16 +55,16 @@ if ischar(hp)
   hp = lower(hp);
   if strncmp(hp,pdstring,numel(pdstring))
 	pdflag = true;
-	hp = str2num(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
-  elseif ~isempty(str2num(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
-	hp = str2num(hp);
+	hp = str2double(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
+  elseif ~isempty(str2double(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
+	hp = str2double(hp);
   else error('%s: Invalid specification for the high-pass filter', mfilename);
   end
 end
 
 %% Allow for compiled matlab (hp as a string is already handled above)
 if (isdeployed)
-  tr = str2num(tr);
+  tr = str2double(tr);
 end
 
 %% Argument checking

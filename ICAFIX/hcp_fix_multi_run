@@ -95,30 +95,44 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 #  Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FSL_FIXDIR
 
 log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
                # Set to empty string to disable debugging related output
 
 this_script_dir=$(readlink -f "$(dirname "$0")")
 
-# Set this before calling hcp_fix instead, to make it more flexible
-#FSL_FIXDIR=$( cd $(dirname $0) ; pwd)
-#export FSL_FIXDIR
-log_Check_Env_Var FSL_FIXDIR
-
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
 source ${FSL_FIXDIR}/settings.sh
+
+# Show HCP pipelines version
+log_Msg "Showing HCP Pipelines version"
+cat ${HCPPIPEDIR}/version.txt
+
+# Show wb_command version
+log_Msg "Showing Connectome Workbench (wb_command) version"
+${CARET7DIR}/wb_command -version
+
+# Show FSL version
+log_Msg "Showing FSL version"
+fsl_version_get fsl_ver
+log_Msg "FSL version: ${fsl_ver}"
 
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
-if [ "${FSL_FIX_MATLAB_MODE}" = "0" ]; then
-	log_Err_Abort "Compiled matlab mode not currently supported"
-fi
+# Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
+Caret7_Command="${CARET7DIR}/wb_command"
+FSL_FIX_WBC=${Caret7_Command}  # Used by fix_3_clean in interpreted matlab/octave mode
 
+	
 #############################################################
 
 #
@@ -339,8 +353,8 @@ for fmri in $fmris ; do
 	${FSLDIR}/bin/fslmaths $fmri -sub ${fmri}_mean ${fmri}_demean
 
 	#Demean CIFTI
-	${FSL_FIX_WBC} -cifti-reduce ${fmri}_Atlas.dtseries.nii MEAN ${fmri}_Atlas_mean.dscalar.nii
-	${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmri}_Atlas_demean.dtseries.nii -var TCS ${fmri}_Atlas.dtseries.nii -var MEAN ${fmri}_Atlas_mean.dscalar.nii -select 1 1 -repeat
+	${Caret7_Command} -cifti-reduce ${fmri}_Atlas.dtseries.nii MEAN ${fmri}_Atlas_mean.dscalar.nii
+	${Caret7_Command} -cifti-math "TCS - MEAN" ${fmri}_Atlas_demean.dtseries.nii -var TCS ${fmri}_Atlas.dtseries.nii -var MEAN ${fmri}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 	
 	## "1st pass" VN on the individual runs; high-pass gets done here as well
 	tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
@@ -348,17 +362,47 @@ for fmri in $fmris ; do
 	log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 	## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionhighpassandvariancenormalize.log file
-	## Also, note that the -r argument of call_matlab (used here to allow addition of 'addpath' as a command)
-	## does not support the use of compiled matlab
-
 	#if [ -e .fix.functionhighpassandvariancenormalize.log ] ; then
 	#	/bin/rm .fix.functionhighpassandvariancenormalize.log
 	#fi
-	#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, '$hp', '$fmri', '${FSL_FIX_WBC}');"
-	matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${FSL_FIX_WBC}');"
-	log_Msg "Run MATLAB/Octave with command..."
-	log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
-	${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"
+
+	## We will use the call_matlab.sh script available in ${FSL_FIXDIR}.
+	## But the arguments need to be customized depending on the matlab mode, because:
+	## (1) the -r argument does not support the use of compiled matlab, but is needed for interpreted matlab/octave
+	## to allow addition of 'addpath' as a command, so that functionhighpassandvariancenormalize.m can be found within matlab/octave
+	## (2) for compiled matlab, we need to use the -c and -b flags to specify the location of the MCR and the compiled binary
+	## (we cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
+	## specific script that is not part of the FIX distribution.
+
+	case ${FSL_FIX_MATLAB_MODE} in
+		0)
+			# Use compiled Matlab
+			if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+				log_Err_Abort "To use MATLAB run mode: ${FSL_FIX_MATLAB_MODE}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+			else
+				log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+			fi
+
+			CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
+			matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -c ${MATLAB_COMPILER_RUNTIME} -b ${CSUBDIR} -f functionhighpassandvariancenormalize ${tr} ${hp} ${fmri} ${Caret7_Command}"
+			log_Msg "Run compiled MATLAB with command..."
+			log_Msg "${matlab_cmd}"
+			${matlab_cmd}
+			;;
+		
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			# ${hp} needs to be passed in as a string, to handle the hp=pd* case
+			matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}');"
+			log_Msg "Run interpreted MATLAB/Octave with command..."
+			log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
+			${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"   # Note: the semicolon within ${matlab_cmd} needs to be protected with quotation marks
+			;;
+		*)
+			# Unsupported MATLAB run mode
+			log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+			;;
+	esac
 
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
@@ -410,12 +454,12 @@ fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask
   # Preceding line creates mask to be used in melodic for suppressing memory error - Takuya Hayashi
 
 # Same thing for the CIFTI
-${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_demean.dtseries.nii ${CIFTIMergeSTRING}
-${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_mean.dscalar.nii ${MeanCIFTISTRING}
-${FSL_FIX_WBC} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
-${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
-${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
-${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
+${Caret7_Command} -cifti-merge ${ConcatNameNoExt}_Atlas_demean.dtseries.nii ${CIFTIMergeSTRING}
+${Caret7_Command} -cifti-average ${ConcatNameNoExt}_Atlas_mean.dscalar.nii ${MeanCIFTISTRING}
+${Caret7_Command} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
+${Caret7_Command} -cifti-merge ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
+${Caret7_Command} -cifti-average ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
+${Caret7_Command} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
 
 # At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
 log_Msg "Removing the concatenated VN'ed time series"
@@ -502,15 +546,31 @@ AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on th
 ## This is solely so that we can apply our own variance normalization as part of the spatial ICA, 
 ## rather than using the VN algorithm internal to melodic
 ## (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
-## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionmotionconfounds.log file
-## Also, note that the -r argument of call_matlab (used here to allow addition of 'addpath' as a command)
-## does not support the use of compiled matlab
+## See comments above about regarding the use of call_matlab here.
 
-#${FSL_FIXDIR}/call_matlab.sh -l .fix.functionhighpassandvariancenormalize.log -r "addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize($tr, $AlreadyHP, '$concatfmrihp', '${FSL_FIX_WBC}');"
-matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${FSL_FIX_WBC}');"
-log_Msg "Run MATLAB/Octave with command..."
-log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
-${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"
+case ${FSL_FIX_MATLAB_MODE} in
+	0)
+		# Use compiled Matlab
+		CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
+		matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -c ${MATLAB_COMPILER_RUNTIME} -b ${CSUBDIR} -f functionhighpassandvariancenormalize ${tr} ${AlreadyHP} ${concatfmrihp} ${Caret7_Command}"
+		log_Msg "Run compiled MATLAB with command..."
+		log_Msg "${matlab_cmd}"
+		${matlab_cmd}
+		;;
+		
+	1 | 2)
+		# Use interpreted MATLAB or Octave
+		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
+		matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}');"
+		log_Msg "Run interpreted MATLAB/Octave with command..."
+		log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
+		${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"   # Note: the semicolon within ${matlab_cmd} needs to be protected with quotation marks
+		;;
+	*)
+		# Unsupported MATLAB run mode
+		log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+		;;
+esac
 
 Dim=`cat ${concatfmrihp}_dims.txt`
 
@@ -705,13 +765,13 @@ log_Msg "Splitting cifti and nifti back into individual runs"
 Start="1"
 for fmri in $fmris ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
-	NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
+	NumTPS=`${Caret7_Command} -file-information ${fmriNoExt}_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	log_Msg "${fmriNoExt}: Start=${Start} Stop=${Stop}"
 	
 	cifti_out=${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii
-	${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
+	${Caret7_Command} -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	${Caret7_Command} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 
 	readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	touch ${readme_for_cifti_out}
@@ -724,7 +784,7 @@ for fmri in $fmris ; do
 	done
 		
 	volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
-	${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	${Caret7_Command} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done

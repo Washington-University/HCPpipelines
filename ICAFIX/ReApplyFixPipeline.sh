@@ -203,11 +203,6 @@ get_options()
 		case ${p_MatlabRunMode} in
 			0)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use compiled MATLAB"
-				if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-					log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-				else
-					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-				fi
 				;;
 			1)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
@@ -265,7 +260,11 @@ have_hand_reclassification()
 	local fMRIName="${3}"
 	local HighPass="${4}"
 
-	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+	if (( HighPass >= 0 )); then
+		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+	else
+		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
+	fi
 }
 
 # ------------------------------------------------------------------------------
@@ -356,19 +355,17 @@ main()
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
 
-	export FSL_FIX_WBC="${Caret7_Command}"
-	# WARNING: FSL_FIXDIR/settings.sh doesn't currently check whether FSL_FIX_WBC is already defined.
-	# Thus, when that settings.sh file gets sourced as part of the invocation of the intepreted matlab
-	# and octave modes (below), there is a possibility that the version of wb_command used within
-	# interpreted matlab/octave may not be the same.
-	# (It all depends on how the user has set up their FSL_FIXDIR/settings.sh file).
-	# Therefore, it is likely that the value of FSL_FIX_WBC as set above is only relevant for compiled matlab mode.
-
 	# Some defaults
 	local aggressive=0
 	local hp=${HighPass}
 	local DoVol=0
 	local fixlist=".fix"
+
+	if (( hp >= 0 )); then
+		hpStr="_hp${hp}"
+	else
+		hpStr=""
+	fi
 	
 	# fMRIName is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 	# (although if someone includes the hp string as part fMRIName itself, the script will still break)
@@ -394,7 +391,7 @@ main()
 	log_Msg "Use fixlist=$fixlist"
 
 	DIR=$(pwd)
-	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${hp}.ica
+	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica
 
 	if [ -f ../${fMRIName}_Atlas${RegString}.dtseries.nii ] ; then
 		log_Msg "FOUND FILE: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
@@ -430,6 +427,15 @@ main()
 	# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
 	# could be worked around).
 
+	export FSL_FIX_WBC="${Caret7_Command}"
+	# WARNING: fix_3_clean uses the environment variable FSL_FIX_WBC, but most previous
+	# versions of FSL_FIXDIR/settings.sh (v1.067 and earlier) have a hard-coded value for
+	# FSL_FIX_WBC, and don't check whether it is already defined in the environment.
+	# Thus, when settings.sh file gets sourced, there is a possibility that the version of
+	# wb_command is no longer the same as that specified by ${Caret7_Command}.  So, after
+	# sourcing settings.sh below, we explicitly set FSL_FIX_WBC back to value of ${Caret7_Command}.
+	# (This may only be relevant for interpreted matlab/octave modes).
+
 	log_Msg "Running fix_3_clean"
 
 	case ${MatlabRunMode} in
@@ -448,7 +454,20 @@ main()
 				matlab_function_arguments+=("${DoVol}")
 			fi
 			
-			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+			# fix_3_clean is part of the FIX distribution.
+			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
+			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
+			if [ -z "${FSL_FIX_MCR}" ]; then
+				source ${FSL_FIXDIR}/settings.sh
+				export FSL_FIX_WBC="${Caret7_Command}"
+				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
+				if [ -z "${FSL_FIX_MCR}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+				fi
+			fi
+			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
+
+			local matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
@@ -479,7 +498,7 @@ main()
 			# Use bash redirection ("here-document") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+			(source "${FSL_FIXDIR}/settings.sh"; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
 # Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
 ${matlab_cmd}
 M_PROG
@@ -502,10 +521,14 @@ M_PROG
 	# in the renaming that follows, but this ensures that any old versions don't linger)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
 	local fmri=${fMRIName}
-	local fmrihp=${fMRIName}_hp${hp}
+	if (( hp >= 0 )); then
+		local fmrihp=${fmri}_hp${hp}
+	else
+		local fmrihp=${fmri}
+	fi
 	
-	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	/bin/rm -f ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
+	/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
 
 	if (( DoVol )); then
 	    $FSLDIR/bin/imrm ${fmrihp}_clean
@@ -516,12 +539,12 @@ M_PROG
 	# Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 	# So check whether those files exist before moving/renaming them
 	if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-	    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	    /bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
 	else
 	    log_Err_Abort "Something went wrong; ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 	fi
 	if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-	    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	    /bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
 	fi
 
 	if (( DoVol )); then
@@ -535,7 +558,7 @@ M_PROG
 	fi
 	log_Msg "Done renaming files"
 
-        # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
+    # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 	
 	cd ${DIR}
