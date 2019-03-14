@@ -135,13 +135,13 @@ main() {
 	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces to otherwise separate runs
 	# the MR FIX groups determine what gets concatenated before doing ICA
 	# the groups can be whatever you want, you can make a day 1 group and a day 2 group, or just concatenate everything, etc
-	fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL%rfMRI_REST2_LR rfMRI_REST2_RL"
+	fMRINames="tfMRI_WM_RL tfMRI_WM_LR tfMRI_GAMBLING_RL tfMRI_GAMBLING_LR tfMRI_MOTOR_RL tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL tfMRI_LANGUAGE_LR tfMRI_SOCIAL_RL tfMRI_SOCIAL_LR tfMRI_RELATIONAL_RL tfMRI_RELATIONAL_LR tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
 	ConcatNames=""
-	ConcatNames="rfMRI_REST1_LR_RL rfMRI_REST2_LR_RL"  ## Use space to separate concatenation groups
+	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds
 	bandpass=0
