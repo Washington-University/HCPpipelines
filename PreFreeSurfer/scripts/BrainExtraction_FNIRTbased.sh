@@ -5,12 +5,39 @@ set -e
 #  installed versions of: FSL (version 5.0.6)
 #  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_Templates}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Templates environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR_Templates: ${HCPPIPEDIR_Templates}"
+fi
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Tool for performing brain extraction using non-linear (FNIRT) results"
+  echo "$(basename $0): Tool for performing brain extraction using non-linear (FNIRT) results"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>] --in=<input image> [--ref=<reference highres image>] [--refmask=<reference brain mask>] [--ref2mm=<reference image 2mm>] [--ref2mmmask=<reference brain mask 2mm>] --outbrain=<output brain extracted image> --outbrainmask=<output brain mask> [--fnirtconfig=<fnirt config file>]"
+  echo "Usage: $(basename $0) [--workingdir=<working dir>] --in=<input image> [--ref=<reference highres image>] [--refmask=<reference brain mask>] [--ref2mm=<reference image 2mm>] [--ref2mmmask=<reference brain mask 2mm>] --outbrain=<output brain extracted image> --outbrainmask=<output brain mask> [--fnirtconfig=<fnirt config file>]"
 }
 
 # function for parsing options
@@ -68,8 +95,7 @@ FNIRTConfig=`defaultopt $FNIRTConfig $FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf`
 BaseName=`${FSLDIR}/bin/remove_ext $Input`;
 BaseName=`basename $BaseName`;
 
-echo " "
-echo " START: BrainExtraction_FNIRT"
+log_Msg "START: BrainExtraction_FNIRT"
 
 mkdir -p $WD
 
@@ -95,8 +121,7 @@ ${FSLDIR}/bin/invwarp --ref="$Reference2mm" -w "$WD"/str2standard.nii.gz -o "$WD
 ${FSLDIR}/bin/applywarp --rel --interp=nn --in="$ReferenceMask" --ref="$Input" -w "$WD"/standard2str.nii.gz -o "$OutputBrainMask"
 ${FSLDIR}/bin/fslmaths "$Input" -mas "$OutputBrainMask" "$OutputBrainExtractedImage"
 
-echo " "
-echo " END: BrainExtraction_FNIRT"
+log_Msg "END: BrainExtraction_FNIRT"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

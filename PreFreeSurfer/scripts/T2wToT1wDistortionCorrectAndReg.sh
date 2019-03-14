@@ -4,7 +4,30 @@ set -e
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR and PATH for gradient_unwarp.py
 
-SCRIPT_NAME="T2WToT1wDistortionCorrectAndReg.sh"
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_Global}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Global environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+fi
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
 
 # -----------------------------------------------------------------------------------
 #  Constants for specification of Averaging and Readout Distortion Correction Method
@@ -17,10 +40,12 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
+  echo "$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working directory>]"
+  echo "Usage: $(basename ${0}) [--workingdir=<working directory>]"
   echo "            --t1=<input T1w image>"
   echo "            --t1brain=<input T1w brain-extracted image>"
   echo "            --t2=<input T2w image>"
@@ -149,8 +174,7 @@ T2wImageBasename=`basename "$T2wImage"`
 
 Modalities="T1w T2w"
 
-echo " "
-echo " START: ${SCRIPT_NAME}"
+log_Msg "START"
 
 mkdir -p $WD
 mkdir -p ${WD}/FieldMap
@@ -221,8 +245,7 @@ case $DistortionCorrection in
         elif [[ ${SEUnwarpDir} = -[xyij] || ${SEUnwarpDir} = [xyij]- ]] ; then
 			ScoutInputName="${SpinEchoPhaseEncodeNegative}"
 		else
-			echo "${SCRIPT_NAME} - ERROR - Invalid entry for --seunwarpdir ($SEUnwarpDir)"
-			exit 1
+			log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
         fi
 
         # Use topup to distortion correct the scout scans
@@ -245,9 +268,8 @@ case $DistortionCorrection in
         ;;
 
     *)
-        echo "${SCRIPT_NAME} - ERROR - Unable to create FSL-suitable readout distortion correction field map"
-        echo "${SCRIPT_NAME}           Unrecognized distortion correction method: ${DistortionCorrection}"
-        exit 1
+        log_Err "Unable to create FSL-suitable readout distortion correction field map"
+        log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
 esac
 
 # FSL's naming convention for 'convertwarp --shiftdir' is {x,y,z,x-,y-,z-}
@@ -301,9 +323,9 @@ for TXw in $Modalities ; do
             ;;
 
         *)
-            echo "${SCRIPT_NAME} - ERROR - Unable to apply readout distortion correction"
-            echo "${SCRIPT_NAME}           Unrecognized distortion correction method: ${DistortionCorrection}"
-            exit 1
+            log_Err "Unable to apply readout distortion correction"
+            log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
+			
     esac
     
     ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -out ${WD}/FieldMap2${TXwImageBasename}
@@ -350,8 +372,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
 ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
 
-echo " "
-echo " END: ${SCRIPT_NAME}"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

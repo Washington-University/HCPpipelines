@@ -2,6 +2,19 @@
 set -e
 echo -e "\n START: FreeSurferHighResPial"
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${CARET7DIR}" ]; then
+	echo "${script_name}: ABORTING: CARET7DIR environment variable must be set"
+	exit 1
+else
+	echo "${script_name}: CARET7DIR: ${CARET7DIR}"
+fi
+
 SubjectID="$1"
 SubjectDIR="$2"
 T1wImage="$3" #T1w FreeSurfer Input (Full Resolution)

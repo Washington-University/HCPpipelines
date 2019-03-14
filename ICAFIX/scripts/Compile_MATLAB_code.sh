@@ -5,11 +5,11 @@
 #
 # # Compile_MATLAB_code.sh
 #
-# Compile the MATLAB code necessary for running the PostFix Pipeline
+# Compile the MATLAB code necessary for running the ICAFIX Pipeline
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2017 The Human Connectome Project
+# Copyright (C) 2017-2019 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -50,10 +50,41 @@ compile_prepareICAs()
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
 				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
 				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 
+	popd > /dev/null
+}
+
+# ------------------------------------------------------------------------------
+# Compile the functionhighpassandvariancenormalize MATLAB code
+# ------------------------------------------------------------------------------
+
+compile_functionhighpassandvariancenormalize()
+{
+	local app_name=functionhighpassandvariancenormalize
+	local output_directory=Compiled_${app_name}
+
+	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
+	log_Msg "Working in ${PWD}"
+
+	log_Msg "Creating output directory: ${output_directory}"
+	mkdir --parents ${output_directory}
+
+	log_Msg "Compiling ${app_name} application"
+	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
+				  -a ${HCPPIPEDIR}/ICAFIX/scripts/icaDim.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
+				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
+				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -a ${HCPPIPEDIR}/global/matlab/normalise.m \
+				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
+				  -d ${output_directory}
+	
 	popd > /dev/null
 }
 
@@ -64,6 +95,7 @@ compile_prepareICAs()
 main()
 {
 	compile_prepareICAs
+	compile_functionhighpassandvariancenormalize
 }
 
 # ------------------------------------------------------------------------------

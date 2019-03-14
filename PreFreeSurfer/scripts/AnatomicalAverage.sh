@@ -1,6 +1,28 @@
 #!/bin/bash 
 set -e
 
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+fi
+
+################################################ SUPPORT FUNCTIONS ##################################################
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
     echo ""
     echo "Usage: `basename $0` [options] <image1> ... <imageN>"
@@ -85,15 +107,12 @@ done
 
 
 if [ X$output = X ] ; then
-  echo "The compulsory argument -o MUST be used"
-  exit 1;
+  log_Err_Abort "The compulsory argument -o MUST be used"
 fi
 
 if [ `echo $imagelist | wc -w` -lt 2 ] ; then
   Usage;
-  echo " "
-  echo "Must specify at least two images to average"
-  exit 1;
+  log_Err_Abort "Must specify at least two images to average"
 fi
 
 # setup working directory
@@ -103,8 +122,7 @@ if [ X$wdir = X ] ; then
 fi
 if [ ! -d $wdir ] ; then
     if [ -f $wdir ] ; then 
-	echo "A file already exists with the name $wdir - cannot use this as the working directory"
-	exit 1;
+		log_Err_Abort "A file already exists with the name $wdir - cannot use this as the working directory"
     fi
     mkdir $wdir
 fi
@@ -118,7 +136,9 @@ for fn in $imagelist ; do
     newimlist="$newimlist $wdir/$bnm"
 done
 
-if [ $verbose = yes ] ; then echo "Images: $imagelist  Output: $output"; fi
+if [ $verbose = yes ] ; then
+	log_Msg "Images: $imagelist  Output: $output"
+fi
 
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
@@ -134,15 +154,15 @@ im1=`echo $newimlist | awk '{ print $1 }'`;
 for im2 in $newimlist ; do
     if [ $im2 != $im1 ] ; then
         # register version of two images (whole heads still)
-	$FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
-
+		$FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
+		
         # transform std space brain mask
-	$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
-
+		$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
+		
         # re-register using the brain mask as a weighting image
-	$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
+		$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
     else
-	cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
+		cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
     fi
 done
 

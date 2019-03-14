@@ -3,9 +3,13 @@
 echo "========================================"
 
 this_tools_dir=$(dirname "${BASH_SOURCE[0]}")
-if [ "${this_tools_dir}" != "." ]; then
-	echo "  DIRECTORY: ${this_tools_dir}"
+
+first_char=${this_tools_dir:0:1}
+if [ "${first_char}" == "." ]; then
+	this_tools_dir="${PWD}${this_tools_dir:1}"
 fi
+
+echo "  DIRECTORY: ${this_tools_dir}"
 
 product_file="${this_tools_dir}/product.txt"
 version_file="${this_tools_dir}/version.txt"

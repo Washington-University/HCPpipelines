@@ -1,15 +1,15 @@
 #!/bin/bash
-
-set -e # If any commands exit with non-zero value, this script exits
+set -e
 
 # ------------------------------------------------------------------------------
-#  Verify HCPPIPEDIR environment variable is set
+#  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 # ------------------------------------------------------------------------------
@@ -17,7 +17,6 @@ fi
 # ------------------------------------------------------------------------------
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # ------------------------------------------------------------------------------
 #  Verify other needed environment variables are set
@@ -25,18 +24,21 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 if [ -z "${MSMBINDIR}" ]; then
 	log_Err_Abort "MSMBINDIR environment variable must be set"
+else
+	log_Msg "MSMBINDIR: ${MSMBINDIR}"
 fi
-log_Msg "MSMBINDIR: ${MSMBINDIR}"
 
 if [ -z "${MSMCONFIGDIR}" ]; then
 	log_Err_Abort "MSMCONFIGDIR environment variable must be set"
+else
+	log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
 fi
-log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
 
 if [ -z "${CARET7DIR}" ]; then
 	log_Err_Abort "CARET7DIR environment variable must be set"
+else
+	log_Msg "CARET7DIR: ${CARET7DIR}"
 fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
 
 # ------------------------------------------------------------------------------
 #  Gather and show positional parameters

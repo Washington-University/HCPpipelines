@@ -5,12 +5,21 @@ set -e
 #  installed versions of: FSL (version 5.0.6) and HCP-gradunwarp (version 1.0.2)
 #  environment: FSLDIR, PATH to be able to find gradient_unwarp.py
 
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
 Usage() {
-  echo "`basename $0`: Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
+  echo "$(basename $0): Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
   echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>]"
+  echo "Usage: $(basename $0) [--workingdir=<working dir>]"
   echo "              --coeffs=<Siemens gradient coefficient file>"
   echo "              --in=<input image>"
   echo "              --out=<output image>"
@@ -64,8 +73,7 @@ WD=`defaultopt $WD ${OutputFile}.wdir`
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
 BaseName=`basename $BaseName`;
 
-echo " "
-echo " START: GradientDistortionUnwarp"
+log_Msg "START"
 
 mkdir -p $WD
 
@@ -95,8 +103,7 @@ ${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_
 ${FSLDIR}/bin/fslmaths ${OutputTransformFile}_jacobian -Tmean ${OutputTransformFile}_jacobian
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
-echo " "
-echo " END: GradientDistortionUnwarp"
+log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 

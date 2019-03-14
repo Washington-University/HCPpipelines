@@ -32,7 +32,11 @@ function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 % Authors: M. Glasser and M. Harms
 
 CIFTIMatlabReaderWriter=getenv('FSL_FIX_CIFTIRW');
-addpath(CIFTIMatlabReaderWriter);
+if (~isdeployed)
+  % addpath does not work and should not be used in compiled MATLAB
+  fprintf('Adding %s to MATLAB path\n', CIFTIMatlabReaderWriter);
+  addpath(CIFTIMatlabReaderWriter);
+end
 
 %% Defaults
 dovol = 1;
@@ -55,16 +59,16 @@ if ischar(hp)
   hp = lower(hp);
   if strncmp(hp,pdstring,numel(pdstring))
 	pdflag = true;
-	hp = str2num(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
-  elseif ~isempty(str2num(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
-	hp = str2num(hp);
+	hp = str2double(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
+  elseif ~isempty(str2double(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
+	hp = str2double(hp);
   else error('%s: Invalid specification for the high-pass filter', mfilename);
   end
 end
 
 %% Allow for compiled matlab (hp as a string is already handled above)
 if (isdeployed)
-  tr = str2num(tr);
+  TR = str2double(TR);
 end
 
 %% Argument checking
@@ -100,8 +104,9 @@ end
 if hp>=0
     confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
     confounds=confounds(:,1:6);
-    confounds=functionnormalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
-    confounds=functionnormalise([confounds confounds.*confounds]);
+	%% normalise function is in HCPPIPEDIR/global/matlab/normalise.m
+    confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
+    confounds=normalise([confounds confounds.*confounds]);
 
     BO=ciftiopen([fmri '_Atlas' regstring '.dtseries.nii'],WBC);
 end

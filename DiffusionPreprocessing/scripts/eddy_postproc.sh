@@ -24,24 +24,24 @@ datadir=${workingdir}/data
 #    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
-    if [ ${CombineDataFlag} -eq 2 ]; then
+if [ ${CombineDataFlag} -eq 2 ]; then
 	${FSLDIR}/bin/imcp  ${eddydir}/eddy_unwarped_images ${datadir}/data
 	cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
 	cp ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs
-    else
+else
 	echo "JAC resampling has been used. Eddy Output is now combined."
 	PosVols=`wc ${eddydir}/Pos.bval | awk {'print $2'}`
 	NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 0 ${PosVols}
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg ${PosVols} ${NegVols}
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
-                    ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
+             ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
 	cp ${datadir}/bvals ${datadir}/bvals_noRot
 	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-     
+    
 	#rm ${eddydir}/Pos.bv*
 	#rm ${eddydir}/Neg.bv*
 
@@ -61,7 +61,7 @@ datadir=${workingdir}/data
 	echo $Posline1 > ${eddydir}/Pos_rotated.bvec
 	echo $Posline2 >> ${eddydir}/Pos_rotated.bvec
 	echo $Posline3 >> ${eddydir}/Pos_rotated.bvec
-
+	
 	Negline1=""
 	Negline2=""
 	Negline3=""
@@ -79,11 +79,11 @@ datadir=${workingdir}/data
 	# Average Eddy-Rotated bvecs. Get for each direction the two b matrices, average those and then eigendecompose the average b-matrix to get the new bvec and bval.
 	# Also outputs an index file (1-based) with the indices of the input (Pos/Neg) volumes that have been retained in the output
 	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
-
+	
 	mv ${datadir}/avg_data.bval ${datadir}/bvals
 	mv ${datadir}/avg_data.bvec ${datadir}/bvecs
 	rm -f ${datadir}/avg_data.bv??
-    fi
+fi
 #fi
 
 	 
@@ -109,8 +109,7 @@ fi
 
 #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
-${FSLDIR}/bin/bet ${datadir}/data ${datadir}/nodif_brain -m -f 0.1
-$FSLDIR/bin/fslroi ${datadir}/data ${datadir}/nodif 0 1
+${FSLDIR}/bin/fslroi ${datadir}/data ${datadir}/nodif 0 1
+${FSLDIR}/bin/bet ${datadir}/nodif ${datadir}/nodif_brain -m -f 0.1
 
 echo -e "\n END: eddy_postproc"
-

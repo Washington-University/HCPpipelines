@@ -7,7 +7,61 @@
 #
 log_SetToolName()
 {
-	log_toolName="$1"
+	log_ToolName="$1"
+}
+
+#
+# Description:
+#   Configure logging so that date and time are shown in log messages
+#
+log_SetShowDateTime()
+{
+	log_ShowDateTime="TRUE"
+}
+
+#
+# Description:
+#   Configure logging so that date and time are not shown in log messages
+#
+log_ClearShowDateTime()
+{
+	log_ShowDateTime="FALSE"
+}
+
+#
+# Description:
+#   Configure logging so that the tool name (i.e. script name) is shown in log messages
+#
+log_SetShowToolName()
+{
+	log_ShowToolName="TRUE"
+}
+
+#
+# Description:
+#   Configure logging so that the tool name (i.e. script name) is not shown in log messages
+#
+log_ClearShowToolName()
+{
+	log_ShowToolName="FALSE"
+}
+
+#
+# Description:
+#   Configure logging so that the function name is shown in log messages
+#
+log_SetShowFunctionName()
+{
+	log_ShowFunctionName="TRUE"
+}
+
+#
+# Description:
+#   Configure logging so that the function name is NOT shown in log messages
+#
+log_ClearShowFunctionName()
+{
+	log_ShowFunctionName="FALSE"
 }
 
 #
@@ -19,18 +73,63 @@ log_SetToolName()
 #
 log_Msg()
 {
-	local msg="$*"
+	# capture parameters specifying message to output
+	local parameters="$*"
+
+	# get current date and time
 	local dateTime
 	dateTime=$(date)
-	local toolname
 
-	if [ -z "${log_toolName}" ]; then
+	# determine name of tool (script) being run
+	local toolname
+	if [ -z "${log_ToolName}" ]; then
 		toolname=$(basename ${0})
 	else
-		toolname="${log_toolName}"
+		toolname="${log_ToolName}"
 	fi
 
-	echo "${dateTime} - ${toolname}: ${msg}"
+	# determine name of function that called this log_Msg function
+	local functionname
+	functionname="${FUNCNAME[1]}"
+
+	# build full text to output
+	local msg=""
+
+	# default is to show the date and time
+	if [ -z "${log_ShowDateTime}" -o "${log_ShowDateTime}" == "TRUE" ]; then
+		if [ -z "${msg}" ]; then
+			msg+="${dateTime}"
+		else
+			msg+=":${dateTime}"
+		fi
+	fi
+
+	# default is to show the tool name
+	if [ -z "${log_ShowToolName}" -o "${log_ShowToolName}" == "TRUE" ]; then
+		if [ -z "${msg}" ]; then
+			msg+="${toolname}"
+		else
+			msg+=":${toolname}"
+		fi
+	fi
+
+	# default is NOT to show the function name
+	if [ "${log_ShowFunctionName}" == "TRUE" ]; then
+		if [ -z "${msg}" ]; then
+			msg+="${functionname}"
+		else
+			msg+=":${functionname}"
+		fi
+	fi
+
+	# always add the message/parameters specified 
+	if [ -z "${msg}" ]; then
+		msg+="${parameters}"
+	else
+		msg+=": ${parameters}"
+	fi
+	
+	echo "${msg}"
 }
 
 #

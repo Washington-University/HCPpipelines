@@ -177,6 +177,28 @@ main()
 	get_options $@
 	show_tool_versions
 
+    # NOTE: HighPass flag may be "pd*", if polynomial detrending was requested in 
+	# hcp_fix_multi_run (not supported in hcp_fix currently)
+
+	if [[ "${p_HighPass}" == pd* ]]; then
+		hpNum=${p_HighPass:2}
+	else
+		hpNum=${p_HighPass}
+	fi
+
+	# Confirm that $hpNum is a valid numeric
+	if ! [[ "${hpNum}" =~ ^[-]?[0-9]+$ ]]; then
+		log_Err_Abort "Invalid value for --high-pass (${HighPass})"
+	fi
+
+	# If HighPass < 0, then no high-pass was applied and directories/filenames
+    # will not include an "_hp" string
+	if (( hpNum < 0 )); then
+		hpStr=""
+	else
+		hpStr="_hp${p_HighPass}"
+	fi
+
 	# Naming Conventions
 	AtlasFolder="${p_StudyFolder}/${p_Subject}/MNINonLinear"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
@@ -184,10 +206,10 @@ main()
 	ResultsFolder="${AtlasFolder}/Results/${p_fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
 
-	ICAFolder="${ResultsFolder}/${p_fMRIName}_hp${p_HighPass}.ica/filtered_func_data.ica"
+	ICAFolder="${ResultsFolder}/${p_fMRIName}${hpStr}.ica/filtered_func_data.ica"
 	log_Msg "ICAFolder: ${ICAFolder}"
 
-	FIXFolder="${ResultsFolder}/${p_fMRIName}_hp${p_HighPass}.ica"
+	FIXFolder="${ResultsFolder}/${p_fMRIName}${hpStr}.ica"
 	log_Msg "FIXFolder: ${FIXFolder}"
 	
 	OriginalFixSignal="${FIXFolder}/Signal.txt"

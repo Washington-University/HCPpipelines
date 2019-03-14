@@ -1,0 +1,14 @@
+These are custom scripts necessary for ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh
+
+They modify the default v6.0 recon-all to:
+
+1) better handle high spatial resolution (< 1 mm voxels) structurals
+(by placing the surfaces onto the high resolution inputs), including
+pial surface refinement using the T2
+
+2) accomodate the HCP with some additional functionality
+
+Make sure the directory that these files are in,
+${HCPPIPEDIR}/FreeSurfer/custom, is on your PATH before running
+FreeSurferPipeline.sh. (If not, this directory will be prepended to your
+PATH by the FreeSurferPipeline.sh itself).

@@ -1,17 +1,38 @@
 #!/bin/bash
 set -e
-echo -e "\n START: CreateMyelinMaps_1res"
 
-StudyFolder="$1"
-Subject="$2"
-AtlasSpaceFolder="$3"
-NativeFolder="$4"
-T1wFolder="$5"
-HighResMesh="$6"
-LowResMeshes="$7"
-OrginalT1wImage="$8"
-OrginalT2wImage="$9"
-T1wImageBrain="${10}"
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${CARET7DIR}" ]; then
+	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
+fi
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+
+log_Msg "START: CreateMyelinMaps_1res"
+
+StudyFolder="${1}"
+Subject="${2}"
+AtlasSpaceFolder="${3}"
+NativeFolder="${4}"
+T1wFolder="${5}"
+HighResMesh="${6}"
+LowResMeshes="${7}"
+OrginalT1wImage="${8}"
+OrginalT2wImage="${9}"
+T1wImageBrainMask="${10}"
 InitialT1wTransform="${11}"
 dcT1wTransform="${12}"
 InitialT2wTransform="${13}"
@@ -36,13 +57,13 @@ OutputOrigT1wToStandard="${31}"
 OutputOrigT2wToT1w="${32}"
 OutputOrigT2wToStandard="${33}"
 BiasFieldOutput="${34}"
-T1wMNIImageBrain="${35}"
+T1wMNIImageBrainMask="${35}"
 Jacobian="${36}"
 ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
 
-echo "CreateMyelinMaps_1res.sh: RegName: ${RegName}"
+log_Msg "CreateMyelinMaps_1res.sh: RegName: ${RegName}"
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
 MyelinMappingFWHM="5"
@@ -53,10 +74,10 @@ SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
 for Hemisphere in L R ; do
-  if [ $Hemisphere = "L" ] ; then 
+  if [ $Hemisphere = "L" ] ; then
     Structure="CORTEX_LEFT"
     ribbon="$LeftGreyRibbonValue"
-  elif [ $Hemisphere = "R" ] ; then 
+  elif [ $Hemisphere = "R" ] ; then
     Structure="CORTEX_RIGHT"
     ribbon="$RightGreyRibbonValue"
   fi
@@ -113,4 +134,4 @@ for STRING in ${STRINGII} ; do
   done
 done
 
-echo -e "\n END: CreateMyelinMaps_1res"
+log_Msg "END: CreateMyelinMaps_1res"

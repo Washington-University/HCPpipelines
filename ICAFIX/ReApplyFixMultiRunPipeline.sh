@@ -5,7 +5,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2017 The Human Connectome Project/Connectome Coordination Facility
+# Copyright (C) 2017-2019 The Human Connectome Project/Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -266,6 +266,62 @@ get_options()
 	fi	
 }
 
+#
+# NOTE:
+#   Don't echo anything in this function other than the last echo
+#   that outputs the return value
+#
+determine_old_or_new_fsl()
+{
+	local fsl_version=${1}
+	local old_or_new
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+
+	# parse the FSL version information into primary, secondary, and tertiary parts
+	fsl_version_array=(${fsl_version//./ })
+
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+	
+	fsl_secondary_version="${fsl_version_array[1]}"
+	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+	
+	fsl_tertiary_version="${fsl_version_array[2]}"
+	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# determine whether we are using "OLD" or "NEW" FSL 
+	# 6.0.0 and below is "OLD"
+	# 6.0.1 and above is "NEW"
+	
+	if [[ $(( ${fsl_primary_version} )) -lt 6 ]] ; then
+		# e.g. 4.x.x, 5.x.x
+		old_or_new="OLD"
+	elif [[ $(( ${fsl_primary_version} )) -gt 6 ]] ; then
+		# e.g. 7.x.x
+		old_or_new="NEW"
+	else
+		# e.g. 6.x.x
+		if [[ $(( ${fsl_secondary_version} )) -gt 0 ]] ; then
+			# e.g. 6.1.x
+			old_or_new="NEW"
+		else
+			# e.g. 6.0.x
+			if [[ $(( ${fsl_tertiary_version} )) -lt 1 ]] ; then
+				# e.g. 6.0.0
+				old_or_new="OLD"
+			else
+				# e.g. 6.0.1, 6.0.2, 6.0.3 ...
+				old_or_new="NEW"
+			fi
+		fi
+	fi
+
+	echo ${old_or_new}
+}
+
 # ------------------------------------------------------------------------------
 #  Show Tool Versions
 # ------------------------------------------------------------------------------
@@ -284,6 +340,11 @@ show_tool_versions()
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
+
+	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
+	if [ "${old_or_new_version}" == "OLD" ] ; then
+		log_Err_Abort "FSL version 6.0.1 or greater is required."
+	fi
 }
 
 # ------------------------------------------------------------------------------
@@ -395,13 +456,6 @@ main()
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}'); addpath('${this_script_dir}/scripts');"
 
-	export FSL_FIX_WBC="${Caret7_Command}"
-	# WARNING: FSL_FIXDIR/settings.sh doesn't currently check whether FSL_FIX_WBC is already defined.
-	# Thus, when that settings.sh file gets sourced as part of the invocation of the intepreted matlab
-	# and octave modes (below), there is a possibility that the version of wb_command used within
-	# interpreted matlab/octave may not be the same as what is used throughout the remainder of this script.
-	# (It all depends on how the user has set up their FSL_FIXDIR/settings.sh file).
-	
 	# Some defaults
 	local aggressive=0
 	local newclassification=0
@@ -520,8 +574,8 @@ main()
 
 	    #Demean CIFTI
 		if [[ ! -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii ]]; then
-	        ${FSL_FIX_WBC} -cifti-reduce ${fmriNoExt}_Atlas${RegString}.dtseries.nii MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii
-	        ${FSL_FIX_WBC} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+	        ${Caret7_Command} -cifti-reduce ${fmriNoExt}_Atlas${RegString}.dtseries.nii MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii
+	        ${Caret7_Command} -cifti-math "TCS - MEAN" ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii -var TCS ${fmriNoExt}_Atlas${RegString}.dtseries.nii -var MEAN ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 		else
 			log_Warn "${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii already exists. Using existing version"
         fi
@@ -549,16 +603,14 @@ main()
 	    	case ${MatlabRunMode} in
 		    0)
 			    # Use Compiled Matlab
+				local matlab_exe="${HCPPIPEDIR}"
+				matlab_exe+="/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh"
 
-				# MPH: Current version of fix (fix1.067) does not have a compiled version of run_functionhighpassandvariancenormalize
-				log_Err_Abort "MATLAB run mode of ${MatlabRunMode} not currently supported"
-
-				# Following code, with appropriate setting of matlab_exe, should work if/when a compiled version is created
 				# Do NOT enclose string variables inside an additional single quote because all
 				# variables are already passed into the compiled binary as strings
-				local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_functionhighpassandvariancenormalize.sh"
-				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${FSL_FIX_WBC}" "${RegString}")
+				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}")
 
+				# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 				local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 				# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -577,8 +629,8 @@ main()
 					local interpreter=(octave-cli -q --no-window-system)
 				fi
 				
-				# MPH: ${hp} needs to be passed in as a string, to handle the hp=pd* case
-				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${FSL_FIX_WBC}', '${RegString}');"
+				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
+				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}');"
 				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 				log_Msg "${matlab_cmd}"
@@ -586,7 +638,8 @@ main()
 				# Use bash redirection ("here-document") to pass multiple commands into matlab
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
-				(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
+				(source "${FSL_FIXDIR}/settings.sh"; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
 # Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
 ${matlab_cmd}
 M_PROG
@@ -653,12 +706,12 @@ M_PROG
 
 	# Same thing for the CIFTI
     if [[ ! -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
-        ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
-        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
-        ${FSL_FIX_WBC} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas${RegString}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
-        ${FSL_FIX_WBC} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
-        ${FSL_FIX_WBC} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
-        ${FSL_FIX_WBC} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
+        ${Caret7_Command} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii ${CIFTIMergeSTRING}
+        ${Caret7_Command} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii ${MeanCIFTISTRING}
+        ${Caret7_Command} -cifti-math "TCS + MEAN" ${ConcatNameNoExt}_Atlas${RegString}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_demean.dtseries.nii -var MEAN ${ConcatNameNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+        ${Caret7_Command} -cifti-merge ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii ${CIFTIhpVNMergeSTRING}
+        ${Caret7_Command} -cifti-average ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii ${VNCIFTISTRING}
+        ${Caret7_Command} -cifti-math "TCS * VN" ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii -var TCS ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii -var VN ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat
     else
 		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists. Using existing version"
 	fi
@@ -742,6 +795,15 @@ M_PROG
 	# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
 	# could be worked around).
 
+	export FSL_FIX_WBC="${Caret7_Command}"
+	# WARNING: fix_3_clean uses the environment variable FSL_FIX_WBC, but most previous
+	# versions of FSL_FIXDIR/settings.sh (v1.067 and earlier) have a hard-coded value for
+	# FSL_FIX_WBC, and don't check whether it is already defined in the environment.
+	# Thus, when settings.sh file gets sourced, there is a possibility that the version of
+	# wb_command is no longer the same as that specified by ${Caret7_Command}.  So, after
+	# sourcing settings.sh below, we explicitly set FSL_FIX_WBC back to value of ${Caret7_Command}.
+	# (This may only be relevant for interpreted matlab/octave modes).
+
 	log_Msg "Running fix_3_clean"
 
 	AlreadyHP="-1"
@@ -752,7 +814,7 @@ M_PROG
 		
 		0)
 			# Use Compiled Matlab
-			
+
 			local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
 
 			# Do NOT enclose string variables inside an additional single quote because all
@@ -762,7 +824,20 @@ M_PROG
 				matlab_function_arguments+=("${DoVol}")
 			fi
 			
-			local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+			# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
+			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
+			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
+			if [ -z "${FSL_FIX_MCR}" ]; then
+				source ${FSL_FIXDIR}/settings.sh
+				export FSL_FIX_WBC="${Caret7_Command}"
+				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
+				if [ -z "${FSL_FIX_MCR}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+				fi
+			fi
+			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
+							
+			local matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
 			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
@@ -793,7 +868,7 @@ M_PROG
             # Use bash redirection ("here-document") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			(source "${FSL_FIXDIR}/settings.sh"; "${interpreter[@]}" <<M_PROG
+			(source "${FSL_FIXDIR}/settings.sh"; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
 # Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
 ${matlab_cmd}
 M_PROG
@@ -877,13 +952,13 @@ M_PROG
 	    fmri="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriname}/${fmriname}"
 
 		fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
-		NumTPS=`${FSL_FIX_WBC} -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
+		NumTPS=`${Caret7_Command} -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
 	    Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	    log_Msg "${fmriNoExt}: Start=${Start} Stop=${Stop}"
 	
 	    cifti_out=${fmriNoExt}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	    ${FSL_FIX_WBC} -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
-	    ${FSL_FIX_WBC} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
+	    ${Caret7_Command} -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	    ${Caret7_Command} -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 
 	    readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt
 	    touch ${readme_for_cifti_out}
@@ -901,7 +976,7 @@ M_PROG
 		
 		if (( DoVol )); then
 			volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
-	        ${FSL_FIX_WBC} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+	        ${Caret7_Command} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	        fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
         fi
 	    Start=`echo "${Start} + ${NumTPS}" | bc -l`

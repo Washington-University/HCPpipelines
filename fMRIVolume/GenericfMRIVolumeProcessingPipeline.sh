@@ -13,6 +13,11 @@ set -e
 
 # TODO
 
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "GenericfMRIVolumeProcessingPipeline.sh: ABORTING - HCPPIPEDIR environment variable not set"
+	exit 1
+fi
+
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
@@ -21,6 +26,63 @@ source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
 
 ################################################ SUPPORT FUNCTIONS ##################################################
+
+# Validate necesary environment variables
+validate_environment_vars()
+{
+	if [ -z "${FSLDIR}" ]; then
+		log_Err_Abort "FSLDIR environment variable not set"
+	fi
+
+	log_Msg "Environment variables used - Start"
+	log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+	log_Msg "FSLDIR: ${FSLDIR}"
+	log_Msg "Environment variables used - End"
+}
+
+# check for incompatible FSL version
+check_fsl_version()
+{
+	local fsl_version_file
+	local fsl_version
+	local fsl_version_array
+	local fsl_primary_version
+	local fsl_secondary_version
+	local fsl_tertiary_version
+
+	# get the current version of FSL in use
+	fsl_version_file="${FSLDIR}/etc/fslversion"
+
+	if [ -f ${fsl_version_file} ]; then
+		fsl_version=$(cat ${fsl_version_file})
+		log_Msg "Determined that the FSL version in use is ${fsl_version}"
+	else
+		log_Err_Abort "Cannot tell which version of FSL is in use"
+	fi
+
+	# break FSL version string into components: primary, secondary, and tertiary
+	# FSL X.Y.Z would have X as primary, Y as secondary, and Z as tertiary versions
+
+	fsl_version_array=(${fsl_version//./ })
+	
+	fsl_primary_version="${fsl_version_array[0]}"
+	fsl_primary_version=${fsl_primary_version//[!0-9]/}
+
+	fsl_secondary_version="${fsl_version_array[1]}"
+	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
+
+	fsl_tertiary_version="${fsl_version_array[2]}"
+	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
+
+	# FSL version 6.0.0 is unsupported
+	if [[ $(( ${fsl_primary_version} )) -eq 6 ]]; then
+		if [[ $(( ${fsl_secondary_version} )) -eq 0 ]]; then
+			if [[ $(( ${fsl_tertiary_version} )) -eq 0 ]]; then
+				log_Err_Abort "FSL version 6.0.0 is unsupported. Please upgrade to at least version 6.0.1"
+			fi
+		fi
+	fi
+}
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -31,10 +93,9 @@ show_usage() {
     exit 1
 }
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-#log_SetToolName "GenericfMRIVolumeProcessingPipeline.sh"
+validate_environment_vars
+
+check_fsl_version
 
 ################################################## OPTION PARSING #####################################################
 
