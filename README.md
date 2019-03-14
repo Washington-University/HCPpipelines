@@ -21,7 +21,7 @@ hcp-users discussion list. Sign up for hcp-users at
 
 [HCP]: http://www.humanconnectome.org
 [GlasserEtAl]: http://www.ncbi.nlm.nih.gov/pubmed/23668970
-[release-install-use]: https://github.com/Washington-University/Pipelines/wiki/v3.4.0-Release-Notes,-Installation,-and-Usage
+[release-install-use]: https://github.com/Washington-University/HCPpipelines/wiki/Installation-and-Usage-Instructions
 [FAQ]: https://github.com/Washington-University/Pipelines/wiki/FAQ
 [wiki]: https://github.com/Washington-University/Pipelines/wiki
 [hcp-users-subscribe]: http://humanconnectome.org/contact/#subscribe
