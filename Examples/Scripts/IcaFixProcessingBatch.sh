@@ -145,7 +145,9 @@ main() {
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
 	bandpass=2000
-	# MR FIX also supports 0 for linear, "pd2" for quadratic
+	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
+	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
+	# bandpass=pd2 is a quadratic detrend
 	bandpass=pd2
 
 	# set whether or not to regress motion parameters (24 regressors)
