@@ -132,7 +132,7 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# set list of fMRI on which to run ICA+FIX, separate groups with @ (for MR FIX concatenation)
+	# set list of fMRI on which to run ICA+FIX, separate groups with % (for MR FIX concatenation)
 	fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
@@ -171,7 +171,7 @@ main() {
 			# single-run FIX
 			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 			
-			fMRINamesFlat=$(echo ${fMRINames} | sed 's/@/ /g')
+			fMRINamesFlat=$(echo ${fMRINames} | sed 's/%/ /g')
 			
 			for fMRIName in ${fMRINamesFlat}; do
 				echo "  ${fMRIName}"
@@ -186,7 +186,7 @@ main() {
 		else
         	#need arrays to sanity check number of concat groups
         	IFS=' ' read -a concatarray <<< "${ConcatNames}"
-        	IFS=@ read -a fmriarray <<< "${fMRINames}"
+        	IFS=% read -a fmriarray <<< "${fMRINames}"
         	
         	if ((${#concatarray[@]} != ${#fmriarray[@]})); then
         	    echo "ERROR: number of names in ConcatNames does not match number of fMRINames groups"
