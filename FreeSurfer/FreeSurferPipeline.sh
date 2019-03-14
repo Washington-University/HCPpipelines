@@ -771,7 +771,7 @@ main()
 	
 	tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 	
-	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
+	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
 	mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
