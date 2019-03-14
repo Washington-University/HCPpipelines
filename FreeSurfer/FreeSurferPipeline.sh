@@ -764,9 +764,14 @@ main()
 	
 	export SUBJECTS_DIR="$SubjectDIR"
 	
-	reg=$mridir/transforms/hires21mm.dat
+	reg=$mridir/transforms/orig2rawavg.dat
+	# generate registration between conformed and hires based on headers
+	# Note that the convention of tkregister2 is that the resulting $reg is the registration
+	# matrix that maps from the "--targ" space into the "--mov" space. 
+	
 	tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 	
+	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
 	mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
 	return_code=$?
 	if [ "${return_code}" != "0" ]; then
