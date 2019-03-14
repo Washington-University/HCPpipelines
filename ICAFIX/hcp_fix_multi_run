@@ -369,10 +369,18 @@ for fmri in $fmris ; do
 	## We will use the call_matlab.sh script available in ${FSL_FIXDIR}.
 	## But the arguments need to be customized depending on the matlab mode, because:
 	## (1) the -r argument does not support the use of compiled matlab, but is needed for interpreted matlab/octave
-	## to allow addition of 'addpath' as a command, so that functionhighpassandvariancenormalize.m can be found within matlab/octave
-	## (2) for compiled matlab, we need to use the -c and -b flags to specify the location of the MCR and the compiled binary
-	## (we cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
-	## specific script that is not part of the FIX distribution.
+	## to allow addition of 'addpath' as a command, so that functionhighpassandvariancenormalize.m can be found within matlab/octave.
+	## (2) for compiled matlab, we need to use the -c and -b flags to specify the location of the MCR and the compiled binary.
+	## (We cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
+	## specific script that is not part of the FIX distribution).
+
+	# For interpreted modes, make sure that matlab/octave has access to the functions it needs.
+	# normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
+	# Note that the call_matlab.sh script itself adds ${FSL_FIXDIR} (all the fix-related functions)
+	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
+	# Note that the ciftiopen.m, ciftisave.m functions are added to the path through the ${FSL_FIX_WBC} 
+	# environment variable within fix_3_clean.m itself.
+	ML_PATHS="addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	case ${FSL_FIX_MATLAB_MODE} in
 		0)
@@ -393,7 +401,7 @@ for fmri in $fmris ; do
 		1 | 2)
 			# Use interpreted MATLAB or Octave
 			# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-			matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}');"
+			matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}');"
 			log_Msg "Run interpreted MATLAB/Octave with command..."
 			log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
 			${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"   # Note: the semicolon within ${matlab_cmd} needs to be protected with quotation marks
@@ -561,7 +569,7 @@ case ${FSL_FIX_MATLAB_MODE} in
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-		matlab_cmd="addpath('${this_script_dir}/scripts'); functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}');"
+		matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}');"
 		log_Msg "Run interpreted MATLAB/Octave with command..."
 		log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
 		${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"   # Note: the semicolon within ${matlab_cmd} needs to be protected with quotation marks

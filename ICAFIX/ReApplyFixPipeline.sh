@@ -349,11 +349,16 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 
-	# For interpreted modes, make sure that fix_3_clean has access to the functions it needs
-	# (e.g., read_avw, save_avw, ciftiopen, ciftisave)
-	# Several environment variables are set in FSL_FIXDIR/settings.sh, which is sourced below for interpreted modes
+	# For interpreted modes, make sure that matlab/octave has access to the functions it needs.
+	# Since we are NOT using the ${FSL_FIXDIR}/call_matlab.sh script to invoke matlab (unlike 'hcp_fix')
+	# we need to explicitly add ${FSL_FIXDIR} (all the fix-related functions)
+	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
+	# Several additional necessary environment variables (e.g., ${FSL_FIX_CIFTIRW} and ${FSL_FIX_WBC})
+	# are set in FSL_FIXDIR/settings.sh, which is sourced below for interpreted modes.
+	# Note that the ciftiopen.m, ciftisave.m functions are added to the path through the ${FSL_FIX_WBC} 
+	# environment variable within fix_3_clean.m itself.
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${FSL_FIXDIR}');"
+	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}');"
 
 	# Some defaults
 	local aggressive=0
