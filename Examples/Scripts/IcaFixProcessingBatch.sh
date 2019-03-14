@@ -132,7 +132,7 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces to otherwise separate runs
+	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces (or @ like dedrift...) to otherwise separate runs
 	# the MR FIX groups determine what gets concatenated before doing ICA
 	# the groups can be whatever you want, you can make a day 1 group and a day 2 group, or just concatenate everything, etc
 	fMRINames="tfMRI_WM_RL tfMRI_WM_LR tfMRI_GAMBLING_RL tfMRI_GAMBLING_LR tfMRI_MOTOR_RL tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL tfMRI_LANGUAGE_LR tfMRI_SOCIAL_RL tfMRI_SOCIAL_LR tfMRI_RELATIONAL_RL tfMRI_RELATIONAL_LR tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
@@ -141,7 +141,7 @@ main() {
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
 	ConcatNames=""
-	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space to separate concatenation groups
+	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
 	bandpass=2000
@@ -177,7 +177,7 @@ main() {
 			# single-run FIX
 			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 			
-			fMRINamesFlat=$(echo ${fMRINames} | sed 's/%/ /g')
+			fMRINamesFlat=$(echo ${fMRINames} | sed 's/[@%]/ /g')
 			
 			for fMRIName in ${fMRINamesFlat}; do
 				echo "  ${fMRIName}"
@@ -191,7 +191,7 @@ main() {
 
 		else
         	#need arrays to sanity check number of concat groups
-        	IFS=' ' read -a concatarray <<< "${ConcatNames}"
+        	IFS=' @' read -a concatarray <<< "${ConcatNames}"
         	IFS=% read -a fmriarray <<< "${fMRINames}"
         	
         	if ((${#concatarray[@]} != ${#fmriarray[@]})); then
@@ -201,26 +201,27 @@ main() {
 
 		    for ((i = 0; i < ${#concatarray[@]}; ++i))
 		    do
-		        ConcatName="${concatarray[$i]}"
-		        fMRINamesGroup="${fmriarray[$i]}"
-			    # multi-run FIX
-			    FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
-			    ConcatFileName="${ResultsFolder}/${ConcatName}/${ConcatName}"
+				ConcatName="${concatarray[$i]}"
+				fMRINamesGroup="${fmriarray[$i]}"
+				# multi-run FIX
+				FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
+				ConcatFileName="${ResultsFolder}/${ConcatName}/${ConcatName}"
 
-			    InputFile=""
-			    for fMRIName in ${fMRINamesGroup}; do
-			        if [[ "$InputFile" == "" ]]; then
-			            InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
-		            else
-    				    InputFile+="@${ResultsFolder}/${fMRIName}/${fMRIName}"
-				    fi
-			    done
-			
-			    echo "  InputFile: ${InputFile}"
+				IFS=' @' read -a namesgrouparray <<< "${fMRINamesGroup}"
+				InputFile=""
+				for fMRIName in "${namesgrouparray[@]}"; do
+					if [[ "$InputFile" == "" ]]; then
+						InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
+					else
+						InputFile+="@${ResultsFolder}/${fMRIName}/${fMRIName}"
+					fi
+				done
 
-			    cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${ConcatFileName} ${domot} "${TrainingData}" ${FixThreshold})
-			    echo "About to run: ${cmd[*]}"
-			    "${cmd[@]}"
+				echo "  InputFile: ${InputFile}"
+
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${TrainingData}" ${FixThreshold})
+				echo "About to run: ${cmd[*]}"
+				"${cmd[@]}"
 			done
 
 		fi
