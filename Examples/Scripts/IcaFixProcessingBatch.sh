@@ -148,7 +148,7 @@ main() {
 	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
 	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
 	# bandpass=pd2 is a quadratic detrend
-	bandpass=pd2
+	bandpass=0
 
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
