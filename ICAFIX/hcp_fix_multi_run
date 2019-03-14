@@ -428,7 +428,7 @@ if [ ! -e ${ConcatFolder} ] ; then
 	mkdir ${ConcatFolder} 
 else
 	/bin/rm -r ${ConcatFolder}
-	log_Warn "Previous ${ConcatFolder} removed"
+	log_Warn "Previous ${ConcatFolder} directory removed"
 	mkdir ${ConcatFolder}
 fi
 
