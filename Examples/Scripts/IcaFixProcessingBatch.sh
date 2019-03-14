@@ -135,20 +135,20 @@ main() {
 	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces (or @ like dedrift...) to otherwise separate runs
 	# the MR FIX groups determine what gets concatenated before doing ICA
 	# the groups can be whatever you want, you can make a day 1 group and a day 2 group, or just concatenate everything, etc
-	fMRINames="tfMRI_WM_RL tfMRI_WM_LR tfMRI_GAMBLING_RL tfMRI_GAMBLING_LR tfMRI_MOTOR_RL tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL tfMRI_LANGUAGE_LR tfMRI_SOCIAL_RL tfMRI_SOCIAL_LR tfMRI_RELATIONAL_RL tfMRI_RELATIONAL_LR tfMRI_EMOTION_RL tfMRI_EMOTION_LR"
+	fMRINames="tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
 	ConcatNames=""
-	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
+	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
-	bandpass=2000
+	bandpass=2000 
 	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
 	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
 	# bandpass=pd2 is a quadratic detrend
-	bandpass=0
+	bandpass=0 #comment out for single run FIX and use above line for bandpass=2000
 
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
