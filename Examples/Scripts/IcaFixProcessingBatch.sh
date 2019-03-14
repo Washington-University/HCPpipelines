@@ -143,8 +143,10 @@ main() {
 	ConcatNames=""
 	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space to separate concatenation groups
 
-	# set temporal highpass full-width (2*sigma) to use, in seconds
-	bandpass=0
+	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
+	bandpass=2000
+	# MR FIX also supports 0 for linear, "pd2" for quadratic
+	bandpass=pd2
 
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
