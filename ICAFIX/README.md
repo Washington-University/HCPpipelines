@@ -122,33 +122,7 @@ directory containing the 'R2016b/v91' MCR (i.e., same as with
 
 Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of FIX.  Note that [FIX]'s minimum supported version of R is 3.3.0.
 
-### Ubuntu 14.04
-
-```bash
-#superuser permissions are required for all steps as written, you can use "sudo -s" to obtain a root-privileged shell
-
-#cran includes packages of R for ubuntu (and other linux distros) which are in sync with cran
-#this repo should install a 3.4.x version - 3.5.x doesn't seem to be able to install the specified package versions
-echo deb http://cloud.r-project.org/bin/linux/ubuntu trusty/ >> /etc/apt/sources.list
-apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0x51716619E084DAB9
-
-#install build dependencies for the R packages we need
-apt-get update && apt-get install build-essential bc r-base-core gfortran libblas-dev liblapack-dev libcurl4-openssl-dev libssl-dev libssh2-1-dev --no-install-recommends
-
-#use R to install devtools, then use its install_version for the rest
-echo '
-  install.packages("devtools", repos = "http://cloud.r-project.org/");
-  require(devtools);
-  install_version("kernlab", version = "0.9-24", repos = "http://cloud.r-project.org/");
-  install_version("ROCR", version = "1.0-7", repos = "http://cloud.r-project.org/");
-  install_version("class", version = "7.3-14", repos = "http://cloud.r-project.org/");
-  install_version("party", version = "1.0-25", repos = "http://cloud.r-project.org/");
-  install_version("e1071", version = "1.6-7", repos = "http://cloud.r-project.org/");
-  install_version("randomForest", version = "4.6-12", repos = "http://cloud.r-project.org/");
-' | R --vanilla
-```
-
-### Generic approach, tested on 3.3.x and 3.4.x
+### Tested on 3.3.x, 3.4.x, and 3.5.x
 
 ```bash
 #superuser permissions are required for most steps as written, you can use "sudo -s" to obtain a root-privileged shell
@@ -161,8 +135,8 @@ yum -y install blas-devel lapack-devel qt-devel mesa-libGLU openssl-devel libssh
 #2) debian/ubuntu dependencies
 apt-get update && apt-get install -y build-essential libblas-dev liblapack-dev qt5-default libglu1-mesa libcurl4-openssl-dev libssl-dev libssh2-1-dev --no-install-recommends
 
-#R and recommended R packages must already be installed
-PACKAGES="mvtnorm_1.0-8 modeltools_0.2-22 zoo_1.8-4 sandwich_2.5-0 strucchange_1.5-1 TH.data_1.0-9 survival_2.43-3 multcomp_1.4-8 coin_1.2-2 bitops_1.0-6 gtools_3.8.1 gdata_2.18.0 caTools_1.17.1.1 gplots_3.0.1 kernlab_0.9-24 ROCR_1.0-7 class_7.3-14 party_1.0-25 e1071_1.6-7 randomForest_4.6-12"
+#R >= 3.3.0 must already be installed, if you have the R-recommended R packages installed you can probably skip "lattice" through "KernSmooth"
+PACKAGES="lattice_0.20-38 Matrix_1.2-15 survival_2.43-3 MASS_7.3-51.1 class_7.3-14 codetools_0.2-16 KernSmooth_2.23-15 mvtnorm_1.0-8 modeltools_0.2-22 zoo_1.8-4 sandwich_2.5-0 strucchange_1.5-1 TH.data_1.0-9 multcomp_1.4-8 coin_1.2-2 bitops_1.0-6 gtools_3.8.1 gdata_2.18.0 caTools_1.17.1.1 gplots_3.0.1 kernlab_0.9-24 ROCR_1.0-7 party_1.0-25 e1071_1.6-7 randomForest_4.6-12"
 MIRROR="http://cloud.r-project.org"
 
 for package in $PACKAGES
