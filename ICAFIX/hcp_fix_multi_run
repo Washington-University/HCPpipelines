@@ -110,7 +110,10 @@ log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging
 this_script_dir=$(readlink -f "$(dirname "$0")")
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
-source ${FSL_FIXDIR}/settings.sh
+# Default settings file that comes with fix isn't "set -e" clean, so disable temporarily
+set +e
+source "${FSL_FIXDIR}/settings.sh"
+set -e
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
