@@ -463,7 +463,9 @@ main()
 			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
 			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
 			if [ -z "${FSL_FIX_MCR}" ]; then
+				set +e
 				source ${FSL_FIXDIR}/settings.sh
+				set -e
 				export FSL_FIX_WBC="${Caret7_Command}"
 				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
 				if [ -z "${FSL_FIX_MCR}" ]; then
@@ -503,11 +505,7 @@ main()
 			# Use bash redirection ("here-document") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			(source "${FSL_FIXDIR}/settings.sh"; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
-# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
-${matlab_cmd}
-M_PROG
-)
+			(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
 			;;
 
 		*)
