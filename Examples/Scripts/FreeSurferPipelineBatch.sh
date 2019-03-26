@@ -69,8 +69,6 @@ echo "$@"
     QUEUE="-q hcp_priority.q"
 #fi
 
-PRINTCOM=""
-#PRINTCOM="echo"
 #QUEUE="-q veryshort.q"
 
 
@@ -103,8 +101,7 @@ for Subject in $Subjlist ; do
       --subjectDIR="$SubjectDIR" \
       --t1="$T1wImage" \
       --t1brain="$T1wImageBrain" \
-      --t2="$T2wImage" \
-      --printcom=$PRINTCOM
+      --t2="$T2wImage"
       
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -112,8 +109,7 @@ for Subject in $Subjlist ; do
       --subjectDIR="$SubjectDIR" \
       --t1="$T1wImage" \
       --t1brain="$T1wImageBrain" \
-      --t2="$T2wImage" \
-      --printcom=$PRINTCOM"
+      --t2="$T2wImage"
 
   echo ". ${EnvironmentScript}"
 
