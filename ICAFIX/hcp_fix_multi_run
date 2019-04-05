@@ -45,7 +45,7 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
   <highpass>: 
      If > 0, is the temporal highpass full-width (2*sigma), in seconds, to apply using 'fslmaths -bptf'.
      If a string "pd#", where # is an integer, applies polynomial detrending of order #.
-        Use "dp1" for a linear detrend, "dp2" for a quadratic detrend, etc.
+        Use "pd1" for a linear detrend, "pd2" for a quadratic detrend, etc.
         File names will include "_hppd#".
      If = 0, a linear detrend is applied, same as "pd1", but file names will instead include "_hp0".
      To mimic detrending-like behaviour using the fslmaths approach, set <highpass> to 2000.
