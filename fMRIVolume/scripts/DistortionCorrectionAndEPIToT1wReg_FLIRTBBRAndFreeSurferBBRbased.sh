@@ -255,6 +255,8 @@ if [ "${UnwarpDir}" = "z-" ] ; then
   UnwarpDir="-z"
 fi
 
+log_Msg "DistortionCorrection: ${DistortionCorrection}"
+
 case $DistortionCorrection in
 
     ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT})
@@ -340,25 +342,32 @@ case $DistortionCorrection in
         ;;
 
     ${SPIN_ECHO_METHOD_OPT})
-    
+
+		log_Msg "Doing distortion correction using Spin Echo Field Maps"
+		
         # --------------------------
         # -- Spin Echo Field Maps --
         # --------------------------
 
+		
         # Use topup to distortion correct the scout scans
         # using a blip-reversed SE pair "fieldmap" sequence
-        ${GlobalScripts}/TopupPreprocessingAll.sh \
-            --workingdir=${WD}/FieldMap \
-            --phaseone=${SpinEchoPhaseEncodeNegative} \
-            --phasetwo=${SpinEchoPhaseEncodePositive} \
-            --scoutin=${ScoutInputName} \
-            --echospacing=${EchoSpacing} \
-            --unwarpdir=${UnwarpDir} \
-            --owarp=${WD}/WarpField \
-            --ojacobian=${WD}/Jacobian \
-            --gdcoeffs=${GradientDistortionCoeffs} \
-            --topupconfig=${TopupConfig} \
-            --usejacobian=${UseJacobian}
+        topup_preproc_cmd="${GlobalScripts}/TopupPreprocessingAll.sh "
+		topup_preproc_cmd+=" --workingdir=${WD}/FieldMap "
+		topup_preproc_cmd+=" --phaseone=${SpinEchoPhaseEncodeNegative} "
+        topup_preproc_cmd+=" --phasetwo=${SpinEchoPhaseEncodePositive} "
+		topup_preproc_cmd+=" --scoutin=${ScoutInputName} "
+		topup_preproc_cmd+=" --echospacing=${EchoSpacing} "
+        topup_preproc_cmd+=" --unwarpdir=${UnwarpDir} "
+		topup_preproc_cmd+=" --owarp=${WD}/WarpField "
+		topup_preproc_cmd+=" --ojacobian=${WD}/Jacobian "
+		topup_preproc_cmd+=" --gdcoeffs=${GradientDistortionCoeffs} "
+		topup_preproc_cmd+=" --topupconfig=${TopupConfig} "
+        topup_preproc_cmd+=" --usejacobian=${UseJacobian} "
+
+		log_Msg "Invoking topup_preproc_cmd: ${topup_preproc_cmd}"
+		${topup_preproc_cmd}
+		log_Msg "topup_preproc_cmd complete"
 
         #If NHP, brain extract scout for registration
         if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
