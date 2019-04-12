@@ -605,7 +605,7 @@ main()
 		# ----------------------------------------------------------------------
 		log_Msg "Thresholding T1w image to eliminate negative voxel values"
 		# ----------------------------------------------------------------------
-		zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
+		zero_threshold_T1wImage=$(${FSLDIR}/bin/remove_ext ${T1wImage})_zero_threshold.nii.gz
 		log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
 		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}

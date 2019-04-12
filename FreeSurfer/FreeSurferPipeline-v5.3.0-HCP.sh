@@ -120,8 +120,8 @@ log_Msg "mri_watershed --version: ${mri_watershed_version}"
 
 # Start work
 
-T1wImageFile=`remove_ext $T1wImage`;
-T1wImageBrainFile=`remove_ext $T1wImageBrain`;
+T1wImageFile=$(${FSLDIR}/bin/remove_ext ${T1wImage})
+T1wImageBrainFile=$(${FSLDIR}/bin/remove_ext ${T1wImageBrain})
 
 PipelineScripts=${HCPPIPEDIR_FS}
 
