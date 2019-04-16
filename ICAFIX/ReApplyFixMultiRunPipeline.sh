@@ -367,7 +367,13 @@ have_hand_reclassification()
 
 main()
 {
-	local this_script_dir=$(readlink -f "$(dirname "$0")")
+	#mac readlink doesn't have -f
+	if [[ -L "$0" ]]
+	then
+		local this_script_dir=$(dirname "$(readlink "$0")")
+	else
+		local this_script_dir=$(dirname "$0")
+	fi
 
 	# Show tool versions
 	show_tool_versions
