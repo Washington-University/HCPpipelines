@@ -294,10 +294,10 @@ fi
 
 # UNWARP DIR = x,y
 if [[ $UnwarpDir = [xyij] ]] ; then
-  # select the first volume from PhaseTwo
+  log_Msg "select the first volume from PhaseTwo"
   VolumeNumber=$(($dimtOne + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
-  # register scout to SE input (PhaseTwo) + combine motion and distortion correction
+  log_Msg "register scout to SE input (PhaseTwo) + combine motion and distortion correction"
   ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseTwo_gdc -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc
   ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseTwo_gdc.mat
   ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseTwo_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
@@ -305,10 +305,10 @@ if [[ $UnwarpDir = [xyij] ]] ; then
   SBRefPhase=Two
 # UNWARP DIR = -x,-y
 elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
-  # select the first volume from PhaseOne
+  log_Msg "select the first volume from PhaseOne"
   VolumeNumber=$((0 + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
-  # register scout to SE input (PhaseOne) + combine motion and distortion correction
+  log_Msg "register scout to SE input (PhaseOne) + combine motion and distortion correction"
   ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseOne_gdc -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc
   ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat
   ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseOne_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
