@@ -121,7 +121,7 @@ for Subject in $Subjlist ; do
         --concat-reg-name=${ConcatRegName} \
         --maps=${Maps} \
         --myelin-maps=${MyelinMaps} \
-        --multirun-fix-concat-name=${MRFixConcatName} \
+        --multirun-fix-concat-names=${MRFixConcatName} \
         --multirun-fix-names=${MRFixNames} \
         --fix-names=${fixNames} \
         --dont-fix-names=${dontFixNames} \
