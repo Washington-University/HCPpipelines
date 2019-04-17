@@ -369,7 +369,7 @@ main()
 
 	# Copy Atlas ROI files
 	for Hemisphere in L R ; do
-		cp --verbose \
+		cp -v \
 			${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
 	done

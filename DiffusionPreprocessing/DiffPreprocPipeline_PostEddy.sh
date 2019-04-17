@@ -392,7 +392,7 @@ main()
 
 	mkdir --parents ${to_location}
 	for filename in ${from_files} ; do
-		cp --verbose ${filename} ${to_location}
+		cp -v ${filename} ${to_location}
 	done
 	
 	log_Msg "Completed"
