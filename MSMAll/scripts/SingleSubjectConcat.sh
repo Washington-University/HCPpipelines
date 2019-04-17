@@ -423,9 +423,10 @@ main()
 					1)
 						# Use interpreted MATLAB
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
+						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 						
 						matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');
+addpath '$mPath'; addpath '$mGlobalPath'; ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');
 M_PROG
 						log_Msg "ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');"
 						;;
