@@ -309,10 +309,22 @@ elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
   VolumeNumber=$((0 + 1))
   vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
   log_Msg "register scout to SE input (PhaseOne) + combine motion and distortion correction"
-  ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseOne_gdc -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc
-  ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat
-  ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseOne_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz
-  ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz
+  flirt_cmd="${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef.nii.gz -ref ${WD}/PhaseOne_gdc -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc"
+  log_Msg "About to execute: ${flirt_cmd}"
+  ${flirt_cmd}
+  
+  convert_xfm_cmd="${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat"
+  log_Msg "About to execute: ${convert_xfm_cmd}"
+  ${convert_xfm_cmd}
+  
+  convertwarp_cmd="${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseOne_gdc --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField.nii.gz"
+  log_Msg "About to execute: ${convertwarp_cmd}"
+  ${convertwarp_cmd}
+  
+  imcp_cmd="${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum}.nii.gz ${WD}/Jacobian.nii.gz"
+  log_Msg "About to execute: ${imcp_cmd}"
+  ${imcp_cmd}
+  
   SBRefPhase=One
 fi
 

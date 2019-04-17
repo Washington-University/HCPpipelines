@@ -130,6 +130,7 @@ log_Msg()
 	fi
 	
 	echo "${msg}"
+	>&2 echo "${msg}"
 }
 
 #
