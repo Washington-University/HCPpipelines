@@ -455,7 +455,7 @@ mv_if_exists()
 	local to="${2}"
 
 	if [ -e "${from}" ] ; then
-		mv -v "${from}" "${to}"
+		mv "${from}" "${to}"
 	fi
 }
 
@@ -1044,9 +1044,9 @@ main()
 	esac
 
 	log_Msg "Moving results of Matlab function"
-	mv -v ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
-	mv -v ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
-	mv -v ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
+	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
+	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
+	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt

@@ -768,7 +768,7 @@ main()
 
 					if [[ ! -e ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii ]] ; then
 						if [[ ! -z ${MyelinTargetFile} ]] ; then
-							cp -v ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+							cp ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 						else
 							log_Err_Abort "A --myelin-target-file is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
 						fi

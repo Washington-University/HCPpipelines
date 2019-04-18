@@ -143,16 +143,16 @@ ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp
 invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${ScoutInputgdc}
 applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${ScoutInputgdc} -w ${OutputInvTransform} -o ${ScoutInputgdc}_mask.nii.gz
 if [ -e ${fMRIFolder}/Movement_RelativeRMS.txt ] ; then
-  /bin/rm -v ${fMRIFolder}/Movement_RelativeRMS.txt
+  /bin/rm ${fMRIFolder}/Movement_RelativeRMS.txt
 fi
 if [ -e ${fMRIFolder}/Movement_AbsoluteRMS.txt ] ; then
-  /bin/rm -v ${fMRIFolder}/Movement_AbsoluteRMS.txt
+  /bin/rm ${fMRIFolder}/Movement_AbsoluteRMS.txt
 fi
 if [ -e ${fMRIFolder}/Movement_RelativeRMS_mean.txt ] ; then
-  /bin/rm -v ${fMRIFolder}/Movement_RelativeRMS_mean.txt
+  /bin/rm ${fMRIFolder}/Movement_RelativeRMS_mean.txt
 fi
 if [ -e ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ] ; then
-  /bin/rm -v ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
+  /bin/rm ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
 fi
 ###Add stuff for RMS###
 

@@ -581,10 +581,10 @@ main()
 		log_Msg "RSNCostWeights: ${RSNCostWeights}"
 		log_File_Must_Exist "${RSNCostWeights}"
 
-		cp -v "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp -v "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp -v "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp -v "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
 
 		if [ "${InPCARegName}" = "MSMSulc" ] ; then
 			log_Msg "InPCARegName is MSMSulc"
@@ -664,10 +664,10 @@ main()
 			log_Msg "Modalities: ${Modalities}"
 
 			if [ ! -e ${NativeFolder}/${RegName} ] ; then
-				mkdir -v ${NativeFolder}/${RegName}
+				mkdir ${NativeFolder}/${RegName}
 			else
 				rm -r "${NativeFolder:?}/${RegName}"
-				mkdir -v ${NativeFolder}/${RegName}
+				mkdir ${NativeFolder}/${RegName}
 			fi
 
 			if [[ $(echo -n ${Modalities} | grep "C") || $(echo -n ${Modalities} | grep "T") ]] ; then

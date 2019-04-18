@@ -751,8 +751,8 @@ main()
 	fi
 
 	log_Msg "...Clean up"
-	rm -v deleteme.dat
-	rm -v Q.lta
+	rm deleteme.dat
+	rm Q.lta
 
 	popd
 
