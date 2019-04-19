@@ -647,15 +647,11 @@ main()
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 				log_Msg "${matlab_cmd}"
 
-				# Use bash redirection ("here-document") to pass multiple commands into matlab
+				# Use bash redirection ("here-string") to pass multiple commands into matlab
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
 				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
-# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
-${matlab_cmd}
-M_PROG
-)
+				(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
                 ;;
 
 			*)
@@ -879,7 +875,7 @@ M_PROG
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "${matlab_cmd}"
 			
-            # Use bash redirection ("here-document") to pass multiple commands into matlab
+            # Use bash redirection ("here-string") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
 			(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
