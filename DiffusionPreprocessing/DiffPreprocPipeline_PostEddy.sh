@@ -390,9 +390,9 @@ main()
 	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_parameters "
 	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_post_eddy_shell_alignment_parameters "
 
-	mkdir --parents ${to_location}
+	mkdir -p ${to_location}
 	for filename in ${from_files} ; do
-		cp --verbose ${filename} ${to_location}
+		cp ${filename} ${to_location}
 	done
 	
 	log_Msg "Completed"

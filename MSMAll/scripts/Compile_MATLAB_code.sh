@@ -45,7 +45,7 @@ compile_ComputeVN()
 	log_Msg "Working in ${PWD}"
 
 	log_Msg "Creating output directory: ${output_directory}"
-	mkdir --parents ${output_directory}
+	mkdir -p ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
@@ -69,7 +69,7 @@ compile_MSMregression()
 	log_Msg "Working in ${PWD}"
 
 	log_Msg "Creating output directory: ${output_directory}"
-	mkdir --parents ${output_directory}
+	mkdir -p ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
