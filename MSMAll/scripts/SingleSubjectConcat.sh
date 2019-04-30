@@ -63,9 +63,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --revert-bias-field=<YES | NO> revert the bias field or not
         Requires having run the RestingStateStats pipeline and is not necessary if 
         computing variance normalization above
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+  [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled MATLAB)
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use Octave
 
 EOF
 }
@@ -261,11 +262,11 @@ get_options()
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
-			1)
+			1 | 2)
 				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
-				log_Err "MATLAB run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0, 1, or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -420,15 +421,21 @@ main()
 						log_Msg "MATLAB command return code: $?"
 						;;
 					
-					1)
-						# Use interpreted MATLAB
+					1 | 2)
+						# Use interpreted MATLAB or Octave
+						if [[ ${MatlabRunMode} == "1" ]]
+						then
+						    interpreter=(matlab -nojvm -nodisplay -nosplash)
+						else
+						    interpreter=(octave-cli -q --no-window-system)
+						fi
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
 						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 						
-						log_Msg "ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');"
-						matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; addpath '$mGlobalPath'; ComputeVN('${cleandtseries}','${bias}','${ICAtcs}','${ICANoise}','${OutputVN}','${Caret7_Command}');
-M_PROG
+						matlabCode="addpath '$mPath'; addpath '$mGlobalPath'; ComputeVN('${cleandtseries}', '${bias}', '${ICAtcs}', '${ICANoise}', '${OutputVN}', '${Caret7_Command}');"
+						
+						log_Msg "$matlabCode"
+						"${interpreter[@]}" <<<"$matlabCode"
 						;;
 					
 					*)
