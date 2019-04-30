@@ -64,9 +64,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --high-res-mesh=<high resolution mesh node count> (in thousands)
    --low-res-mesh=<low resolution mesh node count> (in thousands)
    --input-registration-name=<input registration name>
-  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use Octave
 
 EOF
 }
@@ -264,8 +265,11 @@ get_options()
 			1)
 				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
+			2)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use Octave"
+				;;
 			*)
-				log_Err "MATLAB run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0, 1, or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
