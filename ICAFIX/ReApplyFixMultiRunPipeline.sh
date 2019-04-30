@@ -774,11 +774,15 @@ main()
     #this directory should exist and not be empty (i.e., melodic has already been run)
 	cd ${concatfmrihp}.ica
 
-	#This is the concated volume time series from the 1st pass VN, with the mean VN map multiplied back in
+	# This is the concated volume time series from the 1st pass VN, with requested
+	# hp-filtering applied and with the mean VN map multiplied back in
 	${FSLDIR}/bin/imrm filtered_func_data
 	${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
 
-	#This is the concated CIFTI time series from the 1st pass VN, with the mean VN map multiplied back in
+	# This is the concated CIFTI time series from the 1st pass VN, with requested
+	# hp-filtering applied and with the mean VN map multiplied back in
+	# Unlike single-run FIX (i.e., 'hcp_fix' and 'ReApplyFixPipeline'), here we symlink
+	# to the hp-filtered CIFTI and use "AlreadyHP=-1" to skip any additional filtering in fix_3_clean.
 	if [[ -f ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii ]] ; then
 		log_Msg "FOUND FILE: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 		log_Msg "Performing imln"

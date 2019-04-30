@@ -398,7 +398,12 @@ main()
 	DIR=$(pwd)
 	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica
 
-	# Note: hp-filtering of the CIFTI (dtseries) occurs within fix_3_clean.
+	# Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
+	# that any desired filtering has already been done outside of fix.
+	# So here, we need to symlink to the hp-filtered volume data.
+	$FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
+
+	# However, hp-filtering of the CIFTI (dtseries) occurs within fix_3_clean.
 	# So here, we just create a symlink with the file name expected by
 	# fix_3_clean ("Atlas.dtseries.nii") to the non-filtered data.
 	if [ -f ../${fMRIName}_Atlas${RegString}.dtseries.nii ] ; then
@@ -416,11 +421,7 @@ main()
 		log_Warn "FILE NOT FOUND: ../${fMRIName}_Atlas${RegString}.dtseries.nii"
 	fi
 
-	# However, fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
-	# that any desired filtering has already been done outside of fix.
-	# So here, we need to symlink to the hp-filtered volume data.
-	$FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
-
+	# Get Movement_Regressors.txt into the format expected by functionmotionconfounds.m
 	mkdir -p mc
 	if [ -f ../Movement_Regressors.txt ] ; then
 		log_Msg "Creating mc/prefiltered_func_data_mcf.par file"
