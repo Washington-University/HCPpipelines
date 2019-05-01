@@ -252,6 +252,9 @@ fi
 if [[ "${hp}" == pd* ]]; then
 	hpNum=${hp:2}
 	pdFlag=TRUE
+	if (( hpNum > 5 )); then
+		log_Err_Abort "Polynomial detrending of order ${hpNum} is not allowed (may not be numerically stable); Use 5th order or less"
+	fi
 else
 	hpNum=${hp}
 fi
