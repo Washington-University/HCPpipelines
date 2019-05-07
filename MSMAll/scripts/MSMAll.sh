@@ -37,14 +37,11 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: MSM-All Registration
+${g_script_name}: MSM-All Registration
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -75,7 +72,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --rerun=TBW
    --reg-conf=TBW
    --reg-conf-vars=TBW
-  [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled MATLAB)
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
      2 = Use Octave
@@ -120,7 +117,7 @@ get_options()
 	unset p_MatlabRunMode
 	
 	# set default values
-	p_MatlabRunMode=0
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -495,7 +492,7 @@ main()
 
 	local MatlabRunMode
 	if [ -z "${24}" ]; then
-		MatlabRunMode=0
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
 		MatlabRunMode="${24}"
 	fi
@@ -1404,10 +1401,21 @@ main()
 
 set -e # If any commands exit with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify that HCPPIPEDIR Environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 

@@ -200,6 +200,9 @@ get_options()
 		fi
 		if [[ "${p_HighPass}" == pd* ]]; then
 			local hpNum=${p_HighPass:2}
+			if (( hpNum > 5 )); then
+				log_Err_Abort "Polynomial detrending of order ${hpNum} is not allowed (may not be numerically stable); Use 5th order or less"
+			fi
 		else
 			local hpNum=${p_HighPass}
 		fi
