@@ -1,6 +1,6 @@
 # HCP Pipelines MSMAll subdirectory
 
-<General description to be written>
+MSMAll is a tool for surface-based functional alignment.  It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template.  One runs MSMAll after running either sICA+FIX (single run or multi-run).  One first runs the MSMAll Pipeline, then the DeDriftAndResample Pipeline with or without the GroupAverageDeDrift Pipeline depending upon whether one is creating a new template space (compute a DeDrift) or simply aligning data to an existing template (don't compute a DeDrift). 
 
 # Notes on MATLAB usage
 
