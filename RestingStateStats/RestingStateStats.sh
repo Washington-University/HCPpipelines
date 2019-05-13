@@ -94,6 +94,12 @@ log_SetToolName "${g_script_name}"
 
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
 
+# ------------------------------------------------------------------------------
+# Check required environment variables
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var MATLAB_COMPILER_RUNTIME
+
 #
 # Function Description:
 #  Document Tool Versions
@@ -959,27 +965,12 @@ main()
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
-			# TBD: Use environment variable instead of fixed path
-			if [ "${CLUSTER}" = "1.0" ]; then
-				matlab_compiler_runtime="/export/matlab/R2016b/MCR"
-			elif [ "${CLUSTER}" = "2.0" ]; then
-				matlab_compiler_runtime="/export/matlab/MCR/R2016b/v91"
-			else
-				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-				log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-				log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-				log_Msg "ERROR: using an environment variable's value."
-			fi
-
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
 			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
 
 			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
 
-			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+			matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
 
 			# --------------------------------------------------------------------------------
 			log_Msg "Run matlab command: ${matlab_cmd}"
