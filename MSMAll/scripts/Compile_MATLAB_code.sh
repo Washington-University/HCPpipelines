@@ -25,7 +25,7 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
 #
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
@@ -109,10 +109,7 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify that other needed environment variables are set
-if [ -z "${MATLAB_HOME}" ]; then
-	log_Err_Abort "MATLAB_HOME environment variable must be set"
-fi
-log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
+log_Check_Env_Var MATLAB_HOME
 
 # Invoke the main processing
 main "$@"

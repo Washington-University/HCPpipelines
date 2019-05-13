@@ -4,7 +4,7 @@
 
 Human Connectome Project [Pipelines][Pipelines] = THIS SOFTWARE
 
-Copyright (c) 2011-2018 [The Human Connectome Project][HCP]
+Copyright (c) 2011-2019 [The Human Connectome Project][HCP] and [The Connectome Coordination Facility][CCF]
 
 Redistribution and use in source and binary forms, with or without modification,
 is permitted provided that the following conditions are met:
@@ -34,6 +34,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 <!-- References -->
 
-[HCP]: http://www.humanconnectome.org
-[Pipelines]: https://github.com/Washington-University/Pipelines
-
+[HCP]: https://www.humanconnectome.org
+[Pipelines]: https://github.com/Washington-University/HCPpipelines
+[CCF]: https://www.humanconnectome.org

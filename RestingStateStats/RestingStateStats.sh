@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2016 The Human Connectome Project
+# Copyright (C) 2015-2019 The Human Connectome Project and the Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -957,13 +957,13 @@ main()
 		0)
 			# Use Compiled Matlab
 			matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
+			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
 			# TBD: Use environment variable instead of fixed path
 			if [ "${CLUSTER}" = "1.0" ]; then
-				matlab_compiler_runtime="/export/matlab/R2013a/MCR"
+				matlab_compiler_runtime="/export/matlab/R2016b/MCR"
 			elif [ "${CLUSTER}" = "2.0" ]; then
-				matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+				matlab_compiler_runtime="/export/matlab/MCR/R2016b/v91"
 			else
 				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
 				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
