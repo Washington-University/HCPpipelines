@@ -31,7 +31,7 @@ compile_RestingStateStats()
 	local app_name=RestingStateStats
 	local output_directory=Compiled_${app_name}
 
-	pushd ${HCPPIPEDIR}/RestingStateStats > /dev/null
+	pushd ${HCPPIPEDIR}/RestingStateStats/scripts > /dev/null
 	log_Msg "Working in ${PWD}"
 
 	log_Msg "Creating output directory: ${output_directory}"
