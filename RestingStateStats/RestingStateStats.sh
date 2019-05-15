@@ -144,9 +144,9 @@ usage()
 	echo "    --smoothing-fwhm=<smoothing full width at half max>"
 	echo "    --output-proc-string=<output processing string>"
 	echo "   [--dlabel-file=<dlabel file>] defaults to NONE if not specified"
-	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled Matlab)"
+	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 1 (Interpreted Matlab)"
 	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use Matlab"
+	echo "     1 = Use interpreted Matlab"
 	echo "     2 = Use Octave"
 	echo "   [--bc-mode={REVERT,NONE,CORRECT}] defaults to REVERT"
 	echo "     REVERT = Revert minimal preprocessing pipelines bias field correction"
@@ -177,7 +177,7 @@ usage()
 #  ${g_dlabel_file} - label file containing label designations and label color keys
 #  ${g_matlab_run_mode} - indication of how to run Matlab code
 #    0 - Use compiled Matlab
-#    1 - Use Matlab
+#    1 - Use interpreted Matlab
 #    2 - Use Octave
 #  ${g_bc_mode} - bias correction mode
 #    REVERT - Revert minimal preprocessing pipelines bias field correction
@@ -212,7 +212,7 @@ get_options()
 	# set default values 
 	g_reg_name="NONE"
 	g_dlabel_file="NONE"
-	g_matlab_run_mode=0
+	g_matlab_run_mode=1
 	g_bc_mode="REVERT"
 	g_out_string="stats"
 	g_wm="NONE"
@@ -950,7 +950,6 @@ main()
 	if [ ${g_bc_mode} = "REVERT" ] ; then
 	  g_bc_mode="REVERT"
 	elif [ ${g_bc_mode} = "NONE" ] ; then
-	  g_bc_mode="NONE"
 	elif [ ${g_bc_mode} = "CORRECT" ] ; then
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
@@ -963,7 +962,7 @@ main()
 		0)
 			# Use Compiled Matlab
 			matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/run_RestingStateStats.sh"
+			matlab_exe+="/RestingStateStats/scripts/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
 			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
 			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
@@ -993,7 +992,7 @@ main()
 			
 			# TBD: change these paths to use variables instead of hard coded paths
 			touch ${matlab_script_file_name}
-			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${matlab_script_file_name}
+			echo "addpath ${HCPPIPEDIR}/scripts/RestingStateStats " >> ${matlab_script_file_name}
 			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
 			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
 			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
