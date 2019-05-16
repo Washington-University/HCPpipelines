@@ -394,9 +394,7 @@ get_options()
 		case ${g_matlab_run_mode} in 
 			0)
 				;;
-			1)
-				;;
-			2)
+			1 | 2)
 				;;
 			*)
 				echo "ERROR: matlab run mode value must be 0, 1, or 2"
@@ -980,60 +978,32 @@ main()
 
 			;;
 
-		1)
-			# Use Matlab - Untested
-			matlab_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
-			log_Msg "Creating Matlab script: ${matlab_script_file_name}"
-
-			if [ -e ${matlab_script_file_name} ]; then
-				echo "Removing old ${matlab_script_file_name}"
-				rm -f ${matlab_script_file_name}
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			if [[ ${g_matlab_run_mode} == "1" ]]
+			then
+				interpreter=(matlab -nojvm -nodisplay -nosplash)
+			else
+				interpreter=(octave-cli -q --no-window-system)
 			fi
+
+			mPath="${HCPPIPEDIR}/RestingStateStats/scripts"
+			mGlobalPath="${HCPPIPEDIR}/global/matlab"
+			mFslPath="${FSLDIR}/etc/matlab"
+
+			matlabCode="addpath '$mPath'; addpath '$mGlobalPath'; addpath '$mFslPath'; RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');"
 			
-			# TBD: change these paths to use variables instead of hard coded paths
-			touch ${matlab_script_file_name}
-			echo "addpath ${HCPPIPEDIR}/scripts/RestingStateStats " >> ${matlab_script_file_name}
-			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
-			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
-
-			log_Msg "About to execute the following Matlab script"
-
-			cat ${matlab_script_file_name}
-			cat ${matlab_script_file_name} | matlab -nodisplay -nosplash
-
-			;;
-
-		2)
-			# Use Octave - doesn't seem to work
-			octave_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
-			log_Msg "Creating Octave script: ${octave_script_file_name}"
-
-			if [ -e ${octave_script_file_name} ]; then
-				echo "Removing old ${octave_script_file_name}"
-				rm -f ${octave_script_file_name}
-			fi
-			
-			# TBD: change these paths to use variables instead of hard coded paths
-			touch ${octave_script_file_name}
-			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${octave_script_file_name}
-			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
-			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${octave_script_file_name}
-
-			log_Msg "About to execute the following Octave script"
-
-			cat ${octave_script_file_name}
-			cat ${octave_script_file_name} | ${OCTAVE_HOME}/bin/octave
-
+			log_Msg "$matlabCode"
+			"${interpreter[@]}" <<<"$matlabCode"
 			;;
 
 		*)
-			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
+			# Unsupported MATLAB run mode
+			log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
 			exit 1
 	esac
 
-	log_Msg "Moving results of Matlab function"
+	log_Msg "Moving results of MATLAB function"
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}

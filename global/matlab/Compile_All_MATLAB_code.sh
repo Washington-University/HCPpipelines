@@ -37,11 +37,23 @@ ${g_script_name}
   This script can be used to (re)-compile all MATLAB code for functions called by
   any pipelines that are part of the HCP Pipelines.
 
+  Since the HCP Pipelines already provides compiled versions of the associated 
+  MATLAB code, it should not be necessary for a user of the HCP Pipelines to 
+  use this script to compile the MATLAB code.
+
+  Currently, the compiled MATLAB code was created with MATLAB release R2016b
+  and, therefore, is intended to be run using the MATLAB Compiler Runtime (MCR)
+  version R2016b/v91. 
+
+  Use of this script by users of the HCP Pipelines should only be necessary if
+  a user wants or needs to use a different release of MATLAB. 
+
   The compiled functions can be used to run the associated pipelines on systems
   that do not have MATLAB itself licensed or installed and therefore cannot use 
   interpreted MATLAB during pipeline processing.
 
   Requirements for Compiling MATLAB code
+  ======================================
 
   * The system on which you perform the compilation must have a licensed version 
     of MATLAB installed and a licensed version of the optional MATLAB compiler (mcc). 
@@ -52,6 +64,7 @@ ${g_script_name}
       export MATLAB_HOME=/usr/local/MATLAB/R2016b
 
   Requirements for Running Compiled MATLAB functions
+  ==================================================
 
   * The system on which pipeline processing is run must have installed the MATLAB 
     Compiler Runtime (MCR) that corresponds to the version of the MATLAB Compiler 
