@@ -78,51 +78,9 @@
 #~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-
-# If any commands exit with non-zero value, this script exits
-set -e
-g_script_name=`basename ${0}`
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
-
-# ------------------------------------------------------------------------------
-# Check required environment variables
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var MATLAB_COMPILER_RUNTIME
-
-#
-# Function Description:
-#  Document Tool Versions
-#
-show_tool_versions() {
-	# Show HCP pipelines version
-	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
-
-	# Show wb_command version
-	log_Msg "Showing wb_command version"
-	${CARET7DIR}/wb_command -version
-
-	# Show fsl version
-	log_Msg "Showing FSL version"
-	fsl_version_get fsl_ver
-	log_Msg "FSL version: ${fsl_ver}"
-}
-
-# 
-# Function Description:
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
 	echo ""
@@ -158,11 +116,10 @@ usage()
 	echo ""
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
+# ------------------------------------------------------------------------------
+
 # Global Output Variables
 #  ${g_path_to_study_folder} - path to folder containing subject data directories
 #  ${g_subject} - subject ID
@@ -186,10 +143,10 @@ usage()
 #  ${g_out_string} - name string of output files
 #  ${g_wm} - Switch that turns on white matter timeseries related stats
 #  ${g_csf} - Switch that turns on csf timeseries related stats
-#
+
 get_options()
 {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	unset g_path_to_study_folder
@@ -448,11 +405,32 @@ get_options()
 	fi
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
+{
+	# Show HCP pipelines version
+	log_Msg "Showing HCP Pipelines version"
+	cat ${HCPPIPEDIR}/version.txt
+
+	# Show wb_command version
+	log_Msg "Showing Connectome Workbench (wb_command) version"
+	${CARET7DIR}/wb_command -version
+
+	# Show FSL version
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
+}
+
+# ------------------------------------------------------------------------------
+#  mv_if_exists
+# ------------------------------------------------------------------------------
 #  move the specified file to the new path if the
 #  specified file exists, otherwise, do nothing
-#
+
 mv_if_exists()
 {
 	local from="${1}"
@@ -463,10 +441,10 @@ mv_if_exists()
 	fi
 }
 
-# 
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-# 
+# ------------------------------------------------------------------------------
+
 main()
 {
 	# Get command line options
@@ -1090,7 +1068,44 @@ main()
 	# --------------------------------------------------------------------------------
 
 	find ${ResultsFolder} -type f -name "BiasField*" -print -delete
+
+	log_Msg "Completed!"
 }
+
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any command exits with non-zero value, this script exits
+
+# Establish defaults
+## Currently done in get_options()
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_SetToolName "${g_script_name}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var MATLAB_COMPILER_RUNTIME
 
 # 
 # Invoke the main function to get things started
