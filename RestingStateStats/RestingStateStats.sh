@@ -365,11 +365,7 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_bc_mode} in 
-			REVERT)
-				;;
-			NONE)
-				;;
-			CORRECT)
+			REVERT | NONE | CORRECT)
 				;;
 			*)
 				echo "ERROR: bias corrrection mode must be REVERT, NONE, or CORRECT"
@@ -923,10 +919,8 @@ main()
 	fi
 	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
 	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
-	if [ ${g_bc_mode} = "REVERT" ] ; then
-	  g_bc_mode="REVERT"
-	elif [ ${g_bc_mode} = "NONE" ] ; then
-	elif [ ${g_bc_mode} = "CORRECT" ] ; then
+	# If bc_mode is "CORRECT", convert variable to the location of the "real" bias field
+	if [ ${g_bc_mode} = "CORRECT" ] ; then
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
 
