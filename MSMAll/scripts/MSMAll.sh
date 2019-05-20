@@ -52,7 +52,6 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject=<subject ID>
    --high-res-mesh=<high resolution mesh node count> (in thousands)
    --low-res-mesh=<low resolution mesh node count> (in thousands)
-   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
    --output-fmri-name=<name given to concatenated singel subject "scan">
    --fmri-proc-string=<identification for FIX cleaned dtseries to use>
    --input-pca-registration-name=TBW
@@ -94,7 +93,6 @@ get_options()
 	unset p_Subject
 	unset p_HighResMesh
 	unset p_LowResMesh
-	#unset p_fMRINames
 	unset p_OutputfMRIName
 	unset p_fMRIProcSTRING
 	unset p_InPCARegName
@@ -152,10 +150,6 @@ get_options()
 				p_LowResMesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			#--fmri-names-list=*)
-			#	p_fMRINames=${argument/*=/""}
-			#	index=$(( index + 1 ))
-			#	;;
 			--output-fmri-name=*)
 				p_OutputfMRIName=${argument/*=/""}
 				index=$(( index + 1 ))
@@ -277,13 +271,6 @@ get_options()
 		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
 
-	#if [ -z "${p_fMRINames}" ]; then
-	#	log_Err "fMRI Names List (--fmri-names-list=) required"
-	#	error_count=$(( error_count + 1 ))
-	#else
-	#	log_Msg "fMRI Names List: ${p_fMRINames}"
-	#fi
-	
 	if [ -z "${p_OutputfMRIName}" ]; then
 		log_Err "Output fMRI Name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
