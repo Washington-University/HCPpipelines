@@ -487,6 +487,10 @@ main()
 		RegString="${RegString}.${g_low_res_mesh}k"
 	fi
 
+	### -------------------------------------------------
+	### BEGIN creation of CIFTI version of the bias field
+	### -------------------------------------------------
+
 	if [ ! "${g_bc_mode}" = "NONE" ]; then
 
 		### This whole section (the creation of a CIFTI version of the bias field) is contingent on the use
@@ -725,7 +729,7 @@ main()
 			${CARET7DIR}/wb_command \
 				-metric-smoothing ${surface} ${metricIn} ${smoothingKernel} ${metricOut} -roi ${roiMetric}
 
-		done
+		done  #for Hemisphere in L R
 
 		# --------------------------------------------------------------------------------
 		log_Msg "Project bias field into subcortical CIFTI space"
@@ -851,6 +855,10 @@ main()
 		log_Msg "Not calculating CIFTI version of the bias field since --bc-mode=${g_bc_mode}"
 	fi
 
+	### -------------------------------------------------
+	### END creation of CIFTI version of the bias field
+	### -------------------------------------------------
+
 	if [ ! ${g_wm} = "NONE" ] ; then
 
 		# --------------------------------------------------------------------------------
@@ -909,6 +917,7 @@ main()
 		CSF="NONE"
 	fi
 
+	# Some other housekeeping and variable definitions, before we launch MATLAB
 	motionparameters="${ResultsFolder}/Movement_Regressors" #No .txt
 	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
 	ICAs="${ICAFolder}/melodic_mix"
@@ -918,8 +927,8 @@ main()
 		noise="${FIXFolder}/.fix"
 	fi
 	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
-	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
-	# If bc_mode is "CORRECT", convert variable to the location of the "real" bias field
+	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"  #Irrelevant string if g_bc_mode=NONE
+	# If g_bc_mode is "CORRECT", convert variable to the location of the "real_bias" field
 	if [ ${g_bc_mode} = "CORRECT" ] ; then
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
@@ -934,20 +943,16 @@ main()
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/scripts/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
-			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
-			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
+			matlab_function_arguments=("${motionparameters}" "${g_high_pass}" "${TR}" "${ICAs}" "${noise}")
+			matlab_function_arguments+=("${CARET7DIR}/wb_command" "${dtseries}" "${bias}" "${RssPrefix}" "${g_dlabel_file}")
+			matlab_function_arguments+=("${g_bc_mode}" "${g_out_string}" "${WM}" "${CSF}")
 
-			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
+			matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
-			matlab_cmd="${matlab_exe} ${MATLAB_COMPILER_RUNTIME} ${matlab_function_arguments} ${matlab_logging}"
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Run matlab command: ${matlab_cmd}"
-			# --------------------------------------------------------------------------------
-
-			echo "${matlab_cmd}" | bash
-			echo $?
-
+			# Log to existing stdout and stdout (rather than to a separate file)
+			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
+			log_Msg "Compiled MATLAB return code: $?"
 			;;
 
 		1 | 2)
@@ -964,9 +969,16 @@ main()
 			mFslPath="${FSLDIR}/etc/matlab"
 
 			matlabCode="addpath '$mPath'; addpath '$mGlobalPath'; addpath '$mFslPath'; RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');"
-			
+
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "$matlabCode"
+			
+			# Use bash redirection ("here-string") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
 			"${interpreter[@]}" <<<"$matlabCode"
+
+			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;
 
 		*)
