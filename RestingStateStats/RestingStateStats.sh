@@ -978,7 +978,6 @@ main()
 	log_Msg "Moving results of MATLAB function"
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
-	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
@@ -1049,9 +1048,12 @@ main()
 	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
 	# --------------------------------------------------------------------------------
 
-	mv \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+	# FIX/hcp_fix can now generate the _vn.dscalar directly
+	# Only copy the one created by RSS if one doesn't already exist in $ResultsFolder
+	vnFile=${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+	if [ ! -e ${vnFile} ] ; then
+		cp -p ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${vnFile}
+	fi
 
 	mv_if_exists \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
