@@ -1223,7 +1223,7 @@ main()
 
 				#don't log to a separate file, separate log files have never been desirable
 				log_Msg "Run Matlab command: ${matlab_cmd[*]}"
-				echo "${matlab_cmd[@]}" | bash
+				"${matlab_cmd[@]}"
 				log_Msg "Matlab command return code: $?"
 				;;
 

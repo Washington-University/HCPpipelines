@@ -172,7 +172,6 @@ get_options()
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
-#		index=$(( index + 1 ))
 	done
 
 	local error_count=0
