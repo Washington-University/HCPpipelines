@@ -753,11 +753,9 @@ main()
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii
 
-		# Following removes the individual run hp'ed time series
-		# MPH, 12/21/2018: Leaving them for now
-		#	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
-		#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
-		#	/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
+		log_Msg "Removing the individual run HP'ed time series for ${fmri}"
+		$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
+		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
 	done
 
 	## Terminate the 'else' clause of the "master" conditional that checked whether
