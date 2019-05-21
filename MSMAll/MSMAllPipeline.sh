@@ -107,9 +107,8 @@ get_options()
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
-#	local index=0
+	local index
 
-#	while [ "${index}" -lt "${num_args}" ]; do
     for ((index = 0; index < num_args; ++index))
     do
 		argument=${arguments[index]}
@@ -611,7 +610,6 @@ main()
 			local RegConfVars=$(echo "${MSMAllRegs}" | cut -d "@" -f 16)
 			log_Msg "RegConfVars: ${RegConfVars}"
 
-			#				--fmri-names-list="${fMRINames}" \
 			"${HCPPIPEDIR}"/MSMAll/scripts/"${Module}" \
 				--path="${StudyFolder}" \
 				--subject="${Subject}" \
