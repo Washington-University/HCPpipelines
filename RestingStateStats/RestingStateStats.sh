@@ -366,6 +366,7 @@ get_options()
 	else
 		case ${g_bc_mode} in 
 			REVERT | NONE | CORRECT)
+				log_Msg "g_bc_mode: ${g_bc_mode}"
 				;;
 			*)
 				echo "ERROR: bias corrrection mode must be REVERT, NONE, or CORRECT"
