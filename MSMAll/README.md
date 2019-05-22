@@ -1,6 +1,6 @@
 # HCP Pipelines MSMAll subdirectory
 
-MSMAll is a tool for surface-based functional alignment.  It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template.  One runs MSMAll after running either sICA+FIX (single run or multi-run).  One first runs the MSMAll Pipeline, then the DeDriftAndResample Pipeline with or without the GroupAverageDeDrift Pipeline depending upon whether one is creating a new template space (compute a DeDrift) or simply aligning data to an existing template (don't compute a DeDrift). 
+MSMAll is a tool for surface-based functional alignment.  It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template.  One runs MSMAll after running either sICA+FIX (single run or multi-run).  One first runs the MSMAll Pipeline, then the DeDriftAndResample Pipeline.  Most users should not do any dedrifting as they should use an existing registration template; dedrifting is only intended to be used when generating a new registration template.
 
 # Notes on MATLAB usage
 
@@ -10,9 +10,7 @@ possible modes, controlled by the `--matlab-run-mode` input argument:
 
 0. Compiled Matlab -- more on this below
 1. Interpreted Matlab (default) -- probably easiest to use, if it is an option for you
-2. Interpreted Octave -- an alternative to Matlab, although:
-	1. You'll need to configure various helper functions (i.e.,
-       `${HCPPIPEDIR/global/matlab/{ciftiopen.m, ciftisave.m, ciftisavereset.m}`) to work within your Octave environment.
+2. Interpreted Octave -- an alternative to Matlab
 
 ### Support for compiled MATLAB
 
