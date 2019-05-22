@@ -34,14 +34,11 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: De-Drift and Resample"
+${g_script_name}: De-Drift and Resample"
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -49,7 +46,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
         form) by simply specifying all values on the command line in the order they are
         listed below.
 
-        E.g. ${script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
+        E.g. ${g_script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
 
         However, to use this technique, all optional parameters (e.g. myelin target file
         and input registration name) except the final one (the MATLAB run mode) must be 
@@ -892,16 +889,28 @@ main()
 
 set -e # If any commands exit with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
-log_SetToolName "DeDriftAndResamplePipeline.sh"
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_SetToolName "${g_script_name}"
 log_Debug_On
 
 # Verify any other needed environment variables are set
@@ -909,9 +918,6 @@ log_Check_Env_Var CARET7DIR
 
 # Show tool versions
 show_tool_versions
-
-# Establish default MATLAB run mode
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
