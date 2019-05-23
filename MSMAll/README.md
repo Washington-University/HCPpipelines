@@ -1,6 +1,6 @@
 # HCP Pipelines MSMAll subdirectory
 
-MSMAll is a tool for surface-based functional alignment.  It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template.  One runs MSMAll after running either sICA+FIX (single run or multi-run).  One first runs the MSMAll Pipeline, then the DeDriftAndResample Pipeline.  Most users should not do any dedrifting as they should use an existing registration template; dedrifting is only intended to be used when generating a new registration template.
+MSMAll is a tool for surface-based functional alignment. It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template. MSMAll should be run on sICA+FIX cleaned data (single run or multi-run). First run the MSMAll Pipeline to generate the MSMAll registration, then the DeDriftAndResample Pipeline. DeDriftAndResample is generally used merely to resample the data according to the MSMAll registration, the "dedrift" part of the name only refers to an option (--dedrift-reg-files), which most users should not use, as the option's purpose is for generating a new registration template (atlas). For the uncommon case of generating a new registration template, the MSMRemoveGroupDrift script can calculate the group drift spheres.
 
 # Notes on MATLAB usage
 
