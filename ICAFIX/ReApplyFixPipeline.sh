@@ -67,6 +67,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
+   [--clean-intermediates={TRUE, FALSE}]
 
 EOF
 }
@@ -88,12 +89,14 @@ get_options()
 	unset p_LowResMesh       # ${6}
 	unset p_MatlabRunMode    # ${7}
 	unset p_MotionRegression # ${8}
+        unset p_CleanIntermediates # ${9}
 
 	# set default values
 	p_RegName=${G_DEFAULT_REG_NAME}
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
+        p_CleanIntermediates=${G_DEFAULT_CLEAN_INTERMEDIATES}
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -142,6 +145,10 @@ get_options()
 				;;
 			--motion-regression=*)
 				p_MotionRegression=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--clean-intermediates=*)
+				p_CleanIntermediates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -222,6 +229,13 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		log_Msg "Motion Regression: ${p_MotionRegression}"
+	fi
+
+	if [ -z "${p_CleanIntermediates}" ]; then
+		log_Err "clean intermediates setting (--clean-intermediates=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Clean Intermediates: ${p_CleanIntermediates}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -309,6 +323,13 @@ main()
 		MotionRegression="${8}"
 	fi
 
+	local CleanIntermediates
+	if [ -z "${9}" ]; then
+		CleanIntermediates="${G_DEFAULT_CLEAN_INTERMEDIATES}"
+	else
+		CleanIntermediates="${9}"
+	fi
+
 	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
 	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
         ( true | yes | 1)
@@ -321,6 +342,18 @@ main()
 			log_Err_Abort "motion regression setting must be TRUE or FALSE"
 			;;
 	esac
+
+	case $(echo ${CleanIntermediates} | tr '[:upper:]' '[:lower:]') in
+        ( true | yes | 1)
+            CleanIntermediates=1
+            ;;
+        ( false | no | none | 0)
+            CleanIntermediates=0
+            ;;
+		*)
+			log_Err_Abort "clean intermediate setting must be TRUE or FALSE"
+			;;
+	esac
 	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
@@ -331,6 +364,7 @@ main()
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 	log_Msg "MotionRegression: ${MotionRegression}"
+        log_Msg "CleanIntermediates: ${CleanIntermediates}"
 	
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
@@ -401,7 +435,16 @@ main()
 	# Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
 	# that any desired filtering has already been done outside of fix.
 	# So here, we need to symlink to the hp-filtered volume data.
-	$FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
+
+        if [ -f ../${fMRIName}${hpStr}.nii.gz ] ; then
+	        $FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
+        else
+          tr=`$FSLDIR/bin/fslval ../${fMRIName} pixdim4`
+          hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
+          ${FSLDIR}/bin/fslmaths ../${fMRIName} -Tmean ../${fMRIName}${hpStr}
+          ${FSLDIR}/bin/fslmaths ../${fMRIName} -sub ../${fMRIName}${hpStr} -bptf ${hptr} -1 -add ../${fMRIName}${hpStr} ../${fMRIName}${hpStr}
+          $FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
+        fi
 
 	# However, hp-filtering of the CIFTI (dtseries) occurs within fix_3_clean.
 	# So here, we just create a symlink with the file name expected by
@@ -573,6 +616,10 @@ main()
 	
 	cd ${DIR}
 
+        if [ ${CleanIntermediates} = "1" ] ; then
+          rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.nii.gz
+          rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii
+        fi
 	log_Msg "Completed!"
 }
 
@@ -587,6 +634,7 @@ G_DEFAULT_REG_NAME="NONE"
 G_DEFAULT_LOW_RES_MESH=32
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
+G_DEFAULT_CLEAN_INTERMEDIATES="FALSE"
 
 # Set global variables
 g_script_name=$(basename "${0}")
@@ -625,8 +673,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}                ${8}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
+	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}                ${8}                    ${9}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_CleanIntermediates}"
 
 else
 	# Positional parameters are used
