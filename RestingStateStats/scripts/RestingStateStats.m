@@ -516,7 +516,7 @@ if SaveVarianceNormalizationImage
   if FixVN == 1
     VarianceNormalizationImage.cdata=VarianceNormalizationImage.cdata.*real_bias.cdata;
   end
-  ciftisavereset(VarianceNormalizationImage,[outprefix '_vn.dscalar.nii'],WBC);
+  ciftisavereset(VarianceNormalizationImage,[outprefix '_vn_RSS.dscalar.nii'],WBC);
 end
 
 % Save out grayordinate maps of a number of variables
