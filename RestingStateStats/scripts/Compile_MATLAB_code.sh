@@ -45,6 +45,7 @@ compile_RestingStateStats()
 				  -a ${HCPPIPEDIR}/global/matlab/demean.m \
 				  -a ${HCPPIPEDIR}/global/matlab/normalise.m \
 				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 	
 	popd > /dev/null
