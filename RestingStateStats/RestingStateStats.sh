@@ -349,9 +349,8 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_matlab_run_mode} in 
-			0)
-				;;
-			1 | 2)
+			0 | 1 | 2)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
 			*)
 				echo "ERROR: matlab run mode value must be 0, 1, or 2"
