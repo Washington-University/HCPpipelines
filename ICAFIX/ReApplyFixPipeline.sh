@@ -67,7 +67,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
-   [--clean-intermediates={TRUE, FALSE}]
+   [--delete-intermediates={TRUE, FALSE}] defaults to ${G_DEFAULT_DELETE_INTERMEDIATES}
+     If TRUE, deletes the high-pass filtered files.
 
 EOF
 }
@@ -89,14 +90,14 @@ get_options()
 	unset p_LowResMesh       # ${6}
 	unset p_MatlabRunMode    # ${7}
 	unset p_MotionRegression # ${8}
-        unset p_CleanIntermediates # ${9}
+    unset p_DeleteIntermediates # ${9}
 
 	# set default values
 	p_RegName=${G_DEFAULT_REG_NAME}
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
-        p_CleanIntermediates=${G_DEFAULT_CLEAN_INTERMEDIATES}
+    p_DeleteIntermediates=${G_DEFAULT_DELETE_INTERMEDIATES}
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -147,8 +148,8 @@ get_options()
 				p_MotionRegression=${argument#*=}
 				index=$(( index + 1 ))
 				;;
-			--clean-intermediates=*)
-				p_CleanIntermediates=${argument#*=}
+			--delete-intermediates=*)
+				p_DeleteIntermediates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -231,11 +232,11 @@ get_options()
 		log_Msg "Motion Regression: ${p_MotionRegression}"
 	fi
 
-	if [ -z "${p_CleanIntermediates}" ]; then
-		log_Err "clean intermediates setting (--clean-intermediates=) required"
+	if [ -z "${p_DeleteIntermediates}" ]; then
+		log_Err "delete intermediates setting (--delete-intermediates=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "Clean Intermediates: ${p_CleanIntermediates}"
+		log_Msg "Delete Intermediates: ${p_DeleteIntermediates}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -323,11 +324,11 @@ main()
 		MotionRegression="${8}"
 	fi
 
-	local CleanIntermediates
+	local DeleteIntermediates
 	if [ -z "${9}" ]; then
-		CleanIntermediates="${G_DEFAULT_CLEAN_INTERMEDIATES}"
+		DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
 	else
-		CleanIntermediates="${9}"
+		DeleteIntermediates="${9}"
 	fi
 
 	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
@@ -343,12 +344,12 @@ main()
 			;;
 	esac
 
-	case $(echo ${CleanIntermediates} | tr '[:upper:]' '[:lower:]') in
+	case $(echo ${DeleteIntermediates} | tr '[:upper:]' '[:lower:]') in
         ( true | yes | 1)
-            CleanIntermediates=1
+            DeleteIntermediates=1
             ;;
         ( false | no | none | 0)
-            CleanIntermediates=0
+            DeleteIntermediates=0
             ;;
 		*)
 			log_Err_Abort "clean intermediate setting must be TRUE or FALSE"
@@ -364,7 +365,7 @@ main()
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
 	log_Msg "MotionRegression: ${MotionRegression}"
-        log_Msg "CleanIntermediates: ${CleanIntermediates}"
+    log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
 	
 	# Naming Conventions and other variables
 	local Caret7_Command="${CARET7DIR}/wb_command"
@@ -430,22 +431,42 @@ main()
 	log_Msg "Use fixlist=$fixlist"
 
 	DIR=$(pwd)
-	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica
+	cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
 
 	# Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
 	# that any desired filtering has already been done outside of fix.
-	# So here, we need to symlink to the hp-filtered volume data.
+	# So here, we need to symlink to the hp-filtered volume data (after first
+	# generating it if necessary)
 
-        if [ -f ../${fMRIName}${hpStr}.nii.gz ] ; then
-	        $FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
-        else
-          tr=`$FSLDIR/bin/fslval ../${fMRIName} pixdim4`
-          hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
-          ${FSLDIR}/bin/fslmaths ../${fMRIName} -Tmean ../${fMRIName}${hpStr}
-          ${FSLDIR}/bin/fslmaths ../${fMRIName} -sub ../${fMRIName}${hpStr} -bptf ${hptr} -1 -add ../${fMRIName}${hpStr} ../${fMRIName}${hpStr}
-          $FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
-        fi
+    if [ ! `$FSLDIR/bin/imtest ${fMRIName}${hpStr}` = 1 ] ; then  # hp filtered volume file doesn't exist
+		if (( hp > 0 )); then
+			tr=`$FSLDIR/bin/fslval ${fMRIName} pixdim4`
+			log_Msg "tr: ${tr}"
+			log_Msg "processing FMRI file ${fMRIName} with highpass ${hp}"
+			hptr=$(echo "scale = 10; $hp / (2 * $tr)" | bc -l)
 
+			# Starting with FSL 5.0.7, 'fslmaths -bptf' no longer includes the temporal mean in its output.
+			# A work-around to this, which works with both the pre- and post-5.0.7 behavior is to compute
+			# the temporal mean, remove it, run -bptf, and then add the mean back in.
+			${FSLDIR}/bin/fslmaths ${fMRIName} -Tmean ${fMRIName}${hpStr}
+			highpass_cmd="${FSLDIR}/bin/fslmaths ${fMRIName} -sub ${fMRIName}${hpStr} -bptf ${hptr} -1 -add ${fMRIName}${hpStr} ${fMRIName}${hpStr}"
+			log_Msg "highpass_cmd: ${highpass_cmd}"
+			${highpass_cmd}
+		elif (( hp == 0 )); then
+			# Nothing in script currently detrends the volume if hp=0 is requested (which is the intended meaning of hp=0)
+			log_Err_Abort "hp = ${hp} not currently supported"
+		fi
+	fi
+
+	if [ ! -e ${fMRIName}${hpStr}.ica ]; then
+		log_Err_Abort "${fMRIName}${hpStr}.ica is expected to already exist, but does not"
+	fi
+	
+	cd ${fMRIName}${hpStr}.ica
+
+	# At this point, the hp filtered volume file should definitely exist
+    $FSLDIR/bin/imln ../${fMRIName}${hpStr} filtered_func_data
+	
 	# However, hp-filtering of the CIFTI (dtseries) occurs within fix_3_clean.
 	# So here, we just create a symlink with the file name expected by
 	# fix_3_clean ("Atlas.dtseries.nii") to the non-filtered data.
@@ -603,10 +624,10 @@ main()
 	if (( DoVol )); then
 	    $FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
 	    if [ "$?" -ne "0" ]; then
-		log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
+			log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
 	    fi
 	    if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
-		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
+			$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
 	    fi
 	fi
 	log_Msg "Done renaming files"
@@ -616,10 +637,11 @@ main()
 	
 	cd ${DIR}
 
-        if [ ${CleanIntermediates} = "1" ] ; then
-          rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.nii.gz
-          rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii
-        fi
+    if [ ${DeleteIntermediates} = "1" ] ; then
+        $FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
+        rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii
+    fi
+
 	log_Msg "Completed!"
 }
 
@@ -634,7 +656,7 @@ G_DEFAULT_REG_NAME="NONE"
 G_DEFAULT_LOW_RES_MESH=32
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
-G_DEFAULT_CLEAN_INTERMEDIATES="FALSE"
+G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # Set global variables
 g_script_name=$(basename "${0}")
@@ -674,7 +696,7 @@ if [[ ${1} == --* ]]; then
 
 	# Invoke main functionality
 	#     ${1}               ${2}           ${3}            ${4}            ${5}           ${6}              ${7}                ${8}                    ${9}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_CleanIntermediates}"
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRIName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_DeleteIntermediates}"
 
 else
 	# Positional parameters are used
