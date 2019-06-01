@@ -21,7 +21,8 @@ export HCPPIPEDIR=/home/somebody/Pipelines
 export CARET7DIR=/usr/local/workbench
 export MSMBINDIR=${HOME}/pipeline_tools/MSM
 export MSMCONFIGDIR=${HCPPIPEDIR}/MSMConfig
-export MATLAB_COMPILER_RUNTIME=/usr/local/MATLAB_Runtime/v901
+# export MATLAB_COMPILER_RUNTIME=/usr/local/MATLAB_Runtime/v901
+export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
 export FSL_FIXDIR=/usr/local/fix1.067
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates

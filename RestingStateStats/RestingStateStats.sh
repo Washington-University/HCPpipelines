@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2016 The Human Connectome Project
+# Copyright (C) 2015-2019 The Human Connectome Project and the Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -78,45 +78,9 @@
 #~ND~END~
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-
-# If any commands exit with non-zero value, this script exits
-set -e
-g_script_name=`basename ${0}`
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib # Function for getting FSL version
-
-#
-# Function Description:
-#  Document Tool Versions
-#
-show_tool_versions() {
-	# Show HCP pipelines version
-	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
-
-	# Show wb_command version
-	log_Msg "Showing wb_command version"
-	${CARET7DIR}/wb_command -version
-
-	# Show fsl version
-	log_Msg "Showing FSL version"
-	fsl_version_get fsl_ver
-	log_Msg "FSL version: ${fsl_ver}"
-}
-
-# 
-# Function Description:
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
 	echo ""
@@ -138,9 +102,9 @@ usage()
 	echo "    --smoothing-fwhm=<smoothing full width at half max>"
 	echo "    --output-proc-string=<output processing string>"
 	echo "   [--dlabel-file=<dlabel file>] defaults to NONE if not specified"
-	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 0 (Compiled Matlab)"
+	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 1 (Interpreted Matlab)"
 	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use Matlab"
+	echo "     1 = Use interpreted Matlab"
 	echo "     2 = Use Octave"
 	echo "   [--bc-mode={REVERT,NONE,CORRECT}] defaults to REVERT"
 	echo "     REVERT = Revert minimal preprocessing pipelines bias field correction"
@@ -152,11 +116,10 @@ usage()
 	echo ""
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
+# ------------------------------------------------------------------------------
+
 # Global Output Variables
 #  ${g_path_to_study_folder} - path to folder containing subject data directories
 #  ${g_subject} - subject ID
@@ -171,7 +134,7 @@ usage()
 #  ${g_dlabel_file} - label file containing label designations and label color keys
 #  ${g_matlab_run_mode} - indication of how to run Matlab code
 #    0 - Use compiled Matlab
-#    1 - Use Matlab
+#    1 - Use interpreted Matlab
 #    2 - Use Octave
 #  ${g_bc_mode} - bias correction mode
 #    REVERT - Revert minimal preprocessing pipelines bias field correction
@@ -180,10 +143,10 @@ usage()
 #  ${g_out_string} - name string of output files
 #  ${g_wm} - Switch that turns on white matter timeseries related stats
 #  ${g_csf} - Switch that turns on csf timeseries related stats
-#
+
 get_options()
 {
-	local arguments=($@)
+	local arguments=("$@")
 
 	# initialize global output variables
 	unset g_path_to_study_folder
@@ -206,7 +169,7 @@ get_options()
 	# set default values 
 	g_reg_name="NONE"
 	g_dlabel_file="NONE"
-	g_matlab_run_mode=0
+	g_matlab_run_mode=1
 	g_bc_mode="REVERT"
 	g_out_string="stats"
 	g_wm="NONE"
@@ -386,11 +349,8 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_matlab_run_mode} in 
-			0)
-				;;
-			1)
-				;;
-			2)
+			0 | 1 | 2)
+				log_Msg "g_matlab_run_mode: ${g_matlab_run_mode}"
 				;;
 			*)
 				echo "ERROR: matlab run mode value must be 0, 1, or 2"
@@ -404,11 +364,8 @@ get_options()
 		error_count=$(( error_count + 1 ))
 	else
 		case ${g_bc_mode} in 
-			REVERT)
-				;;
-			NONE)
-				;;
-			CORRECT)
+			REVERT | NONE | CORRECT)
+				log_Msg "g_bc_mode: ${g_bc_mode}"
 				;;
 			*)
 				echo "ERROR: bias corrrection mode must be REVERT, NONE, or CORRECT"
@@ -444,11 +401,32 @@ get_options()
 	fi
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
+show_tool_versions()
+{
+	# Show HCP pipelines version
+	log_Msg "Showing HCP Pipelines version"
+	cat ${HCPPIPEDIR}/version.txt
+
+	# Show wb_command version
+	log_Msg "Showing Connectome Workbench (wb_command) version"
+	${CARET7DIR}/wb_command -version
+
+	# Show FSL version
+	log_Msg "Showing FSL version"
+	fsl_version_get fsl_ver
+	log_Msg "FSL version: ${fsl_ver}"
+}
+
+# ------------------------------------------------------------------------------
+#  mv_if_exists
+# ------------------------------------------------------------------------------
 #  move the specified file to the new path if the
 #  specified file exists, otherwise, do nothing
-#
+
 mv_if_exists()
 {
 	local from="${1}"
@@ -459,10 +437,10 @@ mv_if_exists()
 	fi
 }
 
-# 
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-# 
+# ------------------------------------------------------------------------------
+
 main()
 {
 	# Get command line options
@@ -508,6 +486,10 @@ main()
 	if [ ! ${g_low_res_mesh} = "32" ] ; then
 		RegString="${RegString}.${g_low_res_mesh}k"
 	fi
+
+	### -------------------------------------------------
+	### BEGIN creation of CIFTI version of the bias field
+	### -------------------------------------------------
 
 	if [ ! "${g_bc_mode}" = "NONE" ]; then
 
@@ -747,7 +729,7 @@ main()
 			${CARET7DIR}/wb_command \
 				-metric-smoothing ${surface} ${metricIn} ${smoothingKernel} ${metricOut} -roi ${roiMetric}
 
-		done
+		done  #for Hemisphere in L R
 
 		# --------------------------------------------------------------------------------
 		log_Msg "Project bias field into subcortical CIFTI space"
@@ -873,6 +855,10 @@ main()
 		log_Msg "Not calculating CIFTI version of the bias field since --bc-mode=${g_bc_mode}"
 	fi
 
+	### -------------------------------------------------
+	### END creation of CIFTI version of the bias field
+	### -------------------------------------------------
+
 	if [ ! ${g_wm} = "NONE" ] ; then
 
 		# --------------------------------------------------------------------------------
@@ -931,6 +917,7 @@ main()
 		CSF="NONE"
 	fi
 
+	# Some other housekeeping and variable definitions, before we launch MATLAB
 	motionparameters="${ResultsFolder}/Movement_Regressors" #No .txt
 	TR=`${FSLDIR}/bin/fslval ${ResultsFolder}/${g_fmri_name} pixdim4`
 	ICAs="${ICAFolder}/melodic_mix"
@@ -940,12 +927,9 @@ main()
 		noise="${FIXFolder}/.fix"
 	fi
 	dtseries="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}"
-	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"
-	if [ ${g_bc_mode} = "REVERT" ] ; then
-	  g_bc_mode="REVERT"
-	elif [ ${g_bc_mode} = "NONE" ] ; then
-	  g_bc_mode="NONE"
-	elif [ ${g_bc_mode} = "CORRECT" ] ; then
+	bias="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii"  #Irrelevant string if g_bc_mode=NONE
+	# If g_bc_mode is "CORRECT", convert variable to the location of the "real_bias" field
+	if [ ${g_bc_mode} = "CORRECT" ] ; then
 	  g_bc_mode="${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_real_bias.dscalar.nii"
 	fi
 
@@ -957,96 +941,55 @@ main()
 		0)
 			# Use Compiled Matlab
 			matlab_exe="${HCPPIPEDIR}"
-			matlab_exe+="/RestingStateStats/Compiled_RestingStateStats/distrib/run_RestingStateStats.sh"
+			matlab_exe+="/RestingStateStats/scripts/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
-			# TBD: Use environment variable instead of fixed path
-			if [ "${CLUSTER}" = "1.0" ]; then
-				matlab_compiler_runtime="/export/matlab/R2013a/MCR"
-			elif [ "${CLUSTER}" = "2.0" ]; then
-				matlab_compiler_runtime="/export/matlab/MCR/R2013a/v81"
+			matlab_function_arguments=("${motionparameters}" "${g_high_pass}" "${TR}" "${ICAs}" "${noise}")
+			matlab_function_arguments+=("${CARET7DIR}/wb_command" "${dtseries}" "${bias}" "${RssPrefix}" "${g_dlabel_file}")
+			matlab_function_arguments+=("${g_bc_mode}" "${g_out_string}" "${WM}" "${CSF}")
+
+			matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
+
+			# Log to existing stdout and stdout (rather than to a separate file)
+			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
+			log_Msg "Compiled MATLAB return code: $?"
+			;;
+
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			if [[ ${g_matlab_run_mode} == "1" ]]
+			then
+				interpreter=(matlab -nojvm -nodisplay -nosplash)
 			else
-				log_Msg "ERROR: This script currently uses hardcoded paths to the Matlab compiler runtime."
-				log_Msg "ERROR: These hardcoded paths are specific to the Washington University CHPC cluster environment."
-				log_Msg "ERROR: This is a known bad practice that we haven't had time to correct just yet."
-				log_Msg "ERROR: To correct this for your environment, find this error message in the script and"
-				log_Msg "ERROR: either adjust the setting of the matlab_compiler_runtime variable in the"
-				log_Msg "ERROR: statements above, or set the value of the matlab_compiler_runtime variable"
-				log_Msg "ERROR: using an environment variable's value."
+				interpreter=(octave-cli -q --no-window-system)
 			fi
 
-			matlab_function_arguments="'${motionparameters}' ${g_high_pass} ${TR} '${ICAs}' '${noise}' "
-			matlab_function_arguments+="'${CARET7DIR}/wb_command' '${dtseries}' '${bias}' '${RssPrefix}' '${g_dlabel_file}' '${g_bc_mode}' '${g_out_string}' '${WM}' '${CSF}'"
+			mPath="${HCPPIPEDIR}/RestingStateStats/scripts"
+			mGlobalPath="${HCPPIPEDIR}/global/matlab"
+			mFslPath="${FSLDIR}/etc/matlab"
 
-			matlab_logging=">> ${g_path_to_study_folder}/${g_subject}_${g_fmri_name}.matlab.log 2>&1"
+			matlabCode="addpath '$mPath'; addpath '$mGlobalPath'; addpath '$mFslPath'; RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');"
 
-			matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-			# --------------------------------------------------------------------------------
-			log_Msg "Run matlab command: ${matlab_cmd}"
-			# --------------------------------------------------------------------------------
-
-			echo "${matlab_cmd}" | bash
-			echo $?
-
-			;;
-
-		1)
-			# Use Matlab - Untested
-			matlab_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
-			log_Msg "Creating Matlab script: ${matlab_script_file_name}"
-
-			if [ -e ${matlab_script_file_name} ]; then
-				echo "Removing old ${matlab_script_file_name}"
-				rm -f ${matlab_script_file_name}
-			fi
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+			log_Msg "$matlabCode"
 			
-			# TBD: change these paths to use variables instead of hard coded paths
-			touch ${matlab_script_file_name}
-			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${matlab_script_file_name}
-			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${matlab_script_file_name}
-			echo "addpath ${FSLDIR}/etc/matlab" >> ${matlab_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${matlab_script_file_name}
+			# Use bash redirection ("here-string") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
+			"${interpreter[@]}" <<<"$matlabCode"
 
-			log_Msg "About to execute the following Matlab script"
-
-			cat ${matlab_script_file_name}
-			cat ${matlab_script_file_name} | matlab -nodisplay -nosplash
-
-			;;
-
-		2)
-			# Use Octave - doesn't seem to work
-			octave_script_file_name=${ResultsFolder}/RestingStateStats_${g_fmri_name}.m
-			log_Msg "Creating Octave script: ${octave_script_file_name}"
-
-			if [ -e ${octave_script_file_name} ]; then
-				echo "Removing old ${octave_script_file_name}"
-				rm -f ${octave_script_file_name}
-			fi
-			
-			# TBD: change these paths to use variables instead of hard coded paths
-			touch ${octave_script_file_name}
-			echo "addpath ${HCPPIPEDIR}/RestingStateStats " >> ${octave_script_file_name}
-			echo "addpath /home/HCPpipeline/pipeline_tools/gifti" >> ${octave_script_file_name}
-			echo "addpath ${FSLDIR}/etc/matlab" >> ${octave_script_file_name}
-			echo "RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');" >> ${octave_script_file_name}
-
-			log_Msg "About to execute the following Octave script"
-
-			cat ${octave_script_file_name}
-			cat ${octave_script_file_name} | ${OCTAVE_HOME}/bin/octave
-
+			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;
 
 		*)
-			log_Msg "ERROR: Unrecognized Matlab run mode value: ${g_matlab_run_mode}"
+			# Unsupported MATLAB run mode
+			log_Err_Abort "Unsupported MATLAB run mode value: ${g_matlab_run_mode}"
 			exit 1
 	esac
 
-	log_Msg "Moving results of Matlab function"
+	log_Msg "Moving results of MATLAB function"
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.txt ${ResultsFolder}
 	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_${g_out_string}.dtseries.nii ${ResultsFolder}
-	mv ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii ${ResultsFolder}
 
 	if [ -e ${ResultsFolder}/Names.txt ] ; then 
 		rm ${ResultsFolder}/Names.txt
@@ -1117,9 +1060,16 @@ main()
 	log_Msg "Rename files for MSMAll or SingleSubjectConcat script"
 	# --------------------------------------------------------------------------------
 
-	mv \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_vn.dscalar.nii \
-		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+	# DEPRECATED
+	# FIX/hcp_fix can now generate the _vn.dscalar directly, so we are NOT going to copy/move
+	# the _vn file generated by RSS into ResultsFolder, to avoid potential confusion regarding
+	# exactly how the _vn file was created (in particular, it can get tricky to know which particular
+	# bias field correction the vn is calculated "on top of", esp. in the context of the REVERT and
+	# CORRECT options in RSS
+#	vnFile=${ResultsFolder}/${g_fmri_name}_Atlas${RegString}${g_output_proc_string}_vn.dscalar.nii
+#	if [ ! -e ${vnFile} ] ; then
+#		cp -p ${RssFolder}/${g_fmri_name}_Atlas${RegString}_vn_RSS.dscalar.nii ${vnFile}
+#	fi
 
 	mv_if_exists \
 		${ResultsFolder}/${g_fmri_name}_Atlas${RegString}_BiasField.dscalar.nii \
@@ -1130,7 +1080,44 @@ main()
 	# --------------------------------------------------------------------------------
 
 	find ${ResultsFolder} -type f -name "BiasField*" -print -delete
+
+	log_Msg "Completed!"
 }
+
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any command exits with non-zero value, this script exits
+
+# Establish defaults
+## Currently done in get_options()
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
+# Verify that HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_SetToolName "${g_script_name}"
+
+# Verify any other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var MATLAB_COMPILER_RUNTIME
 
 # 
 # Invoke the main function to get things started

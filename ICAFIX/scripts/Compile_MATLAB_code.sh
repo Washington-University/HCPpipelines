@@ -116,10 +116,7 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify that other needed environment variables are set
-if [ -z "${MATLAB_HOME}" ]; then
-	log_Err_Abort "MATLAB_HOME environment variable must be set"
-fi
-log_Msg "MATLAB_HOME: ${MATLAB_HOME}"
+log_Check_Env_Var MATLAB_HOME
 
 # Invoke the main processing
 main "$@"
