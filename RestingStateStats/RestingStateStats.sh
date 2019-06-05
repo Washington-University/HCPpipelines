@@ -963,7 +963,7 @@ main()
 			else
 				interpreter=(octave-cli -q --no-window-system)
 			fi
-			
+
 			mPath="${HCPPIPEDIR}/RestingStateStats/scripts"
 			mGlobalPath="${HCPPIPEDIR}/global/matlab"
 			mFslPath="${FSLDIR}/etc/matlab"
@@ -972,7 +972,7 @@ main()
 
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "$matlabCode"
-
+			
 			# Use bash redirection ("here-string") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
