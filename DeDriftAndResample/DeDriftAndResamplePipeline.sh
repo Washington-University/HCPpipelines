@@ -34,14 +34,11 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: De-Drift and Resample"
+${g_script_name}: De-Drift and Resample"
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -49,7 +46,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
         form) by simply specifying all values on the command line in the order they are
         listed below.
 
-        E.g. ${script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
+        E.g. ${g_script_name} /path/to/study/folder 100307 164 32@59 ... NONE NONE 1
 
         However, to use this technique, all optional parameters (e.g. myelin target file
         and input registration name) except the final one (the MATLAB run mode) must be 
@@ -63,10 +60,9 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        (e.g. 32@59)
    --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name 
        (e.g. \${Subject}.\${Hemisphere}.sphere.\${RegName}.native.surf.gii)
-   --dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii> 
-       Path to the spheres output by the MSMRemoveGroupDrift pipeline or NONE
-   --concat-reg-name=<regname> String corresponding to the output name of the concatenated registration 
-       (i.e. the dedrifted registration)
+   [--dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>]
+       Path to the spheres output by the MSMRemoveGroupDrift pipeline
+   [--concat-reg-name=<regname>] String corresponding to the output name of the dedrifted registration
    --maps=<non@myelin@maps> @-delimited map name strings corresponding to maps that are not myelin maps 
        (e.g. sulc@curvature@corrThickness@thickness)
    [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps 
@@ -110,7 +106,7 @@ get_options()
 	unset p_HighResMesh
 	unset p_LowResMeshes			# LowReshMeshes - @ delimited list, e.g. 32@59, multiple resolutions not currently supported for fMRI data
 	unset p_RegName
-	unset p_DeDriftRegFiles			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
+	p_DeDriftRegFiles=NONE			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
 	unset p_ConcatRegName
 	unset p_Maps					# @ delimited
 	p_MyelinMaps=NONE				# @ delimited
@@ -265,19 +261,12 @@ get_options()
 		log_Msg "Registration Name: ${p_RegName}"
 	fi
 	
-	if [ -z "${p_DeDriftRegFiles}" ]; then
-		log_Err "De-Drifting registration files (--dedrift-reg-files=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "De-Drifting registration files: ${p_DeDriftRegFiles}"
-	fi
+	log_Msg "De-Drifting registration files: ${p_DeDriftRegFiles}"
 
 	if [ -z "${p_ConcatRegName}" ]; then
-		log_Err "concatenated registration name (--concat-reg-name=) required"
-		error_count=$(( error_count + 1 ))
-	else
-		log_Msg "concatenated registration name: ${p_ConcatRegName}"
+		p_ConcatRegName="${p_RegName}"
 	fi
+	log_Msg "concatenated registration name: ${p_ConcatRegName}"
 	
 	if [ -z "${p_Maps}" ]; then
 		log_Err "list of structural maps to be resampled (--maps=) required"
@@ -768,7 +757,7 @@ main()
 
 					if [[ ! -e ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii ]] ; then
 						if [[ ! -z ${MyelinTargetFile} ]] ; then
-							cp --verbose ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+							cp ${MyelinTargetFile} ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
 						else
 							log_Err_Abort "A --myelin-target-file is required to run this pipeline when using a different mesh resolution than the original MSMAll registration"
 						fi
@@ -892,16 +881,28 @@ main()
 
 set -e # If any commands exit with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
-log_SetToolName "DeDriftAndResamplePipeline.sh"
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_SetToolName "${g_script_name}"
 log_Debug_On
 
 # Verify any other needed environment variables are set
@@ -909,9 +910,6 @@ log_Check_Env_Var CARET7DIR
 
 # Show tool versions
 show_tool_versions
-
-# Establish default MATLAB run mode
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then

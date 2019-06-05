@@ -126,7 +126,13 @@ case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
         ;;
     ( false | no | none )
         doMotionRegression=FALSE
-        ;;
+
+		# 5/20/2019: For the time being, do_motion_regression=FALSE doesn't work properly with single-run FIX,
+		# so don't allow that mode of operation
+		# https://github.com/Washington-University/HCPpipelines/issues/108
+		log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not currently supported"
+
+		;;
     ( * )
         log_Err_Abort "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
         ;;
@@ -232,17 +238,24 @@ $FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data.ica/concat_data
 
 cd ${fmrihp}.ica
 
+# Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
+# that any desired filtering has already been done outside of fix.
+# So here, we need to symlink to the hp-filtered volume data.
 $FSLDIR/bin/imln ../$fmrihp filtered_func_data
-$FSLDIR/bin/imln filtered_func_data.ica/mask mask
 
+# However, hp-filtering of the CIFTI (dtseries) occurs within fix_3_clean.
+# So here, we just create a symlink with the file name expected by
+# fix_3_clean ("Atlas.dtseries.nii") to the non-filtered data.
+if [ -f ../${fmri}_Atlas.dtseries.nii ] ; then
+  $FSLDIR/bin/imln ../${fmri}_Atlas.dtseries.nii Atlas.dtseries.nii
+fi
+
+# Other necessary files
+$FSLDIR/bin/imln filtered_func_data.ica/mask mask
 if [ `$FSLDIR/bin/imtest ../${fmri}_SBRef` = 1 ] ; then
   $FSLDIR/bin/imln ../${fmri}_SBRef mean_func
 else
   $FSLDIR/bin/imln filtered_func_data.ica/mean mean_func
-fi
-
-if [ -f ../${fmri}_Atlas.dtseries.nii ] ; then
-  $FSLDIR/bin/imln ../${fmri}_Atlas.dtseries.nii Atlas.dtseries.nii
 fi
 
 # Get Movement_Regressors.txt into the format expected by functionmotionconfounds.m

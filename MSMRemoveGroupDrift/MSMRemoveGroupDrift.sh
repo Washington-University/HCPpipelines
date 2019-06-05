@@ -1,66 +1,54 @@
 #!/bin/bash
 
 # ------------------------------------------------------------------------------
-#  Code Start
-# ------------------------------------------------------------------------------
-
-# If any commands exit with non-zero value, this script exits
-set -e
-g_script_name=$(basename "${0}")
-
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
-log_SetToolName "${g_script_name}"
-
-#
-# Function Description:
 #  Show usage information for this script
-#
+# ------------------------------------------------------------------------------
+
 usage()
 {
-	echo ""
-	echo "  MSM Remove Group Drift - Compute Group Registration Drift"
-	echo ""
-	echo "  Usage: ${g_script_name} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "   [--help] : show usage information and exit"
-	echo " "
-	echo "  TBW "
-	echo " "
-	echo ""
+	cat <<EOF
+
+${g_script_name}: MSM Remove Group Drift - Compute Group Registration Drift
+
+Usage: ${g_script_name} <options>
+
+  Options: [ ] = optional; < > = user supplied value
+
+    [--help] : show usage information and exit"
+
+	To-be-written
+
+EOF
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Get the command line options for this script.
-#  Shows usage information and exits if command line is malformed
-#
+# ------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
 
 	# initialize global output variables
-	unset g_path_to_study_folder     # StudyFolder
-	unset g_subject_list             # Subjlist
-	unset g_common_folder            # CommonFolder
-	unset g_group_average_name       # GroupAverageName
-	unset g_input_registration_name  # InRegName
-	unset g_target_registration_name # TargetRegName
-	unset g_registration_name        # RegName
-	unset g_high_res_mesh            # HighResMesh
-	unset g_low_res_mesh             # LowResMesh
+	unset p_StudyFolder     # StudyFolder
+	unset p_Subjlist             # Subjlist
+	unset p_CommonFolder            # CommonFolder
+	unset p_GroupAverageName       # GroupAverageName
+	unset p_InputRegName  # InRegName
+	unset p_TargetRegName # TargetRegName
+	unset p_RegName                # RegName
+	unset p_HighResMesh            # HighResMesh
+	unset p_LowResMesh             # LowResMesh
+
+	# set default values
 
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
-	local index=0
+	local index
 
-	while [ ${index} -lt ${num_args} ]; do
+    for ((index = 0; index < num_args; ++index))
+    do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -69,117 +57,105 @@ get_options()
 				exit 1
 				;;
 			--path=*)
-				g_path_to_study_folder=${argument#*=}
-				index=$(( index + 1 ))
+				p_StudyFolder=${argument#*=}
 				;;
 			--study-folder=*)
-				g_path_to_study_folder=${argument#*=}
-				index=$(( index + 1 ))
+				p_StudyFolder=${argument#*=}
 				;;
 			--subject-list=*)
-				g_subject_list=${argument#*=}
-				index=$(( index + 1 ))
+				p_Subjlist=${argument#*=}
 				;;
 			--common-folder=*)
-				g_common_folder=${argument#*=}
-				index=$(( index + 1 ))
+				p_CommonFolder=${argument#*=}
 				;;
 			--group-average-name=*)
-				g_group_average_name=${argument#*=}
-				index=$(( index + 1 ))
+				p_GroupAverageName=${argument#*=}
 				;;
 			--input-registration-name=*)
-				g_input_registration_name=${argument#*=}
-				index=$(( index + 1 ))
+				p_InputRegName=${argument#*=}
 				;;
 			--target-registration-name=*)
-				g_target_registration_name=${argument#*=}
-				index=$(( index + 1 ))
+				p_TargetRegName=${argument#*=}
 				;;
 			--registration-name=*)
-				g_registration_name=${argument#*=}
-				index=$(( index + 1 ))
+				p_RegName=${argument#*=}
 				;;
 			--high-res-mesh=*)
-				g_high_res_mesh=${argument#*=}
-				index=$(( index + 1 ))
+				p_HighResMesh=${argument#*=}
 				;;
 			--low-res-mesh=*)
-				g_low_res_mesh=${argument#*=}
-				index=$(( index + 1 ))
+				p_LowResMesh=${argument#*=}
 				;;
 			*)
 				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
 
 	local error_count=0
 	# check required parameters
-	if [ -z "${g_path_to_study_folder}" ]; then
+	if [ -z "${p_StudyFolder}" ]; then
 		echo "ERROR: path to study folder (--path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_path_to_study_folder: ${g_path_to_study_folder}"
+		log_Msg "p_StudyFolder: ${p_StudyFolder}"
 	fi
 
-	if [ -z "${g_subject_list}" ]; then
+	if [ -z "${p_Subjlist}" ]; then
 		echo "ERROR: subject ID list (--subject-list=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_subject_list: ${g_subject_list}"
+		log_Msg "p_Subjlist: ${p_Subjlist}"
 	fi
 
-	if [ -z "${g_common_folder}" ]; then
+	if [ -z "${p_CommonFolder}" ]; then
 		echo "ERROR: common folder (--common-folder=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_common_folder: ${g_common_folder}"
+		log_Msg "p_CommonFolder: ${p_CommonFolder}"
 	fi
 
-	if [ -z "${g_group_average_name}" ]; then
+	if [ -z "${p_GroupAverageName}" ]; then
 		echo "ERROR: group average name (--group-average-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_group_average_name: ${g_group_average_name}"
+		log_Msg "p_GroupAverageName: ${p_GroupAverageName}"
 	fi
 
-	if [ -z "${g_input_registration_name}" ]; then
+	if [ -z "${p_InputRegName}" ]; then
 		echo "ERROR: input registration name (--input-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_input_registration_name: ${g_input_registration_name}"
+		log_Msg "p_InputRegName: ${p_InputRegName}"
 	fi
 
-	if [ -z "${g_target_registration_name}" ]; then
+	if [ -z "${p_TargetRegName}" ]; then
 		echo "ERROR: target registration name (--target-registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_target_registration_name: ${g_target_registration_name}"
+		log_Msg "p_TargetRegName: ${p_TargetRegName}"
 	fi
 
-	if [ -z "${g_registration_name}" ]; then
+	if [ -z "${p_RegName}" ]; then
 		echo "ERROR: registration name (--registration-name=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_registration_name: ${g_registration_name}"
+		log_Msg "p_RegName: ${p_RegName}"
 	fi
 
-	if [ -z "${g_high_res_mesh}" ]; then
+	if [ -z "${p_HighResMesh}" ]; then
 		echo "ERROR: high resolution mesh (--high-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_high_res_mesh: ${g_high_res_mesh}"
+		log_Msg "p_HighResMesh: ${p_HighResMesh}"
 	fi
 
-	if [ -z "${g_low_res_mesh}" ]; then
+	if [ -z "${p_LowResMesh}" ]; then
 		echo "ERROR: low resolution mesh (--low-res-mesh=) required"
 		error_count=$(( error_count + 1 ))
 	else
-		log_Msg "g_low_res_mesh: ${g_low_res_mesh}"
+		log_Msg "p_LowResMesh: ${p_LowResMesh}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -188,10 +164,10 @@ get_options()
 	fi
 }
 
-#
-# Function Description:
-#  Document Tool Versions
-#
+# ------------------------------------------------------------------------------
+#  Show Tool Versions
+# ------------------------------------------------------------------------------
+
 show_tool_versions()
 {
 	# Show HCP pipelines version
@@ -203,47 +179,44 @@ show_tool_versions()
 	${CARET7DIR}/wb_command -version
 }
 
-#
-# Function Description:
+# ------------------------------------------------------------------------------
 #  Main processing of script.
-#
+# ------------------------------------------------------------------------------
+
 main()
 {
 	# Get command line options
 	# See documentation for the get_options function for global variables set
 	get_options "$@"
 
-	# show the versions of tools used
-	show_tool_versions
-
-	StudyFolder="${g_path_to_study_folder}"
+	StudyFolder="${p_StudyFolder}"
 	log_Msg "StudyFolder: ${StudyFolder}"
 
-	Subjlist="${g_subject_list}"
+	Subjlist="${p_Subjlist}"
 	log_Msg "Subjlist: ${Subjlist}"
 
 	Caret7_Command="${CARET7DIR}/wb_command"
 	log_Msg "Caret7_Command: ${Caret7_Command}"
 
-	CommonFolder="${g_common_folder}"
+	CommonFolder="${p_CommonFolder}"
 	log_Msg "CommonFolder: ${CommonFolder}"
 
-	GroupAverageName="${g_group_average_name}"
+	GroupAverageName="${p_GroupAverageName}"
 	log_Msg "GroupAverageName: ${GroupAverageName}"
 
-	InRegName="${g_input_registration_name}"
+	InRegName="${p_InputRegName}"
 	log_Msg "InRegName: ${InRegName}"
 
-	TargetRegName="${g_target_registration_name}"
+	TargetRegName="${p_TargetRegName}"
 	log_Msg "TargetRegName: ${TargetRegName}"
 
-	RegName="${g_registration_name}"
+	RegName="${p_RegName}"
 	log_Msg "RegName: ${RegName}"
 
-	HighResMesh="${g_high_res_mesh}"
+	HighResMesh="${p_HighResMesh}"
 	log_Msg "HighResMesh: ${HighResMesh}"
 
-	LowResMesh="${g_low_res_mesh}"
+	LowResMesh="${p_LowResMesh}"
 	log_Msg "LowResMes: ${LowResMesh}"
 
 	Subjlist=${Subjlist//@/ }
@@ -369,7 +342,7 @@ main()
 
 	# Copy Atlas ROI files
 	for Hemisphere in L R ; do
-		cp --verbose \
+		cp \
 			${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii \
 			${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
 	done
@@ -529,6 +502,41 @@ main()
 
 }
 
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+set -e # If any commands exit with non-zero value, this script exits
+
+# Establish defaults
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
+# Verify HCPPIPEDIR environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+log_SetToolName "${g_script_name}"
+
+# Verify that other needed environment variables are set
+log_Check_Env_Var CARET7DIR
+
+# Show tool versions
+show_tool_versions
+
+#
 #
 # Invoke the main function to get things started
 #

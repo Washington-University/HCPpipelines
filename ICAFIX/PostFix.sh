@@ -453,13 +453,10 @@ main()
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "${matlab_cmd}"
 
-			# Use bash redirection ("here-document") to pass multiple commands into matlab
+			# Use bash redirection ("here-string") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			"${interpreter[@]}" <<M_PROG
-# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
-${matlab_cmd}
-M_PROG
+			"${interpreter[@]}" <<<"${matlab_cmd}"
 
 			log_Msg "Interpreted MATLAB/Octave return code: $?"
 			;;

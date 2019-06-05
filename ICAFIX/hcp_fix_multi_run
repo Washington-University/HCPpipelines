@@ -252,6 +252,9 @@ fi
 if [[ "${hp}" == pd* ]]; then
 	hpNum=${hp:2}
 	pdFlag=TRUE
+	if (( hpNum > 5 )); then
+		log_Err_Abort "Polynomial detrending of order ${hpNum} is not allowed (may not be numerically stable); Use 5th order or less"
+	fi
 else
 	hpNum=${hp}
 fi
@@ -501,11 +504,9 @@ for fmri in $fmris ; do
 	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}_vn.dtseries.nii
 	/bin/rm -f ${fmriNoExt}_Atlas_demean.dtseries.nii
 
-	# Following removes the individual run hp'ed time series
-	# MPH, 12/21/2018: Leaving them for now
-	#	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
-	#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
-	#	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}.dtseries.nii
+	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
+	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
+	/bin/rm -f ${fmriNoExt}_Atlas_hp${hp}.dtseries.nii
 done
 
 ## ---------------------------------------------------------------------------
@@ -632,19 +633,24 @@ $FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/concat_data
 
 cd ${concatfmrihp}.ica
 
-#This is the concated volume time series from the 1st pass VN, with the mean VN map multiplied back in
+# This is the concated volume time series from the 1st pass VN, with requested
+# hp-filtering applied and with the mean VN map multiplied back in
 $FSLDIR/bin/imln ../${concatfmrihp} filtered_func_data
-$FSLDIR/bin/imln filtered_func_data.ica/mask mask
 
+# This is the concated CIFTI time series from the 1st pass VN, with requested
+# hp-filtering applied and with the mean VN map multiplied back in
+# Unlike 'hcp_fix' (single-run), here we symlink to the hp-filtered CIFTI and
+# use "AlreadyHP=-1" to skip any additional filtering in fix_3_clean.
+if [ -f ../${concatfmri}_Atlas_hp${hp}.dtseries.nii ] ; then
+	$FSLDIR/bin/imln ../${concatfmri}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii
+fi
+
+# Other necessary files (N.B. Movement regressors already prep'ed above)
+$FSLDIR/bin/imln filtered_func_data.ica/mask mask
 if [ `$FSLDIR/bin/imtest ../${concatfmri}_SBRef` = 1 ] ; then
 	$FSLDIR/bin/imln ../${concatfmri}_SBRef mean_func
 else
 	$FSLDIR/bin/imln filtered_func_data.ica/mean mean_func
-fi
-
-#This is the concated CIFTI time series from the 1st pass VN, with the mean VN map multiplied back in
-if [ -f ../${concatfmri}_Atlas_hp${hp}.dtseries.nii ] ; then
-	$FSLDIR/bin/imln ../${concatfmri}_Atlas_hp${hp}.dtseries.nii Atlas.dtseries.nii
 fi
 
 mkdir -p reg

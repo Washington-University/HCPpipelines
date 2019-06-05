@@ -82,7 +82,7 @@ DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.
 ConcatRegName="MSMAll_Test"
 Maps="sulc curvature corrThickness thickness"
 MyelinMaps="MyelinMap SmoothedMyelinMap" #No _BC, this will be reapplied
-MRFixConcatName="NONE"
+MRFixConcatNames="NONE"
 MRFixNames="NONE"
 fixNames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL" #Space delimited list or NONE
 fixNames="rfMRI_REST1_LR" #Space delimited list or NONE
@@ -121,7 +121,7 @@ for Subject in $Subjlist ; do
         --concat-reg-name=${ConcatRegName} \
         --maps=${Maps} \
         --myelin-maps=${MyelinMaps} \
-        --multirun-fix-concat-name=${MRFixConcatName} \
+        --multirun-fix-concat-names=${MRFixConcatNames} \
         --multirun-fix-names=${MRFixNames} \
         --fix-names=${fixNames} \
         --dont-fix-names=${dontFixNames} \

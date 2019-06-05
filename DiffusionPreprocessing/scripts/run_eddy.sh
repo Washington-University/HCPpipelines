@@ -433,7 +433,7 @@ determine_eddy_tools_to_use()
 			else
 				# 5.0.9, 5.0.10, or 5.0.11
 				g_stdEddy="${FSLDIR}/bin/eddy_openmp"
-				g_gpu_EnabledEddy="${FSLDIR}/bin/eddy_cuda"
+				g_gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
 				log_Msg "Detected supported, 5 series, post-5.0.9 version of FSL"
 				log_Msg "Standard (non-GPU-enabled) version of eddy available: ${g_stdEddy}"
 				log_Msg "GPU-enabled version of eddy available: ${g_gpuEnabledEddy}"

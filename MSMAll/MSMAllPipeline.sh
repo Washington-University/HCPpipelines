@@ -37,21 +37,25 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: MSM-All Registration Pipeline
+${g_script_name}: MSM-All Registration Pipeline
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
-   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
+   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan
+        names, cannot be used with --multirun-fix-* options
+   --multirun-fix-names=<MRfix names> an @-separated list of names, identical
+        to what was used in hcp_fix_multi_run
+   --multirun-fix-concat-name=<MRfix concat name>, identical to what was used
+        in hcp_fix_multi_run
+   --multirun-fix-names-to-use=<MRfix run names to use> @-separated list,
+        choose which runs should be used as resting state data
    --output-fmri-name=<name to give to concatenated single subject "scan">
    --high-pass=<high-pass filter used in ICA+FIX>
    --fmri-proc-string=<identification for FIX cleaned dtseries to use>
@@ -64,9 +68,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --high-res-mesh=<high resolution mesh node count> (in thousands)
    --low-res-mesh=<low resolution mesh node count> (in thousands)
    --input-registration-name=<input registration name>
-  [--matlab-run-mode={0, 1}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use Octave
 
 EOF
 }
@@ -83,6 +88,9 @@ get_options()
 	unset p_StudyFolder
 	unset p_Subject
 	unset p_fMRINames
+	unset p_mrfixNames
+	unset p_mrfixConcatName
+	unset p_mrfixNamesToUse
 	unset p_OutputfMRIName
 	unset p_HighPass
 	unset p_fMRIProcSTRING
@@ -99,9 +107,10 @@ get_options()
 	# parse arguments
 	local num_args=${#arguments[@]}
 	local argument
-	local index=0
+	local index
 
-	while [ "${index}" -lt "${num_args}" ]; do
+    for ((index = 0; index < num_args; ++index))
+    do
 		argument=${arguments[index]}
 
 		case ${argument} in
@@ -111,55 +120,51 @@ get_options()
 				;;
 			--path=*)
 				p_StudyFolder=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--study-folder=*)
 				p_StudyFolder=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--subject=*)
 				p_Subject=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--fmri-names-list=*)
 				p_fMRINames=${argument#*=}
-				index=$(( index + 1 ))
 				;;
+			--multirun-fix-names=*)
+			    p_mrfixNames=${argument#*=}
+			    ;;
+			--multirun-fix-concat-name=*)
+			    p_mrfixConcatName=${argument#*=}
+			    ;;
+		    --multirun-fix-names-to-use=*)
+		        p_mrfixNamesToUse=${argument#*=}
+		        ;;
 			--output-fmri-name=*)
 				p_OutputfMRIName=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--high-pass=*)
 				p_HighPass=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--fmri-proc-string=*)
 				p_fMRIProcSTRING=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--msm-all-templates=*)
 				p_MSMAllTemplates=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--output-registration-name=*)
 				p_OutputRegName=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--high-res-mesh=*)
 				p_HighResMesh=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--low-res-mesh=*)
 				p_LowResMesh=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--input-registration-name=*)
 				p_InputRegName=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
 				p_MatlabRunMode=${argument#*=}
-				index=$(( index + 1 ))
 				;;
 			*)
 				usage
@@ -186,9 +191,31 @@ get_options()
 	fi
 
 	if [ -z "${p_fMRINames}" ]; then
-		log_Err "fMRI name list (--fmri-names-list=) required"
-		error_count=$(( error_count + 1 ))
+	    if [[ -z "${p_mrfixNames}" ]]
+	    then
+		    log_Err "fMRI name list (--fmri-names-list=) or MR fix name list (--multirun-fix-names) required"
+		    error_count=$(( error_count + 1 ))
+	    else
+    	    if [[ -z "$p_mrfixConcatName" ]]
+    	    then
+		        log_Err "--multirun-fix-concat-name is required when using --multirun-fix-names"
+		        error_count=$(( error_count + 1 ))
+    	    fi
+    	    if [[ -z "$p_mrfixNamesToUse" ]]
+    	    then
+		        log_Err "--multirun-fix-concat-name is required when using --multirun-fix-names"
+		        error_count=$(( error_count + 1 ))
+    	    fi
+	    fi
+	    log_Msg "MR fix fMRI Names: ${p_mrfixNames}"
+	    log_Msg "MR fix fMRI Concat Name: ${p_mrfixConcatName}"
+	    log_Msg "MR fix fMRI Names to use: ${p_mrfixNamesToUse}"
 	else
+	    if [[ ! -z "${p_mrfixNames}" ]]
+	    then
+		    log_Err "fMRI name list (--fmri-names-list=) and MR fix name list (--multirun-fix-names) must not be used together"
+		    error_count=$(( error_count + 1 ))
+	    fi
 		log_Msg "fMRI Names: ${p_fMRINames}"
 	fi
 
@@ -264,8 +291,11 @@ get_options()
 			1)
 				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use interpreted MATLAB"
 				;;
+			2)
+				log_Msg "MATLAB run mode: ${p_MatlabRunMode} - Use Octave"
+				;;
 			*)
-				log_Err "MATLAB run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0, 1, or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -315,6 +345,10 @@ main()
 		MatlabRunMode="${12}"
 	fi
 	
+	local mrfixNames="${13}"
+	local mrfixConcatName="${14}"
+	local mrfixNamesToUse="${15}"
+	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -328,57 +362,108 @@ main()
 	log_Msg "LowResMesh: ${LowResMesh}"
 	log_Msg "InputRegName: ${InputRegName}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
+	log_Msg "mrfixNames: ${mrfixNames}"
+	log_Msg "mrfixConcatName: ${mrfixConcatName}"
+	log_Msg "mrfixNamesToUse: ${mrfixNamesToUse}"
 
 	# Naming Conventions and other variables
 	local InPCARegName="${InputRegName}"
 	log_Msg "InPCARegName: ${InPCARegName}"
 	
-	# Values of variables determining MIGP usage
-	# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
-	# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
-	#
-	# Note: Spaces should not be used in the variable's value. They are used above to
-	#       help make the form and values easier to understand.
-	# Note: If UseMIGP value is NO, then we use the full timeseries
-	log_Msg "Running MSM on full timeseries"
-#	migp_vars="NO@0@0@YES@YES"
-#	log_Msg "migp_vars: ${migp_vars}"
+    local output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
+    log_Msg "output_proc_string: ${output_proc_string}"
 
-	local output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
-	log_Msg "output_proc_string: ${output_proc_string}"
+	local expected_concatenated_output_dir="${StudyFolder}/${Subject}/MNINonLinear/Results/${OutputfMRIName}"
+	expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
+	before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
 
-	local Demean="YES"
-	log_Msg "Demean: ${Demean}"
-	
-	local VarianceNormalization="YES"
-	log_Msg "VarianceNormalization: ${VarianceNormalization}"
-	
-	local ComputeVarianceNormalization="YES" #Don't rely on RestingStateStats to have been run
-	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
+	if [[ -z "$fMRINames" ]]
+	then
+		local -a mrNamesArray mrNamesUseArray runSplits runIndices
+		local curTimepoints=0
+		#convention: one before the first index of the run
+		runSplits[0]="$curTimepoints"
+		IFS=@ read -a mrNamesArray <<< "${mrfixNames}"
+		IFS=@ read -a mrNamesUseArray <<< "${mrfixNamesToUse}"
+		#sanity check for identical names
+		for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
+		do
+			for ((index2 = 0; index2 < ${#mrNamesArray[@]}; ++index2))
+			do
+				if ((index != index2)) && [[ "${mrNamesArray[$index]}" == "${mrNamesArray[$index2]}" ]]
+				then
+					log_Err_Abort "MR fix names list contains '${mrNamesArray[$index]}' more than once"
+				fi
+			done
+		done
+		#calculate the timepoints where the concatenated switches runs, find which runs are used
+		for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
+		do
+			fmriName="${mrNamesArray[$index]}"
+			NumTPS=`${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps`
+			((curTimepoints += NumTPS))
+			runSplits[$((index + 1))]="$curTimepoints"
+			for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
+			do
+				if [[ "${mrNamesUseArray[$index2]}" == "${mrNamesArray[$index]}" ]]
+				then
+					runIndices[$index2]="$index"
+				fi
+			done
+		done
+		#check that we found all requested runs, build the merge command
+		mergeArgs=()
+		for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
+		do
+			runIndex="${runIndices[$index2]}"
+			if [[ "$runIndex" == "" ]]
+			then
+				log_Err_Abort "requested run '${mrNamesUseArray[$index2]}' not found in list of MR fix runs"
+			fi
+			mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
+		done
+		mkdir -p "${expected_concatenated_output_dir}"
+		${CARET7DIR}/wb_command -cifti-merge "${before_vn_output_file}" -cifti "${StudyFolder}/${Subject}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean.dtseries.nii" "${mergeArgs[@]}"
+		${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Subject}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
+		rm -f -- "${before_vn_output_file}"
+	else
+		# Values of variables determining MIGP usage
+		# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
+		# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
+		#
+		# Note: Spaces should not be used in the variable's value. They are used above to
+		#       help make the form and values easier to understand.
+		# Note: If UseMIGP value is NO, then we use the full timeseries
+		log_Msg "Running MSM on full timeseries"
+		#	migp_vars="NO@0@0@YES@YES"
+		#	log_Msg "migp_vars: ${migp_vars}"
 
-	local RevertBiasField="NO" # Will recompute VN based on not reverting bias field
-	log_Msg "RevertBiasField: ${RevertBiasField}"
+		local Demean="YES"
+		log_Msg "Demean: ${Demean}"
 
-	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
-		--path="${StudyFolder}" \
-		--subject="${Subject}" \
-		--fmri-names-list="${fMRINames}" \
-		--high-pass="${HighPass}" \
-		--output-fmri-name="${OutputfMRIName}" \
-		--fmri-proc-string="${fMRIProcSTRING}" \
-		--output-proc-string="${output_proc_string}" \
-		--demean="${Demean}" \
-		--variance-normalization="${VarianceNormalization}" \
-		--compute-variance-normalization="${ComputeVarianceNormalization}" \
-		--revert-bias-field="${RevertBiasField}" \
-		--matlab-run-mode="${MatlabRunMode}"
+		local VarianceNormalization="YES"
+		log_Msg "VarianceNormalization: ${VarianceNormalization}"
 
-	local expected_concatenated_output_file=""
-	expected_concatenated_output_file+="${StudyFolder}"
-	expected_concatenated_output_file+="/${Subject}/MNINonLinear/Results"
-	expected_concatenated_output_file+="/${OutputfMRIName}"
-	expected_concatenated_output_file+="/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}"
-	expected_concatenated_output_file+=".dtseries.nii"
+		local ComputeVarianceNormalization="NO" #This is computed in FIX now
+		log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
+
+		local RevertBiasField="NO" # Will recompute VN based on not reverting bias field
+		log_Msg "RevertBiasField: ${RevertBiasField}"
+
+		"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
+			--path="${StudyFolder}" \
+			--subject="${Subject}" \
+			--fmri-names-list="${fMRINames}" \
+			--high-pass="${HighPass}" \
+			--output-fmri-name="${OutputfMRIName}" \
+			--fmri-proc-string="${fMRIProcSTRING}" \
+			--output-proc-string="${output_proc_string}" \
+			--demean="${Demean}" \
+			--variance-normalization="${VarianceNormalization}" \
+			--compute-variance-normalization="${ComputeVarianceNormalization}" \
+			--revert-bias-field="${RevertBiasField}" \
+			--matlab-run-mode="${MatlabRunMode}"
+    fi
 
 	log_File_Must_Exist "${expected_concatenated_output_file}"
 	
@@ -525,7 +610,6 @@ main()
 			local RegConfVars=$(echo "${MSMAllRegs}" | cut -d "@" -f 16)
 			log_Msg "RegConfVars: ${RegConfVars}"
 
-			#				--fmri-names-list="${fMRINames}" \
 			"${HCPPIPEDIR}"/MSMAll/scripts/"${Module}" \
 				--path="${StudyFolder}" \
 				--subject="${Subject}" \
@@ -565,10 +649,21 @@ main()
 
 set -e # If any commands exit with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
@@ -585,9 +680,6 @@ log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
 # Show tool versions
 show_tool_versions
 
-# Establish default MATLAB run mode
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
@@ -597,13 +689,13 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality using positional parameters
-	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}               ${12}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}"
+	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}               ${12}                ${13}             ${14}                  ${15}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}" "${p_mrfixNames}" "${p_mrfixConcatName}" "${p_mrfixNamesToUse}"
 
 else
 	# Positional parameters are used
 	log_Msg "Using positional parameters"
-	main $@
+	main "$@"
 
 fi
 

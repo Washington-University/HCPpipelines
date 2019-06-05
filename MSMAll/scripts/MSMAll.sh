@@ -37,14 +37,11 @@
 
 usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: MSM-All Registration
+${g_script_name}: MSM-All Registration
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -55,7 +52,6 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject=<subject ID>
    --high-res-mesh=<high resolution mesh node count> (in thousands)
    --low-res-mesh=<low resolution mesh node count> (in thousands)
-   --fmri-names-list=<fMRI names> an @ symbol separated list of fMRI scan names
    --output-fmri-name=<name given to concatenated singel subject "scan">
    --fmri-proc-string=<identification for FIX cleaned dtseries to use>
    --input-pca-registration-name=TBW
@@ -75,9 +71,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --rerun=TBW
    --reg-conf=TBW
    --reg-conf-vars=TBW
-  [--matlab-run-mode={0, 1}] defaults to 0 (Compiled MATLAB)
+  [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
+     2 = Use Octave
 
 EOF
 }
@@ -96,7 +93,6 @@ get_options()
 	unset p_Subject
 	unset p_HighResMesh
 	unset p_LowResMesh
-	#unset p_fMRINames
 	unset p_OutputfMRIName
 	unset p_fMRIProcSTRING
 	unset p_InPCARegName
@@ -119,7 +115,7 @@ get_options()
 	unset p_MatlabRunMode
 	
 	# set default values
-	p_MatlabRunMode=0
+	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -154,10 +150,6 @@ get_options()
 				p_LowResMesh=${argument/*=/""}
 				index=$(( index + 1 ))
 				;;
-			#--fmri-names-list=*)
-			#	p_fMRINames=${argument/*=/""}
-			#	index=$(( index + 1 ))
-			#	;;
 			--output-fmri-name=*)
 				p_OutputfMRIName=${argument/*=/""}
 				index=$(( index + 1 ))
@@ -279,13 +271,6 @@ get_options()
 		log_Msg "Low Res Mesh: ${p_LowResMesh}"
 	fi
 
-	#if [ -z "${p_fMRINames}" ]; then
-	#	log_Err "fMRI Names List (--fmri-names-list=) required"
-	#	error_count=$(( error_count + 1 ))
-	#else
-	#	log_Msg "fMRI Names List: ${p_fMRINames}"
-	#fi
-	
 	if [ -z "${p_OutputfMRIName}" ]; then
 		log_Err "Output fMRI Name (--output-fmri-name=) required"
 		error_count=$(( error_count + 1 ))
@@ -432,11 +417,11 @@ get_options()
 					log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 				fi
 				;;
-			1)
+			1 | 2)
 				log_Msg "MATLAB run mode: ${p_MatlabRunMode}"
 				;;
 			*)
-				log_Err "MATLAB run mode value must be 0 or 1"
+				log_Err "MATLAB run mode value must be 0, 1, or 2"
 				error_count=$(( error_count + 1 ))
 				;;
 		esac
@@ -494,7 +479,7 @@ main()
 
 	local MatlabRunMode
 	if [ -z "${24}" ]; then
-		MatlabRunMode=0
+		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
 		MatlabRunMode="${24}"
 	fi
@@ -581,10 +566,10 @@ main()
 		log_Msg "RSNCostWeights: ${RSNCostWeights}"
 		log_File_Must_Exist "${RSNCostWeights}"
 
-		cp --verbose "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp --verbose "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp --verbose "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
-		cp --verbose "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${RSNTargetFile}" "${DownSampleFolder}/${Subject}.atlas_RSNs_d${ICAdim}.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${MyelinTargetFile}" "${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${TopographyROIFile}" "${DownSampleFolder}/${Subject}.atlas_Topographic_ROIs.${LowResMesh}k_fs_LR.dscalar.nii"
+		cp "${TopographyTargetFile}" "${DownSampleFolder}/${Subject}.atlas_Topography.${LowResMesh}k_fs_LR.dscalar.nii"
 
 		if [ "${InPCARegName}" = "MSMSulc" ] ; then
 			log_Msg "InPCARegName is MSMSulc"
@@ -664,10 +649,10 @@ main()
 			log_Msg "Modalities: ${Modalities}"
 
 			if [ ! -e ${NativeFolder}/${RegName} ] ; then
-				mkdir --verbose ${NativeFolder}/${RegName}
+				mkdir ${NativeFolder}/${RegName}
 			else
 				rm -r "${NativeFolder:?}/${RegName}"
-				mkdir --verbose ${NativeFolder}/${RegName}
+				mkdir ${NativeFolder}/${RegName}
 			fi
 
 			if [[ $(echo -n ${Modalities} | grep "C") || $(echo -n ${Modalities} | grep "T") ]] ; then
@@ -716,44 +701,31 @@ main()
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-						matlab_function_arguments="'${inputspatialmaps}'"
-						matlab_function_arguments+=" '${inputdtseries}'"
-						matlab_function_arguments+=" '${inputweights}'"
-						matlab_function_arguments+=" '${outputspatialmaps}'"
-						matlab_function_arguments+=" '${outputweights}'"
-						matlab_function_arguments+=" '${Caret7_Command}'"
-						matlab_function_arguments+=" '${Method}'"
-						matlab_function_arguments+=" '${Params}'"
-						matlab_function_arguments+=" '${VN}'"
-						matlab_function_arguments+=" ${nTPsForSpectra}"
-						matlab_function_arguments+=" '${BC}'"
-						matlab_function_arguments+=" '${VolParams}'"
+						matlab_function_arguments=("${inputspatialmaps}" "${inputdtseries}" "${inputweights}" "${outputspatialmaps}" "${outputweights}" "${Caret7_Command}" "${Method}" "${Params}" "${VN}" "${nTPsForSpectra}" "${BC}" "${VolParams}")
 
-						matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.C.Iteration${i}.log 2>&1"
+						matlab_cmd=("${matlab_exe}" "${matlab_compiler_runtime}" "${matlab_function_arguments[@]}")
 
-						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-						# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
-						#       does NOT work. The output redirects that are part of the ${matlab_logging}
-						#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
-						#       such that they get passed as parameters to the underlying executable.
-						#       So ">>" gets passed as a parameter to the executable as does the
-						#       log file name and the "2>&1" redirection. This causes the executable
-						#       to die with a "too many parameters" error message.
-						log_Msg "Run MATLAB command: ${matlab_cmd}"
-						echo "${matlab_cmd}" | bash
+						#don't log to a separate file, separate log files have never been desirable
+						log_Msg "Run MATLAB command: ${matlab_cmd[*]}"
+						"${matlab_cmd[@]}"
 						log_Msg "MATLAB command return code: $?"
 						;;
 
-					1)
-						# Use interpreted MATLAB
+					1 | 2)
+						# Use interpreted MATLAB or Octave
+						if [[ ${MatlabRunMode} == "1" ]]
+						then
+						    interpreter=(matlab -nojvm -nodisplay -nosplash)
+						else
+						    interpreter=(octave-cli -q --no-window-system)
+						fi
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
 						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 
-						matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
-M_PROG
-						log_Msg "addpath '$mPath'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						matlabCode="addpath '$mPath'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+
+						log_Msg "$matlabCode"
+						"${interpreter[@]}" <<<"$matlabCode"
 						;;
 
 					*)
@@ -810,48 +782,36 @@ M_PROG
 				case ${MatlabRunMode} in
 					0)
 						# Use Compiled Matlab
-						matlab_exe="${HCPPIPEDIR}"
-						matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
+						matlab_exe="${HCPPIPEDIR}/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 						matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-						matlab_function_arguments="'${inputspatialmaps}'"
-						matlab_function_arguments+=" '${inputdtseries}'"
-						matlab_function_arguments+=" '${inputweights}'"
-						matlab_function_arguments+=" '${outputspatialmaps}'"
-						matlab_function_arguments+=" '${outputweights}'"
-						matlab_function_arguments+=" '${Caret7_Command}'"
-						matlab_function_arguments+=" '${Method}'"
-						matlab_function_arguments+=" '${Params}'"
-						matlab_function_arguments+=" '${VN}'"
-						matlab_function_arguments+=" ${nTPsForSpectra}"
-						matlab_function_arguments+=" '${BC}'"
-						matlab_function_arguments+=" '${VolParams}'"
+						matlab_function_arguments=("${inputspatialmaps}" "${inputdtseries}" "${inputweights}" "${outputspatialmaps}" "${outputweights}" "${Caret7_Command}" "${Method}" "${Params}" "${VN}" "${nTPsForSpectra}" "${BC}" "${VolParams}")
 
-						matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.T.Iteration${i}.log 2>&1"
-
-						matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
+						matlab_cmd=("${matlab_exe}" "${matlab_compiler_runtime}" "${matlab_function_arguments[@]}")
 						
-						# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
-						#       does NOT work. The output redirects that are part of the ${matlab_logging}
-						#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
-						#       such that they get passed as parameters to the underlying executable.
-						#       So ">>" gets passed as a parameter to the executable as does the
-						#       log file name and the "2>&1" redirection. This causes the executable
-						#       to die with a "too many parameters" error message.
-						log_Msg "Run Matlab command: ${matlab_cmd}"
-						echo "${matlab_cmd}" | bash
+						#don't log to a separate file, separate log files have never been desirable
+						log_Msg "Run Matlab command: ${matlab_cmd[*]}"
+						"${matlab_cmd[@]}"
 						log_Msg "Matlab command return code: $?"
 						;;
 
-					1)
-						# Use interpreted MATLAB
+					1 | 2)
+						# Use interpreted MATLAB or Octave
+						if [[ ${MatlabRunMode} == "1" ]]
+						then
+						    interpreter=(matlab -nojvm -nodisplay -nosplash)
+						else
+						    interpreter=(octave-cli -q --no-window-system)
+						fi
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
-
-						matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
-M_PROG
-						log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						mGlobalPath="${HCPPIPEDIR}/global/matlab"
+						
+						matlabCode="addpath '$mPath'; addpath '$mGlobalPath';
+						MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
+						
+						log_Msg "$matlabCode"
+						"${interpreter[@]}" <<<"$matlabCode"
 						;;
 
 					*)
@@ -1145,6 +1105,10 @@ M_PROG
 			rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.shape.gii
 
 			${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${RegName}.native.shape.gii -edge-method
+			${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.Strain_${RegName}_raw.native.shape.gii -local-affine-method
+			${Caret7_Command} -metric-math 'ln(x) / ln(2)' ${NativeFolder}/${Subject}.${Hemisphere}.StrainJ_${RegName}.native.shape.gii -var x ${NativeFolder}/${Subject}.${Hemisphere}.Strain_${RegName}_raw.native.shape.gii -column 1
+			${Caret7_Command} -metric-math 'ln(x) / ln(2)' ${NativeFolder}/${Subject}.${Hemisphere}.StrainR_${RegName}.native.shape.gii -var x ${NativeFolder}/${Subject}.${Hemisphere}.Strain_${RegName}_raw.native.shape.gii -column 2
+			rm -f ${NativeFolder}/${Subject}.${Hemisphere}.Strain_${RegName}_raw.native.shape.gii
 
 			# Make MSM Registration Areal Distortion Maps
 			log_Msg "Make MSM Registration Areal Distortion Maps"
@@ -1167,6 +1131,14 @@ M_PROG
 		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii 1 ${Subject}_EdgeDistortion_${RegName}
 		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 		rm ${NativeFolder}/${Subject}.EdgeDistortion_${RegName}.native.dtseries.nii
+		
+		${Caret7_Command} -cifti-create-dense-scalar ${NativeFolder}/${Subject}.StrainJ_${RegName}.native.dscalar.nii -left-metric ${NativeFolder}/${Subject}.L.StrainJ_${RegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainJ_${RegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainJ_${RegName}.native.dscalar.nii 1 ${Subject}_StrainJ_${RegName}
+		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainJ_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainJ_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+
+		${Caret7_Command} -cifti-create-dense-scalar ${NativeFolder}/${Subject}.StrainR_${RegName}.native.dscalar.nii -left-metric ${NativeFolder}/${Subject}.L.StrainR_${RegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainR_${RegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+		${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainR_${RegName}.native.dscalar.nii 1 ${Subject}_StrainR_${RegName}
+		${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainR_${RegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainR_${RegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 
 		${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.SphericalDistortion.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.SphericalDistortion.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
 		${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii ROW ${NativeFolder}/${Subject}.SphericalDistortion.native.dscalar.nii
@@ -1186,8 +1158,8 @@ M_PROG
 			elif [ $Mesh = ${LowResMesh} ] ; then
 				Folder=${DownSampleFolder}
 			fi
-			for Map in ArealDistortion EdgeDistortion sulc SphericalDistortion MyelinMap_BC ; do
-				if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "MyelinMap_BC" ]] ; then
+			for Map in ArealDistortion EdgeDistortion StrainJ StrainR sulc SphericalDistortion MyelinMap_BC ; do
+				if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "MyelinMap_BC" || ${Map} = "StrainJ" || ${Map} = "StrainR" ]] ; then
 					NativeMap="${Map}_${RegName}"
 				else
 					NativeMap="${Map}"
@@ -1228,48 +1200,36 @@ M_PROG
 		case ${MatlabRunMode} in
 			0)
 				# Use Compiled Matlab
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
+				matlab_exe="${HCPPIPEDIR}/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-				matlab_function_arguments="'${inputspatialmaps}'"
-				matlab_function_arguments+=" '${inputdtseries}'"
-				matlab_function_arguments+=" '${inputweights}'"
-				matlab_function_arguments+=" '${outputspatialmaps}'"
-				matlab_function_arguments+=" '${outputweights}'"
-				matlab_function_arguments+=" '${Caret7_Command}'"
-				matlab_function_arguments+=" '${Method}'"
-				matlab_function_arguments+=" '${Params}'"
-				matlab_function_arguments+=" '${VN}'"
-				matlab_function_arguments+=" ${nTPsForSpectra}"
-				matlab_function_arguments+=" '${BC}'"
-   				matlab_function_arguments+=" '${VolParams}'"
+				matlab_function_arguments=("${inputspatialmaps}" "${inputdtseries}" "${inputweights}" "${outputspatialmaps}" "${outputweights}" "${Caret7_Command}" "${Method}" "${Params}" "${VN}" "${nTPsForSpectra}" "${BC}" "${VolParams}")
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.1.log 2>&1"
+				matlab_cmd=("${matlab_exe}" "${matlab_compiler_runtime}" "${matlab_function_arguments[@]}")
 
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-				# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
-				#       does NOT work. The output redirects that are part of the ${matlab_logging}
-				#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
-				#       such that they get passed as parameters to the underlying executable.
-				#       So ">>" gets passed as a parameter to the executable as does the
-				#       log file name and the "2>&1" redirection. This causes the executable
-				#       to die with a "too many parameters" error message.
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-				echo "${matlab_cmd}" | bash
+				#don't log to a separate file, separate log files have never been desirable
+				log_Msg "Run Matlab command: ${matlab_cmd[*]}"
+				"${matlab_cmd[@]}"
 				log_Msg "Matlab command return code: $?"
 				;;
 
-			1)
-				# Use interpreted MATLAB
+			1 | 2)
+				# Use interpreted MATLAB or Octave
+				if [[ ${MatlabRunMode} == "1" ]]
+				then
+				    interpreter=(matlab -nojvm -nodisplay -nosplash)
+				else
+				    interpreter=(octave-cli -q --no-window-system)
+				fi
 				mPath="${HCPPIPEDIR}/MSMAll/scripts"
-
-				matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
-M_PROG
-				log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+				mGlobalPath="${HCPPIPEDIR}/global/matlab"
+				
+				matlabCode="addpath '$mPath'; addpath '$mGlobalPath';
+				MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
+				
+				log_Msg "$matlabCode"
+				"${interpreter[@]}" <<<"$matlabCode"
 				;;
 
 			*)
@@ -1309,48 +1269,36 @@ M_PROG
 
 			0)
 				# Use Compiled Matlab
-				matlab_exe="${HCPPIPEDIR}"
-				matlab_exe+="/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
+				matlab_exe="${HCPPIPEDIR}/MSMAll/scripts/Compiled_MSMregression/run_MSMregression.sh"
 
 				matlab_compiler_runtime="${MATLAB_COMPILER_RUNTIME}"
 
-				matlab_function_arguments="'${inputspatialmaps}'"
-				matlab_function_arguments+=" '${inputdtseries}'"
-				matlab_function_arguments+=" '${inputweights}'"
-				matlab_function_arguments+=" '${outputspatialmaps}'"
-				matlab_function_arguments+=" '${outputweights}'"
-				matlab_function_arguments+=" '${Caret7_Command}'"
-				matlab_function_arguments+=" '${Method}'"
-				matlab_function_arguments+=" '${Params}'"
-				matlab_function_arguments+=" '${VN}'"
-				matlab_function_arguments+=" ${nTPsForSpectra}"
-				matlab_function_arguments+=" '${BC}'"
-				matlab_function_arguments+=" '${VolParams}'"
+				matlab_function_arguments=("${inputspatialmaps}" "${inputdtseries}" "${inputweights}" "${outputspatialmaps}" "${outputweights}" "${Caret7_Command}" "${Method}" "${Params}" "${VN}" "${nTPsForSpectra}" "${BC}" "${VolParams}")
 
-				matlab_logging=">> ${StudyFolder}/${Subject}.MSMregression.matlab.2.log 2>&1"
+				matlab_cmd=("${matlab_exe}" "${matlab_compiler_runtime}" "${matlab_function_arguments[@]}")
 
-				matlab_cmd="${matlab_exe} ${matlab_compiler_runtime} ${matlab_function_arguments} ${matlab_logging}"
-
-				# Note: Simply using ${matlab_cmd} here instead of echo "${matlab_cmd}" | bash
-				#       does NOT work. The output redirects that are part of the ${matlab_logging}
-				#       value, get quoted by the run_*.sh script generated by the MATLAB compiler
-				#       such that they get passed as parameters to the underlying executable.
-				#       So ">>" gets passed as a parameter to the executable as does the
-				#       log file name and the "2>&1" redirection. This causes the executable
-				#       to die with a "too many parameters" error message.
-				log_Msg "Run Matlab command: ${matlab_cmd}"
-				echo "${matlab_cmd}" | bash
+				#don't log to a separate file, separate log files have never been desirable
+				log_Msg "Run Matlab command: ${matlab_cmd[*]}"
+				"${matlab_cmd[@]}"
 				log_Msg "Matlab command return code: $?"
 				;;
 
-			1)
-				# Use interpreted MATLAB
+			1 | 2)
+				# Use interpreted MATLAB or Octave
+				if [[ ${MatlabRunMode} == "1" ]]
+				then
+				    interpreter=(matlab -nojvm -nodisplay -nosplash)
+				else
+				    interpreter=(octave-cli -q --no-window-system)
+				fi
 				mPath="${HCPPIPEDIR}/MSMAll/scripts"
+				mGlobalPath="${HCPPIPEDIR}/global/matlab"
+				
+				matlabCode="addpath '$mPath'; addpath '$mGlobalPath';
+				MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
 
-				matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');
-M_PROG
-				log_Msg "addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+				log_Msg "$matlabCode"
+				"${interpreter[@]}" <<<"$matlabCode"
 				;;
 
 			*)
@@ -1376,10 +1324,21 @@ M_PROG
 
 set -e # If any commands exit with non-zero value, this script exits
 
+# Establish defaults
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    usage
+    exit 1
+fi
+
 # Verify that HCPPIPEDIR Environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	script_name=$(basename "${0}")
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 

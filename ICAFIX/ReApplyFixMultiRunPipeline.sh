@@ -200,6 +200,9 @@ get_options()
 		fi
 		if [[ "${p_HighPass}" == pd* ]]; then
 			local hpNum=${p_HighPass:2}
+			if (( hpNum > 5 )); then
+				log_Err_Abort "Polynomial detrending of order ${hpNum} is not allowed (may not be numerically stable); Use 5th order or less"
+			fi
 		else
 			local hpNum=${p_HighPass}
 		fi
@@ -367,7 +370,13 @@ have_hand_reclassification()
 
 main()
 {
-	local this_script_dir=$(readlink -f "$(dirname "$0")")
+	#mac readlink doesn't have -f
+	if [[ -L "$0" ]]
+	then
+		local this_script_dir=$(dirname "$(readlink "$0")")
+	else
+		local this_script_dir=$(dirname "$0")
+	fi
 
 	# Show tool versions
 	show_tool_versions
@@ -641,15 +650,11 @@ main()
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 				log_Msg "${matlab_cmd}"
 
-				# Use bash redirection ("here-document") to pass multiple commands into matlab
+				# Use bash redirection ("here-string") to pass multiple commands into matlab
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
 				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<M_PROG
-# Do NOT wrap the following in quotes (o.w. the entire set of commands gets interpreted as a single string)
-${matlab_cmd}
-M_PROG
-)
+				(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
                 ;;
 
 			*)
@@ -748,11 +753,9 @@ M_PROG
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_demean.dtseries.nii
 
-		# Following removes the individual run hp'ed time series
-		# MPH, 12/21/2018: Leaving them for now
-		#	log_Msg "Removing the individual run HP'ed time series for ${fmri}"
-		#	$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
-		#	/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
+		log_Msg "Removing the individual run HP'ed time series for ${fmri}"
+		$FSLDIR/bin/imrm ${fmriNoExt}_hp${hp}
+		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
 	done
 
 	## Terminate the 'else' clause of the "master" conditional that checked whether
@@ -772,11 +775,15 @@ M_PROG
     #this directory should exist and not be empty (i.e., melodic has already been run)
 	cd ${concatfmrihp}.ica
 
-	#This is the concated volume time series from the 1st pass VN, with the mean VN map multiplied back in
+	# This is the concated volume time series from the 1st pass VN, with requested
+	# hp-filtering applied and with the mean VN map multiplied back in
 	${FSLDIR}/bin/imrm filtered_func_data
 	${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
 
-	#This is the concated CIFTI time series from the 1st pass VN, with the mean VN map multiplied back in
+	# This is the concated CIFTI time series from the 1st pass VN, with requested
+	# hp-filtering applied and with the mean VN map multiplied back in
+	# Unlike single-run FIX (i.e., 'hcp_fix' and 'ReApplyFixPipeline'), here we symlink
+	# to the hp-filtered CIFTI and use "AlreadyHP=-1" to skip any additional filtering in fix_3_clean.
 	if [[ -f ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii ]] ; then
 		log_Msg "FOUND FILE: ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii"
 		log_Msg "Performing imln"
@@ -873,7 +880,7 @@ M_PROG
 			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 			log_Msg "${matlab_cmd}"
 			
-            # Use bash redirection ("here-document") to pass multiple commands into matlab
+            # Use bash redirection ("here-string") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
 			(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")

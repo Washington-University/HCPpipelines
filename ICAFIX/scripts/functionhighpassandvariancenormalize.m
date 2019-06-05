@@ -230,6 +230,9 @@ function Y = detrendpoly(X,p);
 % p: Order of polynomial to remove
 % Y: Detrended output
   
+% Need to define a function to accomplish this, because MATLAB's own DETREND
+% is only capable of removing a *linear* trend (i.e., "p=1" only)
+  
   % Check data, must be in column order
   [m, n] = size(X);
   if (m == 1)
@@ -243,8 +246,25 @@ function Y = detrendpoly(X,p);
 	error('order of polynomial (p) must be a non-negative integer');
   end
   
-  b = ((1 : r)' * ones (1, p + 1)) .^ (ones (r, 1) * (0 : p));  % Design matrix
-  Y = X - b * (b \ X);  % Remove polynomial fit
+  % 5/1/2019 -- Construct the "Vandermonde matrix" (V) scaled to a maximum of 1, for better numerical properties.
+  % Note that Octave's DETREND function supports arbitrary polynomial orders, but computes V by taking powers
+  % of [1:r] (rather than [1:r]/r), which is not numerically robust as p increases.
+  
+  V = ([1 : r]'/r * ones (1, p + 1)) .^ (ones (r, 1) * [0 : p]);  % "Vandermonde" design matrix
+  
+  % Cast design matrix to 'single' if the input is also 'single' (which CIFTI will be)
+  if strcmp(class(X),'single')
+	V = single(V);
+  end
+  
+  % Use mldivide ('\') as the linear solver, as it has the nice property of generating a warning
+  % if the solution is rank deficient (in MATLAB at least; Octave doesn't appear to generate a similar warning).
+  % [In contrast, PINV does NOT generate a warning if the singular values are less than its internal tolerance].
+  % Note that even with the scaling of the Vandermonde matrix to a maximum of 1, rank deficiency starts
+  % becoming a problem at p=6 for data of class 'single' and 1200 time points.
+  % Rather than explicitly restricting the allowed order here, we'll code a restriction into the calling scripts.
+  
+  Y = X - V * (V \ X);  % Remove polynomial fit
   
 end
   
