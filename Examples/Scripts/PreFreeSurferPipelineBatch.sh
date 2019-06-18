@@ -425,6 +425,25 @@ main()
 
     	    exit 1
 
+
+
+
+
+
+	    --SEPhaseNeg=/HCP/hcpdb/build_ssd/chpc/BUILD/tbbrown/LifeSpanAging/HCA6002236_V1_MR/unprocessed/T1w_MPR_vNav_4e_RMS/HCA6002236_V1\
+			_MR_SpinEchoFieldMap2_AP.nii.gz
+	    --SEPhasePos=/HCP/hcpdb/build_ssd/chpc/BUILD/tbbrown/LifeSpanAging/HCA6002236_V1_MR/unprocessed/T1w_MPR_vNav_4e_RMS/HCA6002236_V1\
+			_MR_SpinEchoFieldMap2_PA.nii.gz
+	    --seechospacing=0.000580009
+	    --topupconfig=/home/tbbrown/pipeline_tools/HCPpipelines/global/config/b02b0.cnf
+	    --seunwarpdir=j
+	    --unwarpdir=z
+
+	    
+
+
+
+	    
 	    
 
     # 	    # Run (or submit to be run) the PreFreeSurferPipeline.sh script
