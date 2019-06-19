@@ -431,55 +431,70 @@ main()
 			SpinEchoPhaseEncodePositive=${PositiveFieldMaps##* }
 			SpinEchoPhaseEncodeNegative=${NegativeFieldMaps##* }
 
-			echo ${SpinEchoPhaseEncodePositive}
-			echo ${SpinEchoPhaseEncodeNegative}
+			# Spin Echo Echo Spacing
+			# See the EffectiveEchoSpacing value in the JSON sidecar file corresponding to the SpinEchoFieldMap file
+			# "EffectiveEchoSpacing": 0.000580009
+			SEEchoSpacing="0.000580009"
 
-			# --seechospacing=0.000580009
-			# --topupconfig=/home/tbbrown/pipeline_tools/HCPpipelines/global/config/b02b0.cnf
-			# --seunwarpdir=j
-			# --unwarpdir=z
+			# Default file to use when using SEFMs
+			TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+
+			# Spin Echo Unwarp Direction
+			# See the PhaseEncodingDirection value in the JSON sidecar file corresponding to the SpinEchoFieldMap file
+			# "PhaseEncodingDirection": "j"
+			SEUnwarpDir="j"
+
+			# See the ReadoutDirection value in the JSON sidecare file corresponding to the T1w file
+			# "ReadoutDirection": "k"
+			# x,y,z corresponds to i,j,k
+			UnwarpDir="z"
 			
-			
-			
-			# Run (or submit to be run) the PreFreeSurferPipeline.sh script
+			# Build the PreFreeSurferPipeline.sh script invocation command to run
 			# with all the specified parameter values
 
-			PreFreeSurferCmd="${queuing_command} "
-			PreFreeSurferCmd+="${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh "
-			PreFreeSurferCmd+=" --path=\"${StudyFolder}\" "
-			PreFreeSurferCmd+="	--subject=\"${Session}\" "
-			PreFreeSurferCmd+="	--t1=\"${T1wInputImages}\" "
-			PreFreeSurferCmd+="	--t2=\"${T2wInputImages}\" "
-			PreFreeSurferCmd+="	--t1template=\"${T1wTemplate}\" "
-			PreFreeSurferCmd+="	--t1templatebrain=\"${T1wTemplateBrain}\" "
-			PreFreeSurferCmd+="	--t1template2mm=\"${T1wTemplate2mm}\" "
-			PreFreeSurferCmd+="	--t2template=\"${T2wTemplate}\" "
-			PreFreeSurferCmd+="	--t2templatebrain=\"${T2wTemplateBrain}\" "
-			PreFreeSurferCmd+="	--t2template2mm=\"${T2wTemplate2mm}\" "
-			PreFreeSurferCmd+="	--templatemask=\"${TemplateMask}\" "
-			PreFreeSurferCmd+="	--template2mmmask=\"${Template2mmMask}\" "
-			PreFreeSurferCmd+="	--fnirtconfig=\"${FNIRTConfig}\" "
-			PreFreeSurferCmd+="	--gdcoeffs=\"${GradientDistortionCoeffs}\" "
-			PreFreeSurferCmd+="	--brainsize=\"${BrainSize}\" "
-			PreFreeSurferCmd+="	--echodiff=\"${TE}\" "
-			PreFreeSurferCmd+="	--t1samplespacing=\"${T1wSampleSpacing}\" "
-			PreFreeSurferCmd+="	--t2samplespacing=\"${T2wSampleSpacing}\" "
-			PreFreeSurferCmd+="	--avgrdcmethod=\"${AvgrdcSTRING}\" "
-			PreFreeSurferCmd+=" --SEPhasePos=\"${SpinEchoPhaseEncodePositive}\" "
-			PreFreeSurferCmd+=" --SEPhaseNeg=\"${SpinEchoPhaseEncodeNegative}\" "
-			
+			PreFreeSurferCmd=()
+			if [ -n "${queuing_command}" ]; then
+				PreFreeSurferCmd+=("${queuing_command}")
+			fi
+			PreFreeSurferCmd+=("${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh")
+			PreFreeSurferCmd+=("--path=${StudyFolder}")
+			PreFreeSurferCmd+=("--subject=${Session}")
+			PreFreeSurferCmd+=("--t1=${T1wInputImages}")
+			PreFreeSurferCmd+=("--t2=${T2wInputImages}")
+			PreFreeSurferCmd+=("--t1template=${T1wTemplate}")
+			PreFreeSurferCmd+=("--t1templatebrain=${T1wTemplateBrain}")
+			PreFreeSurferCmd+=("--t1template2mm=${T1wTemplate2mm}")
+			PreFreeSurferCmd+=("--t2template=${T2wTemplate}")
+			PreFreeSurferCmd+=("--t2templatebrain=${T2wTemplateBrain}")
+			PreFreeSurferCmd+=("--t2template2mm=${T2wTemplate2mm}")
+			PreFreeSurferCmd+=("--templatemask=${TemplateMask}")
+			PreFreeSurferCmd+=("--template2mmmask=${Template2mmMask}")
+			PreFreeSurferCmd+=("--fnirtconfig=${FNIRTConfig}")
+			PreFreeSurferCmd+=("--gdcoeffs=${GradientDistortionCoeffs}")
+			PreFreeSurferCmd+=("--brainsize=${BrainSize}")
+			PreFreeSurferCmd+=("--echodiff=${TE}")
+			PreFreeSurferCmd+=("--t1samplespacing=${T1wSampleSpacing}")
+			PreFreeSurferCmd+=("--t2samplespacing=${T2wSampleSpacing}")
+			PreFreeSurferCmd+=("--avgrdcmethod=${AvgrdcSTRING}")
+			PreFreeSurferCmd+=("--SEPhasePos=${SpinEchoPhaseEncodePositive}")
+			PreFreeSurferCmd+=("--SEPhaseNeg=${SpinEchoPhaseEncodeNegative}")
+			PreFreeSurferCmd+=("--seechospacing=${SEEchoSpacing}")
+			PreFreeSurferCmd+=("--topupconfig=${TopupConfig}")
+			PreFreeSurferCmd+=("--seunwarpdir=${SEUnwarpDir}")
+			PreFreeSurferCmd+=("--unwarpdir=${UnwarpDir}")
+			PreFreeSurferCmd+=("--printcom=${PRINTCOM}")
 
-			#				   --seechospacing="$SEEchoSpacing" \
-			#				   --seunwarpdir="$SEUnwarpDir" \
-			#				   --unwarpdir="$UnwarpDir" \
-			#				   --topupconfig="$TopupConfig" \
-			#				   --printcom=${PRINTCOM}
+			# Show the command 
+			num_cmd_args=${#PreFreeSurferCmd[@]}
+			echo "PreFreeSurfer command to execute:"
+			for (( cmdindex = 0; cmdindex < num_cmd_args; ++cmdindex )); do
+				echo "${PreFreeSurferCmd[cmdindex]}"
+			done
+			echo ""
 			
-			
-			echo "PreFreeSurferCmd: ${PreFreeSurferCmd}"			
-			# ${PreFreeSurferCmd}
-			
-			
+			# Execute the command
+			"${PreFreeSurferCmd[@]}"
+		  			
 		else # Default to HCP style
 			
 			# Note that for the HCP naming convention, the "Session" and the "Subject" are
@@ -751,43 +766,54 @@ main()
 			# Set to NONE to skip gradient distortion correction
 			GradientDistortionCoeffs="NONE"
 			
-			# Run (or submit to be run) the PreFreeSurferPipeline.sh script
+			# Build the PreFreeSurferPipeline.sh script command to run 
 			# with all the specified parameter values
+
+			PreFreeSurferCmd=()
+			if [ -n "${queuing_command}" ]; then
+				PreFreeSurferCmd+=("${queuing_command}")
+			fi
+			PreFreeSurferCmd+=("${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh")
+			PreFreeSurferCmd+=(" --path=${StudyFolder}")
+			PreFreeSurferCmd+=(" --subject=${Subject}")
+			PreFreeSurferCmd+=(" --t1=${T1wInputImages}")
+			PreFreeSurferCmd+=(" --t2=${T2wInputImages}")
+			PreFreeSurferCmd+=(" --t1template=${T1wTemplate}")
+			PreFreeSurferCmd+=(" --t1templatebrain=${T1wTemplateBrain}")
+			PreFreeSurferCmd+=(" --t1template2mm=${T1wTemplate2mm}")
+			PreFreeSurferCmd+=(" --t2template=${T2wTemplate}")
+			PreFreeSurferCmd+=(" --t2templatebrain=${T2wTemplateBrain}")
+			PreFreeSurferCmd+=(" --t2template2mm=${T2wTemplate2mm}")
+			PreFreeSurferCmd+=(" --templatemask=${TemplateMask}")
+			PreFreeSurferCmd+=(" --template2mmmask=${Template2mmMask}")
+			PreFreeSurferCmd+=(" --brainsize=${BrainSize}")
+			PreFreeSurferCmd+=(" --fnirtconfig=${FNIRTConfig}")
+			PreFreeSurferCmd+=(" --fmapmag=${MagnitudeInputName}")
+			PreFreeSurferCmd+=(" --fmapphase=${PhaseInputName}")
+			PreFreeSurferCmd+=(" --fmapgeneralelectric=${GEB0InputName}")
+			PreFreeSurferCmd+=(" --echodiff=${TE}")
+			PreFreeSurferCmd+=(" --SEPhaseNeg=${SpinEchoPhaseEncodeNegative}")
+			PreFreeSurferCmd+=(" --SEPhasePos=${SpinEchoPhaseEncodePositive}")
+			PreFreeSurferCmd+=(" --seechospacing=${SEEchoSpacing}")
+			PreFreeSurferCmd+=(" --seunwarpdir=${SEUnwarpDir}")
+			PreFreeSurferCmd+=(" --t1samplespacing=${T1wSampleSpacing}")
+			PreFreeSurferCmd+=(" --t2samplespacing=${T2wSampleSpacing}")
+			PreFreeSurferCmd+=(" --unwarpdir=${UnwarpDir}")
+			PreFreeSurferCmd+=(" --gdcoeffs=${GradientDistortionCoeffs}")
+			PreFreeSurferCmd+=(" --avgrdcmethod=${AvgrdcSTRING}")
+			PreFreeSurferCmd+=(" --topupconfig=${TopupConfig}")
+			PreFreeSurferCmd+=(" --printcom=${PRINTCOM}")
+
+			# Show the command
+			num_cmd_args=${#PreFreeSurferCmd[@]}
+			echo "PreFreeSurfer command to execute:"
+			for (( cmdindex = 0; cmdindex < num_cmd_args; ++cmdindex )); do
+				echo "${PreFreeSurferCmd[cmdindex]}"
+			done
+			echo ""
 			
-			PreFreeSurferCmd="${queuing_command} "
-			PreFreeSurferCmd+="${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh "
-			PreFreeSurferCmd+=" --path=\"${StudyFolder}\" "
-			PreFreeSurferCmd+=" --subject=\"${Subject}\" "
-			PreFreeSurferCmd+=" --t1=\"${T1wInputImages}\" "
-			PreFreeSurferCmd+=" --t2=\"${T2wInputImages}\" "
-			PreFreeSurferCmd+=" --t1template=\"${T1wTemplate}\" "
-			PreFreeSurferCmd+=" --t1templatebrain=\"${T1wTemplateBrain}\" "
-			PreFreeSurferCmd+=" --t1template2mm=\"${T1wTemplate2mm}\" "
-			PreFreeSurferCmd+=" --t2template=\"${T2wTemplate}\" "
-			PreFreeSurferCmd+=" --t2templatebrain=\"${T2wTemplateBrain}\" "
-			PreFreeSurferCmd+=" --t2template2mm=\"${T2wTemplate2mm}\" "
-			PreFreeSurferCmd+=" --templatemask=\"${TemplateMask}\" "
-			PreFreeSurferCmd+=" --template2mmmask=\"${Template2mmMask}\" "
-			PreFreeSurferCmd+=" --brainsize=\"${BrainSize}\" "
-			PreFreeSurferCmd+=" --fnirtconfig=\"${FNIRTConfig}\" "
-			PreFreeSurferCmd+=" --fmapmag=\"${MagnitudeInputName}\" "
-			PreFreeSurferCmd+=" --fmapphase=\"${PhaseInputName}\" "
-			PreFreeSurferCmd+=" --fmapgeneralelectric=\"${GEB0InputName}\" "
-			PreFreeSurferCmd+=" --echodiff=\"${TE}\" "
-			PreFreeSurferCmd+=" --SEPhaseNeg=\"${SpinEchoPhaseEncodeNegative}\" "
-			PreFreeSurferCmd+=" --SEPhasePos=\"${SpinEchoPhaseEncodePositive}\" "
-			PreFreeSurferCmd+=" --seechospacing=\"${SEEchoSpacing}\" "
-			PreFreeSurferCmd+=" --seunwarpdir=\"${SEUnwarpDir}\" "
-			PreFreeSurferCmd+=" --t1samplespacing=\"${T1wSampleSpacing}\" "
-			PreFreeSurferCmd+=" --t2samplespacing=\"${T2wSampleSpacing}\" "
-			PreFreeSurferCmd+=" --unwarpdir=\"${UnwarpDir}\" "
-			PreFreeSurferCmd+=" --gdcoeffs=\"${GradientDistortionCoeffs}\" "
-			PreFreeSurferCmd+=" --avgrdcmethod=\"${AvgrdcSTRING}\" "
-			PreFreeSurferCmd+=" --topupconfig=\"${TopupConfig}\" "
-			PreFreeSurferCmd+=" --printcom=\"${PRINTCOM}\" "
-			
-			echo "PreFreeSurferCmd: ${PreFreeSurferCmd}"			
-			# ${PreFreeSurferCmd}
+			# Execute the command
+			"${PreFreeSurferCmd[@]}"
 			
 		fi
 		
