@@ -67,6 +67,12 @@
 #
 #~ND~END~
 
+# ----------------------------------------------------------------
+#   HERE IS WHERE YOU WOULD CHANGE DEFAULT VALUES TO BE USED
+#   IF YOU WOULD LIKE TO RUN THIS SCRIPT WITHOUT SPECIFYING
+#   ANY COMMAND LINE PARAMETERS.
+# ----------------------------------------------------------------
+
 # Default location of study folder
 DEFAULT_STUDY_FOLDER="${HOME}/projects/Pipelines_ExampleData"
 
@@ -75,6 +81,39 @@ DEFAULT_SESSION_LIST="100307"
 
 # Default pipeline environment script
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+
+# Default indicator of whether to run the processing "locally" (i.e. on the
+# machine on which this script is invoked) or try to submit the a job
+# to a processing queue using fsl_sub. If this value is anything other
+# than empty, then the processing is done "locally".
+#
+# Example usage:
+#
+# Set to empty string to submit a job for each session/subject.
+#
+#   DEFAULT_RUN_LOCAL=""
+#
+# Set to "TRUE" to do processing "locally".
+#
+#   DEFAULT_RUN_LOCAL="TRUE"
+#
+DEFAULT_RUN_LOCAL=""
+
+# Default indicator of whether to process data in "LifeSpan" style.
+# If this value is anything other than empty, then it is assume that
+# the data to be processed follows LifeSpan style naming conventions.
+#
+# Example usage:
+#
+# Set to empty string to run processing on HCP-YA style data
+#
+#   DEFAULT_LIFESPAN_STYLE=""
+#
+# Set to "TRUE" to run processing on LifeSpan style data
+#
+#   DEFAULT_LIFESPAN_STYLE="TRUE"
+#
+DEFAULT_LIFESPAN_STYLE=""
 
 usage()
 {
@@ -169,52 +208,22 @@ get_options()
 				usage
 				exit 1
 				;;
-			--StudyFolder=*)
+			--StudyFolder=* | --study=* | --working-dir=*)
  				p_study_folder=${argument#*=}
 				;;
-			--study=*)
-				p_study_folder=${argument#*=}
-				;;
-			--working-dir=*)
-				p_study_folder=${argument#*=}
-				;;
-			--Subject=*)
+			--Subject=* | --subject=* | --Session=* | --session=*)
 				if [ -n "${p_session_list}" ]; then
 					p_session_list+=" "
 				fi
 				p_session_list+=${argument#*=}
 				;;
-			--subject=*)
-				if [ -n "${p_session_list}" ]; then
-					p_session_list+=" "
-				fi
-				p_session_list+=${argument#*=}
-				;;
-			--Session=*)
-				if [ -n "${p_session_list}" ]; then
-					p_session_list+=" "
-				fi
-				p_session_list+=${argument#*=}
-				;;
-			--session=*)
-				if [ -n "${p_session_list}" ]; then
-					p_session_list+=" "
-				fi
-				p_session_list+=${argument#*=}
-				;;
-			--runlocal)
-				p_run_local="TRUE"
-				;;
-			--run-local)
+			--runlocal | --run-local)
 				p_run_local="TRUE"
 				;;
 			--lifespan)
 				p_lifespan_style="TRUE"
 				;;
-			--env=*)
-				p_environment_script=${argument#*=}
-				;;
-			--env-script=*)
+			--env=* | --env-script=*)
 				p_environment_script=${argument#*=}
 				;;
 			*)
@@ -236,29 +245,37 @@ get_options()
 	if [ -z "${p_environment_script}" ]; then
 		p_environment_script=${DEFAULT_ENVIRONMENT_SCRIPT}
 	fi
+
+	if [ -z "${p_run_local}" ]; then
+		p_run_local=${DEFAULT_RUN_LOCAL}
+	fi
+
+	if [ -z "${p_lifespan_style}" ]; then
+		p_lifespan_style=${DEFAULT_LIFESPAN_STYLE}
+	fi
 }
 
 main()
 {
 	get_options "$@"
 	
-	# Gather options specified
+	# Gather options specified on the command line or given default values
 	local StudyFolder="${p_study_folder}"
 	local SessionList="${p_session_list}"
+	local EnvironmentScript="${p_environment_script}"
 	local RunLocal="${p_run_local}"
 	local LifeSpanStyle="${p_lifespan_style}"
-	local EnvironmentScript="${p_environment_script}"
 	
 	# Report major script control variables to user
 	echo ""
 	echo "StudyFolder: ${StudyFolder}"
 	echo "SessionList: ${SessionList}"
+	echo "EnvironmentScript: ${EnvironmentScript}"
 	echo "RunLocal: ${RunLocal}"
 	echo "LifeSpanStyle: ${LifeSpanStyle}"
-	echo "EnvironmentScript: ${EnvironmentScript}"
 	echo ""
 	
-	# Set up pipeline environment variables and software
+	# Set up pipeline environment variables and software paths
 	source ${EnvironmentScript}
 	
 	# Report environment variables pointing to tools
@@ -267,14 +284,7 @@ main()
 	echo "HCPPIPEDIR: ${HCPPIPEDIR}"
 	echo "CARET7DIR: ${CARET7DIR}"
 	echo "PATH: ${PATH}"
-	
-	# Define processing queue to be used if submitted to job scheduler
-	# if [ X$SGE_ROOT != X ] ; then
-	#	 QUEUE="-q long.q"
-	#	 QUEUE="-q veryshort.q"
-	QUEUE="-q hcp_priority.q"
-	# fi
-	
+
 	# If PRINTCOM is not a null or empty string variable, then
 	# this script and other scripts that it calls will simply
 	# print out the primary commands it otherwise would run.
@@ -283,13 +293,21 @@ main()
 	PRINTCOM=""
 	# PRINTCOM="echo"
 
-	# Establish queuing command based on command line option
+	# Define processing queue to be used if submitted to job scheduler
+	# if [ X$SGE_ROOT != X ] ; then
+	#	 QUEUE="-q long.q"
+	#	 QUEUE="-q veryshort.q"
+	QUEUE="-q hcp_priority.q"
+	# fi
+	
+	# Establish queuing command based on whether running locally or submitting jobs
 	if [ -n "${RunLocal}" ] ; then
 		queuing_command=""
 	else
 		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
 	fi
-			
+
+	# Cycle through specified subjects/sessions and run/submit processing
 	for Session in ${SessionList} ; do
 		echo ""
 		echo "Processing: ${Session}"
@@ -300,11 +318,15 @@ main()
 		# data naming convention or the LifeSpan unprocessed data naming convention
 		# depending upon whether LifeSpanStyle is "TRUE".
 		
-		if [ "${LifeSpanStyle}" = "TRUE" ]; then
+		if [ -n "${LifeSpanStyle}" ]; then
+
+			# ----------------------------------------------------------------
+			#   Set processing parameters for running data in LifeSpan style
+			# ----------------------------------------------------------------
 			
 			# Input Images
 			#
-			# If LifeSpanStyle is "TRUE", then the LifeSpan unprocessed data naming convention
+			# If LifeSpanStyle is non-empty, then the LifeSpan unprocessed data naming convention
 			# is used.
 			
 			T1wInputImages="${StudyFolder}/${Session}/unprocessed/T1w_MPR_vNav_4e_RMS/${Session}_T1w_MPR_vNav_4e_RMS.nii.gz"
@@ -495,13 +517,17 @@ main()
 			# Execute the command
 			"${PreFreeSurferCmd[@]}"
 		  			
-		else # Default to HCP style
+		else # Default to HCP-YA style
+
+			# ----------------------------------------------------------------
+			#   Set processing parameters for running data in HCP-YA style
+			# ----------------------------------------------------------------
 			
 			# Note that for the HCP naming convention, the "Session" and the "Subject" are
 			# essentially equivalent. Sessions would be subject IDs like 100307, 110226, 997865, etc.
 			Subject="${Session}"
 			
-			# If LifeSpanStyle is NOT "TRUE", then the HCP unprocessed data naming convention
+			# If LifeSpanStyle is empty, then the HCP unprocessed data naming convention
 			# is used, e.g.
 			#
 			# ${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_T1w_MPR1.nii.gz
