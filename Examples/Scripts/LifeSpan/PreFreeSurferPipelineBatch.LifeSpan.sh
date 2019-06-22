@@ -344,11 +344,15 @@ main()
 		# The values set below are for the LifeSpan Aging Protocol using
 		# a Prisma 3T scanner
 		
-		# See the DwellTime value in the JSON Sidecar file corresponding to the T1w scan file
+		# If JSON sidecar files are available (e.g. produced by recent versions of dcm2niix),
+		# The value to be used for T1wSampleSpacing should be found in the DwellTime value
+	    # in the JSON sidecar file corresponding to the T1w scan file.
 		# "DwellTime": 2.1e-06
 		T1wSampleSpacing="0.000002100"
 		
-		# See the DwellTime value in the JSON Sidecar file corresponding to the T2w scan file
+		# If JSON sidecar files are available (e.g. produced by recent versions of dcm2niix),
+		# The value to be used for T2wSampleSpacing should be found in the DwellTime value
+		# in the JSON sidecar file corresponding to the T2w scan file.
 		# "DwellTime": 2.1e-06		
 		T2wSampleSpacing="0.000002100"
 		
@@ -387,6 +391,16 @@ main()
 		AvgrdcSTRING="TOPUP"
 			
 		# Spin Echo Field Maps
+
+		# The SpinEchoPhaseEncodePositive and SpinEchoPhaseEncodeNegative variables should
+		# be set to values other than "NONE" for using Spin Echo Field Maps (i.e. when AvgrdcSTRING="TOPUP")
+
+		# The SpinEchoPhaseEncodeNegative variable should be set to the
+		# spin echo field map volume with a negative phase encoding direction
+		# (LR if using a pair of LR/RL Siemens Spin Echo Field Maps (SEFMs);
+		# AP if using a pair of AP/PA Siemens SEFMS)
+		# and set to "NONE" if not using SEFMs
+		# (i.e. if AvgrdcSTRING is not equal to "TOPUP")
 		
 		PositiveFieldMaps=$(ls ${StudyFolder}/${Session}/unprocessed/T1w_MPR_vNav_4e_RMS/${Session}_SpinEchoFieldMap*PA.nii.gz)
 		NegativeFieldMaps=$(ls ${StudyFolder}/${Session}/unprocessed/T1w_MPR_vNav_4e_RMS/${Session}_SpinEchoFieldMap*AP.nii.gz)
@@ -396,7 +410,9 @@ main()
 		SpinEchoPhaseEncodeNegative=${NegativeFieldMaps##* }
 
 		# Spin Echo Echo Spacing
-		# See the EffectiveEchoSpacing value in the JSON sidecar file corresponding to the SpinEchoFieldMap file
+		# If JSON sidecar files are available (e.g. produced by recent versions of dcm2niix),
+		# the value to be used for SEEchoSpacing should be found in the EffectiveEchoSpacing value
+		# in the JSON sidecar file corresponding to the SpinEchoFieldMap file.
 		# "EffectiveEchoSpacing": 0.000580009
 		SEEchoSpacing="0.000580009"
 
@@ -404,14 +420,38 @@ main()
 		TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 		
 		# Spin Echo Unwarp Direction
-		# See the PhaseEncodingDirection value in the JSON sidecar file corresponding to the SpinEchoFieldMap file
+		# If JSON sidecar files are available (e.g. produced by recent versions of dcm2niix),
+		# the value to be used for SEUnwarpDir should be found in the PhaseEncodingDirection value
+	    # in the JSON sidecar file corresponding to the SpinEchoFieldMap file.
 		# "PhaseEncodingDirection": "j"
 		SEUnwarpDir="j"
 		
-		# See the ReadoutDirection value in the JSON sidecare file corresponding to the T1w file
+		# If JSON sidecar files are available (e.g. produced by recent versions of dcm2niix),
+		# the value to be used for UnwarpDir should be found in the ReadoutDirection value
+		# in the JSON sidecare file corresponding to the T1w file.
 		# "ReadoutDirection": "k"
-		# x,y,z corresponds to i,j,k
+		# Note: x is equivalent to i, y is equivalent to j, and z is equivalent to k
 		UnwarpDir="z"
+
+		# ----------------------------------------------------------------------
+		# Variables related to using General Electric specific Gradient Echo
+		# Field Maps
+		# ----------------------------------------------------------------------
+
+		# The following variables would be set to values other than "NONE" for
+		# using General Electric specific Gradient Echo Field Maps (i.e. when
+		# AvgrdcSTRING="GeneralElectricFieldMap")
+
+		# Example value for when using General Electric Gradient Echo Field Map
+		#
+		# GEB0InputName should be a General Electric style B0 fieldmap with two
+		# volumes
+		#   1) fieldmap in deg and
+		#   2) magnitude,
+		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap
+		#
+		#   GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_GradientEchoFieldMap.nii.gz"
+		GEB0InputName="NONE"
 		
 		# Build the PreFreeSurferPipeline.sh script invocation command to run
 		# with all the specified parameter values
@@ -443,6 +483,19 @@ main()
 		PreFreeSurferCmd+=("--SEPhasePos=${SpinEchoPhaseEncodePositive}")
 		PreFreeSurferCmd+=("--SEPhaseNeg=${SpinEchoPhaseEncodeNegative}")
 		PreFreeSurferCmd+=("--seechospacing=${SEEchoSpacing}")
+
+		if [ "${MagnitudeInputName}" != "NONE" ]; then
+			PreFreeSurferCmd+=("--fmapmag=${MagnitudeInputName}")
+		fi
+
+		if [ "${PhaseInputName}" != "NONE" ]; then
+			PreFreeSurferCmd+=("--fmapphase=${PhaseInputName}")
+		fi
+
+		if [ "${GEB0InputName}" != "NONE" ]; then
+			PreFreeSurferCmd+=("--fmapgeneralelectric=${GEB0InputName}")
+		fi
+
 		PreFreeSurferCmd+=("--topupconfig=${TopupConfig}")
 		PreFreeSurferCmd+=("--seunwarpdir=${SEUnwarpDir}")
 		PreFreeSurferCmd+=("--unwarpdir=${UnwarpDir}")
