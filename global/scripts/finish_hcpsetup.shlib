@@ -1,0 +1,28 @@
+#!/bin/echo This script should not be run directly:
+
+#extra setup bits that the user should never need to edit
+
+#make sure fsl generates .nii.gz files
+export FSLOUTPUTTYPE=NIFTI_GZ
+
+export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
+export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
+export HCPPIPEDIR_Config=${HCPPIPEDIR}/global/config
+
+export HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
+export HCPPIPEDIR_FS=${HCPPIPEDIR}/FreeSurfer/scripts
+export HCPPIPEDIR_PostFS=${HCPPIPEDIR}/PostFreeSurfer/scripts
+export HCPPIPEDIR_fMRISurf=${HCPPIPEDIR}/fMRISurface/scripts
+export HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
+export HCPPIPEDIR_tfMRI=${HCPPIPEDIR}/tfMRI/scripts
+export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
+export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
+export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
+
+#try to reduce strangeness from locale and other environment settings
+export LC_ALL=C
+export LANGUAGE=C
+#POSIXLY_CORRECT currently gets set by many versions of fsl_sub, unfortunately, but at least don't pass it in if the user has it set in their usual environment
+unset POSIXLY_CORRECT
+
