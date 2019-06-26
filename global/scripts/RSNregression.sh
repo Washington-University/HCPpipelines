@@ -29,8 +29,6 @@ function main()
     opts_AddMandatory '--group-maps' 'GroupMaps' 'file' "the group template maps to regress"
     opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
     #matlab arguments should be complete filenames
-    #old script hardcoded naming conventions for hidden inputs (surfaces, vertex areas)
-    #Matt says it should be runnable by itself, so parameters and hidden inputs
     opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
     opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
     opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like FIXME: EXAMPLE"
@@ -39,21 +37,13 @@ function main()
     opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
     opts_AddOptional '--low-ica-template-name' 'ICATemplateName' 'filename' "filename template where 'REPLACEDIM' will be replaced by each of the --low-ica-dims values in turn to form the low-dim inputs"
     #outputs
-    #opts_AddMandatory '--output-beta' 'OutputBeta' 'filename' "what name to use for the output beta maps"
     opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like FIXME: EXAMPLE_d127"
     opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "FIXME: what does this do?" '0'
     opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
     opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from the regression" 'NO'
     #opts_AddOptional '--output-norm' 'DoNorm' '1 or 0' "also create maps normalized to match the group maps" '0'
-    #opts_AddOptional '--output-beta-vol' 'OutputVolBeta' 'filename' "what name to use for the output beta maps"
-    #opts_AddOptional '--output-z-vol' 'OutputVolZ' 'filename' "also create Z maps from the regression"
-    #opts_AddOptional '--output-norm-vol' 'OutputVolNorm' 'filename' "also create maps normalized to match the group maps"
     #old bias field
     opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
-    #opts_AddOptional '--old-bias' 'OldBias' 'file' "for fixing data using older bias fields, specify the data's bias field here"
-    #opts_AddOptional '--new-bias-list' 'NewBiasList' 'file@file@file...' "when using --old-bias, specify each run's new bias field file here"
-    #opts_AddOptional '--old-vol-bias' 'OldVolBias' 'file' "for fixing volume data with older bias fields, specify the data's bias field here"
-    #opts_AddOptional '--new-vol-bias-list' 'NewVolBiasList' 'file@file@file...' "when using --old-vol-bias, specify each run's new bias field file here"
     opts_AddOptional '--scale-factor' 'ScaleFactor' 'number' "multiply the input timeseries by some factor before processing"
     #FIXME: compiled matlab
     opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -122,8 +112,6 @@ function main()
         if ((DoFixBias))
         then
             echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_real_bias.dscalar.nii" >> "$tempname.goodbias.txt"
-        #else
-        #    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_sebased_bias.dscalar.nii" >> "$tempname.goodbias.txt"
         fi
         if ((DoVol))
         then
@@ -132,8 +120,6 @@ function main()
             if ((DoFixBias))
             then
                 echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
-            #else
-            #    echo "$MNIFolder/Results/$fmri/${fmri}_sebased_bias.nii.gz" >> "$tempname.volgoodbias.txt"
             fi
         fi
     done
