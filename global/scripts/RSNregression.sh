@@ -11,7 +11,7 @@ function usage()
 {
     #header text
     echo "
-$log_ToolName: does stuff
+$log_ToolName: regresses group ICA spatial maps into individual data in order to obtain individual spatial maps of where the subject's similar function is
 
 Usage: $log_ToolName PARAMETER...
 
@@ -28,17 +28,16 @@ function main()
     opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
     opts_AddMandatory '--group-maps' 'GroupMaps' 'file' "the group template maps to regress"
     opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
-    #matlab arguments should be complete filenames
     opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
     opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
-    opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like FIXME: EXAMPLE"
+    opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
     opts_AddMandatory '--method' 'Method' 'regression method' "'weighted' or 'dual' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information"
     opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
     opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
     opts_AddOptional '--low-ica-template-name' 'ICATemplateName' 'filename' "filename template where 'REPLACEDIM' will be replaced by each of the --low-ica-dims values in turn to form the low-dim inputs"
     #outputs
-    opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like FIXME: EXAMPLE_d127"
-    opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "FIXME: what does this do?" '0'
+    opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like group_ICA_d127"
+    opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "number of samples to use when computing frequency spectrum" '0'
     opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
     opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from the regression" 'NO'
     #opts_AddOptional '--output-norm' 'DoNorm' '1 or 0' "also create maps normalized to match the group maps" '0'
