@@ -329,20 +329,22 @@ ${FSLDIR}/bin/fslmaths ${WD}/Magnitudes -Tmean ${WD}/Magnitude
 ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
 
 # copy images to specified outputs
+# explicitly include .nii.gz suffix on outputs here, to avoid any ambiguity between files
+# vs directories with the same (base)name
 if [ ! -z ${DistortionCorrectionWarpFieldOutput} ] ; then
-  ${FSLDIR}/bin/imcp ${WD}/WarpField ${DistortionCorrectionWarpFieldOutput}
+  ${FSLDIR}/bin/imcp ${WD}/WarpField.nii.gz ${DistortionCorrectionWarpFieldOutput}.nii.gz
 fi
 if [ ! -z ${JacobianOutput} ] ; then
-  ${FSLDIR}/bin/imcp ${WD}/Jacobian ${JacobianOutput}
+  ${FSLDIR}/bin/imcp ${WD}/Jacobian.nii.gz ${JacobianOutput}.nii.gz
 fi
 if [ ! -z ${DistortionCorrectionFieldOutput} ] ; then
-  ${FSLDIR}/bin/imcp ${WD}/TopupField ${DistortionCorrectionFieldOutput}
+  ${FSLDIR}/bin/imcp ${WD}/TopupField.nii.gz ${DistortionCorrectionFieldOutput}.nii.gz
 fi
 if [ ! -z ${DistortionCorrectionMagnitudeOutput} ] ; then
-  ${FSLDIR}/bin/imcp ${WD}/Magnitude ${DistortionCorrectionMagnitudeOutput}
+  ${FSLDIR}/bin/imcp ${WD}/Magnitude.nii.gz ${DistortionCorrectionMagnitudeOutput}.nii.gz
 fi
 if [ ! -z ${DistortionCorrectionMagnitudeBrainOutput} ] ; then
-  ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain ${DistortionCorrectionMagnitudeBrainOutput}
+  ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain.nii.gz ${DistortionCorrectionMagnitudeBrainOutput}.nii.gz
 fi
 
 log_Msg "END: Topup Field Map Generation and Gradient Unwarping"
