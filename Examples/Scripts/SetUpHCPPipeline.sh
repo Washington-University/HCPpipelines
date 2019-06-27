@@ -1,9 +1,9 @@
 #!/bin/echo This script should be sourced before calling a pipeline script, and should not be run directly:
 
 # Set up specific environment variables for the HCP Pipeline
-export HCPPIPEDIR=/home/somebody/Pipelines
-export MSMBINDIR=${HOME}/pipeline_tools/MSM
-export MSMCONFIGDIR=${HCPPIPEDIR}/MSMConfig
+export HCPPIPEDIR="${HOME}/HCPpipelines"
+export MSMBINDIR="${HOME}/pipeline_tools/MSM"
+export MSMCONFIGDIR="${HCPPIPEDIR}/MSMConfig"
 # export MATLAB_COMPILER_RUNTIME=/usr/local/MATLAB_Runtime/v901
 export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
 export FSL_FIXDIR=/usr/local/fix
@@ -32,7 +32,7 @@ then
             source "$FSLDIR/etc/fslconf/fsl.sh"
         fi
     else
-        echo "fslmaths not found in \$PATH, please install connectome workbench and ensure it is on \$PATH, or edit the setup script to specify its location" 1>&2
+        echo "fslmaths not found in \$PATH, please install FSL and ensure it is on \$PATH, or edit the setup script to specify its location" 1>&2
         exit 1
     fi
 fi

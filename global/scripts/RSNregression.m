@@ -1,8 +1,32 @@
 function RSNregression(InputFile, InputVNFile, GroupMaps, Method, ParamsFile, VAWeightsName, OutputBeta, varargin)
+    optional = myargparse(varargin, {'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
+    
+    %InputFile - text file containing filenames of timeseries to concatenate
+    %InputVNFile - text file containing filenames of the variance maps of each input
+    %GroupMaps - file name of maps to use as a template
+    %Method - string, 'weighted' or 'dual'
+    %ParamsFile - text file containing parameters for the selected method - for weighted, it contains the filenames to low-dimensionality files to estimate the alignment quality with
+    %VAWeightsName - filename of spatial weights to use (usually vertex areas normalized to mean 1, and 1s in all voxels)
+    %OutputBeta - filename for output beta maps
+    %
+    %optional - specify like (..., 'WRSmoothingSigma', '5'):
+    %VolInputFile - like InputFile, but volume data (.nii.gz)
+    %VolInputVNFile - like InputVNFile, but volume data
+    %VolCiftiTemplate - cifti dscalar file with a spatial mapping that includes all voxels to consider in the volume data
+    %OldBias - for correcting old bias field method, give the old bias field name
+    %OldVolBias - same as OldBias, but volume data
+    %GoodBCFile - for correcting old bias field method, text file containing the new bias field for each input
+    %VolGoodBCFile - same as GoodBCFile, but volume data
+    %SpectraParams - string, <num>@<tsfile>@<spectrafile> - number of samples, and output filenames for spectra analysis
+    %OutputZ - filename for output of (approximate) Z stat maps
+    %OutputVolBeta - same as OutputBeta, but volume data
+    %OutputVolZ - same as OutputZ, but volume data
+    %SurfString - string, <leftsurf>@<rightsurf>, surfaces to use in weighted method for smoothing the alignment quality map
+    %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
+    %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
+    
     wbcommand = 'wb_command';
     ScaleFactor = 1;
-    
-    optional = myargparse(varargin, {'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
     
     if ~strcmp(optional.ScaleFactor, '')
         ScaleFactor = str2double(optional.ScaleFactor);
