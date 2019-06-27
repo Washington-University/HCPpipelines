@@ -262,7 +262,7 @@ function opts_print_help_line()
             local string=""
             if ((firstline == 1))
             then
-                if [[ "${line}" == [* ]]
+                if [[ "${linemod}" == [* ]]
                 then
                     string="  "
                 else
