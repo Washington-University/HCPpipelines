@@ -1,0 +1,45 @@
+# Description:
+#
+#   Function for printing debugging information on caught errors.
+#   It makes use of error trapping. To reset the trap, add
+#   end of the script using "trap - EXIT".
+#
+# Input:
+#
+#   — line number
+#   - command ran
+#   - exit status
+
+trap 'on_error $LINENO "$BASH_COMMAND" $?; exit' ERR
+
+on_error()
+{
+    me=`basename $0`
+    line=($2)
+    com=${line[0]}
+    arg=${line[@]:1}
+    echo
+    echo -e "\033[33m##### ERROR: Execution stopped prematurely #####"
+    echo "---> script: $me"
+    echo "---> stopped at line: $1"
+    echo "---> command: $2"
+    echo "---> expanded: $com" `eval echo $arg`
+    echo "---> exit status: $3"
+    echo -e "##### -------------------------------- ##### \033[0m "
+    echo
+    exit $3
+}
+
+
+# Description:
+#
+#   Function for printing colored output to be used same as echo.
+#
+# Input:
+#
+#   — text to be printed
+
+ceho ()
+{
+    echo -e "\033[31m $1 \033[0m"
+}
