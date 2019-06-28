@@ -1,5 +1,7 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
+
 script_name="SubcorticalProcessing.sh"
 echo "${script_name}: START"
 

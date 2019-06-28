@@ -14,7 +14,8 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 Usage() {
   echo "$(basename $0): Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"

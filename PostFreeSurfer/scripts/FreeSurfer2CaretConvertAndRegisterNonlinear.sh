@@ -17,6 +17,7 @@ fi
 # ------------------------------------------------------------------------------
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source $HCPPIPEDIR/global/scripts/debug.shlib # Debugging functions
 
 # ------------------------------------------------------------------------------
 #  Verify other needed environment variables are set

@@ -41,6 +41,7 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 Usage() {
   echo "$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"

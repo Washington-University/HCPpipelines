@@ -25,7 +25,8 @@ fi
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+source $HCPPIPEDIR_Global/log.shlib             # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 Usage() {
   echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"

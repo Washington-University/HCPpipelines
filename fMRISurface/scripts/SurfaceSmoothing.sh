@@ -1,5 +1,7 @@
 #!/bin/bash 
 set -e
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
+
 echo -e "\n START: SurfaceSmoothing"
 
 NameOffMRI="$1"

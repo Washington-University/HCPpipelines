@@ -812,6 +812,8 @@ fi
 
 # Load Function Libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
+
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify any other needed environment variables are set
