@@ -159,6 +159,7 @@ function opts_ParseArguments()
         fi
         local opts_found=0
         local opts_index
+        #check main switches
         for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
         do
             if [[ "${opts_param_switches[$opts_index]}" == "$opts_switch" ]]
@@ -167,6 +168,7 @@ function opts_ParseArguments()
                 break
             fi
         done
+        #check compatibility switches
         if ((opts_found == 0))
         then
             local opts_index2
@@ -182,12 +184,12 @@ function opts_ParseArguments()
         fi
         if ((opts_found == 1))
         then
-            printf -v "${opts_param_variable_names[$opts_index]}" '%s' "$opts_argument"
             if ((opts_used_params[opts_index] == 1))
             then
                 error "parameter specified multiple times: '$opts_switch'"
             fi
             opts_used_params["$opts_index"]=1
+            printf -v "${opts_param_variable_names[$opts_index]}" '%s' "$opts_argument"
         else
             log_Err_Abort "unrecognized option: '$opts_switch'"
         fi
@@ -244,7 +246,7 @@ function opts_print_help_line()
     local maxwidth=79
     local -a mylines
     #read -a only reads one line, and mac's old bash doesn't have readarray, so time for some trickery
-    #could use just IFS without quoting, but this removes intentional blank lines
+    #could use just IFS without quoting inside =(), but that would remove intentional blank lines
     #turn % into %p, @ into %a, and newline into @ - need to escape % first, and undo it last
     #then we can use read -a with IFS=@
     escaped=$(echo "$1" | sed -e 's/%/%p/g' -e 's/@/%a/g' | tr $'\n' @)
