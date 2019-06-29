@@ -1,3 +1,11 @@
+#use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
+if (($# > 0))
+then
+    log_FullCommand="$0 $@"
+else
+    log_FullCommand=""
+fi
+
 #
 # Description:
 #   sets the name of the tool to use for future logging
@@ -9,6 +17,8 @@ log_SetToolName()
 {
 	log_ToolName="$1"
 }
+#also set the default toolname on sourcing
+log_SetToolName "$(basename $0)"
 
 #
 # Description:
@@ -18,6 +28,7 @@ log_SetShowDateTime()
 {
 	log_ShowDateTime="TRUE"
 }
+log_SetShowDateTime
 
 #
 # Description:
@@ -36,6 +47,7 @@ log_SetShowToolName()
 {
 	log_ShowToolName="TRUE"
 }
+log_SetShowToolName
 
 #
 # Description:
@@ -63,6 +75,7 @@ log_ClearShowFunctionName()
 {
 	log_ShowFunctionName="FALSE"
 }
+log_ClearShowFunctionName
 
 #
 # Description:
@@ -143,6 +156,10 @@ log_Msg()
 log_Err_Abort()
 {
 	local msg="$*"
+	if [[ ! -z "$log_FullCommand" ]]
+	then
+	    log_Msg "While running '$log_FullCommand':"
+	fi
 	log_Msg "ABORTING: ${msg}"
 	exit 1
 }
@@ -150,6 +167,10 @@ log_Err_Abort()
 log_Err()
 {
 	local msg="$*"
+	if [[ ! -z "$log_FullCommand" ]]
+	then
+	    log_Msg "While running '$log_FullCommand':"
+	fi
 	log_Msg "ERROR: ${msg}"
 }
 
