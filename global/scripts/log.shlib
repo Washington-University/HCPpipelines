@@ -15,10 +15,10 @@ fi
 #
 log_SetToolName()
 {
-	log_ToolName="$1"
+	log_ToolName="$*"
 }
 #also set the default toolname on sourcing
-log_SetToolName "$(basename $0)"
+log_SetToolName "$(basename "$0")"
 
 #
 # Description:
