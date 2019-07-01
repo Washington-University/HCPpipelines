@@ -160,7 +160,8 @@ log_Err_Abort()
 	then
 	    log_Msg "While running '$log_FullCommand':"
 	fi
-	log_Msg "ABORTING: ${msg}"
+	log_Msg "ERROR: ${msg}" 1>&2
+	log_Msg "ABORTING"
 	exit 1
 }
 
@@ -171,6 +172,7 @@ log_Err()
 	then
 	    log_Msg "While running '$log_FullCommand':"
 	fi
+	log_Msg "ERROR: ${msg}" 1>&2
 	log_Msg "ERROR: ${msg}"
 }
 
