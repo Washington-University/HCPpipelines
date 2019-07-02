@@ -1,7 +1,7 @@
 #use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
 if (($# > 0))
 then
-    log_FullCommand="$0 $@"
+    log_FullCommand="$0 $*"
 else
     log_FullCommand=""
 fi
@@ -173,7 +173,11 @@ log_Err()
 	    log_Msg "While running '$log_FullCommand':" 1>&2
 	fi
 	log_Msg "ERROR: ${msg}" 1>&2
-	log_Msg "ERROR: ${msg}"
+	#-t checks for being a terminal - if stderr is redirected to a file, duplicate the error message on stdout
+	if [[ ! -t 2 ]]
+	then
+    	log_Msg "ERROR: ${msg}"
+	fi
 }
 
 log_Warn()
