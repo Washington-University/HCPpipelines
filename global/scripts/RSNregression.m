@@ -184,7 +184,7 @@ function RSNregression(InputFile, InputVNFile, GroupMaps, Method, ParamsFile, VA
     %Save Timeseries and Spectra if Desired
     if ~strcmp(optional.SpectraParams, '')
         SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
-        nTPsForSpectra = str2double(SpectraArray{1}{1});
+        nTPsForSpectra = min(str2double(SpectraArray{1}{1}), size(NODEts, 1));
         OutputSpectraTS = SpectraArray{1}{2};
         OutputSpectraFile = SpectraArray{1}{3};
         if nTPsForSpectra > 0 && ~strcmp(OutputSpectraTS, '') && ~strcmp(OutputSpectraFile, '')
