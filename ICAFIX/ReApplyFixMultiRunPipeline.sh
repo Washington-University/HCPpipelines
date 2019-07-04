@@ -1033,23 +1033,6 @@ main()
 	    Start=`echo "${Start} + ${NumTPS}" | bc -l`
 	done
 
-	## ---------------------------------------------------------------------------
-	## Remove all the large time series files in ${ConcatFolder}
-	## ---------------------------------------------------------------------------
-
-	## Deleting these files would save a lot of space.
-	## But downstream scripts (e.g., RestingStateStats) assume they exist, and
-	## if deleted they would therefore need to be re-created "on the fly" later
-
-	# cd ${ConcatFolder}
-        # log_Msg "Removing large (concatenated) time series files from ${ConcatFolder}"
-	# $FSLDIR/bin/imrm ${concatfmri}
-	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
-	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-
 	cd ${DIR}
 
 	log_Msg "Completed!"
