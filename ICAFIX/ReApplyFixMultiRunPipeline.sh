@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e # If any command exits with non-zero value, this script exits
 
 #
 # # ReApplyFixMultiRunPipeline.sh
@@ -70,9 +71,18 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
+   [--delete-intermediates={TRUE, FALSE}] defaults to ${G_DEFAULT_DELETE_INTERMEDIATES}
+     If TRUE, deletes the high-pass filtered files.
 
 EOF
 }
+
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
+G_DEFAULT_LOW_RES_MESH=32
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+G_DEFAULT_MOTION_REGRESSION="FALSE"
+G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
@@ -98,6 +108,7 @@ get_options()
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
+    p_DeleteIntermediates=${G_DEFAULT_DELETE_INTERMEDIATES}
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -150,6 +161,10 @@ get_options()
 				;;
 			--motion-regression=*)
 				p_MotionRegression=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--delete-intermediates=*)
+				p_DeleteIntermediates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -264,6 +279,13 @@ get_options()
 		log_Msg "Motion Regression: ${p_MotionRegression}"
 	fi
 
+	if [ -z "${p_DeleteIntermediates}" ]; then
+		log_Err "delete intermediates setting (--delete-intermediates=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Delete Intermediates: ${p_DeleteIntermediates}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi	
@@ -364,6 +386,21 @@ have_hand_reclassification()
 	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 }
 
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo 1
+        ;;
+    (false | no | none | 0)
+        echo 0
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -415,22 +452,16 @@ main()
 	if [ -z "${9}" ]; then
 		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
 	else
-		MotionRegression="${9}"
+		MotionRegression=$(interpret_as_bool "${9}")
 	fi
 
-	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
-	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            MotionRegression=1
-            ;;
-        ( false | no | none | 0)
-            MotionRegression=0
-            ;;
-		*)
-			log_Err_Abort "motion regression setting must be TRUE or FALSE"
-			;;
-	esac
-		
+	local DeleteIntermediates
+	if [ -z "${10}" ]; then
+		DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
+	else
+		DeleteIntermediates=$(interpret_as_bool "${10}")
+	fi
+
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -938,6 +969,15 @@ main()
     # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
  
+	#always delete things with too-generic names
+	rm -f ${concatfmrihp}.ica/filtered_func_data.nii.gz ${concatfmrihp}.ica/Atlas.dtseries.nii
+
+	#delete highpass intermediates
+	if [[ "$DeleteIntermediates" == "1" ]]
+	then
+		rm -f ${concatfmri}.nii.gz ${concatfmri}_hp${hp}.nii.gz ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+	fi
+	
 	## ---------------------------------------------------------------------------
 	## Split the cleaned volume and CIFTI back into individual runs.
 	## ---------------------------------------------------------------------------
@@ -1019,14 +1059,6 @@ main()
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-set -e # If any command exits with non-zero value, this script exits
-
-# Establish defaults
-G_DEFAULT_REG_NAME="NONE"
-G_DEFAULT_LOW_RES_MESH=32
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-G_DEFAULT_MOTION_REGRESSION="FALSE"
-
 # Set global variables
 g_script_name=$(basename "${0}")
 
@@ -1061,8 +1093,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}           ${7}              ${8}                ${9}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
+	#    ${1}               ${2}           ${3}             ${4}              ${5}            ${6}           ${7}              ${8}                 ${9}                    ${10}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_DeleteIntermediates}"
 
 else
 	# Positional parameters are used

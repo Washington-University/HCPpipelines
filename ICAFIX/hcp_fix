@@ -27,7 +27,7 @@
 Usage() {
     cat <<EOF
 
-hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
+hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
 
   Apply FIX cleaning to a single file
 
@@ -43,7 +43,7 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixT
      Must be specified, use TRUE or FALSE
 
   [<TrainingFile>] (optional)
-     Defaults to "HCP_hp${hp}.RData"
+     Defaults to "HCP_hp<highpass>.RData"
 
   [<FixThreshold>] (optional)
      Threshold setting in FIX that controls the sensitivity/specificity tradeoff.
@@ -52,6 +52,11 @@ hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixT
 
 e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
+
+  [<DeleteIntermediates>] (optional)
+     Delete highpass-filtered files at the end, use TRUE or FALSE.
+     Default = FALSE.
+     You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 EOF
     exit 1
@@ -119,30 +124,40 @@ fi
 
 hp=$2
 
-#this case logic could go in a helper function, interpret_as_bool or something
-case $(echo "$3" | tr '[:upper:]' '[:lower:]') in
-    ( true | yes )
-        doMotionRegression=TRUE
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
         ;;
-    ( false | no | none )
-        doMotionRegression=FALSE
-
-		# 5/20/2019: For the time being, do_motion_regression=FALSE doesn't work properly with single-run FIX,
-		# so don't allow that mode of operation
-		# https://github.com/Washington-University/HCPpipelines/issues/108
-		log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not currently supported"
-
-		;;
-    ( * )
-        log_Err_Abort "error: '$3' is not valid for <do_motion_regression>, please use TRUE or FALSE"
+    (false | no | none | 0)
+        echo FALSE
         ;;
-esac
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
+doMotionRegression=$(interpret_as_bool "$3")
+# 5/20/2019: For the time being, do_motion_regression=FALSE doesn't work properly with single-run FIX,
+# so don't allow that mode of operation
+# https://github.com/Washington-University/HCPpipelines/issues/108
+if [[ "$doMotionRegression" == "FALSE" ]]
+then
+    log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not currently supported"
+fi
 
 unset TrainingData
 unset FixThresh
 if [ $# -ge 4 ] ; then
 	TrainingData=$4
 	FixThresh=$5
+fi
+DeleteIntermediates=FALSE
+if (($# >= 6))
+then
+    DeleteIntermediates=$(interpret_as_bool "$6")
 fi
 if [ -z "${FixThresh}" ]; then
 	FixThresh=10
@@ -377,5 +392,17 @@ log_Msg "Done renaming files"
 
 # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 $FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
+
+#delete things with too-generic names
+rm -f ${fmrihp}.ica/filtered_func_data.nii.gz ${fmrihp}.ica/Atlas.dtseries.nii
+
+#optional cleanup of hp intermediates
+if [[ "$DeleteIntermediates" == "TRUE" ]]
+then
+    rm -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_hp${HighPass}.nii.gz
+else
+    #even if we don't delete it, don't leave this file with a hard to interpret name
+    mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${HighPass}.dtseries.nii
+fi
 
 log_Msg "Completed!"

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e # If any command exits with non-zero value, this script exits
 
 #
 # # ReApplyFixPipeline.sh
@@ -72,6 +73,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 EOF
 }
+
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
+G_DEFAULT_LOW_RES_MESH=32
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+G_DEFAULT_MOTION_REGRESSION="FALSE"
+G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
@@ -282,6 +290,21 @@ have_hand_reclassification()
 	fi
 }
 
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo 1
+        ;;
+    (false | no | none | 0)
+        echo 0
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -321,14 +344,14 @@ main()
 	if [ -z "${8}" ]; then
 		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
 	else
-		MotionRegression="${8}"
+		MotionRegression=$(interpret_as_bool "${8}")
 	fi
 
 	local DeleteIntermediates
 	if [ -z "${9}" ]; then
 		DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
 	else
-		DeleteIntermediates="${9}"
+		DeleteIntermediates=$(interpret_as_bool "${9}")
 	fi
 
 	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
@@ -650,11 +673,11 @@ main()
     # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 
-	# If the symlink for filtered_func_data is not actually pointing to a filtered volume, make
-	# sure to delete it (regardless of DeleteIntermediates setting)
-	if (( useNonFilteredAsFilteredFunc )); then
+	# Always delete things with too-generic names
+	if [[ -f ${fmrihp}.ica/filtered_func_data.nii.gz ]]; then
 		$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data
 	fi
+	rm -f ${fmrihp}.ica/Atlas.dtseries.nii
 	
 	cd ${DIR}
 
@@ -663,7 +686,11 @@ main()
 			$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
 		fi
 		$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/filtered_func_data
-        rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii
+		#TSC: should these be ${hpStr} or _hp${hp}?
+		rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.nii.gz"
+	else
+		#don't leave this file with a hard to interpret name - again, hpStr?
+		mv -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_hp${hp}.dtseries.nii"
     fi
 
 	log_Msg "Completed!"
@@ -672,15 +699,6 @@ main()
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
-
-set -e # If any command exits with non-zero value, this script exits
-
-# Establish defaults
-G_DEFAULT_REG_NAME="NONE"
-G_DEFAULT_LOW_RES_MESH=32
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-G_DEFAULT_MOTION_REGRESSION="FALSE"
-G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # Set global variables
 g_script_name=$(basename "${0}")

@@ -33,7 +33,7 @@
 Usage() {
     cat <<EOF
 
-hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
+hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
 
    Apply FIX cleaning to a concatenated set of input files.
 
@@ -69,6 +69,11 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
 
 e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
+
+  [<DeleteIntermediates>] (optional)
+     Delete highpass-filtered files at the end, use TRUE or FALSE.
+     Default = FALSE.
+     You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 EOF
     exit 1
@@ -267,33 +272,42 @@ fi
 
 log_Msg "hp: ${hp}"
 
+fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
+log_Msg "fmris: ${fmris}"
+ConcatName="${3}"
+log_Msg "ConcatName: ${ConcatName}"
+
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
+doMotionRegression=$(interpret_as_bool "$4")
+
 unset TrainingData
 unset FixThresh
 if [ $# -ge 5 ] ; then
 	TrainingData=$5
 	FixThresh=$6
 fi
+DeleteIntermediates=FALSE
+if (($# >= 7))
+then
+    DeleteIntermediates=$(interpret_as_bool "$7")
+fi
 if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
-
-fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
-log_Msg "fmris: ${fmris}"
-ConcatName="${3}"
-log_Msg "ConcatName: ${ConcatName}"
-
-#this case logic could go in a helper function, interpret_as_bool or something
-case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
-    ( true | yes )
-        doMotionRegression=TRUE
-        ;;
-    ( false | no | none )
-        doMotionRegression=FALSE
-        ;;
-    ( * )
-        log_Err_Abort "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        ;;
-esac
 
 DIR=`pwd`
 log_Msg "PWD : $DIR"
@@ -770,6 +784,15 @@ log_Msg "Done renaming files"
 
 # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 $FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
+
+#always delete things with too-generic names
+rm -f ${concatfmrihp}.ica/filtered_func_data.nii.gz ${concatfmrihp}.ica/Atlas.dtseries.nii
+
+#delete highpass intermediates
+if [[ "$DeleteIntermediates" == "TRUE" ]]
+then
+    rm -f ${concatfmri}.nii.gz ${concatfmrihp}.nii.gz ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+fi
 
 ## ---------------------------------------------------------------------------
 ## Split the cleaned volume and CIFTI back into individual runs.
