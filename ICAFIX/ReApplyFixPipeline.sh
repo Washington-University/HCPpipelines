@@ -684,14 +684,14 @@ main()
     if [ ${DeleteIntermediates} = "1" ] ; then
 		if (( hp >= 0 )); then
 			$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
+			rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii"
 		fi
-		$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/filtered_func_data
-		#TSC: should these be ${hpStr} or _hp${hp}?
-		rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.nii.gz"
 	else
-		#don't leave this file with a hard to interpret name - again, hpStr?
-		mv -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_hp${hp}.dtseries.nii"
-    fi
+		#don't leave this file with a hard to interpret name 
+		if (( hp >= 0 )); then
+                        mv -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${hpStr}.dtseries.nii"
+                fi
+     fi
 
 	log_Msg "Completed!"
 }
