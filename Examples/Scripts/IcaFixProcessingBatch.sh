@@ -160,7 +160,7 @@ main() {
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
 	
-	#delete highpass files
+	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
 	
 	# establish queue for job submission
