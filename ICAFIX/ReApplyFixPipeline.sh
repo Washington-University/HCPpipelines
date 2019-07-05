@@ -342,14 +342,14 @@ main()
 
 	local MotionRegression
 	if [ -z "${8}" ]; then
-		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
+		MotionRegression=$(interpret_as_bool "${G_DEFAULT_MOTION_REGRESSION}")
 	else
 		MotionRegression=$(interpret_as_bool "${8}")
 	fi
 
 	local DeleteIntermediates
 	if [ -z "${9}" ]; then
-		DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
+		DeleteIntermediates=$(interpret_as_bool "${G_DEFAULT_DELETE_INTERMEDIATES}")
 	else
 		DeleteIntermediates=$(interpret_as_bool "${9}")
 	fi
