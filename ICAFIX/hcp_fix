@@ -399,12 +399,12 @@ rm -f ${fmrihp}.ica/filtered_func_data.nii.gz ${fmrihp}.ica/Atlas.dtseries.nii
 #optional cleanup of hp intermediates
 if [[ "$DeleteIntermediates" == "TRUE" ]] ; then
     if (( hp >= 0 )); then
-       rm -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_hp${HighPass}.nii.gz
+       rm -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_hp${hp}.nii.gz
     fi
 else
     if (( hp >= 0 )); then
       #even if we don't delete it, don't leave this file with a hard to interpret name
-      mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${HighPass}.dtseries.nii
+      mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${hp}.dtseries.nii
     fi
 fi
 
