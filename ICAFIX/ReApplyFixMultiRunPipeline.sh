@@ -723,7 +723,7 @@ main()
 	## ---------------------------------------------------------------------------
 
 	if (( DoVol )); then
-		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
+		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}_hp${hp}` != 1 ]; then
 		    # Merge volumes from the individual runs
 			fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
 			fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
@@ -809,7 +809,13 @@ main()
 	# This is the concated volume time series from the 1st pass VN, with requested
 	# hp-filtering applied and with the mean VN map multiplied back in
 	${FSLDIR}/bin/imrm filtered_func_data
-	${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
+	if (( DoVol ))
+	then
+		${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
+	else
+		#fix_3_clean is hardcoded to pull the TR from "filtered_func_data", so we have to make sure something with the right TR is there
+		${FSLDIR}/bin/imln ${concatfmrihp}_clean filtered_func_data
+	fi
 
 	# This is the concated CIFTI time series from the 1st pass VN, with requested
 	# hp-filtering applied and with the mean VN map multiplied back in
