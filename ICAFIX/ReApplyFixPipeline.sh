@@ -657,13 +657,13 @@ main()
 	cd ${DIR}
 
     if [ ${DeleteIntermediates} = "1" ] ; then
-		if (( hp >= 0 )); then
+		if (( hp > 0 )); then
 			$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
 			rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii"
 		fi
 	else
 		#don't leave this file with a hard to interpret name 
-		if (( hp >= 0 )); then
+		if (( hp > 0 )); then
 			mv -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${hpStr}.dtseries.nii"
 		fi
      fi
