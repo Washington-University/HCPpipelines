@@ -354,31 +354,6 @@ main()
 		DeleteIntermediates=$(interpret_as_bool "${9}")
 	fi
 
-	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
-	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            MotionRegression=1
-            ;;
-        ( false | no | none | 0)
-            MotionRegression=0
-            ;;
-		*)
-			log_Err_Abort "motion regression setting must be TRUE or FALSE"
-			;;
-	esac
-
-	case $(echo ${DeleteIntermediates} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            DeleteIntermediates=1
-            ;;
-        ( false | no | none | 0)
-            DeleteIntermediates=0
-            ;;
-		*)
-			log_Err_Abort "clean intermediate setting must be TRUE or FALSE"
-			;;
-	esac
-	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
