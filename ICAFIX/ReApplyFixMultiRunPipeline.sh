@@ -814,7 +814,7 @@ main()
 		${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
 	else
 		#fix_3_clean is hardcoded to pull the TR from "filtered_func_data", so we have to make sure something with the right TR is there
-		${FSLDIR}/bin/imln ${concatfmrihp}_clean filtered_func_data
+		${FSLDIR}/bin/imln ../${concatfmrihp}_clean filtered_func_data
 	fi
 
 	# This is the concated CIFTI time series from the 1st pass VN, with requested
