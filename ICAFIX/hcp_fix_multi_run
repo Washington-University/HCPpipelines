@@ -72,6 +72,7 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
      that are prerequisites to FIX cleaning.
      (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
      Default = FALSE.
+     Note, deleting intermediates is not recommended for MR FIX.
      You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR FALSE
