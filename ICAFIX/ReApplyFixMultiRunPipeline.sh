@@ -539,22 +539,31 @@ main()
 	DIR=`pwd`
 	log_Msg "PWD : $DIR"
 
-	## MPH: High level "master" conditional that checks whether the files necessary for fix_3_clean
+	## MPH: Create a high level variable that checks whether the files necessary for fix_3_clean
 	## already exist (i.e., reapplying FIX cleanup following manual classification).
 	## If so, we can skip all the following looping through individual runs and concatenation, 
 	## and resume at the "Housekeeping related to files expected for fix_3_clean" section
 
 	local ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
-	if [[ -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
+	local regenConcatHP=0
+	if [[ ! -f "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii" || \
+			( $DoVol == "1" && `$FSLDIR/bin/imtest "${ConcatNameNoExt}_hp${hp}"` != 1 ) ]]
+	then
+		regenConcatHP=1
+	else  # Generate some messages that we are going to use already existing files
 		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists."
-		if (( DoVol && $(${FSLDIR}/bin/imtest "${ConcatNameNoExt}_hp${hp}") )); then
+		if (( DoVol )); then
 			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}_hp${hp}) already exists."
 		fi
 		log_Warn "Using preceding existing concatenated file(s) for recleaning."
-	else  # bash GOTO construct would be helpful here, to skip a bunch of code
+	fi
+	
+	####### BEGIN: Skip a whole bunch of code unless regenConcatHP=1 ########
+	if (( regenConcatHP )); then
+
 		# NOT RE-INDENTING ALL THE FOLLOWING CODE
-		# This 'else' clause terminates at the start of the
+		# This 'if' clause terminates at the start of the
 		# "Housekeeping related to files expected for fix_3_clean" section
 
 	###LOOP HERE --> Since the files are being passed as a group
@@ -638,6 +647,9 @@ main()
 		log_Msg "tr: $tr"
 
 		## Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
+		## Note that the existence of the HP'ed, VN timeseries and VN maps is all that matters here for
+		## creating the "final" ${ConcatNameNoExt}*_hp${hp}.{dtseries.nii,nii.gz} files.
+		## (i.e., whether the individual run _hp${hp}.dtseries and _hp${hp}.nii.gz files exist is irrelevant)
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
               ( $DoVol == "1" && \
@@ -742,7 +754,7 @@ main()
 			fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask
               # Preceding line creates mask to be used in melodic for suppressing memory error - Takuya Hayashi
 		else
-			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}) already exists. Using existing version"
+			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}_hp${hp}) already exists. Using existing version"
 		fi
 	fi
 
@@ -789,10 +801,11 @@ main()
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
 	done
 
-	## Terminate the 'else' clause of the "master" conditional that checked whether
-	## the preceding code needed to be run.
-	fi
-
+	fi   #	if (( regenConcatHP )); then
+	## Terminate the 'if' clause of the conditional that checked whether
+	## the large block of preceding code needed to be run.
+	####### END: Skip a whole bunch of code unless regenConcatHP=1 ########
+	
 	## ---------------------------------------------------------------------------
 	## Housekeeping related to files expected for fix_3_clean
 	## ---------------------------------------------------------------------------
@@ -811,9 +824,15 @@ main()
 	${FSLDIR}/bin/imrm filtered_func_data
 	if (( DoVol ))
 	then
+		if [ `$FSLDIR/bin/imtest ../${concatfmrihp}` != 1 ]; then
+			log_Err_Abort "FILE NOT FOUND: ../${concatfmrihp}"
+		fi
 		${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
 	else
-		#fix_3_clean is hardcoded to pull the TR from "filtered_func_data", so we have to make sure something with the right TR is there
+		#fix_3_clean is hardcoded to pull the TR from "filtered_func_data", so we have to make sure
+		#something with the right TR is there (to avoid getting a scary sounding "No image file match" message,
+		#and TR=[] (empty), although TR only matters if hp>0, and we have AlreadyHP=-1, so this is really
+		#just for good hygene in the log files)
 		${FSLDIR}/bin/imln ../${concatfmrihp}_clean filtered_func_data
 	fi
 
