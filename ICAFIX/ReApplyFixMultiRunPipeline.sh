@@ -72,7 +72,9 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      2 = Use interpreted Octave
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
    [--delete-intermediates={TRUE, FALSE}] defaults to ${G_DEFAULT_DELETE_INTERMEDIATES}
-     If TRUE, deletes the high-pass filtered files.
+     If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files
+     that are prerequisites to FIX cleaning.
+     (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
 
 EOF
 }
@@ -994,13 +996,16 @@ main()
     # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
  
-	#always delete things with too-generic names
-	rm -f ${concatfmrihp}.ica/filtered_func_data.nii.gz ${concatfmrihp}.ica/Atlas.dtseries.nii
+	# Always delete things with too-generic names
+	$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data
+	rm -f ${concatfmrihp}.ica/Atlas.dtseries.nii
 
-	#delete highpass intermediates
-	if [[ "$DeleteIntermediates" == "1" ]]
+	# Optional deletion of highpass intermediates and the concatenated (non-filtered) time series
+	# (hp<0 not supported in this script currently, so no need to condition on value of hp)
+	if [ "${DeleteIntermediates}" == "1" ]
 	then
-		rm -f ${concatfmri}.nii.gz ${concatfmri}_hp${hp}.nii.gz ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+		$FSLDIR/bin/imrm ${concatfmri} ${concatfmrihp}
+		rm -f ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
 	fi
 	
 	## ---------------------------------------------------------------------------

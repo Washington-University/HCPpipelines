@@ -649,24 +649,24 @@ main()
 	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 
 	# Always delete things with too-generic names
-	if [[ -f ${fmrihp}.ica/filtered_func_data.nii.gz ]]; then
-		$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data
-	fi
+	$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data
 	rm -f ${fmrihp}.ica/Atlas.dtseries.nii
 	
-	cd ${DIR}
-
-    if [ ${DeleteIntermediates} = "1" ] ; then
-		if (( hp > 0 )); then
-			$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
-			rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii"
+	# Optional deletion of highpass intermediates
+    if [ "${DeleteIntermediates}" == "1" ] ; then
+		if (( hp > 0 )); then  # fix_3_clean only writes out the hp-filtered time series if hp > 0
+			$FSLDIR/bin/imrm ${fmri}_hp${hp}  # Explicitly use _hp${hp} here (rather than $hpStr as a safeguard against accidental deletion of the non-hp-filtered timeseries)
+			rm -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii
 		fi
 	else
-		#don't leave this file with a hard to interpret name 
+		#even if we don't delete it, don't leave this file with a hard to interpret name 
 		if (( hp > 0 )); then
-			mv -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii" "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${hpStr}.dtseries.nii"
+			# 'OR' mv command with "true" to avoid returning an error code if file doesn't exist for some reason
+			mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${hp}.dtseries.nii || true 
 		fi
      fi
+
+	cd ${DIR}  # Return to directory where script was launched
 
 	log_Msg "Completed!"
 }
