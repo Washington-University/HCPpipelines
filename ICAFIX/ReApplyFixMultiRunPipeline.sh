@@ -646,7 +646,19 @@ main()
 		# If ${RegString} is empty, the movement regressors will also automatically get re-filtered.
 		
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
-		log_Msg "tr: $tr"
+		TR_units=`${FSLDIR}/bin/fslval $fmri time_units | cut -d " " -f 1` #get the time_units for TR
+		TR_vol=${tr}		
+
+		log_Msg "tr: $tr ${TR_units}"
+
+		if [ ${TR_units} = "s" ] ; then
+                	#this is correct;
+                	break
+        	elif [ ${TR_units} = "ms" ] ; then
+                	TR_vol=$( echo "scale=4;${TR_vol} / 1000.0" | bc -l );
+        	elif [ ${TR_units} = "us" ] ; then
+                	TR_vol=$( echo "scale=4;${TR_vol} / 1000000.0" | bc -l );
+        	fi
 
 		## Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
 		## Note that the existence of the HP'ed, VN timeseries and VN maps is all that matters here for
@@ -739,8 +751,8 @@ main()
 	if (( DoVol )); then
 		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}_hp${hp}` != 1 ]; then
 		    # Merge volumes from the individual runs
-			fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
-			fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
+			fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $TR_vol
+			fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $TR_vol
 			fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
 			fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
 			fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}

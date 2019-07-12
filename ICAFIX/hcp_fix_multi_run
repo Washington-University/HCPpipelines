@@ -386,8 +386,20 @@ for fmri in $fmris ; do
 	${Caret7_Command} -cifti-math "TCS - MEAN" ${fmri}_Atlas_demean.dtseries.nii -var TCS ${fmri}_Atlas.dtseries.nii -var MEAN ${fmri}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 	
 	## "1st pass" VN on the individual runs; high-pass gets done here as well
-	tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
-	log_Msg "tr: ${tr}"  
+	tr=`$FSLDIR/bin/fslval $fmri pixdim4 | cut -d " " -f 1`  #No checking currently that TR is same across runs
+	TR_vol=${tr}
+        TR_units=`${FSLDIR}/bin/fslval $fmri time_units | cut -d " " -f 1` #get the time_units for TR
+
+	if [ ${TR_units} = "s" ] ; then
+		#this is correct;
+		break
+	elif [ ${TR_units} = "ms" ] ; then
+		TR_vol=$( echo "scale=4;${TR_vol} / 1000.0" | bc -l );
+	elif [ ${TR_units} = "us" ] ; then
+		TR_vol=$( echo "scale=4;${TR_vol} / 1000000.0" | bc -l );
+	fi
+
+	log_Msg "tr: ${tr} ${TR_units}"  
 	log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 	## MPH: Log output to existing stdout/stderr, rather than a separate .fix.functionhighpassandvariancenormalize.log file
@@ -472,8 +484,8 @@ fi
 ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
 # Merge volumes from the individual runs
-fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
-fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
+fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $TR_vol
+fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $TR_vol
 fslmerge -t  ${ConcatNameNoExt}_SBRef ${SBRefVolSTRING}
 fslmerge -t  ${ConcatNameNoExt}_mean ${MeanVolSTRING}
 fslmerge -t  ${ConcatNameNoExt}_hp${hp}_vn ${VNVolSTRING}
@@ -542,8 +554,8 @@ mkdir -p ${ConcatFolder}/${concatfmrihp}.ica
 log_Debug_Msg "About to put contents of ${MovementTXTMergeSTRING} in Movement_Regressors_demean.txt file"
 cat ${MovementTXTMergeSTRING} > ${ConcatFolder}/Movement_Regressors_demean.txt
 mkdir ${ConcatFolder}/${concatfmrihp}.ica/mc
-fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $tr
-fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $tr
+fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp ${MovementNIFTIhpMergeSTRING} $TR_vol
+fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf ${MovementNIFTIMergeSTRING} $TR_vol
 
 #MPH: Now we can switch to ${ConcatFolder}
 cd ${ConcatFolder}
