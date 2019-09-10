@@ -120,7 +120,7 @@ else
 fi
 
 # only include voxels fully(!) within the field of view for every volume
-${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/fov_mask -thr 1 -bin "$T1wOutputDirectory"/fov_mask
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/fov_mask -thr 0.999 -bin "$T1wOutputDirectory"/fov_mask
 
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp -mas "$T1wOutputDirectory"/fov_mask "$T1wOutputDirectory"/data  #Mask-out data outside the brain
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (caused by spline interpolation) from final data
