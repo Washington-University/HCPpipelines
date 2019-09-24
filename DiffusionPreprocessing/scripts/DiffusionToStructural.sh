@@ -97,11 +97,14 @@ done
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
+DILATE_DISTANCE=echo "$DiffRes * 12"  # Extrapolates the diffusion data up to 12 voxels outside of the FOV
+
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
-    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
+    ${CARET7DIR}/wb_command -volume_dilate $DataDirectory/warped/data_warped $DILATE_DISTANCE NEAREST $DataDirectory/warped/data_warped_dilated
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
     ${FSLDIR}/bin/fslroi "$DataDirectory"/warped/data_warped "$DataDirectory"/warped/nodif_warped
@@ -113,7 +116,8 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 else
     #Register diffusion data to T1w space without considering gradient nonlinearities
-    ${FSLDIR}/bin/flirt -in "$DataDirectory"/data -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
+    ${CARET7DIR}/wb_command -volume_dilate $DataDirectory/data $DILATE_DISTANCE NEAREST $DataDirectory/data_dilated
+    ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
     ${FSLDIR}/bin/fslmaths "$DataDirectory"/nodif -abs -bin "$DataDirectory"/fov_mask
@@ -132,5 +136,11 @@ ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDire
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
+${FSLDIR}/bin/imrm "$T1wOutputDirectory"/fov_mask
+if [ ${GdcorrectionFlag} -eq 1 ]; then
+    ${FSLDIR}/bin/imrm $DataDirectory/warped/data_warped_dilated
+else
+    ${FSLDIR}/bin/imrm $DataDirectory/data_dilated
+fi
 
 echo " END: DiffusionToStructural"
