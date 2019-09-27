@@ -6,10 +6,10 @@ set -e
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 # ------------------------------------------------------------------------------
@@ -28,21 +28,21 @@ log_Err_Abort "Script needs to be adapted to support use of strain-based MSM"
 # ------------------------------------------------------------------------------
 
 if [ -z "${MSMBINDIR}" ]; then
-	log_Err_Abort "MSMBINDIR environment variable must be set"
+  log_Err_Abort "MSMBINDIR environment variable must be set"
 else
-	log_Msg "MSMBINDIR: ${MSMBINDIR}"
+  log_Msg "MSMBINDIR: ${MSMBINDIR}"
 fi
 
 if [ -z "${MSMCONFIGDIR}" ]; then
-	log_Err_Abort "MSMCONFIGDIR environment variable must be set"
+  log_Err_Abort "MSMCONFIGDIR environment variable must be set"
 else
-	log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
+  log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
 fi
 
 if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
+  log_Err_Abort "CARET7DIR environment variable must be set"
 else
-	log_Msg "CARET7DIR: ${CARET7DIR}"
+  log_Msg "CARET7DIR: ${CARET7DIR}"
 fi
 
 
@@ -104,10 +104,10 @@ done
 
 
 for LowResMesh in ${LowResMeshes} ; do
-  ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+  [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
   ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-  ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
+  [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
 done
 
@@ -119,7 +119,7 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
   applywarp --interp=nn -i "$SurfaceAtlasDIR"/Avgwmparc.nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/ROIs/Atlas_wmparc."$GrayordinatesResolution".nii.gz
   ${CARET7DIR}/wb_command -volume-label-import "$AtlasSpaceFolder"/ROIs/Atlas_wmparc."$GrayordinatesResolution".nii.gz "$FreeSurferLabels" "$AtlasSpaceFolder"/ROIs/Atlas_wmparc."$GrayordinatesResolution".nii.gz -drop-unused-labels
   ${CARET7DIR}/wb_command -volume-label-import "$AtlasSpaceFolder"/ROIs/wmparc."$GrayordinatesResolution".nii.gz ${SubcorticalGrayLabels} "$AtlasSpaceFolder"/ROIs/ROIs."$GrayordinatesResolution".nii.gz -discard-others
-  applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
+  [ "${T2wImage}" != "NONE" ] && applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
   applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage"."$GrayordinatesResolution".nii.gz
 done
 
