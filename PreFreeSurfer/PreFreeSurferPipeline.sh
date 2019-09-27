@@ -170,31 +170,31 @@ GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 script_name=$(basename "${0}")
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 if [ -z "${FSLDIR}" ]; then
-	echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: FSLDIR: ${FSLDIR}"
+  echo "${script_name}: FSLDIR: ${FSLDIR}"
 fi
 
 if [ -z "${HCPPIPEDIR_Global}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+  echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
 fi
 
 if [ -z "${HCPPIPEDIR_PreFS}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
+  echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
 fi
 
 # ------------------------------------------------------------------------------
@@ -209,22 +209,22 @@ source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
 # ------------------------------------------------------------------------------
 
 show_usage() {
-	cat <<EOF
+  cat <<EOF
 
 PreFreeSurferPipeline.sh
 
 Usage: PreeFreeSurferPipeline.sh [options]
 
-  --path=<path>        Path to study data folder (required)
-					   Used with --subject input to create full path to root
-					   directory for all outputs generated as path/subject
-  --subject=<subject>  Subject ID (required)
-					   Used with --path input to create full path to root
-					   directory for all outputs generated as path/subject
-  --t1=<T1w images>    An @ symbol separated list of full paths to T1-weighted
-					   (T1w) structural images for the subject (required)
-  --t2=<T2w images>    An @ symbol separated list of full paths to T2-weighted
-					   (T2w) structural images for the subject (required)
+  --path=<path>                     Path to study data folder (required)
+                                    Used with --subject input to create full path to root
+                                    directory for all outputs generated as path/subject
+  --subject=<subject>               Subject ID (required)
+                                    Used with --path input to create full path to root
+                                    directory for all outputs generated as path/subject
+  --t1=<T1w images>                 An @ symbol separated list of full paths to T1-weighted
+                                    (T1w) structural images for the subject (required)
+  --t2=<T2w images>                 An @ symbol separated list of full paths to T2-weighted
+                                    (T2w) structural images for the subject (required)
   --t1template=<file path>          MNI T1w template
   --t1templatebrain=<file path>     Brain extracted MNI T1wTemplate
   --t1template2mm=<file path>       MNI 2mm T1wTemplate
@@ -238,21 +238,21 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --fmapmag=<file path>             Siemens Gradient Echo Fieldmap magnitude file
   --fmapphase=<file path>           Siemens Gradient Echo Fieldmap phase file
   --fmapgeneralelectric=<file path> General Electric Gradient Echo Field Map file
-									Two volumes in one file
-									1. field map in deg
-									2. magnitude
+                                    Two volumes in one file
+                                    1. field map in deg
+                                    2. magnitude
   --echodiff=<delta TE>             Delta TE in ms for field map or "NONE" if
-									not used
+                                    not used
   --SEPhaseNeg={<file path>, NONE}  For spin echo field map, path to volume with
-									a negative phase encoding direction (LR in
-									HCP data), set to "NONE" if not using Spin
-									Echo Field Maps
+                                    a negative phase encoding direction (LR in
+                                    HCP data), set to "NONE" if not using Spin
+                                    Echo Field Maps
   --SEPhasePos={<file path>, NONE}  For spin echo field map, path to volume with
-									a positive phase encoding direction (RL in
-									HCP data), set to "NONE" if not using Spin
-									Echo Field Maps
+                                    a positive phase encoding direction (RL in
+                                    HCP data), set to "NONE" if not using Spin
+                                    Echo Field Maps
   --seechospacing=<seconds>         Effective Echo Spacing of Spin Echo Field Map,
-									(in seconds) or "NONE" if not used
+                                    (in seconds) or "NONE" if not used
   --seunwarpdir={x,y,NONE}          Phase encoding direction (according to the *voxel* axes)
              or={i,j,NONE}          of the spin echo field map. 
                                     (Only applies when using a spin echo field map.)
@@ -260,37 +260,42 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --t2samplespacing=<seconds>       T2 image sample spacing, "NONE" if not used
   --unwarpdir={x,y,z,x-,y-,z-}      Readout direction of the T1w and T2w images (according to the *voxel axes)
            or={i,j,k,i-,j-,k-}      (Used with either a gradient echo field map 
-									or a spin echo field map)
+                                    or a spin echo field map)
   --gdcoeffs=<file path>            File containing gradient distortion
-									coefficients, Set to "NONE" to turn off
+                                    coefficients, Set to "NONE" to turn off
   --avgrdcmethod=<avgrdcmethod>     Averaging and readout distortion correction
-									method. See below for supported values.
+                                    method. See below for supported values.
+  --custombrain=(NONE|MASK|CUSTOM)  Whether to use a custom brain mask (MASK) the 
+                                    pre-existing custom brain images (CUSTOM)
+                                    or not (NONE)
 
-	  "${NONE_METHOD_OPT}"
-		 average any repeats with no readout distortion correction
+    "${NONE_METHOD_OPT}"
+     average any repeats with no readout distortion correction
 
-	  "${FIELDMAP_METHOD_OPT}"
-		 equivalent to "${SIEMENS_METHOD_OPT}" (see below)
-		 SiemensFieldMap is preferred. This option value is maintained for
-		 backward compatibility.
+    "${FIELDMAP_METHOD_OPT}"
+       equivalent to "${SIEMENS_METHOD_OPT}" (see below)
+       SiemensFieldMap is preferred. This option value is maintained for
+       backward compatibility.
 
-	  "${SPIN_ECHO_METHOD_OPT}"
-		 average any repeats and use Spin Echo Field Maps for readout
-		 distortion correction
+    "${SPIN_ECHO_METHOD_OPT}"
+       average any repeats and use Spin Echo Field Maps for readout
+       distortion correction
 
-	  "${GENERAL_ELECTRIC_METHOD_OPT}"
-		 average any repeats and use General Electric specific Gradient
-		 Echo Field Maps for readout distortion correction
+    "${GENERAL_ELECTRIC_METHOD_OPT}"
+       average any repeats and use General Electric specific Gradient
+       Echo Field Maps for readout distortion correction
 
-	  "${SIEMENS_METHOD_OPT}"
-		 average any repeats and use Siemens specific Gradient Echo
-		 Field Maps for readout distortion correction
+    "${SIEMENS_METHOD_OPT}"
+       average any repeats and use Siemens specific Gradient Echo
+       Field Maps for readout distortion correction
 
   --topupconfig=<file path>      Configuration file for topup or "NONE" if not
-								 used
+                 used
   --bfsigma=<value>              Bias Field Smoothing Sigma (optional)
+  --t1biascorrect=(YES|NONE)     Bias Field Correction for T1w image only (YES or NONE if not, YES default; optional)
+  --mppversion=(hcp|legacy)      Which version of MPP to use. ("hcp" is default, "legacy"; optional).
 EOF
-	exit 1
+  exit 1
 }
 
 # ------------------------------------------------------------------------------
@@ -305,7 +310,7 @@ log_SetToolName "PreFreeSurferPipeline.sh"
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-	show_usage
+  show_usage
 fi
 
 log_Msg "Platform Information Follows: "
@@ -342,6 +347,12 @@ GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`
 AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
+T1wBiasCorrect=`opts_GetOpt1 "--t1biascorrect" $@`
+CustomBrain=`opts_GetOpt1 "--custombrain" $@`
+
+# Defaults
+CustomBrain=`opts_DefaultOpt $CustomBrain NONE`
+T1wBiasCorrect=`opts_DefaultOpt $T1wBiasCorrect YES`
 
 #NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
 #not currently in usage, either, because of this very limited use
@@ -354,6 +365,72 @@ RUN=`opts_GetOpt1 "--printcom" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
 UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
+
+
+# ------------------------------------------------------------------------------
+#  Check MMP Version
+# ------------------------------------------------------------------------------
+
+Compliance="hcp"
+MPPVersion=`opts_GetOpt1 "--mppversion" $@`
+MPPVersion=`opts_DefaultOpt $MPPVersion "hcp"`
+
+if [ "${MPPVersion}" = "legacy" ] ; then
+  log_Msg "Legacy Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
+  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
+  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
+  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
+  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
+  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
+  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
+  log_Msg "        cited when published."
+  log_Msg "        "
+  log_Msg "Checking available data and processing options"
+else
+  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
+  log_Msg "Checking data compliance with HCP MPP"
+fi
+
+# -- T2w image
+
+if [ "${T2wInputImages}" = "NONE" ] ; then
+  log_Msg "-> T2w image not present (legacy)"
+  SkipT2wImage="YES"
+  Compliance="legacy"
+else
+  SkipT2wImage="NO"
+  log_Msg "-> T2w image present (HCP)"
+fi
+
+# -- Use of custom brain
+
+if [ ! "${CustomBrain}" = "NONE" ] ; then
+  log_Msg "-> Custom brain used: ${CustomBrain} (legacy)"
+  Compliance="legacy"
+else
+  log_Msg "-> No custom brain used (HCP)"
+fi
+
+# -- Final evaluation
+
+if [ "${MPPVersion}" = "legacy" ] ; then
+  if [ "${Compliance}" = "legacy" ] ; then
+    log_Msg "Processing will continue using Legacy MPP."
+  else
+    log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
+    log_Msg "Processing will continue using Legacy MPP."
+  fi
+else
+  if [ "${Compliance}" = "legacy" ] ; then
+    log_Msg "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
+    log_Msg "Aborting execution."
+    exit 1
+  else
+    log_Msg "Conditions for the use of HCP MPP are met."
+    log_Msg "Processing will continue using HCP MPP."
+  fi
+fi
+
 
 # ------------------------------------------------------------------------------
 #  Show Command Line Options
@@ -390,6 +467,8 @@ log_Msg "AvgrdcSTRING: ${AvgrdcSTRING}"
 log_Msg "TopupConfig: ${TopupConfig}"
 log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
 log_Msg "UseJacobian: ${UseJacobian}"
+log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
+log_Msg "CustomBrain: ${CustomBrain}"
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables
@@ -422,18 +501,18 @@ T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g'`
 T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
 
 if [ ! -e ${T1wFolder}/xfms ] ; then
-	log_Msg "mkdir -p ${T1wFolder}/xfms/"
-	mkdir -p ${T1wFolder}/xfms/
+  log_Msg "mkdir -p ${T1wFolder}/xfms/"
+  mkdir -p ${T1wFolder}/xfms/
 fi
 
 if [ ! -e ${T2wFolder}/xfms ] ; then
-	log_Msg "mkdir -p ${T2wFolder}/xfms/"
-	mkdir -p ${T2wFolder}/xfms/
+  log_Msg "mkdir -p ${T2wFolder}/xfms/"
+  mkdir -p ${T2wFolder}/xfms/
 fi
 
 if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
-	log_Msg "mkdir -p ${AtlasSpaceFolder}/xfms/"
-	mkdir -p ${AtlasSpaceFolder}/xfms/
+  log_Msg "mkdir -p ${AtlasSpaceFolder}/xfms/"
+  mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
 log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
@@ -452,253 +531,327 @@ log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 #  - Perform Brain Extraction(FNIRT-based Masking)
 # ------------------------------------------------------------------------------
 
-Modalities="T1w T2w"
+# --- skip if we have a custom brain
 
-for TXw in ${Modalities} ; do
-	log_Msg "Processing Modality: " $TXw
+if [ "$CustomBrain" = "NONE" ] ; then
 
-	# set up appropriate input variables
-	if [ $TXw = T1w ] ; then
-		TXwInputImages="${T1wInputImages}"
-		TXwFolder=${T1wFolder}
-		TXwImage=${T1wImage}
-		TXwTemplate=${T1wTemplate}
-		TXwTemplate2mm=${T1wTemplate2mm}
-	else
-		TXwInputImages="${T2wInputImages}"
-		TXwFolder=${T2wFolder}
-		TXwImage=${T2wImage}
-		TXwTemplate=${T2wTemplate}
-		TXwTemplate2mm=${T2wTemplate2mm}
-	fi
-	OutputTXwImageSTRING=""
+  Modalities="T1w T2w"
 
-	# Perform Gradient Nonlinearity Correction
+  for TXw in ${Modalities} ; do
+      log_Msg "Processing Modality: " $TXw
 
-	if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
-		log_Msg "Performing Gradient Nonlinearity Correction"
+      # set up appropriate input variables
+      if [ $TXw = T1w ] ; then
+          TXwInputImages="${T1wInputImages}"
+          TXwFolder=${T1wFolder}
+          TXwImage=${T1wImage}
+          TXwTemplate=${T1wTemplate}
+          TXwTemplate2mm=${T1wTemplate2mm}
+      else
+          TXwInputImages="${T2wInputImages}"
+          TXwFolder=${T2wFolder}
+          TXwImage=${T2wImage}
+          TXwTemplate=${T2wTemplate}
+          TXwTemplate2mm=${T2wTemplate2mm}
+      fi
+      OutputTXwImageSTRING=""
 
-		i=1
-		for Image in $TXwInputImages ; do
-			wdir=${TXwFolder}/${TXwImage}${i}_GradientDistortionUnwarp
-			log_Msg "mkdir -p $wdir"
-			mkdir -p $wdir
-			# Make sure input axes are oriented the same as the templates
-			${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${wdir}/${TXwImage}${i}
+      # skip modality if no image
 
-			${RUN} ${HCPPIPEDIR_Global}/GradientDistortionUnwarp.sh \
-				--workingdir=${wdir} \
-				--coeffs=$GradientDistortionCoeffs \
-				--in=${wdir}/${TXwImage}${i} \
-				--out=${TXwFolder}/${TXwImage}${i}_gdc \
-				--owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-			OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
-			i=$(($i+1))
-		done
+      if [ "${TXwInputImages}" = "NONE" ] ; then
+        continue
+      fi
 
-	else
-		log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
+      # Perform Gradient Nonlinearity Correction
 
-		i=1
-		for Image in $TXwInputImages ; do
-			${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-			OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
-			i=$(($i+1))
-		done
+      if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
+        log_Msg "Performing Gradient Nonlinearity Correction"
 
-	fi
+        i=1
+        for Image in $TXwInputImages ; do
+          wdir=${TXwFolder}/${TXwImage}${i}_GradientDistortionUnwarp
+          log_Msg "mkdir -p $wdir"
+          mkdir -p $wdir
+          # Make sure input axes are oriented the same as the templates
+          ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${wdir}/${TXwImage}${i}
 
-	# Average Like (Same Modality) Scans
+          ${RUN} ${HCPPIPEDIR_Global}/GradientDistortionUnwarp.sh \
+            --workingdir=${wdir} \
+            --coeffs=$GradientDistortionCoeffs \
+            --in=${wdir}/${TXwImage}${i} \
+            --out=${TXwFolder}/${TXwImage}${i}_gdc \
+            --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
+          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          i=$(($i+1))
+        done
 
-	if [ `echo $TXwInputImages | wc -w` -gt 1 ] ; then
-		log_Msg "Averaging ${TXw} Images"
-		log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
-		mkdir -p ${TXwFolder}/Average${TXw}Images
-		log_Msg "PERFORMING SIMPLE AVERAGING"
-		${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
-	else
-		log_Msg "Not Averaging ${TXw} Images"
-		log_Msg "ONLY ONE AVERAGE FOUND: COPYING"
-		${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
-	fi
+      else
+        log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
 
-	# ACPC align T1w or T2w image to specified MNI Template to create native volume space
-	log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
-	log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
-	mkdir -p ${TXwFolder}/ACPCAlignment
-	${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
-		--workingdir=${TXwFolder}/ACPCAlignment \
-		--in=${TXwFolder}/${TXwImage} \
-		--ref=${TXwTemplate} \
-		--out=${TXwFolder}/${TXwImage}_acpc \
-		--omat=${TXwFolder}/xfms/acpc.mat \
-		--brainsize=${BrainSize}
+        i=1
+        for Image in $TXwInputImages ; do
+          ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
+          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          i=$(($i+1))
+        done
 
-	# Brain Extraction(FNIRT-based Masking)
-	log_Msg "Performing Brain Extraction using FNIRT-based Masking"
-	log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
-	mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
-	${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
-		--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
-		--in=${TXwFolder}/${TXwImage}_acpc \
-		--ref=${TXwTemplate} \
-		--refmask=${TemplateMask} \
-		--ref2mm=${TXwTemplate2mm} \
-		--ref2mmmask=${Template2mmMask} \
-		--outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
-		--outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
-		--fnirtconfig=${FNIRTConfig}
+      fi
 
-done
+      # Average Like (Same Modality) Scans
 
-# End of looping over modalities (T1w and T2w)
+      if [ `echo $TXwInputImages | wc -w` -gt 1 ] ; then
+        log_Msg "Averaging ${TXw} Images"
+        log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
+        mkdir -p ${TXwFolder}/Average${TXw}Images
+        log_Msg "PERFORMING SIMPLE AVERAGING"
+        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+      else
+        log_Msg "Not Averaging ${TXw} Images"
+        log_Msg "ONLY ONE AVERAGE FOUND: COPYING"
+        ${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
+      fi
 
-# ------------------------------------------------------------------------------
-#  T2w to T1w Registration and Optional Readout Distortion Correction
-# ------------------------------------------------------------------------------
+      # ACPC align T1w or T2w image to specified MNI Template to create native volume space
+      log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
+      log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
+      mkdir -p ${TXwFolder}/ACPCAlignment
+      ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
+        --workingdir=${TXwFolder}/ACPCAlignment \
+        --in=${TXwFolder}/${TXwImage} \
+        --ref=${TXwTemplate} \
+        --out=${TXwFolder}/${TXwImage}_acpc \
+        --omat=${TXwFolder}/xfms/acpc.mat \
+        --brainsize=${BrainSize}
 
-case $AvgrdcSTRING in
+      # Brain Extraction(FNIRT-based Masking)
+      log_Msg "Performing Brain Extraction using FNIRT-based Masking"
+      log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
+      mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
+      ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
+        --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
+        --in=${TXwFolder}/${TXwImage}_acpc \
+        --ref=${TXwTemplate} \
+        --refmask=${TemplateMask} \
+        --ref2mm=${TXwTemplate2mm} \
+        --ref2mmmask=${Template2mmMask} \
+        --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
+        --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
+      --fnirtconfig=${FNIRTConfig}
 
-	${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT})
+  done
 
-		log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
-		wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-		if [ -d ${wdir} ] ; then
-			# DO NOT change the following line to "rm -r ${wdir}" because the
-			# chances of something going wrong with that are much higher, and
-			# rm -r always needs to be treated with the utmost caution
-			rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-		fi
+  # End of looping over modalities (T1w and T2w)
 
-		log_Msg "mkdir -p ${wdir}"
-		mkdir -p ${wdir}
+  # ------------------------------------------------------------------------------
+  #  T2w to T1w Registration and Optional Readout Distortion Correction
+  # ------------------------------------------------------------------------------
 
-		${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
-			--workingdir=${wdir} \
-			--t1=${T1wFolder}/${T1wImage}_acpc \
-			--t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
-			--t2=${T2wFolder}/${T2wImage}_acpc \
-			--t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
-			--fmapmag=${MagnitudeInputName} \
-			--fmapphase=${PhaseInputName} \
-			--fmapgeneralelectric=${GEB0InputName} \
-			--echodiff=${TE} \
-			--SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-			--SEPhasePos=${SpinEchoPhaseEncodePositive} \
-			--seechospacing=${SEEchoSpacing} \
-			--seunwarpdir=${SEUnwarpDir} \
-			--t1sampspacing=${T1wSampleSpacing} \
-			--t2sampspacing=${T2wSampleSpacing} \
-			--unwarpdir=${UnwarpDir} \
-			--ot1=${T1wFolder}/${T1wImage}_acpc_dc \
-			--ot1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
-			--ot1warp=${T1wFolder}/xfms/${T1wImage}_dc \
-			--ot2=${T1wFolder}/${T2wImage}_acpc_dc \
-			--ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
-			--method=${AvgrdcSTRING} \
-			--topupconfig=${TopupConfig} \
-			--gdcoeffs=${GradientDistortionCoeffs} \
-			--usejacobian=${UseJacobian}
+  if [ "${T2wInputImages}" = "NONE" ] ; then
+    T2wImagePath="NONE"
+  else
+    T2wImagePath="${T2wFolder}/${T2wImage}_acpc"
+  fi
 
-		;;
+  case $AvgrdcSTRING in
 
-	*)
+    ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT})
 
-		log_Msg "NOT PERFORMING READOUT DISTORTION CORRECTION"
-		wdir=${T2wFolder}/T2wToT1wReg
-		if [ -e ${wdir} ] ; then
-			# DO NOT change the following line to "rm -r ${wdir}" because the
-			# chances of something going wrong with that are much higher, and
-			# rm -r always needs to be treated with the utmost caution
-			rm -r ${T2wFolder}/T2wToT1wReg
-		fi
+      log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
+      wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+      if [ -d ${wdir} ] ; then
+        # DO NOT change the following line to "rm -r ${wdir}" because the
+        # chances of something going wrong with that are much higher, and
+        # rm -r always needs to be treated with the utmost caution
+        rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+      fi
 
-		log_Msg "mkdir -p ${wdir}"
-		mkdir -p ${wdir}
+      log_Msg "mkdir -p ${wdir}"
+      mkdir -p ${wdir}
 
-		${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wReg.sh \
-			${wdir} \
-			${T1wFolder}/${T1wImage}_acpc \
-			${T1wFolder}/${T1wImage}_acpc_brain \
-			${T2wFolder}/${T2wImage}_acpc \
-			${T2wFolder}/${T2wImage}_acpc_brain \
-			${T1wFolder}/${T1wImage}_acpc_dc \
-			${T1wFolder}/${T1wImage}_acpc_dc_brain \
-			${T1wFolder}/xfms/${T1wImage}_dc \
-			${T1wFolder}/${T2wImage}_acpc_dc \
-			${T1wFolder}/xfms/${T2wImage}_reg_dc
+      ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
+        --workingdir=${wdir} \
+        --t1=${T1wFolder}/${T1wImage}_acpc \
+        --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
+        --t2=${T2wImagePath} \
+        --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
+        --fmapmag=${MagnitudeInputName} \
+        --fmapphase=${PhaseInputName} \
+        --fmapgeneralelectric=${GEB0InputName} \
+        --echodiff=${TE} \
+        --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+        --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+        --seechospacing=${SEEchoSpacing} \
+        --seunwarpdir=${SEUnwarpDir} \
+        --t1sampspacing=${T1wSampleSpacing} \
+        --t2sampspacing=${T2wSampleSpacing} \
+        --unwarpdir=${UnwarpDir} \
+        --ot1=${T1wFolder}/${T1wImage}_acpc_dc \
+        --ot1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
+        --ot1warp=${T1wFolder}/xfms/${T1wImage}_dc \
+        --ot2=${T1wFolder}/${T2wImage}_acpc_dc \
+        --ot2warp=${T1wFolder}/xfms/${T2wImage}_reg_dc \
+        --method=${AvgrdcSTRING} \
+        --topupconfig=${TopupConfig} \
+        --gdcoeffs=${GradientDistortionCoeffs} \
+        --usejacobian=${UseJacobian} 
 
-esac
+      ;;
 
-# ------------------------------------------------------------------------------
-#  Bias Field Correction: Calculate bias field using square root of the product
-#  of T1w and T2w iamges.
-# ------------------------------------------------------------------------------
+    *)
 
-log_Msg "Performing Bias Field Correction"
-if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-	BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
-fi
+      log_Msg "NOT PERFORMING READOUT DISTORTION CORRECTION"
+      wdir=${T2wFolder}/T2wToT1wReg
+      if [ -e ${wdir} ] ; then
+        # DO NOT change the following line to "rm -r ${wdir}" because the
+        # chances of something going wrong with that are much higher, and
+        # rm -r always needs to be treated with the utmost caution
+        rm -r ${T2wFolder}/T2wToT1wReg
+      fi
 
-log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w"
-mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+      log_Msg "mkdir -p ${wdir}"
+      mkdir -p ${wdir}
 
-${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
-	--workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
-	--T1im=${T1wFolder}/${T1wImage}_acpc_dc \
-	--T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
-	--T2im=${T1wFolder}/${T2wImage}_acpc_dc \
-	--obias=${T1wFolder}/BiasField_acpc_dc \
-	--oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
-	--oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-	--oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore \
-	--oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-	${BiasFieldSmoothingSigma}
+      ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wReg.sh \
+        ${wdir} \
+        ${T1wFolder}/${T1wImage}_acpc \
+        ${T1wFolder}/${T1wImage}_acpc_brain \
+        ${T2wImagePath} \
+        ${T2wFolder}/${T2wImage}_acpc_brain \
+        ${T1wFolder}/${T1wImage}_acpc_dc \
+        ${T1wFolder}/${T1wImage}_acpc_dc_brain \
+        ${T1wFolder}/xfms/${T1wImage}_dc \
+        ${T1wFolder}/${T2wImage}_acpc_dc \
+        ${T1wFolder}/xfms/${T2wImage}_reg_dc
 
-# ------------------------------------------------------------------------------
-# Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
-# (applied after GDC, which we don't bundle in, because of the possible need
-# to average multiple T1/T2 inputs).
+  esac
 
-# This overwrites the {T1w,T2w}_acpc_dc outputs created above, and mimics what
-# occurs at the beginning of PostFreeSurfer/CreateMyelinMaps.sh.
-# Note that the CreateMyelinMaps equivalent is still needed though because
-# (1) T1w_acpc_dc_restore_brain is (re)generated with a better estimate of
-#     the brain mask, provided by FreeSurfer
-# (2) the entire set of T2w_acpc_dc outputs needs to be regenerated, using the
-#     refinement to the "T2wtoT1w" registration that FreeSurfer provides.
+  # ------------------------------------------------------------------------------
+  #  Bias Field Correction: Calculate bias field using square root of the product
+  #  of T1w and T2w iamges.
+  # ------------------------------------------------------------------------------
 
-# Just implement inline, rather than writing a separate script
-# Added 2/19/2019
-# ------------------------------------------------------------------------------
+  if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
-log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
+    log_Msg "Performing Bias Field Correction"
+    if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+      BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+    fi
 
-# T1w
-OutputOrigT1wToT1w=OrigT1w2T1w_PreFS  # Name for one-step resample warpfield
-convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T1wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T1wImage}_dc --out=${T1wFolder}/xfms/${OutputOrigT1wToT1w}
+    log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w"
+    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
 
-OutputT1wImage=${T1wFolder}/${T1wImage}_acpc_dc
-applywarp --rel --interp=spline -i ${T1wFolder}/${T1wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT1wToT1w} -o ${OutputT1wImage}
-fslmaths ${OutputT1wImage} -abs ${OutputT1wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
-fslmaths ${OutputT1wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT1wImage}_restore
-fslmaths ${OutputT1wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT1wImage}_restore_brain
+    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
+      --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
+      --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
+      --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
+      --T2im=${T1wFolder}/${T2wImage}_acpc_dc \
+      --obias=${T1wFolder}/BiasField_acpc_dc \
+      --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+      --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
+      --oT2im=${T1wFolder}/${T2wImage}_acpc_dc_restore \
+      --oT2brain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
+      ${BiasFieldSmoothingSigma}
 
-#T2w
-OutputOrigT2wToT1w=OrigT2w2T1w_PreFS  # Name for one-step resample warpfield
-convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T2wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T2wImage}_reg_dc --out=${T1wFolder}/xfms/${OutputOrigT2wToT1w}
+  else  # -- No T2w image
 
-OutputT2wImage=${T1wFolder}/${T2wImage}_acpc_dc
-applywarp --rel --interp=spline -i ${T2wFolder}/${T2wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT2wToT1w} -o ${OutputT2wImage}
-fslmaths ${OutputT2wImage} -abs ${OutputT2wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
-fslmaths ${OutputT2wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT2wImage}_restore
-fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
+    if [ ! "${T1wBiasCorrect}" = "NONE" ] ; then
 
-# Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
-# i.e., whether the T1w/T2w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
-# or the PostFreeSurferPipeline versions
-OutputOrigT2wToT1wPostFS=OrigT2w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
-imrm ${OutputOrigT2wToT1wPostFS}
+      log_Msg "Performing Bias Field Correction on T1w image only"
+
+      if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+        BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+      fi
+
+      ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
+        --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
+        --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
+        --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
+        --obias=${T1wFolder}/BiasField_acpc_dc \
+        --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+        --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
+        ${BiasFieldSmoothingSigma}
+
+    else
+
+      log_Msg "Skipping Bias Field Correction of T1w image"
+
+      cp ${T1wFolder}/${T1wImage}_acpc_dc.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore.nii.gz
+      cp ${T1wFolder}/${T1wImage}_acpc_dc_brain.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain.nii.gz
+      fslmaths ${T1wFolder}/${T1wImage}_acpc_dc -div ${T1wFolder}/${T1wImage}_acpc_dc ${T1wFolder}/BiasField_acpc_dc
+
+    fi
+
+  fi
+
+
+  # ------------------------------------------------------------------------------
+  # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
+  # (applied after GDC, which we don't bundle in, because of the possible need
+  # to average multiple T1/T2 inputs).
+
+  # This overwrites the {T1w,T2w}_acpc_dc outputs created above, and mimics what
+  # occurs at the beginning of PostFreeSurfer/CreateMyelinMaps.sh.
+  # Note that the CreateMyelinMaps equivalent is still needed though because
+  # (1) T1w_acpc_dc_restore_brain is (re)generated with a better estimate of
+  #     the brain mask, provided by FreeSurfer
+  # (2) the entire set of T2w_acpc_dc outputs needs to be regenerated, using the
+  #     refinement to the "T2wtoT1w" registration that FreeSurfer provides.
+
+  # Just implement inline, rather than writing a separate script
+  # Added 2/19/2019
+  # ------------------------------------------------------------------------------
+
+  log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
+
+  # T1w
+  OutputOrigT1wToT1w=OrigT1w2T1w_PreFS  # Name for one-step resample warpfield
+  convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T1wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T1wImage}_dc --out=${T1wFolder}/xfms/${OutputOrigT1wToT1w}
+
+  OutputT1wImage=${T1wFolder}/${T1wImage}_acpc_dc
+  applywarp --rel --interp=spline -i ${T1wFolder}/${T1wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT1wToT1w} -o ${OutputT1wImage}
+  fslmaths ${OutputT1wImage} -abs ${OutputT1wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
+  fslmaths ${OutputT1wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT1wImage}_restore
+  fslmaths ${OutputT1wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT1wImage}_restore_brain
+
+  if [ ! "${T2wInputImages}" = "NONE" ] ; then
+    OutputOrigT2wToT1w=OrigT2w2T1w_PreFS  # Name for one-step resample warpfield
+    convertwarp --relout --rel --ref=${T1wTemplate} --premat=${T2wFolder}/xfms/acpc.mat --warp1=${T1wFolder}/xfms/${T2wImage}_reg_dc --out=${T1wFolder}/xfms/${OutputOrigT2wToT1w}
+
+    OutputT2wImage=${T1wFolder}/${T2wImage}_acpc_dc
+    applywarp --rel --interp=spline -i ${T2wFolder}/${T2wImage} -r ${T1wTemplate} -w ${T1wFolder}/xfms/${OutputOrigT2wToT1w} -o ${OutputT2wImage}
+    fslmaths ${OutputT2wImage} -abs ${OutputT2wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
+    fslmaths ${OutputT2wImage} -div ${T1wFolder}/BiasField_acpc_dc ${OutputT2wImage}_restore
+    fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
+
+    # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
+    # i.e., whether the T1w/T2w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
+    # or the PostFreeSurferPipeline versions
+    OutputOrigT2wToT1wPostFS=OrigT2w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
+    imrm ${OutputOrigT2wToT1wPostFS}
+  fi
+
+
+# -- Are we using a custom mask?
+
+elif [ "$CustomBrain" = "MASK" ] ; then
+
+  log_Msg "Skipping all the steps to Atlas registration, applying custom mask."
+  ceho "---> Applying custom mask"
+
+  ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
+
+  if [ ! "${T2wInputImages}" = "NONE" ] ; then
+    ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T2wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T2wImage}_acpc_dc_restore_brain
+  fi
+
+# -- Then we are using existing images
+
+else
+
+  log_Msg "Skipping all the steps to Atlas registration, using existing images."
+  ceho "---> Using existing images"
+
+fi  # --- skipped to here if we are using custom brain
 
 # ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
@@ -708,30 +861,37 @@ imrm ${OutputOrigT2wToT1wPostFS}
 #  so, the primary purpose of the following is to generate the Atlas Registration itself).
 # ------------------------------------------------------------------------------
 
+if [ ! "${T2wInputImages}" = "NONE" ] ; then
+  t2status="RUN"
+else
+  t2status="SKIP"
+fi
+
 log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
 
 ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
-	--workingdir=${AtlasSpaceFolder} \
-	--t1=${T1wFolder}/${T1wImage}_acpc_dc \
-	--t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
-	--t1restbrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-	--t2=${T1wFolder}/${T2wImage}_acpc_dc \
-	--t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
-	--t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-	--ref=${T1wTemplate} \
-	--refbrain=${T1wTemplateBrain} \
-	--refmask=${TemplateMask} \
-	--ref2mm=${T1wTemplate2mm} \
-	--ref2mmmask=${Template2mmMask} \
-	--owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
-	--oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
-	--ot1=${AtlasSpaceFolder}/${T1wImage} \
-	--ot1rest=${AtlasSpaceFolder}/${T1wImage}_restore \
-	--ot1restbrain=${AtlasSpaceFolder}/${T1wImage}_restore_brain \
-	--ot2=${AtlasSpaceFolder}/${T2wImage} \
-	--ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
-	--ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-	--fnirtconfig=${FNIRTConfig}
+  --workingdir=${AtlasSpaceFolder} \
+  --t1=${T1wFolder}/${T1wImage}_acpc_dc \
+  --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+  --t1restbrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
+  --t2=${T1wFolder}/${T2wImage}_acpc_dc \
+  --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
+  --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
+  --ref=${T1wTemplate} \
+  --refbrain=${T1wTemplateBrain} \
+  --refmask=${TemplateMask} \
+  --ref2mm=${T1wTemplate2mm} \
+  --ref2mmmask=${Template2mmMask} \
+  --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
+  --oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
+  --ot1=${AtlasSpaceFolder}/${T1wImage} \
+  --ot1rest=${AtlasSpaceFolder}/${T1wImage}_restore \
+  --ot1restbrain=${AtlasSpaceFolder}/${T1wImage}_restore_brain \
+  --ot2=${AtlasSpaceFolder}/${T2wImage} \
+  --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
+  --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
+  --fnirtconfig=${FNIRTConfig} \
+  --t2status=${t2status}
 
 log_Msg "Completed"
 
