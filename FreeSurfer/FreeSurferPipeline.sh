@@ -204,6 +204,9 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
+  [--mppversion={hcp, legacy}]
+      Indicates, which version of MPP to use. ("hcp" is the default, "legacy" allows processing w/o T2w image)
+
 PARAMETERs can also be specified positionally as:
 
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
@@ -294,6 +297,10 @@ get_options()
 				p_extra_reconall_args+="${extra_reconall_arg} "
 				index=$(( index + 1 ))
 				;;
+			--mppversion=*)
+				p_mppversion=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			--no-conf2hires)
 				p_conf2hires="FALSE"
 				index=$(( index + 1 ))
@@ -307,6 +314,30 @@ get_options()
 	done
 
 	local error_count=0
+
+	# ------------------------------------------------------------------------------
+	#  Check MMP Version
+	# ------------------------------------------------------------------------------
+	
+	Compliance="hcp"
+	MPPVersion=${p_mppversion:-hcp}
+	
+	if [ "${MPPVersion}" = "legacy" ] ; then
+	  log_Msg "Legacy Minimal Preprocessing Pipelines: FreeSurferPipeline v.XX"
+	  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
+	  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
+	  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
+	  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
+	  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
+	  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
+	  log_Msg "        cited when published."
+	  log_Msg "        "
+	  log_Msg "Checking available data and processing options"
+	else
+	  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
+	  log_Msg "Checking data compliance with HCP MPP"
+	fi
+
 
 	# check required parameters
 	if [ -z "${p_subject_dir}" ]; then
@@ -347,8 +378,12 @@ get_options()
 
 	if [ -z "${p_t2w_image}" ]; then
 		if [ -z "${p_existing_subject}" ]; then
-			log_Err "T2w Image (--t2w-image= or --t2=) required"
-			error_count=$(( error_count + 1 ))
+			if [ "${MPPVersion}" = "legacy" ] ; then
+				p_t2w_image="NONE"
+			else
+				log_Err "T2w Image (--t2w-image= or --t2=) required"
+				error_count=$(( error_count + 1 ))
+			fi
 		else
 			p_t2w_image="NONE"  # Need something assigned as a placeholder for positional parameters
 		fi
@@ -368,6 +403,32 @@ get_options()
 	fi
 	if [ ! -z "${p_conf2hires}" ]; then
 		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
+	fi
+	if [ "${p_t2w_image}" = "NONE" ] ; then
+  		Compliance="legacy"
+	fi
+
+	# -- Final evaluation
+
+	if [ "${MPPVersion}" = "legacy" ] ; then
+		if [ ! ${error_count} -gt 0 ]; then
+		    if [ "${Compliance}" = "legacy" ] ; then
+		      	log_Msg "Processing will continue using Legacy MPP."
+		    else
+		      	log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
+		      	log_Msg "Processing will continue using Legacy MPP."
+		    fi
+		fi
+	else
+  	    if [ "${Compliance}" = "legacy" ] ; then
+	    	log_Err "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
+	    	error_count=$(( error_count + 1 ))
+	  	else
+	  		if [ ! ${error_count} -gt 0 ]; then
+	    		log_Msg "Conditions for the use of HCP MPP are met."
+	    		log_Msg "Processing will continue using HCP MPP."
+	    	fi
+	  	fi
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -625,14 +686,18 @@ main()
 	if [ "${existing_subject}" != "TRUE" ]; then  # input volumes only necessary first time through
 		recon_all_cmd+=" -all"
 		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
-		recon_all_cmd+=" -T2 ${T2wImage}"
+		[ "${T2wImage}" != "NONE" ] && recon_all_cmd+=" -T2 ${T2wImage}"
 		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	fi
 
 	# By default, refine pial surfaces using T2.
 	# If for some reason the -T2pial flag needs to be excluded from recon-all, this can be
 	# accomplished using --extra-reconall-arg=-noT2pial
-	recon_all_cmd+=" -T2pial"
+	if [ "${T2wImage}" != "NONE" ]; then
+		recon_all_cmd+=" -T2pial"
+	else
+		recon_all_cmd+=" -noT2pial"
+	fi
 
 	recon_all_cmd+=" -openmp ${num_cores}"
 
@@ -694,67 +759,69 @@ main()
 	echo "0 0 0 1" >> ${eye_dat_file}
 	echo "round" >> ${eye_dat_file}
 
-	# ----------------------------------------------------------------------
-	log_Msg "Making T2w to T1w registration available in FSL format"
-	# ----------------------------------------------------------------------
+	if [ "${T2wImage}" != "NONE" ]; then
+		# ----------------------------------------------------------------------
+		log_Msg "Making T2w to T1w registration available in FSL format"
+		# ----------------------------------------------------------------------
 
-	pushd ${mridir}
+		pushd ${mridir}
 
-	log_Msg "...Create a registration between the original conformed space and the rawavg space"
-	tkregister_cmd="tkregister"
-	tkregister_cmd+=" --mov orig.mgz"
-	tkregister_cmd+=" --targ rawavg.mgz"
-	tkregister_cmd+=" --regheader"
-	tkregister_cmd+=" --noedit"
-	tkregister_cmd+=" --reg deleteme.dat"
-	tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
-	tkregister_cmd+=" --s ${SubjectID}"
+		log_Msg "...Create a registration between the original conformed space and the rawavg space"
+		tkregister_cmd="tkregister"
+		tkregister_cmd+=" --mov orig.mgz"
+		tkregister_cmd+=" --targ rawavg.mgz"
+		tkregister_cmd+=" --regheader"
+		tkregister_cmd+=" --noedit"
+		tkregister_cmd+=" --reg deleteme.dat"
+		tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
+		tkregister_cmd+=" --s ${SubjectID}"
 
-	log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
-	log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+		log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
+		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
 
-	${tkregister_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+		${tkregister_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ]; then
+			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Concatenate the T2raw->orig and orig->rawavg transforms"
+		mri_concatenate_lta_cmd="mri_concatenate_lta"
+		mri_concatenate_lta_cmd+=" transforms/T2raw.lta"
+		mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
+		mri_concatenate_lta_cmd+=" Q.lta"
+
+		log_Msg "......The following concatenates transforms/T2raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
+		log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
+		${mri_concatenate_lta_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ]; then
+			log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Convert to FSL format"
+		tkregister_cmd="tkregister"
+		tkregister_cmd+=" --mov orig/T2raw.mgz"
+		tkregister_cmd+=" --targ rawavg.mgz"
+		tkregister_cmd+=" --reg Q.lta"
+		tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
+		tkregister_cmd+=" --noedit"
+
+		log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
+		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+
+		${tkregister_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ]; then
+			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Clean up"
+		rm deleteme.dat
+		rm Q.lta
+
+		popd
 	fi
-
-	log_Msg "...Concatenate the T2raw->orig and orig->rawavg transforms"
-	mri_concatenate_lta_cmd="mri_concatenate_lta"
-	mri_concatenate_lta_cmd+=" transforms/T2raw.lta"
-	mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
-	mri_concatenate_lta_cmd+=" Q.lta"
-
-	log_Msg "......The following concatenates transforms/T2raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
-	log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
-	${mri_concatenate_lta_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
-	fi
-
-	log_Msg "...Convert to FSL format"
-	tkregister_cmd="tkregister"
-	tkregister_cmd+=" --mov orig/T2raw.mgz"
-	tkregister_cmd+=" --targ rawavg.mgz"
-	tkregister_cmd+=" --reg Q.lta"
-	tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
-	tkregister_cmd+=" --noedit"
-
-	log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
-	log_Msg "......tkregister_cmd: ${tkregister_cmd}"
-
-	${tkregister_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
-		log_Err_Abort "tkregister command failed with return_code: ${return_code}"
-	fi
-
-	log_Msg "...Clean up"
-	rm deleteme.dat
-	rm Q.lta
-
-	popd
 
 	# ----------------------------------------------------------------------
 	log_Msg "Creating white surface files in rawavg space"
@@ -792,9 +859,12 @@ main()
 
 	make_t1w_hires_nifti_file "${mridir}"
 
-	make_t2w_hires_nifti_file "${mridir}"
+	if [ "${T2wImage}" != "NONE" ]; then
 
-	make_t1wxtw2_qc_file "${mridir}"
+		make_t2w_hires_nifti_file "${mridir}"
+
+		make_t1wxtw2_qc_file "${mridir}"
+	fi
 
 	# ----------------------------------------------------------------------
 	log_Msg "Completing main functionality"
