@@ -41,17 +41,18 @@ wmMeanT1=`fslstats "$mridir"/T1w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
 fslmaths "$mridir"/T1w_hires.nii.gz -div $wmMeanT1 -mul 110 "$mridir"/T1w_hires.norm.nii.gz
 mri_convert "$mridir"/T1w_hires.norm.nii.gz "$mridir"/T1w_hires.norm.mgz
 
-wmMeanT2=`fslstats "$mridir"/T2w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
-fslmaths "$mridir"/T2w_hires.nii.gz -div $wmMeanT2 -mul 57 "$mridir"/T2w_hires.norm.nii.gz -odt float
-mri_convert "$mridir"/T2w_hires.norm.nii.gz "$mridir"/T2w_hires.norm.mgz
-
+if [ ! "${T2wImage}" = "NONE" ] ; then
+  wmMeanT2=`fslstats "$mridir"/T2w_hires.nii.gz -k "$mridir"/wm.hires.nii.gz -M`
+  fslmaths "$mridir"/T2w_hires.nii.gz -div $wmMeanT2 -mul 57 "$mridir"/T2w_hires.norm.nii.gz -odt float
+  mri_convert "$mridir"/T2w_hires.norm.nii.gz "$mridir"/T2w_hires.norm.mgz
+fi
 
 ## Overview of what follows:
-## 1) First pass attempts to capture all grey matter (and plenty of vessels/dura) with permissive variable sigma.  
-## 2) Remove vessels and dura using T2w image.  
+## 1) First pass attempts to capture all grey matter (and plenty of vessels/dura) with permissive variable sigma.
+## 2) Remove vessels and dura using T2w image.
 ## 3) Normalize T1w image to reduce the effects of low spatial-frequency myelin content changes.
-## 4) Generate second pass pial surface using more precise gaussian tissue distributions 
-##    (grey matter peak is narrower because of less variability in myelin content).  
+## 4) Generate second pass pial surface using more precise gaussian tissue distributions
+##    (grey matter peak is narrower because of less variability in myelin content).
 ## 5) Remove veins and dura from pial surface using T2w image again.
 
 ## ------ First pass ------
@@ -75,13 +76,22 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$Subjec
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass1
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass1
 
-# Generate pial surfaces with T2 adjustment, still first pass.  
-# Same 4 files created as above, but have $outputSuffix1 ("postT2.pass1") appended through use of -output flag.
-# Use -T2 flag (rather than -T2dura), since -T2 is the flag used within recon-all script of FS 5.3 (but -T2 and -T2dura generate same results)
-#For mris_make_surface with correct arguments #Could go from 3 to 2 potentially...
-outputSuffix1=".postT2.pass1"
-mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID lh
-mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
+if [ ! "${T2wImage}" = "NONE" ] ; then
+  # ceho "---> Generating pial first pass surfaces with T2 adjustment."
+  echo "---> Generating pial first pass surfaces with T2 adjustment."
+  # Generate pial surfaces with T2 adjustment, still first pass.
+  # Same 4 files created as above, but have $outputSuffix1 ("postT2.pass1") appended through use of -output flag.
+  # Use -T2 flag (rather than -T2dura), since -T2 is the flag used within recon-all script of FS 5.3 (but -T2 and -T2dura generate same results)
+  # For mris_make_surface with correct arguments #Could go from 3 to 2 potentially...
+  outputSuffix1=".postT2.pass1"
+  mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID lh
+  mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
+else
+  #ceho "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
+  echo "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
+  outputSuffix1=""
+fi
+
 
 # Bring pial surfaces out of highres space into the 1 mm (FS conformed) space
 # [Note that $regII, although named 1mm2hires.dat, actually maps from the hires space into the FS conformed space].
@@ -93,31 +103,34 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$Subjec
 
 
 # Deal with FreeSurfer c_ras offset (might be able to simplify this with FS 6.0)
-MatrixX=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_r" | cut -d "=" -f 5 | sed s/" "/""/g`
-MatrixY=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_a" | cut -d "=" -f 5 | sed s/" "/""/g`
-MatrixZ=`mri_info $mridir/brain.finalsurfs.mgz | grep "c_s" | cut -d "=" -f 5 | sed s/" "/""/g`
-echo "1 0 0 ""$MatrixX" > $mridir/c_ras.mat
-echo "0 1 0 ""$MatrixY" >> $mridir/c_ras.mat
-echo "0 0 1 ""$MatrixZ" >> $mridir/c_ras.mat
-echo "0 0 0 1" >> $mridir/c_ras.mat
+# -- Corrected code using native mri_info --cras function to build the needed variables
+MatrixXYZ=`mri_info --cras ${mridir}/brain.finalsurfs.mgz`
+MatrixX=`echo ${MatrixXYZ} | awk '{print $1;}'`
+MatrixY=`echo ${MatrixXYZ} | awk '{print $2;}'`
+MatrixZ=`echo ${MatrixXYZ} | awk '{print $3;}'`
+echo "1 0 0 ${MatrixX}" >  ${mridir}/c_ras.mat
+echo "0 1 0 ${MatrixY}" >> ${mridir}/c_ras.mat
+echo "0 0 1 ${MatrixZ}" >> ${mridir}/c_ras.mat
+echo "0 0 0 1"          >> ${mridir}/c_ras.mat
+
 
 mris_convert "$surfdir"/lh.white "$surfdir"/lh.white.surf.gii
-${CARET7DIR}/wb_command -set-structure "$surfdir"/lh.white.surf.gii CORTEX_LEFT 
+${CARET7DIR}/wb_command -set-structure "$surfdir"/lh.white.surf.gii CORTEX_LEFT
 ${CARET7DIR}/wb_command -surface-apply-affine "$surfdir"/lh.white.surf.gii $mridir/c_ras.mat "$surfdir"/lh.white.surf.gii
 ${CARET7DIR}/wb_command -create-signed-distance-volume "$surfdir"/lh.white.surf.gii "$mridir"/T1w_hires.nii.gz "$surfdir"/lh.white.nii.gz
 
 mris_convert "$surfdir"/lh.pial "$surfdir"/lh.pial.surf.gii
-${CARET7DIR}/wb_command -set-structure "$surfdir"/lh.pial.surf.gii CORTEX_LEFT 
+${CARET7DIR}/wb_command -set-structure "$surfdir"/lh.pial.surf.gii CORTEX_LEFT
 ${CARET7DIR}/wb_command -surface-apply-affine "$surfdir"/lh.pial.surf.gii $mridir/c_ras.mat "$surfdir"/lh.pial.surf.gii
 ${CARET7DIR}/wb_command -create-signed-distance-volume "$surfdir"/lh.pial.surf.gii "$mridir"/T1w_hires.nii.gz "$surfdir"/lh.pial.nii.gz
 
 mris_convert "$surfdir"/rh.white "$surfdir"/rh.white.surf.gii
-${CARET7DIR}/wb_command -set-structure "$surfdir"/rh.white.surf.gii CORTEX_RIGHT 
+${CARET7DIR}/wb_command -set-structure "$surfdir"/rh.white.surf.gii CORTEX_RIGHT
 ${CARET7DIR}/wb_command -surface-apply-affine "$surfdir"/rh.white.surf.gii $mridir/c_ras.mat "$surfdir"/rh.white.surf.gii
 ${CARET7DIR}/wb_command -create-signed-distance-volume "$surfdir"/rh.white.surf.gii "$mridir"/T1w_hires.nii.gz "$surfdir"/rh.white.nii.gz
 
 mris_convert "$surfdir"/rh.pial "$surfdir"/rh.pial.surf.gii
-${CARET7DIR}/wb_command -set-structure "$surfdir"/rh.pial.surf.gii CORTEX_RIGHT 
+${CARET7DIR}/wb_command -set-structure "$surfdir"/rh.pial.surf.gii CORTEX_RIGHT
 ${CARET7DIR}/wb_command -surface-apply-affine "$surfdir"/rh.pial.surf.gii $mridir/c_ras.mat "$surfdir"/rh.pial.surf.gii
 ${CARET7DIR}/wb_command -create-signed-distance-volume "$surfdir"/rh.pial.surf.gii "$mridir"/T1w_hires.nii.gz "$surfdir"/rh.pial.nii.gz
 
@@ -168,12 +181,21 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.pial $SubjectDIR/$Subjec
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$SubjectID/surf/lh.thickness.preT2.pass2
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass2
 
-# Generate pial surfaces with T2 adjustment, second pass.  
-# Same 4 files created as above, but have $outputSuffix2 ("postT2.pass2") appended through use of -output flag
-#Could go from 3 to 2 potentially...
-outputSuffix2=".postT2.pass2"
-mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID lh
-mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID rh
+
+if [ ! "${T2wImage}" = "NONE" ] ; then
+  #ceho "---> Generating pial second pass surfaces with T2 adjustment."
+  echo "---> Generating pial second pass surfaces with T2 adjustment."
+  # Generate pial surfaces with T2 adjustment, second pass.
+  # Same 4 files created as above, but have $outputSuffix2 ("postT2.pass2") appended through use of -output flag
+  #Could go from 3 to 2 potentially...
+  outputSuffix2=".postT2.pass2"
+  mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID lh
+  mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID rh
+else
+  # ceho "---> No T2w image, skipping generation of pial second pass surfaces with T2 adjustment."
+  echo "---> No T2w image, skipping generation of pial second pass surfaces with T2 adjustment."
+  outputSuffix2=""
+fi
 
 # Create final Xh.pial surfaces in FS conformed space
 mri_surf2surf --s $SubjectID --sval-xyz pial${outputSuffix2} --reg $regII $mridir/orig.mgz --tval-xyz --tval pial --hemi lh
@@ -195,7 +217,7 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.curv.pial${outputSuffix2
 # but which no longer correspond to the final pial surfaces (after the 2nd pass)
 rm "$surfdir"/lh.pial.surf.gii "$surfdir"/lh.pial.nii.gz
 rm "$surfdir"/rh.pial.surf.gii "$surfdir"/rh.pial.nii.gz
-# Move all the "ribbon" related files generated following the 1st pass into a dedicated 
+# Move all the "ribbon" related files generated following the 1st pass into a dedicated
 # subdirectory since those also do not correspond to the final ribbon
 cd "$mridir"
 ribbon1Dir=ribbon${outputSuffix1}
