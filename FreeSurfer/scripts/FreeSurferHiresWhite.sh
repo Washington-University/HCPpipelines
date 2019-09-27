@@ -28,13 +28,13 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.area $SubjectDIR/$Subjec
 cp --preserve=timestamps $SubjectDIR/$SubjectID/label/rh.cortex.label $SubjectDIR/$SubjectID/label/rh.cortex.prehires.label
 
 # generate registration between conformed and hires based on headers
-# Note that the convention of tkregister2 is that the resulting $reg is the registration 
+# Note that the convention of tkregister2 is that the resulting $reg is the registration
 # matrix that maps from the "--targ" space into the "--mov" space.  So, while $reg is named
 # "hires21mm.dat", the matrix actually maps from the 1 mm (FS conformed) space into the hires space).
 tkregister2 --mov "$mridir"/T1w_hires.nii.gz --targ $mridir/orig.mgz --noedit --regheader --reg $reg
 
 # map white to hires coords
-# [Note that Xh.sphere.reg doesn't exist yet, which is the default surface registration 
+# [Note that Xh.sphere.reg doesn't exist yet, which is the default surface registration
 # assumed by mri_surf2surf, so use "--surfreg white"].
 mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg "$mridir"/T1w_hires.nii.gz --tval-xyz --tval white.hires --surfreg white --hemi lh
 mri_surf2surf --s $SubjectID --sval-xyz white --reg $reg "$mridir"/T1w_hires.nii.gz --tval-xyz --tval white.hires --surfreg white --hemi rh
@@ -89,17 +89,27 @@ echo "0 0 1 0" >> "$mridir"/transforms/eye.dat
 echo "0 0 0 1" >> "$mridir"/transforms/eye.dat
 echo "round" >> "$mridir"/transforms/eye.dat
 
-if [ ! -e "$mridir"/transforms/T2wtoT1w.mat ] ; then
-  bbregister --s "$SubjectID" --mov "$T2wImage" --surf white.deformed --init-reg "$mridir"/transforms/eye.dat --t2 --reg "$mridir"/transforms/T2wtoT1w.dat --o "$mridir"/T2w_hires.nii.gz
-  tkregister2 --noedit --reg "$mridir"/transforms/T2wtoT1w.dat --mov "$T2wImage" --targ "$mridir"/T1w_hires.nii.gz --fslregout "$mridir"/transforms/T2wtoT1w.mat
-  applywarp --interp=spline -i "$T2wImage" -r "$mridir"/T1w_hires.nii.gz --premat="$mridir"/transforms/T2wtoT1w.mat -o "$mridir"/T2w_hires.nii.gz
-  fslmaths "$mridir"/T2w_hires.nii.gz -abs -add 1 "$mridir"/T2w_hires.nii.gz
-  fslmaths "$mridir"/T1w_hires.nii.gz -mul "$mridir"/T2w_hires.nii.gz -sqrt "$mridir"/T1wMulT2w_hires.nii.gz
+if [ ! "${T2wImage}" = "NONE" ] || [ ! "${T2wImage}" = ""] ; then
+
+  #ceho "---> computing T2 to T1 transform"
+  echo "---> computing T2 to T1 transform"
+
+  if [ ! -e "$mridir"/transforms/T2wtoT1w.mat ] ; then
+    bbregister --s "$SubjectID" --mov "$T2wImage" --surf white.deformed --init-reg "$mridir"/transforms/eye.dat --t2 --reg "$mridir"/transforms/T2wtoT1w.dat --o "$mridir"/T2w_hires.nii.gz
+    tkregister2 --noedit --reg "$mridir"/transforms/T2wtoT1w.dat --mov "$T2wImage" --targ "$mridir"/T1w_hires.nii.gz --fslregout "$mridir"/transforms/T2wtoT1w.mat
+    applywarp --interp=spline -i "$T2wImage" -r "$mridir"/T1w_hires.nii.gz --premat="$mridir"/transforms/T2wtoT1w.mat -o "$mridir"/T2w_hires.nii.gz
+    fslmaths "$mridir"/T2w_hires.nii.gz -abs -add 1 "$mridir"/T2w_hires.nii.gz
+    fslmaths "$mridir"/T1w_hires.nii.gz -mul "$mridir"/T2w_hires.nii.gz -sqrt "$mridir"/T1wMulT2w_hires.nii.gz
+  else
+    echo "Warning Reruning FreeSurfer Pipeline"
+    echo "T2w to T1w Registration Will Not Be Done Again"
+    echo "Verify that "$T2wImage" has not been fine tuned and then remove "$mridir"/transforms/T2wtoT1w.mat"
+  fi
 else
-  echo "Warning Reruning FreeSurfer Pipeline"
-  echo "T2w to T1w Registration Will Not Be Done Again"
-  echo "Verify that "$T2wImage" has not been fine tuned and then remove "$mridir"/transforms/T2wtoT1w.mat"
+  #ceho "---> No T2 image present, skipping computation of T2w to T1w transform."
+  echo "---> No T2 image present, skipping computation of T2w to T1w transform."
 fi
+
 
 # Create version of white surfaces back in the 1mm (FS conformed) space
 tkregister2 --mov $mridir/orig.mgz --targ "$mridir"/T1w_hires.nii.gz --noedit --regheader --reg $regII
