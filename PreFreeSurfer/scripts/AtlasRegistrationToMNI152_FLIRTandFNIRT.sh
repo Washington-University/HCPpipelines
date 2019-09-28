@@ -51,7 +51,7 @@ Usage() {
   echo "                --ot2rest=<output bias corrected t2w to MNI>"
   echo "                --ot2restbrain=<output bias corrected, brain extracted t2w to MNI>"
   echo "                [--fnirtconfig=<FNIRT configuration file>]"
-  echo "                [--t2status=<RUN or SKIP>]"
+  echo "                [--t2avail=<YES or NO>]"
 }
 
 # function for parsing options
@@ -113,14 +113,14 @@ OutputT2wImage=`getopt1 "--ot2" $@`  # "${18}"
 OutputT2wImageRestore=`getopt1 "--ot2rest" $@`  # "${19}"
 OutputT2wImageRestoreBrain=`getopt1 "--ot2restbrain" $@`  # "${20}"
 FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${21}"
-t2status=`getopt1 "--t2status" $@`  # "${22}"
+t2avail=`getopt1 "--t2avail" $@`  # "${22}"
 
 # default parameters
 WD=`defaultopt $WD .`
 Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
 Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`
 FNIRTConfig=`defaultopt $FNIRTConfig ${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf`
-t2status=`defaultopt $t2status RUN`
+t2avail=`defaultopt $t2avail YES`
 
 
 T1wRestoreBasename=`remove_ext $T1wRestore`;
@@ -155,7 +155,7 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} 
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
 
 # T2w set of warped outputs (brain/whole-head + restored/orig)
-if [ "${t2status}" = "RUN" ] ; then
+if [ "${t2avail}" = "YES" ] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImage}
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestore}
   ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
