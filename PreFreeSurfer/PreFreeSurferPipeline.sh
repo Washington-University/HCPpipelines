@@ -785,8 +785,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
       log_Warn "${T1wImage}_acpc_dc_restore* images should be considered misnamed and ARE NOT bias field corrected!"
       log_Warn "${T1wFolder}/BiasField_acpc_dc IS NOT an estimate of the bias field!"
 
-      cp ${T1wFolder}/${T1wImage}_acpc_dc.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore.nii.gz
-      cp ${T1wFolder}/${T1wImage}_acpc_dc_brain.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain.nii.gz
+      ${FSLDIR}/bin/imcp ${T1wFolder}/${T1wImage}_acpc_dc ${T1wFolder}/${T1wImage}_acpc_dc_restore
+      ${FSLDIR}/bin/imcp ${T1wFolder}/${T1wImage}_acpc_dc_brain ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
       fslmaths ${T1wFolder}/${T1wImage}_acpc_dc -div ${T1wFolder}/${T1wImage}_acpc_dc ${T1wFolder}/BiasField_acpc_dc
 
     fi

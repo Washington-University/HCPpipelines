@@ -99,17 +99,17 @@ fi
 # Copy data out if output targets provided
 
 if [ ! -z ${oT1wImage} ] ; then 
-  cp ${WDir}/T1_biascorr.nii.gz ${oT1wImage}.nii.gz
+  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${oT1wImage}
   echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
 fi
 
 if [ ! -z ${oT1wBrain} ] ; then
-  cp ${WDir}/T1_biascorr_brain.nii.gz ${oT1wBrain}.nii.gz
+  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${oT1wBrain}
   echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
 fi 
 
 if [ ! -z ${oBias} ] ; then
-  cp ${WDir}/T1_fast_bias.nii.gz ${oBias}.nii.gz
+  ${FSLDIR}/bin/imcp ${WDir}/T1_fast_bias ${oBias}
   echo " --> Copied T1_fast_bias.nii.gz to ${oBias}.nii.gz"
 fi
 
