@@ -341,7 +341,7 @@ for TXw in $Modalities ; do
       TXwImageBrainBasename=$T2wImageBrainBasename
     fi
 
-    if [ "${TXwImage}" = "NONE" ] ; then
+    if [[ "${TXwImage}" == "NONE"* ]] ; then
       echo "      ... Skipping $TXw"
       continue
     else
@@ -400,7 +400,7 @@ done
 
 ### END LOOP over modalities ###
 
-if [ "${T2wImage}" = "NONE" ] ; then
+if [[ "${T2wImage}" == "NONE"* ]] ; then
   echo ""
   # ceho " ---> Skipping T2w to T1w registration"
   echo " ---> Skipping T2w to T1w registration"
