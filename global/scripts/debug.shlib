@@ -2,7 +2,7 @@
 #
 #   Function for printing debugging information on caught errors.
 #   It makes use of error trapping. To reset the trap, add
-#   end of the script using "trap - EXIT".
+#   end of the script using "trap - ERR".
 #
 # Input:
 #
@@ -10,36 +10,263 @@
 #   - command ran
 #   - exit status
 
-trap 'on_error $LINENO "$BASH_COMMAND" $?; exit' ERR
+trap 'debug_on_error $LINENO "$BASH_COMMAND" $?; exit' ERR
 
-on_error()
+if [[ "$(type -t log_Err)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
+
+# Description:
+#
+#   Function to turn on error trappimg
+
+debug_enable_trap()
 {
-    me=`basename $0`
-    line=($2)
-    com=${line[0]}
-    arg=${line[@]:1}
-    echo
-    echo -e "\033[33m##### ERROR: Execution stopped prematurely #####"
-    echo "---> script: $me"
-    echo "---> stopped at line: $1"
-    echo "---> command: $2"
-    echo "---> expanded: $com" `eval echo $arg`
-    echo "---> exit status: $3"
-    echo -e "##### -------------------------------- ##### \033[0m "
-    echo
-    exit $3
+    HCP_DEBUG_USETRAP=ON
+}
+
+# Description:
+#
+#   Function to turn on off error trappimg
+
+debug_disable_trap()
+{
+    HCP_DEBUG_USETRAP=OFF
+}
+
+# Description:
+#
+#   Function to turn on exit upon error trap
+
+debug_enable_exit()
+{
+    HCP_DEBUG_EXIT_ON_ERROR=ON
+}
+
+# Description:
+#
+#   Function to turn off exit upon error trap
+
+debug_diable_exit()
+{
+    HCP_DEBUG_EXIT_ON_ERROR=OFF
+}
+
+# Description:
+#
+#   Function to turn on output coloring
+
+debug_enable_color()
+{
+    HCP_DEBUG_COLOR=TRUE
+}
+
+# Description:
+#
+#   Function to turn off output coloring
+
+debug_disable_color()
+{
+    HCP_DEBUG_COLOR=FALSE
 }
 
 
 # Description:
 #
-#   Function for printing colored output to be used same as echo.
+#   Function for printing red debug output.
 #
 # Input:
 #
 #   — text to be printed
 
-ceho ()
+debug_red_echo()
+{   
+    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+        echo -e "\033[31m $* \033[0m"
+    else
+        echo "$*"
+    fi
+}
+
+
+# Description:
+#
+#   Function for printing green debug output.
+#
+# Input:
+#
+#   — text to be printed
+
+debug_green_echo()
+{   
+    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+        echo -e "\033[32m $* \033[0m"
+    else
+        echo "$*"
+    fi
+}
+
+
+# Description:
+#
+#   Function for printing blue debug output.
+#
+# Input:
+#
+#   — text to be printed
+
+debug_blue_echo()
+{   
+    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+        echo -e "\033[34m $* \033[0m"
+    else
+        echo "$*"
+    fi
+}
+
+
+debug_on_error()
+{    
+    if [ ! $HCP_DEBUG_USETRAP == 'OFF' ]; then        
+
+        local me=`basename "$0"`
+        local line
+        local startreport = ""
+        local endreport   = ""
+
+        # --- try to identify command if $command is not set
+
+        if [ -z "$command" ]; then
+            line=($(eval echo "$2"))
+            command=${line[0]}
+        fi
+
+        # --- output a regular HCP error log
+
+        log_Err "$command command failed with return code: $3"
+
+        # --- are we printing in color
+
+        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+           startreport="\033[33m"
+           endreport="\033[0m"
+        fi
+        
+        # --- output a detailed report if usetrap is not turned off    
+        echo                                                               
+        echo -e "${startreport}##### ERROR: Execution stopped prematurely #####"
+        echo "---> script: $me"                                            
+        echo "---> stopped at line: $1"                                    
+        echo "---> command: $command"                                      
+        echo "---> expanded: $(eval echo "$2")"                            
+        echo "---> exit status: $3"                                        
+        echo -e "##### -------------------------------- #####${endreport}" 
+        echo                                                               
+        
+        # --- check if ok to exit        
+        if [ ! $HCP_DEBUG_EXIT_ON_ERROR = 'OFF' ]; then
+            exit $3
+        fi
+    fi
+}
+
+
+
+# ============ VERBOSE functionality ==============
+
+
+# Description:
+#
+#   Function to turn on verbose reporting
+
+debug_enable_verbose()
 {
-    echo -e "\033[31m $1 \033[0m"
+    HCP_VERBOSE=TRUE
+}
+
+# Description:
+#
+#   Function to turn off output coloring
+
+debug_disable_verbose()
+{
+    HCP_VERBOSE=FALSE
+}
+
+
+# Description:
+#
+#   Function for printing red verbose output.
+#
+# Input:
+#
+#   — text to be printed
+
+verbose_red_echo()
+{   
+    if [ "$HCP_VERBOSE" == "TRUE" ] ; then
+        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+            echo -e "\033[31m $* \033[0m"
+        else
+            echo "$*"
+        fi
+    fi
+}
+
+
+# Description:
+#
+#   Function for printing green verbose output.
+#
+# Input:
+#
+#   — text to be printed
+
+verbose_green_echo()
+{   
+    if [ "$HCP_VERBOSE" == "TRUE" ] ; then
+        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+            echo -e "\033[32m $* \033[0m"
+        else
+            echo "$*"
+        fi
+    fi
+}
+
+
+# Description:
+#
+#   Function for printing blue verbose output.
+#
+# Input:
+#
+#   — text to be printed
+
+verbose_blue_echo()
+{   
+    if [ "$HCP_VERBOSE" == "TRUE" ] ; then
+        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+            echo -e "\033[34m $* \033[0m"
+        else
+            echo "$*"
+        fi
+    fi
+}
+
+
+# Description:
+#
+#   Function for printing verbose output.
+#
+# Input:
+#
+#   — text to be printed
+
+verbose_echo()
+{   
+    if [ "$HCP_VERBOSE" == "TRUE" ] ; then
+        echo "$*"
+    fi
 }
