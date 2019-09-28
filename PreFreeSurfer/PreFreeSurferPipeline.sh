@@ -215,59 +215,65 @@ PreFreeSurferPipeline.sh
 
 Usage: PreeFreeSurferPipeline.sh [options]
 
-  --path=<path>                     Path to study data folder (required)
-                                    Used with --subject input to create full path to root
-                                    directory for all outputs generated as path/subject
-  --subject=<subject>               Subject ID (required)
-                                    Used with --path input to create full path to root
-                                    directory for all outputs generated as path/subject
-  --t1=<T1w images>                 An @ symbol separated list of full paths to T1-weighted
-                                    (T1w) structural images for the subject (required)
-  --t2=<T2w images>                 An @ symbol separated list of full paths to T2-weighted
-                                    (T2w) structural images for the subject (required)
-  --t1template=<file path>          MNI T1w template
-  --t1templatebrain=<file path>     Brain extracted MNI T1wTemplate
-  --t1template2mm=<file path>       MNI 2mm T1wTemplate
-  --t2template=<file path>          MNI T2w template
-  --t2templatebrain=<file path>     Brain extracted MNI T2wTemplate
-  --t2template2mm=<file path>       MNI 2mm T2wTemplate
-  --templatemask=<file path>        Brain mask MNI Template
-  --template2mmmask=<file path>     Brain mask MNI 2mm Template
-  --brainsize=<size value>          Brain size estimate in mm, 150 for humans
-  --fnirtconfig=<file path>         FNIRT 2mm T1w Configuration file
-  --fmapmag=<file path>             Siemens Gradient Echo Fieldmap magnitude file
-  --fmapphase=<file path>           Siemens Gradient Echo Fieldmap phase file
-  --fmapgeneralelectric=<file path> General Electric Gradient Echo Field Map file
-                                    Two volumes in one file
-                                    1. field map in deg
-                                    2. magnitude
-  --echodiff=<delta TE>             Delta TE in ms for field map or "NONE" if
-                                    not used
-  --SEPhaseNeg={<file path>, NONE}  For spin echo field map, path to volume with
-                                    a negative phase encoding direction (LR in
-                                    HCP data), set to "NONE" if not using Spin
-                                    Echo Field Maps
-  --SEPhasePos={<file path>, NONE}  For spin echo field map, path to volume with
-                                    a positive phase encoding direction (RL in
-                                    HCP data), set to "NONE" if not using Spin
-                                    Echo Field Maps
-  --seechospacing=<seconds>         Effective Echo Spacing of Spin Echo Field Map,
-                                    (in seconds) or "NONE" if not used
-  --seunwarpdir={x,y,NONE}          Phase encoding direction (according to the *voxel* axes)
-             or={i,j,NONE}          of the spin echo field map. 
-                                    (Only applies when using a spin echo field map.)
-  --t1samplespacing=<seconds>       T1 image sample spacing, "NONE" if not used
-  --t2samplespacing=<seconds>       T2 image sample spacing, "NONE" if not used
-  --unwarpdir={x,y,z,x-,y-,z-}      Readout direction of the T1w and T2w images (according to the *voxel axes)
-           or={i,j,k,i-,j-,k-}      (Used with either a gradient echo field map 
-                                    or a spin echo field map)
-  --gdcoeffs=<file path>            File containing gradient distortion
-                                    coefficients, Set to "NONE" to turn off
-  --avgrdcmethod=<avgrdcmethod>     Averaging and readout distortion correction
-                                    method. See below for supported values.
-  --custombrain=(NONE|MASK|CUSTOM)  Whether to use a custom brain mask (MASK) the 
-                                    pre-existing custom brain images (CUSTOM)
-                                    or not (NONE)
+  --path=<path>                       Path to study data folder (required)
+                                      Used with --subject input to create full path to root
+                                      directory for all outputs generated as path/subject
+  --subject=<subject>                 Subject ID (required)
+                                      Used with --path input to create full path to root
+                                      directory for all outputs generated as path/subject
+  --t1=<T1w images>                   An @ symbol separated list of full paths to T1-weighted
+                                      (T1w) structural images for the subject (required)
+  --t2=<T2w images>                   An @ symbol separated list of full paths to T2-weighted
+                                      (T2w) structural images for the subject (required)
+  --t1template=<file path>            MNI T1w template
+  --t1templatebrain=<file path>       Brain extracted MNI T1wTemplate
+  --t1template2mm=<file path>         MNI 2mm T1wTemplate
+  --t2template=<file path>            MNI T2w template
+  --t2templatebrain=<file path>       Brain extracted MNI T2wTemplate
+  --t2template2mm=<file path>         MNI 2mm T2wTemplate
+  --templatemask=<file path>          Brain mask MNI Template
+  --template2mmmask=<file path>       Brain mask MNI 2mm Template
+  --brainsize=<size value>            Brain size estimate in mm, 150 for humans
+  --fnirtconfig=<file path>           FNIRT 2mm T1w Configuration file
+  --fmapmag=<file path>               Siemens Gradient Echo Fieldmap magnitude file
+  --fmapphase=<file path>             Siemens Gradient Echo Fieldmap phase file
+  --fmapgeneralelectric=<file path>   General Electric Gradient Echo Field Map file
+                                      Two volumes in one file
+                                      1. field map in deg
+                                      2. magnitude
+  --echodiff=<delta TE>               Delta TE in ms for field map or "NONE" if
+                                      not used
+  --SEPhaseNeg={<file path>, NONE}    For spin echo field map, path to volume with
+                                      a negative phase encoding direction (LR in
+                                      HCP data), set to "NONE" if not using Spin
+                                      Echo Field Maps
+  --SEPhasePos={<file path>, NONE}    For spin echo field map, path to volume with
+                                      a positive phase encoding direction (RL in
+                                      HCP data), set to "NONE" if not using Spin
+                                      Echo Field Maps
+  --seechospacing=<seconds>           Effective Echo Spacing of Spin Echo Field Map,
+                                      (in seconds) or "NONE" if not used
+  --seunwarpdir={x,y,NONE}            Phase encoding direction (according to the *voxel* axes)
+             or={i,j,NONE}            of the spin echo field map. 
+                                      (Only applies when using a spin echo field map.)
+  --t1samplespacing=<seconds>         T1 image sample spacing, "NONE" if not used
+  --t2samplespacing=<seconds>         T2 image sample spacing, "NONE" if not used
+  --unwarpdir={x,y,z,x-,y-,z-}        Readout direction of the T1w and T2w images (according to the *voxel axes)
+           or={i,j,k,i-,j-,k-}        (Used with either a gradient echo field map 
+                                      or a spin echo field map)
+  --gdcoeffs=<file path>              File containing gradient distortion
+                                      coefficients, Set to "NONE" to turn off
+  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction
+                                      method. See below for supported values.
+  [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
+                                      brain mask saved as "<path>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
+                                      If PreFreeSurfer has been run before and you have created custom T1w images to
+                                      be used when peforming Atlas registration, specify "CUSTOM".
+                                      When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
+                                      are skipped.
+                                      If the parameter is ommited or set to NONE (the default), 
+                                      standard image processing will take place.
+
 
     "${NONE_METHOD_OPT}"
      average any repeats with no readout distortion correction
@@ -289,11 +295,18 @@ Usage: PreeFreeSurferPipeline.sh [options]
        average any repeats and use Siemens specific Gradient Echo
        Field Maps for readout distortion correction
 
-  --topupconfig=<file path>      Configuration file for topup or "NONE" if not
-                 used
-  --bfsigma=<value>              Bias Field Smoothing Sigma (optional)
-  --t1biascorrect=(YES|NONE)     Bias Field Correction for T1w image only (YES or NONE if not, YES default; optional)
-  --mppversion=(hcp|legacy)      Which version of MPP to use. ("hcp" is default, "legacy"; optional).
+  --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
+  [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
+  [--t1biascorrect=(YES|NO|NONE)]     Whether to run Bias Field Correction even when only T1w image 
+                                      is present (YES default; optional). NOTE that if set to NO or NONE, 
+                                      T1w_*_restore* images should be considered misnamed and 
+                                      ARE NOT bias field corrected. 
+                                      Also BiasField_acpc_dc.nii.gz IS NOT an estimate of the bias field.
+  [--mpp-mode=(standard|extended)]    Which version of MPP to use. "standard" (the default) requires the data and follows
+                                      the steps described in Glasser et al. (2013). "extended" allows additional 
+                                      functionality and working with data that does not conform to standards described in
+                                      Glasser et al. (2013), e.g. missing high-resolution T2w image, missing field maps
+                                      for distortion correction, etc.
 EOF
   exit 1
 }
@@ -371,63 +384,61 @@ UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 #  Check MMP Version
 # ------------------------------------------------------------------------------
 
-Compliance="hcp"
-MPPVersion=`opts_GetOpt1 "--mppversion" $@`
-MPPVersion=`opts_DefaultOpt $MPPVersion "hcp"`
+Compliance="standard"
+MPPVersion=`opts_GetOpt1 "--mpp-mode" $@`
+MPPVersion=`opts_DefaultOpt $MPPVersion "standard"`
 
-if [ "${MPPVersion}" = "legacy" ] ; then
-  log_Msg "Legacy Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
+if [ "${MPPVersion}" = "extended" ] ; then
+  log_Msg "Extended Minimal Preprocessing Pipelines: PreFreeSurferPipeline"
   log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
   log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
   log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
   log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
-  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
-  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
+  log_Msg "        in support of this workflow. A manuscript with comprehensive evaluation for"
+  log_Msg "        the Extended MPP workflow is in active preparation and should be appropriately"
   log_Msg "        cited when published."
   log_Msg "        "
   log_Msg "Checking available data and processing options"
 else
-  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
+  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline"
   log_Msg "Checking data compliance with HCP MPP"
 fi
 
 # -- T2w image
 
 if [ "${T2wInputImages}" = "NONE" ] ; then
-  log_Msg "-> T2w image not present (legacy)"
+  log_Msg "-> T2w image not present (extended)"
   SkipT2wImage="YES"
-  Compliance="legacy"
+  Compliance="extended"
 else
   SkipT2wImage="NO"
-  log_Msg "-> T2w image present (HCP)"
+  log_Msg "-> T2w image present (standard)"
 fi
 
 # -- Use of custom brain
 
 if [ ! "${CustomBrain}" = "NONE" ] ; then
-  log_Msg "-> Custom brain used: ${CustomBrain} (legacy)"
-  Compliance="legacy"
+  log_Msg "-> Custom brain used: ${CustomBrain} (extended)"
+  Compliance="extended"
 else
-  log_Msg "-> No custom brain used (HCP)"
+  log_Msg "-> No custom brain used (standard)"
 fi
 
 # -- Final evaluation
 
-if [ "${MPPVersion}" = "legacy" ] ; then
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "Processing will continue using Legacy MPP."
+if [ "${MPPVersion}" = "extended" ] ; then
+  if [ "${Compliance}" = "extended" ] ; then
+    log_Msg "Processing will continue using Extended MPP mode."
   else
-    log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
-    log_Msg "Processing will continue using Legacy MPP."
+    log_Warn "All conditions for the use of Standard HCP MPP are met. Consider using Standard HCP MPP mode instead of Extended MPP mode."
+    log_Msg "Processing will continue using Exteneded MPP mode."
   fi
 else
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
-    log_Msg "Aborting execution."
-    exit 1
+  if [ "${Compliance}" = "extended" ] ; then
+    log_Err_Abort "User requested Standard HCP MPP mode. However, compliance check for use of Standard HCP MPP mode failed."
   else
-    log_Msg "Conditions for the use of HCP MPP are met."
-    log_Msg "Processing will continue using HCP MPP."
+    log_Msg "Conditions for the use of Standard HCP MPP mode are met."
+    log_Msg "Processing will continue using Standard HCP MPP."
   fi
 fi
 
@@ -538,7 +549,15 @@ if [ "$CustomBrain" = "NONE" ] ; then
   Modalities="T1w T2w"
 
   for TXw in ${Modalities} ; do
-      log_Msg "Processing Modality: " $TXw
+
+      # skip modality if no image
+
+      if [ "${TXwInputImages}" = "NONE" ] ; then
+        log_Msg "Skipping Modality: " $TXw " - image not specified."
+        continue
+      else
+        log_Msg "Processing Modality: " $TXw
+      fi
 
       # set up appropriate input variables
       if [ $TXw = T1w ] ; then
@@ -555,12 +574,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
       OutputTXwImageSTRING=""
-
-      # skip modality if no image
-
-      if [ "${TXwInputImages}" = "NONE" ] ; then
-        continue
-      fi
 
       # Perform Gradient Nonlinearity Correction
 
@@ -646,12 +659,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
 
-  if [ "${T2wInputImages}" = "NONE" ] ; then
-    T2wImagePath="NONE"
-  else
-    T2wImagePath="${T2wFolder}/${T2wImage}_acpc"
-  fi
-
   case $AvgrdcSTRING in
 
     ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT})
@@ -672,7 +679,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --workingdir=${wdir} \
         --t1=${T1wFolder}/${T1wImage}_acpc \
         --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
-        --t2=${T2wImagePath} \
+        --t2=${T2wFolder}/${T2wImage}_acpc \
         --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
         --fmapmag=${MagnitudeInputName} \
         --fmapphase=${PhaseInputName} \
@@ -715,7 +722,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         ${wdir} \
         ${T1wFolder}/${T1wImage}_acpc \
         ${T1wFolder}/${T1wImage}_acpc_brain \
-        ${T2wImagePath} \
+        ${T2wFolder}/${T2wImage}_acpc \
         ${T2wFolder}/${T2wImage}_acpc_brain \
         ${T1wFolder}/${T1wImage}_acpc_dc \
         ${T1wFolder}/${T1wImage}_acpc_dc_brain \
@@ -773,7 +780,10 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
     else
 
-      log_Msg "Skipping Bias Field Correction of T1w image"
+      log_Warn "Skipping Bias Field Correction of T1w image"
+      log_Warn "As Bias Field Correction is skipped note that:"
+      log_Warn "${T1wImage}_acpc_dc_restore* images should be considered misnamed and ARE NOT bias field corrected!"
+      log_Warn "${T1wFolder}/BiasField_acpc_dc IS NOT an estimate of the bias field!"
 
       cp ${T1wFolder}/${T1wImage}_acpc_dc.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore.nii.gz
       cp ${T1wFolder}/${T1wImage}_acpc_dc_brain.nii.gz ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain.nii.gz
@@ -862,9 +872,9 @@ fi  # --- skipped to here if we are using custom brain
 # ------------------------------------------------------------------------------
 
 if [ ! "${T2wInputImages}" = "NONE" ] ; then
-  t2status="RUN"
+  t2avail="YES"
 else
-  t2status="SKIP"
+  t2avail="NO"
 fi
 
 log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
@@ -891,7 +901,7 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
   --fnirtconfig=${FNIRTConfig} \
-  --t2status=${t2status}
+  --t2avail=${t2avail}
 
 log_Msg "Completed"
 
