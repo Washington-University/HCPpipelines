@@ -68,7 +68,7 @@ oT1wImage=`getopt1 "--oT1im" $@`
 oT1wBrain=`getopt1 "--oT1brain" $@`  
 BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`
 
-# default parameters
+# A default value of 20 for bias smoothing sigma is the recommended default by FSL 
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 20` 
 WDir="$WD.anat"
 
