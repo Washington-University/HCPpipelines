@@ -1,10 +1,21 @@
 #!/bin/bash
 set -e
-source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
+# source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), caret7 (a.k.a. Connectome Workbench) (version 1.0)
-#  environment: FSLDIR  CARET7DIR
+#  installed versions of: FSL (version 5.0.6)
+#  environment: FSLDIR
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${FSLDIR}" ]; then
+  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+  exit 1
+else
+  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -80,13 +91,27 @@ ${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --nor
 
 # Use existing brain mask if one is provided
 
-[ ! -z ${T1wBrain} ] && ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain  && echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
+if [ ! -z ${T1wBrain} ] ; then
+  ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain  
+  echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
+fi
 
 # Copy data out if output targets provided
 
-[ ! -z ${oT1wImage} ] &&  cp ${WDir}/T1_biascorr.nii.gz       ${oT1wImage}.nii.gz  && echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
-[ ! -z ${oT1wBrain} ] &&  cp ${WDir}/T1_biascorr_brain.nii.gz ${oT1wBrain}.nii.gz  && echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
-[ ! -z ${oBias} ]     &&  cp ${WDir}/T1_fast_bias.nii.gz      ${oBias}.nii.gz      && echo " --> Copied T1_fast_bias.nii.gz to ${oBias}.nii.gz"
+if [ ! -z ${oT1wImage} ] ; then 
+  cp ${WDir}/T1_biascorr.nii.gz ${oT1wImage}.nii.gz
+  echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
+fi
+
+if [ ! -z ${oT1wBrain} ] ; then
+  cp ${WDir}/T1_biascorr_brain.nii.gz ${oT1wBrain}.nii.gz
+  echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
+fi 
+
+if [ ! -z ${oBias} ] ; then
+  cp ${WDir}/T1_fast_bias.nii.gz ${oBias}.nii.gz
+  echo " --> Copied T1_fast_bias.nii.gz to ${oBias}.nii.gz"
+fi
 
 echo " "
 echo " END: T1w BiasFieldCorrection"
