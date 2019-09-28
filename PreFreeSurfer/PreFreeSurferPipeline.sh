@@ -846,7 +846,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
 elif [ "$CustomBrain" = "MASK" ] ; then
 
   log_Msg "Skipping all the steps to Atlas registration, applying custom mask."
-  ceho "---> Applying custom mask"
+  # ceho "---> Applying custom mask"
+  echo "---> Applying custom mask"
 
   ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
 
@@ -859,7 +860,8 @@ elif [ "$CustomBrain" = "MASK" ] ; then
 else
 
   log_Msg "Skipping all the steps to Atlas registration, using existing images."
-  ceho "---> Using existing images"
+  # ceho "---> Using existing images"
+  echo "---> Using existing images"
 
 fi  # --- skipped to here if we are using custom brain
 
