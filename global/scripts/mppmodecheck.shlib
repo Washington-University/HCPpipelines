@@ -27,19 +27,19 @@ check_mpp_PreFreeSurfer()
     # -- T2w image
 
     if [ "${T2wInputImages}" = "NONE" ]; then
-      log_Msg "-> T2w image not present (extended)"
-      Compliance="extended"
+      log_Msg "-> T2w image not present (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> T2w image present (standard)"
+      log_Msg "-> T2w image present (HCPStyleData)"
     fi
 
     # -- Use of custom brain
 
     if [ ! "${CustomBrain}" = "NONE" ]; then
-      log_Msg "-> Custom brain used: ${CustomBrain} (extended)"
-      Compliance="extended"
+      log_Msg "-> Custom brain used: ${CustomBrain} (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> No custom brain used (standard)"
+      log_Msg "-> No custom brain used (HCPStyleData)"
     fi
 }
 
@@ -49,12 +49,12 @@ check_mpp_FreeSurfer()
 
     if [ -z "${p_t2w_image}" ]; then
         if [ -z "${p_existing_subject}" ]; then
-            log_Msg "-> T2w Image (--t2w-image= or --t2=) not present (extended)"
-            Compliance="extended"
+            log_Msg "-> T2w Image (--t2w-image= or --t2=) not present (LegacyStyleData)"
+            Compliance="LegacyStyleData"
         fi
         p_t2w_image="NONE"
     else
-        log_Msg "T2w Image present: ${p_t2w_image} (standard)"
+        log_Msg "T2w Image present: ${p_t2w_image} (HCPStyleData)"
     fi
 }
 
@@ -64,11 +64,11 @@ check_mpp_PostFreeSurfer()
     # -- T2w image
 
     if [ ! -e ${T2wFolder}/T2w.nii.gz ]; then
-        log_Msg "-> T2w image not present (extended)"
-        Compliance="extended"
+        log_Msg "-> T2w image not present (LegacyStyleData)"
+        Compliance="LegacyStyleData"
         T2wRestoreImage="NONE"
     else
-      log_Msg "-> T2w image present (standard)"
+      log_Msg "-> T2w image present (HCPStyleData)"
     fi
 }
 
@@ -78,75 +78,75 @@ check_mpp_fMRIVolume()
     # -- Slice timing correction
 
     if [ ! "${DoSliceTimeCorrection}" == 'NONE' ]; then
-      log_Msg "-> Set to run slice timing correction (extended)"
-      Compliance="extended"
+      log_Msg "-> Set to run slice timing correction (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> Not running slice timing correction (standard)"
+      log_Msg "-> Not running slice timing correction (HCPStyleData)"
     fi
 
     # -- Use of BOLD scout image
 
     if [ "${fMRIScout}" == 'NONE' ]; then
-      log_Msg "-> Set to use average motion corrected image as scout image (extended)"
-      Compliance="extended"
+      log_Msg "-> Set to use average motion corrected image as scout image (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> fMRIScout image is provided (standard)"
+      log_Msg "-> fMRIScout image is provided (HCPStyleData)"
     fi
 
     # -- Use of BOLD reference
 
     if [ ! "${fMRIReference}" == 'NONE' ]; then
-      log_Msg "-> Set to use ${fMRIReference} as BOLD reference (extended)"
-      Compliance="extended"
+      log_Msg "-> Set to use ${fMRIReference} as BOLD reference (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> Independent processing of BOLD image (standard)"
+      log_Msg "-> Independent processing of BOLD image (HCPStyleData)"
     fi
 
     # -- Use of distortion correction methods
 
     if [ "${DistortionCorrection}" == 'NONE' ]; then
-      log_Msg "-> Set not to use any distortion correction method (extended)"
-      Compliance="extended"
+      log_Msg "-> Set not to use any distortion correction method (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> Distortion correction method specified (${DistortionCorrection}; standard)"
+      log_Msg "-> Distortion correction method specified (${DistortionCorrection}; HCPStyleData)"
     fi
 
     # -- Use of BOLD mask
 
     if [ ! "${Mask}" == 'T1' ]; then
-      log_Msg "-> Set to use mask: ${Mask} (extended)"
-      Compliance="extended"
+      log_Msg "-> Set to use mask: ${Mask} (LegacyStyleData)"
+      Compliance="LegacyStyleData"
     else
-      log_Msg "-> Set to use T1w image based mask (standard)"
+      log_Msg "-> Set to use T1w image based mask (HCPStyleData)"
     fi
 
     # -- Preregister code
 
     if [ ! "${Preregister}" == 'epi_reg' ]; then
-      Compliance="extended"
-      log_Msg "-> Set to use ${Preregister} for bold image pre-registration (extended)"
+      Compliance="LegacyStyleData"
+      log_Msg "-> Set to use ${Preregister} for bold image pre-registration (LegacyStyleData)"
     else
-      log_Msg "-> Set to use ${Preregister} for bold image pre-registration (standard)"
+      log_Msg "-> Set to use ${Preregister} for bold image pre-registration (HCPStyleData)"
     fi
 
     # -- BOLD registration to reference image
 
     if [ ! "${ReferenceReg}" == 'linear' ]; then
-      Compliance="extended"
-      log_Msg "-> Set to use ${ReferenceReg} registration to reference image (extended)"
+      Compliance="LegacyStyleData"
+      log_Msg "-> Set to use ${ReferenceReg} registration to reference image (LegacyStyleData)"
     else
-      log_Msg "-> Set to use ${ReferenceReg} registration to reference image (standard)"
+      log_Msg "-> Set to use ${ReferenceReg} registration to reference image (HCPStyleData)"
     fi 
 }
 
 check_mpp_fMRISurface()
 {
-    log_Msg "-> No extended functionality"
+    log_Msg "-> No LegacyStyleData functionality"
 }
 
 check_mpp_Diffusion()
 {
-    log_Msg "-> No extended functionality"   
+    log_Msg "-> No LegacyStyleData functionality"   
 }
 
 
@@ -163,7 +163,7 @@ check_mpp_compliance()
 
     local pipeline=$1
     local hcpversion=`cat "$HCPPIPEDIR"/version.txt`
-    local Compliance="standard"
+    local Compliance="HCPStyleData"
     local ispipeline="false"
 
     # --- check and abort if pipeline name is not known
@@ -176,8 +176,8 @@ check_mpp_compliance()
 
     # --- Initial information
 
-    if [ "${MPPVersion}" = "extended" ]; then
-      log_Msg "Extended Minimal Preprocessing Pipelines: ${pipeline} ${version}"
+    if [ "${MPPMode}" = "LegacyStyleData" ]; then
+      log_Msg "LegacyStyleData Minimal Preprocessing Pipelines: ${pipeline} ${version}"
       log_Msg "NOTICE: You are using MPP mode that enables processing of images that do not"
       log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
       log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
@@ -188,27 +188,27 @@ check_mpp_compliance()
       log_Msg "        "
       log_Msg "Checking available data and processing options"
     else
-      log_Msg "Standard HCP Minimal Preprocessing Pipelines: ${pipeline} ${version}"
-      log_Msg "Checking data compliance with Standard HCP MPP"
+      log_Msg "HCPStyleData HCP Minimal Preprocessing Pipelines: ${pipeline} ${version}"
+      log_Msg "Checking data compliance with HCPStyleData HCP MPP mode"
     fi
 
     check_mpp_${pipeline}
 
     # -- Final evaluation
 
-    if [ "${MPPVersion}" = "extended" ]; then
-      if [ "${Compliance}" = "extended" ]; then
+    if [ "${MPPMode}" = "LegacyStyleData" ]; then
+      if [ "${Compliance}" = "LegacyStyleData" ]; then
         log_Msg "Processing will continue using Extended MPP mode."
       else
-        log_Warn "All conditions for the use of Standard HCP MPP are met. Consider using Standard HCP MPP mode instead of Extended MPP mode."
-        log_Msg "Processing will continue using Extended MPP mode."
+        log_Warn "All conditions for the use of HCPStyleData HCP MPP are met. Consider using HCPStyleData HCP MPP mode instead of LegacyStyleData MPP mode."
+        log_Msg "Processing will continue using LegacyStyleData MPP mode."
       fi
     else
-      if [ "${Compliance}" = "extended" ]; then
-        log_Err_Abort "User requested Standard HCP MPP mode. However, compliance check for use of Standard HCP MPP mode failed."
+      if [ "${Compliance}" = "LegacyStyleData" ]; then
+        log_Err_Abort "User requested HCPStyleData HCP MPP mode. However, compliance check for use of HCPStyleData HCP MPP mode failed."
       else
-        log_Msg "Conditions for the use of Standard HCP MPP mode are met."
-        log_Msg "Processing will continue using Standard HCP MPP."
+        log_Msg "Conditions for the use of HCPStyleData HCP MPP mode are met."
+        log_Msg "Processing will continue using HCPStyleData HCP MPP mode."
       fi
     fi
 
