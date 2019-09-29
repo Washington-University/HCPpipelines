@@ -176,35 +176,35 @@ Modalities="T1w T2w"
 
 log_Msg "START"
 
-echo "  "
-ceho " ===> Running T2WToT1wDistortionCorrectAndReg"
-echo "  "
-echo "  Parameters"
-echo "                           WD          (workingdir): $WD"
-echo "                     T1wImage                  (t1): $T1wImage"
-echo "                T1wImageBrain             (t1brain): $T1wImageBrain"
-echo "                     T2wImage                  (t2): $T2wImage"
-echo "                T2wImageBrain             (t2brain): $T2wImageBrain"
-echo "           MagnitudeInputName             (fmapmag): $MagnitudeInputName"
-echo "               PhaseInputName           (fmapphase): $PhaseInputName"
-echo "                GEB0InputName (fmapgeneralelectric): $GEB0InputName"
-echo "                           TE            (echodiff): $TE"
-echo "  SpinEchoPhaseEncodeNegative          (SEPhaseNeg): $SpinEchoPhaseEncodeNegative"
-echo "  SpinEchoPhaseEncodePositive          (SEPhasePos): $SpinEchoPhaseEncodePositive"
-echo "               SEEchoSpacing        (seechospacing): $SEEchoSpacing"
-echo "                  SEUnwarpDir         (seunwarpdir): $SEUnwarpDir"
-echo "             T1wSampleSpacing       (t1sampspacing): $T1wSampleSpacing"
-echo "             T2wSampleSpacing       (t2sampspacing): $T2wSampleSpacing"
-echo "                    UnwarpDir           (unwarpdir): $UnwarpDir"
-echo "               OutputT1wImage                 (ot1): $OutputT1wImage"
-echo "          OutputT1wImageBrain            (ot1brain): $OutputT1wImageBrain"
-echo "           OutputT1wTransform             (ot1warp): $OutputT1wTransform"
-echo "               OutputT2wImage                 (ot2): $OutputT2wImage"
-echo "           OutputT2wTransform             (ot2warp): $OutputT2wTransform"
-echo "         DistortionCorrection              (method): $DistortionCorrection"
-echo "                  TopupConfig         (topupconfig): $TopupConfig"
-echo "     GradientDistortionCoeffs            (gdcoeffs): $GradientDistortionCoeffs"
-echo " "
+verbose_echo "  "
+verbose_red_echo " ===> Running T2WToT1wDistortionCorrectAndReg"
+verbose_echo "  "
+verbose_echo "  Parameters"
+verbose_echo "                           WD          (workingdir): $WD"
+verbose_echo "                     T1wImage                  (t1): $T1wImage"
+verbose_echo "                T1wImageBrain             (t1brain): $T1wImageBrain"
+verbose_echo "                     T2wImage                  (t2): $T2wImage"
+verbose_echo "                T2wImageBrain             (t2brain): $T2wImageBrain"
+verbose_echo "           MagnitudeInputName             (fmapmag): $MagnitudeInputName"
+verbose_echo "               PhaseInputName           (fmapphase): $PhaseInputName"
+verbose_echo "                GEB0InputName (fmapgeneralelectric): $GEB0InputName"
+verbose_echo "                           TE            (echodiff): $TE"
+verbose_echo "  SpinEchoPhaseEncodeNegative          (SEPhaseNeg): $SpinEchoPhaseEncodeNegative"
+verbose_echo "  SpinEchoPhaseEncodePositive          (SEPhasePos): $SpinEchoPhaseEncodePositive"
+verbose_echo "               SEEchoSpacing        (seechospacing): $SEEchoSpacing"
+verbose_echo "                  SEUnwarpDir         (seunwarpdir): $SEUnwarpDir"
+verbose_echo "             T1wSampleSpacing       (t1sampspacing): $T1wSampleSpacing"
+verbose_echo "             T2wSampleSpacing       (t2sampspacing): $T2wSampleSpacing"
+verbose_echo "                    UnwarpDir           (unwarpdir): $UnwarpDir"
+verbose_echo "               OutputT1wImage                 (ot1): $OutputT1wImage"
+verbose_echo "          OutputT1wImageBrain            (ot1brain): $OutputT1wImageBrain"
+verbose_echo "           OutputT1wTransform             (ot1warp): $OutputT1wTransform"
+verbose_echo "               OutputT2wImage                 (ot2): $OutputT2wImage"
+verbose_echo "           OutputT2wTransform             (ot2warp): $OutputT2wTransform"
+verbose_echo "         DistortionCorrection              (method): $DistortionCorrection"
+verbose_echo "                  TopupConfig         (topupconfig): $TopupConfig"
+verbose_echo "     GradientDistortionCoeffs            (gdcoeffs): $GradientDistortionCoeffs"
+verbose_echo " "
 
 
 mkdir -p $WD
@@ -320,9 +320,8 @@ if [ "${UnwarpDir}" = "-z" ] ; then
 fi
 
 ### LOOP over available modalities ###
-echo ""
-#ceho " ---> Looping over modalities"
-echo " ---> Looping over modalities"
+verbose_echo ""
+verbose_red_echo " ---> Looping over modalities"
 
 for TXw in $Modalities ; do
 
@@ -342,15 +341,15 @@ for TXw in $Modalities ; do
     fi
 
     if [[ "${TXwImage}" == "NONE"* ]] ; then
-      echo "      ... Skipping $TXw"
+      verbose_echo "      ... Skipping $TXw"
       continue
     else
-      echo "      ... $TXw"
+      verbose_echo "      ... $TXw"
     fi
 
     # Forward warp the fieldmap magnitude and register to TXw image (transform phase image too)
 
-    echo "      ... Forward warping fieldmap"
+    verbose_echo "      ... Forward warping fieldmap"
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap_ShiftMap${TXw}.nii.gz
     ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/Magnitude --shiftmap=${WD}/FieldMap_ShiftMap${TXw}.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap_Warp${TXw}.nii.gz
 
@@ -376,20 +375,20 @@ for TXw in $Modalities ; do
 
     # Convert to shift map then to warp field and unwarp the TXw
 
-    echo "      ... Converting to shift map, to warp field and unwarping $TWx"
+    verbose_echo "      ... Converting to shift map, to warp field and unwarping $TWx"
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${TXwImageBasename} --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz
     ${FSLDIR}/bin/convertwarp --relout --rel --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz
     ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${TXwImage} -r ${TXwImage} -w ${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz -o ${WD}/${TXwImageBasename}
 
     # Make a brain image (transform to make a mask, then apply it)
 
-    echo "      ... Making a brain image"
+    verbose_echo "      ... Making a brain image"
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${TXwImageBrain} -r ${TXwImageBrain} -w ${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz -o ${WD}/${TXwImageBrainBasename}
     ${FSLDIR}/bin/fslmaths ${WD}/${TXwImageBasename} -mas ${WD}/${TXwImageBrainBasename} ${WD}/${TXwImageBrainBasename}
 
     # Copy files to specified destinations
 
-    echo "      ... Copying files"
+    verbose_echo "      ... Copying files"
     if [ $TXw = T1w ] ; then
        ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBasename}_Warp ${OutputT1wTransform}
        ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasename} ${OutputT1wImage}
@@ -401,42 +400,41 @@ done
 ### END LOOP over modalities ###
 
 if [[ "${T2wImage}" == "NONE"* ]] ; then
-  echo ""
-  # ceho " ---> Skipping T2w to T1w registration"
-  echo " ---> Skipping T2w to T1w registration"
+  verbose_echo ""
+  verbose_red_echo " ---> Skipping T2w to T1w registration"
 
 else
         
-  echo ""
-  # ceho " ---> Running T2w to T1w registration"
-  echo " ---> Running T2w to T1w registration"
+  verbose_echo ""
+  verbose_red_echo " ---> Running T2w to T1w registration"
 
   ### Now do T2w to T1w registration
   mkdir -p ${WD}/T2w2T1w
 
   # Main registration: between corrected T2w and corrected T1w
-  echo "      ... Corrected T2w to T1w"
+  verbose_echo "      ... Corrected T2w to T1w"
   ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
 
   # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
-  echo "      ... Making a warpfield from original"
+  verbose_echo "      ... Making a warpfield from original"
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
-  echo "      ... Applying warpfield"
+  verbose_echo "      ... Applying warpfield"
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
 
   # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
-  echo "      ... Adding 1"
   ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
 
   # QA image
-  echo "      ... Creating QA image"
+  verbose_echo "      ... Creating QA image"
   ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
 
   # Copy files to specified destinations
-  echo "      ... Copying files"
+  verbose_echo "      ... Copying files"
   ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
   ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
 fi
+
+verbose_green_echo "---> Finished T2w To T1w Distortion Correction and Registration"
 
 log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
@@ -453,4 +451,5 @@ echo "# Compare pre- and post-distortion correction for T2w" >> $WD/qa.txt
 echo "fslview ${T2wImage} ${WD}/${T2wImageBasename}" >> $WD/qa.txt
 
 ##############################################################################################
+
 

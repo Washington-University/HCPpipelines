@@ -79,6 +79,10 @@ if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
 
 log_Msg "START"
 
+verbose_echo " "
+verbose_red_echo " ===> Running AC-PC Alignment"
+verbose_echo " "
+
 mkdir -p $WD
 
 # Record the input options in a log file
@@ -90,22 +94,31 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Crop the FOV
+verbose_echo " --> Croping the FOV"
 ${FSLDIR}/bin/robustfov -i "$Input" -m "$WD"/roi2full.mat -r "$WD"/robustroi.nii.gz $BrainSizeOpt
 
 # Invert the matrix (to get full FOV to ROI)
+verbose_echo " --> Inverting the matrix"
 ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2roi.mat -inverse "$WD"/roi2full.mat
 
 # Register cropped image to MNI152 (12 DOF)
+verbose_echo " --> Registering cropped image to MNI152 (12 DOF)"
 ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$Reference" -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 
 # Concatenate matrices to get full FOV to MNI
+verbose_echo " --> Concatenating matrices to get full FOV to MNI"
 ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2std.mat -concat "$WD"/roi2std.mat "$WD"/full2roi.mat
 
 # Get a 6 DOF approximation which does the ACPC alignment (AC, ACPC line, and hemispheric plane)
+verbose_echo " --> Geting a 6 DOF approximation"
 ${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 
 # Create a resampled image (ACPC aligned) using spline interpolation
+verbose_echo " --> Creating a resampled image"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
+
+verbose_green_echo "---> Finished AC-PC Alignment"
+verbose_echo " "
 
 log_Msg "END"
 echo " END: `date`" >> $WD/log.txt
