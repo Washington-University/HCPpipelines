@@ -268,8 +268,12 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       method. See below for supported values.
   [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
                                       brain mask saved as "<path>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
-                                      If PreFreeSurfer has been run before and you have created custom T1w images to
-                                      be used when peforming Atlas registration, specify "CUSTOM".
+                                      If PreFreeSurfer has been run before and you have created custom structural images, e.g.: 
+                                      - "<path>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
+                                      - "<path>/T1w/T1w_acpc_dc_restore.nii.gz"
+                                      - "<path>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
+                                      - "<path>/T1w/T2w_acpc_dc_restore.nii.gz"
+                                      to be used when peforming Atlas registration, specify "CUSTOM".
                                       When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
                                       are skipped.
                                       If the parameter is ommited or set to NONE (the default), 
