@@ -646,8 +646,6 @@ main()
 	# accomplished using --extra-reconall-arg=-noT2pial
 	if [ "${T2wImage}" != "NONE" ]; then
 		recon_all_cmd+=" -T2pial"
-	else
-		recon_all_cmd+=" -noT2pial"
 	fi
 
 	recon_all_cmd+=" -openmp ${num_cores}"
