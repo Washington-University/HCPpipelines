@@ -19,6 +19,7 @@ set -e
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/opts.shlib  # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Checking validity of MPP mode selection
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -66,42 +67,9 @@ RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything a
 #  Check MMP Version
 # ------------------------------------------------------------------------------
 
-Compliance="hcp"
-MPPVersion=`opts_GetOpt1 "--mppversion" $@`
-MPPVersion=`opts_DefaultOpt $MPPVersion "hcp"`
-
-if [ "${MPPVersion}" = "legacy" ] ; then
-  log_Msg "Legacy Minimal Preprocessing Pipelines: fMRISurface v.XX"
-  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
-  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
-  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
-  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
-  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
-  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
-  log_Msg "        cited when published."
-else
-  log_Msg "HCP Minimal Preprocessing Pipelines: fMRISurface v.XX"
-fi
-
-# -- Final evaluation
-
-if [ "${MPPVersion}" = "legacy" ] ; then
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "Processing will continue using Legacy MPP."
-  else
-    log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
-    log_Msg "Processing will continue using Legacy MPP."
-  fi
-else
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
-    log_Msg "Aborting execution."
-    exit 1
-  else
-    log_Msg "Conditions for the use of HCP MPP are met."
-    log_Msg "Processing will continue using HCP MPP."
-  fi
-fi
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+check_mpp_compliance "fMRISurface"
 
 # --- END MPP Version Check
 
