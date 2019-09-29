@@ -68,7 +68,7 @@ check_mpp_PostFreeSurfer()
         Compliance="extended"
         T2wRestoreImage="NONE"
     else
-      log_Msg "-> T2w image present"
+      log_Msg "-> T2w image present (standard)"
     fi
 }
 
