@@ -19,6 +19,7 @@ set -e
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Functions to check the validity of MPP mode specification
 
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
@@ -74,6 +75,16 @@ else
 	seed_cmd_appendix="-norandomness -rng-seed ${recon_all_seed}"
 fi
 log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
+
+
+# ------------------------------------------------------------------------------
+#  Check MMP Mode
+# ------------------------------------------------------------------------------
+
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+
+check_mpp_compliance "FreeSurfer53HCP"
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables
