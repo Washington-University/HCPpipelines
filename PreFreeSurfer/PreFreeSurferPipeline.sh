@@ -302,11 +302,12 @@ Usage: PreeFreeSurferPipeline.sh [options]
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
-  [--mpp-mode=(HCPStyleData|          Which version of MPP to use. "HCPStyleData" (the default) requires the data and follows
-               LegacyStyleData)]      the steps described in Glasser et al. (2013). "LegacyStyleData" allows additional 
-                                      functionality and working with data that does not conform to standards described in
-                                      Glasser et al. (2013), e.g. missing high-resolution T2w image, missing field maps
-                                      for distortion correction, etc.
+  [--mpp-mode=(HCPStyleData|          Which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps
+               LegacyStyleData)]      described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. 
+                                      "LegacyStyleData" allows additional processing functionality and use of some acquisitions 
+                                      that do not conform to 'HCP-Style' expectations:
+                                      - missing high-resolution T2w image, 
+                                      - use of custom adjusted brain images or custom adjusted brain mask.
 EOF
   exit 1
 }
