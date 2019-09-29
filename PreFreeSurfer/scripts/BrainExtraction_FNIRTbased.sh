@@ -95,23 +95,22 @@ FNIRTConfig=`defaultopt $FNIRTConfig $FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf`
 BaseName=`${FSLDIR}/bin/remove_ext $Input`;
 BaseName=`basename $BaseName`;
 
-echo "  "
-# ceho " ===> Running FNIRT based brain extraction"
-echo " ===> Running FNIRT based brain extraction"
-echo "  "
-echo "  Parameters"
-echo "  WD:                         $WD"
-echo "  Input:                      $Input"
-echo "  Reference:                  $Reference"
-echo "  ReferenceMask:              $ReferenceMask"
-echo "  Reference2mm:               $Reference2mm"
-echo "  Reference2mmMask:           $Reference2mmMask"
-echo "  OutputBrainExtractedImage:  $OutputBrainExtractedImage"
-echo "  OutputBrainMask:            $OutputBrainMask"
-echo "  FNIRTConfig:                $FNIRTConfig"
-echo "  BaseName:                   $BaseName"
-echo " "
-echo " START: BrainExtraction_FNIRT"
+verbose_echo "  "
+verbose_red_echo " ===> Running FNIRT based brain extraction"
+verbose_echo "  "
+verbose_echo "  Parameters"
+verbose_echo "  WD:                         $WD"
+verbose_echo "  Input:                      $Input"
+verbose_echo "  Reference:                  $Reference"
+verbose_echo "  ReferenceMask:              $ReferenceMask"
+verbose_echo "  Reference2mm:               $Reference2mm"
+verbose_echo "  Reference2mmMask:           $Reference2mmMask"
+verbose_echo "  OutputBrainExtractedImage:  $OutputBrainExtractedImage"
+verbose_echo "  OutputBrainMask:            $OutputBrainMask"
+verbose_echo "  FNIRTConfig:                $FNIRTConfig"
+verbose_echo "  BaseName:                   $BaseName"
+verbose_echo " "
+verbose_echo " START: BrainExtraction_FNIRT"
 log_Msg "START: BrainExtraction_FNIRT"
 
 mkdir -p $WD
@@ -126,23 +125,25 @@ echo " " >> $WD/log.txt
 
 
 # Register to 2mm reference image (linear then non-linear)
-echo " ... linear registration to 2mm reference"
+verbose_echo " ... linear registration to 2mm reference"
 ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$Reference2mm" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
-echo " ... non-linear registration to 2mm reference"
+verbose_echo " ... non-linear registration to 2mm reference"
 ${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
 
 # Overwrite the image output from FNIRT with a spline interpolated highres version
-echo " ... creating spline interpolated hires version"
+verbose_echo " ... creating spline interpolated hires version"
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in="$Input" --ref="$Reference" -w "$WD"/str2standard.nii.gz --out="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz
 
 # Invert warp and transform dilated brain mask back into native space, and use it to mask input image
 # Input and reference spaces are the same, using 2mm reference to save time
-echo " ... computing inverse warp"
+verbose_echo " ... computing inverse warp"
 ${FSLDIR}/bin/invwarp --ref="$Reference2mm" -w "$WD"/str2standard.nii.gz -o "$WD"/standard2str.nii.gz
-echo " ... applying inverse warp"
+verbose_echo " ... applying inverse warp"
 ${FSLDIR}/bin/applywarp --rel --interp=nn --in="$ReferenceMask" --ref="$Input" -w "$WD"/standard2str.nii.gz -o "$OutputBrainMask"
-echo " ... creating mask"
+verbose_echo " ... creating mask"
 ${FSLDIR}/bin/fslmaths "$Input" -mas "$OutputBrainMask" "$OutputBrainExtractedImage"
+
+verbose_green_echo "---> Finished BrainExtraction FNIRT"
 
 log_Msg "END: BrainExtraction_FNIRT"
 echo " END: `date`" >> $WD/log.txt
@@ -159,5 +160,4 @@ echo "fslview $Reference $WD/${BaseName}_to_MNI_nonlin.nii.gz" >> $WD/qa.txt
 
 ##############################################################################################
 
-# ceho "---> Finished BrainExtraction FNIRT"
-echo "---> Finished BrainExtraction FNIRT"
+

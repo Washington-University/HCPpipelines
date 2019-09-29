@@ -72,8 +72,11 @@ BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 20` 
 WDir="$WD.anat"
 
-echo " "
-echo " START: T1w BiasFieldCorrection"
+log_Msg " START: T1wBiasFieldCorrection"
+
+verbose_echo "  "
+verbose_red_echo " ===> Running T1w Bias Field Correction"
+verbose_echo " "
 
 mkdir -p $WDir
 
@@ -93,28 +96,30 @@ ${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --nor
 
 if [ ! -z ${T1wBrain} ] ; then
   ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain  
-  echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
+  verbose_echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
 fi
 
 # Copy data out if output targets provided
 
 if [ ! -z ${oT1wImage} ] ; then 
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${oT1wImage}
-  echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
+  verbose_echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
 fi
 
 if [ ! -z ${oT1wBrain} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${oT1wBrain}
-  echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
+  verbose_echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
 fi 
 
 if [ ! -z ${oBias} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_fast_bias ${oBias}
-  echo " --> Copied T1_fast_bias.nii.gz to ${oBias}.nii.gz"
+  verbose_echo " --> Copied T1_fast_bias.nii.gz to ${oBias}.nii.gz"
 fi
 
-echo " "
-echo " END: T1w BiasFieldCorrection"
+verbose_green_echo "---> Finished T1w Bias Field Correction"
+verbose_echo " "
+
+log_Msg " END: T1w BiasFieldCorrection"
 echo " END: `date`" >> $WDir/log.txt
 
 ########################################## QA STUFF ##########################################
@@ -124,3 +129,4 @@ echo "# Look at the quality of the bias corrected output (T1w is brain only)" >>
 echo "fslview $WDir/T1_biascorr_brain.nii.gz" >> $WDir/qa.txt
 
 ##############################################################################################
+

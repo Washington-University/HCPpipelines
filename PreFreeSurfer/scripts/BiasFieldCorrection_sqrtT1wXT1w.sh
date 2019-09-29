@@ -88,6 +88,9 @@ BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5
 
 log_Msg "START: BiasFieldCorrection"
 
+verbose_echo "  "
+verbose_red_echo " ===> Running Bias Field Correction"
+
 mkdir -p $WD
 
 # Record the input options in a log file
@@ -99,19 +102,23 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Form sqrt(T1w*T2w), mask this and normalise by the mean
+verbose_echo " --> Forming rt(T1w*T2w), masking this and normalising by the mean"
 ${FSLDIR}/bin/fslmaths $T1wImage -mul $T2wImage -abs -sqrt $WD/T1wmulT2w.nii.gz -odt float
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w.nii.gz -mas $T1wImageBrain $WD/T1wmulT2w_brain.nii.gz
 meanbrainval=`${FSLDIR}/bin/fslstats $WD/T1wmulT2w_brain.nii.gz -M`
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain.nii.gz -div $meanbrainval $WD/T1wmulT2w_brain_norm.nii.gz
 
 # Smooth the normalised sqrt image, using within-mask smoothing : s(Mask*X)/s(Mask)
+verbose_echo " --> Smoothing the normalised sqrt image, using within-mask smoothing"
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -bin -s $BiasFieldSmoothingSigma $WD/SmoothNorm_s${BiasFieldSmoothingSigma}.nii.gz
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -s $BiasFieldSmoothingSigma -div $WD/SmoothNorm_s${BiasFieldSmoothingSigma}.nii.gz $WD/T1wmulT2w_brain_norm_s${BiasFieldSmoothingSigma}.nii.gz
 
 # Divide normalised sqrt image by smoothed version (to do simple bias correction)
+verbose_echo " --> Dividing normalised sqrt image by smoothed version"
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -div $WD/T1wmulT2w_brain_norm_s$BiasFieldSmoothingSigma.nii.gz $WD/T1wmulT2w_brain_norm_modulate.nii.gz
 
 # Create a mask using a threshold at Mean - 0.5*Stddev, with filling of holes to remove any non-grey/white tissue.
+verbose_echo " --> Creating a mask and filling holes"
 STD=`${FSLDIR}/bin/fslstats $WD/T1wmulT2w_brain_norm_modulate.nii.gz -S`
 echo $STD
 MEAN=`${FSLDIR}/bin/fslstats $WD/T1wmulT2w_brain_norm_modulate.nii.gz -M`
@@ -122,14 +129,18 @@ ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm_modulate -thr $Lower -bin -ero -
 ${CARET7DIR}/wb_command -volume-remove-islands $WD/T1wmulT2w_brain_norm_modulate_mask.nii.gz $WD/T1wmulT2w_brain_norm_modulate_mask.nii.gz
 
 # Extrapolate normalised sqrt image from mask region out to whole FOV
+verbose_echo " --> Extrapolating normalised sqrt image from mask region out to whole FOV"
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -mas $WD/T1wmulT2w_brain_norm_modulate_mask.nii.gz -dilall $WD/bias_raw.nii.gz -odt float
 ${FSLDIR}/bin/fslmaths $WD/bias_raw.nii.gz -s $BiasFieldSmoothingSigma $OutputBiasField
 
 # Use bias field output to create corrected images
+verbose_echo " --> Using bias field output to create corrected images"
 ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT1wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField $OutputT1wRestoredImage -odt float
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT2wRestoredBrainImage -odt float
 ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField $OutputT2wRestoredImage -odt float
+
+verbose_green_echo "---> Finished Bias Field Correction"
 
 log_Msg "END: BiasFieldCorrection"
 echo " END: `date`" >> $WD/log.txt
@@ -145,5 +156,5 @@ echo "fslview $WD/T1wmulT2w.nii.gz $WD/T1wmulT2w_brain_norm.nii.gz $WD/T1wmulT2w
 echo "# Optional debugging (smoothed version, extrapolated version)" >> $WD/qa.txt
 echo "fslview $WD/T1wmulT2w_brain_norm_s${BiasFieldSmoothingSigma}.nii.gz $WD/bias_raw" >> $WD/qa.txt
 
-
 ##############################################################################################
+
