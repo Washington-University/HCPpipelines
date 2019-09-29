@@ -204,15 +204,18 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
-  [--mppversion={hcp, legacy}]
-      Indicates, which version of MPP to use. ("hcp" is the default, "legacy" allows processing w/o T2w image)
+  [--mpp-mode={HCPStyleData, LegacyStyleData}]
+      Indicates, which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps 
+         described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. "LegacyStyleData" 
+         allows additional processing functionality and use of some acquisitions that do not conform 
+         to 'HCP-Style' expectations in this case missing high-resolution T2w image 
 
 PARAMETERs can also be specified positionally as:
 
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
   Note that the positional approach to specifying parameters does NOT support the 
-      --existing-subject, --extra-reconall-arg, and --no-conf2hires options.
+      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --mpp-mode options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
@@ -297,8 +300,8 @@ get_options()
 				p_extra_reconall_args+="${extra_reconall_arg} "
 				index=$(( index + 1 ))
 				;;
-			--mppversion=*)
-				p_mppversion=${argument#*=}
+			--mpp-mode=*)
+				p_mppmode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--no-conf2hires)
@@ -316,30 +319,16 @@ get_options()
 	local error_count=0
 
 	# ------------------------------------------------------------------------------
-	#  Check MMP Version
+	#  Check MMP Mode
 	# ------------------------------------------------------------------------------
 	
-	Compliance="hcp"
-	MPPVersion=${p_mppversion:-hcp}
-	
-	if [ "${MPPVersion}" = "legacy" ] ; then
-	  log_Msg "Legacy Minimal Preprocessing Pipelines: FreeSurferPipeline v.XX"
-	  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
-	  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
-	  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
-	  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
-	  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
-	  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
-	  log_Msg "        cited when published."
-	  log_Msg "        "
-	  log_Msg "Checking available data and processing options"
-	else
-	  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline v.XX"
-	  log_Msg "Checking data compliance with HCP MPP"
-	fi
+	MPPMode=${p_mppmode:-HCPStyleData}
+	check_mpp_compliance "FreeSurfer"
 
+	# ------------------------------------------------------------------------------
+	#  check required parameters
+	# ------------------------------------------------------------------------------
 
-	# check required parameters
 	if [ -z "${p_subject_dir}" ]; then
 		log_Err "Subject Directory (--subject-dir= or --subjectDIR= or --path= or --study-folder=) required"
 		error_count=$(( error_count + 1 ))
@@ -376,21 +365,6 @@ get_options()
 		log_Msg "T1w Brain: ${p_t1w_brain}"
 	fi
 
-	if [ -z "${p_t2w_image}" ]; then
-		if [ -z "${p_existing_subject}" ]; then
-			if [ "${MPPVersion}" = "legacy" ] ; then
-				p_t2w_image="NONE"
-			else
-				log_Err "T2w Image (--t2w-image= or --t2=) required"
-				error_count=$(( error_count + 1 ))
-			fi
-		else
-			p_t2w_image="NONE"  # Need something assigned as a placeholder for positional parameters
-		fi
-	else
-		log_Msg "T2w Image: ${p_t2w_image}"
-	fi
-
 	# show optional parameters if specified
 	if [ ! -z "${p_seed}" ]; then
 		log_Msg "Seed: ${p_seed}"
@@ -406,29 +380,6 @@ get_options()
 	fi
 	if [ "${p_t2w_image}" = "NONE" ] ; then
   		Compliance="legacy"
-	fi
-
-	# -- Final evaluation
-
-	if [ "${MPPVersion}" = "legacy" ] ; then
-		if [ ! ${error_count} -gt 0 ]; then
-		    if [ "${Compliance}" = "legacy" ] ; then
-		      	log_Msg "Processing will continue using Legacy MPP."
-		    else
-		      	log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
-		      	log_Msg "Processing will continue using Legacy MPP."
-		    fi
-		fi
-	else
-  	    if [ "${Compliance}" = "legacy" ] ; then
-	    	log_Err "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
-	    	error_count=$(( error_count + 1 ))
-	  	else
-	  		if [ ! ${error_count} -gt 0 ]; then
-	    		log_Msg "Conditions for the use of HCP MPP are met."
-	    		log_Msg "Processing will continue using HCP MPP."
-	    	fi
-	  	fi
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -882,6 +833,7 @@ fi
 
 # Load Function Libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib
+source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify any other needed environment variables are set
