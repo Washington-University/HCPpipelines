@@ -203,6 +203,7 @@ fi
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Check MMP mode requirements
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
@@ -297,8 +298,8 @@ Usage: PreeFreeSurferPipeline.sh [options]
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
-  [--mpp-mode=(standard|extended)]    Which version of MPP to use. "standard" (the default) requires the data and follows
-                                      the steps described in Glasser et al. (2013). "extended" allows additional 
+  [--mpp-mode=(HCPStyleData|          Which version of MPP to use. "HCPStyleData" (the default) requires the data and follows
+               LegacyStyleData)]      the steps described in Glasser et al. (2013). "LegacyStyleData" allows additional 
                                       functionality and working with data that does not conform to standards described in
                                       Glasser et al. (2013), e.g. missing high-resolution T2w image, missing field maps
                                       for distortion correction, etc.
@@ -374,66 +375,13 @@ UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 
 
 # ------------------------------------------------------------------------------
-#  Check MMP Version
+#  Check MMP Mode
 # ------------------------------------------------------------------------------
 
-Compliance="standard"
-MPPVersion=`opts_GetOpt1 "--mpp-mode" $@`
-MPPVersion=`opts_DefaultOpt $MPPVersion "standard"`
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 
-if [ "${MPPVersion}" = "extended" ] ; then
-  log_Msg "Extended Minimal Preprocessing Pipelines: PreFreeSurferPipeline"
-  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
-  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
-  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
-  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
-  log_Msg "        in support of this workflow. A manuscript with comprehensive evaluation for"
-  log_Msg "        the Extended MPP workflow is in active preparation and should be appropriately"
-  log_Msg "        cited when published."
-  log_Msg "        "
-  log_Msg "Checking available data and processing options"
-else
-  log_Msg "HCP Minimal Preprocessing Pipelines: PreFreeSurferPipeline"
-  log_Msg "Checking data compliance with HCP MPP"
-fi
-
-# -- T2w image
-
-if [ "${T2wInputImages}" = "NONE" ] ; then
-  log_Msg "-> T2w image not present (extended)"
-  SkipT2wImage="YES"
-  Compliance="extended"
-else
-  SkipT2wImage="NO"
-  log_Msg "-> T2w image present (standard)"
-fi
-
-# -- Use of custom brain
-
-if [ ! "${CustomBrain}" = "NONE" ] ; then
-  log_Msg "-> Custom brain used: ${CustomBrain} (extended)"
-  Compliance="extended"
-else
-  log_Msg "-> No custom brain used (standard)"
-fi
-
-# -- Final evaluation
-
-if [ "${MPPVersion}" = "extended" ] ; then
-  if [ "${Compliance}" = "extended" ] ; then
-    log_Msg "Processing will continue using Extended MPP mode."
-  else
-    log_Warn "All conditions for the use of Standard HCP MPP are met. Consider using Standard HCP MPP mode instead of Extended MPP mode."
-    log_Msg "Processing will continue using Exteneded MPP mode."
-  fi
-else
-  if [ "${Compliance}" = "extended" ] ; then
-    log_Err_Abort "User requested Standard HCP MPP mode. However, compliance check for use of Standard HCP MPP mode failed."
-  else
-    log_Msg "Conditions for the use of Standard HCP MPP mode are met."
-    log_Msg "Processing will continue using Standard HCP MPP."
-  fi
-fi
+check_mpp_compliance "PreFreeSurfer"
 
 
 # ------------------------------------------------------------------------------
