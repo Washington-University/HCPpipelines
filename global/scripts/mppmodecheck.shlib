@@ -12,7 +12,7 @@ fi
 
 check_pipeline_name()
 {
-    for valid_pipeline in PreFreeSurfer FreeSurfer PostFreeSurfer fMRIVolume fMRISurface Difussion
+    for valid_pipeline in PreFreeSurfer FreeSurfer FreeSurfer53HCP PostFreeSurfer fMRIVolume fMRISurface Difussion
     do
         if [ "${valid_pipeline}" = "${pipeline}" ]; then
             ispipeline="true"
@@ -40,6 +40,18 @@ check_mpp_PreFreeSurfer()
       Compliance="LegacyStyleData"
     else
       log_Msg "-> No custom brain used (HCPStyleData)"
+    fi
+}
+
+check_mpp_FreeSurfer53HCP()
+{
+    # -- T2w image
+
+    if [ "${T2wImage}" = "NONE" ]; then
+      log_Msg "-> T2w image not present (LegacyStyleData)"
+      Compliance="LegacyStyleData"
+    else
+      log_Msg "-> T2w image present (HCPStyleData)"
     fi
 }
 
