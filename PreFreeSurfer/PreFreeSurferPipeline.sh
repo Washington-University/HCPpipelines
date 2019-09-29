@@ -297,11 +297,6 @@ Usage: PreeFreeSurferPipeline.sh [options]
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
-  [--t1biascorrect=(YES|NO|NONE)]     Whether to run Bias Field Correction even when only T1w image 
-                                      is present (YES default; optional). NOTE that if set to NO or NONE, 
-                                      T1w_*_restore* images should be considered misnamed and 
-                                      ARE NOT bias field corrected. 
-                                      Also BiasField_acpc_dc.nii.gz IS NOT an estimate of the bias field.
   [--mpp-mode=(standard|extended)]    Which version of MPP to use. "standard" (the default) requires the data and follows
                                       the steps described in Glasser et al. (2013). "extended" allows additional 
                                       functionality and working with data that does not conform to standards described in
@@ -360,12 +355,10 @@ GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`
 AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
-T1wBiasCorrect=`opts_GetOpt1 "--t1biascorrect" $@`
 CustomBrain=`opts_GetOpt1 "--custombrain" $@`
 
 # Defaults
 CustomBrain=`opts_DefaultOpt $CustomBrain NONE`
-T1wBiasCorrect=`opts_DefaultOpt $T1wBiasCorrect YES`
 
 #NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
 #not currently in usage, either, because of this very limited use
@@ -649,7 +642,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --ref2mmmask=${Template2mmMask} \
         --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
         --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
-      --fnirtconfig=${FNIRTConfig}
+        --fnirtconfig=${FNIRTConfig}
 
   done
 
@@ -761,35 +754,20 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   else  # -- No T2w image
 
-    if [ ! "${T1wBiasCorrect}" = "NONE" ] ; then
+    log_Msg "Performing Bias Field Correction on T1w image only"
 
-      log_Msg "Performing Bias Field Correction on T1w image only"
-
-      if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-        BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
-      fi
-
-      ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
-        --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
-        --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
-        --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
-        --obias=${T1wFolder}/BiasField_acpc_dc \
-        --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
-        --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-        ${BiasFieldSmoothingSigma}
-
-    else
-
-      log_Warn "Skipping Bias Field Correction of T1w image"
-      log_Warn "As Bias Field Correction is skipped note that:"
-      log_Warn "${T1wImage}_acpc_dc_restore* images should be considered misnamed and ARE NOT bias field corrected!"
-      log_Warn "${T1wFolder}/BiasField_acpc_dc IS NOT an estimate of the bias field!"
-
-      ${FSLDIR}/bin/imcp ${T1wFolder}/${T1wImage}_acpc_dc ${T1wFolder}/${T1wImage}_acpc_dc_restore
-      ${FSLDIR}/bin/imcp ${T1wFolder}/${T1wImage}_acpc_dc_brain ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
-      fslmaths ${T1wFolder}/${T1wImage}_acpc_dc -div ${T1wFolder}/${T1wImage}_acpc_dc ${T1wFolder}/BiasField_acpc_dc
-
+    if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+      BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
     fi
+
+    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
+      --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
+      --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
+      --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
+      --obias=${T1wFolder}/BiasField_acpc_dc \
+      --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+      --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
+      ${BiasFieldSmoothingSigma}
 
   fi
 
@@ -846,8 +824,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 elif [ "$CustomBrain" = "MASK" ] ; then
 
   log_Msg "Skipping all the steps to Atlas registration, applying custom mask."
-  # ceho "---> Applying custom mask"
-  echo "---> Applying custom mask"
+  verbose_red_echo "---> Applying custom mask"
 
   ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
 
@@ -860,8 +837,7 @@ elif [ "$CustomBrain" = "MASK" ] ; then
 else
 
   log_Msg "Skipping all the steps to Atlas registration, using existing images."
-  # ceho "---> Using existing images"
-  echo "---> Using existing images"
+  verbose_red_echo "---> Using existing images"
 
 fi  # --- skipped to here if we are using custom brain
 
