@@ -174,14 +174,14 @@ check_mpp_compliance()
     check_pipeline_name
 
     if [ "${ispipeline}" == "false" ]; then
-        log_Err_Abort "${pipeline} is not a valid HCP Pipeline name. Aborting execution!"
+        log_Err_Abort "${pipeline} is not a valid HCP Pipeline name."
     fi
 
     # --- Initial information
 
     if [ "${MPPMode}" = "LegacyStyleData" ]; then
       log_Msg "LegacyStyleData Minimal Preprocessing Pipelines: ${pipeline} ${version}"
-      log_Msg "NOTICE: You are using MPP mode that enables processing of images that do not"
+      log_Msg "NOTICE: You are using a mode that enables processing of acquisitions that do not"
       log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
       log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
       log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
@@ -201,7 +201,7 @@ check_mpp_compliance()
 
     if [ "${MPPMode}" = "LegacyStyleData" ]; then
       if [ "${Compliance}" = "LegacyStyleData" ]; then
-        log_Msg "Processing will continue using Extended MPP mode."
+        log_Msg "Processing will continue using LegacyStyleData MPP mode."
       else
         log_Warn "All conditions for the use of HCPStyleData HCP MPP are met. Consider using HCPStyleData HCP MPP mode instead of LegacyStyleData MPP mode."
         log_Msg "Processing will continue using LegacyStyleData MPP mode."
