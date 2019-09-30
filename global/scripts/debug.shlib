@@ -10,7 +10,7 @@
 #   - command ran
 #   - exit status
 
-trap 'debug_on_error $LINENO "$BASH_COMMAND" $?; exit' ERR
+trap 'debug_on_error $LINENO "$BASH_COMMAND" $?' ERR
 
 if [[ "$(type -t log_Err)" != "function" ]]
 then
@@ -49,7 +49,7 @@ debug_enable_exit()
 #
 #   Function to turn off exit upon error trap
 
-debug_diable_exit()
+debug_disable_exit()
 {
     HCP_DEBUG_EXIT_ON_ERROR=OFF
 }
