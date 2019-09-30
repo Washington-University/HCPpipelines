@@ -273,10 +273,10 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       - "<path>/T1w/T1w_acpc_dc_restore.nii.gz"
                                       - "<path>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
                                       - "<path>/T1w/T2w_acpc_dc_restore.nii.gz"
-                                      to be used when peforming Atlas registration, specify "CUSTOM".
+                                      to be used when peforming MNI152 Atlas registration, specify "CUSTOM".
                                       When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
                                       are skipped.
-                                      If the parameter is ommited or set to NONE (the default), 
+                                      If the parameter is omitted or set to NONE (the default), 
                                       standard image processing will take place.
 
 
