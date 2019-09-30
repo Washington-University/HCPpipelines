@@ -96,15 +96,6 @@ check_mpp_fMRIVolume()
       log_Msg "-> Not running slice timing correction (HCPStyleData)"
     fi
 
-    # -- Use of BOLD scout image
-
-    if [ "${fMRIScout}" = 'NONE' ]; then
-      log_Msg "-> Set to use average motion corrected image as scout image (LegacyStyleData)"
-      Compliance="LegacyStyleData"
-    else
-      log_Msg "-> fMRIScout image is provided (HCPStyleData)"
-    fi
-
     # -- Use of BOLD reference
 
     if [ ! "${fMRIReference}" = 'NONE' ]; then
