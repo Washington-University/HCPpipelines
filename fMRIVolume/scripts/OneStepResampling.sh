@@ -23,8 +23,8 @@ Usage() {
   echo "             --motionmatdir=<input motion correcton matrix directory>"
   echo "             --motionmatprefix=<input motion correcton matrix filename prefix>"
   echo "             --ofmri=<input fMRI 4D image>"
-  echo "             --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in T1w space>"
-  echo "             --biasfield=<input biasfield image, in T1w space>"
+  echo "             --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in atlas (MNI152) space>"
+  echo "             --biasfield=<input biasfield image, in atlas (MNI152) space>"
   echo "             --gdfield=<input warpfield for gradient non-linearity correction>"
   echo "             --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>"
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
@@ -164,7 +164,7 @@ mkdir -p ${WD}/prevols
 mkdir -p ${WD}/postvols
 
 # Apply combined transformations to fMRI in a one-step resampling
-# (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
+# (combines gradient non-linearity distortion, motion correction, and registration to atlas (MNI152) space, but keeping fMRI resolution)
 ${FSLDIR}/bin/fslsplit ${InputfMRI} ${WD}/prevols/vol -t
 FrameMergeSTRING=""
 FrameMergeSTRINGII=""
