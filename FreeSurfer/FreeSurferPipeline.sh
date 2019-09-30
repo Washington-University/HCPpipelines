@@ -208,7 +208,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
       Indicates, which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps 
          described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. "LegacyStyleData" 
          allows additional processing functionality and use of some acquisitions that do not conform 
-         to 'HCP-Style' expectations in this case missing high-resolution T2w image 
+         to 'HCP-Style' expectations; i.e., in this case missing high-resolution T2w image 
 
 PARAMETERs can also be specified positionally as:
 
@@ -364,6 +364,10 @@ get_options()
 	else
 		log_Msg "T1w Brain: ${p_t1w_brain}"
 	fi
+
+
+	# NOTE: Check for T2w image is moved to check_mpp_compliance(), as missing T2w is allowed in LegacyStyleData MPP mode.
+
 
 	# show optional parameters if specified
 	if [ ! -z "${p_seed}" ]; then
@@ -641,9 +645,9 @@ main()
 		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 	fi
 
-	# By default, refine pial surfaces using T2.
-	# If for some reason the -T2pial flag needs to be excluded from recon-all, this can be
-	# accomplished using --extra-reconall-arg=-noT2pial
+	# By default, refine pial surfaces using T2 (if T2w image provided).
+	# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
+	# this can be accomplished using --extra-reconall-arg=-noT2pial
 	if [ "${T2wImage}" != "NONE" ]; then
 		recon_all_cmd+=" -T2pial"
 	fi
