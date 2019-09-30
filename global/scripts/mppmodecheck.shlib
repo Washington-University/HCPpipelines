@@ -12,7 +12,7 @@ fi
 
 check_pipeline_name()
 {
-    for valid_pipeline in PreFreeSurfer FreeSurfer FreeSurfer53HCP PostFreeSurfer fMRIVolume fMRISurface Difussion
+    for valid_pipeline in PreFreeSurfer FreeSurfer FreeSurfer53HCP PostFreeSurfer fMRIVolume fMRISurface Diffusion
     do
         if [ "${valid_pipeline}" = "${pipeline}" ]; then
             ispipeline="true"
@@ -75,7 +75,7 @@ check_mpp_PostFreeSurfer()
 {
     # -- T2w image
 
-    if [ ! -e ${T2wFolder}/T2w.nii.gz ]; then
+    if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w.nii.gz` -eq 0 ]; then
         log_Msg "-> T2w image not present (LegacyStyleData)"
         Compliance="LegacyStyleData"
         T2wRestoreImage="NONE"
@@ -89,7 +89,7 @@ check_mpp_fMRIVolume()
 {
     # -- Slice timing correction
 
-    if [ ! "${DoSliceTimeCorrection}" == 'NONE' ]; then
+    if [ ! "${DoSliceTimeCorrection}" = 'NONE' ]; then
       log_Msg "-> Set to run slice timing correction (LegacyStyleData)"
       Compliance="LegacyStyleData"
     else
@@ -98,7 +98,7 @@ check_mpp_fMRIVolume()
 
     # -- Use of BOLD scout image
 
-    if [ "${fMRIScout}" == 'NONE' ]; then
+    if [ "${fMRIScout}" = 'NONE' ]; then
       log_Msg "-> Set to use average motion corrected image as scout image (LegacyStyleData)"
       Compliance="LegacyStyleData"
     else
@@ -107,7 +107,7 @@ check_mpp_fMRIVolume()
 
     # -- Use of BOLD reference
 
-    if [ ! "${fMRIReference}" == 'NONE' ]; then
+    if [ ! "${fMRIReference}" = 'NONE' ]; then
       log_Msg "-> Set to use ${fMRIReference} as BOLD reference (LegacyStyleData)"
       Compliance="LegacyStyleData"
     else
@@ -116,7 +116,7 @@ check_mpp_fMRIVolume()
 
     # -- Use of distortion correction methods
 
-    if [ "${DistortionCorrection}" == 'NONE' ]; then
+    if [ "${DistortionCorrection}" = 'NONE' ]; then
       log_Msg "-> Set not to use any distortion correction method (LegacyStyleData)"
       Compliance="LegacyStyleData"
     else
@@ -125,7 +125,7 @@ check_mpp_fMRIVolume()
 
     # -- Use of BOLD mask
 
-    if [ ! "${Mask}" == 'T1' ]; then
+    if [ ! "${Mask}" = 'T1' ]; then
       log_Msg "-> Set to use mask: ${Mask} (LegacyStyleData)"
       Compliance="LegacyStyleData"
     else
@@ -134,7 +134,7 @@ check_mpp_fMRIVolume()
 
     # -- Preregister code
 
-    if [ ! "${Preregister}" == 'epi_reg' ]; then
+    if [ ! "${Preregister}" = 'epi_reg' ]; then
       Compliance="LegacyStyleData"
       log_Msg "-> Set to use ${Preregister} for bold image pre-registration (LegacyStyleData)"
     else
@@ -143,7 +143,7 @@ check_mpp_fMRIVolume()
 
     # -- BOLD registration to reference image
 
-    if [ ! "${ReferenceReg}" == 'linear' ]; then
+    if [ ! "${ReferenceReg}" = 'linear' ]; then
       Compliance="LegacyStyleData"
       log_Msg "-> Set to use ${ReferenceReg} registration to reference image (LegacyStyleData)"
     else
