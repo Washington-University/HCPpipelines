@@ -446,7 +446,11 @@ AtlasSpaceFolder="MNINonLinear"
 
 # Build Paths
 T1wFolder=${StudyFolder}/${Subject}/${T1wFolder}
-T2wFolder=${StudyFolder}/${Subject}/${T2wFolder}
+if [ "${T2wInputImages}" = "NONE" ] ; then
+  T2wFolder=NONE
+else
+  T2wFolder=${StudyFolder}/${Subject}/${T2wFolder}
+fi
 AtlasSpaceFolder=${StudyFolder}/${Subject}/${AtlasSpaceFolder}
 
 log_Msg "T1wFolder: $T1wFolder"
@@ -462,7 +466,7 @@ if [ ! -e ${T1wFolder}/xfms ] ; then
   mkdir -p ${T1wFolder}/xfms/
 fi
 
-if [ ! -e ${T2wFolder}/xfms ] ; then
+if [ ! -e ${T2wFolder}/xfms ] && [ ${T2wFolder} != "NONE" ] ; then
   log_Msg "mkdir -p ${T2wFolder}/xfms/"
   mkdir -p ${T2wFolder}/xfms/
 fi
