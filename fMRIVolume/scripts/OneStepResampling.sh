@@ -203,7 +203,9 @@ done
 # Merge together results and restore the TR (saved beforehand)
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI}_mask $FrameMergeSTRINGII $TR_vol
+
 # Generate a spatial coverage mask that captures the voxels that have data available at *ALL* time points
+# (gets applied in IntensityNormalization.sh; so don't change name here without changing it in that script as well).
 fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
