@@ -380,13 +380,26 @@ UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 
 
 # ------------------------------------------------------------------------------
-#  Check MMP Mode
+#  Compliance check
 # ------------------------------------------------------------------------------
 
 MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ComplianceMsg=""
 
-check_mpp_compliance "PreFreeSurfer"
+# -- T2w image
+
+if [ "${T2wInputImages}" = "NONE" ]; then
+  ComplianceMsg+=" --t2=NONE"
+fi
+
+# -- Use of custom brain
+
+if [ ! "${CustomBrain}" = "NONE" ]; then
+  ComplianceMsg+=" --custombrain=${CustomBrain}"
+fi
+
+check_mpp_compliance "${MPPMode}" "${ComplianceMsg}"
 
 
 # ------------------------------------------------------------------------------
