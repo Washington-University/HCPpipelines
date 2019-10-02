@@ -385,21 +385,24 @@ UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 
 MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+Compliance="HCPStyleData"
 ComplianceMsg=""
 
 # -- T2w image
 
 if [ "${T2wInputImages}" = "NONE" ]; then
   ComplianceMsg+=" --t2=NONE"
+  Compliance="LegacyStyleData"
 fi
 
 # -- Use of custom brain
 
 if [ ! "${CustomBrain}" = "NONE" ]; then
   ComplianceMsg+=" --custombrain=${CustomBrain}"
+  Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${ComplianceMsg}"
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 
 # ------------------------------------------------------------------------------
