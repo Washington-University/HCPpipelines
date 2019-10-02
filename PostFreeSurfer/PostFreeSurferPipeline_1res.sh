@@ -89,24 +89,23 @@ InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
-#ceho "---> Starting Post FreeSurfer Pipeline"
-echo "---> Starting Post FreeSurfer Pipeline"
-echo " "
-echo " Using parameters ..."
-echo "              --path: ${StudyFolder}"
-echo "           --subject: ${Subject}"
-echo "      --surfatlasdir: ${SurfaceAtlasDIR}"
-echo "  --grayordinatesdir: ${GrayordinatesSpaceDIR}"
-echo "  --grayordinatesres: ${GrayordinatesResolutions}"
-echo "         --hiresmesh: ${HighResMesh}"
-echo "        --lowresmesh: ${LowResMeshes}"
-echo " --subcortgraylabels: ${SubcorticalGrayLabels}"
-echo "  --freesurferlabels: ${FreeSurferLabels}"
-echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
-echo "           --mcsigma: ${CorrectionSigma}"
-echo "           --regname: ${RegName}"
-echo "   --PipelineScripts: ${PipelineScripts}"
-echo " "
+verbose_red_echo "---> Starting Post FreeSurfer Pipeline"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "              --path: ${StudyFolder}"
+verbose_echo "           --subject: ${Subject}"
+verbose_echo "      --surfatlasdir: ${SurfaceAtlasDIR}"
+verbose_echo "  --grayordinatesdir: ${GrayordinatesSpaceDIR}"
+verbose_echo "  --grayordinatesres: ${GrayordinatesResolutions}"
+verbose_echo "         --hiresmesh: ${HighResMesh}"
+verbose_echo "        --lowresmesh: ${LowResMeshes}"
+verbose_echo " --subcortgraylabels: ${SubcorticalGrayLabels}"
+verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
+verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
+verbose_echo "           --mcsigma: ${CorrectionSigma}"
+verbose_echo "           --regname: ${RegName}"
+verbose_echo "   --PipelineScripts: ${PipelineScripts}"
+verbose_echo " "
 
 #Naming Conventions
 # Do NOT include spaces in any of these names
@@ -259,4 +258,8 @@ else
     argList+="$RegName "                                  # ${39}
     "$PipelineScripts"/CreateMyelinMaps_1res.sh ${argList}
 
+    verbose_green_echo "---> Finished Post FreeSurfer Pipeline"
+    verbose_echo " "
+
+fi
 log_Msg "Completed"
