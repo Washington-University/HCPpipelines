@@ -64,14 +64,17 @@ fi
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
 # ------------------------------------------------------------------------------
-#  Check MMP Version
+#  Compliance check
 # ------------------------------------------------------------------------------
 
 MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
-check_mpp_compliance "fMRISurface"
+Compliance="HCPStyleData"
+ComplianceMsg=""
 
-# --- END MPP Version Check
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+
+# --- End compliance check
 
 
 log_Msg "Path: ${Path}"
