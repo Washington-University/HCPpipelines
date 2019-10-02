@@ -14,7 +14,8 @@ check_mpp_compliance()
     # --- Define variables
 
     local MPPMode="$1"
-    local ComplianceMsg="$2"
+    local Compliance="$2"
+    local ComplianceMsg="$3"
 
     # --- Initial information
 
@@ -33,14 +34,14 @@ check_mpp_compliance()
     # -- Final evaluation
 
     if [ "${MPPMode}" = "LegacyStyleData" ]; then
-      if [ -z "${ComplianceMsg}" ]; then
+      if [ "${Compliance}" = "HCPStyleData" ]; then
         log_Warn "All conditions for the use of HCPStyleData HCP MPP are met. Consider using HCPStyleData HCP MPP mode instead of LegacyStyleData MPP mode."        
       else
         log_Msg "The following LegacyStyleData settings were requested:${ComplianceMsg}"
       fi
     else
       if [ "${Compliance}" = "LegacyStyleData" ]; then
-        log_Err_Abort "HCPStyleData HCP MPP mode was requested, but the following settings are not compliant:$2. Fix these settings or consider requesting 'LegacyStyleData' mode."
+        log_Err_Abort "HCPStyleData HCP MPP mode was requested, but the following settings are not compliant:${ComplianceMsg}. Fix these settings or consider requesting 'LegacyStyleData' mode."
       fi
     fi
 
