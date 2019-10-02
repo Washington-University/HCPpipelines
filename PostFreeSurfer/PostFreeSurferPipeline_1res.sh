@@ -161,58 +161,23 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
 
 # ------------------------------------------------------------------------------
-#  Check MMP Version
+#  Compliance check
 # ------------------------------------------------------------------------------
 
-Compliance="hcp"
-MPPVersion=`opts_GetOpt1 "--mppversion" $@`
-MPPVersion=`opts_DefaultOpt $MPPVersion "hcp"`
-
-if [ "${MPPVersion}" = "legacy" ] ; then
-  log_Msg "Legacy Minimal Preprocessing Pipelines: PostFreeSurferPipeline_1res v.XX"
-  log_Msg "NOTICE: You are using MPP version that enables processing of images that do not"
-  log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
-  log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
-  log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
-  log_Msg "        in support of this workflow. A mnauscript with comprehensive evaluation for"
-  log_Msg "        the Legacy MPP workflow is in active preparation and should be appropriately"
-  log_Msg "        cited when published."
-  log_Msg "        "
-  log_Msg "Checking available data"
-else
-  log_Msg "HCP Minimal Preprocessing Pipelines: PostFreeSurferPipeline_1res v.XX"
-  log_Msg "Checking data compliance with HCP MPP"
-fi
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+Compliance="HCPStyleData"
+ComplianceMsg=""
 
 # -- T2w image
 
-if [ ! -e ${T2wFolder}/T2w.nii.gz ]; then
-    log_Msg "-> T2w image not present (legacy)"
-    Compliance="legacy"
+if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w` -eq 0 ]; then
+    ComplianceMsg+=" T2w image not present"
+    Compliance="LegacyStyleData"
     T2wRestoreImage="NONE"
-else
-  log_Msg "-> T2w image present"
 fi
 
-# -- Final evaluation
-
-if [ "${MPPVersion}" = "legacy" ] ; then
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "Processing will continue using Legacy MPP."
-  else
-    log_Msg "All conditions for the use of HCP MPP are met. Consider using HCP MPP instead of Legacy MPP."
-    log_Msg "Processing will continue using Legacy MPP."
-  fi
-else
-  if [ "${Compliance}" = "legacy" ] ; then
-    log_Msg "User requested HCP MPP. However, compliance check for use of HCP MPP failed."
-    log_Msg "Aborting execution."
-    exit 1
-  else
-    log_Msg "Conditions for the use of HCP MPP are met."
-    log_Msg "Processing will continue using HCP MPP."
-  fi
-fi
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 
 
