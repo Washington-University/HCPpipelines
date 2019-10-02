@@ -319,11 +319,24 @@ get_options()
 	local error_count=0
 
 	# ------------------------------------------------------------------------------
-	#  Check MMP Mode
+	#  Compliance check
 	# ------------------------------------------------------------------------------
 	
-	MPPMode=${p_mppmode:-HCPStyleData}
-	check_mpp_compliance "FreeSurfer"
+	MPPMode=${p_mppmode:-HCPStyleData}	
+    Compliance="HCPStyleData"
+    ComplianceMsg=""
+
+     # -- T2w image
+
+    if [ -z "${p_t2w_image}" ] || [ "${p_t2w_image}" = "NONE" ]; then
+        if [ -z "${p_existing_subject}" ]; then
+            ComplianceMsg+=" --t2w-image= or --t2= not present or set to NONE"
+            Compliance="LegacyStyleData"
+        fi
+        p_t2w_image="NONE"
+    fi
+
+    check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 	# ------------------------------------------------------------------------------
 	#  check required parameters
