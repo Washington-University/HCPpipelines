@@ -78,13 +78,23 @@ log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
 
 
 # ------------------------------------------------------------------------------
-#  Check MMP Mode
+#  Compliance check
 # ------------------------------------------------------------------------------
 
 MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+Compliance="HCPStyleData"
+ComplianceMsg=""
 
-check_mpp_compliance "FreeSurfer53HCP"
+# -- T2w image
+
+if [ "${T2wInputImages}" = "NONE" ]; then
+  ComplianceMsg+=" --t2=NONE"
+  Compliance="LegacyStyleData"
+fi
+
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables
