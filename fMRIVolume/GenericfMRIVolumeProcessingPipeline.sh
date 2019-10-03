@@ -225,6 +225,10 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
+Mask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (T1: the default, BOLD: one made on the reference bold image, DILATED: dilated MNI mask, NONE:none)
+
+# Defaults
+Mask=${Mask:-T1}
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -235,7 +239,10 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-
+if [ ! "${Mask}" = 'T1' ]; then
+  ComplianceMsg+=" --usemask=${Mask}"
+  Compliance="LegacyStyleData"
+fi
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
@@ -484,7 +491,8 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
        --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
-       --usejacobian=${UseJacobian}
+       --usejacobian=${UseJacobian} \
+       --usemask=${Mask}
 
 # MJ QUERY: WHY THE -r OPTIONS BELOW?
 # TBr Response: Since the copy operations are specifying individual files

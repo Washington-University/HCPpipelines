@@ -1,5 +1,6 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
+source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 # Intensity normalisation, and bias field correction, and optional Jacobian modulation, applied to fMRI images (all inputs must be in fMRI space)
 
@@ -35,6 +36,7 @@ Usage() {
   echo "             [--inscout=<input name for scout image (pre-sat EPI)>]"
   echo "             [--oscout=<output name for normalized scout image>]"
   echo "             [--workingdir=<working dir>]"
+  echo "             [--usemask=<what mask to use: T1, BOLD, DILATED, NONE; default=T1>]"
 }
 
 # function for parsing options
@@ -42,11 +44,11 @@ getopt1() {
     sopt="$1"
     shift 1
     for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    # if [ ] ; then Usage ; echo " " ; echo "Error:: option ${sopt} requires an argument"; exit 1 ; end
-	    return 0
-	fi
+  if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+      echo $fn | sed "s/^${sopt}=//"
+      # if [ ] ; then Usage ; echo " " ; echo "Error:: option ${sopt} requires an argument"; exit 1 ; end
+      return 0
+  fi
     done
 }
 
@@ -75,10 +77,27 @@ OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
 ScoutInput=`getopt1 "--inscout" $@`  # "$6"
 ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
 UseJacobian=`getopt1 "--usejacobian" $@`  # 
+Mask=`getopt1 "--usemask" $@`
+
+verbose_red_echo "---> Intensity normalization"
+
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "          --infmri: ${InputfMRI}"
+verbose_echo "       --biasfield: ${BiasField}"
+verbose_echo "        --jacobian: ${Jacobian}"
+verbose_echo "       --brainmask: ${BrainMask}"
+verbose_echo "           --ofmri: ${OutputfMRI}"
+verbose_echo "         --inscout: ${ScoutInput}"
+verbose_echo "          --oscout: ${ScoutOutput}"
+verbose_echo "     --usejacobian: ${UseJacobian}"
+verbose_echo "         --usemask: ${Mask}"
+verbose_echo " "
 
 # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 WD=`defaultopt $WD ${OutputfMRI}.wdir`
+Mask=${Mask:-T1}
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -99,10 +118,10 @@ then
 fi
 
 # sanity checking
-if [ X${ScoutInput} != X ] ; then 
+if [ X${ScoutInput} != X ] ; then
     if [ X${ScoutOutput} = X ] ; then
-    	echo "Error: Must supply an output name for the normalised scout image"
-    	exit 1
+      echo "Error: Must supply an output name for the normalised scout image"
+      exit 1
     fi
 fi
 
@@ -117,13 +136,35 @@ echo "PWD = `pwd`" >> $WD/log.txt
 echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
+########################################## DO WORK ##########################################
 
-########################################## DO WORK ########################################## 
+if [ $Mask == 'BOLD' ] ; then
+  echo " ... Creating BOLD based brain mask"
+  if [ X${ScoutInput} == X ] ; then
+    ${FSLDIR}/bin/fslmaths ${InputfMRI} -Tmean ${InputfMRI%.nii.gz}_avg
+    ${FSLDIR}/bin/bet ${InputfMRI%.nii.gz}_avg ${InputfMRI%.nii.gz}_brain -R -f 0.3
+    BrainMask=${InputfMRI%.nii.gz}_brain
+  else
+    ${FSLDIR}/bin/bet ${ScoutInput} ${ScoutInput%.nii.gz}_brain -R -f 0.3
+    BrainMask=${ScoutInput%.nii.gz}_brain
+  fi
+fi
+
+if [ $Mask == 'DILATED' ] ; then
+  BrainMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz"
+fi
+
+BrainMask="-mas ${BrainMask}"
+
+if [ $Mask == 'NONE' ] ; then
+  BrainMask=""
+fi
 
 # Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
-${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
+
+${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
+   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
 fi
 
 #Basic Cleanup
@@ -133,7 +174,7 @@ echo " "
 echo "END: IntensityNormalization"
 echo " END: `date`" >> $WD/log.txt
 
-########################################## QA STUFF ########################################## 
+########################################## QA STUFF ##########################################
 
 if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt
