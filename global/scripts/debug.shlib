@@ -126,6 +126,10 @@ debug_blue_echo()
     fi
 }
 
+function debug_first()
+{
+    echo "$1"
+}
 
 debug_on_error()
 {    
@@ -138,10 +142,7 @@ debug_on_error()
 
         # --- try to identify command if $command is not set
 
-        if [ -z "$command" ]; then
-            line=($(eval echo "$2"))
-            command=${line[0]}
-        fi
+        local command=$(eval debug_first "$2")
 
         # --- output a regular HCP error log
 
@@ -207,11 +208,7 @@ debug_disable_verbose()
 verbose_red_echo()
 {   
     if [ "$HCP_VERBOSE" == "TRUE" ] ; then
-        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-            echo -e "\033[31m $* \033[0m"
-        else
-            echo "$*"
-        fi
+        debug_red_echo "$*"
     fi
 }
 
@@ -227,11 +224,7 @@ verbose_red_echo()
 verbose_green_echo()
 {   
     if [ "$HCP_VERBOSE" == "TRUE" ] ; then
-        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-            echo -e "\033[32m $* \033[0m"
-        else
-            echo "$*"
-        fi
+        debug_green_echo "$*"
     fi
 }
 
@@ -247,11 +240,7 @@ verbose_green_echo()
 verbose_blue_echo()
 {   
     if [ "$HCP_VERBOSE" == "TRUE" ] ; then
-        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-            echo -e "\033[34m $* \033[0m"
-        else
-            echo "$*"
-        fi
+        debug_blue_echo "$*"
     fi
 }
 
