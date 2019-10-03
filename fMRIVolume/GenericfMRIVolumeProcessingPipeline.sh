@@ -222,6 +222,11 @@ fi
 
 
 # ------------------------------------------------------------------------------
+#  Legacy Style Data Options
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
 
@@ -230,8 +235,9 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
+
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
 
