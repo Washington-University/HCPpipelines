@@ -225,6 +225,14 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
+DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`              # Whether to do slicetime correction, FALSE to omit
+SliceCorrectionDirection=`opts_GetOpt1 "--slicetimedir" $@`          # direction: empty for up, --down for down
+SliceCorrectionInterleaved=`opts_GetOpt1 "--slicetimeodd" $@`        # interleaved: empty for not, --odd for interleaved
+TR=`opts_GetOpt1 "--tr" $@`                                          # TR of the timeseries
+
+# Defaults
+DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                # No slice timing correction is done by default 
+
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -235,6 +243,12 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
+# -- Slice timing correction
+
+if [ ! "${DoSliceTimeCorrection}" = 'NO' ]; then
+  ComplianceMsg+="-> Set to run slice timing correction (LegacyStyleData)"
+  Compliance="LegacyStyleData"
+fi
 
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
@@ -317,6 +331,16 @@ if [ ! -e "$fMRIFolder" ] ; then
   mkdir "$fMRIFolder"
 fi
 cp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName".nii.gz
+
+# --- Do slice time correction if indicated
+if [ ! $DoSliceTimeCorrection = "NONE" ] ; then
+    log_Msg "Running slice timing correction"
+    #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
+    #  this makes the single-band processing more robust to registration problems
+    fslreorient2std "$fMRIFolder"/"$OrigTCSName".nii.gz "$fMRIFolder"/"$OrigTCSName"_prestcor.nii.gz
+    rm "$fMRIFolder"/"$OrigTCSName".nii.gz
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_prestcor -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} ${SliceCorrectionDirection} ${SliceCorrectionInterleaved} -v
+fi
 
 #Create fake "Scout" if it doesn't exist
 if [ $fMRIScout = "NONE" ] ; then
