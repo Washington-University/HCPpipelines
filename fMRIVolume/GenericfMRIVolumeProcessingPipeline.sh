@@ -225,6 +225,10 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
+ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # How to register bold image to reference? Using 'linear' (default) or also 'nonlinear' registration to movement reference.
+
+# Defaults
+ReferenceReg=${ReferenceReg:-linear}
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -235,7 +239,12 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
+# -- BOLD nonlinear registration to reference image
 
+if [ ! "${ReferenceReg}" = 'linear']; then
+  ComplianceMsg+=" --refreg=${ReferenceReg}"
+  Compliance="LegacyStyleData"
+fi
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
@@ -373,7 +382,8 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
        "$MotionMatrixPrefix" \
-       "$MotionCorrectionType"
+       "$MotionCorrectionType" \
+       "$ReferenceReg"
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
@@ -441,7 +451,8 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
        --scoutin=${fMRIFolder}/${OrigScoutName} \
        --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
+       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+       --refreg=${ReferenceReg}
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
