@@ -139,9 +139,6 @@ debug_on_error()
         local line
         local startreport = ""
         local endreport   = ""
-
-        # --- try to identify command if $command is not set
-
         local command=$(eval debug_first "$2")
 
         # --- output a regular HCP error log
