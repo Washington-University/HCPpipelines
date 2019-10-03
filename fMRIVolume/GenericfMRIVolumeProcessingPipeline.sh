@@ -220,6 +220,23 @@ then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
+
+# ------------------------------------------------------------------------------
+#  Compliance check
+# ------------------------------------------------------------------------------
+
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+
+
+# -- End compliance check
+
+
+
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
 GlobalScripts=${HCPPIPEDIR_Global}
