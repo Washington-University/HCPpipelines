@@ -63,19 +63,6 @@ fi
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 
-# ------------------------------------------------------------------------------
-#  Compliance check
-# ------------------------------------------------------------------------------
-
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
-Compliance="HCPStyleData"
-ComplianceMsg=""
-
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
-
-# --- End compliance check
-
 log_Msg "Path: ${Path}"
 log_Msg "Subject: ${Subject}"
 log_Msg "NameOffMRI: ${NameOffMRI}"
