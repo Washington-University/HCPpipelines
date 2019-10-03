@@ -225,7 +225,8 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --t1=<T1w images>                   An @ symbol separated list of full paths to T1-weighted
                                       (T1w) structural images for the subject (required)
   --t2=<T2w images>                   An @ symbol separated list of full paths to T2-weighted
-                                      (T2w) structural images for the subject (required)
+                                      (T2w) structural images for the subject (required for 
+                                      hcp-style data, can be NONE for legacy-style data)
   --t1template=<file path>            MNI T1w template
   --t1templatebrain=<file path>       Brain extracted MNI T1wTemplate
   --t1template2mm=<file path>         MNI 2mm T1wTemplate
@@ -266,19 +267,6 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       coefficients, Set to "NONE" to turn off
   --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction
                                       method. See below for supported values.
-  [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
-                                      brain mask saved as "<path>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
-                                      If PreFreeSurfer has been run before and you have created custom structural images, e.g.: 
-                                      - "<path>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
-                                      - "<path>/T1w/T1w_acpc_dc_restore.nii.gz"
-                                      - "<path>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
-                                      - "<path>/T1w/T2w_acpc_dc_restore.nii.gz"
-                                      to be used when peforming MNI152 Atlas registration, specify "CUSTOM".
-                                      When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
-                                      are skipped.
-                                      If the parameter is omitted or set to NONE (the default), 
-                                      standard image processing will take place.
-
 
     "${NONE_METHOD_OPT}"
      average any repeats with no readout distortion correction
@@ -302,6 +290,18 @@ Usage: PreeFreeSurferPipeline.sh [options]
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
+  [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
+                                      brain mask saved as "<path>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
+                                      If PreFreeSurfer has been run before and you have created custom structural images, e.g.: 
+                                      - "<path>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
+                                      - "<path>/T1w/T1w_acpc_dc_restore.nii.gz"
+                                      - "<path>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
+                                      - "<path>/T1w/T2w_acpc_dc_restore.nii.gz"
+                                      to be used when peforming MNI152 Atlas registration, specify "CUSTOM".
+                                      When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
+                                      are skipped.
+                                      If the parameter is omitted or set to NONE (the default), 
+                                      standard image processing will take place.
   [--mpp-mode=(HCPStyleData|          Which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps
                LegacyStyleData)]      described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. 
                                       "LegacyStyleData" allows additional processing functionality and use of some acquisitions 
@@ -591,7 +591,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
       else
         log_Msg "Not Averaging ${TXw} Images"
-        log_Msg "ONLY ONE AVERAGE FOUND: COPYING"
+        log_Msg "ONLY ONE IMAGE FOUND: COPYING"
         ${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
       fi
 
