@@ -223,57 +223,53 @@ argList+="$T1wRestoreImage "           # ${7}  Called T1wImage in CreateRibbon.s
 argList+="$FreeSurferLabels "          # ${8}
 "$PipelineScripts"/CreateRibbon.sh ${argList}
 
-
 #Myelin Mapping
-if [ "${T2wRestoreImage}" = "NONE" ]; then
-    log_Msg "Skipping Myelin Mapping"
-else
-    log_Msg "Myelin Mapping"
-    log_Msg "RegName: ${RegName}"
+log_Msg "Myelin Mapping"
+log_Msg "RegName: ${RegName}"
 
-    argList="$StudyFolder "                # ${1}
-    argList+="$Subject "
-    argList+="$AtlasSpaceFolder "
-    argList+="$NativeFolder "
-    argList+="$T1wFolder "                 # ${5}
-    argList+="$HighResMesh "
-    argList+="$LowResMeshes "
-    argList+="$T1wFolder"/"$OrginalT1wImage "
-    argList+="$T2wFolder"/"$OrginalT2wImage "
-    argList+="$T1wFolder"/"$T1wImageBrainMask "           # ${10}
-    argList+="$T1wFolder"/xfms/"$InitialT1wTransform "
-    argList+="$T1wFolder"/xfms/"$dcT1wTransform "
-    argList+="$T2wFolder"/xfms/"$InitialT2wTransform "
-    argList+="$T1wFolder"/xfms/"$dcT2wTransform "
-    argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15}
-    argList+="$AtlasTransform "
-    argList+="$T1wFolder"/"$BiasField "
-    argList+="$T1wFolder"/"$OutputT1wImage "
-    argList+="$T1wFolder"/"$OutputT1wImageRestore "
-    argList+="$T1wFolder"/"$OutputT1wImageRestoreBrain "  # ${20}
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImage "
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore "
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain "
-    argList+="$T1wFolder"/"$OutputT2wImage "
-    argList+="$T1wFolder"/"$OutputT2wImageRestore "       # ${25}
-    argList+="$T1wFolder"/"$OutputT2wImageRestoreBrain "
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImage "
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore "
-    argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain "
-    argList+="$T1wFolder"/xfms/"$OutputOrigT1wToT1w "     # {30}
-    argList+="$T1wFolder"/xfms/"$OutputOrigT1wToStandard "
-    argList+="$T1wFolder"/xfms/"$OutputOrigT2wToT1w "
-    argList+="$T1wFolder"/xfms/"$OutputOrigT2wToStandard "
-    argList+="$AtlasSpaceFolder"/"$BiasFieldOutput "
-    argList+="$AtlasSpaceFolder"/"$T1wImageBrainMask "    # {35}  Called T1wMNIImageBrainMask in CreateMyelinMaps.sh
-    argList+="$AtlasSpaceFolder"/xfms/"$Jacobian "
-    argList+="$ReferenceMyelinMaps "
-    argList+="$CorrectionSigma "
-    argList+="$RegName "                                  # ${39}
-    "$PipelineScripts"/CreateMyelinMaps.sh ${argList}
+argList="$StudyFolder "                # ${1}
+argList+="$Subject "
+argList+="$AtlasSpaceFolder "
+argList+="$NativeFolder "
+argList+="$T1wFolder "                 # ${5}
+argList+="$HighResMesh "
+argList+="$LowResMeshes "
+argList+="$T1wFolder"/"$OrginalT1wImage "
+argList+="$T2wFolder"/"$OrginalT2wImage "
+argList+="$T1wFolder"/"$T1wImageBrainMask "           # ${10}
+argList+="$T1wFolder"/xfms/"$InitialT1wTransform "
+argList+="$T1wFolder"/xfms/"$dcT1wTransform "
+argList+="$T2wFolder"/xfms/"$InitialT2wTransform "
+argList+="$T1wFolder"/xfms/"$dcT2wTransform "
+argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15}
+argList+="$AtlasTransform "
+argList+="$T1wFolder"/"$BiasField "
+argList+="$T1wFolder"/"$OutputT1wImage "
+argList+="$T1wFolder"/"$OutputT1wImageRestore "
+argList+="$T1wFolder"/"$OutputT1wImageRestoreBrain "  # ${20}
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImage "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain "
+argList+="$T1wFolder"/"$OutputT2wImage "
+argList+="$T1wFolder"/"$OutputT2wImageRestore "       # ${25}
+argList+="$T1wFolder"/"$OutputT2wImageRestoreBrain "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImage "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore "
+argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain "
+argList+="$T1wFolder"/xfms/"$OutputOrigT1wToT1w "     # {30}
+argList+="$T1wFolder"/xfms/"$OutputOrigT1wToStandard "
+argList+="$T1wFolder"/xfms/"$OutputOrigT2wToT1w "
+argList+="$T1wFolder"/xfms/"$OutputOrigT2wToStandard "
+argList+="$AtlasSpaceFolder"/"$BiasFieldOutput "
+argList+="$AtlasSpaceFolder"/"$T1wImageBrainMask "    # {35}  Called T1wMNIImageBrainMask in CreateMyelinMaps.sh
+argList+="$AtlasSpaceFolder"/xfms/"$Jacobian "
+argList+="$ReferenceMyelinMaps "
+argList+="$CorrectionSigma "
+argList+="$RegName "                                  # ${39}
+"$PipelineScripts"/CreateMyelinMaps.sh ${argList}
 
-    verbose_green_echo "---> Finished Post FreeSurfer Pipeline"
-    verbose_echo " "
+verbose_green_echo "---> Finished Post FreeSurfer Pipeline"
+verbose_echo " "
 
-    log_Msg "Completed"
-fi
+log_Msg "Completed"
+
