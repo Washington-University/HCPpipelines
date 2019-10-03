@@ -19,7 +19,6 @@ set -e
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/opts.shlib  # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Checking validity of MPP mode selection
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
