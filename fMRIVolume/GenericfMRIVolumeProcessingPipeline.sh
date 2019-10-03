@@ -225,6 +225,11 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
+fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD run to use for movement correction target and to copy atlas registration from (or NONE; default)
+
+# Defaults
+fMRIReference=${fMRIReference:-NONE}
+
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -235,7 +240,12 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
+# -- Use of BOLD reference
 
+if [ ! "${DoSliceTimeCorrection}" = 'NONE' ]; then
+  ComplianceMsg+=" --t2=NONE"
+  Compliance="LegacyStyleData"
+fi
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
@@ -310,6 +320,10 @@ T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
+if [ ! $fMRIReference = "NONE" ] ; then
+    fMRIReference="$Path"/"$Subject"/"$fMRIReference"
+fi
+
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
 
 if [ ! -e "$fMRIFolder" ] ; then
@@ -365,6 +379,15 @@ fi
 
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
 mkdir -p "$fMRIFolder"/MotionCorrection
+
+if [ ! $fMRIReference = "NONE" ] ; then
+    log_Msg "Using reference image from ${fMRIReference}"
+    reference="$fMRIReference"/"$ScoutName"_gdc
+else
+    reference="$fMRIFolder"/"$ScoutName"_gdc
+    ReferenceReg="NONE"  # only do nonlinear or linear registration for target that is not of the same bold run
+fi
+
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/MotionCorrection \
        "$fMRIFolder"/"$NameOffMRI"_gdc \
@@ -376,46 +399,61 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$MotionCorrectionType"
 
 # EPI Distortion Correction and EPI to T1w Registration
-log_Msg "EPI Distortion Correction and EPI to T1w Registration"
-
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 DCFolder=${fMRIFolder}/${DCFolderName}
 
-if [ -e ${DCFolder} ] ; then
-    ${RUN} rm -r ${DCFolder}
-fi
-log_Msg "mkdir -p ${DCFolder}"
-mkdir -p ${DCFolder}
+if [ $fMRIReference = "NONE" ] ; then
+  log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
-${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
-       --workingdir=${DCFolder} \
-       --scoutin=${fMRIFolder}/${ScoutName}_gdc \
-       --t1=${T1wFolder}/${T1wImage} \
-       --t1restore=${T1wFolder}/${T1wRestoreImage} \
-       --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
-       --fmapmag=${MagnitudeInputName} \
-       --fmapphase=${PhaseInputName} \
-       --fmapgeneralelectric=${GEB0InputName} \
-       --echodiff=${deltaTE} \
-       --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-       --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-       --echospacing=${EchoSpacing} \
-       --unwarpdir=${UnwarpDir} \
-       --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-       --biasfield=${T1wFolder}/${BiasField} \
-       --oregim=${fMRIFolder}/${RegOutput} \
-       --freesurferfolder=${T1wFolder} \
-       --freesurfersubjectid=${Subject} \
-       --gdcoeffs=${GradientDistortionCoeffs} \
-       --qaimage=${fMRIFolder}/${QAImage} \
-       --method=${DistortionCorrection} \
-       --topupconfig=${TopupConfig} \
-       --ojacobian=${fMRIFolder}/${JacobianOut} \
-       --dof=${dof} \
-       --fmriname=${NameOffMRI} \
-       --subjectfolder=${SubjectFolder} \
-       --biascorrection=${BiasCorrection} \
-       --usejacobian=${UseJacobian}
+  if [ -e ${DCFolder} ] ; then
+      ${RUN} rm -r ${DCFolder}
+  fi
+  log_Msg "mkdir -p ${DCFolder}"
+  mkdir -p ${DCFolder}
+
+  ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+         --workingdir=${DCFolder} \
+         --scoutin=${fMRIFolder}/${ScoutName}_gdc \
+         --t1=${T1wFolder}/${T1wImage} \
+         --t1restore=${T1wFolder}/${T1wRestoreImage} \
+         --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
+         --fmapmag=${MagnitudeInputName} \
+         --fmapphase=${PhaseInputName} \
+         --fmapgeneralelectric=${GEB0InputName} \
+         --echodiff=${deltaTE} \
+         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+         --echospacing=${EchoSpacing} \
+         --unwarpdir=${UnwarpDir} \
+         --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+         --biasfield=${T1wFolder}/${BiasField} \
+         --oregim=${fMRIFolder}/${RegOutput} \
+         --freesurferfolder=${T1wFolder} \
+         --freesurfersubjectid=${Subject} \
+         --gdcoeffs=${GradientDistortionCoeffs} \
+         --qaimage=${fMRIFolder}/${QAImage} \
+         --method=${DistortionCorrection} \
+         --topupconfig=${TopupConfig} \
+         --ojacobian=${fMRIFolder}/${JacobianOut} \
+         --dof=${dof} \
+         --fmriname=${NameOffMRI} \
+         --subjectfolder=${SubjectFolder} \
+         --biascorrection=${BiasCorrection} \
+         --usejacobian=${UseJacobian}
+else
+    log_Msg "linking EPI distorsion correction and T1 registration from ${fMRIReference}"
+    if [ -e ${fMRIFolder}/${DCFolderName} ] ; then
+        log_Msg "     ... removing stale link (or preexisiting files)"
+        rm -r ${fMRIFolder}/${DCFolderName}
+    fi
+    ln -s -f ${fMRIReference}/${DCFolderName} ${fMRIFolder}/${DCFolderName}
+ 
+    WD=${fMRIReference}/${DCFolderName}
+    ${FSLDIR}/bin/imcp ${fMRIReference}/${RegOutput} ${fMRIFolder}/${RegOutput}
+    ${FSLDIR}/bin/imcp ${WD}/fMRI2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
+    ${FSLDIR}/bin/imcp ${WD}/Jacobian2T1w ${fMRIFolder}/${JacobianOut}
+    ${FSLDIR}/bin/imcp ${fMRIReference}/${QAImage} ${fMRIFolder}/${QAImage}
+fi
 
 #One Step Resampling
 log_Msg "One Step Resampling"
@@ -441,7 +479,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
        --scoutin=${fMRIFolder}/${OrigScoutName} \
        --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
+       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} 
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
