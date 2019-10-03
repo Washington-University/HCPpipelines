@@ -235,7 +235,10 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-
+if [ "${DistortionCorrection}" = 'NONE' ]; then
+  ComplianceMsg+=" --dcmethod=NONE"
+  Compliance="LegacyStyleData"
+fi
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
