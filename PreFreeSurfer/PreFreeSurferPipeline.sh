@@ -462,11 +462,7 @@ AtlasSpaceFolder="MNINonLinear"
 
 # Build Paths
 T1wFolder=${StudyFolder}/${Subject}/${T1wFolder}
-if [ "${T2wInputImages}" = "NONE" ] ; then
-  T2wFolder=NONE
-else
-  T2wFolder=${StudyFolder}/${Subject}/${T2wFolder}
-fi
+T2wFolder=${StudyFolder}/${Subject}/${T2wFolder}
 AtlasSpaceFolder=${StudyFolder}/${Subject}/${AtlasSpaceFolder}
 
 log_Msg "T1wFolder: $T1wFolder"
@@ -476,6 +472,15 @@ log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
 # Unpack List of Images
 T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g'`
 T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
+
+
+# -- Are T2w images available
+
+if [ ! "${T2wInputImages}" = "NONE" ] ; then
+  T2wAvailable="TRUE"
+else
+  T2wAvailable="FALSE"
+fi
 
 if [ ! -e ${T1wFolder}/xfms ] ; then
   log_Msg "mkdir -p ${T1wFolder}/xfms/"
@@ -666,7 +671,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --method=${AvgrdcSTRING} \
         --topupconfig=${TopupConfig} \
         --gdcoeffs=${GradientDistortionCoeffs} \
-        --usejacobian=${UseJacobian} 
+        --usejacobian=${UseJacobian} \
+        --t2avail=${T2wAvailable}
 
       ;;
 
@@ -694,7 +700,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
         ${T1wFolder}/${T1wImage}_acpc_dc_brain \
         ${T1wFolder}/xfms/${T1wImage}_dc \
         ${T1wFolder}/${T2wImage}_acpc_dc \
-        ${T1wFolder}/xfms/${T2wImage}_reg_dc
+        ${T1wFolder}/xfms/${T2wImage}_reg_dc \
+        ${T2wAvailable}
 
   esac
 
@@ -822,12 +829,6 @@ fi  # --- skipped to here if we are using custom brain
 #  so, the primary purpose of the following is to generate the Atlas Registration itself).
 # ------------------------------------------------------------------------------
 
-if [ ! "${T2wInputImages}" = "NONE" ] ; then
-  t2avail="YES"
-else
-  t2avail="NO"
-fi
-
 log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
 
 ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
@@ -852,7 +853,7 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
   --fnirtconfig=${FNIRTConfig} \
-  --t2avail=${t2avail}
+  --t2avail=${T2wAvailable}
 
 log_Msg "Completed"
 

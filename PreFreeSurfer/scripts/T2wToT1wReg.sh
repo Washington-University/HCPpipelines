@@ -33,12 +33,13 @@ OutputT1wImageBrain="$7"
 OutputT1wTransform="$8"
 OutputT2wImage="$9"
 OutputT2wTransform="${10}"
+T2wAvailable="${11}"
 
 T1wImageBrainFile=`basename "$T1wImageBrain"`
 
 ${FSLDIR}/bin/imcp "$T1wImageBrain" "$WD"/"$T1wImageBrainFile"
 
-if [[ "${T2wImage}" = "NONE"* ]] ; then
+if [[ "${T2wAvailable}" = "FALSE" ]] ; then
     log_Msg "Skipping T2w to T1w registration --- no T2w image."
 else
     ${FSLDIR}/bin/epi_reg --epi="$T2wImageBrain" --t1="$T1wImage" --t1brain="$WD"/"$T1wImageBrainFile" --out="$WD"/T2w2T1w
@@ -51,7 +52,7 @@ ${FSLDIR}/bin/imcp "$T1wImageBrain" "$OutputT1wImageBrain"
 ${FSLDIR}/bin/fslmerge -t $OutputT1wTransform "$T1wImage".nii.gz "$T1wImage".nii.gz "$T1wImage".nii.gz
 ${FSLDIR}/bin/fslmaths $OutputT1wTransform -mul 0 $OutputT1wTransform
 
-if [[ "${T2wImage}" != "NONE"* ]] ; then
+if [[ "${T2wAvailable}" = "TRUE" ]] ; then
     ${FSLDIR}/bin/imcp "$WD"/T2w2T1w "$OutputT2wImage"
     ${FSLDIR}/bin/convertwarp --relout --rel -r "$OutputT2wImage".nii.gz -w $OutputT1wTransform --postmat="$WD"/T2w2T1w.mat --out="$OutputT2wTransform"
 fi
