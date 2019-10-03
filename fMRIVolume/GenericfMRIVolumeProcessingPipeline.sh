@@ -225,6 +225,11 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
+Preregister=`opts_GetOpt1 "--preregister" $@`                        # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
+
+# Defaults
+
+Preregister=${Preregister:-epi_reg}
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -235,7 +240,12 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
+# -- Preregister code
 
+if [ ! "${Preregister}" = 'epi_reg' ]; then
+  ComplianceMsg+=" --preregister=${Preregister}"
+  Compliance="LegacyStyleData"
+fi
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
@@ -415,7 +425,8 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
        --fmriname=${NameOffMRI} \
        --subjectfolder=${SubjectFolder} \
        --biascorrection=${BiasCorrection} \
-       --usejacobian=${UseJacobian}
+       --usejacobian=${UseJacobian} \
+       --preregister=${Preregister}
 
 #One Step Resampling
 log_Msg "One Step Resampling"
