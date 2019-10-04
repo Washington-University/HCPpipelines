@@ -138,7 +138,6 @@ debug_on_error()
     if [ ! $HCP_DEBUG_USETRAP == 'OFF' ]; then        
 
         local me=`basename "$0"`
-        local line
         local startreport=""
         local endreport=""
         local command=$(eval debug_first "$2")
