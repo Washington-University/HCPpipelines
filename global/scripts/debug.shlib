@@ -1,3 +1,5 @@
+#!/bin/echo This script should not run directly:
+
 # Description:
 #
 #   Function for printing debugging information on caught errors.
