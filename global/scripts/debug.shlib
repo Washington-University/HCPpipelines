@@ -84,7 +84,7 @@ debug_disable_color()
 debug_red_echo()
 {   
     if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-        echo -e "\033[31m $* \033[0m"
+        echo -e "\033[31m$*\033[0m"
     else
         echo "$*"
     fi
@@ -102,7 +102,7 @@ debug_red_echo()
 debug_green_echo()
 {   
     if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-        echo -e "\033[32m $* \033[0m"
+        echo -e "\033[32m$*\033[0m"
     else
         echo "$*"
     fi
@@ -120,7 +120,7 @@ debug_green_echo()
 debug_blue_echo()
 {   
     if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-        echo -e "\033[34m $* \033[0m"
+        echo -e "\033[34m$*\033[0m"
     else
         echo "$*"
     fi
@@ -143,7 +143,7 @@ debug_on_error()
 
         # --- output a regular HCP error log
 
-        log_Err "$command command failed with return code: $3"
+        log_Err "'$command' command failed with return code: $3"
 
         # --- are we printing in color
 
@@ -154,17 +154,20 @@ debug_on_error()
         
         # --- output a detailed report if usetrap is not turned off    
         echo                                                               
-        echo -e "${startreport}##### ERROR: Execution stopped prematurely #####"
-        echo "---> script: $me"                                            
-        echo "---> stopped at line: $1"                                    
-        echo "---> command: $command"                                      
-        echo "---> expanded: $(eval echo "$2")"                            
-        echo "---> exit status: $3"                                        
-        echo -e "##### -------------------------------- #####${endreport}" 
+        echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
+        echo "---------------------------------------------------"
+        echo "         script: $me"                                            
+        echo "stopped at line: $1"                                    
+        echo "           call: $2"
+        echo "  expanded call: $(eval echo "$2")"                            
+        echo "    exit status: $3"                                        
+        echo -e "---------------------------------------------------${endreport}" 
         echo                                                               
         
         # --- check if ok to exit        
         if [ ! $HCP_DEBUG_EXIT_ON_ERROR = 'OFF' ]; then
+            debug_red_echo "===> Aborting execution!"
+            echo ""
             exit $3
         fi
     fi
