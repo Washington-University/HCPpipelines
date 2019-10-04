@@ -6,7 +6,7 @@
 #
 # Input:
 #
-#   — line number
+#   - line number
 #   - command ran
 #   - exit status
 
@@ -79,7 +79,7 @@ debug_disable_color()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 debug_red_echo()
 {   
@@ -97,7 +97,7 @@ debug_red_echo()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 debug_green_echo()
 {   
@@ -115,7 +115,7 @@ debug_green_echo()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 debug_blue_echo()
 {   
@@ -203,7 +203,7 @@ debug_disable_verbose()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 verbose_red_echo()
 {   
@@ -219,7 +219,7 @@ verbose_red_echo()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 verbose_green_echo()
 {   
@@ -235,7 +235,7 @@ verbose_green_echo()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 verbose_blue_echo()
 {   
@@ -251,7 +251,7 @@ verbose_blue_echo()
 #
 # Input:
 #
-#   — text to be printed
+#   - text to be printed
 
 verbose_echo()
 {   
