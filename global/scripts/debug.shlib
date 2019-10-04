@@ -137,8 +137,8 @@ debug_on_error()
 
         local me=`basename "$0"`
         local line
-        local startreport = ""
-        local endreport   = ""
+        local startreport=""
+        local endreport=""
         local command=$(eval debug_first "$2")
 
         # --- output a regular HCP error log
