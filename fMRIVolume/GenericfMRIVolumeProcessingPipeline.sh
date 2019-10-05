@@ -225,7 +225,7 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD run to use for movement correction target and to copy atlas registration from (or NONE; default)
+fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD name run to use for movement correction target and to copy atlas registration from (or NONE; default)
 
 # Defaults
 fMRIReference=${fMRIReference:-NONE}
@@ -242,8 +242,8 @@ ComplianceMsg=""
 
 # -- Use of BOLD reference
 
-if [ ! "${DoSliceTimeCorrection}" = 'NONE' ]; then
-  ComplianceMsg+=" --t2=NONE"
+if [ ! "${fMRIReference}" = 'NONE' ]; then
+  ComplianceMsg+=" --fmriref=${fMRIReference}"
   Compliance="LegacyStyleData"
 fi
 
