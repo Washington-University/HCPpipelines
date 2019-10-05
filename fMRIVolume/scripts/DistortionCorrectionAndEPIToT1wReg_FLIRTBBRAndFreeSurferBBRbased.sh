@@ -398,7 +398,7 @@ case $DistortionCorrection in
           ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted2T1w_init
         elif [ $Preregister = "flirt" ] ; then
           log_Msg "... running flirt"
-          ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof 6
+          ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof ${dof}
         fi
 
         #copy the initial registration into the final affine's filename, as it is pretty good
