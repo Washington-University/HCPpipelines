@@ -452,11 +452,11 @@ case $DistortionCorrection in
 
             log_Msg "---> FAKE Jacobian Volume"
             ###Jacobian Volume FAKED for Regular Fieldmaps (all ones) ###
-            ${FSLDIR}/bin/fslmaths ${T1wImage} -abs -add 1 -bin ${WD}/Jacobian.nii.gz
+            ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 -bin ${WD}/Jacobian.nii.gz
 
             log_Msg "---> FAKE spline interpolated image of scout"
             # create a spline interpolated image of scout (distortion corrected in same space)
-            cp ${ScoutInputName}.nii.gz ${WD}/${ScoutInputFile}_undistorted.nii.gz
+            ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}_undistorted
 
             log_Msg "---> REORIENT scout to standard MNI152 template"
             # use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images (MNI152)
