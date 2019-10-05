@@ -410,7 +410,7 @@ case $DistortionCorrection in
         for File in ${Files}
         do
             # check if T2w image exists
-            if [ `${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
+            if [ `${FSLDIR}/bin/imtest ${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
                 ReferenceImage=${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz
             else
                 ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
@@ -561,7 +561,7 @@ then
     #we need them before the final bias field computation
 
     # check if T2w image exists
-    if [ `${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
+    if [ `${FSLDIR}/bin/imtest ${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
         ReferenceImage=${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz
     else
         ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
