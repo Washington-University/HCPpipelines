@@ -225,7 +225,7 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # How to register bold image to reference? Using 'linear' (default) or also 'nonlinear' registration to movement reference.
+ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # Whether to use 'linear', 'nonlinear' or no ('NONE') registration to movement reference.
 
 # Defaults
 ReferenceReg=${ReferenceReg:-linear}
@@ -241,7 +241,7 @@ ComplianceMsg=""
 
 # -- BOLD nonlinear registration to reference image
 
-if [ ! "${ReferenceReg}" = 'linear']; then
+if [ "${ReferenceReg}" = 'nonlinear']; then
   ComplianceMsg+=" --refreg=${ReferenceReg}"
   Compliance="LegacyStyleData"
 fi

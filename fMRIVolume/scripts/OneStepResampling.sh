@@ -30,6 +30,7 @@ Usage() {
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
+  echo "             --refreg=<whether to do 'linear', 'nonlinear' or no ('NONE') additional registration to movement reference image>"
 }
 
 # function for parsing options
