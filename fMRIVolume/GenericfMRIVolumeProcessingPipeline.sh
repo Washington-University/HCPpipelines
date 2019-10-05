@@ -225,13 +225,14 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`              # Whether to do slicetime correction (TRUE), FALSE to omit
-SliceCorrectionDirection=`opts_GetOpt1 "--slicetimedir" $@`          # direction: empty for up, --down for down
-SliceCorrectionInterleaved=`opts_GetOpt1 "--slicetimeodd" $@`        # interleaved: empty for not, --odd for interleaved
-TR=`opts_GetOpt1 "--tr" $@`                                          # TR of the timeseries
+DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                 # Whether to do slicetime correction (TRUE), FALSE to omit
+SliceCorrectionDirection=`opts_GetOpt1 "--slicetimedir" $@`             # direction: empty for up, --down for down
+SliceCorrectionInterleaved=`opts_GetOpt1 "--slicetimeinterleaved" $@`   # interleaved slice acquisition: TRUE/FALSE
+TR=`opts_GetOpt1 "--tr" $@`                                             # TR of the timeseries
 
 # Defaults
-DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                # No slice timing correction is done by default 
+DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                   # No slice timing correction is done by default 
+SliceCorrectionInterleaved=${SliceCorrectionInterleaved:-TRUE}          # Interleaved slice timing is TRUE by default 
 
 
 # ------------------------------------------------------------------------------
@@ -336,10 +337,15 @@ cp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName".nii.gz
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction"
     #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
-    #  this makes the single-band processing more robust to registration problems
-    fslreorient2std "$fMRIFolder"/"$OrigTCSName".nii.gz "$fMRIFolder"/"$OrigTCSName"_prestcor.nii.gz
+    #  this makes the single-band processing more robust to registration problems    
+    fslreorient2std "$fMRIFolder"/"$OrigTCSName".nii.gz "$fMRIFolder"/"$OrigTCSName"_orig_reorient.nii.gz
     rm "$fMRIFolder"/"$OrigTCSName".nii.gz
-    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_prestcor -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} ${SliceCorrectionDirection} ${SliceCorrectionInterleaved} -v
+    if [ ${SliceCorrectionInterleaved} = 'TRUE' ] ; then
+      InterleavedSliceTiming="--odd"
+    else
+      InterleavedSliceTiming=""
+    fi
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_orig_reorient -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} ${SliceCorrectionDirection} ${InterleavedSliceTiming} -v
 fi
 
 #Create fake "Scout" if it doesn't exist
