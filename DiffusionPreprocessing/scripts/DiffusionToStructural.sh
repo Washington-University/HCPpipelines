@@ -137,6 +137,14 @@ ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
+
+# Create a simple summary text file of the percentage of spatial coverage of the dMRI data inside the FS-derived brain mask
+NvoxBrainMask=`fslstats  -V "$T1wOutputDirectory"/nodif_brain_mask_old | awk '{print $1}'`
+NvoxFinalMask=`fslstats  -V "$T1wOutputDirectory"/nodif_brain_mask | awk '{print $1}'`
+PctCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxBrainMask}" | bc -l`
+echo "PctCoverage, NvoxFinalMask, NvoxBrainMask" >| "$T1wOutputDirectory"/nodif_brain_mask.stats.txt
+echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> fov_mask.stats.txt
+
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/fov_mask
