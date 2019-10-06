@@ -97,7 +97,7 @@ done
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
-DILATE_DISTANCE=echo "$DiffRes * 12"  # Extrapolates the diffusion data up to 12 voxels outside of the FOV
+DILATE_DISTANCE=echo "$DiffRes * 4" | bc  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
 
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
