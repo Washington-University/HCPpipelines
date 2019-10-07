@@ -240,13 +240,6 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-# -- Preregister code
-
-if [ ! "${Preregister}" = 'epi_reg' ]; then
-  ComplianceMsg+=" --preregister=${Preregister}"
-  Compliance="LegacyStyleData"
-fi
-
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
