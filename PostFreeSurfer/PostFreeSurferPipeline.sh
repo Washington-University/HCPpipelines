@@ -105,7 +105,9 @@ verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
 verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
 verbose_echo "           --mcsigma: ${CorrectionSigma}"
 verbose_echo "           --regname: ${RegName}"
-verbose_echo "   --PipelineScripts: ${PipelineScripts}"
+verbose_echo ""
+verbose_echo " Using environment setting ..."
+verbose_echo "   HCPPIPEDIR_PostFS: ${PipelineScripts}"
 verbose_echo " "
 
 #Naming Conventions
