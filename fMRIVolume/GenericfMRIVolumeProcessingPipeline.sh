@@ -225,7 +225,9 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # Whether to use 'linear', 'nonlinear' or no ('NONE') registration to movement reference.
+ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # In the cases when BOLD image is registered to a specified BOLD reference, this option 
+                                                                     # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
+                                                                     # Default is 'linear'.
 
 # Defaults
 ReferenceReg=${ReferenceReg:-linear}
