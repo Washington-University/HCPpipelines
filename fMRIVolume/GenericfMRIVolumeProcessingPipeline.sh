@@ -231,7 +231,15 @@ SliceCorrectionInterleaved=`opts_GetOpt1 "--slicetimeinterleaved" $@`   # interl
 TR=`opts_GetOpt1 "--tr" $@`                                             # TR of the timeseries
 
 # Defaults
-DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                   # No slice timing correction is done by default 
+DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                   # WARNING: This legacy option of slice timing correction is performed before motion correction 
+                                                                        # (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. 
+                                                                        # Errors in temporal interpolation will occur in the presence of head motion and may also disrupt 
+                                                                        # data quality measures as shown in Power et al 2017 PLOS One "Temporal interpolation alters motion in fMRI
+                                                                        # scans: Magnitudes and consequences for artifact detection." Slice timing correction and motion correction 
+                                                                        # would ideally be performed simultaneously; however, this is not currently supported by any major software 
+                                                                        # tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, 
+                                                                        # provide major advantages for fMRI denoising, and are recommended. 
+                                                                        # No slice timing correction is done by default 
 SliceCorrectionInterleaved=${SliceCorrectionInterleaved:-TRUE}          # Interleaved slice timing is TRUE by default 
 
 
@@ -247,10 +255,9 @@ ComplianceMsg=""
 # -- Slice timing correction
 
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
-  ComplianceMsg+=" --doslicetime=TRUE"
+  ComplianceMsg+=" --doslicetime=TRUE WARNING: This legacy option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
   Compliance="LegacyStyleData"
 fi
-
 
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
