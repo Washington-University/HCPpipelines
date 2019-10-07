@@ -3,14 +3,13 @@
 # Description:
 #
 #   Function for printing debugging information on caught errors.
-#   It makes use of error trapping. To reset the trap, add
-#   end of the script using "trap - ERR".
+#   It makes use of error trapping.
 #
 # Input:
 #
-#   - line number
-#   - command ran
-#   - exit status
+#   $1 - line number
+#   $2 - command ran
+#   $3 - exit status
 
 trap 'debug_on_error $LINENO "$BASH_COMMAND" $?' ERR
 
@@ -19,10 +18,25 @@ then
     source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
 fi
 
+if [ -z ${HCP_DEBUG_USETRAP} ] ; then
+    HCP_DEBUG_USETRAP=ON
+fi
+
+if [ -z ${HCP_DEBUG_EXIT_ON_ERROR} ] ; then
+    HCP_DEBUG_EXIT_ON_ERROR=ON
+fi
+
+if [ -z ${HCP_DEBUG_COLOR} ] ; then
+    HCP_DEBUG_COLOR=FALSE
+fi
+
+if [ -z ${HCP_VERBOSE} ] ; then
+    HCP_VERBOSE=FALSE
+fi
 
 # Description:
 #
-#   Function to turn on error trappimg
+#   Function to turn on error trapping
 
 debug_enable_trap()
 {
@@ -31,7 +45,7 @@ debug_enable_trap()
 
 # Description:
 #
-#   Function to turn on off error trappimg
+#   Function to turn off error trapping
 
 debug_disable_trap()
 {
@@ -166,7 +180,7 @@ debug_on_error()
         echo                                                               
         
         # --- check if ok to exit        
-        if [ ! $HCP_DEBUG_EXIT_ON_ERROR = 'OFF' ]; then
+        if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
             debug_red_echo "===> Aborting execution!"
             echo ""
             exit $3
@@ -190,7 +204,7 @@ debug_enable_verbose()
 
 # Description:
 #
-#   Function to turn off output coloring
+#   Function to turn off verbose reporting
 
 debug_disable_verbose()
 {
