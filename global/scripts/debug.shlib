@@ -3,7 +3,11 @@
 # Description:
 #
 #   Function for printing debugging information on caught errors.
-#   It makes use of error trapping.
+#   It makes use of error trapping. 
+#
+#   To disable error trapping run `debug_disable_trap`
+#   To disable exit uppon trapped error run `debug_disable_exit`
+
 #
 # Input:
 #
