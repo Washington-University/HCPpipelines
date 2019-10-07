@@ -560,12 +560,8 @@ then
     #the MNI space versions get made in OneStepResampling, but they aren't actually 1-step resampled
     #we need them before the final bias field computation
 
-    # check if T2w image exists
-    if [ `${FSLDIR}/bin/imtest ${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
-        ReferenceImage=${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz
-    else
-        ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
-    fi
+    # Set up reference image
+    ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
 
     Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
     for File in ${Files}

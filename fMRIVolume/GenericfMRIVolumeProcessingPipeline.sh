@@ -235,13 +235,6 @@ MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-# -- T2w image
-
-if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w.nii.gz` -eq 0 ]; then
-  log_Msg " T2w image is not present"
-  Compliance="LegacyStyleData"
-fi
-
 check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
