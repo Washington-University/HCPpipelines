@@ -563,7 +563,7 @@ main()
 	local mri_surf2surf_cmd
 
 	local T2wtoT1wFile="T2wtoT1w.mat"
-	local OutputOrigT2wToT1w="OrigT2w2T1w"  #Needs to match name used in PostFreeSurfer (N.B. "OrigT2" here refers to the T2w/T2w.nii.gz file; NOT FreeSurfer's "orig" space)
+	local OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
 
 	# ----------------------------------------------------------------------
 	log_Msg "Starting main functionality"
@@ -625,7 +625,7 @@ main()
 
 		# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
 		# certain files need to be reverted to their PreFreeSurfer output versions
-		if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ]; then
+		if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
 			log_Err "The --existing-subject flag was not invoked AND PostFreeSurfer has already been run."
 			log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <subj>/T1w/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
 			log_Err_Abort "If this is the goal, delete ${SubjectDIR}/${SubjectID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
