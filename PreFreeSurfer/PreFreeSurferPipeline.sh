@@ -363,20 +363,19 @@ TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 CustomBrain=`opts_GetOpt1 "--custombrain" $@`
 
-# Defaults
-CustomBrain=`opts_DefaultOpt $CustomBrain NONE`
-
 #NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
 #not currently in usage, either, because of this very limited use
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
+UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
 
 # Use --printcom=echo for just printing everything and not actually
 # running the commands (the default is to actually run the commands)
 RUN=`opts_GetOpt1 "--printcom" $@`
 
-# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
-UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+# Defaults
 UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
+CustomBrain=`opts_DefaultOpt $CustomBrain NONE`
 
 
 # ------------------------------------------------------------------------------
@@ -442,6 +441,7 @@ log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
 log_Msg "UseJacobian: ${UseJacobian}"
 log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
 log_Msg "CustomBrain: ${CustomBrain}"
+log_Msg "MPPMode: ${MPPMode}"
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables
@@ -517,7 +517,8 @@ log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
 #  - Perform Brain Extraction(FNIRT-based Masking)
 # ------------------------------------------------------------------------------
 
-# --- skip if we have a custom brain
+# NOTE: We skip all the way to AtlasRegistration (last step) if using a custom 
+# brain mask or custom structural images ($CustomBrain={MASK|CUSTOM})
 
 if [ "$CustomBrain" = "NONE" ] ; then
 
