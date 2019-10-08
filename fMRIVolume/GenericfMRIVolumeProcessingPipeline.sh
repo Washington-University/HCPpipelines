@@ -231,7 +231,7 @@ fi
                                                        # In HCP data 30% of the cortical surface will be misaligned by at least half cortical thickness and 10% of the cortical 
                                                        # surface will be completely misaligned by a full cortical thickness. At a future time, we may be able to add support for 
                                                        # fieldmap-less distortion correction; however, no extant software package or pipelines have successfully demonstrated 
-                                                       # clear improvement from fieldmap-less distortion correction when compared with a gold standard fieldmap-based correction.
+                                                       # clear improvement over no distortion correction, in the direction towards gold standard fieldmap-based correction.
 
 
 
@@ -243,13 +243,15 @@ MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
+ComplianceWarn=""
 
 if [ "${DistortionCorrection}" = 'NONE' ]; then
-  ComplianceMsg+=" --dcmethod=NONE WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of the distorted fMRI to the undistorted T1w image. Distorted portions of the fMRI data will not align with the cortical ribbon. In HCP data 30% of the cortical surface will be misaligned by at least half cortical thickness and 10% of the cortical surface will be completely misaligned by a full cortical thickness. At a future time, we may be able to add support for fieldmap-less distortion correction; however, no extant software package or pipelines have successfully demonstrated clear improvement from fieldmap-less distortion correction when compared with a gold standard fieldmap-based correction."
+  ComplianceMsg+=" --dcmethod=NONE"
+  ComplianceWarn="WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of the distorted fMRI to the undistorted T1w image. Distorted portions of the fMRI data will not align with the cortical ribbon. In HCP data 30% of the cortical surface will be misaligned by at least half cortical thickness and 10% of the cortical surface will be completely misaligned by a full cortical thickness. At a future time, we may be able to add support for fieldmap-less distortion correction; however, no extant software package or pipelines have successfully demonstrated clear improvement over no distortion correction, in the direction towards gold standard fieldmap-based correction."
   Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}" "${ComplianceWarn}"
 
 # -- End compliance check
 
