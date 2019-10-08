@@ -806,20 +806,20 @@ elif [ "$CustomBrain" = "MASK" ] ; then
   log_Msg "Skipping all the steps to Atlas registration, applying custom mask."
   verbose_red_echo "---> Applying custom mask"
 
-  ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
+  fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
 
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
-    ${FSLDIR}/bin/fslmaths ${T1wFolder}/${T2wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T2wImage}_acpc_dc_restore_brain
+    fslmaths ${T1wFolder}/${T2wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T2wImage}_acpc_dc_restore_brain
   fi
 
 # -- Then we are using existing images
 
 else
 
-  log_Msg "Skipping all the steps to Atlas registration, using existing images."
+  log_Msg "Skipping all the steps preceding AtlasRegistration, using existing images instead."
   verbose_red_echo "---> Using existing images"
 
-fi  # --- skipped to here if we are using custom brain
+fi  # --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
 
 # ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
