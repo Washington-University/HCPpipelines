@@ -291,21 +291,20 @@ Usage: PreeFreeSurferPipeline.sh [options]
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
   [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
-                                      brain mask saved as "<path>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
+                                      brain mask saved as "<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
                                       If PreFreeSurfer has been run before and you have created custom structural images, e.g.: 
-                                      - "<path>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
-                                      - "<path>/T1w/T1w_acpc_dc_restore.nii.gz"
-                                      - "<path>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
-                                      - "<path>/T1w/T2w_acpc_dc_restore.nii.gz"
+                                      - "<subject>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
+                                      - "<subject>/T1w/T1w_acpc_dc_restore.nii.gz"
+                                      - "<subject>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
+                                      - "<subject>/T1w/T2w_acpc_dc_restore.nii.gz"
                                       to be used when peforming MNI152 Atlas registration, specify "CUSTOM".
-                                      When "MASK" or "CUSTOM" is specified, all the steps until Atlas registration 
-                                      are skipped.
+                                      When "MASK" or "CUSTOM" is specified, only the AtlasRegistration step is run.
                                       If the parameter is omitted or set to NONE (the default), 
                                       standard image processing will take place.
   [--mpp-mode=(HCPStyleData|          Which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps
                LegacyStyleData)]      described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. 
                                       "LegacyStyleData" allows additional processing functionality and use of some acquisitions 
-                                      that do not conform to 'HCP-Style' expectations:
+                                      that do not conform to 'HCP-Style' expectations i.e., in this case:
                                       - missing high-resolution T2w image, 
                                       - use of custom adjusted brain images or custom adjusted brain mask.
 EOF
