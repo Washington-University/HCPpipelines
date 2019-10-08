@@ -22,13 +22,8 @@ then
     source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
 fi
 
-if [ -z ${HCP_DEBUG_USETRAP} ] ; then
-    HCP_DEBUG_USETRAP=ON
-fi
-
-if [ -z ${HCP_DEBUG_EXIT_ON_ERROR} ] ; then
-    HCP_DEBUG_EXIT_ON_ERROR=ON
-fi
+HCP_DEBUG_USETRAP=ON
+HCP_DEBUG_EXIT_ON_ERROR=ON
 
 if [ -z ${HCP_DEBUG_COLOR} ] ; then
     HCP_DEBUG_COLOR=FALSE
