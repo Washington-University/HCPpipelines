@@ -226,7 +226,7 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       (T1w) structural images for the subject (required)
   --t2=<T2w images>                   An @ symbol separated list of full paths to T2-weighted
                                       (T2w) structural images for the subject (required for 
-                                      hcp-style data, can be NONE for legacy-style data)
+                                      hcp-style data, can be NONE for legacy-style data, see --mpp-mode option)
   --t1template=<file path>            MNI T1w template
   --t1templatebrain=<file path>       Brain extracted MNI T1wTemplate
   --t1template2mm=<file path>         MNI 2mm T1wTemplate
