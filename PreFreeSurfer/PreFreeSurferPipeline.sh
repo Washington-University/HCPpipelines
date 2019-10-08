@@ -301,10 +301,11 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       When "MASK" or "CUSTOM" is specified, only the AtlasRegistration step is run.
                                       If the parameter is omitted or set to NONE (the default), 
                                       standard image processing will take place.
-  [--mpp-mode=(HCPStyleData|          Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" (the default) follows the processing steps
-               LegacyStyleData)]      described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. 
-                                      "LegacyStyleData" allows additional processing functionality and use of some acquisitions 
-                                      that do not conform to 'HCP-Style' expectations i.e., in this case:
+  [--mpp-mode=(HCPStyleData|          Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" 
+               LegacyStyleData)]      (the default) follows the processing stepsdescribed in Glasser et al. (2013) 
+                                      and requires 'HCP-Style' data acquistion. "LegacyStyleData" allows additional 
+                                      processing functionality and use of some acquisitions that do not conform to 
+                                      'HCP-Style' expectations i.e., in this case:
                                       - missing high-resolution T2w image, 
                                       - use of custom adjusted brain images or custom adjusted brain mask.
 EOF
