@@ -345,23 +345,22 @@ ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction"
-    #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
-    #  this makes the single-band processing more robust to registration problems    
-    ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_orig_reorient
-    ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
     if [ ${SliceCorrectionInterleaved} = 'TRUE' ] ; then
       InterleavedSliceTiming="--odd"
     else
       InterleavedSliceTiming=""
-    fi
-    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_orig_reorient -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} ${SliceCorrectionDirection} ${InterleavedSliceTiming} -v
+    fi    
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_orig_stc -r ${TR} ${SliceCorrectionDirection} ${InterleavedSliceTiming} -v
+    #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
+    #  this makes the single-band processing more robust to registration problems    
+    ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_orig_stc "$fMRIFolder"/"$OrigTCSName"
 fi
 
 #Create fake "Scout" if it doesn't exist
 if [ $fMRIScout = "NONE" ] ; then
   ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
 else
-  cp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName".nii.gz
+  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName".nii.gz
 fi
 
 #Gradient Distortion Correction of fMRI
