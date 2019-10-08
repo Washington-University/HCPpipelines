@@ -80,9 +80,7 @@ ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
 CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
-
 MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 
 log_Msg "RegName: ${RegName}"
 
@@ -90,6 +88,7 @@ log_Msg "RegName: ${RegName}"
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
 RegName=`opts_DefaultOpt $RegName FS`
 InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 

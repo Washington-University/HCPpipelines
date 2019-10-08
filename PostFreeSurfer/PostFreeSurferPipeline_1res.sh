@@ -80,12 +80,14 @@ ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
 CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 
 log_Msg "RegName: ${RegName}"
 # default parameters
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
 RegName=`opts_DefaultOpt $RegName FS`
 InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
@@ -104,8 +106,10 @@ verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
 verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
 verbose_echo "           --mcsigma: ${CorrectionSigma}"
 verbose_echo "           --regname: ${RegName}"
-verbose_echo "   --PipelineScripts: ${PipelineScripts}"
+verbose_echo "          --mpp-mode: ${MPPMode}"
 verbose_echo " "
+verbose_echo " Using environment setting ..."
+verbose_echo "   HCPPIPEDIR_PostFS: ${PipelineScripts}"
 
 #Naming Conventions
 # Do NOT include spaces in any of these names
@@ -163,8 +167,6 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
