@@ -204,6 +204,7 @@ verbose_echo "           OutputT2wTransform             (ot2warp): $OutputT2wTra
 verbose_echo "         DistortionCorrection              (method): $DistortionCorrection"
 verbose_echo "                  TopupConfig         (topupconfig): $TopupConfig"
 verbose_echo "     GradientDistortionCoeffs            (gdcoeffs): $GradientDistortionCoeffs"
+verbose_echo "                  UseJacobian         (usejacobian): $UseJacobian"
 verbose_echo " "
 
 
