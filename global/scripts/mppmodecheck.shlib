@@ -16,6 +16,7 @@ check_mpp_compliance()
     local MPPMode="$1"
     local Compliance="$2"
     local ComplianceMsg="$3"
+    local ComplianceWarn="$4"
 
     # --- Initial information
 
@@ -38,6 +39,9 @@ check_mpp_compliance()
         log_Warn "All conditions for the use of --mpp-mode=HCPStyleData are met. Consider using that mode (or equivalently, simply leave --mpp-mode empty) instead of --mpp-mode=LegacyStyleData."
       else
         log_Msg "The following LegacyStyleData settings were requested:${ComplianceMsg}"
+      fi
+      if [ ! -z "${ComplianceWarn}" ] ; then
+        log_Warn "${ComplianceWarn}"
       fi
     else
       if [ "${Compliance}" = "LegacyStyleData" ]; then
