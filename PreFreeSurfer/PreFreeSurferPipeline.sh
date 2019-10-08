@@ -476,10 +476,14 @@ T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
 
 # -- Are T2w images available
 
-if [ ! "${T2wInputImages}" = "NONE" ] ; then
-  T2wAvailable="TRUE"
+if [ "${T2wInputImages}" = "NONE" ] ; then
+  T2wFolder_T2wImageWithPath_acpc="NONE"
+  T2wFolder_T2wImageWithPath_acpc_brain="NONE"
+  T1wFolder_T2wImageWithPath_acpc_dc="NONE"
 else
-  T2wAvailable="FALSE"
+  T2wFolder_T2wImageWithPath_acpc="${T2wFolder}/${T2wImage}_acpc"
+  T2wFolder_T2wImageWithPath_acpc_brain="${T2wFolder}/${T2wImage}_acpc_brain"
+  T1wFolder_T2wImageWithPath_acpc_dc=${T1wFolder}/${T2wImage}_acpc_dc
 fi
 
 if [ ! -e ${T1wFolder}/xfms ] ; then
@@ -650,8 +654,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --workingdir=${wdir} \
         --t1=${T1wFolder}/${T1wImage}_acpc \
         --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
-        --t2=${T2wFolder}/${T2wImage}_acpc \
-        --t2brain=${T2wFolder}/${T2wImage}_acpc_brain \
+        --t2=${T2wFolder_T2wImageWithPath_acpc} \
+        --t2brain=${T2wFolder_T2wImageWithPath_acpc_brain} \
         --fmapmag=${MagnitudeInputName} \
         --fmapphase=${PhaseInputName} \
         --fmapgeneralelectric=${GEB0InputName} \
@@ -671,8 +675,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --method=${AvgrdcSTRING} \
         --topupconfig=${TopupConfig} \
         --gdcoeffs=${GradientDistortionCoeffs} \
-        --usejacobian=${UseJacobian} \
-        --t2avail=${T2wAvailable}
+        --usejacobian=${UseJacobian} 
 
       ;;
 
@@ -694,14 +697,13 @@ if [ "$CustomBrain" = "NONE" ] ; then
         ${wdir} \
         ${T1wFolder}/${T1wImage}_acpc \
         ${T1wFolder}/${T1wImage}_acpc_brain \
-        ${T2wFolder}/${T2wImage}_acpc \
-        ${T2wFolder}/${T2wImage}_acpc_brain \
+        ${T2wFolder_T2wImageWithPath_acpc} \
+        ${T2wFolder_T2wImageWithPath_acpc_brain} \
         ${T1wFolder}/${T1wImage}_acpc_dc \
         ${T1wFolder}/${T1wImage}_acpc_dc_brain \
         ${T1wFolder}/xfms/${T1wImage}_dc \
         ${T1wFolder}/${T2wImage}_acpc_dc \
-        ${T1wFolder}/xfms/${T2wImage}_reg_dc \
-        ${T2wAvailable}
+        ${T1wFolder}/xfms/${T2wImage}_reg_dc 
 
   esac
 
@@ -724,7 +726,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
       --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
       --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
       --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
-      --T2im=${T1wFolder}/${T2wImage}_acpc_dc \
+      --T2im=${T1wFolder_T2wImageWithPath_acpc_dc} \
       --obias=${T1wFolder}/BiasField_acpc_dc \
       --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
       --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
@@ -836,7 +838,7 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --t1=${T1wFolder}/${T1wImage}_acpc_dc \
   --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
   --t1restbrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-  --t2=${T1wFolder}/${T2wImage}_acpc_dc \
+  --t2=${T1wFolder_T2wImageWithPath_acpc_dc} \
   --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
   --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
   --ref=${T1wTemplate} \
@@ -852,8 +854,7 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2=${AtlasSpaceFolder}/${T2wImage} \
   --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-  --fnirtconfig=${FNIRTConfig} \
-  --t2avail=${T2wAvailable}
+  --fnirtconfig=${FNIRTConfig} 
 
 log_Msg "Completed"
 

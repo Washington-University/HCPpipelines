@@ -84,7 +84,6 @@ Usage() {
   echo ""
   echo "            [--topupconfig=<topup config file>]"
   echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
-  echo "            [--t2avail=<TRUE or FALSE>]"
 }
 
 # function for parsing options
@@ -159,11 +158,9 @@ DistortionCorrection=`getopt1 "--method" $@`
 TopupConfig=`getopt1 "--topupconfig" $@`  
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  
 UseJacobian=`getopt1 "--usejacobian" $@`
-T2wAvailable=`getopt1 "--t2avail" $@`
 
 # default parameters
 WD=`defaultopt $WD .`
-T2wAvailable=`defaultopt $T2wAvailable TRUE`
 
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
@@ -207,7 +204,6 @@ verbose_echo "           OutputT2wTransform             (ot2warp): $OutputT2wTra
 verbose_echo "         DistortionCorrection              (method): $DistortionCorrection"
 verbose_echo "                  TopupConfig         (topupconfig): $TopupConfig"
 verbose_echo "     GradientDistortionCoeffs            (gdcoeffs): $GradientDistortionCoeffs"
-verbose_echo "                 T2wAvailable             (t2avail): $T2wAvailable"
 verbose_echo " "
 
 
@@ -344,7 +340,7 @@ for TXw in $Modalities ; do
       TXwImageBrainBasename=$T2wImageBrainBasename
     fi
 
-    if [ "${T2wAvailable}" = "FALSE" ] ; then
+    if [ "${T2wImage}" = "NONE" ] ; then
       verbose_echo "      ... Skipping $TXw"
       continue
     else
@@ -403,7 +399,7 @@ done
 
 ### END LOOP over modalities ###
 
-if [ "${T2wAvailable}" == "FALSE" ] ; then
+if [ "${T2wImage}" == "NONE" ] ; then
   verbose_echo ""
   verbose_red_echo " ---> Skipping T2w to T1w registration"
 
