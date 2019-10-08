@@ -792,13 +792,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
     fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/${T1wImage}_acpc_dc_brain ${OutputT2wImage}_restore_brain
   fi
 
-  # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
-  # i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
-  # or the PostFreeSurferPipeline versions
-  OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
-  imrm ${OutputOrigT1wToT1wPostFS}
-
-
 # -- Are we using a custom mask?
 
 elif [ "$CustomBrain" = "MASK" ] ; then
@@ -820,6 +813,13 @@ else
   verbose_red_echo "---> Using existing images"
 
 fi  # --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
+
+# Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
+# i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
+# or the PostFreeSurferPipeline versions
+OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
+imrm ${OutputOrigT1wToT1wPostFS}
+
 
 # ------------------------------------------------------------------------------
 #  Atlas Registration to MNI152: FLIRT + FNIRT
