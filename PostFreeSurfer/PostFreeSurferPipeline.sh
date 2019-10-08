@@ -81,6 +81,9 @@ CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
 
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+
 log_Msg "RegName: ${RegName}"
 
 # default parameters
@@ -105,6 +108,7 @@ verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
 verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
 verbose_echo "           --mcsigma: ${CorrectionSigma}"
 verbose_echo "           --regname: ${RegName}"
+verbose_echo "          --mpp-mode: ${MPPMode}"
 verbose_echo ""
 verbose_echo " Using environment setting ..."
 verbose_echo "   HCPPIPEDIR_PostFS: ${PipelineScripts}"
@@ -166,8 +170,6 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
