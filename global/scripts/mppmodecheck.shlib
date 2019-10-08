@@ -1,3 +1,5 @@
+#!/bin/echo This script should not run directly:
+
 # Functions for checking compliance with selected MPP mode for HCP Pipelines
 
 # --- Import log.shlib 
