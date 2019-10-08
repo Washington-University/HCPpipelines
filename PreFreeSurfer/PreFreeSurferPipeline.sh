@@ -301,6 +301,8 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       When "MASK" or "CUSTOM" is specified, only the AtlasRegistration step is run.
                                       If the parameter is omitted or set to NONE (the default), 
                                       standard image processing will take place.
+                                      If using "MASK" or "CUSTOM", the data still needs to be staged properly by 
+                                      running FreeSurfer and PostFreeSurfer afterwards.
   [--mpp-mode=(HCPStyleData|          Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" 
                LegacyStyleData)]      (the default) follows the processing stepsdescribed in Glasser et al. (2013) 
                                       and requires 'HCP-Style' data acquistion. "LegacyStyleData" allows additional 
@@ -799,10 +801,12 @@ elif [ "$CustomBrain" = "MASK" ] ; then
   log_Msg "Skipping all the steps to Atlas registration, applying custom mask."
   verbose_red_echo "---> Applying custom mask"
 
-  fslmaths ${T1wFolder}/${T1wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
+  OutputT1wImage=${T1wFolder}/${T1wImage}_acpc_dc
+  fslmaths ${OutputT1wImage}_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${OutputT1wImage}_restore_brain
 
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
-    fslmaths ${T1wFolder}/${T2wImage}_acpc_dc_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${T1wFolder}/${T2wImage}_acpc_dc_restore_brain
+    OutputT2wImage=${T1wFolder}/${T2wImage}_acpc_dc
+    fslmaths ${OutputT2wImage}_restore -mas ${T1wFolder}/custom_acpc_dc_restore_mask ${OutputT2wImage}_restore_brain
   fi
 
 # -- Then we are using existing images
@@ -816,9 +820,14 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 
 # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
 # i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
-# or the PostFreeSurferPipeline versions
+# or the PostFreeSurferPipeline versions.
+# Make sure that you rerun FreeSurfer and PostFreeSurfer if using --custombrain={CUSTOM|MASK}
+# or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised; 
+# in the --custombrain=NONE condition, the recommendation would be to simply delete the existing data, 
+# and run PreFreeSurfer (and then FreeSurfer and PostFreeSurfer) de novo].
+
 OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
-imrm ${OutputOrigT1wToT1wPostFS}
+imrm ${T1wFolder}/xfms/${OutputOrigT1wToT1wPostFS}
 
 
 # ------------------------------------------------------------------------------
