@@ -379,7 +379,7 @@ get_options()
 	fi
 
 
-	# NOTE: Check for T2w image is moved to check_mpp_compliance(), as missing T2w is allowed in LegacyStyleData MPP mode.
+	# NOTE: Check for T2w image has moved upwards, as missing T2w is allowed in LegacyStyleData MPP mode.
 
 
 	# show optional parameters if specified
@@ -395,8 +395,8 @@ get_options()
 	if [ ! -z "${p_conf2hires}" ]; then
 		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
-	if [ "${p_t2w_image}" = "NONE" ] ; then
-  		Compliance="legacy"
+	if [ ! -z "${p_mppmode}" ] ; then
+  		log_Msg "Set --mpp-mode to: ${p_mppmode}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
