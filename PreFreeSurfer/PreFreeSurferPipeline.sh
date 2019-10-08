@@ -709,7 +709,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   # ------------------------------------------------------------------------------
   #  Bias Field Correction: Calculate bias field using square root of the product
-  #  of T1w and T2w iamges.
+  #  of T1w and T2w images (if both available).
+  #  Otherwise (if only T1w available), calculate bias field using 'fsl_anat'
   # ------------------------------------------------------------------------------
 
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
