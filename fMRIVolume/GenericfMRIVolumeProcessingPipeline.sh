@@ -340,15 +340,15 @@ if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
 fi
-cp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName".nii.gz
+${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
 
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction"
     #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
     #  this makes the single-band processing more robust to registration problems    
-    fslreorient2std "$fMRIFolder"/"$OrigTCSName".nii.gz "$fMRIFolder"/"$OrigTCSName"_orig_reorient.nii.gz
-    rm "$fMRIFolder"/"$OrigTCSName".nii.gz
+    ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_orig_reorient
+    ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
     if [ ${SliceCorrectionInterleaved} = 'TRUE' ] ; then
       InterleavedSliceTiming="--odd"
     else
