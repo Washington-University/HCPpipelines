@@ -713,14 +713,15 @@ if [ "$CustomBrain" = "NONE" ] ; then
   #  Otherwise (if only T1w available), calculate bias field using 'fsl_anat'
   # ------------------------------------------------------------------------------
 
+  if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+    BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+  fi
+
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
-    log_Msg "Performing Bias Field Correction"
-    if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-      BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
-    fi
-
+    log_Msg "Performing Bias Field Correction using sqrt(T1w x T2w)"    
     log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w"
+
     mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
 
     ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
@@ -737,11 +738,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   else  # -- No T2w image
 
-    log_Msg "Performing Bias Field Correction on T1w image only"
-
-    if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-      BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
-    fi
+    log_Msg "Performing Bias Field Correction using T1w image only"
 
     ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
       --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
