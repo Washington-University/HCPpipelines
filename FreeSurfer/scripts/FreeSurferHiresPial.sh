@@ -77,8 +77,7 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/lh.thickness $SubjectDIR/$S
 cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$SubjectID/surf/rh.thickness.preT2.pass1
 
 if [ ! "${T2wImage}" = "NONE" ] ; then
-  # ceho "---> Generating pial first pass surfaces with T2 adjustment."
-  echo "---> Generating pial first pass surfaces with T2 adjustment."
+  verbose_red_echo "---> Generating pial first pass surfaces with T2 adjustment."
   # Generate pial surfaces with T2 adjustment, still first pass.
   # Same 4 files created as above, but have $outputSuffix1 ("postT2.pass1") appended through use of -output flag.
   # Use -T2 flag (rather than -T2dura), since -T2 is the flag used within recon-all script of FS 5.3 (but -T2 and -T2dura generate same results)
@@ -87,8 +86,7 @@ if [ ! "${T2wImage}" = "NONE" ] ; then
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID lh
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
 else
-  #ceho "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
-  echo "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
+  verbose_red_echo "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
   outputSuffix1=""
 fi
 
@@ -183,8 +181,7 @@ cp --preserve=timestamps $SubjectDIR/$SubjectID/surf/rh.thickness $SubjectDIR/$S
 
 
 if [ ! "${T2wImage}" = "NONE" ] ; then
-  #ceho "---> Generating pial second pass surfaces with T2 adjustment."
-  echo "---> Generating pial second pass surfaces with T2 adjustment."
+  verbose_red_echo "---> Generating pial second pass surfaces with T2 adjustment."
   # Generate pial surfaces with T2 adjustment, second pass.
   # Same 4 files created as above, but have $outputSuffix2 ("postT2.pass2") appended through use of -output flag
   #Could go from 3 to 2 potentially...
@@ -192,8 +189,7 @@ if [ ! "${T2wImage}" = "NONE" ] ; then
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID lh
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix2 $SubjectID rh
 else
-  # ceho "---> No T2w image, skipping generation of pial second pass surfaces with T2 adjustment."
-  echo "---> No T2w image, skipping generation of pial second pass surfaces with T2 adjustment."
+  verbose_red_echo "---> No T2w image, skipping generation of pial second pass surfaces with T2 adjustment."
   outputSuffix2=""
 fi
 

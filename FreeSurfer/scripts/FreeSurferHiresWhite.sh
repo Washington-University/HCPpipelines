@@ -91,8 +91,7 @@ echo "round" >> "$mridir"/transforms/eye.dat
 
 if [ ! "${T2wImage}" = "NONE" ] || [ ! "${T2wImage}" = ""] ; then
 
-  #ceho "---> computing T2 to T1 transform"
-  echo "---> computing T2 to T1 transform"
+  verbose_red_echo "---> computing T2 to T1 transform"
 
   if [ ! -e "$mridir"/transforms/T2wtoT1w.mat ] ; then
     bbregister --s "$SubjectID" --mov "$T2wImage" --surf white.deformed --init-reg "$mridir"/transforms/eye.dat --t2 --reg "$mridir"/transforms/T2wtoT1w.dat --o "$mridir"/T2w_hires.nii.gz
@@ -106,8 +105,7 @@ if [ ! "${T2wImage}" = "NONE" ] || [ ! "${T2wImage}" = ""] ; then
     echo "Verify that "$T2wImage" has not been fine tuned and then remove "$mridir"/transforms/T2wtoT1w.mat"
   fi
 else
-  #ceho "---> No T2 image present, skipping computation of T2w to T1w transform."
-  echo "---> No T2 image present, skipping computation of T2w to T1w transform."
+  verbose_red_echo "---> No T2 image present, skipping computation of T2w to T1w transform."
 fi
 
 
