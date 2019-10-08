@@ -362,6 +362,7 @@ AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 CustomBrain=`opts_GetOpt1 "--custombrain" $@`
+MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
 
 #NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
 #not currently in usage, either, because of this very limited use
@@ -375,15 +376,13 @@ RUN=`opts_GetOpt1 "--printcom" $@`
 
 # Defaults
 UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
-CustomBrain=`opts_DefaultOpt $CustomBrain NONE`
-
+CustomBrain=`opts_DefaultOpt $CustomBrain "NONE"`
+MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
