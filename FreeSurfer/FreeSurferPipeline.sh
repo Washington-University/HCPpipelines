@@ -204,7 +204,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
-  [--mpp-mode={HCPStyleData, LegacyStyleData}]
+  [--pipeline-mode={HCPStyleData, LegacyStyleData}]
       Indicates, which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps 
          described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. "LegacyStyleData" 
          allows additional processing functionality and use of some acquisitions that do not conform 
@@ -215,7 +215,7 @@ PARAMETERs can also be specified positionally as:
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
   Note that the positional approach to specifying parameters does NOT support the 
-      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --mpp-mode options.
+      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --pipeline-mode options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
@@ -300,8 +300,8 @@ get_options()
 				p_extra_reconall_args+="${extra_reconall_arg} "
 				index=$(( index + 1 ))
 				;;
-			--mpp-mode=*)
-				p_mppmode=${argument#*=}
+			--pipeline-mode=*)
+				p_pipelinemode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--no-conf2hires)
@@ -322,11 +322,11 @@ get_options()
 	#  Compliance check
 	# ------------------------------------------------------------------------------
 	
-	MPPMode=${p_mppmode:-HCPStyleData}	
+	ProcessingMoce=${p_pipelinemode:-HCPStyleData}	
     Compliance="HCPStyleData"
     ComplianceMsg=""
 
-     # -- T2w image
+    # -- T2w image
 
     if [ -z "${p_t2w_image}" ] || [ "${p_t2w_image}" = "NONE" ]; then
         if [ -z "${p_existing_subject}" ]; then
@@ -336,7 +336,7 @@ get_options()
         p_t2w_image="NONE"
     fi
 
-    check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+    check_mode_compliance "${ProcessingMoce}" "${Compliance}" "${ComplianceMsg}"
 
 	# ------------------------------------------------------------------------------
 	#  check required parameters
@@ -395,8 +395,8 @@ get_options()
 	if [ ! -z "${p_conf2hires}" ]; then
 		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
-	if [ ! -z "${p_mppmode}" ] ; then
-  		log_Msg "Set --mpp-mode to: ${p_mppmode}"
+	if [ ! -z "${p_pipelinemode}" ] ; then
+  		log_Msg "Set --pipeline-mode to: ${p_pipelinemode}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -848,7 +848,7 @@ fi
 
 # Load Function Libraries
 source ${HCPPIPEDIR}/global/scripts/log.shlib
-source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify any other needed environment variables are set
