@@ -203,7 +203,7 @@ fi
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Check MMP mode requirements
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
@@ -226,7 +226,8 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       (T1w) structural images for the subject (required)
   --t2=<T2w images>                   An @ symbol separated list of full paths to T2-weighted
                                       (T2w) structural images for the subject (required for 
-                                      hcp-style data, can be NONE for legacy-style data, see --mpp-mode option)
+                                      hcp-style data, can be NONE for legacy-style data, 
+                                      see --processing-mode option)
   --t1template=<file path>            MNI T1w template
   --t1templatebrain=<file path>       Brain extracted MNI T1wTemplate
   --t1template2mm=<file path>         MNI 2mm T1wTemplate
@@ -307,11 +308,10 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       were not successfully processed and/or masked by the regular use of the pipelines.
                                       Before using this option, first ensure that the pipeline arguments used were 
                                       correct and that templates are a good match to the data.
-  [--processing-mode=(HCPStyleData|   Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" 
-               LegacyStyleData)]      (the default) follows the processing stepsdescribed in Glasser et al. (2013) 
-                                      and requires 'HCP-Style' data acquistion. "LegacyStyleData" allows additional 
-                                      processing functionality and use of some acquisitions that do not conform to 
-                                      'HCP-Style' expectations i.e., in this case:
+  [--processing-mode=(HCPStyleData|   Which processing mode to use. "HCPStyleData" (the default) follows the processing
+               LegacyStyleData)]      steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.
+                                      "LegacyStyleData" allows additional processing functionality and use of some 
+                                      acquisitions that do not conform to 'HCP-Style' expectations i.e., in this case:                                      
                                       - missing high-resolution T2w image, 
                                       - use of custom adjusted brain images or custom adjusted brain mask.
 EOF
@@ -368,7 +368,7 @@ AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 CustomBrain=`opts_GetOpt1 "--custombrain" $@`
-MPPMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 
 # NOTE: UseJacobian only affects whether the spin echo field maps 
 # get modulated by the gradient distortion correction warpfield 
@@ -384,7 +384,7 @@ RUN=`opts_GetOpt1 "--printcom" $@`
 # Defaults
 UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 CustomBrain=`opts_DefaultOpt $CustomBrain "NONE"`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -400,7 +400,7 @@ if [ "${T2wInputImages}" = "NONE" ]; then
   Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 
 # ------------------------------------------------------------------------------
@@ -440,7 +440,7 @@ log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
 log_Msg "UseJacobian: ${UseJacobian}"
 log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
 log_Msg "CustomBrain: ${CustomBrain}"
-log_Msg "MPPMode: ${MPPMode}"
+log_Msg "ProcessingMode: ${ProcessingMode}"
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables
