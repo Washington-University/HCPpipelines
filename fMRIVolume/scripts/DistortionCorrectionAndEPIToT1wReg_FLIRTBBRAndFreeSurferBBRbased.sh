@@ -46,7 +46,7 @@ Usage() {
   echo "             --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "             [--qaimage=<output name for QA image>]"
   echo ""
-  echo "             --method=<method used for readout distortion correction>"
+  echo "             --method=<method used for susceptibility distortion correction>"
   echo ""
   echo "               \"${FIELDMAP_METHOD_OPT}\""
   echo "                 equivalent to ${SIEMENS_METHOD_OPT} (see below)"
@@ -79,7 +79,7 @@ Usage() {
   echo "                 don't do bias correction"
   echo ""
   echo "             --usejacobian=<\"true\" or \"false\">"
-  echo "             --preregister=<epi_reg (default) or flirt>"
+  echo "             --preregistertool=<epi_reg (default) or flirt>"
 }
 
 # function for parsing options
@@ -162,7 +162,7 @@ NameOffMRI=`getopt1 "--fmriname" $@`
 SubjectFolder=`getopt1 "--subjectfolder" $@`
 BiasCorrection=`getopt1 "--biascorrection" $@`
 UseJacobian=`getopt1 "--usejacobian" $@`
-Preregister=`getopt1 "--preregister" $@`
+PreregisterTool=`getopt1 "--preregistertool" $@`
 
 if [[ -n $HCPPIPEDEBUG ]]
 then
@@ -209,7 +209,7 @@ WD=`defaultopt $WD ${RegOutput}.wdir`
 dof=`defaultopt $dof 6`
 GlobalScripts=${HCPPIPEDIR_Global}
 TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
-Preregister=${Preregister:-epi_reg}
+PreregisterTool=${PreregisterTool:-epi_reg}
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -393,12 +393,14 @@ case $DistortionCorrection in
         # this is just an initial registration, refined later in this script, but it is actually pretty good
         log_Msg "register undistorted scout image to T1w"
 
-        if [ $Preregister = "epi_reg" ] ; then
+        if [ $PreregisterTool = "epi_reg" ] ; then
           log_Msg "... running epi_reg (dof ${dof})"
           ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted2T1w_init
-        elif [ $Preregister = "flirt" ] ; then
+        elif [ $PreregisterTool = "flirt" ] ; then
           log_Msg "... running flirt"
           ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof ${dof}
+        else
+          log_Err_Abort "No valid preregister tool specified. Please specify --prepregistertool as either 'epi_reg' or 'flirt'."
         fi
 
         #copy the initial registration into the final affine's filename, as it is pretty good

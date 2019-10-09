@@ -227,11 +227,11 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-Preregister=`opts_GetOpt1 "--preregister" $@`                        # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
+PreregisterTool=`opts_GetOpt1 "--preregistertool" $@`                        # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
 
 # Defaults
 
-Preregister=${Preregister:-epi_reg}
+PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -422,7 +422,7 @@ ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurf
        --subjectfolder=${SubjectFolder} \
        --biascorrection=${BiasCorrection} \
        --usejacobian=${UseJacobian} \
-       --preregister=${Preregister}
+       --preregistertool=${PreregisterTool}
 
 #One Step Resampling
 log_Msg "One Step Resampling"
