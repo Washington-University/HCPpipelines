@@ -303,7 +303,11 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       standard image processing will take place.
                                       If using "MASK" or "CUSTOM", the data still needs to be staged properly by 
                                       running FreeSurfer and PostFreeSurfer afterwards.
-  [--mpp-mode=(HCPStyleData|          Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" 
+                                      NOTE: This option allows manual correction of brain images in cases when they
+                                      were not successfully processed and/or masked by the regular use of the pipelines.
+                                      Before using this option, first ensure that the pipeline arguments used were 
+                                      correct and that templates are a good match to the data.
+  [--processing-mode=(HCPStyleData|   Which variant of Minimal Preprocessing Pipelines (MPP) to use. "HCPStyleData" 
                LegacyStyleData)]      (the default) follows the processing stepsdescribed in Glasser et al. (2013) 
                                       and requires 'HCP-Style' data acquistion. "LegacyStyleData" allows additional 
                                       processing functionality and use of some acquisitions that do not conform to 
@@ -364,10 +368,11 @@ AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
 BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
 CustomBrain=`opts_GetOpt1 "--custombrain" $@`
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_GetOpt1 "--processing-mode" $@`
 
-#NOTE: currently is only used in gradient distortion correction of spin echo fieldmaps to topup
-#not currently in usage, either, because of this very limited use
+# NOTE: UseJacobian only affects whether the spin echo field maps 
+# get modulated by the gradient distortion correction warpfield 
+# (T2wToT1wDistortionCorrectAndReg -> TopupPreprocessingAll)
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
@@ -392,13 +397,6 @@ ComplianceMsg=""
 
 if [ "${T2wInputImages}" = "NONE" ]; then
   ComplianceMsg+=" --t2=NONE"
-  Compliance="LegacyStyleData"
-fi
-
-# -- Use of custom brain
-
-if [ ! "${CustomBrain}" = "NONE" ]; then
-  ComplianceMsg+=" --custombrain=${CustomBrain}"
   Compliance="LegacyStyleData"
 fi
 
