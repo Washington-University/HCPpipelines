@@ -18,7 +18,6 @@ check_mpp_compliance()
     local MPPMode="$1"
     local Compliance="$2"
     local ComplianceMsg="$3"
-    local ComplianceWarn="$4"
 
     # --- Initial information
 
@@ -38,16 +37,13 @@ check_mpp_compliance()
 
     if [ "${MPPMode}" = "LegacyStyleData" ]; then
       if [ "${Compliance}" = "HCPStyleData" ]; then
-        log_Warn "All conditions for the use of --mpp-mode=HCPStyleData are met. Consider using that mode (or equivalently, simply leave --mpp-mode empty) instead of --mpp-mode=LegacyStyleData."
+        log_Warn "All conditions for the use of --processing-mode=HCPStyleData are met. Consider using that mode (or equivalently, simply leave --processing-mode empty) instead of --processing-mode=LegacyStyleData."
       else
         log_Msg "The following LegacyStyleData settings were requested:${ComplianceMsg}"
       fi
-      if [ ! -z "${ComplianceWarn}" ] ; then
-        log_Warn "${ComplianceWarn}"
-      fi
     else
       if [ "${Compliance}" = "LegacyStyleData" ]; then
-        log_Err_Abort "--mpp-mode=HCPStyleData was requested, but the following settings are not compliant:${ComplianceMsg}. Fix these settings or consider requesting 'LegacyStyleData' mode instead."
+        log_Err_Abort "--processing-mode=HCPStyleData was requested, but the following settings are not compliant:${ComplianceMsg}. Fix these settings or consider requesting 'LegacyStyleData' mode instead."
       fi
     fi
 
