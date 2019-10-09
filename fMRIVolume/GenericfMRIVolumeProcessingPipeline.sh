@@ -24,6 +24,8 @@ fi
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -235,8 +237,13 @@ fMRIReference=${fMRIReference:-NONE}
 #  Compliance check
 # ------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 MPPMode=`opts_GetOpt1 "--processing-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+=======
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
+>>>>>>> qunex_fmrivolume
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -247,7 +254,7 @@ if [ ! "${fMRIReference}" = "NONE" ]; then
   Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
 
