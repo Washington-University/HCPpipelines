@@ -56,8 +56,8 @@ SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`  # "${14}"
 GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`  # "${14}"
 RegName=`opts_GetOpt1 "--regname" $@`
 
-if [ "${RegName}" = "" ]; then
-    RegName="FS"
+if [ -z "${RegName}" ]; then
+    RegName="MSMSulc"
 fi
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
@@ -71,6 +71,10 @@ log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "RegName: ${RegName}"
 log_Msg "RUN: ${RUN}"
+
+if [ "${RegName}" = "FS" ] ; then
+  logWarn "WARNING: FreeSurfer registration is deprecated in the HCP Pipelines as it results in poorer cross-subject functional and cortical areal alignment relative to MSMSulc. Additionally, FreeSurfer registration results in dramatically higher surface distortion (both isotropic and anisotropic). These things occur because FreeSurfer's registration has too little regularizattion of folding patterns that are imperfectly correlated with function and cortical areas, resulting in overfitting of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS for more details."
+fi
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
