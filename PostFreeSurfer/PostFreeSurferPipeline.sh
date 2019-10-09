@@ -39,6 +39,7 @@ fi
 
 source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
 source ${HCPPIPEDIR}/global/scripts/opts.shlib  # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
 
 ########################################## SUPPORT FUNCTIONS ##########################################
 
@@ -80,7 +81,7 @@ ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
 CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 
 log_Msg "RegName: ${RegName}"
 
@@ -88,7 +89,7 @@ log_Msg "RegName: ${RegName}"
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
 RegName=`opts_DefaultOpt $RegName FS`
 InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
@@ -107,7 +108,7 @@ verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
 verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
 verbose_echo "           --mcsigma: ${CorrectionSigma}"
 verbose_echo "           --regname: ${RegName}"
-verbose_echo "          --mpp-mode: ${MPPMode}"
+verbose_echo "   --processing-mode: ${ProcessingMode}"
 verbose_echo ""
 verbose_echo " Using environment setting ..."
 verbose_echo "   HCPPIPEDIR_PostFS: ${PipelineScripts}"
@@ -180,7 +181,11 @@ if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w` -eq 0 ]; then
     T2wRestoreImage="NONE"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+if [ "${RegName}" = "FS" ] ; then
+  logWarn "WARNING: FreeSurfer registration is deprecated in the HCP Pipelines as it results in poorer cross-subject functional and cortical areal alignment relative to MSMSulc. Additionally, FreeSurfer registration results in dramatically higher surface distortion (both isotropic and anisotropic). These things occur because FreeSurfer's registration has too little regularizattion of folding patterns that are imperfectly correlated with function and cortical areas, resulting in overfitting of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS for more details."
+fi
+
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
