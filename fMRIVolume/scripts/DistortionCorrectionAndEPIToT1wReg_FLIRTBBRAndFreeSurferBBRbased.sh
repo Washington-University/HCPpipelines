@@ -409,13 +409,7 @@ case $DistortionCorrection in
         Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
         for File in ${Files}
         do
-            # check if T2w image exists
-            if [ `${FSLDIR}/bin/imtest ${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz` -eq 0 ]; then
-                ReferenceImage=${SubjectFolder}/T1w/T2w_acpc_dc.nii.gz
-            else
-                ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
-            fi
-
+            ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
 
             #NOTE: this relies on TopupPreprocessingAll generating _jac versions of the files
             if [[ $UseJacobian == "true" ]]
