@@ -24,6 +24,8 @@ fi
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -247,8 +249,8 @@ SliceCorrectionInterleaved=${SliceCorrectionInterleaved:-TRUE}          # Interl
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 ComplianceWarn=""
@@ -257,11 +259,11 @@ ComplianceWarn=""
 
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   ComplianceMsg+=" --doslicetime=TRUE"
-  ComplianceWarn="WARNING: This legacy option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
   Compliance="LegacyStyleData"
+  log_Warn "WARNING: This legacy option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}" "${ComplianceWarn}"
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
 
