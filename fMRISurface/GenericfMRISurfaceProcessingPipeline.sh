@@ -73,7 +73,7 @@ log_Msg "RegName: ${RegName}"
 log_Msg "RUN: ${RUN}"
 
 if [ "${RegName}" = "FS" ] ; then
-  log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the HCP Pipelines as it results in poorer cross-subject functional and cortical areal alignment relative to MSMSulc. Additionally, FreeSurfer registration results in dramatically higher surface distortion (both isotropic and anisotropic). These things occur because FreeSurfer's registration has too little regularizattion of folding patterns that are imperfectly correlated with function and cortical areas, resulting in overfitting of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS for more details."
+  log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the HCP Pipelines as it results in poorer cross-subject functional and cortical areal alignment relative to MSMSulc. Additionally, FreeSurfer registration results in dramatically higher surface distortion (both isotropic and anisotropic). These things occur because FreeSurfer's registration has too little regularization of folding patterns that are imperfectly correlated with function and cortical areas, resulting in overfitting of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS for more details."
 fi
 
 # Setup PATHS
