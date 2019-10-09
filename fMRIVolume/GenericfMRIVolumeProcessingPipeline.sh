@@ -24,6 +24,8 @@ fi
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -236,8 +238,8 @@ ReferenceReg=${ReferenceReg:-linear}
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -248,7 +250,7 @@ if [ "${ReferenceReg}" = 'nonlinear']; then
   Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
 
