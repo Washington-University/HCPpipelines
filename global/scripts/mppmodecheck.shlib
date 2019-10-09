@@ -10,18 +10,18 @@ then
 fi
 
 
-check_mpp_compliance()
+check_mode_compliance()
 {
 
     # --- Define variables
 
-    local MPPMode="$1"
+    local ProcessingMode="$1"
     local Compliance="$2"
     local ComplianceMsg="$3"
 
     # --- Initial information
 
-    if [ "${MPPMode}" = "LegacyStyleData" ]; then
+    if [ "${ProcessingMode}" = "LegacyStyleData" ]; then
       log_Msg "LegacyStyleData mode requested."
       log_Msg "NOTICE: You are using a mode that enables processing of acquisitions that do not"
       log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
@@ -35,7 +35,7 @@ check_mpp_compliance()
 
     # -- Final evaluation
 
-    if [ "${MPPMode}" = "LegacyStyleData" ]; then
+    if [ "${ProcessingMode}" = "LegacyStyleData" ]; then
       if [ "${Compliance}" = "HCPStyleData" ]; then
         log_Warn "All conditions for the use of --processing-mode=HCPStyleData are met. Consider using that mode (or equivalently, simply leave --processing-mode empty) instead of --processing-mode=LegacyStyleData."
       else
