@@ -235,14 +235,14 @@ fMRIReference=${fMRIReference:-NONE}
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
+MPPMode=`opts_GetOpt1 "--processing-mode" $@`
 MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
 # -- Use of BOLD reference
 
-if [ ! "${fMRIReference}" = 'NONE' ]; then
+if [ ! "${fMRIReference}" = "NONE" ]; then
   ComplianceMsg+=" --fmriref=${fMRIReference}"
   Compliance="LegacyStyleData"
 fi
@@ -391,7 +391,7 @@ fi
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/MotionCorrection \
        "$fMRIFolder"/"$NameOffMRI"_gdc \
-       "$fMRIFolder"/"$ScoutName"_gdc \
+       "$reference" \
        "$fMRIFolder"/"$NameOffMRI"_mc \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
@@ -441,12 +441,12 @@ if [ $fMRIReference = "NONE" ] ; then
          --biascorrection=${BiasCorrection} \
          --usejacobian=${UseJacobian}
 else
-    log_Msg "linking EPI distorsion correction and T1 registration from ${fMRIReference}"
+    log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -e ${fMRIFolder}/${DCFolderName} ] ; then
         log_Msg "     ... removing stale link (or preexisiting files)"
         rm -r ${fMRIFolder}/${DCFolderName}
     fi
-    ln -s -f ${fMRIReference}/${DCFolderName} ${fMRIFolder}/${DCFolderName}
+    ln -s ${fMRIReference}/${DCFolderName} ${fMRIFolder}/${DCFolderName}
  
     WD=${fMRIReference}/${DCFolderName}
     ${FSLDIR}/bin/imcp ${fMRIReference}/${RegOutput} ${fMRIFolder}/${RegOutput}
