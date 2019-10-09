@@ -353,9 +353,15 @@ if [ $DoSliceTimeCorrection = "TRUE" ] ; then
       InterleavedSliceTiming=""
     fi    
     ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_orig_stc -r ${TR} ${SliceCorrectionDirection} ${InterleavedSliceTiming} -v
-    #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
-    #  this makes the single-band processing more robust to registration problems    
-    ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_orig_stc "$fMRIFolder"/"$OrigTCSName"
+    
+    if [ "${DistortionCorrection}" = "NONE"] ; then {
+      #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
+      #  this makes the single-band processing more robust to registration problems.
+      #  NOTE: Take into account that BOLD images might have a different spatial orientation!
+
+      log_Warn "Performing fslreorient2std! Please take that into account when using volume BOLD images in further analyses!"
+      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_orig_stc "$fMRIFolder"/"$OrigTCSName"
+    fi
 fi
 
 #Create fake "Scout" if it doesn't exist
