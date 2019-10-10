@@ -371,7 +371,7 @@ CustomBrain=`opts_GetOpt1 "--custombrain" $@`
 ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 
 # NOTE: UseJacobian only affects whether the spin echo field maps 
-# get modulated by the gradient distortion correction warpfield 
+# get intensity modulated by the gradient distortion correction warpfield 
 # (T2wToT1wDistortionCorrectAndReg -> TopupPreprocessingAll)
 UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
