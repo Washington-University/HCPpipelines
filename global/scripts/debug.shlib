@@ -89,6 +89,22 @@ debug_defaults()
     fi
 }
 
+# == Compatibility and convenience with set -u and interactive shells
+
+if [[ "$-" == *i* ]]
+then
+    #interactive
+    set +e
+else
+    #noninteractive
+    #note: 'set -u' complaints will not call 'trap ... ERR', but will do a 'set -e' exit
+    #if we don't have -u but we do have -e, we are in an unintended state
+    #but until a disable function is called, it is harmless, so only warn
+    if [[ "$-" != *u* && "$-" == *e* ]]
+    then
+        log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
+    fi
+fi
 
 # == Logging functionality
 
@@ -107,6 +123,11 @@ fi
 debug_enable_trap()
 {
     HCP_DEBUG_USETRAP=ON
+    #if we will exit on error, are noninteractive, and have set -u, also enable -e
+    if [[ "$HCP_DEBUG_EXIT_ON_ERROR" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    then
+        set -e
+    fi
 }
 
 # Description:
@@ -116,6 +137,8 @@ debug_enable_trap()
 debug_disable_trap()
 {
     HCP_DEBUG_USETRAP=OFF
+    #have debug_disable_* turn off shell error exit too
+    set +e
 }
 
 # Description:
@@ -125,6 +148,11 @@ debug_disable_trap()
 debug_enable_exit()
 {
     HCP_DEBUG_EXIT_ON_ERROR=ON
+    #if we will exit on error, are noninteractive, and have set -u, also enable -e
+    if [[ "$HCP_DEBUG_USETRAP" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    then
+        set -e
+    fi
 }
 
 # Description:
@@ -134,6 +162,8 @@ debug_enable_exit()
 debug_disable_exit()
 {
     HCP_DEBUG_EXIT_ON_ERROR=OFF
+    #have debug_disable_* turn off shell error exit too
+    set +e
 }
 
 # Description:
