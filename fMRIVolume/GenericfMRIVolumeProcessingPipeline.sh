@@ -22,8 +22,8 @@ fi
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
+source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 
@@ -227,21 +227,21 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                 # Whether to do slicetime correction (TRUE), FALSE to omit
-SliceTimerCorrectionParameters=`opts_GetOpt1 "--slicetimerparams" $@`   # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
-                                                                        # Verbose (-v) is already turned on. TR (-r) is specified using --tr parameter.
-TR=`opts_GetOpt1 "--tr" $@`                                             # TR of the timeseries
+DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit
+SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
+                                                                         # Verbose (-v) is already turned on. TR (-r) is specified using --tr parameter.
+                                                                         # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
 
 # Defaults
-DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                   # WARNING: This legacy option of slice timing correction is performed before motion correction 
-                                                                        # (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. 
-                                                                        # Errors in temporal interpolation will occur in the presence of head motion and may also disrupt 
-                                                                        # data quality measures as shown in Power et al 2017 PLOS One "Temporal interpolation alters motion in fMRI
-                                                                        # scans: Magnitudes and consequences for artifact detection." Slice timing correction and motion correction 
-                                                                        # would ideally be performed simultaneously; however, this is not currently supported by any major software 
-                                                                        # tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, 
-                                                                        # provide major advantages for fMRI denoising, and are recommended. 
-                                                                        # No slice timing correction is done by default.  
+DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                    # WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction 
+                                                                         # (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. 
+                                                                         # Errors in temporal interpolation will occur in the presence of head motion and may also disrupt 
+                                                                         # data quality measures as shown in Power et al 2017 PLOS One "Temporal interpolation alters motion in fMRI
+                                                                         # scans: Magnitudes and consequences for artifact detection." Slice timing correction and motion correction 
+                                                                         # would ideally be performed simultaneously; however, this is not currently supported by any major software 
+                                                                         # tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, 
+                                                                         # provide major advantages for fMRI denoising, and are recommended. 
+                                                                         # No slice timing correction is done by default.  
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -258,7 +258,7 @@ ComplianceWarn=""
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   ComplianceMsg+=" --doslicetime=TRUE"
   Compliance="LegacyStyleData"
-  log_Warn "WARNING: This legacy option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
+  log_Warn "WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
 fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
@@ -344,17 +344,35 @@ ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
 
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
-    log_Msg "Running slice timing correction"
-    SliceTimerCorrectionParameters=`echo ${SliceTimerCorrectionParameters} | sed 's/@/ /g'` 
-    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_orig_stc -r ${TR} -v ${SliceTimerCorrectionParameters}
-    
-    if [ "${DistortionCorrection}" = "NONE"] ; then {
-      #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
-      #  this makes the single-band processing more robust to registration problems.
-      #  NOTE: Take into account that BOLD images might have a different spatial orientation!
+    log_Msg "Running slice timing correction using FSL's 'slicetimer' tool"
+    TR=`${FSLDIR}/bin/fslval ${fMRIName} pixdim4`
 
+    IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_stc -r ${TR} -v "${SliceTimerCorrectionParametersArray[@]}"
+  
+    # Processing is more robust to registration problems if the fMRI is in the same orientation as the
+    # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
+    # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
+    # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
+    xorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' '`
+    yorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' '`
+    zorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' '`
+
+    log_Msg "$fMRIFolder/$OrigTCSName: xorient=${xorient}, yorient=${yorient}, zorient=${zorient}"
+
+    if [[ "$xorient" != "Right-to-Left" && "$xorient" != "Left-to-Right" || \
+          "$yorient" != "Posterior-to-Anterior" || \
+          "$zorient" != "Inferior-to-Superior" ]] ; then
+      reorient=TRUE
+    else 
+      reorient=FALSE
+    fi
+
+    if [[ $reorient = "TRUE" && $DistortionCorrection = "NONE" ]] ; then
       log_Warn "Performing fslreorient2std! Please take that into account when using volume BOLD images in further analyses!"
-      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_orig_stc "$fMRIFolder"/"$OrigTCSName"
+      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_stc "$fMRIFolder"/"$OrigTCSName"
+    else
+      ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName"_stc "$fMRIFolder"/"$OrigTCSName"
     fi
 fi
 
@@ -362,7 +380,7 @@ fi
 if [ $fMRIScout = "NONE" ] ; then
   ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
 else
-  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName".nii.gz
+  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
 fi
 
 #Gradient Distortion Correction of fMRI
