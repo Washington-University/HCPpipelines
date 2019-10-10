@@ -205,10 +205,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
   [--processing-mode={HCPStyleData, LegacyStyleData}]
-      Indicates, which processing mode to use. "HCPStyleData" (the default) follows the processing steps 
-         described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. "LegacyStyleData" 
-         allows additional processing functionality and use of some acquisitions that do not conform 
-         to 'HCP-Style' expectations; i.e., in this case missing high-resolution T2w image 
+      Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
+      "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
+         and requires 'HCP-Style' data acquistion. 
+      "LegacyStyleData" allows additional processing functionality and use of some acquisitions
+         that do not conform to 'HCP-Style' expectations.
+         i.e., in this case no high-resolution T2w image acquisition 
 
 PARAMETERs can also be specified positionally as:
 
