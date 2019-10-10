@@ -85,6 +85,11 @@ SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) 
 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
+STRINGList="corrThickness@shape"
+if [ "${T2wPresent}" = "YES" ] ; then
+  STRINGList+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
+fi
+
 for Hemisphere in L R ; do
   if [ $Hemisphere = "L" ] ; then
     Structure="CORTEX_LEFT"
@@ -97,11 +102,6 @@ for Hemisphere in L R ; do
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.MSMSulc.native.surf.gii"
   else
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
-  fi
-
-  STRINGList="corrThickness@shape"
-  if [ "${T2wPresent}" = "YES" ] ; then
-    STRINGList+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
   fi
 
   for STRING in $STRINGList ; do
@@ -126,12 +126,7 @@ for STRING in ${STRINGII} ; do
   Mesh=`echo $STRING | cut -d "@" -f 2`
   ROI=`echo $STRING | cut -d "@" -f 3`
 
-  STRINGIIList="corrThickness@shape"
-  if [ "${T2wPresent}" = "YES" ] ; then
-    STRINGIIList+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
-  fi
-
-  for STRINGII in $STRINGIIList ; do
+  for STRINGII in $STRINGIList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -cifti-create-dense-scalar "$Folder"/"$Subject".${Map}."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L.${Map}."$Mesh"."$Ext".gii -roi-left "$Folder"/"$Subject".L."$ROI"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R.${Map}."$Mesh"."$Ext".gii -roi-right "$Folder"/"$Subject".R."$ROI"."$Mesh".shape.gii
@@ -146,15 +141,16 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 #Add CIFTI Maps to Spec Files
+
+STRINGIIList="corrThickness@dscalar"
+if [ "${T2wPresent}" = "YES" ] ; then
+  STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
+fi
+  
 for STRING in ${STRINGII} ; do
   FolderI=`echo $STRING | cut -d "@" -f 1`
   FolderII=`echo $STRING | cut -d "@" -f 2`
   Mesh=`echo $STRING | cut -d "@" -f 3`
-
-  STRINGIIList="corrThickness@dscalar"
-  if [ "${T2wPresent}" = "YES" ] ; then
-    STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
-  fi
 
   for STRINGII in $STRINGIIList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`

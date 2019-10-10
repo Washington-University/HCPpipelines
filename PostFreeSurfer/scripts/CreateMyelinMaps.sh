@@ -130,8 +130,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
   fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
 fi
 
-if [ "${T2wPresent}" = "YES" ] ; then
-  # Create T1w/T2w maps
+# Create T1w/T2w maps
+if [ "${T2wPresent}" = "YES" ] ; then  
   ${CARET7DIR}/wb_command -volume-math "clamp((T1w / T2w), 0, 100)" "$T1wFolder"/T1wDividedByT2w.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -fixnan 0
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w.nii.gz
@@ -233,15 +233,15 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 #Add CIFTI Maps to Spec Files
+STRINGIIList="corrThickness@dscalar"
+if [ "${T2wPresent}" = "YES" ] ; then
+  STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
+fi
+
 for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"@"$AtlasSpaceFolder"@"$HighResMesh"k_fs_LR ${STRINGII} ; do
   FolderI=`echo $STRING | cut -d "@" -f 1`
   FolderII=`echo $STRING | cut -d "@" -f 2`
   Mesh=`echo $STRING | cut -d "@" -f 3`
-
-  STRINGIIList="corrThickness@dscalar"
-  if [ "${T2wPresent}" = "YES" ] ; then
-    STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
-  fi
 
   for STRINGII in $STRINGIIList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
