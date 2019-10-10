@@ -102,7 +102,7 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Form sqrt(T1w*T2w), mask this and normalise by the mean
-verbose_echo " --> Forming rt(T1w*T2w), masking this and normalising by the mean"
+verbose_echo " --> Forming sqrt(T1w*T2w), masking this and normalising by the mean"
 ${FSLDIR}/bin/fslmaths $T1wImage -mul $T2wImage -abs -sqrt $WD/T1wmulT2w.nii.gz -odt float
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w.nii.gz -mas $T1wImageBrain $WD/T1wmulT2w_brain.nii.gz
 meanbrainval=`${FSLDIR}/bin/fslstats $WD/T1wmulT2w_brain.nii.gz -M`
