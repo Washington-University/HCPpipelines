@@ -89,29 +89,28 @@ debug_defaults()
     fi
 }
 
-# == Compatibility and convenience with set -u and interactive shells
-
-if [[ "$-" == *i* ]]
-then
-    #interactive
-    set +e
-else
-    #noninteractive
-    #note: 'set -u' complaints will not call 'trap ... ERR', but will do a 'set -e' exit
-    #if we don't have -u but we do have -e, we are in an unintended state
-    #but until a disable function is called, it is harmless, so only warn
-    if [[ "$-" != *u* && "$-" == *e* ]]
-    then
-        log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
-    fi
-fi
-
 # == Logging functionality
-
 
 if [[ "$(type -t log_Err)" != "function" ]]
 then
     source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
+# == Sanity checking and convenience with set -u and interactive shells
+
+#note: 'set -u' complaints will not call 'trap ... ERR', but will do a 'set -e' exit
+#if we don't have -u but we do have -e, we are in an unintended state
+#but until a disable function is called, it is harmless (for non-interactive), so only warn
+if [[ "$-" != *u* && "$-" == *e* ]]
+then
+    log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
+fi
+
+#if interactive, always disable set -e
+if [[ "$-" == *i* ]]
+then
+    #interactive
+    set +e
 fi
 
 # == Color printing functionality
