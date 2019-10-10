@@ -19,7 +19,7 @@ set -e
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/mppmodecheck.shlib  # Functions to check the validity of MPP mode specification
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
@@ -81,8 +81,8 @@ log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-MPPMode=`opts_GetOpt1 "--mpp-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -93,7 +93,7 @@ if [ "${T2wInputImages}" = "NONE" ]; then
   Compliance="LegacyStyleData"
 fi
 
-check_mpp_compliance "${MPPMode}" "${Compliance}" "${ComplianceMsg}"
+check_mode_compliance "${ProcessingMoce}" "${Compliance}" "${ComplianceMsg}"
 
 
 # ------------------------------------------------------------------------------
