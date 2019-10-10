@@ -93,7 +93,7 @@ if [ "${T2wInputImages}" = "NONE" ]; then
   Compliance="LegacyStyleData"
 fi
 
-check_mode_compliance "${ProcessingMoce}" "${Compliance}" "${ComplianceMsg}"
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 
 # ------------------------------------------------------------------------------
