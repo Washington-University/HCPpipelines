@@ -308,12 +308,12 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       were not successfully processed and/or masked by the regular use of the pipelines.
                                       Before using this option, first ensure that the pipeline arguments used were 
                                       correct and that templates are a good match to the data.
-  [--processing-mode=(HCPStyleData|   Which processing mode to use. "HCPStyleData" (the default) follows the processing
-               LegacyStyleData)]      steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.
-                                      "LegacyStyleData" allows additional processing functionality and use of some 
-                                      acquisitions that do not conform to 'HCP-Style' expectations i.e., in this case:                                      
-                                      - missing high-resolution T2w image, 
-                                      - use of custom adjusted brain images or custom adjusted brain mask.
+  [--processing-mode=(HCPStyleData|   Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
+               LegacyStyleData)]      "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
+                                         and requires 'HCP-Style' data acquistion. 
+                                      "LegacyStyleData" allows additional processing functionality and use of some acquisitions
+                                         that do not conform to 'HCP-Style' expectations.
+                                         i.e., in this case no high-resolution T2w image acquisition
 EOF
   exit 1
 }
