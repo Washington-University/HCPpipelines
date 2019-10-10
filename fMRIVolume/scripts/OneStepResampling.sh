@@ -144,7 +144,7 @@ echo " " >> $WD/log.txt
 
 if [ `${FSLDIR}/bin/imtest ${BiasField}` -eq 0 ]; then
   verbose_red_echo "---> Missing Bias Field image, creating a fake one"
-  ${FSLDIR}/bin/fslmaths ${T1wImage} -abs -add 1 -bin ${BiasField}
+  ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 ${BiasField}
 fi
 
 #Save TR for later
@@ -233,27 +233,26 @@ for ((k=0; k < $NumFrames; k++)); do
   rm ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
 done
 
-ceho "---> Merging results"
+verbose_red_echo "---> Merging results"
 # Merge together results and restore the TR (saved beforehand)
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI}_mask $FrameMergeSTRINGII $TR_vol
 fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
-ceho "---> Combining transformations"
+verbose_red_echo "---> Combining transformations"
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
 if [ "$ReferenceReg" == "nonlinear" ]; then
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${GradientDistortionField}_nmc
   GradientDistortionField=${GradientDistortionField}_nmc
 fi
 
-# Add linear transform to reference if needed
-if [ "$ReferenceReg" == "NONE" ]; then
-  lintoref=""
-else
-  lintoref="--premat=${MotionMatrixFolder}/${MotionMatrixPrefix}0000"
+prematStr=""
+# Add transform to reference if needed
+if [ "$ReferenceReg" != "NONE" ]; then
+  prematStr="--premat=${MotionMatrixFolder}/${MotionMatrixPrefix}0000"
 fi
 
-${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} ${lintoref} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} ${prematStr} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
 ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
