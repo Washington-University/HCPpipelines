@@ -228,22 +228,21 @@ fi
 # ------------------------------------------------------------------------------
 
 fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD name run to use for movement correction target and to copy atlas registration from (or NONE; default)
+ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # In the cases when BOLD image is registered to a specified BOLD reference, this option 
+                                                                     # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
+                                                                     # Default is 'linear'.
 
 # Defaults
 fMRIReference=${fMRIReference:-NONE}
+ReferenceReg=${ReferenceReg:-linear}
 
 
 # ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
 
-<<<<<<< HEAD
-MPPMode=`opts_GetOpt1 "--processing-mode" $@`
-MPPMode=`opts_DefaultOpt $MPPMode "HCPStyleData"`
-=======
 ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
->>>>>>> qunex_fmrivolume
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -403,7 +402,8 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
        "$MotionMatrixPrefix" \
-       "$MotionCorrectionType"
+       "$MotionCorrectionType" \
+       "$ReferenceReg"
 
 # EPI Distortion Correction and EPI to T1w Registration
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
@@ -486,7 +486,8 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
        --scoutin=${fMRIFolder}/${OrigScoutName} \
        --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} 
+       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+       --refreg=${ReferenceReg}
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
@@ -531,32 +532,29 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
        --usejacobian=${UseJacobian}
 
-# MJ QUERY: WHY THE -r OPTIONS BELOW?
-# TBr Response: Since the copy operations are specifying individual files
-# to be copied and not directories, the recursive copy options (-r) to the
-# cp calls below definitely seem unnecessary. They should be removed in 
-# a code clean up phase when tests are in place to verify that removing them
-# has no unexpected bad side-effect.
-${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
-${RUN} cp -r ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}/${MovementRegressor}.txt
-${RUN} cp -r ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}/${MovementRegressor}_dt.txt
-${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
-${RUN} cp -r ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
-${RUN} cp -r ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
-###Add stuff for RMS###
-${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}/Movement_RelativeRMS.txt
-${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}/Movement_AbsoluteRMS.txt
-${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}/Movement_RelativeRMS_mean.txt
-${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Movement_AbsoluteRMS_mean.txt
-###Add stuff for RMS###
+#Copy selected files to ResultsFolder
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
+${RUN} cp ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
+${RUN} cp ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz ${ResultsFolder}/${NameOffMRI}_fovmask.nii.gz
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.nii.gz ${ResultsFolder}/${NameOffMRI}_finalmask.nii.gz
+
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.stats.txt ${ResultsFolder}/${NameOffMRI}_finalmask.stats.txt
+${RUN} cp ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}
 
 #Basic Cleanup
-rm ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz
+${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 
 #Econ
-#rm "$fMRIFolder"/"$OrigTCSName".nii.gz
-#rm "$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz
-#rm "$fMRIFolder"/"$NameOffMRI"_mc.nii.gz
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc
 
 log_Msg "Completed"
 

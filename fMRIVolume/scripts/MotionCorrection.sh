@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+source ${HCPPIPEDIR_Global}/log.shlib           # Logging related functions
 
 # --------------------------------------------------------------------------------
 #  Establish tool name for logging
@@ -22,6 +22,21 @@ OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
 MotionCorrectionType="$8"
+ReferenceReg="$9"
+
+verbose_red_echo "---> ${MotionCorrectionType} based motion correction"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "             WorkingDirectory: ${WorkingDirectory}"
+verbose_echo "                    InputfMRI: ${InputfMRI}"
+verbose_echo "                        Scout: ${Scout}"
+verbose_echo "                   OutputfMRI: ${OutputfMRI}"
+verbose_echo "       OutputMotionRegressors: ${OutputMotionRegressors}"
+verbose_echo "     OutputMotionMatrixFolder: ${OutputMotionMatrixFolder}"
+verbose_echo " OutputMotionMatrixNamePrefix: ${OutputMotionMatrixNamePrefix}"
+verbose_echo "         MotionCorrectionType: ${MotionCorrectionType}"
+verbose_echo "                 ReferenceReg: ${ReferenceReg}"
+verbose_echo " "
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
@@ -44,6 +59,25 @@ case "$MotionCorrectionType" in
     ;;
 esac
 
+
+# Run nonlinear registration if needed
+
+if [ "${ReferenceReg}" == "nonlinear" ] ; then
+  verbose_echo " ... computing nonlinear transform to reference"
+  verbose_echo "     ... generating bold average"
+  ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
+
+  verbose_echo "     ... running fnirt: fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/mc2ref_warp"
+  ${FSLDIR}/bin/fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/mc2ref_warp
+
+  verbose_echo "     ... applying warp"
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/mc2ref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}_nonlin
+
+  tmcbold="_nonlin"
+else
+  tmcbold=""
+fi
+
 # Move output files about
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par
 if [ -e $OutputMotionMatrixFolder ] ; then
@@ -52,7 +86,7 @@ fi
 mkdir $OutputMotionMatrixFolder
 
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/* ${OutputMotionMatrixFolder}
-mv -f ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${OutputfMRI}.nii.gz
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}.nii.gz ${OutputfMRI}.nii.gz
 
 # Change names of all matrices in OutputMotionMatrixFolder
 log_Msg "Change names of all matrices in OutputMotionMatrixFolder"
@@ -65,6 +99,11 @@ if [ -e $OutputMotionMatrixFolder ] ; then
     mv $Matrix `echo ${OutputMotionMatrixNamePrefix}${MatrixNumber} | cut -d "." -f 1`
   done
   cd $DIR
+fi
+
+if [ ${ReferenceReg} == "nonlinear" ] ; then
+  log_Msg " ... moving ${WorkingDirectory}/mc2ref_warp.nii.gz to ${OutputMotionMatrixFolder}"
+  mv -f ${WorkingDirectory}/mc2ref_warp.nii.gz ${OutputMotionMatrixFolder}
 fi
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries
