@@ -45,7 +45,9 @@ check_mode_compliance()
       fi
     else
       if [ "${Compliance}" = "LegacyStyleData" ]; then
-        log_Err_Abort "--processing-mode=HCPStyleData was requested, but the following settings are not compliant:${ComplianceMsg}. Fix these settings or consider requesting 'LegacyStyleData' mode instead."
+        log_Err "--processing-mode=HCPStyleData was requested, but the following settings are not compliant:"
+        log_Err "${ComplianceMsg}"
+        log_Err_Abort "Fix these settings or consider requesting 'LegacyStyleData' mode instead."
       fi
     fi
 
