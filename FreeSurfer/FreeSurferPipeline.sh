@@ -205,7 +205,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
   [--pipeline-mode={HCPStyleData, LegacyStyleData}]
-      Indicates, which variant of MPP to use. "HCPStyleData" (the default) follows the processing steps 
+      Indicates, which processing mode to use. "HCPStyleData" (the default) follows the processing steps 
          described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion. "LegacyStyleData" 
          allows additional processing functionality and use of some acquisitions that do not conform 
          to 'HCP-Style' expectations; i.e., in this case missing high-resolution T2w image 
@@ -379,7 +379,7 @@ get_options()
 	fi
 
 
-	# NOTE: Check for T2w image has moved upwards, as missing T2w is allowed in LegacyStyleData MPP mode.
+	# NOTE: Check for T2w image has moved upwards, as missing T2w is allowed in LegacyStyleData processing mode.
 
 
 	# show optional parameters if specified
