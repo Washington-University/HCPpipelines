@@ -228,8 +228,8 @@ fi
 # ------------------------------------------------------------------------------
 
 DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                 # Whether to do slicetime correction (TRUE), FALSE to omit
-SliceCorrectionDirection=`opts_GetOpt1 "--slicetimedir" $@`             # direction: empty for up, --down for down
-SliceCorrectionInterleaved=`opts_GetOpt1 "--slicetimeinterleaved" $@`   # interleaved slice acquisition: TRUE/FALSE
+SliceTimerCorrectionParameters=`opts_GetOpt1 "--slicetimerparams" $@`   # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
+                                                                        # Verbose (-v) is already turned on. TR (-r) is specified using --tr parameter.
 TR=`opts_GetOpt1 "--tr" $@`                                             # TR of the timeseries
 
 # Defaults
@@ -241,9 +241,7 @@ DoSliceTimeCorrection=${DoSliceTimeCorrection:-FALSE}                   # WARNIN
                                                                         # would ideally be performed simultaneously; however, this is not currently supported by any major software 
                                                                         # tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, 
                                                                         # provide major advantages for fMRI denoising, and are recommended. 
-                                                                        # No slice timing correction is done by default 
-SliceCorrectionInterleaved=${SliceCorrectionInterleaved:-TRUE}          # Interleaved slice timing is TRUE by default 
-
+                                                                        # No slice timing correction is done by default.  
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -347,12 +345,8 @@ ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction"
-    if [ ${SliceCorrectionInterleaved} = 'TRUE' ] ; then
-      InterleavedSliceTiming="--odd"
-    else
-      InterleavedSliceTiming=""
-    fi    
-    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_orig_stc -r ${TR} ${SliceCorrectionDirection} ${InterleavedSliceTiming} -v
+    SliceTimerCorrectionParameters=`echo ${SliceTimerCorrectionParameters} | sed 's/@/ /g'` 
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_orig_stc -r ${TR} -v ${SliceTimerCorrectionParameters}
     
     if [ "${DistortionCorrection}" = "NONE"] ; then {
       #  use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images MNI152
