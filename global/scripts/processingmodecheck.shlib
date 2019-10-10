@@ -1,6 +1,6 @@
 #!/bin/echo This script should not run directly:
 
-# Functions for checking compliance with selected MPP mode for HCP Pipelines
+# Functions for checking compliance with selected processing mode for HCP Pipelines
 
 # --- Import log.shlib 
 
@@ -28,8 +28,8 @@ check_mode_compliance()
       log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
       log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
       log_Msg "        in support of this workflow. A manuscript with comprehensive evaluation for"
-      log_Msg "        the Extended MPP workflow is in active preparation and should be appropriately"
-      log_Msg "        cited when published."
+      log_Msg "        the LegacyStyleData processing mode is in active preparation and should be"
+      log_Msg "        appropriately cited when published."
       log_Msg "        "
     fi
 
@@ -37,7 +37,9 @@ check_mode_compliance()
 
     if [ "${ProcessingMode}" = "LegacyStyleData" ]; then
       if [ "${Compliance}" = "HCPStyleData" ]; then
-        log_Warn "All conditions for the use of --processing-mode=HCPStyleData are met. Consider using that mode (or equivalently, simply leave --processing-mode empty) instead of --processing-mode=LegacyStyleData."
+        log_Warn "All conditions for the use of --processing-mode=HCPStyleData are met. "
+        log_Warn "Consider using that mode (or equivalently, simply leave --processing-mode empty)"
+        log_Warn "instead of --processing-mode=LegacyStyleData."
       else
         log_Msg "The following LegacyStyleData settings were requested:${ComplianceMsg}"
       fi
