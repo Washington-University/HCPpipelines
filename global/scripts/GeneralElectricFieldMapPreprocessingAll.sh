@@ -15,7 +15,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename $0): Script for generating a fieldmap suitable for FSL from General Electric Gradient Echo field map,"

@@ -93,7 +93,7 @@ debug_defaults()
 
 if [[ "$(type -t log_Err)" != "function" ]]
 then
-    source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+    source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 fi
 
 # == Sanity checking and convenience with set -u and interactive shells

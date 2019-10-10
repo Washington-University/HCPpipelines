@@ -27,7 +27,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename $0): Tool for bias field correction based on square root of T1w * T2w"

@@ -21,7 +21,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
     echo ""

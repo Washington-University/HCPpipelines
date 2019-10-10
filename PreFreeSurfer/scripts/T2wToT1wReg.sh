@@ -19,7 +19,7 @@ else
 	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 log_Msg "START: T2w2T1Reg"
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # function for parsing options
 getopt1() {

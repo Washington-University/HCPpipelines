@@ -3,7 +3,7 @@ set -e
 
 ########################################## PREPARE FUNCTIONS ########################################## 
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib  # Function for getting FSL version
 
 show_tool_versions()

@@ -5,7 +5,7 @@ set -e
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # --------------------------------------------------------------------------------
 #  Establish tool name for logging

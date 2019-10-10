@@ -16,7 +16,7 @@ fi
 #  Load function libraries
 # ------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # ------------------------------------------------------------------------------
 #  Verify other needed environment variables are set

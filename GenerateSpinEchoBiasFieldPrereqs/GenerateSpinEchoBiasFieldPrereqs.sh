@@ -2,7 +2,7 @@
 set -e
 g_script_name=`basename ${0}`
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 log_SetToolName "${g_script_name}"
 log_Debug_On
 

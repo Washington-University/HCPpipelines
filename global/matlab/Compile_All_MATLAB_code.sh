@@ -168,7 +168,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify that any other needed environment variables are set

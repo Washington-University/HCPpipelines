@@ -68,7 +68,7 @@
 set -e
 
 # Load Function Libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions 
 
 # Global values

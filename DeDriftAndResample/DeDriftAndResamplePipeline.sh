@@ -900,7 +900,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 log_SetToolName "${g_script_name}"
 log_Debug_On
