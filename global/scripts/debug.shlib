@@ -1,10 +1,5 @@
 #!/bin/echo This script should not run directly:
 
-# -- Set debug defaults
-
-HCP_DEBUG_USETRAP=ON
-HCP_DEBUG_EXIT_ON_ERROR=ON
-
 # Description:
 #
 #   Function for printing debugging information on caught errors.
@@ -25,8 +20,6 @@ HCP_DEBUG_EXIT_ON_ERROR=ON
 #   $1 - line number
 #   $2 - command ran
 #   $3 - exit status
-
-trap 'debug_on_error $LINENO "$BASH_COMMAND" $?' ERR
 
 debug_on_error()
 {    
@@ -81,6 +74,21 @@ function debug_first()
     echo "$1"
 }
 
+debug_defaults()
+{
+    debug_enable_trap
+    debug_enable_exit
+    #the ${<var>:-} pattern exists to work properly under set -eu, mac's old bash doesn't have [[ -v <var> ]]
+    if [[ "${HCP_DEBUG_COLOR:-}" == "" ]]
+    then
+        debug_disable_color
+    fi
+    if [[ "${HCP_VERBOSE:-}" == "" ]]
+    then
+        debug_disable_verbose
+    fi
+}
+
 
 # == Logging functionality
 
@@ -91,15 +99,6 @@ then
 fi
 
 # == Color printing functionality
-
-if [ -z ${HCP_DEBUG_COLOR} ] ; then
-    HCP_DEBUG_COLOR=FALSE
-fi
-
-if [ -z ${HCP_VERBOSE} ] ; then
-    HCP_VERBOSE=FALSE
-fi
-
 
 # Description:
 #
@@ -293,3 +292,8 @@ verbose_echo()
         echo "$*"
     fi
 }
+
+
+debug_defaults
+
+trap 'debug_on_error "$LINENO" "$BASH_COMMAND" "$?"' ERR
