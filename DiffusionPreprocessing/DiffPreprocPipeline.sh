@@ -96,8 +96,8 @@
 set -e
 
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib		# log_ functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib	# version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib	   # version_ functions
 
 # Global values
 DEFAULT_B0_MAX_BVAL=50

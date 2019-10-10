@@ -17,7 +17,7 @@ set -e
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
 
 ########################################## SUPPORT FUNCTIONS ########################################## 

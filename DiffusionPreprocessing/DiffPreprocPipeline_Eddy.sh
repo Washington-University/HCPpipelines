@@ -68,8 +68,8 @@
 set -e
 
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib     # log_ functions  
-source ${HCPPIPEDIR}/global/scripts/version.shlib # version_ functions 
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions 
 
 # Global values
 SCRIPT_NAME=$(basename ${0})

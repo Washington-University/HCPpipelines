@@ -811,8 +811,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib
-source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
 
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
 scriptName="basic_preproc.sh"
 echo -e "\n START: ${scriptName}"
 

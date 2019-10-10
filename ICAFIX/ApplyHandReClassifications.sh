@@ -335,7 +335,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions
 log_SetToolName "${g_script_name}"
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
