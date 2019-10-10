@@ -5,9 +5,15 @@
 #   Function for printing debugging information on caught errors.
 #   It makes use of error trapping. 
 #
-#   To disable error trapping run `debug_disable_trap`
-#   To disable exit uppon trapped error run `debug_disable_exit`
-
+#   Default behavior is that error trapping is enabled, 
+#   and the script exits upon trapped error with the same status as the failed command.
+#   
+#   To disable error trapping altogether run `debug_disable_trap`
+#      (Note that if `set -e` is set in the calling script, the script would still exit upon error 
+#       through that mechanism).
+#   To disable exit upon trapped error run `debug_disable_exit`
+#       In this case (trap doesn't exit), execution proceeds to the next line of the script, 
+#       with `$?` still set to whatever value the failed command errored with.
 #
 # Input:
 #
@@ -25,6 +31,7 @@ fi
 HCP_DEBUG_USETRAP=ON
 HCP_DEBUG_EXIT_ON_ERROR=ON
 
+
 if [ -z ${HCP_DEBUG_COLOR} ] ; then
     HCP_DEBUG_COLOR=FALSE
 fi
@@ -32,6 +39,99 @@ fi
 if [ -z ${HCP_VERBOSE} ] ; then
     HCP_VERBOSE=FALSE
 fi
+
+
+# Description:
+#
+#   Function for printing red debug output.
+#
+# Input:
+#
+#   - text to be printed
+
+debug_red_echo()
+{   
+    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+        echo -e "\033[31m$*\033[0m"
+    else
+        echo "$*"
+    fi
+}
+
+
+# Description 
+#
+#   Support function for debug_on_error()
+#
+
+
+function debug_first()
+{
+    echo "$1"
+}
+
+
+
+# Description 
+#
+#   Main function to run on ERR trap
+#
+# Input:
+#
+#   $1 - line number
+#   $2 - command ran
+#   $3 - exit status
+
+debug_on_error()
+{    
+    if [ ! $HCP_DEBUG_USETRAP == 'OFF' ]; then        
+
+        local me=`basename "$0"`
+        local startreport=""
+        local endreport=""
+        local command=$(eval debug_first "$2")
+
+        # --- output a regular HCP error log
+
+        log_Err "'$command' command failed with return code: $3"
+
+        # --- are we printing in color
+
+        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+           startreport="\033[33m"
+           endreport="\033[0m"
+        fi
+        
+        # --- output a detailed report if usetrap is not turned off    
+        echo                                                               
+        echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
+        echo "---------------------------------------------------"
+        echo "         script: $me"                                            
+        echo "stopped at line: $1"                                    
+        echo "           call: $2"
+        echo "  expanded call: $(eval echo "$2")"                            
+        echo "      exit code: $3"                                        
+        echo -e "---------------------------------------------------${endreport}" 
+        echo                                                               
+        
+        # --- check if ok to exit        
+        if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
+            if [[ "$-" == *i* ]]
+            then
+                echo
+                echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
+                read
+            else
+                debug_red_echo "===> Aborting execution!"
+                echo ""
+                exit $3
+            fi
+        fi
+    fi
+}
+
+
+# == Color printing functions
 
 # Description:
 #
@@ -90,24 +190,6 @@ debug_disable_color()
 
 # Description:
 #
-#   Function for printing red debug output.
-#
-# Input:
-#
-#   - text to be printed
-
-debug_red_echo()
-{   
-    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-        echo -e "\033[31m$*\033[0m"
-    else
-        echo "$*"
-    fi
-}
-
-
-# Description:
-#
 #   Function for printing green debug output.
 #
 # Input:
@@ -138,52 +220,6 @@ debug_blue_echo()
         echo -e "\033[34m$*\033[0m"
     else
         echo "$*"
-    fi
-}
-
-function debug_first()
-{
-    echo "$1"
-}
-
-debug_on_error()
-{    
-    if [ ! $HCP_DEBUG_USETRAP == 'OFF' ]; then        
-
-        local me=`basename "$0"`
-        local startreport=""
-        local endreport=""
-        local command=$(eval debug_first "$2")
-
-        # --- output a regular HCP error log
-
-        log_Err "'$command' command failed with return code: $3"
-
-        # --- are we printing in color
-
-        if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-           startreport="\033[33m"
-           endreport="\033[0m"
-        fi
-        
-        # --- output a detailed report if usetrap is not turned off    
-        echo                                                               
-        echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
-        echo "---------------------------------------------------"
-        echo "         script: $me"                                            
-        echo "stopped at line: $1"                                    
-        echo "           call: $2"
-        echo "  expanded call: $(eval echo "$2")"                            
-        echo "    exit status: $3"                                        
-        echo -e "---------------------------------------------------${endreport}" 
-        echo                                                               
-        
-        # --- check if ok to exit        
-        if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
-            debug_red_echo "===> Aborting execution!"
-            echo ""
-            exit $3
-        fi
     fi
 }
 
