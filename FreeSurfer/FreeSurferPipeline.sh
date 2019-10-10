@@ -215,7 +215,7 @@ PARAMETERs can also be specified positionally as:
   ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
   Note that the positional approach to specifying parameters does NOT support the 
-      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --pipeline-mode options.
+      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --processing-mode options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
@@ -300,8 +300,8 @@ get_options()
 				p_extra_reconall_args+="${extra_reconall_arg} "
 				index=$(( index + 1 ))
 				;;
-			--pipeline-mode=*)
-				p_pipelinemode=${argument#*=}
+			--processing-mode=*)
+				p_processing_mode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--no-conf2hires)
@@ -322,7 +322,7 @@ get_options()
 	#  Compliance check
 	# ------------------------------------------------------------------------------
 	
-	ProcessingMoce=${p_pipelinemode:-HCPStyleData}	
+	ProcessingMode=${p_processing_mode:-HCPStyleData}	
     Compliance="HCPStyleData"
     ComplianceMsg=""
 
@@ -336,7 +336,7 @@ get_options()
         p_t2w_image="NONE"
     fi
 
-    check_mode_compliance "${ProcessingMoce}" "${Compliance}" "${ComplianceMsg}"
+    check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 	# ------------------------------------------------------------------------------
 	#  check required parameters
@@ -395,8 +395,8 @@ get_options()
 	if [ ! -z "${p_conf2hires}" ]; then
 		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
-	if [ ! -z "${p_pipelinemode}" ] ; then
-  		log_Msg "Set --pipeline-mode to: ${p_pipelinemode}"
+	if [ ! -z "${p_processing_mode}" ] ; then
+  		log_Msg "Set --processing-mode to: ${p_processing_mode}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
