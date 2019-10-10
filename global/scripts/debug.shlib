@@ -1,5 +1,10 @@
 #!/bin/echo This script should not run directly:
 
+# -- Set debug defaults
+
+HCP_DEBUG_USETRAP=ON
+HCP_DEBUG_EXIT_ON_ERROR=ON
+
 # Description:
 #
 #   Function for printing debugging information on caught errors.
@@ -22,65 +27,6 @@
 #   $3 - exit status
 
 trap 'debug_on_error $LINENO "$BASH_COMMAND" $?' ERR
-
-if [[ "$(type -t log_Err)" != "function" ]]
-then
-    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
-fi
-
-HCP_DEBUG_USETRAP=ON
-HCP_DEBUG_EXIT_ON_ERROR=ON
-
-
-if [ -z ${HCP_DEBUG_COLOR} ] ; then
-    HCP_DEBUG_COLOR=FALSE
-fi
-
-if [ -z ${HCP_VERBOSE} ] ; then
-    HCP_VERBOSE=FALSE
-fi
-
-
-# Description:
-#
-#   Function for printing red debug output.
-#
-# Input:
-#
-#   - text to be printed
-
-debug_red_echo()
-{   
-    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
-        echo -e "\033[31m$*\033[0m"
-    else
-        echo "$*"
-    fi
-}
-
-
-# Description 
-#
-#   Support function for debug_on_error()
-#
-
-
-function debug_first()
-{
-    echo "$1"
-}
-
-
-
-# Description 
-#
-#   Main function to run on ERR trap
-#
-# Input:
-#
-#   $1 - line number
-#   $2 - command ran
-#   $3 - exit status
 
 debug_on_error()
 {    
@@ -130,8 +76,30 @@ debug_on_error()
     fi
 }
 
+function debug_first()
+{
+    echo "$1"
+}
 
-# == Color printing functions
+
+# == Logging functionality
+
+
+if [[ "$(type -t log_Err)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
+# == Color printing functionality
+
+if [ -z ${HCP_DEBUG_COLOR} ] ; then
+    HCP_DEBUG_COLOR=FALSE
+fi
+
+if [ -z ${HCP_VERBOSE} ] ; then
+    HCP_VERBOSE=FALSE
+fi
+
 
 # Description:
 #
@@ -187,6 +155,22 @@ debug_disable_color()
     HCP_DEBUG_COLOR=FALSE
 }
 
+# Description:
+#
+#   Function for printing red debug output.
+#
+# Input:
+#
+#   - text to be printed
+
+debug_red_echo()
+{   
+    if [ "$HCP_DEBUG_COLOR" == "TRUE" ] ; then
+        echo -e "\033[31m$*\033[0m"
+    else
+        echo "$*"
+    fi
+}
 
 # Description:
 #
