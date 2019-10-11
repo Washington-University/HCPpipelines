@@ -46,8 +46,6 @@ QAImage=`getopt1 "--QAimage" $@`                   # "$14" #Temporary file for s
 # Set default option values
 dof=`defaultopt $dof 6`
 
-echo $T1wOutputDirectory
-
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 GlobalScripts=${HCPPIPEDIR_Global}
 
@@ -97,7 +95,7 @@ done
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
-DILATE_DISTANCE=echo "$DiffRes * 4" | bc  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
+DILATE_DISTANCE=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
 
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
@@ -107,7 +105,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
-    ${FSLDIR}/bin/fslroi "$DataDirectory"/warped/data_warped "$DataDirectory"/warped/nodif_warped
+    ${FSLDIR}/bin/fslroi "$DataDirectory"/warped/data_warped "$DataDirectory"/warped/nodif_warped 0 1
     ${FSLDIR}/bin/fslmaths "$DataDirectory"/warped/nodif_warped -abs -bin "$DataDirectory"/warped/fov_mask
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
 
@@ -136,11 +134,11 @@ ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDire
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
 
 # Create a simple summary text file of the percentage of spatial coverage of the dMRI data inside the FS-derived brain mask
-NvoxBrainMask=`fslstats  -V "$T1wOutputDirectory"/nodif_brain_mask_old | awk '{print $1}'`
-NvoxFinalMask=`fslstats  -V "$T1wOutputDirectory"/nodif_brain_mask | awk '{print $1}'`
+NvoxBrainMask=`fslstats "$T1wOutputDirectory"/nodif_brain_mask_old -V | awk '{print $1}'`
+NvoxFinalMask=`fslstats "$T1wOutputDirectory"/nodif_brain_mask -V | awk '{print $1}'`
 PctCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxBrainMask}" | bc -l`
 echo "PctCoverage, NvoxFinalMask, NvoxBrainMask" >| "$T1wOutputDirectory"/nodif_brain_mask.stats.txt
-echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> fov_mask.stats.txt
+echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> "$T1wOutputDirectory"/nodif_brain_mask.stats.txt
 
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
