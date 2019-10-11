@@ -443,26 +443,27 @@ case $DistortionCorrection in
 
     ${NONE_METHOD_OPT})
 
+            # NOTE: To work with later code a number of fake files are created 
+            #       with names that do not reflect the true nature of the file
+            #       this is to be considered an initial fix for datasets that 
+            #       do not include data that enable distortion correction and
+            #       will be replaced with a cleaner code. 
+
+
             log_Msg "---> No distortion correction"
 
             log_Msg "---> FAKE WarpField"
-            ### faked warp image with three frames
+            # Create fake warp image with three frames
             ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 ${WD}/WarpField.nii.gz
             ${FSLDIR}/bin/fslmerge -t ${WD}/WarpField.nii.gz ${WD}/WarpField.nii.gz ${WD}/WarpField.nii.gz ${WD}/WarpField.nii.gz
 
             log_Msg "---> FAKE Jacobian Volume"
-            ###Jacobian Volume FAKED for Regular Fieldmaps (all ones) ###
+            # Create fake Jacobian Volume for Regular Fieldmaps (all ones)
             ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 -bin ${WD}/Jacobian.nii.gz
 
             log_Msg "---> FAKE spline interpolated image of scout"
-            # create a spline interpolated image of scout (distortion corrected in same space)
+            # Create a fake spline interpolated image of scout
             ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}_undistorted
-
-            log_Msg "---> REORIENT scout to standard MNI152 template"
-            # use FSL's fslreorient2std for reorienting the image to match the approximate orientation of the standard template images (MNI152)
-            fslreorient2std ${WD}/${ScoutInputFile}_undistorted.nii.gz ${WD}/${ScoutInputFile}_undistorted_fMRI2str.nii.gz
-            rm ${WD}/${ScoutInputFile}_undistorted.nii.gz
-            mv ${WD}/${ScoutInputFile}_undistorted_fMRI2str.nii.gz ${WD}/${ScoutInputFile}_undistorted.nii.gz
 
             log_Msg "---> register scout image to T1w"
             # register undistorted scout image to T1w
@@ -483,7 +484,7 @@ case $DistortionCorrection in
             log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
             ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFile}_undistorted2T1w_init_warp
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
-            #1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
+            # 1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted2T1w_init_warp -o ${WD}/${ScoutInputFile}_undistorted2T1w_init
 
         ;;
