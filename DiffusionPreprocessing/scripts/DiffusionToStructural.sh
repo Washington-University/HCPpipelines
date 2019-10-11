@@ -95,13 +95,13 @@ done
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
-DILATE_DISTANCE=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
+DilateDistance=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
 
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
-    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/data_warped.nii.gz $DILATE_DISTANCE NEAREST $DataDirectory/warped/data_warped_dilated.nii.gz
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/data_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/data_warped_dilated.nii.gz
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
@@ -113,7 +113,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 else
     #Register diffusion data to T1w space without considering gradient nonlinearities
-    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/data.nii.gz $DILATE_DISTANCE NEAREST $DataDirectory/data_dilated.nii.gz
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/data.nii.gz $DilateDistance NEAREST $DataDirectory/data_dilated.nii.gz
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
