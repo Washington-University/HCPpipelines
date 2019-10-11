@@ -340,7 +340,7 @@ if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
 fi
-${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
@@ -348,8 +348,19 @@ if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     TR=`${FSLDIR}/bin/fslval ${fMRIName} pixdim4`
 
     IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
-    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName" -o "$fMRIFolder"/"$OrigTCSName"_stc -r ${TR} -v "${SliceTimerCorrectionParametersArray[@]}"
-  
+    ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_prestc
+    ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_prestc -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} -v "${SliceTimerCorrectionParametersArray[@]}"
+    ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_prestc
+fi
+
+#Create fake "Scout" if it doesn't exist
+if [ $fMRIScout = "NONE" ] ; then
+  ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
+else
+  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+fi
+
+if [ $DistortionCorrection = "NONE" ] ; then
     # Processing is more robust to registration problems if the fMRI is in the same orientation as the
     # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
     # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
@@ -368,20 +379,21 @@ if [ $DoSliceTimeCorrection = "TRUE" ] ; then
       reorient=FALSE
     fi
 
-    if [[ $reorient = "TRUE" && $DistortionCorrection = "NONE" ]] ; then
+    if [ $reorient = "TRUE" ] ; then
       log_Warn "Performing fslreorient2std! Please take that into account when using volume BOLD images in further analyses!"
-      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_stc "$fMRIFolder"/"$OrigTCSName"
-    else
-      ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName"_stc "$fMRIFolder"/"$OrigTCSName"
+
+      # --- reorient BOLD
+      ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_pre2std
+      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_pre2std "$fMRIFolder"/"$OrigTCSName"
+      ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
+
+      # --- reorient SCOUT
+      ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
+      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
+      ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
     fi
 fi
 
-#Create fake "Scout" if it doesn't exist
-if [ $fMRIScout = "NONE" ] ; then
-  ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
-else
-  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
-fi
 
 #Gradient Distortion Correction of fMRI
 log_Msg "Gradient Distortion Correction of fMRI"
