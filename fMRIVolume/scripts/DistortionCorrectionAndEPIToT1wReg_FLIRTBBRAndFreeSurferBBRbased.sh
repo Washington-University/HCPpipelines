@@ -407,10 +407,9 @@ case $DistortionCorrection in
         #we don't have the final transform to actual T1w space yet, that occurs later in this script
         #but, we need the T1w segmentation to make the bias field, so use the initial registration above, then compute the bias field again at the end
         Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
+        ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
         for File in ${Files}
         do
-            ReferenceImage=${SubjectFolder}/T1w/T1w_acpc_dc.nii.gz
-
             #NOTE: this relies on TopupPreprocessingAll generating _jac versions of the files
             if [[ $UseJacobian == "true" ]]
             then
