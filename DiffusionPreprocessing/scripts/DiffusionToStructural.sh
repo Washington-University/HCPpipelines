@@ -105,8 +105,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
-    ${FSLDIR}/bin/fslroi "$DataDirectory"/warped/data_warped "$DataDirectory"/warped/nodif_warped 0 1
-    ${FSLDIR}/bin/fslmaths "$DataDirectory"/warped/nodif_warped -abs -bin "$DataDirectory"/warped/fov_mask
+    ${FSLDIR}/bin/fslmaths "$DataDirectory"/warped/data_warped -abs -Tmax -bin "$DataDirectory"/warped/fov_mask
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
 
     #Now register the grad_dev tensor 
@@ -118,7 +117,7 @@ else
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
 
     #Create a mask covering voxels within the field of view for all volumes
-    ${FSLDIR}/bin/fslmaths "$DataDirectory"/nodif -abs -bin "$DataDirectory"/fov_mask
+    ${FSLDIR}/bin/fslmaths "$DataDirectory"/data -abs -Tmax -bin "$DataDirectory"/fov_mask
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/fov_mask -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp trilinear -out "$T1wOutputDirectory"/fov_mask
 fi
 
