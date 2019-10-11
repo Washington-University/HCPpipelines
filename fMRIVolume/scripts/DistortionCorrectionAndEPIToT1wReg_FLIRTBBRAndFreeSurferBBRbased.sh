@@ -400,7 +400,7 @@ case $DistortionCorrection in
           log_Msg "... running flirt"
           ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof ${dof}
         else
-          log_Err_Abort "No valid preregister tool specified. Please specify --prepregistertool as either 'epi_reg' or 'flirt'."
+          log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
         fi
 
         #copy the initial registration into the final affine's filename, as it is pretty good
