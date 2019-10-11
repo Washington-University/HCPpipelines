@@ -66,7 +66,7 @@ RegName="${39}"
 log_Msg "CreateMyelinMaps.sh: RegName: ${RegName}"
 
 verbose_echo " "
-verbose_red_echo " ===> Running Create Myelin Maps"
+verbose_red_echo " ===> Running CreateMyelinMaps"
 verbose_echo " "
 
 # -- check for presence of T2w image
@@ -250,6 +250,7 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
   done
 done
 
-
+verbose_green_echo "---> Finished CreateMyelinMaps"
+verbose_echo " "
 
 log_Msg "END: CreateMyelinMaps"
