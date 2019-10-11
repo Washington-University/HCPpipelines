@@ -35,26 +35,19 @@
 usage()
 {
 	cat <<EOF
-
 ${g_script_name}: ReApplyFix Pipeline
-
 This script has two purposes:
 1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
 following manual reclassification of the FIX signal/noise components (see ApplyHandReClassifications.sh).
 2) Apply FIX cleanup to the CIFTI from an alternative surface registration (e.g., MSMAll)
 (either for the first time, or following manual reclassification of the components).
 Only one of these two purposes can be accomplished per invocation.
-
 Usage: ${g_script_name} PARAMETER...
-
 PARAMETERs are [ ] = optional; < > = user supplied value
-
   Note: The PARAMETERS can be specified positionally (i.e. without using the --param=value
         form) by simply specifying all values on the command line in the order they are
         listed below.
-
         e.g. ${g_script_name} /path/to/study/folder 100307 rfMRI_REST1_LR 2000 ...
-
   [--help] : show usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID>
@@ -69,9 +62,15 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
    [--delete-intermediates={TRUE, FALSE}] defaults to ${G_DEFAULT_DELETE_INTERMEDIATES}
      If TRUE, deletes the high-pass filtered files.
-
 EOF
 }
+
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
+G_DEFAULT_LOW_RES_MESH=32
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+G_DEFAULT_MOTION_REGRESSION="FALSE"
+G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
@@ -282,6 +281,21 @@ have_hand_reclassification()
 	fi
 }
 
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo 1
+        ;;
+    (false | no | none | 0)
+        echo 0
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -319,43 +333,18 @@ main()
 
 	local MotionRegression
 	if [ -z "${8}" ]; then
-		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
+		MotionRegression=$(interpret_as_bool "${G_DEFAULT_MOTION_REGRESSION}")
 	else
-		MotionRegression="${8}"
+		MotionRegression=$(interpret_as_bool "${8}")
 	fi
 
 	local DeleteIntermediates
 	if [ -z "${9}" ]; then
-		DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
+		DeleteIntermediates=$(interpret_as_bool "${G_DEFAULT_DELETE_INTERMEDIATES}")
 	else
-		DeleteIntermediates="${9}"
+		DeleteIntermediates=$(interpret_as_bool "${9}")
 	fi
 
-	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
-	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            MotionRegression=1
-            ;;
-        ( false | no | none | 0)
-            MotionRegression=0
-            ;;
-		*)
-			log_Err_Abort "motion regression setting must be TRUE or FALSE"
-			;;
-	esac
-
-	case $(echo ${DeleteIntermediates} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            DeleteIntermediates=1
-            ;;
-        ( false | no | none | 0)
-            DeleteIntermediates=0
-            ;;
-		*)
-			log_Err_Abort "clean intermediate setting must be TRUE or FALSE"
-			;;
-	esac
-	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -650,21 +639,25 @@ main()
     # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${fmrihp}.ica/Atlas
 
-	# If the symlink for filtered_func_data is not actually pointing to a filtered volume, make
-	# sure to delete it (regardless of DeleteIntermediates setting)
-	if (( useNonFilteredAsFilteredFunc )); then
-		$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data
-	fi
+	# Always delete things with too-generic names
+	$FSLDIR/bin/imrm ${fmrihp}.ica/filtered_func_data
+	rm -f ${fmrihp}.ica/Atlas.dtseries.nii
 	
-	cd ${DIR}
-
-    if [ ${DeleteIntermediates} = "1" ] ; then
-		if (( hp >= 0 )); then
-			$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}
+	# Optional deletion of highpass intermediates
+    if [ "${DeleteIntermediates}" == "1" ] ; then
+		if (( hp > 0 )); then  # fix_3_clean only writes out the hp-filtered time series if hp > 0
+			$FSLDIR/bin/imrm ${fmri}_hp${hp}  # Explicitly use _hp${hp} here (rather than $hpStr as a safeguard against accidental deletion of the non-hp-filtered timeseries)
+			rm -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii
 		fi
-		$FSLDIR/bin/imrm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/filtered_func_data
-        rm ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${hpStr}.ica/Atlas_hp_preclean.dtseries.nii
-    fi
+	else
+		#even if we don't delete it, don't leave this file with a hard to interpret name 
+		if (( hp > 0 )); then
+			# 'OR' mv command with "true" to avoid returning an error code if file doesn't exist for some reason
+			mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${hp}.dtseries.nii || true 
+		fi
+     fi
+
+	cd ${DIR}  # Return to directory where script was launched
 
 	log_Msg "Completed!"
 }
@@ -672,13 +665,6 @@ main()
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
-
-# Establish defaults
-G_DEFAULT_REG_NAME="NONE"
-G_DEFAULT_LOW_RES_MESH=32
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-G_DEFAULT_MOTION_REGRESSION="FALSE"
-G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # Set global variables
 g_script_name=$(basename "${0}")
@@ -696,7 +682,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
