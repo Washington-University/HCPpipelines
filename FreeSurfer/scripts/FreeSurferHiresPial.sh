@@ -87,7 +87,7 @@ if [ ! "${T2wImage}" = "NONE" ] ; then
   mris_make_surfaces -nsigma_above 2 -nsigma_below 3 -aseg aseg.hires -filled filled.hires -wm wm.hires -mgz -sdir $SubjectDIR -orig white.deformed -nowhite -orig_white white.deformed -orig_pial pial -T2 "$mridir"/T2w_hires.norm -T1 T1w_hires.norm -output $outputSuffix1 $SubjectID rh
 else
   verbose_red_echo "---> No T2w image, skipping generation of pial first pass surfaces with T2 adjustment."
-  outputSuffix1=""
+  outputSuffix1=".preT2.pass1"
 fi
 
 
