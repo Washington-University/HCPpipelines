@@ -1088,8 +1088,6 @@ main()
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-set -e # If any command exits with non-zero value, this script exits
-
 # Establish defaults
 ## Currently done in get_options()
 

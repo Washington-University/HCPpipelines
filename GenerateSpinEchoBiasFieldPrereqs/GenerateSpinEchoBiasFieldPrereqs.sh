@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+
 g_script_name=`basename ${0}`
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib

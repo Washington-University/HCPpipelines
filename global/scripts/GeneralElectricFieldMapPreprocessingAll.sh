@@ -1,6 +1,5 @@
 #!/bin/bash 
 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)

@@ -39,8 +39,6 @@
 
 # If any command used in this script exits with a non-zero value, this script itself exits 
 # and does not attempt any further processing.
-set -e
-
 
 ########################################## PREPARE FUNCTIONS ########################################## 
 

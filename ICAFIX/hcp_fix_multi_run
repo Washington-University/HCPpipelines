@@ -82,7 +82,6 @@ fi
 
 #############################################################
 
-set -e
 unset POSIXLY_CORRECT
 
 # Set global variables
@@ -116,10 +115,10 @@ else
 fi
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
-# Default settings file that comes with fix isn't "set -e" clean, so disable temporarily
-set +e
+# Default settings file that comes with fix isn't "ERR" clean, so disable temporarily
+debug_disable_trap
 source "${FSL_FIXDIR}/settings.sh"
-set -e
+debug_enable_trap
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
@@ -537,7 +536,7 @@ if [ ! -z "${log_debugOn}" ] ; then
 fi
 
 #grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
-#we need to do "if which ..." because the script currently uses set -e
+#we need to do "if which ..." because the script currently uses ERR trap
 if which melodic &> /dev/null
 then
     MELODIC=$(which melodic 2> /dev/null)

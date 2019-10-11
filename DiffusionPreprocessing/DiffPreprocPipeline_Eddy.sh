@@ -65,7 +65,6 @@
 
 # Setup this script such that if any command exits with a non-zero value, the 
 # script itself exits and does not attempt any further processing.
-set -e
 
 # Load Function Libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib

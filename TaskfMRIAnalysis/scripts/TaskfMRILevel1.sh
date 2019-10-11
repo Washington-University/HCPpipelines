@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Must first source SetUpHCPPipeline.sh to set up pipeline environment variables and software
 # Requirements for this script

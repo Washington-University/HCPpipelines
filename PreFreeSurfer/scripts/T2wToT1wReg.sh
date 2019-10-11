@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -e
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set

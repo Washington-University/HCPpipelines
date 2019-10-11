@@ -1,5 +1,5 @@
 #!/bin/bash 
-set -e
+
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # Requirements for this script

@@ -506,8 +506,6 @@ main()
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-set -e # If any commands exit with non-zero value, this script exits
-
 # Establish defaults
 
 # Set global variables

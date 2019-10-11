@@ -151,7 +151,6 @@
 
 # Setup this script such that if any command exits with a non-zero value, the
 # script itself exits and does not attempt any further processing.
-set -e
 
 # -----------------------------------------------------------------------------------
 #  Constants for specification of Averaging and Readout Distortion Correction Method
