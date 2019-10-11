@@ -313,7 +313,7 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                          and requires 'HCP-Style' data acquistion. 
                                       "LegacyStyleData" allows additional processing functionality and use of some acquisitions
                                          that do not conform to 'HCP-Style' expectations.
-                                         i.e., in this case no high-resolution T2w image acquisition
+                                         In this script, it allows not having a high-resolution T2w image.
 EOF
   exit 1
 }
