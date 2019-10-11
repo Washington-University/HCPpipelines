@@ -34,19 +34,27 @@
 usage()
 {
 	cat <<EOF
+
 ${g_script_name}: ReApplyFix Pipeline for MultiRun ICA+FIX
+
 This script has two purposes (both in the context of MultiRun FIX):
+
 1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
 following manual reclassification of the FIX signal/noise components (see ApplyHandReClassifications.sh).
 2) Apply FIX cleanup to the CIFTI from an alternative surface registration (e.g., MSMAll)
 (either for the first time, or following manual reclassification of the components).
 Only one of these two purposes can be accomplished per invocation.
+
 Usage: ${g_script_name} PARAMETER...
+
 PARAMETERs are [ ] = optional; < > = user supplied value
+
   Note: The PARAMETERs can be specified positionally (i.e. without using the --param=value
         form) by simply specifying all values on the command line in the order they are
 		listed below.
+
 		e.g. ${g_script_name} <path to study folder> <subject ID> <fMRINames> ...
+
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID> (e.g. 100610)
