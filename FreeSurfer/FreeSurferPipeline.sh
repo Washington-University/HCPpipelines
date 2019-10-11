@@ -210,7 +210,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
          and requires 'HCP-Style' data acquistion. 
       "LegacyStyleData" allows additional processing functionality and use of some acquisitions
          that do not conform to 'HCP-Style' expectations.
-         i.e., in this case no high-resolution T2w image acquisition 
+         In this script, it allows not having a high-resolution T2w image.
 
 PARAMETERs can also be specified positionally as:
 
