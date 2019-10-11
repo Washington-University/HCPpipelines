@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # # ReApplyFixMultiRunPipeline.sh
 #
@@ -35,26 +34,19 @@
 usage()
 {
 	cat <<EOF
-
 ${g_script_name}: ReApplyFix Pipeline for MultiRun ICA+FIX
-
 This script has two purposes (both in the context of MultiRun FIX):
 1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
 following manual reclassification of the FIX signal/noise components (see ApplyHandReClassifications.sh).
 2) Apply FIX cleanup to the CIFTI from an alternative surface registration (e.g., MSMAll)
 (either for the first time, or following manual reclassification of the components).
 Only one of these two purposes can be accomplished per invocation.
-
 Usage: ${g_script_name} PARAMETER...
-
 PARAMETERs are [ ] = optional; < > = user supplied value
-
   Note: The PARAMETERs can be specified positionally (i.e. without using the --param=value
         form) by simply specifying all values on the command line in the order they are
 		listed below.
-
 		e.g. ${g_script_name} <path to study folder> <subject ID> <fMRINames> ...
-
   [--help] : show this usage information and exit
    --path=<path to study folder> OR --study-folder=<path to study folder>
    --subject=<subject ID> (e.g. 100610)
@@ -70,9 +62,19 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      1 = Use interpreted MATLAB
      2 = Use interpreted Octave
    [--motion-regression={TRUE, FALSE}] defaults to ${G_DEFAULT_MOTION_REGRESSION}
-
+   [--delete-intermediates={TRUE, FALSE}] defaults to ${G_DEFAULT_DELETE_INTERMEDIATES}
+     If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files
+     that are prerequisites to FIX cleaning.
+     (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
 EOF
 }
+
+# Establish defaults
+G_DEFAULT_REG_NAME="NONE"
+G_DEFAULT_LOW_RES_MESH=32
+G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
+G_DEFAULT_MOTION_REGRESSION="FALSE"
+G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
 
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
@@ -98,6 +100,7 @@ get_options()
 	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
 	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
+    p_DeleteIntermediates=${G_DEFAULT_DELETE_INTERMEDIATES}
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -150,6 +153,10 @@ get_options()
 				;;
 			--motion-regression=*)
 				p_MotionRegression=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--delete-intermediates=*)
+				p_DeleteIntermediates=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -264,6 +271,13 @@ get_options()
 		log_Msg "Motion Regression: ${p_MotionRegression}"
 	fi
 
+	if [ -z "${p_DeleteIntermediates}" ]; then
+		log_Err "delete intermediates setting (--delete-intermediates=) required"
+		error_count=$(( error_count + 1 ))
+	else
+		log_Msg "Delete Intermediates: ${p_DeleteIntermediates}"
+	fi
+
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi	
@@ -364,6 +378,21 @@ have_hand_reclassification()
 	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 }
 
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo 1
+        ;;
+    (false | no | none | 0)
+        echo 0
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -413,24 +442,18 @@ main()
 
 	local MotionRegression
 	if [ -z "${9}" ]; then
-		MotionRegression="${G_DEFAULT_MOTION_REGRESSION}"
+		MotionRegression=$(interpret_as_bool "${G_DEFAULT_MOTION_REGRESSION}")
 	else
-		MotionRegression="${9}"
+		MotionRegression=$(interpret_as_bool "${9}")
 	fi
 
-	# Turn MotionRegression into an appropriate numeric value for fix_3_clean
-	case $(echo ${MotionRegression} | tr '[:upper:]' '[:lower:]') in
-        ( true | yes | 1)
-            MotionRegression=1
-            ;;
-        ( false | no | none | 0)
-            MotionRegression=0
-            ;;
-		*)
-			log_Err_Abort "motion regression setting must be TRUE or FALSE"
-			;;
-	esac
-		
+	local DeleteIntermediates
+	if [ -z "${10}" ]; then
+		DeleteIntermediates=$(interpret_as_bool "${G_DEFAULT_DELETE_INTERMEDIATES}")
+	else
+		DeleteIntermediates=$(interpret_as_bool "${10}")
+	fi
+
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -508,22 +531,31 @@ main()
 	DIR=`pwd`
 	log_Msg "PWD : $DIR"
 
-	## MPH: High level "master" conditional that checks whether the files necessary for fix_3_clean
+	## MPH: Create a high level variable that checks whether the files necessary for fix_3_clean
 	## already exist (i.e., reapplying FIX cleanup following manual classification).
 	## If so, we can skip all the following looping through individual runs and concatenation, 
 	## and resume at the "Housekeeping related to files expected for fix_3_clean" section
 
 	local ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
-	if [[ -f ${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii ]]; then
+	local regenConcatHP=0
+	if [[ ! -f "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii" || \
+			( $DoVol == "1" && `$FSLDIR/bin/imtest "${ConcatNameNoExt}_hp${hp}"` != 1 ) ]]
+	then
+		regenConcatHP=1
+	else  # Generate some messages that we are going to use already existing files
 		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists."
-		if (( DoVol && $(${FSLDIR}/bin/imtest "${ConcatNameNoExt}_hp${hp}") )); then
+		if (( DoVol )); then
 			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}_hp${hp}) already exists."
 		fi
 		log_Warn "Using preceding existing concatenated file(s) for recleaning."
-	else  # bash GOTO construct would be helpful here, to skip a bunch of code
+	fi
+	
+	####### BEGIN: Skip a whole bunch of code unless regenConcatHP=1 ########
+	if (( regenConcatHP )); then
+
 		# NOT RE-INDENTING ALL THE FOLLOWING CODE
-		# This 'else' clause terminates at the start of the
+		# This 'if' clause terminates at the start of the
 		# "Housekeeping related to files expected for fix_3_clean" section
 
 	###LOOP HERE --> Since the files are being passed as a group
@@ -607,6 +639,9 @@ main()
 		log_Msg "tr: $tr"
 
 		## Check if "1st pass" VN on the individual runs is needed; high-pass gets done here as well
+		## Note that the existence of the HP'ed, VN timeseries and VN maps is all that matters here for
+		## creating the "final" ${ConcatNameNoExt}*_hp${hp}.{dtseries.nii,nii.gz} files.
+		## (i.e., whether the individual run _hp${hp}.dtseries and _hp${hp}.nii.gz files exist is irrelevant)
         if [[ ! -f "${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dtseries.nii" || \
               ! -f "${fmriNoExt}_Atlas${RegString}_vn.dscalar.nii" || \
               ( $DoVol == "1" && \
@@ -692,7 +727,7 @@ main()
 	## ---------------------------------------------------------------------------
 
 	if (( DoVol )); then
-		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}` != 1 ]; then
+		if [ `$FSLDIR/bin/imtest ${ConcatNameNoExt}_hp${hp}` != 1 ]; then
 		    # Merge volumes from the individual runs
 			fslmerge -tr ${ConcatNameNoExt}_demean ${NIFTIvolMergeSTRING} $tr
 			fslmerge -tr ${ConcatNameNoExt}_hp${hp}_vnts ${NIFTIvolhpVNMergeSTRING} $tr
@@ -711,7 +746,7 @@ main()
 			fslmaths ${ConcatNameNoExt}_SBRef -bin ${ConcatNameNoExt}_brain_mask
               # Preceding line creates mask to be used in melodic for suppressing memory error - Takuya Hayashi
 		else
-			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}) already exists. Using existing version"
+			log_Warn "$($FSLDIR/bin/imglob -extension ${ConcatNameNoExt}_hp${hp}) already exists. Using existing version"
 		fi
 	fi
 
@@ -758,10 +793,11 @@ main()
 		/bin/rm -f ${fmriNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii
 	done
 
-	## Terminate the 'else' clause of the "master" conditional that checked whether
-	## the preceding code needed to be run.
-	fi
-
+	fi   #	if (( regenConcatHP )); then
+	## Terminate the 'if' clause of the conditional that checked whether
+	## the large block of preceding code needed to be run.
+	####### END: Skip a whole bunch of code unless regenConcatHP=1 ########
+	
 	## ---------------------------------------------------------------------------
 	## Housekeeping related to files expected for fix_3_clean
 	## ---------------------------------------------------------------------------
@@ -778,7 +814,19 @@ main()
 	# This is the concated volume time series from the 1st pass VN, with requested
 	# hp-filtering applied and with the mean VN map multiplied back in
 	${FSLDIR}/bin/imrm filtered_func_data
-	${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
+	if (( DoVol ))
+	then
+		if [ `$FSLDIR/bin/imtest ../${concatfmrihp}` != 1 ]; then
+			log_Err_Abort "FILE NOT FOUND: ../${concatfmrihp}"
+		fi
+		${FSLDIR}/bin/imln ../${concatfmrihp} filtered_func_data
+	else
+		#fix_3_clean is hardcoded to pull the TR from "filtered_func_data", so we have to make sure
+		#something with the right TR is there (to avoid getting a scary sounding "No image file match" message,
+		#and TR=[] (empty), although TR only matters if hp>0, and we have AlreadyHP=-1, so this is really
+		#just for good hygene in the log files)
+		${FSLDIR}/bin/imln ../${concatfmrihp}_clean filtered_func_data
+	fi
 
 	# This is the concated CIFTI time series from the 1st pass VN, with requested
 	# hp-filtering applied and with the mean VN map multiplied back in
@@ -938,6 +986,18 @@ main()
     # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 	$FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
  
+	# Always delete things with too-generic names
+	$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data
+	rm -f ${concatfmrihp}.ica/Atlas.dtseries.nii
+
+	# Optional deletion of highpass intermediates and the concatenated (non-filtered) time series
+	# (hp<0 not supported in this script currently, so no need to condition on value of hp)
+	if [ "${DeleteIntermediates}" == "1" ]
+	then
+		$FSLDIR/bin/imrm ${concatfmri} ${concatfmrihp}
+		rm -f ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+	fi
+	
 	## ---------------------------------------------------------------------------
 	## Split the cleaned volume and CIFTI back into individual runs.
 	## ---------------------------------------------------------------------------
@@ -993,23 +1053,6 @@ main()
 	    Start=`echo "${Start} + ${NumTPS}" | bc -l`
 	done
 
-	## ---------------------------------------------------------------------------
-	## Remove all the large time series files in ${ConcatFolder}
-	## ---------------------------------------------------------------------------
-
-	## Deleting these files would save a lot of space.
-	## But downstream scripts (e.g., RestingStateStats) assume they exist, and
-	## if deleted they would therefore need to be re-created "on the fly" later
-
-	# cd ${ConcatFolder}
-        # log_Msg "Removing large (concatenated) time series files from ${ConcatFolder}"
-	# $FSLDIR/bin/imrm ${concatfmri}
-	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
-	# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii
-	# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-
 	cd ${DIR}
 
 	log_Msg "Completed!"
@@ -1018,12 +1061,6 @@ main()
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
-
-# Establish defaults
-G_DEFAULT_REG_NAME="NONE"
-G_DEFAULT_LOW_RES_MESH=32
-G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
-G_DEFAULT_MOTION_REGRESSION="FALSE"
 
 # Set global variables
 g_script_name=$(basename "${0}")
@@ -1041,7 +1078,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
@@ -1059,8 +1096,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}           ${7}              ${8}                ${9}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}"
+	#    ${1}               ${2}           ${3}             ${4}              ${5}            ${6}           ${7}              ${8}                 ${9}                    ${10}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_DeleteIntermediates}"
 
 else
 	# Positional parameters are used
@@ -1068,10 +1105,3 @@ else
 	main "$@"
 
 fi
-
-
-
-
-
-
-
