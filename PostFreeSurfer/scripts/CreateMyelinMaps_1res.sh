@@ -66,7 +66,7 @@ RegName="${39}"
 log_Msg "CreateMyelinMaps_1res.sh: RegName: ${RegName}"
 
 verbose_echo " "
-verbose_red_echo " ===> Running Create Myelin Maps 1res"
+verbose_red_echo " ===> Running CreateMyelinMaps_1res"
 verbose_echo " "
 
 # -- check for presence of T2w image
@@ -126,7 +126,7 @@ for STRING in ${STRINGII} ; do
   Mesh=`echo $STRING | cut -d "@" -f 2`
   ROI=`echo $STRING | cut -d "@" -f 3`
 
-  for STRINGII in $STRINGIList ; do
+  for STRINGII in $STRINGList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -cifti-create-dense-scalar "$Folder"/"$Subject".${Map}."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L.${Map}."$Mesh"."$Ext".gii -roi-left "$Folder"/"$Subject".L."$ROI"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R.${Map}."$Mesh"."$Ext".gii -roi-right "$Folder"/"$Subject".R."$ROI"."$Mesh".shape.gii
@@ -159,7 +159,7 @@ for STRING in ${STRINGII} ; do
   done
 done
 
-verbose_green_echo "---> Finished Create Myelin Maps 1res"
+verbose_green_echo "---> Finished CreateMyelinMaps_1res"
 verbose_echo " "
 
 log_Msg "END: CreateMyelinMaps_1res"
