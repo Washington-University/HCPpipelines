@@ -160,6 +160,9 @@ main() {
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
 	
+	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
+	DeleteIntermediates=FALSE
+	
 	# establish queue for job submission
 	QUEUE="-q hcp_priority.q"
 	if [ "${RunLocal}" == "TRUE" ]; then
@@ -173,7 +176,7 @@ main() {
 
 		ResultsFolder="${StudyFolder}/${Subject}/MNINonLinear/Results"
 		
-		if [ -z ${ConcatNames} ]; then
+		if [ -z "${ConcatNames}" ]; then
 			# single-run FIX
 			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
 			
@@ -184,7 +187,7 @@ main() {
 
 				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${TrainingData}" ${FixThreshold})
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
@@ -219,7 +222,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${TrainingData}" ${FixThreshold})
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done

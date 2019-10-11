@@ -33,7 +33,7 @@
 Usage() {
     cat <<EOF
 
-hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>]
+hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
 
    Apply FIX cleaning to a concatenated set of input files.
 
@@ -66,6 +66,14 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
      Threshold setting in FIX that controls the sensitivity/specificity tradeoff.
      Default = 10.
      To specify a threshold, <TrainingFile> becomes a mandatory argument.
+
+  [<DeleteIntermediates>] (optional)
+     If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files
+     that are prerequisites to FIX cleaning.
+     (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
+     Default = FALSE.
+     Note, deleting intermediates is not recommended for MR FIX.
+     You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
@@ -266,33 +274,42 @@ fi
 
 log_Msg "hp: ${hp}"
 
+fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
+log_Msg "fmris: ${fmris}"
+ConcatName="${3}"
+log_Msg "ConcatName: ${ConcatName}"
+
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
+doMotionRegression=$(interpret_as_bool "$4")
+
 unset TrainingData
 unset FixThresh
 if [ $# -ge 5 ] ; then
 	TrainingData=$5
 	FixThresh=$6
 fi
+DeleteIntermediates=FALSE
+if (($# >= 7))
+then
+    DeleteIntermediates=$(interpret_as_bool "$7")
+fi
 if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
-
-fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
-log_Msg "fmris: ${fmris}"
-ConcatName="${3}"
-log_Msg "ConcatName: ${ConcatName}"
-
-#this case logic could go in a helper function, interpret_as_bool or something
-case $(echo "$4" | tr '[:upper:]' '[:lower:]') in
-    ( true | yes )
-        doMotionRegression=TRUE
-        ;;
-    ( false | no | none )
-        doMotionRegression=FALSE
-        ;;
-    ( * )
-        log_Err_Abort "'$4' is not valid for <do_motion_regression>, please use TRUE or FALSE"
-        ;;
-esac
 
 DIR=`pwd`
 log_Msg "PWD : $DIR"
@@ -770,6 +787,18 @@ log_Msg "Done renaming files"
 # Remove the 'fake-NIFTI' file created in fix_3_clean for high-pass filtering of the CIFTI (if it exists)
 $FSLDIR/bin/imrm ${concatfmrihp}.ica/Atlas
 
+# Always delete things with too-generic names
+$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data
+rm -f ${concatfmrihp}.ica/Atlas.dtseries.nii
+
+# Optional deletion of highpass intermediates
+# (hp<0 not supported in this script currently, so no need to condition on value of hp)
+if [ "${DeleteIntermediates}" == "TRUE" ]
+then
+	$FSLDIR/bin/imrm ${concatfmri} ${concatfmrihp}
+    rm -f ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
+fi
+
 ## ---------------------------------------------------------------------------
 ## Split the cleaned volume and CIFTI back into individual runs.
 ## ---------------------------------------------------------------------------
@@ -810,23 +839,6 @@ for fmri in $fmris ; do
 	fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
-
-## ---------------------------------------------------------------------------
-## Remove all the large time series files in ${ConcatFolder}
-## ---------------------------------------------------------------------------
-
-## Deleting these files would save a lot of space.
-## But downstream scripts (e.g., RestingStateStats) assume they exist, and
-## if deleted they would therefore need to be re-created "on the fly" later
-
-# cd ${ConcatFolder}
-# log_Msg "Removing large (concatenated) time series files from ${ConcatFolder}"
-# $FSLDIR/bin/imrm ${concatfmri}
-# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}
-# $FSLDIR/bin/imrm ${concatfmri}_hp${hp}_clean
-# /bin/rm -f ${concatfmri}_Atlas.dtseries.nii
-# /bin/rm -f ${concatfmri}_Atlas_hp${hp}.dtseries.nii
-# /bin/rm -f ${concatfmri}_Atlas_hp${hp}_clean.dtseries.nii
 
 cd ${DIR}
 

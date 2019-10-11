@@ -24,8 +24,8 @@ Usage() {
   echo "             --motionmatdir=<input motion correcton matrix directory>"
   echo "             --motionmatprefix=<input motion correcton matrix filename prefix>"
   echo "             --ofmri=<input fMRI 4D image>"
-  echo "             --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in T1w space>"
-  echo "             --biasfield=<input biasfield image, in T1w space>"
+  echo "             --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in atlas (MNI152) space>"
+  echo "             --biasfield=<input biasfield image, in atlas (MNI152) space>"
   echo "             --gdfield=<input warpfield for gradient non-linearity correction>"
   echo "             --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>"
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
@@ -140,7 +140,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 
-###Add stuff for RMS###
+# Add stuff for estimating RMS motion
 invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${ScoutInputgdc}
 applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${ScoutInputgdc} -w ${OutputInvTransform} -o ${ScoutInputgdc}_mask.nii.gz
 if [ -e ${fMRIFolder}/Movement_RelativeRMS.txt ] ; then
@@ -155,9 +155,8 @@ fi
 if [ -e ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ] ; then
   /bin/rm ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
 fi
-###Add stuff for RMS###
 
-
+# Copy some files from ${WD} (--workingdir arg) to ${fMRIFolder} (--fmrifolder arg)
 ${FSLDIR}/bin/imcp ${WD}/${T1wImageFile}.${FinalfMRIResolution} ${fMRIFolder}/${T1wImageFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/imcp ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution} ${fMRIFolder}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/imcp ${WD}/${BiasFieldFile}.${FinalfMRIResolution} ${fMRIFolder}/${BiasFieldFile}.${FinalfMRIResolution}
@@ -165,13 +164,15 @@ ${FSLDIR}/bin/imcp ${WD}/${BiasFieldFile}.${FinalfMRIResolution} ${fMRIFolder}/$
 mkdir -p ${WD}/prevols
 mkdir -p ${WD}/postvols
 
-# Apply combined transformations to fMRI (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
+# Apply combined transformations to fMRI in a one-step resampling
+# (combines gradient non-linearity distortion, motion correction, and registration to atlas (MNI152) space, but keeping fMRI resolution)
 ${FSLDIR}/bin/fslsplit ${InputfMRI} ${WD}/prevols/vol -t
 FrameMergeSTRING=""
 FrameMergeSTRINGII=""
 for ((k=0; k < $NumFrames; k++)); do
   vnum=`${FSLDIR}/bin/zeropad $k 4`
-  ###Add stuff for RMS###
+
+  # Add stuff for estimating RMS motion
   rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
   if [ $k -eq 0 ] ; then
     echo "0" >> ${fMRIFolder}/Movement_RelativeRMS.txt
@@ -179,22 +180,33 @@ for ((k=0; k < $NumFrames; k++)); do
     rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
   fi
   prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
-  ###Add stuff for RMS###
+
+  # Combine GCD with motion correction
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
+  # Add in the warp to MNI152
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz --warp2=${OutputTransform} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
-  ${FSLDIR}/bin/fslmaths ${WD}/prevols/vol${vnum}.nii.gz -mul 0 -add 1 ${WD}/prevols/vol${vnum}_mask.nii.gz
+  # Apply one-step warp, using spline interpolation
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${WD}/prevols/vol${vnum}.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postvols/vol${vnum}.nii.gz
+
+  # Generate a mask for keeping track of spatial coverage (use nearest neighbor interpolation here)
+  ${FSLDIR}/bin/fslmaths ${WD}/prevols/vol${vnum}.nii.gz -mul 0 -add 1 ${WD}/prevols/vol${vnum}_mask.nii.gz
   ${FSLDIR}/bin/applywarp --rel --interp=nn --in=${WD}/prevols/vol${vnum}_mask.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postvols/vol${vnum}_mask.nii.gz
-  FrameMergeSTRING="${FrameMergeSTRING}${WD}/postvols/vol${vnum}.nii.gz " 
-  FrameMergeSTRINGII="${FrameMergeSTRINGII}${WD}/postvols/vol${vnum}_mask.nii.gz "
+
+  # Create strings for merging
+  FrameMergeSTRING+="${WD}/postvols/vol${vnum}.nii.gz " 
+  FrameMergeSTRINGII+="${WD}/postvols/vol${vnum}_mask.nii.gz "
 
   #Do Basic Cleanup
   rm ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
   rm ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
 done
+
 # Merge together results and restore the TR (saved beforehand)
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI}_mask $FrameMergeSTRINGII $TR_vol
+
+# Generate a spatial coverage mask that captures the voxels that have data available at *ALL* time points
+# (gets applied in IntensityNormalization.sh; so don't change name here without changing it in that script as well).
 fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
@@ -215,12 +227,11 @@ ${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
 #and resample it to MNI space
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 
-###Add stuff for RMS###
+# Compute average motion across frames
 cat ${fMRIFolder}/Movement_RelativeRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_RelativeRMS_mean.txt
 cat ${fMRIFolder}/Movement_AbsoluteRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt
-###Add stuff for RMS###
 
-###Do Basic Cleanup
+# Do Basic Cleanup
 rm -r ${WD}/postvols
 rm -r ${WD}/prevols
 

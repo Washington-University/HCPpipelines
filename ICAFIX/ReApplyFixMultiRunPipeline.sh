@@ -66,6 +66,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files
      that are prerequisites to FIX cleaning.
      (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
+
 EOF
 }
 

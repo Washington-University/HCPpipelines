@@ -1,3 +1,11 @@
+#use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
+if (($# > 0))
+then
+	log_FullCommand="$0 $*"
+else
+	log_FullCommand=""
+fi
+
 #
 # Description:
 #   sets the name of the tool to use for future logging
@@ -7,8 +15,10 @@
 #
 log_SetToolName()
 {
-	log_ToolName="$1"
+	log_ToolName="$*"
 }
+#also set the default toolname on sourcing
+log_SetToolName "$(basename "$0")"
 
 #
 # Description:
@@ -18,6 +28,7 @@ log_SetShowDateTime()
 {
 	log_ShowDateTime="TRUE"
 }
+log_SetShowDateTime
 
 #
 # Description:
@@ -36,6 +47,7 @@ log_SetShowToolName()
 {
 	log_ShowToolName="TRUE"
 }
+log_SetShowToolName
 
 #
 # Description:
@@ -63,6 +75,7 @@ log_ClearShowFunctionName()
 {
 	log_ShowFunctionName="FALSE"
 }
+log_ClearShowFunctionName
 
 #
 # Description:
@@ -143,14 +156,28 @@ log_Msg()
 log_Err_Abort()
 {
 	local msg="$*"
-	log_Msg "ABORTING: ${msg}"
+	if [[ ! -z "$log_FullCommand" ]]
+	then
+		log_Msg "While running '$log_FullCommand':" 1>&2
+	fi
+	log_Msg "ERROR: ${msg}" 1>&2
+	log_Msg "ABORTING"
 	exit 1
 }
 
 log_Err()
 {
 	local msg="$*"
-	log_Msg "ERROR: ${msg}"
+	if [[ ! -z "$log_FullCommand" ]]
+	then
+		log_Msg "While running '$log_FullCommand':" 1>&2
+	fi
+	log_Msg "ERROR: ${msg}" 1>&2
+	#-t checks for being a terminal - if stderr is redirected to a file, duplicate the error message on stdout
+	if [[ ! -t 2 ]]
+	then
+		log_Msg "ERROR: ${msg}"
+	fi
 }
 
 log_Warn()

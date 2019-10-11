@@ -1,0 +1,299 @@
+#!/bin/echo This script should not be run directly:
+
+#new named parameter parsing code: you write one line per argument, write just the tool's description into a "usage" function, and it does everything else except process the data (parameter descriptions in usage, parsing, logging parsed inputs, showing help info with --help or no arguments)
+#use the lines between EXAMPLE_START and EXAMPLE_END as a template when making a new script
+true <<"EXAMPLE_END"
+EXAMPLE_START
+#!/bin/bash
+set -eu
+
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+
+#this function gets called by opts_ParseArguments when --help is specified
+function usage()
+{
+    #header text
+    echo "
+$log_ToolName: does stuff
+
+Usage: $log_ToolName PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+"
+    #automatic argument descriptions
+    opts_ShowArguments
+}
+
+function main()
+{
+    #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag], ...
+    opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+    opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
+    opts_ParseArguments "$@"
+    
+    #display the parsed/default values
+    opts_ShowValues
+    
+    #processing code goes here
+}
+
+if (($# == 0)) || [[ "$1" == --* ]]
+then
+    #named parameters
+    main "$@"
+else
+    #positional support goes here - just call main with named parameters built from $1, etc
+    log_Err_Abort "positional parameter support is not currently implemented"
+    main --foo="$1" --bar="$2"
+fi
+EXAMPLE_END
+
+#we want a "log error and abort" function, so use the shlib for that
+if [[ "$(type -t log_Err_Abort)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
+#takes things like "true", "YES", and outputs "1", "NO" is "0", throws error if unrecognized
+function opts_StringToBool()
+{
+    case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+        (yes | true | 1)
+            echo 1
+            ;;
+        (no | false | 0)
+            echo 0
+            ;;
+        (*)
+            log_Err_Abort "unrecognized boolean '$1', please use yes/no, true/false, or 1/0"
+            ;;
+    esac
+}
+
+#switch, variable to set, name for inside of <> in help text, description, [default value], [compatibility flag, ...]
+function opts_AddOptional()
+{
+    local switch="$1"
+    local varname="$2"
+    local vardescrip="$3"
+    local descrip="$4"
+    shift 4
+    opts_add_switch "$switch" "$varname" 1 "$vardescrip" "$descrip" "$@"
+}
+
+#switch, variable to set, name for inside of <> in help text, description, [compatibility flag, ...]
+function opts_AddMandatory()
+{
+    local switch="$1"
+    local varname="$2"
+    local vardescrip="$3"
+    local descrip="$4"
+    shift 4
+    opts_add_switch "$switch" "$varname" 0 "$vardescrip" "$descrip" '' "$@"
+}
+
+opts_param_switches=()
+opts_compat_aliases=()
+function opts_add_switch()
+{
+    if (($# < 5))
+    then
+        error "parameter '$1' added improperly, check number of arguments and quoting"
+    fi
+    if [[ "$1" != --* ]]
+    then
+        error "parameter switches must start with --, attempted to create switch '$1'"
+    fi
+    #only the index is local, the arrays must be global
+    local new_index="${#opts_param_switches[@]}"
+    opts_param_switches["$new_index"]="$1"
+    opts_param_variable_names["$new_index"]="$2"
+    opts_param_optional["$new_index"]="$3"
+    opts_param_vardescrip["$new_index"]="$4"
+    opts_param_descrip["$new_index"]="$5"
+    #yes, it takes and sets a default value for mandatory parameters - doesn't matter because it checks that all mandatory are provided, and the code is simpler this way
+    if (($# >= 6))
+    then
+        opts_default["$new_index"]="$6"
+    else
+        opts_default["$new_index"]=""
+    fi
+    for ((index = 7; index <= $#; ++index))
+    do
+        opts_compat_aliases+=("${!index}" "$new_index")
+    done
+}
+
+function opts_ParseArguments()
+{
+    if (($# == 0))
+    then
+        #"usage" must be defined by the actual tool script
+        usage
+        exit 2
+    fi
+    #initialize all output variables to empty string, so optional ones don't error with 'set -eu')
+    #print -v sets global variables without having declare -g
+    #use opts_ even for local variables in this function to reduce chance of collision with the output variable names
+    for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+    do
+        #note: empty format string does not actually set the variable
+        printf -v "${opts_param_variable_names[$opts_index]}" '%s' "${opts_default[$opts_index]}"
+    done
+    local -a opts_used_params
+    local opts_myswitch
+    for opts_myswitch in "${opts_param_switches[@]}"
+    do
+        opts_used_params+=(0)
+    done
+    while (($# > 0))
+    do
+        local opts_switch="${1%%=*}"
+        local opts_argument="${1#*=}"
+        shift
+        #the convention of "--help"
+        if [[ "$opts_switch" == "--help" ]]
+        then
+            usage
+            exit 2
+        fi
+        local opts_found=0
+        local opts_index
+        #check main switches
+        for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+        do
+            if [[ "${opts_param_switches[$opts_index]}" == "$opts_switch" ]]
+            then
+                opts_found=1
+                break
+            fi
+        done
+        #check compatibility switches
+        if ((opts_found == 0))
+        then
+            local opts_index2
+            for ((opts_index2 = 0; opts_index2 < ${#opts_compat_aliases[@]}; opts_index2 += 2))
+            do
+                if [[ "${opts_compat_aliases[$opts_index2]}" == "$opts_switch" ]]
+                then
+                    opts_found=1
+                    opts_index=$((${opts_compat_aliases[opts_index2 + 1]}))
+                    break
+                fi
+            done
+        fi
+        if ((opts_found == 1))
+        then
+            if ((opts_used_params[opts_index] == 1))
+            then
+                error "parameter specified multiple times: '$opts_switch'"
+            fi
+            opts_used_params["$opts_index"]=1
+            printf -v "${opts_param_variable_names[$opts_index]}" '%s' "$opts_argument"
+        else
+            log_Err_Abort "unrecognized option: '$opts_switch'"
+        fi
+    done
+    local opts_missing_list=()
+    for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+    do
+        if ((opts_param_optional[opts_index] == 0 && opts_used_params[opts_index] == 0))
+        then
+            opts_missing_list+=("${opts_param_switches[$opts_index]}")
+        fi
+    done
+    if ((${#opts_missing_list[@]} > 0))
+    then
+        log_Err_Abort "missing the following mandatory parameter(s): ${opts_missing_list[*]}"
+    fi
+}
+
+#after parsing, call this to log all values
+function opts_ShowValues()
+{
+    local opts_index
+    for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+    do
+        local opts_varname="${opts_param_variable_names[$opts_index]}"
+        log_Msg "$opts_varname: ${!opts_varname}"
+    done
+}
+
+function opts_ShowArguments()
+{
+    opts_print_help_line '[--help] - show usage information and exit'
+    local index
+    for ((index = 0; index < ${#opts_param_switches[@]}; ++index))
+    do
+        local string="${opts_param_switches[$index]}=<${opts_param_vardescrip[$index]}>"
+        if ((opts_param_optional[index] == 1))
+        then
+            string="[$string]"
+        fi
+        if [[ "${opts_param_descrip[$index]}" != "" ]]
+        then
+            string+=" - ${opts_param_descrip[$index]}"
+        fi
+        opts_print_help_line "$string"
+    done
+    #extra line for aesthetics
+    echo
+}
+
+function opts_print_help_line()
+{
+    local maxwidth=79
+    local -a mylines
+    #read -a only reads one line, and mac's old bash doesn't have readarray, so time for some trickery
+    #could use just IFS without quoting inside =(), but that would remove intentional blank lines
+    #turn % into %p, @ into %a, and newline into @ - need to escape % first, and undo it last
+    #then we can use read -a with IFS=@
+    escaped=$(echo "$1" | sed -e 's/%/%p/g' -e 's/@/%a/g' | tr $'\n' @)
+    IFS='@' read -a mylinesescaped <<<"$escaped"
+    local firstline=1
+    local line
+    for line in "${mylinesescaped[@]}"
+    do
+        #undo escaping
+        local linemod=$(echo "$line" | sed -e 's/%a/@/g' -e 's/%p/%/g')
+        local firstloop=1
+        while ((firstloop || ${#linemod} > 0))
+        do
+            firstloop=0
+            local string=""
+            if ((firstline == 1))
+            then
+                if [[ "${linemod}" == [* ]]
+                then
+                    string="  "
+                else
+                    string="   "
+                fi
+            else
+                string="        "
+            fi
+            string+="$linemod"
+            if ((${#string} < maxwidth))
+            then
+                local toprint="$string"
+                local linemod=""
+            else
+                local chopped="${string:0:$((maxwidth + 1))}"
+                local untilspace="${chopped% *}"
+                #this test also prevents the leading spaces from being accepted as the splitting location
+                if ((${#untilspace} < (maxwidth * 2 / 3)))
+                then
+                    local toprint="${string:0:$((maxwidth - 1))}-"
+                    linemod="${string:$((maxwidth - 1))}"
+                else
+                    local divide="${#untilspace}"
+                    local toprint="${untilspace}"
+                    linemod=$(echo "${string:$((divide))}" | sed 's/^ *//')
+                fi
+            fi
+            echo "$toprint"
+            firstline=0
+        done
+    done
+}
+
