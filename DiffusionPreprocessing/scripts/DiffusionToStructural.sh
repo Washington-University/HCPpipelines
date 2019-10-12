@@ -146,7 +146,6 @@ echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> "$T1wOutputDirector
 
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
-${FSLDIR}/bin/imrm "$T1wOutputDirectory"/fov_mask
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/imrm $DataDirectory/warped/data_warped_dilated
 else
