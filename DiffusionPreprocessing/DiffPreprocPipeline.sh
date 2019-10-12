@@ -135,7 +135,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --gdcoeffs=<path-to-gradients-coefficients-file>
                           path to file containing coefficients that describe
                           spatial variations of the scanner gradients.
-                          Use --gdcoeffs=NONE if not available
+                          Applied *after* 'eddy'.
+                          Use --gdcoeffs=NONE if not available.
   [--dwiname=<DWIName>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--dof=<Degrees of Freedom>]

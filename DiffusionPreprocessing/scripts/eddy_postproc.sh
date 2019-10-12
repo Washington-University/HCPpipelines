@@ -34,6 +34,7 @@ else
 	NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 0 ${PosVols}
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg ${PosVols} ${NegVols}
+	# Note: 'eddy_combine' is apparently hard-coded to use "data" as the output NIFTI file name
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
              ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
@@ -89,6 +90,8 @@ fi
 	 
 if [ ! $GdCoeffs = "NONE" ] ; then
     echo "Correcting for gradient nonlinearities"
+	# Note: "data_warped" is eddy-current and suspectibility distortion corrected (via 'eddy'), but prior to gradient distortion correction
+	# i.e., "data_posteddy_preGDC" would be another way to think of it
     ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
     ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${datadir}/data_warped" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
 

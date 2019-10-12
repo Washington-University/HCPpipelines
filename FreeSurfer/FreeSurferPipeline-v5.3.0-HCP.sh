@@ -16,8 +16,9 @@
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source $HCPPIPEDIR/global/scripts/opts.shlib           # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source $HCPPIPEDIR/global/scripts/opts.shlib                   # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
@@ -73,6 +74,26 @@ else
 	seed_cmd_appendix="-norandomness -rng-seed ${recon_all_seed}"
 fi
 log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
+
+
+# ------------------------------------------------------------------------------
+#  Compliance check
+# ------------------------------------------------------------------------------
+
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+# -- T2w image
+
+if [ "${T2wInputImages}" = "NONE" ]; then
+  ComplianceMsg+=" --t2=NONE"
+  Compliance="LegacyStyleData"
+fi
+
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
+
 
 # ------------------------------------------------------------------------------
 #  Show Environment Variables

@@ -63,6 +63,18 @@ CorrectionSigma="${38}"
 RegName="${39}"
 
 log_Msg "CreateMyelinMaps_1res.sh: RegName: ${RegName}"
+
+verbose_echo " "
+verbose_red_echo " ===> Running CreateMyelinMaps_1res"
+verbose_echo " "
+
+# -- check for presence of T2w image
+if [ `${FSLDIR}/bin/imtest ${OrginalT2wImage}` -eq 0 ]; then
+  T2wPresent="NO"
+else
+  T2wPresent="YES"
+fi
+
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
 MyelinMappingFWHM="5"
@@ -71,6 +83,11 @@ MyelinMappingSigma=`echo "$MyelinMappingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )"
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
+
+STRINGList="corrThickness@shape"
+if [ "${T2wPresent}" = "YES" ] ; then
+  STRINGList+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
+fi
 
 for Hemisphere in L R ; do
   if [ $Hemisphere = "L" ] ; then
@@ -86,7 +103,7 @@ for Hemisphere in L R ; do
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
   fi
 
-  for STRING in MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func corrThickness@shape ; do
+  for STRING in $STRINGList ; do
     Map=`echo $STRING | cut -d "@" -f 1`
     Ext=`echo $STRING | cut -d "@" -f 2`
 
@@ -107,7 +124,8 @@ for STRING in ${STRINGII} ; do
   Folder=`echo $STRING | cut -d "@" -f 1`
   Mesh=`echo $STRING | cut -d "@" -f 2`
   ROI=`echo $STRING | cut -d "@" -f 3`
-  for STRINGII in MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func corrThickness@shape ; do
+
+  for STRINGII in $STRINGList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -cifti-create-dense-scalar "$Folder"/"$Subject".${Map}."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L.${Map}."$Mesh"."$Ext".gii -roi-left "$Folder"/"$Subject".L."$ROI"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R.${Map}."$Mesh"."$Ext".gii -roi-right "$Folder"/"$Subject".R."$ROI"."$Mesh".shape.gii
@@ -122,15 +140,25 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 #Add CIFTI Maps to Spec Files
+
+STRINGIIList="corrThickness@dscalar"
+if [ "${T2wPresent}" = "YES" ] ; then
+  STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
+fi
+  
 for STRING in ${STRINGII} ; do
   FolderI=`echo $STRING | cut -d "@" -f 1`
   FolderII=`echo $STRING | cut -d "@" -f 2`
   Mesh=`echo $STRING | cut -d "@" -f 3`
-  for STRINGII in MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar corrThickness@dscalar ; do
+
+  for STRINGII in $STRINGIIList ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -add-to-spec-file "$FolderI"/"$Subject"."$Mesh".wb.spec INVALID "$FolderII"/"$Subject"."$Map"."$Mesh"."$Ext".nii
   done
 done
+
+verbose_green_echo "---> Finished CreateMyelinMaps_1res"
+verbose_echo " "
 
 log_Msg "END: CreateMyelinMaps_1res"

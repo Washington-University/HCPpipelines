@@ -1,0 +1,58 @@
+#!/bin/echo This script should not run directly:
+
+# Functions for checking compliance with selected processing mode for HCP Pipelines
+
+# --- Import log.shlib 
+
+if [[ "$(type -t log_Err_Abort)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
+
+check_mode_compliance()
+{
+
+    # --- Define variables
+
+    local ProcessingMode="$1"
+    local Compliance="$2"
+    local ComplianceMsg="$3"
+
+    # --- Initial information
+
+    if [ "${ProcessingMode}" = "LegacyStyleData" ]; then
+      log_Msg "LegacyStyleData mode requested."
+      log_Msg "NOTICE: You are using a mode that enables processing of acquisitions that do not"
+      log_Msg "        conform to the HCP specification as described in Glasser et al. (2013)!"
+      log_Msg "        Be aware that if the HCP requirements are not met, the level of data quality"
+      log_Msg "        can not be guaranteed and the Glasser et al. (2013) paper should not be used"
+      log_Msg "        in support of this workflow. A manuscript with comprehensive evaluation for"
+      log_Msg "        the LegacyStyleData processing mode is in active preparation and should be"
+      log_Msg "        appropriately cited when published."
+      log_Msg "        "
+    fi
+
+    # -- Final evaluation
+
+    if [ "${ProcessingMode}" = "LegacyStyleData" ]; then
+      if [ "${Compliance}" = "HCPStyleData" ]; then
+        log_Warn "All conditions for the use of --processing-mode=HCPStyleData are met. "
+        log_Warn "Consider using that mode (or equivalently, simply leave --processing-mode empty)"
+        log_Warn "instead of --processing-mode=LegacyStyleData."
+      else
+        log_Msg "The following LegacyStyleData settings were requested:${ComplianceMsg}"
+      fi
+    else
+      if [ "${Compliance}" = "LegacyStyleData" ]; then
+        log_Err "--processing-mode=HCPStyleData was requested, but the following settings are not compliant:"
+        log_Err "${ComplianceMsg}"
+        log_Err_Abort "Fix these settings or consider requesting 'LegacyStyleData' mode instead."
+      fi
+    fi
+
+}
+
+
+
+
