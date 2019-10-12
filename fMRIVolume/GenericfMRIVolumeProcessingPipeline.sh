@@ -227,10 +227,10 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-Mask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (T1: the default, BOLD: one made on the reference bold image, DILATED: dilated MNI mask, NONE:none)
+UseMask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (FINAL: the default, T1: T1w image based mask, DILATEDT1: dilated T1w image based mask, NONE: none)
 
 # Defaults
-Mask=${Mask:-T1}
+UseMask=`opts_DefaultOpt $UseMask "FINAL"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -241,8 +241,11 @@ ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if [ ! "${Mask}" = 'T1' ]; then
-  ComplianceMsg+=" --usemask=${Mask}"
+if [ "${UseMask}" != 'FINAL' ]; then
+  if [ "${UseMask}" != "T1" ] && [ "${UseMask}" != "DILATEDT1" ] && [ "${UseMask}" != "NONE" ] ; then
+    log_Err_Abort "--usemask=${UseMask} is invalid! Valid options are: FINAL (default), T1, DILATEDT1, and NONE."
+  fi
+  ComplianceMsg+=" --usemask=${UseMask}"
   Compliance="LegacyStyleData"
 fi
 
@@ -494,34 +497,31 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
        --usejacobian=${UseJacobian} \
-       --usemask=${Mask}
+       --usemask=${UseMask}
 
-# MJ QUERY: WHY THE -r OPTIONS BELOW?
-# TBr Response: Since the copy operations are specifying individual files
-# to be copied and not directories, the recursive copy options (-r) to the
-# cp calls below definitely seem unnecessary. They should be removed in 
-# a code clean up phase when tests are in place to verify that removing them
-# has no unexpected bad side-effect.
-${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
-${RUN} cp -r ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}/${MovementRegressor}.txt
-${RUN} cp -r ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}/${MovementRegressor}_dt.txt
-${RUN} cp -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
-${RUN} cp -r ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
-${RUN} cp -r ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
-###Add stuff for RMS###
-${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}/Movement_RelativeRMS.txt
-${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}/Movement_AbsoluteRMS.txt
-${RUN} cp -r ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}/Movement_RelativeRMS_mean.txt
-${RUN} cp -r ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}/Movement_AbsoluteRMS_mean.txt
-###Add stuff for RMS###
+#Copy selected files to ResultsFolder
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
+${RUN} cp ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
+${RUN} cp ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz ${ResultsFolder}/${NameOffMRI}_fovmask.nii.gz
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.nii.gz ${ResultsFolder}/${NameOffMRI}_finalmask.nii.gz
+
+${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.stats.txt ${ResultsFolder}/${NameOffMRI}_finalmask.stats.txt
+${RUN} cp ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}
+${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}
 
 #Basic Cleanup
-rm ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz
+${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 
 #Econ
-#rm "$fMRIFolder"/"$OrigTCSName".nii.gz
-#rm "$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz
-#rm "$fMRIFolder"/"$NameOffMRI"_mc.nii.gz
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc
+#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc
 
 log_Msg "Completed"
 

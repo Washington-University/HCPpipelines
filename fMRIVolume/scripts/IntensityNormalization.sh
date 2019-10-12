@@ -36,7 +36,12 @@ Usage() {
   echo "             [--inscout=<input name for scout image (pre-sat EPI)>]"
   echo "             [--oscout=<output name for normalized scout image>]"
   echo "             [--workingdir=<working dir>]"
-  echo "             [--usemask=<what mask to use: T1, BOLD, DILATED, NONE; default=T1>]"
+  echo "             [--usemask=<what mask to use for generating final BOLD timeseries:"
+  echo "                         FINAL (mask based on T1 and voxels available at all timepoints - the default)"
+  echo "                         T1 (mask based on the T1w image)"
+  echo "                         DILATEDT1 (dilated T1w image based mask)"
+  echo "                         NONE (do not use a mask)]"
+  echo "                         NOTE: Mask used will also determine intensity normalization!"
 }
 
 # function for parsing options
@@ -77,7 +82,7 @@ OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
 ScoutInput=`getopt1 "--inscout" $@`  # "$6"
 ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
 UseJacobian=`getopt1 "--usejacobian" $@`  # 
-Mask=`getopt1 "--usemask" $@`
+UseMask=`getopt1 "--usemask" $@`
 
 verbose_red_echo "---> Intensity normalization"
 
@@ -91,13 +96,13 @@ verbose_echo "           --ofmri: ${OutputfMRI}"
 verbose_echo "         --inscout: ${ScoutInput}"
 verbose_echo "          --oscout: ${ScoutOutput}"
 verbose_echo "     --usejacobian: ${UseJacobian}"
-verbose_echo "         --usemask: ${Mask}"
+verbose_echo "         --usemask: ${UseMask}"
 verbose_echo " "
 
 # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 WD=`defaultopt $WD ${OutputfMRI}.wdir`
-Mask=${Mask:-T1}
+UseMask=`defaultopt $UseMask "FINAL"`
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -108,7 +113,7 @@ fi
 
 jacobiancom=""
 if [[ $UseJacobian == "true" ]] ; then
-  jacobiancom="-mul $Jacobian"
+    jacobiancom="-mul $Jacobian"
 fi
 
 biascom=""
@@ -138,33 +143,40 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ##########################################
 
-if [ $Mask == 'BOLD' ] ; then
-  echo " ... Creating BOLD based brain mask"
-  if [ X${ScoutInput} == X ] ; then
-    ${FSLDIR}/bin/fslmaths ${InputfMRI} -Tmean ${InputfMRI%.nii.gz}_avg
-    ${FSLDIR}/bin/bet ${InputfMRI%.nii.gz}_avg ${InputfMRI%.nii.gz}_brain -R -f 0.3
-    BrainMask=${InputfMRI%.nii.gz}_brain
-  else
-    ${FSLDIR}/bin/bet ${ScoutInput} ${ScoutInput%.nii.gz}_brain -R -f 0.3
-    BrainMask=${ScoutInput%.nii.gz}_brain
-  fi
+# FinalMask is a combination of the FS-derived brainmask, and the spatial coverage mask that captures the
+# voxels that have data available at *ALL* time points (derived in OneStepResampling)
+FinalMask=`${FSLDIR}/bin/remove_ext ${InputfMRI}`_finalmask
+${FSLDIR}/bin/fslmaths ${BrainMask} -bin -mas ${InputfMRI}_mask ${FinalMask}
+
+# Create a simple summary text file of the percentage of spatial coverage of the fMRI data inside the FS-derived brain mask
+NvoxBrainMask=`fslstats ${BrainMask} -V | awk '{print $1}'`
+NvoxFinalMask=`fslstats ${FinalMask} -V | awk '{print $1}'`
+PctCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxBrainMask}" | bc -l`
+echo "PctCoverage, NvoxFinalMask, NvoxBrainMask" >| ${FinalMask}.stats.txt
+echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> ${FinalMask}.stats.txt
+
+# If a user requested, use a T1 mas, a dilated T1 mask or no mask instedad when generating final BOLD timeseries
+
+if [ "${UseMask}" = "DILATEDT1" ] ; then
+    # -- create a dilated version of T1 mask
+    ${FSLDIR}/bin/fslmaths ${BrainMask} -dilF ${BrainMask}_dil
+    MaskStr="-mas ${BrainMask}_dil"
+elif [ "${UseMask}" = "T1" ] ; then
+    MaskStr="-mas ${BrainMask}"
+elif [ "${UseMask}" = "NONE" ] ; then
+    MaskStr=""
+elif [ "${UseMask}" = "FINAL" ] ; then
+    MaskStr="-mas ${FinalMask}"
+elif
+    log_Err_Abort "Specified BOLD mask to use (--usemask=${UseMask}) is invalid!"
 fi
 
-if [ $Mask == 'DILATED' ] ; then
-  BrainMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz"
-fi
 
-BrainMask="-mas ${BrainMask}"
-
-if [ $Mask == 'NONE' ] ; then
-  BrainMask=""
-fi
-
-# Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
-
-${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
+# Run intensity normalisation, with bias field correction and optional jacobian modulation,
+# for the main fmri timeseries and the scout images (pre-saturation images)
+${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom ${MaskStr} -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
+   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom ${MaskStr} -thr 0 -ing 10000 ${ScoutOutput} -odt float
 fi
 
 #Basic Cleanup
