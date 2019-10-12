@@ -24,6 +24,8 @@ fi
 
 source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
 source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -219,6 +221,27 @@ if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
+
+
+# ------------------------------------------------------------------------------
+#  Legacy Style Data Options
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+#  Compliance check
+# ------------------------------------------------------------------------------
+
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
+
+# -- End compliance check
+
+
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
