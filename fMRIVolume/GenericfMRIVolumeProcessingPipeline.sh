@@ -233,8 +233,13 @@ ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # In the ca
                                                                      # Default is 'linear'.
 
 # Defaults
-fMRIReference=${fMRIReference:-NONE}
-ReferenceReg=${ReferenceReg:-linear}
+fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
+
+if [ "$fMRIReference" = "NONE" ]; then
+  ReferenceReg="NONE"                                                # Only do nonlinear or linear registration for target that is not of the same bold run.
+else
+  dof=`opts_DefaultOpt $ReferenceReg "linear"` 
+fi
 
 
 # ------------------------------------------------------------------------------
@@ -391,7 +396,6 @@ if [ ! $fMRIReference = "NONE" ] ; then
     reference="$fMRIReference"/"$ScoutName"_gdc
 else
     reference="$fMRIFolder"/"$ScoutName"_gdc
-    ReferenceReg="NONE"  # only do nonlinear or linear registration for target that is not of the same bold run
 fi
 
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
