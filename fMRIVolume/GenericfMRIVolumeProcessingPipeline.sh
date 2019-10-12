@@ -228,7 +228,7 @@ fi
 # ------------------------------------------------------------------------------
 
 fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD name run to use for movement correction target and to copy atlas registration from (or NONE; default)
-ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # In the cases when BOLD image is registered to a specified BOLD reference, this option 
+fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                            # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                      # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
                                                                      # Default is 'linear'.
 
@@ -236,9 +236,9 @@ ReferenceReg=`opts_GetOpt1 "--refreg" $@`                            # In the ca
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 
 if [ "$fMRIReference" = "NONE" ]; then
-  ReferenceReg="NONE"                                                # Only do nonlinear or linear registration for target that is not of the same bold run.
+  fMRIReferenceReg="NONE"                                                # Only do nonlinear or linear registration for target that is not of the same bold run.
 else
-  dof=`opts_DefaultOpt $ReferenceReg "linear"` 
+  dof=`opts_DefaultOpt $fMRIReferenceReg "linear"` 
 fi
 
 
@@ -407,7 +407,7 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/"$MotionMatrixFolder" \
        "$MotionMatrixPrefix" \
        "$MotionCorrectionType" \
-       "$ReferenceReg"
+       "$fMRIReferenceReg"
 
 # EPI Distortion Correction and EPI to T1w Registration
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
@@ -491,7 +491,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
        --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
-       --refreg=${ReferenceReg}
+       --fmrirefreg=${fMRIReferenceReg}
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}

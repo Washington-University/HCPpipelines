@@ -30,7 +30,7 @@ Usage() {
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
-  echo "             --refreg=<whether to do 'linear', 'nonlinear' or no ('NONE') additional registration to movement reference image>"
+  echo "             --fmrirefreg=<whether to do 'linear', 'nonlinear' or no ('NONE') additional registration to movement reference image>"
 }
 
 # function for parsing options
@@ -92,7 +92,7 @@ ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
 ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
 ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
-ReferenceReg=`getopt1 "--refreg" $@`  # "${19}"
+fMRIReferenceReg=`getopt1 "--fmrirefreg" $@`  # "${19}"
 
 # --- Report arguments
 
@@ -118,7 +118,7 @@ verbose_echo "            --scoutin: ${ScoutInput}"
 verbose_echo "         --scoutgdcin: ${ScoutInputgdc}"
 verbose_echo "             --oscout: ${ScoutOutput}"
 verbose_echo "          --ojacobian: ${JacobianOut}"
-verbose_echo "             --refreg: ${ReferenceReg}"
+verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
 verbose_echo " "
 
 BiasFieldFile=`basename "$BiasField"`
@@ -215,7 +215,7 @@ for ((k=0; k < $NumFrames; k++)); do
   prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
 
   # Combine GCD with motion correction
-  if [ "$ReferenceReg" == "nonlinear" ]; then
+  if [ "$fMRIReferenceReg" == "nonlinear" ]; then
       ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --midmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
   else # ---> we assume linear registration to movement reference
       ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
@@ -250,14 +250,14 @@ fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
 verbose_red_echo "---> Combining transformations"
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
-if [ "$ReferenceReg" == "nonlinear" ]; then
+if [ "$fMRIReferenceReg" == "nonlinear" ]; then
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${GradientDistortionField}_nmc
   GradientDistortionField=${GradientDistortionField}_nmc
 fi
 
 prematStr=""
 # Add transform to reference if needed
-if [ "$ReferenceReg" != "NONE" ]; then
+if [ "$fMRIReferenceReg" != "NONE" ]; then
   prematStr="--premat=${MotionMatrixFolder}/${MotionMatrixPrefix}0000"
 fi
 

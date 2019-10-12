@@ -22,7 +22,7 @@ OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
 MotionCorrectionType="$8"
-ReferenceReg="$9"
+fMRIReferenceReg="$9"
 
 verbose_red_echo "---> ${MotionCorrectionType} based motion correction"
 verbose_echo " "
@@ -35,7 +35,7 @@ verbose_echo "       OutputMotionRegressors: ${OutputMotionRegressors}"
 verbose_echo "     OutputMotionMatrixFolder: ${OutputMotionMatrixFolder}"
 verbose_echo " OutputMotionMatrixNamePrefix: ${OutputMotionMatrixNamePrefix}"
 verbose_echo "         MotionCorrectionType: ${MotionCorrectionType}"
-verbose_echo "                 ReferenceReg: ${ReferenceReg}"
+verbose_echo "             fMRIReferenceReg: ${fMRIReferenceReg}"
 verbose_echo " "
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
@@ -62,7 +62,7 @@ esac
 
 # Run nonlinear registration if needed
 
-if [ "${ReferenceReg}" == "nonlinear" ] ; then
+if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   verbose_echo " ... computing nonlinear transform to reference"
   verbose_echo "     ... generating bold average"
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
@@ -101,7 +101,7 @@ if [ -e $OutputMotionMatrixFolder ] ; then
   cd $DIR
 fi
 
-if [ ${ReferenceReg} == "nonlinear" ] ; then
+if [ ${fMRIReferenceReg} == "nonlinear" ] ; then
   log_Msg " ... moving ${WorkingDirectory}/mc2ref_warp.nii.gz to ${OutputMotionMatrixFolder}"
   mv -f ${WorkingDirectory}/mc2ref_warp.nii.gz ${OutputMotionMatrixFolder}
 fi
