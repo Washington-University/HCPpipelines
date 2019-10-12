@@ -92,7 +92,7 @@ ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
 
-verbose_red_echo "---> Starting PostFreeSurferPipeline_1res"
+verbose_red_echo "---> Starting ${script_name}"
 verbose_echo " "
 verbose_echo " Using parameters ..."
 verbose_echo "              --path: ${StudyFolder}"
@@ -269,7 +269,7 @@ argList+="$CorrectionSigma "
 argList+="$RegName "                                  # ${39}
 "$PipelineScripts"/CreateMyelinMaps_1res.sh ${argList}
 
-verbose_green_echo "---> Finished PostFreeSurferPipeline_1res"
+verbose_green_echo "---> Finished ${script_name}"
 verbose_echo " "
 
 log_Msg "Completed"
