@@ -38,7 +38,6 @@ usage()
 ${g_script_name}: ReApplyFix Pipeline for MultiRun ICA+FIX
 
 This script has two purposes (both in the context of MultiRun FIX):
-
 1) Reapply FIX cleanup to the volume and default CIFTI (i.e., MSMSulc registered surfaces)
 following manual reclassification of the FIX signal/noise components (see ApplyHandReClassifications.sh).
 2) Apply FIX cleanup to the CIFTI from an alternative surface registration (e.g., MSMAll)

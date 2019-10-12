@@ -197,7 +197,7 @@ if [ ! -z "${log_debugOn}" ] ; then
 fi
 
 #grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
-#we need to do "if which ..." because the script currently uses ERR trapp
+#we need to do "if which ..." because the script currently uses ERR trap
 if which melodic &> /dev/null
 then
     MELODIC=$(which melodic 2> /dev/null)
