@@ -229,7 +229,7 @@ fi
 
 DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit
 SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
-                                                                         # Verbose (-v) is already turned on. TR (-r) is specified using --tr parameter.
+                                                                         # Verbose (-v) is already turned on. TR is read from the file itself.
                                                                          # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
 
 # Defaults
@@ -345,7 +345,8 @@ ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 # --- Do slice time correction if indicated
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction using FSL's 'slicetimer' tool"
-    TR=`${FSLDIR}/bin/fslval ${fMRIName} pixdim4`
+    TR=`${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4`
+    log_Msg "TR: ${TR}"
 
     IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
     ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_prestc
@@ -365,6 +366,8 @@ if [ $DistortionCorrection = "NONE" ] ; then
     # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
     # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
     # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
+
+    # First though, detect if reorienting is even necessary
     xorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' '`
     yorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' '`
     zorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' '`
