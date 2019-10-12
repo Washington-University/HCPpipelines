@@ -60,7 +60,9 @@ case "$MotionCorrectionType" in
 esac
 
 
-# Run nonlinear registration if needed
+# If registering across runs, perform nonlinear registration if requested.
+# (If using linear registration, don't need to do anything extra here, since
+# linear registration is handled implicitly via the motion correction).
 
 if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   verbose_echo " ... computing nonlinear transform to reference"
