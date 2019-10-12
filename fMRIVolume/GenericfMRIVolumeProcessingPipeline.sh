@@ -227,10 +227,10 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-UseMask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (FINAL: the default, T1: T1w image based mask, DILATEDT1: dilated T1w image based mask, NONE: none)
+UseMask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (T1_fMRI_FOV combination of T1w and FOV masks: the default, T1: T1w image based mask, DILATEDT1: dilated T1w image based mask, NONE: none)
 
 # Defaults
-UseMask=`opts_DefaultOpt $UseMask "FINAL"`
+UseMask=`opts_DefaultOpt $UseMask "T1_fMRI_FOV"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -241,9 +241,9 @@ ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if [ "${UseMask}" != 'FINAL' ]; then
+if [ "${UseMask}" != 'T1_fMRI_FOV' ]; then
   if [ "${UseMask}" != "T1" ] && [ "${UseMask}" != "DILATEDT1" ] && [ "${UseMask}" != "NONE" ] ; then
-    log_Err_Abort "--usemask=${UseMask} is invalid! Valid options are: FINAL (default), T1, DILATEDT1, and NONE."
+    log_Err_Abort "--usemask=${UseMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1, DILATEDT1, and NONE."
   fi
   ComplianceMsg+=" --usemask=${UseMask}"
   Compliance="LegacyStyleData"

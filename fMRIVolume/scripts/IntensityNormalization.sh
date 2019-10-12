@@ -37,7 +37,7 @@ Usage() {
   echo "             [--oscout=<output name for normalized scout image>]"
   echo "             [--workingdir=<working dir>]"
   echo "             [--usemask=<what mask to use for generating final BOLD timeseries:"
-  echo "                         FINAL (mask based on T1 and voxels available at all timepoints - the default)"
+  echo "                         T1_fMRI_FOV (mask based on T1 and voxels available at all timepoints - the default)"
   echo "                         T1 (mask based on the T1w image)"
   echo "                         DILATEDT1 (dilated T1w image based mask)"
   echo "                         NONE (do not use a mask)]"
@@ -102,7 +102,7 @@ verbose_echo " "
 # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 WD=`defaultopt $WD ${OutputfMRI}.wdir`
-UseMask=`defaultopt $UseMask "FINAL"`
+UseMask=`defaultopt $UseMask "T1_fMRI_FOV"`
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -165,7 +165,7 @@ elif [ "${UseMask}" = "T1" ] ; then
     MaskStr="-mas ${BrainMask}"
 elif [ "${UseMask}" = "NONE" ] ; then
     MaskStr=""
-elif [ "${UseMask}" = "FINAL" ] ; then
+elif [ "${UseMask}" = "T1_fMRI_FOV" ] ; then
     MaskStr="-mas ${FinalMask}"
 elif
     log_Err_Abort "Specified BOLD mask to use (--usemask=${UseMask}) is invalid!"
