@@ -103,10 +103,11 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
 	# We combine the GDC warp with the diff2str affine, and apply to warped/data_warped (i.e., the post-eddy, pre-GDC data)
 	# so that we can have a one-step resampling following 'eddy'
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
+    # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
     ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/data_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/data_warped_dilated.nii.gz
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
-    #Create a mask covering voxels within the field of view for all volumes
+    #Create a mask representing voxels within the field of view for all volumes prior to dilation
     ${FSLDIR}/bin/fslmaths "$DataDirectory"/warped/data_warped -abs -Tmin -bin -fillh "$DataDirectory"/warped/fov_mask
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
 
@@ -114,11 +115,12 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
 else
-    #Register diffusion data to T1w space without considering gradient nonlinearities
+    # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
     ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/data.nii.gz $DilateDistance NEAREST $DataDirectory/data_dilated.nii.gz
+    #Register diffusion data to T1w space without considering gradient nonlinearities
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
 
-    #Create a mask covering voxels within the field of view for all volumes
+    #Create a mask representing voxels within the field of view for all volumes prior to dilation
     ${FSLDIR}/bin/fslmaths "$DataDirectory"/data -abs -Tmin -bin -fillh "$DataDirectory"/fov_mask
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/fov_mask -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp trilinear -out "$T1wOutputDirectory"/fov_mask
 fi
