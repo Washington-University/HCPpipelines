@@ -46,7 +46,7 @@ Usage() {
   echo "             --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "             [--qaimage=<output name for QA image>]"
   echo ""
-  echo "             --method=<method used for readout distortion correction>"
+  echo "             --method=<method used for susceptibility distortion correction>"
   echo ""
   echo "               \"${FIELDMAP_METHOD_OPT}\""
   echo "                 equivalent to ${SIEMENS_METHOD_OPT} (see below)"
@@ -79,6 +79,7 @@ Usage() {
   echo "                 don't do bias correction"
   echo ""
   echo "             --usejacobian=<\"true\" or \"false\">"
+  echo "             --preregistertool=<epi_reg (default) or flirt>"
 }
 
 # function for parsing options
@@ -161,6 +162,7 @@ NameOffMRI=`getopt1 "--fmriname" $@`
 SubjectFolder=`getopt1 "--subjectfolder" $@`
 BiasCorrection=`getopt1 "--biascorrection" $@`
 UseJacobian=`getopt1 "--usejacobian" $@`
+PreregisterTool=`getopt1 "--preregistertool" $@`
 
 if [[ -n $HCPPIPEDEBUG ]]
 then
@@ -207,6 +209,7 @@ WD=`defaultopt $WD ${RegOutput}.wdir`
 dof=`defaultopt $dof 6`
 GlobalScripts=${HCPPIPEDIR_Global}
 TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
+PreregisterTool=${PreregisterTool:-epi_reg}
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -229,7 +232,7 @@ if [ ! -e ${WD}/FieldMap ] ; then
   mkdir ${WD}/FieldMap
 fi
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 cp ${T1wBrainImage}.nii.gz ${WD}/${T1wBrainImageFile}.nii.gz
 
@@ -389,7 +392,16 @@ case $DistortionCorrection in
         # register undistorted scout image to T1w
         # this is just an initial registration, refined later in this script, but it is actually pretty good
         log_Msg "register undistorted scout image to T1w"
-        ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted2T1w_init
+
+        if [ $PreregisterTool = "epi_reg" ] ; then
+          log_Msg "... running epi_reg (dof ${dof})"
+          ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted2T1w_init
+        elif [ $PreregisterTool = "flirt" ] ; then
+          log_Msg "... running flirt"
+          ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof ${dof}
+        else
+          log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
+        fi
 
         #copy the initial registration into the final affine's filename, as it is pretty good
         #we need something to get between the spaces to compute an initial bias field
@@ -401,7 +413,7 @@ case $DistortionCorrection in
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
         #1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}_undistorted2T1w_init_warp -o ${WD}/${ScoutInputFile}_undistorted2T1w_init
-        
+
         #resample phase images to T1w space
         #these files were obtained by the import script from the FieldMap directory, save them into the package and resample them
         #we don't have the final transform to actual T1w space yet, that occurs later in this script
