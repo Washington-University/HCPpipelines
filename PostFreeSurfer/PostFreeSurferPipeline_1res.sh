@@ -86,7 +86,7 @@ ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 log_Msg "RegName: ${RegName}"
 # default parameters
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
-RegName=`opts_DefaultOpt $RegName FS`
+RegName=`opts_DefaultOpt $RegName MSMSulc`
 InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
 ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
