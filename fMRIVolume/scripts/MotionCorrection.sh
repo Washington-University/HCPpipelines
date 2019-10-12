@@ -65,6 +65,7 @@ esac
 if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   verbose_echo " ... computing nonlinear transform to reference"
   verbose_echo "     ... generating bold average"
+  # Generating a mean image to increase SNR to noise ratio when registering to scout.
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
   verbose_echo "     ... running fnirt: fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/mc2ref_warp"
