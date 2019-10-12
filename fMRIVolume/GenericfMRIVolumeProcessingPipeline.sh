@@ -228,7 +228,7 @@ fi
 # ------------------------------------------------------------------------------
 
 fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD name run to use for movement correction target and to copy atlas registration from (or NONE; default)
-fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                            # In the cases when BOLD image is registered to a specified BOLD reference, this option 
+fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                    # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                      # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
                                                                      # Default is 'linear'.
 
@@ -238,7 +238,7 @@ fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 if [ "$fMRIReference" = "NONE" ]; then
   fMRIReferenceReg="NONE"                                                # Only do nonlinear or linear registration for target that is not of the same bold run.
 else
-  dof=`opts_DefaultOpt $fMRIReferenceReg "linear"` 
+  fMRIReferenceReg=`opts_DefaultOpt $fMRIReferenceReg "linear"`
 fi
 
 
@@ -324,16 +324,30 @@ case "$BiasCorrection" in
 		;;
 esac
 
-
 ########################################## DO WORK ########################################## 
 
 T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
-if [ ! $fMRIReference = "NONE" ] ; then
-    fMRIReference="$Path"/"$Subject"/"$fMRIReference"
+# set reference and check if external reference (if one is specified) exists 
+
+if [ ! $fMRIReference = "NONE" ] ; then  
+  fMRIReferencePath="$Path"/"$Subject"/"$fMRIReference"
+  log_Msg "Using reference image from ${fMRIReferencePath}"
+  fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
+
+  if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
+    log_Err_Abort "Specified BOLD Reference is the same as the current BOLD!"
+  fi
+
+  if [ `${FSLDIR}/bin/imtest reference` -eq 0 ] ; then
+    log_Err_Abort "Specified BOLD Reference ${reference} does not exist!"
+  fi    
+else
+  fMRIReferenceImage="$fMRIFolder"/"$ScoutName"_gdc
 fi
+
 
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
 
@@ -391,17 +405,10 @@ fi
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
 mkdir -p "$fMRIFolder"/MotionCorrection
 
-if [ ! $fMRIReference = "NONE" ] ; then
-    log_Msg "Using reference image from ${fMRIReference}"
-    reference="$fMRIReference"/"$ScoutName"_gdc
-else
-    reference="$fMRIFolder"/"$ScoutName"_gdc
-fi
-
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/MotionCorrection \
        "$fMRIFolder"/"$NameOffMRI"_gdc \
-       "$reference" \
+       "$fMRIReferenceImage" \
        "$fMRIFolder"/"$NameOffMRI"_mc \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
@@ -454,7 +461,7 @@ if [ $fMRIReference = "NONE" ] ; then
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -e ${fMRIFolder}/${DCFolderName} ] ; then
-        log_Msg "     ... removing stale link (or preexisiting files)"
+        log_Warn "     ... removing stale link (or preexisiting files)"
         rm -r ${fMRIFolder}/${DCFolderName}
     fi
     ln -s ${fMRIReference}/${DCFolderName} ${fMRIFolder}/${DCFolderName}
