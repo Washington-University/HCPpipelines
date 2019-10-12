@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# If any command exits with non-zero value, this script exits
-
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
