@@ -53,8 +53,10 @@ debug_on_error()
         echo -e "---------------------------------------------------${endreport}" 
         echo                                                               
         
-        # --- Check if interactive shell
+        
         if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
+
+            # --- Check if interactive shell
             if [[ "$-" == *i* ]]
             then
                 echo
