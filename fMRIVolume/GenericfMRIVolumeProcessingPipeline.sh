@@ -230,7 +230,7 @@ fi
 PreregisterTool=`opts_GetOpt1 "--preregistertool" $@`                    # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
 DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit
 SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
-                                                                         # Verbose (-v) is already turned on. TR is read from the file itself.
+                                                                         # Verbose (-v) is already turned on. TR is read from 'pixdim4' of the input NIFTI itself.
                                                                          # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
 
 # Defaults
