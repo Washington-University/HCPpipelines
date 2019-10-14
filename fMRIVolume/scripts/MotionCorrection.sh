@@ -63,6 +63,8 @@ esac
 # If registering across runs, perform nonlinear registration if requested.
 # (If using linear registration, don't need to do anything extra here, since
 # linear registration is handled implicitly via the motion correction).
+# Note that if registering across runs, the "$Scout" input to MotionCorrection will
+# be the *reference* scout image (by construction in GenericfMRIVolume).
 
 if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   verbose_echo " ... computing nonlinear transform to reference"
@@ -70,11 +72,11 @@ if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   # Generating a mean image to increase SNR to noise ratio when registering to scout.
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
-  verbose_echo "     ... running fnirt: fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --refmask=${Scout}_mask --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/mc2ref_warp"
-  ${FSLDIR}/bin/fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --refmask=${Scout}_mask --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/mc2ref_warp
+  verbose_echo "     ... running fnirt: fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/postmc2fmriref_warp"
+  ${FSLDIR}/bin/fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/postmc2fmriref_warp
 
   verbose_echo "     ... applying warp"
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/mc2ref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}_nonlin
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/postmc2fmriref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}_nonlin
 
   tmcbold="_nonlin"
 else
@@ -105,8 +107,8 @@ if [ -e $OutputMotionMatrixFolder ] ; then
 fi
 
 if [ ${fMRIReferenceReg} == "nonlinear" ] ; then
-  log_Msg " ... moving ${WorkingDirectory}/mc2ref_warp.nii.gz to ${OutputMotionMatrixFolder}"
-  mv -f ${WorkingDirectory}/mc2ref_warp.nii.gz ${OutputMotionMatrixFolder}
+  log_Msg " ... moving ${WorkingDirectory}/postmc2fmriref_warp.nii.gz to ${OutputMotionMatrixFolder}"
+  mv -f ${WorkingDirectory}/postmc2fmriref_warp.nii.gz ${OutputMotionMatrixFolder}
 fi
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries

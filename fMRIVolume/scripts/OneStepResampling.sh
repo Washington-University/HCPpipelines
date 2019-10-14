@@ -139,11 +139,6 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ##########################################
 
-if [ `${FSLDIR}/bin/imtest ${BiasField}` -eq 0 ]; then
-  verbose_red_echo "---> Missing Bias Field image, creating a fake one"
-  ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 ${BiasField}
-fi
-
 #Save TR for later
 TR_vol=`${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1`
 NumFrames=`${FSLDIR}/bin/fslval ${InputfMRI} dim4`

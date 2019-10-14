@@ -341,8 +341,8 @@ if [ ! $fMRIReference = "NONE" ] ; then
     log_Err_Abort "Specified BOLD Reference is the same as the current BOLD!"
   fi
 
-  if [ `${FSLDIR}/bin/imtest reference` -eq 0 ] ; then
-    log_Err_Abort "Specified BOLD Reference ${reference} does not exist!"
+  if [ `${FSLDIR}/bin/imtest ${fMRIReferenceImage}` -eq 0 ] ; then
+    log_Err_Abort "Specified BOLD Reference ${fMRIReferenceImage} does not exist!"
   fi    
 else
   fMRIReferenceImage="$fMRIFolder"/"$ScoutName"_gdc
@@ -464,12 +464,11 @@ else
         log_Warn "     ... removing stale link (or preexisiting files)"
         rm -r ${fMRIFolder}/${DCFolderName}
     fi
-    ln -s ${fMRIReference}/${DCFolderName} ${fMRIFolder}/${DCFolderName}
+    ln -s ${fMRIReference}/${DCFolderName} ${DCFolder}
  
-    WD=${fMRIReference}/${DCFolderName}
-    ${FSLDIR}/bin/imcp ${fMRIReference}/${RegOutput} ${fMRIFolder}/${RegOutput}
-    ${FSLDIR}/bin/imcp ${WD}/fMRI2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
-    ${FSLDIR}/bin/imcp ${WD}/Jacobian2T1w ${fMRIFolder}/${JacobianOut}
+    ${FSLDIR}/bin/imcp ${fMRIReference}/${RegOutput} ${fMRIFolder}/Reference${RegOutput}
+    ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
+    ${FSLDIR}/bin/imcp ${fMRIReferencePath}/${JacobianOut} ${fMRIFolder}/${JacobianOut}
     ${FSLDIR}/bin/imcp ${fMRIReference}/${QAImage} ${fMRIFolder}/${QAImage}
 fi
 
