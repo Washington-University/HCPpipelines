@@ -227,10 +227,14 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-UseMask=`opts_GetOpt1 "--usemask" $@`                                   # what mask to use for the final bold (T1_fMRI_FOV combination of T1w and FOV masks: the default, T1: T1w image based mask, DILATEDT1: dilated T1w image based mask, NONE: none)
+BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                   # Specifies what mask to use for the final bold:
+                                                                          #   T1_fMRI_FOV: combined T1w brain mask and FOV masks (the default), 
+                                                                          #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
+                                                                          #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
+                                                                          #   fMRI_FOV: a fMRI FOV mask
 
 # Defaults
-UseMask=`opts_DefaultOpt $UseMask "T1_fMRI_FOV"`
+BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -241,11 +245,11 @@ ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if [ "${UseMask}" != 'T1_fMRI_FOV' ]; then
-  if [ "${UseMask}" != "T1" ] && [ "${UseMask}" != "DILATEDT1" ] && [ "${UseMask}" != "NONE" ] ; then
-    log_Err_Abort "--usemask=${UseMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1, DILATEDT1, and NONE."
+if [ "${BOLDMask}" != 'T1_fMRI_FOV' ]; then
+  if [ "${BOLDMask}" != "T1_DILATED_fMRI_FOV" ] && [ "${BOLDMask}" != "T1_DILATED2x_fMRI_FOV" ] && [ "${BOLDMask}" != "fMRI_FOV" ] ; then
+    log_Err_Abort "--boldmask=${BOLDMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV, fMRI_FOV."
   fi
-  ComplianceMsg+=" --usemask=${UseMask}"
+  ComplianceMsg+=" --boldmask=${BOLDMask}"
   Compliance="LegacyStyleData"
 fi
 
@@ -497,7 +501,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
        --usejacobian=${UseJacobian} \
-       --usemask=${UseMask}
+       --boldmask=${BOLDMask}
 
 #Copy selected files to ResultsFolder
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
