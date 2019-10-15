@@ -51,7 +51,7 @@
 #~ND~END~
 
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib # log_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 #
 # Function Description:

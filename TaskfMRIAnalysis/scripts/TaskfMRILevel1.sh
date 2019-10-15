@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Must first source SetUpHCPPipeline.sh to set up pipeline environment variables and software
 # Requirements for this script
@@ -9,8 +8,8 @@ set -e
 
 ########################################## PREPARE FUNCTIONS ########################################## 
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib			# Logging related functions
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib	# Function for getting FSL version
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib   # Function for getting FSL version
 
 show_tool_versions()
 {

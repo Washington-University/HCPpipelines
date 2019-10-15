@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6) (including python with numpy, needed to run aff2rigid - part of FSL)
@@ -21,7 +20,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename $0): Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"

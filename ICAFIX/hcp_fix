@@ -70,8 +70,6 @@ fi
 
 #############################################################
 
-set -e
-
 # Set global variables
 g_script_name=$(basename "${0}")
 
@@ -82,7 +80,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 #  Load function libraries
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
@@ -94,11 +92,11 @@ log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging
                # Set to empty string to disable debugging related output
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
-# Default settings file that comes with fix isn't "set -e" clean, so disable temporarily
+# Default settings file that comes with fix isn't "ERR" clean, so disable temporarily
 log_Msg "Sourcing ${FSL_FIXDIR}/settings.sh"
-set +e
+debug_disable_trap
 . "${FSL_FIXDIR}/settings.sh"
-set -e
+debug_enable_trap
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
@@ -199,7 +197,7 @@ if [ ! -z "${log_debugOn}" ] ; then
 fi
 
 #grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
-#we need to do "if which ..." because the script currently uses set -e
+#we need to do "if which ..." because the script currently uses ERR trap
 if which melodic &> /dev/null
 then
     MELODIC=$(which melodic 2> /dev/null)
