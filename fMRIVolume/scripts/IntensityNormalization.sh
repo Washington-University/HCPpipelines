@@ -180,7 +180,7 @@ NvoxT1FOVMask=`fslstats ${T1FOVMask} -V | awk '{print $1}'`
 NvoxFinalMask=`fslstats ${FinalMask} -V | awk '{print $1}'`
 PctBrainCoverage=`echo "scale=4; 100 * ${NvoxT1FOVMask} / ${NvoxBrainMask}" | bc -l`
 PctMaskCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxT1FOVMask}" | bc -l`
-echo "Mask, PctBrainCoverage, PctMaskCoverage, NvoxT1FOVMask, NvoxBrainMask, NvoxFinalMask" >| ${FinalMask}.stats.txt
+echo "BOLDMask, PctBrainCoverage, PctMaskCoverage, NvoxT1FOVMask, NvoxBrainMask, NvoxFinalMask" >| ${FinalMask}.stats.txt
 echo "${BOLDMask}, ${PctBrainCoverage}, ${PctMaskCoverage}, ${NvoxT1FOVMask}, ${NvoxBrainMask}, ${NvoxFinalMask}" >> ${FinalMask}.stats.txt
 
 
