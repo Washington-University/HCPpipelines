@@ -151,7 +151,7 @@ ${FSLDIR}/bin/fslmaths ${BrainMask} -bin -mas ${InputfMRI}_mask ${T1FOVMask}
 if [ "${BOLDMask}" = "T1_fMRI_FOV" ] ; then
     # FinalMask is a combination of the FS-derived brainmask, and the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
-    ${FSLDIR}/bin/fslmaths ${BrainMask} -bin -mas ${InputfMRI}_mask ${FinalMask}
+    ${FSLDIR}/bin/imcp ${T1FOVMask} ${FinalMask}
 
 elif [ "${BOLDMask}" = "T1_DILATED_fMRI_FOV" ] ; then
     # FinalMask is a combination of once dilated FS-derived brainmask, and the spatial coverage mask that captures the
@@ -166,11 +166,11 @@ elif [ "${BOLDMask}" = "T1_DILATED2x_fMRI_FOV" ] ; then
 elif [ "${BOLDMask}" = "fMRI_FOV" ] ; then
     # FinalMask is the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
-    {FSLDIR}/bin/imcp ${InputfMRI}_mask ${FinalMask}
+    ${FSLDIR}/bin/imcp ${InputfMRI}_mask ${FinalMask}
 
 elif
     # No valid BOLDMask option was specified
-    log_Err_Abort "Specified BOLD mask to use (--boldmask=${BOLDMask}) is invalid!"
+    log_Err_Abort "Invalid entry for specified BOLD mask (--boldmask=${BOLDMask})"
 fi
 
 
