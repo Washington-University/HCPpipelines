@@ -342,11 +342,11 @@ if [ ! $fMRIReference = "NONE" ] ; then
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
 
   if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
-    log_Err_Abort "Specified BOLD reference (--fmriref) is the same as the current BOLD (--fmriname)!"
+    log_Err_Abort "Specified BOLD reference (--fmriref=${fMRIReference}) is the same as the current BOLD (--fmriname=${NameOffMRI})!"
   fi
 
   if [ `${FSLDIR}/bin/imtest ${fMRIReferenceImage}` -eq 0 ] ; then
-    log_Err_Abort "Specified BOLD Reference ${fMRIReferenceImage} does not exist!"
+    log_Err_Abort "Intended BOLD Reference does not exist (${fMRIReferenceImage})!"
   fi    
 else
   fMRIReferenceImage="$fMRIFolder"/"$ScoutName"_gdc
@@ -464,9 +464,9 @@ if [ $fMRIReference = "NONE" ] ; then
          --usejacobian=${UseJacobian}
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
-    if [ -e ${fMRIFolder}/${DCFolderName} ] ; then
+    if [ -e ${DCFolder} ] ; then
         log_Warn "     ... removing stale link (or preexisiting files)"
-        rm -r ${fMRIFolder}/${DCFolderName}
+        rm -r ${DCFolder}
     fi
     ln -s ${fMRIReference}/${DCFolderName} ${DCFolder}
  
