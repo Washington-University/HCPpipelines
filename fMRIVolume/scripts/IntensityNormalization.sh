@@ -37,7 +37,7 @@ Usage() {
   echo "             [--oscout=<output name for normalized scout image>]"
   echo "             [--workingdir=<working dir>]"
   echo "             [--boldmask=<what mask to use for generating final BOLD timeseries:"
-  echo "                         T1_fMRI_FOV (mask based on T1 and voxels available at all timepoints i.e. FOV - the default)"
+  echo "                         T1_fMRI_FOV (default): mask based on T1 and voxels available at all timepoints (i.e., the fMRI FOV)"
   echo "                         T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV"
   echo "                         T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV,"
   echo "                         fMRI_FOV: a fMRI FOV mask"

@@ -228,7 +228,7 @@ fi
 # ------------------------------------------------------------------------------
 
 BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                   # Specifies what mask to use for the final bold:
-                                                                          #   T1_fMRI_FOV: combined T1w brain mask and FOV masks (the default), 
+                                                                          #   T1_fMRI_FOV: combined T1w brain mask and fMRI FOV masks (the default), 
                                                                           #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
                                                                           #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
                                                                           #   fMRI_FOV: a fMRI FOV mask
