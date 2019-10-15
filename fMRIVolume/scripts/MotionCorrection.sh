@@ -72,6 +72,7 @@ if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   # Generating a mean image to increase SNR to noise ratio when registering to scout.
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
+  # Note that the name of the warp is hard-coded into OneStepResampling.sh
   cmd="${FSLDIR}/bin/fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/postmc2fmriref_warp"
   verbose_echo "     ... running fnirt: ${cmd}"
   ${cmd}
