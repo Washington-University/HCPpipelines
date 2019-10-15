@@ -249,17 +249,11 @@ if [ "$fMRIReferenceReg" == "nonlinear" ]; then
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${GradientDistortionField}_nmc
   GradientDistortionField=${GradientDistortionField}_nmc
 fi
-
-prematStr=""
-# Add transform to reference if needed
-if [ "$fMRIReferenceReg" != "NONE" ]; then
-  prematStr="--premat=${MotionMatrixFolder}/${MotionMatrixPrefix}0000"
-fi
-
-# Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
 ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} ${prematStr} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
-${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 
+if [ "$fMRIReferenceReg" = "NONE" ]; then
+  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
+fi
 
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
 #${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}

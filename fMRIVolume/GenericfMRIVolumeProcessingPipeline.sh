@@ -474,6 +474,7 @@ else
     ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
     ${FSLDIR}/bin/imcp ${fMRIReferencePath}/${JacobianOut} ${fMRIFolder}/${JacobianOut}
     ${FSLDIR}/bin/imcp ${fMRIReference}/${QAImage} ${fMRIFolder}/${QAImage}
+    ${FSLDIR}/bin/imcp ${fMRIReference}/${NameOffMRI}_SBRef_nonlin ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin
 fi
 
 #One Step Resampling
