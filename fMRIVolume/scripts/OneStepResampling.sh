@@ -247,11 +247,14 @@ fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 verbose_red_echo "---> Combining transformations"
 # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
 if [ "$fMRIReferenceReg" == "nonlinear" ]; then
-  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${GradientDistortionField}_nmc
+  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${MotionMatrixFolder}/postmc2fmriref_warp --out=${GradientDistortionField}_nmc
   GradientDistortionField=${GradientDistortionField}_nmc
 fi
-${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} ${prematStr} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
 
+
+# Note̵: If an external reference is used, then the Scout from this BOLD run is not and it's creation should be avoided.
+#  The Scout used as reference is copied over in the main GenericfMRIVOlumeProcessingPipeline.sh. 
 if [ "$fMRIReferenceReg" = "NONE" ]; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 fi
