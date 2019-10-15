@@ -73,9 +73,9 @@ if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
   # Note that the name of the warp is hard-coded into OneStepResampling.sh
-  cmd="${FSLDIR}/bin/fnirt --in=${WorkingDirectory}/${OutputfMRIBasename}_avg --ref=${Scout} --iout=${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin --cout=${WorkingDirectory}/postmc2fmriref_warp"
-  verbose_echo "     ... running fnirt: ${cmd}"
-  ${cmd}
+  cmd=("${FSLDIR}/bin/fnirt" --in="${WorkingDirectory}/${OutputfMRIBasename}_avg" --ref="${Scout}" --iout="${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin" --cout="${WorkingDirectory}/postmc2fmriref_warp")
+  verbose_echo "     ... running fnirt: ${cmd[*]}"
+  "${cmd[@]}"
 
   verbose_echo "     ... applying warp"
   tmcbold="_nonlin"
