@@ -211,7 +211,7 @@ for ((k=0; k < $NumFrames; k++)); do
 
   # Combine GCD with motion correction
   if [ "$fMRIReferenceReg" == "nonlinear" ]; then
-      ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --midmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --warp2=${MotionMatrixFolder}/mc2ref_warp.nii.gz --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
+      ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --midmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --warp2=${MotionMatrixFolder}/postmc2fmriref_warp --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
   else # ---> we assume linear registration to movement reference
       ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
   fi

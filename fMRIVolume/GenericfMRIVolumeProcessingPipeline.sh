@@ -227,7 +227,11 @@ fi
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
 
-fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # reference BOLD name run to use for movement correction target and to copy atlas registration from (or NONE; default)
+fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # Reference BOLD run name (i.e., --fmriname from run to be used as *reference*) to use as 
+                                                                     # motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
+                                                                     # NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
+                                                                     # that a distortion correction and atlas (MNI152) registration solution for the reference
+                                                                     # BOLD already exists.
 fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                    # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                      # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
                                                                      # Default is 'linear'.
@@ -338,7 +342,7 @@ if [ ! $fMRIReference = "NONE" ] ; then
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
 
   if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
-    log_Err_Abort "Specified BOLD Reference is the same as the current BOLD!"
+    log_Err_Abort "Specified BOLD reference (--fmriref) is the same as the current BOLD (--fmriname)!"
   fi
 
   if [ `${FSLDIR}/bin/imtest ${fMRIReferenceImage}` -eq 0 ] ; then
