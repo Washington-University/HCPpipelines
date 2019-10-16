@@ -229,7 +229,8 @@ fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # Reference
                                                                      # motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
                                                                      # NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
                                                                      # that a distortion correction and atlas (MNI152) registration solution for the reference
-                                                                     # BOLD already exists.
+                                                                     # BOLD already exists. Also, the reference BOLD must have been acuired using the same
+                                                                     # phase encoding direction, or it can not serve as a valid reference. 
 fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                    # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                      # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
                                                                      # Default is 'linear'.
@@ -241,6 +242,10 @@ if [ "$fMRIReference" = "NONE" ]; then
   fMRIReferenceReg="NONE"                                                # Only do nonlinear or linear registration for target that is not of the same bold run.
 else
   fMRIReferenceReg=`opts_DefaultOpt $fMRIReferenceReg "linear"`
+  log_Warn "You are using an external reference (--fmriref=${fMRIReference}) for motion registration and"
+  log_Warn "  distortion correction and registration to T1w image. Please make sure that the reference BOLD"
+  log_Warn "  (--fmriref=${fMRIReference}) and the current bold (--fmriname=${NameOffMRI}) were acquired "
+  log_Warn "  using the same acquisition parameters, e.g. phase encoding direction."
 fi
 
 
