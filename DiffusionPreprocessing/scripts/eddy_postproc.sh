@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 echo -e "\n START: eddy_postproc"
 
 #Hard-Coded filename. Flag from eddy to indicate that the jac method has been used for resampling

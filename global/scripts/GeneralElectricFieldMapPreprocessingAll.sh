@@ -1,6 +1,5 @@
 #!/bin/bash 
 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL5.0.1 or higher, gradunwarp python package (from MGH)
@@ -15,7 +14,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename $0): Script for generating a fieldmap suitable for FSL from General Electric Gradient Echo field map,"

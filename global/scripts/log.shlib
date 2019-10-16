@@ -153,14 +153,10 @@ log_Msg()
 # Input:
 #   The parameters are the message to send to the standard output
 #
+log_full_command_shown=0
 log_Err_Abort()
 {
-	local msg="$*"
-	if [[ ! -z "$log_FullCommand" ]]
-	then
-		log_Msg "While running '$log_FullCommand':" 1>&2
-	fi
-	log_Msg "ERROR: ${msg}" 1>&2
+	log_Err "$*"
 	log_Msg "ABORTING"
 	exit 1
 }
@@ -168,9 +164,10 @@ log_Err_Abort()
 log_Err()
 {
 	local msg="$*"
-	if [[ ! -z "$log_FullCommand" ]]
+	if [[ ! -z "$log_FullCommand" ]] && ((! log_full_command_shown))
 	then
 		log_Msg "While running '$log_FullCommand':" 1>&2
+		log_full_command_shown=1
 	fi
 	log_Msg "ERROR: ${msg}" 1>&2
 	#-t checks for being a terminal - if stderr is redirected to a file, duplicate the error message on stdout

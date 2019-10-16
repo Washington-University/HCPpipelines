@@ -37,17 +37,12 @@
 #
 #~ND~END~   
 
-# If any command used in this script exits with a non-zero value, this script itself exits 
-# and does not attempt any further processing.
-set -e
-
-
 ########################################## PREPARE FUNCTIONS ########################################## 
 
 # Load function libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
-source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib	# Function for getting FSL version
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
+source ${HCPPIPEDIR}/global/scripts/opts.shlib          # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib   # Function for getting FSL version
 
 
 # function to test FSL versions

@@ -647,8 +647,6 @@ main()
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
-set -e # If any commands exit with non-zero value, this script exits
-
 # Establish defaults
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 
@@ -668,7 +666,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify that other needed environment variables are set
