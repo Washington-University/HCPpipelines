@@ -171,7 +171,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--seed=<recon-all seed value>]
 
-  [--flair]
+  [--flair]  (experimental)
       Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options
       (rather than the -T2/-T2pial options).
       The FLAIR input image itself should still be provided via the '--t2' argument.
