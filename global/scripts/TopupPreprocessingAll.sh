@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (version 1.0.2)
@@ -25,7 +24,7 @@ fi
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"

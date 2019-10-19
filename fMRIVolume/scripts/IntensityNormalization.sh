@@ -1,5 +1,6 @@
 #!/bin/bash 
-set -e
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # Intensity normalisation, and bias field correction, and optional Jacobian modulation, applied to fMRI images (all inputs must be in fMRI space)
 
@@ -120,10 +121,23 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
-# Run intensity normalisation, with bias field correction and optional jacobian modulation, for the main fmri timeseries and the scout images (pre-saturation images)
-${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${OutputfMRI} -odt float
+# FinalMask is a combination of the FS-derived brainmask, and the spatial coverage mask that captures the
+# voxels that have data available at *ALL* time points (derived in OneStepResampling)
+FinalMask=`${FSLDIR}/bin/remove_ext ${InputfMRI}`_finalmask
+${FSLDIR}/bin/fslmaths ${BrainMask} -bin -mas ${InputfMRI}_mask ${FinalMask}
+
+# Create a simple summary text file of the percentage of spatial coverage of the fMRI data inside the FS-derived brain mask
+NvoxBrainMask=`fslstats ${BrainMask} -V | awk '{print $1}'`
+NvoxFinalMask=`fslstats ${FinalMask} -V | awk '{print $1}'`
+PctCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxBrainMask}" | bc -l`
+echo "PctCoverage, NvoxFinalMask, NvoxBrainMask" >| ${FinalMask}.stats.txt
+echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> ${FinalMask}.stats.txt
+
+# Run intensity normalisation, with bias field correction and optional jacobian modulation,
+# for the main fmri timeseries and the scout images (pre-saturation images)
+${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${FinalMask} -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom -mas ${BrainMask} -mas ${InputfMRI}_mask -thr 0 -ing 10000 ${ScoutOutput} -odt float
+   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom -mas ${FinalMask} -thr 0 -ing 10000 ${ScoutOutput} -odt float
 fi
 
 #Basic Cleanup

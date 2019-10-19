@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e # If any command exits with non-zero value, this script exits
-
 #
 # # ReApplyFixMultiRunPipeline.sh
 #
@@ -699,7 +697,7 @@ main()
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
 				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
+				(debug_disable_trap; source "${FSL_FIXDIR}/settings.sh"; debug_enable_trap; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
                 ;;
 
 			*)
@@ -899,9 +897,9 @@ main()
 			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
 			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
 			if [ -z "${FSL_FIX_MCR}" ]; then
-				set +e
+				debug_disable_trap
 				source ${FSL_FIXDIR}/settings.sh
-				set -e
+				debug_enable_trap
 				export FSL_FIX_WBC="${Caret7_Command}"
 				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
 				if [ -z "${FSL_FIX_MCR}" ]; then
@@ -941,7 +939,7 @@ main()
             # Use bash redirection ("here-string") to pass multiple commands into matlab
 			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 			# get interpreted as separating different bash shell commands)
-			(set +e; source "${FSL_FIXDIR}/settings.sh"; set -e; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
+			(debug_disable_trap; source "${FSL_FIXDIR}/settings.sh"; debug_enable_trap; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
 			;;
 
 		*)
@@ -1088,7 +1086,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
@@ -1115,10 +1113,3 @@ else
 	main "$@"
 
 fi
-
-
-
-
-
-
-

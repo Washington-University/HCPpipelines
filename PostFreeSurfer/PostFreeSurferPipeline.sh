@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later)
@@ -12,17 +11,17 @@ set -e
 script_name=$(basename "${0}")
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 if [ -z "${HCPPIPEDIR_PostFS}" ]; then
-	echo "${script_name}: ABORTING: HCPPIPEDIR_PostFS environment variable must be set"
-	exit 1
+  echo "${script_name}: ABORTING: HCPPIPEDIR_PostFS environment variable must be set"
+  exit 1
 else
-	echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
+  echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
 fi
 
 ########################################## PIPELINE OVERVIEW ##########################################
@@ -37,8 +36,9 @@ fi
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
 
 ########################################## SUPPORT FUNCTIONS ##########################################
 
@@ -80,15 +80,38 @@ ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
 CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
+ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
 
 log_Msg "RegName: ${RegName}"
 
 # default parameters
 CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
-RegName=`opts_DefaultOpt $RegName FS`
+RegName=`opts_DefaultOpt $RegName MSMSulc`
 InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
+ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
 PipelineScripts=${HCPPIPEDIR_PostFS}
+
+verbose_red_echo "---> Starting ${script_name}"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "              --path: ${StudyFolder}"
+verbose_echo "           --subject: ${Subject}"
+verbose_echo "      --surfatlasdir: ${SurfaceAtlasDIR}"
+verbose_echo "  --grayordinatesdir: ${GrayordinatesSpaceDIR}"
+verbose_echo "  --grayordinatesres: ${GrayordinatesResolutions}"
+verbose_echo "         --hiresmesh: ${HighResMesh}"
+verbose_echo "        --lowresmesh: ${LowResMeshes}"
+verbose_echo " --subcortgraylabels: ${SubcorticalGrayLabels}"
+verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
+verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
+verbose_echo "           --mcsigma: ${CorrectionSigma}"
+verbose_echo "           --regname: ${RegName}"
+verbose_echo "   --processing-mode: ${ProcessingMode}"
+verbose_echo ""
+verbose_echo " Using environment setting ..."
+verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
+verbose_echo " "
 
 #Naming Conventions
 # Do NOT include spaces in any of these names
@@ -141,6 +164,36 @@ FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
+
+# ------------------------------------------------------------------------------
+#  Compliance check
+# ------------------------------------------------------------------------------
+
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+# -- T2w image
+
+if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w` -eq 0 ]; then
+    ComplianceMsg+=" T2w image not present"
+    Compliance="LegacyStyleData"
+    T2wRestoreImage="NONE"
+fi
+
+if [ "${RegName}" = "FS" ] ; then
+    log_Warn "FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
+    log_Warn "  HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
+    log_Warn "  alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
+    log_Warn "  dramatically higher surface distortion (both isotropic and anisotropic). These things"
+    log_Warn "  occur because FreeSurfer's registration has too little regularization of folding patterns"
+    log_Warn "  that are imperfectly correlated with function and cortical areas, resulting in overfitting"
+    log_Warn "  of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS"
+    log_Warn "  for more details."
+fi
+
+check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
+
+
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
 log_Msg "RegName: ${RegName}"
@@ -183,7 +236,6 @@ argList+="$AtlasSpaceT1wImage "        # ${6}
 argList+="$T1wRestoreImage "           # ${7}  Called T1wImage in CreateRibbon.sh
 argList+="$FreeSurferLabels "          # ${8}
 "$PipelineScripts"/CreateRibbon.sh ${argList}
-
 
 #Myelin Mapping
 log_Msg "Myelin Mapping"
@@ -230,4 +282,8 @@ argList+="$CorrectionSigma "
 argList+="$RegName "                                  # ${39}
 "$PipelineScripts"/CreateMyelinMaps.sh ${argList}
 
+verbose_green_echo "---> Finished ${script_name}"
+verbose_echo " "
+
 log_Msg "Completed"
+

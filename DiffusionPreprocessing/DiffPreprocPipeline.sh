@@ -91,13 +91,9 @@
 # 
 #~ND~END~
 
-# Set up this script such that if any command exits with a non-zero value, the 
-# script itself exits and does not attempt any further processing.
-set -e
-
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib		# log_ functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib	# version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/version.shlib	   # version_ functions
 
 # Global values
 DEFAULT_B0_MAX_BVAL=50
@@ -139,7 +135,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --gdcoeffs=<path-to-gradients-coefficients-file>
                           path to file containing coefficients that describe
                           spatial variations of the scanner gradients.
-                          Use --gdcoeffs=NONE if not available
+                          Applied *after* 'eddy'.
+                          Use --gdcoeffs=NONE if not available.
   [--dwiname=<DWIName>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--dof=<Degrees of Freedom>]

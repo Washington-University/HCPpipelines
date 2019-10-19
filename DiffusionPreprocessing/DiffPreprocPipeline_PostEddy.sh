@@ -63,13 +63,9 @@
 # 
 #~ND~END~
 
-# Setup this script such that if any command exits with a non-zero value, the 
-# script itself exits and does not attempt any further processing.
-set -e
-
 # Load Function Libraries
-source ${HCPPIPEDIR}/global/scripts/log.shlib     # log_ functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib # version_ functions 
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions 
 
 # Global values
 DEFAULT_DEGREES_OF_FREEDOM=6
@@ -95,8 +91,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --subject=<subject-id>  subject ID
   --gdcoeffs=<path-to-gradients-coefficients-file>
                           path to file containing coefficients that describe 
-                          spatial variations of the scanner gradients. Use 
-                          --gdcoeffs=NONE if not available.
+                          spatial variations of the scanner gradients. 
+                          Use --gdcoeffs=NONE if not available.
   [--dwiname=<DWIName>]   name to give DWI output directories
 	                      Defaults to Diffusion
   [--dof=<Degrees of Freedom>]
@@ -343,6 +339,7 @@ main()
 	fi
 	
 	log_Msg "Running Eddy PostProcessing"
+	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag}
 	
 	# Establish variables that follow naming conventions

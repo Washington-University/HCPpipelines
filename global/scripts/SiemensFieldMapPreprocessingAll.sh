@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
@@ -14,7 +13,7 @@ fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename $0): Script for generating a fieldmap suitable for FSL from Siemens Gradient Echo field map,"

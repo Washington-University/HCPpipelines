@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 echo -e "\n START: DiffusionToStructural"
 
 
@@ -78,11 +78,11 @@ ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w -div "$BiasField" "$Wor
 ${FSLDIR}/bin/imcp "$WorkingDirectory"/"$regimg"2T1w_restore "$RegOutput"
 ${FSLDIR}/bin/fslmaths "$T1wRestoreImage".nii.gz -mul "$WorkingDirectory"/"$regimg"2T1w_restore.nii.gz -sqrt "$QAImage"_"$regimg".nii.gz
 
-#Generate 1.25mm structural space for resampling the diffusion data into
+#Generate a ${DiffRes} structural space for resampling the diffusion data into
 ${FSLDIR}/bin/flirt -interp spline -in "$T1wRestoreImage" -ref "$T1wRestoreImage" -applyisoxfm ${DiffRes} -out "$T1wRestoreImage"_${DiffRes}
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$T1wRestoreImage" -r "$T1wRestoreImage"_${DiffRes} -o "$T1wRestoreImage"_${DiffRes}
 
-#Generate 1.25mm mask in structural space
+#Generate a ${DiffRes} mask in structural space
 ${FSLDIR}/bin/flirt -interp nearestneighbour -in "$InputBrainMask" -ref "$InputBrainMask" -applyisoxfm ${DiffRes} -out "$T1wOutputDirectory"/nodif_brain_mask
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask -kernel 3D -dilM "$T1wOutputDirectory"/nodif_brain_mask
 
@@ -100,6 +100,8 @@ cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 #Register diffusion data to T1w space. Account for gradient nonlinearities if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
+	# We combine the GDC warp with the diff2str affine, and apply to warped/data_warped (i.e., the post-eddy, pre-GDC data)
+	# so that we can have a one-step resampling following 'eddy'
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
@@ -115,6 +117,7 @@ ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nod
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (caused by spline interpolation) from final data
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
 
+# Identify any voxels that are zeros across all frames and remove those from the final nodif_brain_mask
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask

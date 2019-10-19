@@ -1,11 +1,10 @@
 #!/bin/bash 
-set -e
 
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source $HCPPIPEDIR_Global/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # --------------------------------------------------------------------------------
 #  Establish tool name for logging
