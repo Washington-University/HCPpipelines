@@ -229,7 +229,7 @@ fMRIReference=`opts_GetOpt1 "--fmriref" $@`                          # Reference
                                                                      # motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
                                                                      # NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
                                                                      # that a distortion correction and atlas (MNI152) registration solution for the reference
-                                                                     # BOLD already exists. Also, the reference BOLD must have been acuired using the same
+                                                                     # BOLD already exists. Also, the reference BOLD must have been acquired using the same
                                                                      # phase encoding direction, or it can not serve as a valid reference. 
 fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                    # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                      # specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
