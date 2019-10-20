@@ -25,7 +25,6 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
-
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 # Validate necesary environment variables
@@ -244,6 +243,16 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNI
                                                                          # provide major advantages for fMRI denoising, and are recommended. 
                                                                          # No slice timing correction is done by default.  
 
+# If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. 
+                                                                         # This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of the 
+                                                                         # distorted fMRI to the undistorted T1w image. Distorted portions of the fMRI data will not align with the cortical ribbon. 
+                                                                         # In HCP data 30% of the cortical surface will be misaligned by at least half cortical thickness and 10% of the cortical 
+                                                                         # surface will be completely misaligned by a full cortical thickness. At a future time, we may be able to add support for 
+                                                                         # fieldmap-less distortion correction; however, no extant software package or pipelines have successfully demonstrated 
+                                                                         # clear improvement over no distortion correction, in the direction towards gold standard fieldmap-based correction.
+
+
+
 # ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
@@ -254,19 +263,41 @@ Compliance="HCPStyleData"
 ComplianceMsg=""
 ComplianceWarn=""
 
+if [ "${DistortionCorrection}" = 'NONE' ]; then
+  ComplianceMsg+=" --dcmethod=NONE"
+  Compliance="LegacyStyleData"
+  log_Warn "The fMRIVolume pipeline is being run without appropriate distortion correction"
+  log_Warn "  of the fMRI image. This is NOT RECOMMENDED under normal circumstances. We will "
+  log_Warn "  attempt 6 DOF FreeSurfer BBR registration of the distorted fMRI to the undistorted"
+  log_Warn "  T1w image. Distorted portions of the fMRI data will not align with the cortical ribbon."
+  log_Warn "  In HCP data 30% of the cortical surface will be misaligned by at least half cortical "
+  log_Warn "  thickness and 10% of the cortical surface will be completely misaligned by a full "
+  log_Warn "  cortical thickness. At a future time, we may be able to add support for fieldmap-less "
+  log_Warn "  distortion correction. At this time, however, despite ongoing efforts, this problem is"
+  log_Warn "  unsolved and no extant approach has been successfully shown to demonstrate clear "
+  log_Warn "  improvement according to the accuracy standards of HCP-Style data analysis when compared"
+  log_Warn "  to gold-standard fieldmap-based correction."
+fi
+
 # -- Slice timing correction
 
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   ComplianceMsg+=" --doslicetime=TRUE"
   Compliance="LegacyStyleData"
-  log_Warn "WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing correction and motion correction would ideally be performed simultaneously; however, this is not currently supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide major advantages for fMRI denoising, and are recommended."
+  log_Warn "WARNING: This LegacyStyleData option of slice timing correction is performed before motion"
+  log_Warn "  correction (as is typically done in legacy-style brain imaging) and thus assumes that the"
+  log_Warn "  brain is motionless. Errors in temporal interpolation will occur in the presence of head"
+  log_Warn "  motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One "
+  log_Warn "  'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for"
+  log_Warn "  artifact detection.' Slice timing correction and motion correction would ideally be performed"
+  log_Warn "  simultaneously; however, this is not currently supported by any major software tool. HCP-Style"
+  log_Warn "  fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide"
+  log_Warn "  major advantages for fMRI denoising, and are recommended."
 fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
-
-
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
