@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
@@ -16,7 +15,7 @@ fi
 #  Load function libraries
 # ------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 ## MPH:
 ## Script as currently written has not been adapted to support use of the strain-based msm

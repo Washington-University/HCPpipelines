@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 #quick script to regenerate inflated 59k surfaces to match original HCP 32k
 

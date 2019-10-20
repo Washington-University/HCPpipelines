@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash 
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6) and FreeSurfer (version 5.3.0-HCP)
@@ -20,7 +19,7 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR_Global}/log.shlib           # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "`basename $0`: Script to register EPI to T1w, with distortion correction"

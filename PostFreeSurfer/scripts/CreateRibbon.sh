@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
@@ -19,7 +18,7 @@ else
 	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 log_Msg "START: CreateRibbon"
 

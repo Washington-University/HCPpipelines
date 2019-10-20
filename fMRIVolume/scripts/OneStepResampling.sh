@@ -1,5 +1,6 @@
 #!/bin/bash 
-set -e
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6)

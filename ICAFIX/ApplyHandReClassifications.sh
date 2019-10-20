@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# If any command exits with non-zero value, this script exits
-set -e
-
 # ------------------------------------------------------------------------------
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
@@ -335,7 +332,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/log.shlib" # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 log_SetToolName "${g_script_name}"
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"

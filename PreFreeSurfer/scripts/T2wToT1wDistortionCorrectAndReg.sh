@@ -1,5 +1,5 @@
 #!/bin/bash 
-set -e
+
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
 #  environment: FSLDIR and PATH for gradient_unwarp.py
@@ -40,7 +40,7 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6 or later)
@@ -37,8 +36,8 @@ fi
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib   # Logging related functions
-source ${HCPPIPEDIR}/global/scripts/opts.shlib  # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
 
 ########################################## SUPPORT FUNCTIONS ##########################################

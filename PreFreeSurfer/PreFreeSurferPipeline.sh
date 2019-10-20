@@ -149,10 +149,6 @@
 #  Code Start
 # ------------------------------------------------------------------------------
 
-# Setup this script such that if any command exits with a non-zero value, the
-# script itself exits and does not attempt any further processing.
-set -e
-
 # -----------------------------------------------------------------------------------
 #  Constants for specification of Averaging and Readout Distortion Correction Method
 # -----------------------------------------------------------------------------------
@@ -201,8 +197,8 @@ fi
 #  Load Function Libraries
 # ------------------------------------------------------------------------------
 
-source ${HCPPIPEDIR}/global/scripts/log.shlib  # Logging related functions
-source ${HCPPIPEDIR}/global/scripts/opts.shlib # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 # ------------------------------------------------------------------------------
