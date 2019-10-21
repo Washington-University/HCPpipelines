@@ -252,6 +252,14 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNI
                                                                          # clear improvement over no distortion correction, in the direction towards gold standard fieldmap-based correction.
 
 
+BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                  # Specifies what mask to use for the final bold:
+                                                                         #   T1_fMRI_FOV: combined T1w brain mask and fMRI FOV masks (the default), 
+                                                                         #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
+                                                                         #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
+                                                                         #   fMRI_FOV: a fMRI FOV mask
+
+# Defaults
+BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -293,6 +301,14 @@ if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   log_Warn "  simultaneously; however, this is not currently supported by any major software tool. HCP-Style"
   log_Warn "  fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide"
   log_Warn "  major advantages for fMRI denoising, and are recommended."
+fi
+
+if [ "${BOLDMask}" != 'T1_fMRI_FOV' ]; then
+  if [ "${BOLDMask}" != "T1_DILATED_fMRI_FOV" ] && [ "${BOLDMask}" != "T1_DILATED2x_fMRI_FOV" ] && [ "${BOLDMask}" != "fMRI_FOV" ] ; then
+    log_Err_Abort "--boldmask=${BOLDMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV, fMRI_FOV."
+  fi
+  ComplianceMsg+=" --boldmask=${BOLDMask}"
+  Compliance="LegacyStyleData"
 fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
@@ -590,7 +606,8 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
        --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
-       --usejacobian=${UseJacobian}
+       --usejacobian=${UseJacobian} \
+       --boldmask=${BOLDMask}
 
 #Copy selected files to ResultsFolder
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
