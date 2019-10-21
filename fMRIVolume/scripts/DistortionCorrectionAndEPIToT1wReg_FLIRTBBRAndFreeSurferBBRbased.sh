@@ -4,9 +4,9 @@
 #  installed versions of: FSL (version 5.0.6) and FreeSurfer (version 5.3.0-HCP)
 #  environment: FSLDIR, FREESURFER_HOME + others
 
-# ---------------------------------------------------------------------
-#  Constants for specification of Readout Distortion Correction Method
-# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#  Constants for specification of susceptibility distortion Correction Method
+# ---------------------------------------------------------------------------
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
@@ -53,14 +53,17 @@ Usage() {
   echo ""
   echo "               \"${SIEMENS_METHOD_OPT}\""
   echo "                 use Siemens specific Gradient Echo Field Maps for"
-  echo "                 readout distortion correction"
+  echo "                 susceptibility distortion correction"
   echo ""
   echo "               \"${SPIN_ECHO_METHOD_OPT}\""
-  echo "                 use Spin Echo Field Maps for readout distortion correction"
+  echo "                 use Spin Echo Field Maps for susceptibility distortion correction"
   echo ""
   echo "               \"${GENERAL_ELECTRIC_METHOD_OPT}\""
   echo "                 use General Electric specific Gradient Echo Field Maps"
-  echo "                 for readout distortion correction"
+  echo "                 for susceptibility distortion correction"
+  echo ""
+  echo "               \"${NONE_METHOD_OPT}\""
+  echo "                 do not use any susceptibility distortion correction"
   echo ""
   echo "             [--topupconfig=<topup config file>]"
   echo "             --ojacobian=<output filename for Jacobian image (in T1w space)>"
@@ -188,21 +191,18 @@ case "$BiasCorrection" in
     SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
         then
-            log_Msg "SEBASED bias correction is only available with --method=${SPIN_ECHO_METHOD_OPT}"
-            exit 1
+            log_Err_Abort "SEBASED bias correction is only available with --method=${SPIN_ECHO_METHOD_OPT}"
         fi
         #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh
         UseBiasField="${WD}/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias.nii.gz"
     ;;
 
     "")
-        log_Msg "--biascorrection option not specified"
-        exit 1
+        log_Err_Abort "--biascorrection option not specified"
     ;;
 
     *)
-        log_Msg "unrecognized value for bias correction: $BiasCorrection"
-        exit 1
+        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
 esac
 
 
@@ -220,8 +220,7 @@ PreregisterTool=${PreregisterTool:-epi_reg}
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
-    log_Msg "the --usejacobian option must be 'true' or 'false'"
-    exit 1
+    log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
 log_Msg "START"
@@ -246,8 +245,7 @@ if [ ! "$DistortionCorrection" = ${NONE_METHOD_OPT} ]; then
 
   # Explicit check on the allowed values of UnwarpDir
   if [[ ${UnwarpDir} != [xyzijk] && ${UnwarpDir} != -[xyzijk] && ${UnwarpDir} != [xyzijk]- ]]; then
-    log_Msg "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
-    exit 1
+    log_Err_Abort "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
   fi
     
   # FSL's naming convention for 'epi_reg --pedir' is {x,y,z,-x,-y,-z}
@@ -303,8 +301,7 @@ case $DistortionCorrection in
                 --gdcoeffs=${GradientDistortionCoeffs}
 
         else
-            log_Msg "Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"
-            exit 1
+            log_Err_Abort "Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"            
         fi
 
         cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
@@ -473,7 +470,7 @@ case $DistortionCorrection in
 
             log_Msg "---> No distortion correction"
 
-            ScoutExtension=""
+            ScoutExtension="_orig"
 
             log_Msg "---> Copy Scout image"
             ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
@@ -493,12 +490,10 @@ case $DistortionCorrection in
                 ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof 6
             fi
 
-            #copy the initial registration into the final affine's filename, as it is pretty good
-            #we need something to get between the spaces to compute an initial bias field
-            cp "${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat" "${WD}/fMRI2str.mat"
-
-            # generate Scout2T1 warpfield and spline interpolated images + apply bias field correction
-            log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
+            # In the NONE condition, we have no distortion Warpfield.  Convert the Scout2T1 registration (affine)
+            # to its warp field equivalent, since we need "${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp" later            
+            # generate Scout2T1 warpfield and spline interpolated images
+            log_Msg "generate combined warpfields and spline interpolated images"
             ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
             # 1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
@@ -507,8 +502,7 @@ case $DistortionCorrection in
         ;;
     *)
 
-        log_Msg "UNKNOWN DISTORTION CORRECTION METHOD: ${DistortionCorrection}"
-        exit 1
+        log_Err_Abort "UNKNOWN DISTORTION CORRECTION METHOD: ${DistortionCorrection}"
 
 esac
 
