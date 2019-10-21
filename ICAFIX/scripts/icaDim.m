@@ -5,14 +5,14 @@ function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
 %Variables
 Out.VNDIM=VN; %Variance Normalization Dimensionality initially set to 1
 lnb = 0.5; %Lower noise bound for Golden Section Search
-stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for legacy converged results, -1 for new converged results, >2 for fixed iterations)
+stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for legacy converged results, -1 for new converged results, >3 for fixed iterations)
 
 if Iterate < 0
      stabThresh=0.25; %Difference in running average
      priordimavg=0;
 end
 
-if Iterate > 2
+if Iterate > 3
      stabThresh=Iterate; %Difference in running average
      priordimavg=0;
 end
@@ -163,7 +163,7 @@ while stabCount < stabThresh %Loop until dim output is stable
         end
     end
 
-    if Iterate > 2
+    if Iterate > 3
         stabCount=c;
         priordimavg = mean(Out.VNDIM(4:end));
         disp(['   dimavg: ' mat2str(priordimavg)]);
@@ -172,7 +172,7 @@ end %End while loop for dim calcs
 if Iterate < 0 
     Out.calcDim=round(priordimavg);
 end
-if Iterate > 2 
+if Iterate > 3 
     Out.calcDim=round(mean(Out.VNDIM(4:end)));
 end
 
