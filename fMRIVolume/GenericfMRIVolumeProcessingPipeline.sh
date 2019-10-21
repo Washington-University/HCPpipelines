@@ -290,9 +290,9 @@ fi
 # -- Slice timing correction
 
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
-  ComplianceMsg+=" --doslicetime=TRUE"
+  ComplianceMsg+=" --doslicetime=TRUE --slicetimerparams=${SliceTimerCorrectionParameters}"
   Compliance="LegacyStyleData"
-  log_Warn "WARNING: This LegacyStyleData option of slice timing correction is performed before motion"
+  log_Warn "This LegacyStyleData option of slice timing correction is performed before motion"
   log_Warn "  correction (as is typically done in legacy-style brain imaging) and thus assumes that the"
   log_Warn "  brain is motionless. Errors in temporal interpolation will occur in the presence of head"
   log_Warn "  motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One "

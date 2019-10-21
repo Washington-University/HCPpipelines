@@ -485,10 +485,10 @@ case $DistortionCorrection in
             log_Msg "---> register scout image to T1w"
             # register scout image to T1w
             # this is just an initial registration, refined later in this script, but it is actually pretty good
-            if [ $Preregister = "epi_reg" ] ; then
+            if [ "$PreregisterTool" = "epi_reg" ] ; then
                 log_Msg "... running epi_reg (dof ${dof})"
                 ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}${ScoutExtension} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
-            elif [ $Preregister = "flirt" ] ; then
+            elif [ "$PreregisterTool" = "flirt" ] ; then
                 log_Msg "... running flirt"
                 ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof 6
             fi
