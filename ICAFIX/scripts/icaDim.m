@@ -5,7 +5,17 @@ function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
 %Variables
 Out.VNDIM=VN; %Variance Normalization Dimensionality initially set to 1
 lnb = 0.5; %Lower noise bound for Golden Section Search
-stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for converged results)
+stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for legacy converged results, -1 for new converged results, >2 for fixed iterations)
+
+if Iterate < 0
+     stabThresh=0.25; %Difference in running average
+     priordimavg=0;
+end
+
+if Iterate > 2
+     stabThresh=Iterate; %Difference in running average
+     priordimavg=0;
+end
 
 %%%%%%%%%%%%%%%%%%%%
 
@@ -26,7 +36,7 @@ end
 
 %Precompute PCA reconstruction
 %octave doesn't have "rng", but it does accept "rand('twister', 0);" for matlab compatibility
-rand('twister', 0);
+
 [u,EigS,v]=nets_svds(data_detrend',0); %Eigenvalues of detrended data
 Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
 
@@ -35,7 +45,6 @@ stabCount = 0;
 while stabCount < stabThresh %Loop until dim output is stable
         
     c
-    rand('twister', 0);
     %Variance normalization via PCA reconstruction: Isolate unstructured noise
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
@@ -65,7 +74,7 @@ while stabCount < stabThresh %Loop until dim output is stable
     %DOF=sum(Out.lambda_pcaNorm>std(Out.lambda_pcaNorm)*0.1); %Recompute DOF because of demeaning in cov
     MaxX=length(data_detrend_vn); 
     if DEMDT==-1
-        MaxX=1000000;
+        MaxX=2000000;
     end
     lambda=Out.lambda_pcaNorm;
     S=0;
@@ -77,15 +86,22 @@ while stabCount < stabThresh %Loop until dim output is stable
         EN(:,i)=en(1:Out.DOF);
         MaxX=x(i);
         DOF=min(find(lambda <= 0)); 
-        lambda=[lambda(1:DOF);single(zeros(Out.DOF-DOF+1,1))];
+        lambda=[lambda(1:DOF-1);single(zeros(Out.DOF-DOF+1,1))];
         lambda=lambda(1:Out.DOF);
     end
       
     Out.EN=sum(EN,2); 
     %Out.x(c)=x(1);
-    Out.x(c)=round(x(end));
+    %Out.x(c)=round(x(end));
     %DOF=round(Out.DOF);
-    
+    if NDist>1
+       %Out.x(c)=round(x(1)-sum(x(2:end))); %Fit is not as steep as data, so subtract additional spatial DOFs
+       %Best fit Wishart to entire multi-piece Wishart 
+       [x,en] = FitWishart(0.01,S,Out.DOF,x(1),Out.EN);
+       Out.x(c) = x;
+    else
+       Out.x(c)=round(x(1)); 
+    end
     %MaxS=5;
     %DOF=Out.DOF;
     %MaxX=round(Out.x(c));
@@ -96,11 +112,15 @@ while stabCount < stabThresh %Loop until dim output is stable
     %[Out.x(c),Out.EN] = FitWishart(lnb,Out.s(c),DOF,MaxX,lambda(1:DOF));
     
     %Divide eigenvalues by null for adjusted output values
-    Out.lambdaAdj = abs(Out.lambda_pcaNorm(1:DOF)./(Out.EN(1:DOF)));
+    Out.lambdaAdj = Out.lambda_pcaNorm(1:DOF)./(Out.EN(1:DOF));
     %Out.lambdaAdj(DOF:end)=1;
-    
+    n=DOF-1;
+    tmp=ones(Out.DOF,1);
+    tmp(1:n)=Out.lambdaAdj(1:n);
+    Out.lambdaAdj=tmp;
     %Normalize adjusted eigenvalues to 1 for input to laplacian
     %Out.lambdaAdj_norm = Out.lambdaAdj ./ max(Out.lambdaAdj);
+
     Out.pcaDim_lambdaAdj = pca_dim(Out.lambdaAdj',Out.x(c));
     
     %Maximum of laplacian is estimate of optimal dimensionality
@@ -128,9 +148,34 @@ while stabCount < stabThresh %Loop until dim output is stable
 
     %Store dims in array, check number of occurances to prevent dim loops
     stabCount = sum(Out.VNDIM==Out.calcDim);
-    
+    if Iterate < 0 
+        if c>3
+            diffdimavg = abs(priordimavg-mean(Out.VNDIM(4:end)));
+            if diffdimavg < stabThresh
+                stabCount = 1;
+            else
+                stabCount = 0;
+            end
+            priordimavg = mean(Out.VNDIM(4:end));
+            disp(['   dimavg: ' mat2str(priordimavg)]);
+        else
+            stabCount = 0;
+        end
+    end
+
+    if Iterate > 2
+        stabCount=c;
+        priordimavg = mean(Out.VNDIM(4:end));
+        disp(['   dimavg: ' mat2str(priordimavg)]);
+    end
 end %End while loop for dim calcs
-rand('twister', 0);
+if Iterate < 0 
+    Out.calcDim=round(priordimavg);
+end
+if Iterate > 2 
+    Out.calcDim=round(mean(Out.VNDIM(4:end)));
+end
+
 if DEMDT~=-1
     [u,EigS,v]=nets_svds(demean(data_detrend_vn)',0);
 else
@@ -154,7 +199,8 @@ end
 %manual display of Out fields, to make octave less verbose
 disp('Out =');
 disp(['   VNDIM: ' mat2str(Out.VNDIM)]);
-disp(['   DOF: ' mat2str(Out.DOF)]);
+disp(['   Out.DOF: ' mat2str(Out.DOF)]);
+disp(['   DOF: ' mat2str(DOF)]);
 disp(['   noise_unst_std: array of size ' mat2str(size(Out.noise_unst_std))]);
 disp(['   lambda_pcaNorm: array of size ' mat2str(size(Out.lambda_pcaNorm))]);
 disp(['   EN: array of size ' mat2str(size(Out.EN))]);
@@ -188,7 +234,6 @@ function [out] = lpdist(in)
 end
 
 function [x,EN] = FitWishart(lnb,S,DOF,MaxX,lambda) %FitWishart(lnb,step,DOF,MaxX,lambda)
-    rand('twister', 0);
     EigDn1=round(DOF*lnb); %Isolate search to noise
     EigDn2=round(DOF-1); %Reqd for post MR+FIX deconcatinated tcs
     %EigDn2=round(DOF*0.75); %Reqd for post MR+FIX deconcatinated tcs
@@ -219,7 +264,6 @@ function [x,EN] = FitWishart(lnb,S,DOF,MaxX,lambda) %FitWishart(lnb,step,DOF,Max
     
     while (abs(b-a)>epsilon) && (k<iter) %Loop until low error OR max iter met
         %k=k+1;
-        rand('twister', 0);
         disp([num2str(a) ' ' num2str(x1) ' ' num2str(x2) ' ' num2str(b)]);
         %Check both terms for minimal pairwise distance and continue toward minimum
         if (f_x1<f_x2)
@@ -256,8 +300,6 @@ function [x,EN] = FitWishart(lnb,S,DOF,MaxX,lambda) %FitWishart(lnb,step,DOF,Max
     else
         x = x2;
     end
-    rand('twister', 0);
-    %disp(randn(1,1));
     EN=flipud(eig(cov(Smooth(randn(round(x),DOF),S))));
     
     x=x/1+S;
