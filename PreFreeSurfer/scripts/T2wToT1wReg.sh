@@ -50,7 +50,7 @@ ${FSLDIR}/bin/imcp "$T1wImageBrain" "$OutputT1wImageBrain"
 ${FSLDIR}/bin/fslmerge -t $OutputT1wTransform "$T1wImage".nii.gz "$T1wImage".nii.gz "$T1wImage".nii.gz
 ${FSLDIR}/bin/fslmaths $OutputT1wTransform -mul 0 $OutputT1wTransform
 
-if [ ! "${T2wImage}" = "NONE" ]] ; then
+if [ ! "${T2wImage}" = "NONE" ] ; then
     ${FSLDIR}/bin/imcp "$WD"/T2w2T1w "$OutputT2wImage"
     ${FSLDIR}/bin/convertwarp --relout --rel -r "$OutputT2wImage".nii.gz -w $OutputT1wTransform --postmat="$WD"/T2w2T1w.mat --out="$OutputT2wTransform"
 fi
