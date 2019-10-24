@@ -64,6 +64,7 @@ Usage() {
   echo ""
   echo "               \"${NONE_METHOD_OPT}\""
   echo "                 do not use any susceptibility distortion correction"
+  echo "                 NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData"
   echo ""
   echo "             [--topupconfig=<topup config file>]"
   echo "             --ojacobian=<output filename for Jacobian image (in T1w space)>"
@@ -470,7 +471,7 @@ case $DistortionCorrection in
 
             log_Msg "---> No distortion correction"
 
-            ScoutExtension="_orig"
+            ScoutExtension="_nosdc"
 
             log_Msg "---> Copy Scout image"
             ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
