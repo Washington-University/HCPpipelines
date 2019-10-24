@@ -540,10 +540,10 @@ if [ "$CustomBrain" = "NONE" ] ; then
       # skip modality if no image
 
       if [ "${TXwInputImages}" = "NONE" ] ; then
-        log_Msg "Skipping Modality: " $TXw " - image not specified."
+        log_Msg "Skipping Modality: $TXw - image not specified."
         continue
       else
-        log_Msg "Processing Modality: " $TXw
+        log_Msg "Processing Modality: $TXw"
       fi
 
       # Perform Gradient Nonlinearity Correction
