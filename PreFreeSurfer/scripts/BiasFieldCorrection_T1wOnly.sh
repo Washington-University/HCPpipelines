@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e
-# source ${HCPPIPEDIR}/global/scripts/debug.shlib # Debugging functions
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6)
@@ -18,6 +16,8 @@ else
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "`basename $0`: Tool for bias field correction based on T1w image only"

@@ -341,7 +341,7 @@ for TXw in $Modalities ; do
       TXwImageBrainBasename=$T2wImageBrainBasename
     fi
 
-    if [ "${T2wImage}" = "NONE" ] ; then
+    if [ "${TXwImage}" = "NONE" ] ; then
       verbose_echo "      ... Skipping $TXw"
       continue
     else

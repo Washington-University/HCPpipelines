@@ -114,7 +114,7 @@ if($status) goto error_exit;
 # Create a registration to go from conformed space to rawavg. 
 set regC2R = transforms/conf2rawavg.dat
 set regC2Rlta = transforms/conf2rawavg.lta
-set cmd = (tkregister --noedit --mov orig.mgz --targ rawavg.cmdc.mgz --regheader \
+set cmd = (tkregister2_cmdl --noedit --mov orig.mgz --targ rawavg.cmdc.mgz --regheader \
   --reg $regC2R  --ltaout $regC2Rlta)
 echo "\n#===============================" | tee -a $LF
 echo $cmd | tee -a $LF
@@ -124,7 +124,7 @@ if($status) goto error_exit;
 # Create a registration to go from rawavg to conformed space (inv of above)
 set regR2C = transforms/rawavg2conf.dat
 set regR2Clta = transforms/rawavg2conf.lta
-set cmd = (tkregister --noedit --mov rawavg.cmdc.mgz --targ orig.mgz --regheader \
+set cmd = (tkregister2_cmdl --noedit --mov rawavg.cmdc.mgz --targ orig.mgz --regheader \
   --reg $regR2C --ltaout $regR2Clta)
 echo "\n#===============================" | tee -a $LF
 echo $cmd | tee -a $LF
@@ -386,8 +386,8 @@ if($#MMode) then
       -orig $srcsurf.rawavg -orig_white white.rawavg -orig_pial wo${MMode}.pial.rawavg \
       -aseg rawavg.aseg.presurf -wm rawavg.wm -filled rawavg.filled -mgz \
       -T1 rawavg.brain.finalsurfs)
-    if($DoT2)    set cmd = ($cmd -T2 rawavg.$MMode -nsigma_above 2 -nsigma_below 3)
-    if($DoFLAIR) set cmd = ($cmd -T2 rawavg.$MMode -nsigma_above 3 -nsigma_below 3)
+    if($DoT2)    set cmd = ($cmd -T2    rawavg.$MMode -nsigma_above 2 -nsigma_below 3)
+    if($DoFLAIR) set cmd = ($cmd -FLAIR rawavg.$MMode -nsigma_above 3 -nsigma_below 3)
     set cmd = ($cmd $subject $hemi)
     date | tee -a $LF
     echo "\n#===============================" | tee -a $LF

@@ -171,9 +171,14 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--seed=<recon-all seed value>]
 
+  [--flair]  (experimental)
+      Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options
+      (rather than the -T2/-T2pial options).
+      The FLAIR input image itself should still be provided via the '--t2' argument.
+
   [--existing-subject]
       Indicates that the script is to be run on top of an already existing analysis/subject.
-      This excludes the '-i' and '-T2' flags from the invocation of recon-all (i.e., uses previous input volumes).
+      This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).
       [The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored].
       It also excludes the -all' flag from the invocation of recon-all.
       Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.
@@ -200,7 +205,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
          By default, -conf2hires *IS* included, so that recon-all will place the surfaces on the 
          hires T1 (and T2).
          This is an advanced option, intended for situations where:
-            (i) the original T1 and T2 are NOT "hires" (i.e., they are 1 mm isotropic or worse), or
+            (i) the original T1w and T2w images are NOT "hires" (i.e., they are 1 mm isotropic or worse), or
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
@@ -214,7 +219,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 PARAMETERs can also be specified positionally as:
 
-  ${g_script_name} <path to subject directory> <subject ID> <path to T1 image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
+  ${g_script_name} <path to subject directory> <subject ID> <path to T1w image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
   Note that the positional approach to specifying parameters does NOT support the 
       --existing-subject, --extra-reconall-arg, --no-conf2hires, and --processing-mode options.
@@ -235,6 +240,7 @@ get_options()
 	unset p_t1w_brain
 	unset p_t2w_image
 	unset p_seed
+	unset p_flair
 	unset p_existing_subject
 	unset p_extra_reconall_args
 	p_conf2hires="TRUE"  # Default is to include -conf2hires flag; do NOT make this variable 'local'
@@ -291,6 +297,10 @@ get_options()
 				;;
 			--seed=*)
 				p_seed=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--flair)
+				p_flair="TRUE"
 				index=$(( index + 1 ))
 				;;
 			--existing-subject)
@@ -388,8 +398,11 @@ get_options()
 	if [ ! -z "${p_seed}" ]; then
 		log_Msg "Seed: ${p_seed}"
 	fi
+	if [ ! -z "${p_flair}" ]; then
+		log_Msg "FLAIR (using -FLAIR/-FLAIRpial rather than -T2/-T2pial in recon-all): ${p_flair}"
+	fi
 	if [ ! -z "${p_existing_subject}" ]; then
-		log_Msg "Existing subject (exclude -all, -i, -T2, and -emregmask flags from recon-all): ${p_existing_subject}"
+		log_Msg "Existing subject (exclude -all, -i, -T2/-FLAIR, and -emregmask flags from recon-all): ${p_existing_subject}"
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
@@ -398,7 +411,7 @@ get_options()
 		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
 	if [ ! -z "${p_processing_mode}" ] ; then
-  		log_Msg "Set --processing-mode to: ${p_processing_mode}"
+  		log_Msg "ProcessingMode: ${p_processing_mode}"
 	fi
 
 	if [ ${error_count} -gt 0 ]; then
@@ -459,16 +472,23 @@ make_t2w_hires_nifti_file()
 	local t2w_output_file
 	local mri_vol2vol_cmd
 	local return_code
+	local t2_or_flair
 
 	working_dir="${1}"
 
 	pushd "${working_dir}"
 
-	# The rawavg.T2.prenorm.mgz file must exist.
+	if [ "${p_flair}" = "TRUE" ]; then
+		t2_or_flair="FLAIR"
+	else
+		t2_or_flair="T2"
+	fi
+
+	# The rawavg.${t2_or_flair}.prenorm.mgz file must exist.
 	# Then we need to move (resample) it to
 	# the target volume and convert it to NIFTI format.
 
-	t2w_input_file="rawavg.T2.prenorm.mgz"
+	t2w_input_file="rawavg.${t2_or_flair}.prenorm.mgz"
 	target_volume="rawavg.mgz"
 	t2w_output_file="T2w_hires.nii.gz"
 
@@ -548,6 +568,7 @@ main()
 	local T1wImageBrain
 	local T2wImage
 	local recon_all_seed
+	local flair="FALSE"
 	local existing_subject="FALSE"
 	local extra_reconall_args
 	local conf2hires="TRUE"
@@ -563,8 +584,9 @@ main()
 	local tkregister_cmd
 	local mri_concatenate_lta_cmd
 	local mri_surf2surf_cmd
+	local t2_or_flair
 
-	local T2wtoT1wFile="T2wtoT1w.mat"
+	local T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
 	local OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
 
 	# ----------------------------------------------------------------------
@@ -585,6 +607,9 @@ main()
 	# For backwards compatibility, continue to allow positional specification of parameters for the above set of 6 parameters.
 	# But any new parameters/options in the script will only be accessible via a named parameter/flag.
 	# Here, we retrieve those from the global variable that was set in get_options()
+	if [ "${p_flair}" = "TRUE" ]; then
+		flair=${p_flair}
+	fi
 	if [ "${p_existing_subject}" = "TRUE" ]; then
 		existing_subject=${p_existing_subject}
 	fi
@@ -604,6 +629,7 @@ main()
 	log_Msg "T1wImageBrain: ${T1wImageBrain}"
 	log_Msg "T2wImage: ${T2wImage}"
 	log_Msg "recon_all_seed: ${recon_all_seed}"
+	log_Msg "flair: ${flair}"
 	log_Msg "existing_subject: ${existing_subject}"
 	log_Msg "extra_reconall_args: ${extra_reconall_args}"
 	log_Msg "conf2hires: ${conf2hires}"
@@ -656,15 +682,25 @@ main()
 	if [ "${existing_subject}" != "TRUE" ]; then  # input volumes only necessary first time through
 		recon_all_cmd+=" -all"
 		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
-		[ "${T2wImage}" != "NONE" ] && recon_all_cmd+=" -T2 ${T2wImage}"
 		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
+		if [ "${T2wImage}" != "NONE" ]; then
+			if [ "${flair}" = "TRUE"]; then
+				recon_all_cmd+=" -FLAIR ${T2wImage}"
+			else
+				recon_all_cmd+=" -T2 ${T2wImage}"
+			fi
+		fi
 	fi
 
 	# By default, refine pial surfaces using T2 (if T2w image provided).
 	# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
 	# this can be accomplished using --extra-reconall-arg=-noT2pial
 	if [ "${T2wImage}" != "NONE" ]; then
-		recon_all_cmd+=" -T2pial"
+		if [ "${flair}" = "TRUE"]; then
+			recon_all_cmd+=" -FLAIRpial"
+		else
+			recon_all_cmd+=" -T2pial"
+		fi
 	fi
 
 	recon_all_cmd+=" -openmp ${num_cores}"
@@ -734,6 +770,12 @@ main()
 
 		pushd ${mridir}
 
+		if [ "${flair}" = "TRUE" ]; then
+			t2_or_flair="FLAIR"
+		else
+			t2_or_flair="T2"
+		fi
+
 		log_Msg "...Create a registration between the original conformed space and the rawavg space"
 		tkregister_cmd="tkregister"
 		tkregister_cmd+=" --mov orig.mgz"
@@ -753,13 +795,13 @@ main()
 			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
 		fi
 
-		log_Msg "...Concatenate the T2raw->orig and orig->rawavg transforms"
+		log_Msg "...Concatenate the ${t2_or_flair}raw->orig and orig->rawavg transforms"
 		mri_concatenate_lta_cmd="mri_concatenate_lta"
-		mri_concatenate_lta_cmd+=" transforms/T2raw.lta"
+		mri_concatenate_lta_cmd+=" transforms/${t2_or_flair}raw.lta"
 		mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
 		mri_concatenate_lta_cmd+=" Q.lta"
 
-		log_Msg "......The following concatenates transforms/T2raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
+		log_Msg "......The following concatenates transforms/${t2_or_flair}raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
 		log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
 		${mri_concatenate_lta_cmd}
 		return_code=$?
@@ -769,7 +811,7 @@ main()
 
 		log_Msg "...Convert to FSL format"
 		tkregister_cmd="tkregister"
-		tkregister_cmd+=" --mov orig/T2raw.mgz"
+		tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
 		tkregister_cmd+=" --targ rawavg.mgz"
 		tkregister_cmd+=" --reg Q.lta"
 		tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"

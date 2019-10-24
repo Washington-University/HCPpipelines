@@ -521,15 +521,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   for TXw in ${Modalities} ; do
 
-      # skip modality if no image
-
-      if [ "${TXwInputImages}" = "NONE" ] ; then
-        log_Msg "Skipping Modality: " $TXw " - image not specified."
-        continue
-      else
-        log_Msg "Processing Modality: " $TXw
-      fi
-
       # set up appropriate input variables
       if [ $TXw = T1w ] ; then
           TXwInputImages="${T1wInputImages}"
@@ -545,6 +536,15 @@ if [ "$CustomBrain" = "NONE" ] ; then
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
       OutputTXwImageSTRING=""
+
+      # skip modality if no image
+
+      if [ "${TXwInputImages}" = "NONE" ] ; then
+        log_Msg "Skipping Modality: $TXw - image not specified."
+        continue
+      else
+        log_Msg "Processing Modality: $TXw"
+      fi
 
       # Perform Gradient Nonlinearity Correction
 
