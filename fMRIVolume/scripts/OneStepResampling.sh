@@ -31,6 +31,8 @@ Usage() {
   echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
   echo "             --oscout=<output transformed + distortion corrected scout image>"
   echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
+  echo "             [--fmrirefpath=<path to an external BOLD reference or NONE (default)>]"
+  echo "             [--fmrirefreg=<whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image>]"
 }
 
 # function for parsing options
@@ -38,10 +40,10 @@ getopt1() {
     sopt="$1"
     shift 1
     for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
+  if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+      echo $fn | sed "s/^${sopt}=//"
+      return 0
+  fi
     done
 }
 
@@ -51,17 +53,17 @@ defaultopt() {
 
 ################################################### OUTPUT FILES #####################################################
 
-# Outputs (in $WD): 
-#         NB: all these images are in standard space 
+# Outputs (in $WD):
+#         NB: all these images are in standard space
 #             but at the specified resolution (to match the fMRI - i.e. low-res)
-#     ${T1wImageFile}.${FinalfMRIResolution}  
+#     ${T1wImageFile}.${FinalfMRIResolution}
 #     ${FreeSurferBrainMaskFile}.${FinalfMRIResolution}
-#     ${BiasFieldFile}.${FinalfMRIResolution}  
+#     ${BiasFieldFile}.${FinalfMRIResolution}
 #     Scout_gdc_MNI_warp     : a warpfield from original (distorted) scout to low-res MNI
 #
 # Outputs (not in either of the above):
 #     ${OutputTransform}  : the warpfield from fMRI to standard (low-res)
-#     ${OutputfMRI}       
+#     ${OutputfMRI}
 #     ${JacobianOut}
 #     ${ScoutOutput}
 #          NB: last three images are all in low-res standard space
@@ -92,6 +94,41 @@ ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
 ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
 ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
 JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
+fMRIReferencePath=`getopt1 "--fmrirefpath" $@` # "${19}"
+fMRIReferenceReg=`getopt1 "--fmrirefreg" $@`  # "${20}"
+
+# defaults
+fMRIReferencePath=${fMRIReferencePath:-NONE}
+fMRIReferenceReg=${fMRIReferenceReg:-NONE}
+
+# --- Report arguments
+
+verbose_echo "  "
+verbose_red_echo " ===> Running OneStepResampling"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "         --workingdir: ${WD}"
+verbose_echo "             --infmri: ${InputfMRI}"
+verbose_echo "                 --t1: ${T1wImage}"
+verbose_echo "         --fmriresout: ${FinalfMRIResolution}"
+verbose_echo "         --fmrifolder: ${fMRIFolder}"
+verbose_echo "      --fmri2structin: ${fMRIToStructuralInput}"
+verbose_echo "         --struct2std: ${StructuralToStandard}"
+verbose_echo "              --owarp: ${OutputTransform}"
+verbose_echo "             --oiwarp: ${OutputInvTransform}"
+verbose_echo "       --motionmatdir: ${MotionMatrixFolder}"
+verbose_echo "    --motionmatprefix: ${MotionMatrixPrefix}"
+verbose_echo "              --ofmri: ${OutputfMRI}"
+verbose_echo "--freesurferbrainmask: ${FreeSurferBrainMask}"
+verbose_echo "          --biasfield: ${BiasField}"
+verbose_echo "            --gdfield: ${GradientDistortionField}"
+verbose_echo "            --scoutin: ${ScoutInput}"
+verbose_echo "         --scoutgdcin: ${ScoutInputgdc}"
+verbose_echo "             --oscout: ${ScoutOutput}"
+verbose_echo "          --ojacobian: ${JacobianOut}"
+verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
+verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
+verbose_echo " "
 
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
@@ -109,15 +146,15 @@ echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 
-########################################## DO WORK ########################################## 
+########################################## DO WORK ##########################################
 
 #Save TR for later
 TR_vol=`${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1`
 NumFrames=`${FSLDIR}/bin/fslval ${InputfMRI} dim4`
 
 # Create fMRI resolution standard space files for T1w image, wmparc, and brain mask
-#   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the 
-#       2mm and 1mm cases because it doesn't know the peculiarities of the 
+#   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
+#       2mm and 1mm cases because it doesn't know the peculiarities of the
 #       MNI template FOVs
 if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
     ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
@@ -125,7 +162,7 @@ elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
     ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
 else
   ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
-  ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution} 
+  ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
 fi
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}
 
@@ -136,9 +173,46 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${BiasField} -r ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 
-# Downsample warpfield (fMRI to standard) to increase speed 
+# Compute a linear affine and (optionally) nonlinear warp transform to external reference is one is provided
+
+if [ ${fMRIReferenceImage} != "NONE" ] ; then
+
+  fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
+  fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_gdc_mask
+  fMRIReferenceImageBrain="$WD"/fMRIReference_gdc_brain
+
+  # -- compute a linear transform
+
+  verbose_echo " ... computing linear transform to external reference"
+
+  # -- create a brain only reference and register scout to it linearly
+  ${FSLDIR}/bin/fslmaths ${fMRIReferenceImage} -mas ${fMRIReferenceImageMask} ${fMRIReferenceImageBrain}
+  ${FSLDIR}/bin/flirt -interp spline -in ${ScoutInputgdc} -ref ${fMRIReferenceImageBrain} -omat ${WD}/Scout_gdc2Reference_gdc.mat -out ${WD}/Scout_gdc2Reference_gdc
+
+  # -- are we also doing a nonlinear transform?
+  if [ ${fMRIReferenceReg} = "nonlinear" ] ; then
+
+    verbose_echo " ... computing nonlinear transform to external reference"
+    ${FSLDIR}/bin/fnirt --in=${ScoutInputgdc} --ref=${fMRIReferenceImage} --aff=${WD}/Scout_gdc2Reference_gdc.mat --refmask=${fMRIReferenceImageMask} --fout=${WD}/Scout_gdc2Reference_gdc_nonlin --cout=${WD}/Scout_gdc2Reference_gdc_nonlin_warp    
+
+    verbose_echo " ... computing combined warp to standard"
+    ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/Scout_gdc2Reference_gdc_nonlin_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/fMRI2Ref2Struct_warp
+    
+    # -- We now use the combined fMRI to reference to structural warp
+    fMRI2Struct=${WD}/fMRI2Ref2Struct_warp
+  else
+    # -- we need a premat for computing the combined warp if only linear registration to external reference is used, and we are using the adopted fMRI2STructural warp
+    prematstr="--premat=${WD}/Scout_gdc2Reference_gdc.mat"
+    fMRI2Struct=${fMRIToStructuralInput}
+  fi
+else
+  # we are not using an external reference so no initial linear transform is needed
+  prematstr=""
+fi
+
+# Downsample warpfield (fMRI to standard) to increase speed
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision
-${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
+${FSLDIR}/bin/convertwarp --relout --rel ${prematstr} --warp1=${fMRI2Struct} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 
 # Add stuff for estimating RMS motion
 invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${ScoutInputgdc}
@@ -201,6 +275,7 @@ for ((k=0; k < $NumFrames; k++)); do
   rm ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
 done
 
+verbose_red_echo "---> Merging results"
 # Merge together results and restore the TR (saved beforehand)
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI}_mask $FrameMergeSTRINGII $TR_vol
@@ -215,12 +290,12 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_
 
 # Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
 #${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
-#fMRIToStructuralInput is from gdc space to T1w space, ie, only fieldmap-based distortions (like topup)
+#fMRI2Struct is from gdc space to T1w space (optionally through an external reference), ie, only fieldmap-based distortions (like topup)
 #output jacobian is both gdc and topup/fieldmap jacobian, but not the to MNI jacobian
 #JacobianIn was removed from inputs, now we just compute it from the combined warpfield of gdc and dc (NOT MNI)
 #compute combined warpfield, but don't use jacobian output because it has 8 frames for no apparent reason
 #NOTE: convertwarp always requires -o anyway
-${FSLDIR}/bin/convertwarp --relout --rel --ref=${fMRIToStructuralInput} --warp1=${GradientDistortionField} --warp2=${fMRIToStructuralInput} -o ${WD}/gdc_dc_warp --jacobian=${WD}/gdc_dc_jacobian
+${FSLDIR}/bin/convertwarp --relout --rel --ref=${fMRI2Struct} --warp1=${GradientDistortionField} --warp2=${fMRI2Struct} -o ${WD}/gdc_dc_warp --jacobian=${WD}/gdc_dc_jacobian
 #but, convertwarp's jacobian is 8 frames - each combination of one-sided differences, so average them
 ${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
 
@@ -235,11 +310,13 @@ cat ${fMRIFolder}/Movement_AbsoluteRMS.txt | awk '{ sum += $1} END { print sum /
 rm -r ${WD}/postvols
 rm -r ${WD}/prevols
 
+verbose_green_echo "---> Finished OneStepResampling"
+
 echo " "
 echo "END: OneStepResampling"
 echo " END: `date`" >> $WD/log.txt
 
-########################################## QA STUFF ########################################## 
+########################################## QA STUFF ##########################################
 
 if [ -e $WD/qa.txt ] ; then rm -f $WD/qa.txt ; fi
 echo "cd `pwd`" >> $WD/qa.txt

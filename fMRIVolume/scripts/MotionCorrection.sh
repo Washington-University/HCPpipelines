@@ -24,8 +24,6 @@ MotionCorrectionType="$8"
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
-
-
 # Do motion correction
 log_Msg "Do motion correction"
 case "$MotionCorrectionType" in
