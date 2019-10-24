@@ -168,7 +168,7 @@ elif [ "${BOLDMask}" = "fMRI_FOV" ] ; then
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
     ${FSLDIR}/bin/imcp ${InputfMRI}_mask ${FinalMask}
 
-elif
+else
     # No valid BOLDMask option was specified
     log_Err_Abort "Invalid entry for specified BOLD mask (--boldmask=${BOLDMask})"
 fi
