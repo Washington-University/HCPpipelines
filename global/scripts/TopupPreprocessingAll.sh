@@ -39,10 +39,13 @@ Usage() {
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
   echo "            [--ofmap=<output scaled topup field map image>]"
-  echo "            [--ojacobian=<output Jacobian image>]"
+  echo "            [--ojacobian=<output Jacobian image> (of the TOPUP warp field)]"
   echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "            [--topupconfig=<topup config file>]"
   echo "            --usejacobian=<\"true\" or \"false\">"
+  echo "                 Whether to apply the jacobian of the gradient non-linearity distortion correction"
+  echo "                 Irrelevant if --gdcoeffs=NONE"
+  echo "                 (Has nothing to do with the jacobian of the TOPUP warp field)"
   echo " "
   echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
 }
@@ -268,6 +271,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM 
 
 # RUN TOPUP
 # Needs FSL (version 5.0.6 or later)
+# Note: All the jacobian stuff from here onward is related to the TOPUP warp field
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
