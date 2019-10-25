@@ -1,8 +1,12 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6) (including python with numpy, needed to run aff2rigid - part of FSL)
-#  environment: FSLDIR
+#  installed versions of: FSL (including python with numpy, needed to run aff2rigid - part of FSL)
+#  environment: HCPPIPEDIR, FSLDIR
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"

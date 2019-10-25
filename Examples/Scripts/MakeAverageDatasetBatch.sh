@@ -113,8 +113,8 @@ if [ -n "${command_line_specified_symlink_study_folder}" ]; then
 fi
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 #Set up pipeline environment variables and software
 source ${EnvironmentScript}

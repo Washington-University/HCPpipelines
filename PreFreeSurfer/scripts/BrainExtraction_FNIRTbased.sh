@@ -1,12 +1,19 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Templates
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+else
+  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
 
 if [ -z "${FSLDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
@@ -20,13 +27,6 @@ if [ -z "${HCPPIPEDIR_Templates}" ]; then
 	exit 1
 else
 	echo "$(basename ${0}): HCPPIPEDIR_Templates: ${HCPPIPEDIR_Templates}"
-fi
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 ################################################ SUPPORT FUNCTIONS ##################################################

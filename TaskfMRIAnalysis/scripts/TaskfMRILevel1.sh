@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Must first source SetUpHCPPipeline.sh to set up pipeline environment variables and software
 # Requirements for this script
-#  installed versions of FSL 5.0.7 or greater
-#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
 
 
 ########################################## PREPARE FUNCTIONS ########################################## 

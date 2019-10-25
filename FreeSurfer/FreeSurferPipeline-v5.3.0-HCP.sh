@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP)
-#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR 
+#  installed versions of: FSL, FreeSurfer (version 5.3.0-HCP), Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, CARET7DIR 
 
 ########################################## PIPELINE OVERVIEW ########################################## 
 
@@ -17,7 +17,7 @@
 # --------------------------------------------------------------------------------
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source $HCPPIPEDIR/global/scripts/opts.shlib                   # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                   # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
 ########################################## SUPPORT FUNCTIONS ########################################## 

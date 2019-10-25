@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6) and FreeSurfer (version 5.3.0-HCP)
-#  environment: FSLDIR, FREESURFER_HOME + others
+#  installed versions of: FSL, FreeSurfer
+#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME
 
 # ---------------------------------------------------------------------
 #  Constants for specification of Readout Distortion Correction Method

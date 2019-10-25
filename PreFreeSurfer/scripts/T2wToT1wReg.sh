@@ -1,15 +1,12 @@
 #!/bin/bash 
 
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
-
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
 
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
@@ -18,7 +15,18 @@ else
 	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
+if [ -z "${FSLDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+fi
+
+################################################ SUPPORT FUNCTIONS ##################################################
+
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+
+########################################## DO WORK ########################################## 
 
 log_Msg "START: T2w2T1Reg"
 
