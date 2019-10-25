@@ -1,12 +1,19 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
-#  environment: FSLDIR and PATH for gradient_unwarp.py
+#  installed versions of: FSL, gradunwarp (HCP version)
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+else
+  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
 
 if [ -z "${FSLDIR}" ]; then
   echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
@@ -20,13 +27,6 @@ if [ -z "${HCPPIPEDIR_Global}" ]; then
   exit 1
 else
   echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
 # -----------------------------------------------------------------------------------

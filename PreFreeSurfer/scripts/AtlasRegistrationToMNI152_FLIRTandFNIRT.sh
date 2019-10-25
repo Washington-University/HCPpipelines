@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set

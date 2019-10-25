@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
 # Intensity normalisation, and bias field correction, and optional Jacobian modulation, applied to fMRI images (all inputs must be in fMRI space)
 
 #  This code is released to the public domain.
@@ -19,10 +17,12 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 ################################################ REQUIREMENTS ##################################################
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
   echo "`basename $0`: "

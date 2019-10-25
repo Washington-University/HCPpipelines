@@ -1,14 +1,19 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), caret7 (a.k.a. Connectome Workbench) (version 1.0)
-#  environment: FSLDIR  CARET7DIR
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
-script_name=
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+else
+  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
 
 if [ -z "${FSLDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
