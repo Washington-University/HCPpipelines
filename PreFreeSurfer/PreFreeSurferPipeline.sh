@@ -111,7 +111,7 @@
 # * ${T2wFolder}/xfms - transformation matrices and warp fields
 #
 # * ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-# * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+# * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w
 #
 # * ${AtlasSpaceFolder}
 # * ${AtlasSpaceFolder}/xfms
@@ -716,12 +716,12 @@ if [ "$CustomBrain" = "NONE" ] ; then
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
     log_Msg "Performing Bias Field Correction using sqrt(T1w x T2w)"    
-    log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w"
+    log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w"
 
-    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w
 
-    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
-      --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
+    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT2w.sh \
+      --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w \
       --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
       --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
       --T2im=${T1wFolder_T2wImageWithPath_acpc_dc} \
