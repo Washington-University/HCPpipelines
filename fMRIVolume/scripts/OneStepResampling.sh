@@ -133,6 +133,8 @@ verbose_echo " "
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
 FreeSurferBrainMaskFile=`basename "$FreeSurferBrainMask"`
+ScoutName=`basename "$ScoutInputgdc"`
+
 
 echo " "
 echo " START: OneStepResampling"
@@ -175,10 +177,10 @@ ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${
 
 # Compute a linear affine and (optionally) nonlinear warp transform to external reference is one is provided
 
-if [ ${fMRIReferenceImage} != "NONE" ] ; then
+if [ ${fMRIReferencePath} != "NONE" ] ; then
 
-  fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
-  fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_gdc_mask
+  fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"
+  fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_mask
   fMRIReferenceImageBrain="$WD"/fMRIReference_gdc_brain
 
   # -- compute a linear transform
@@ -199,15 +201,16 @@ if [ ${fMRIReferenceImage} != "NONE" ] ; then
     ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/Scout_gdc2Reference_gdc_nonlin_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/fMRI2Ref2Struct_warp
     
     # -- We now use the combined fMRI to reference to structural warp
-    fMRI2Struct=${WD}/fMRI2Ref2Struct_warp
+    fMRI2Struct="${WD}/fMRI2Ref2Struct_warp"
   else
     # -- we need a premat for computing the combined warp if only linear registration to external reference is used, and we are using the adopted fMRI2STructural warp
     prematstr="--premat=${WD}/Scout_gdc2Reference_gdc.mat"
-    fMRI2Struct=${fMRIToStructuralInput}
+    fMRI2Struct="${fMRIToStructuralInput}"
   fi
 else
   # we are not using an external reference so no initial linear transform is needed
   prematstr=""
+  fMRI2Struct="${fMRIToStructuralInput}"
 fi
 
 # Downsample warpfield (fMRI to standard) to increase speed

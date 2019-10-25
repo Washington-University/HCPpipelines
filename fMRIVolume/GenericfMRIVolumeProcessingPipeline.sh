@@ -220,6 +220,43 @@ then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
+# Setup PATHS
+PipelineScripts=${HCPPIPEDIR_fMRIVol}
+GlobalScripts=${HCPPIPEDIR_Global}
+
+#Naming Conventions
+T1wImage="T1w_acpc_dc"
+T1wRestoreImage="T1w_acpc_dc_restore"
+T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
+T1wFolder="T1w" #Location of T1w images
+AtlasSpaceFolder="MNINonLinear"
+ResultsFolder="Results"
+BiasField="BiasField_acpc_dc"
+BiasFieldMNI="BiasField"
+T1wAtlasName="T1w_restore"
+MovementRegressor="Movement_Regressors" #No extension, .txt appended
+MotionMatrixFolder="MotionMatrices"
+MotionMatrixPrefix="MAT_"
+FieldMapOutputName="FieldMap"
+MagnitudeOutputName="Magnitude"
+MagnitudeBrainOutputName="Magnitude_brain"
+ScoutName="Scout"
+OrigScoutName="${ScoutName}_orig"
+OrigTCSName="${NameOffMRI}_orig"
+FreeSurferBrainMask="brainmask_fs"
+fMRI2strOutputTransform="${NameOffMRI}2str"
+RegOutput="Scout2T1w"
+AtlasTransform="acpc_dc2standard"
+OutputfMRI2StandardTransform="${NameOffMRI}2standard"
+Standard2OutputfMRITransform="standard2${NameOffMRI}"
+QAImage="T1wMulEPI"
+JacobianOut="Jacobian"
+SubjectFolder="$Path"/"$Subject"
+#note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
+sebasedBiasFieldMNI="$SubjectFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
+
+fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
+
 
 # ------------------------------------------------------------------------------
 #  Legacy Style Data Options
@@ -369,7 +406,7 @@ fi
 
 # -- Use of nonlinear registration to external BOLD reference
 
-if [ "${fMRIReferenceReg}" = "nonlinear" ]
+if [ "${fMRIReferenceReg}" = "nonlinear" ] ; then
   ComplianceMsg+=" --fmrirefreg=${fMRIReferenceReg}"
   Compliance="LegacyStyleData"
 fi
@@ -377,43 +414,6 @@ fi
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # -- End compliance check
-
-# Setup PATHS
-PipelineScripts=${HCPPIPEDIR_fMRIVol}
-GlobalScripts=${HCPPIPEDIR_Global}
-
-#Naming Conventions
-T1wImage="T1w_acpc_dc"
-T1wRestoreImage="T1w_acpc_dc_restore"
-T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
-T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolder="MNINonLinear"
-ResultsFolder="Results"
-BiasField="BiasField_acpc_dc"
-BiasFieldMNI="BiasField"
-T1wAtlasName="T1w_restore"
-MovementRegressor="Movement_Regressors" #No extension, .txt appended
-MotionMatrixFolder="MotionMatrices"
-MotionMatrixPrefix="MAT_"
-FieldMapOutputName="FieldMap"
-MagnitudeOutputName="Magnitude"
-MagnitudeBrainOutputName="Magnitude_brain"
-ScoutName="Scout"
-OrigScoutName="${ScoutName}_orig"
-OrigTCSName="${NameOffMRI}_orig"
-FreeSurferBrainMask="brainmask_fs"
-fMRI2strOutputTransform="${NameOffMRI}2str"
-RegOutput="Scout2T1w"
-AtlasTransform="acpc_dc2standard"
-OutputfMRI2StandardTransform="${NameOffMRI}2standard"
-Standard2OutputfMRITransform="standard2${NameOffMRI}"
-QAImage="T1wMulEPI"
-JacobianOut="Jacobian"
-SubjectFolder="$Path"/"$Subject"
-#note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
-sebasedBiasFieldMNI="$SubjectFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
-
-fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 
 #error check bias correction opt
 case "$BiasCorrection" in
@@ -605,11 +605,15 @@ if [ $fMRIReference = "NONE" ] ; then
 
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
-    if [ -e ${DCFolder} ] ; then
-        log_Warn "     ... removing stale link (or preexisiting files)"
+    if [ -d ${DCFolder} ] ; then
+        log_Warn "     ... removing preexisiting files"
         rm -r ${DCFolder}
     fi
-    ln -s ${fMRIReference}/${DCFolderName} ${DCFolder}
+    if [ -h ${DCFolder} ] ; then
+        log_Warn "     ... removing stale link"
+        rm ${DCFolder}
+    fi
+    ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
  
     if [ `${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str` -eq 0 ]; then
       log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"    
