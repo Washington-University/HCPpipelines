@@ -5,6 +5,27 @@
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+Usage() {
+	cat <<EOF
+
+$(basename ${0}): Script for registering T2w to T1w
+
+Usage: $(basename ${0})
+  To be written
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 

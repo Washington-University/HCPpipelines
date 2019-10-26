@@ -5,6 +5,36 @@
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Templates
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+Usage() {
+	cat <<EOF
+
+$(basename $0): Tool for performing brain extraction using non-linear (FNIRT) results
+
+Usage: $(basename $0)
+  [--workingdir=<working dir>]
+  --in=<input image>
+  [--ref=<reference highres image>]
+  [--refmask=<reference brain mask>]
+  [--ref2mm=<reference image 2mm>]
+  [--ref2mmmask=<reference brain mask 2mm>]
+  --outbrain=<output brain extracted image>
+  --outbrainmask=<output brain mask>
+  [--fnirtconfig=<fnirt config file>]
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
@@ -33,12 +63,6 @@ fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
-Usage() {
-  echo "$(basename $0): Tool for performing brain extraction using non-linear (FNIRT) results"
-  echo " "
-  echo "Usage: $(basename $0) [--workingdir=<working dir>] --in=<input image> [--ref=<reference highres image>] [--refmask=<reference brain mask>] [--ref2mm=<reference image 2mm>] [--ref2mmmask=<reference brain mask 2mm>] --outbrain=<output brain extracted image> --outbrainmask=<output brain mask> [--fnirtconfig=<fnirt config file>]"
-}
-
 # function for parsing options
 getopt1() {
     sopt="$1"
@@ -66,11 +90,6 @@ defaultopt() {
 #    "$OutputBrainMask" "$OutputBrainExtractedImage"
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 4 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

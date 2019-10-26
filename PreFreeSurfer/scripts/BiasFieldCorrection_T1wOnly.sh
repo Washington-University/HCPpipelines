@@ -5,6 +5,32 @@
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+Usage() {
+	cat <<EOF
+
+`basename $0`: Tool for bias field correction based on T1w image only
+
+Usage: `basename $0` 
+  --workingdir=<working directory> 
+  --T1im=<input T1 image> 
+  [--oT1im=<output T1 image>] 
+  [--oT1brain=<output T1 brain>] 
+  [--bfsigma=<input T1 image>]
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
@@ -25,12 +51,6 @@ fi
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "`basename $0`: Tool for bias field correction based on T1w image only"
-  echo " "
-  echo "Usage: `basename $0` --workingdir=<working directory> --T1im=<input T1 image> [--oT1im=<output T1 image>] [-oT1brain=<output T1 brain>] [--bfsigma=<input T1 image>]"
-}
 
 # function for parsing options
 getopt1() {
@@ -60,11 +80,6 @@ defaultopt() {
 # T1_fast_bias_init.nii.gz          T1_initfast2_brain_mask.nii.gz
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 2 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  

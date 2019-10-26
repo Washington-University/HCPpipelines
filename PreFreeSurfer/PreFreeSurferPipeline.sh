@@ -160,48 +160,6 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
-
-if [ -z "${FSLDIR}" ]; then
-  echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_Global}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
-
-if [ -z "${HCPPIPEDIR_PreFS}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
-fi
-
-# ------------------------------------------------------------------------------
-#  Load Function Libraries
-# ------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
-
-# ------------------------------------------------------------------------------
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
@@ -210,7 +168,7 @@ show_usage() {
 
 PreFreeSurferPipeline.sh
 
-Usage: PreeFreeSurferPipeline.sh [options]
+Usage: PreFreeSurferPipeline.sh [options]
 
   --path=<path>                       Path to study data folder (required)
                                       Used with --subject input to create full path to root
@@ -262,28 +220,27 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       or a spin echo field map)
   --gdcoeffs=<file path>              File containing gradient distortion
                                       coefficients, Set to "NONE" to turn off
-  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction
-                                      method. See below for supported values.
+  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction method. 
+                                      See below for supported values.
 
-    "${NONE_METHOD_OPT}"
-     average any repeats with no readout distortion correction
+      "${NONE_METHOD_OPT}"
+         average any repeats with no readout distortion correction
 
-    "${FIELDMAP_METHOD_OPT}"
-       equivalent to "${SIEMENS_METHOD_OPT}" (see below)
-       SiemensFieldMap is preferred. This option value is maintained for
-       backward compatibility.
+      "${SPIN_ECHO_METHOD_OPT}"
+         average any repeats and use Spin Echo Field Maps for readout
+         distortion correction
 
-    "${SPIN_ECHO_METHOD_OPT}"
-       average any repeats and use Spin Echo Field Maps for readout
-       distortion correction
+      "${GENERAL_ELECTRIC_METHOD_OPT}"
+         average any repeats and use General Electric specific Gradient
+         Echo Field Maps for readout distortion correction
 
-    "${GENERAL_ELECTRIC_METHOD_OPT}"
-       average any repeats and use General Electric specific Gradient
-       Echo Field Maps for readout distortion correction
+      "${SIEMENS_METHOD_OPT}"
+         average any repeats and use Siemens specific Gradient Echo
+         Field Maps for readout distortion correction
 
-    "${SIEMENS_METHOD_OPT}"
-       average any repeats and use Siemens specific Gradient Echo
-       Field Maps for readout distortion correction
+      "${FIELDMAP_METHOD_OPT}"
+         equivalent to "${SIEMENS_METHOD_OPT}" (preferred)
+         This option value is maintained for backward compatibility.
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
@@ -313,6 +270,54 @@ Usage: PreeFreeSurferPipeline.sh [options]
 EOF
   exit 1
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+else
+  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
+
+if [ -z "${FSLDIR}" ]; then
+  echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
+  exit 1
+else
+  echo "${script_name}: FSLDIR: ${FSLDIR}"
+fi
+
+if [ -z "${HCPPIPEDIR_Global}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
+  exit 1
+else
+  echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
+fi
+
+if [ -z "${HCPPIPEDIR_PreFS}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
+  exit 1
+else
+  echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
+fi
+
+# ------------------------------------------------------------------------------
+#  Load Function Libraries
+# ------------------------------------------------------------------------------
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 # ------------------------------------------------------------------------------
 #  Establish tool name for logging
