@@ -109,7 +109,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
 
     # Transforms field of view mask to T1-weighted space
     # (Be sure to use the fov_mask derived prior to application of GDC)
-    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
 
     # Now register the grad_dev tensor
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
@@ -129,7 +129,7 @@ fi
 # only include voxels fully(!) within the field of view for every volume
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/fov_mask -thr 0.999 -bin "$T1wOutputDirectory"/fov_mask
 
-# Mask out data outside the brain adn outside the fov
+# Mask out data outside the brain and outside the fov
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp -mas "$T1wOutputDirectory"/fov_mask "$T1wOutputDirectory"/data
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (from eddy) from final data
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp

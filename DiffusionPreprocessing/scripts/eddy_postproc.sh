@@ -100,9 +100,9 @@ if [ ! $GdCoeffs = "NONE" ] ; then
     ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/data_warped
 
     # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
-	  DiffRes=`${FSLDIR}/bin/fslval ${datadir}/data pixdim1`
+	DiffRes=`${FSLDIR}/bin/fslval ${datadir}/data_warped pixdim1`
     DilateDistance=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
-    ${CARET7DIR}/wb_command -volume-dilate ${datadir}/warped/data_warped.nii.gz $DilateDistance NEAREST ${datadir}/warped/data_warped_dilated.nii.gz
+    ${CARET7DIR}/wb_command -volume-dilate ${datadir}/data_warped.nii.gz $DilateDistance NEAREST ${datadir}/data_warped_dilated.nii.gz
 
     # apply gradient distortion correction
     ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${datadir}/data_warped_dilated" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
