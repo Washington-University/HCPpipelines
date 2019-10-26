@@ -4,6 +4,41 @@
 #  installed versions of: FSL
 #  environment: HCPPIPEDIR, FSLDIR
 
+########################################## PIPELINE OVERVIEW ##########################################
+
+#TODO
+
+########################################## OUTPUT DIRECTORIES ##########################################
+
+#TODO
+
+########################################## SUPPORT FUNCTIONS ##########################################
+
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Run PostFreeSurfer processing pipeline
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
+    exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
@@ -24,14 +59,6 @@ else
   echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
 fi
 
-########################################## PIPELINE OVERVIEW ##########################################
-
-#TODO
-
-########################################## OUTPUT DIRECTORIES ##########################################
-
-#TODO
-
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
@@ -39,17 +66,6 @@ fi
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
-
-########################################## SUPPORT FUNCTIONS ##########################################
-
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-show_usage() {
-    echo "Usage information To Be Written"
-    exit 1
-}
 
 # --------------------------------------------------------------------------------
 #   Establish tool name for logging
