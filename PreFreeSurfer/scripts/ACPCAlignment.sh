@@ -5,6 +5,33 @@
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+Usage() {
+	cat <<EOF
+
+$(basename $0): Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space
+
+Usage: $(basename $0)
+  --workingdir=<working dir> 
+  --in=<input image> 
+  --ref=<reference image> 
+  --out=<output image> 
+  --omat=<output matrix> 
+  [--brainsize=<brainsize>]
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
@@ -25,12 +52,6 @@ fi
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "$(basename $0): Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
-  echo " "
-  echo "Usage: $(basename $0) --workingdir=<working dir> --in=<input image> --ref=<reference image> --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>]"
-}
 
 # function for parsing options
 getopt1() {
@@ -58,11 +79,6 @@ defaultopt() {
 #     "$Output"  (the ACPC aligned image)
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 5 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

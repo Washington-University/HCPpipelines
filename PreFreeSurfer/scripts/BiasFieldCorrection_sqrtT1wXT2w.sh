@@ -5,6 +5,36 @@
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+Usage() {
+	cat <<EOF
+
+$(basename $0): Tool for bias field correction based on square root of T1w * T2w
+
+Usage: $(basename $0)
+  --workingdir=<working directory>
+  --T1im=<input T1 image>
+  --T1brain=<input T1 brain>
+  --T2im=<input T2 image>
+  --obias=<output bias field image>
+  --oT1im=<output corrected T1 image>
+  --oT1brain=<output corrected T1 brain>
+  --oT2im=<output corrected T2 image>
+  --oT2brain=<output corrected T2 brain>
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
@@ -32,12 +62,6 @@ fi
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "$(basename $0): Tool for bias field correction based on square root of T1w * T2w"
-  echo " "
-  echo "Usage: $(basename $0) --workingdir=<working directory> --T1im=<input T1 image> --T1brain=<input T1 brain> --T2im=<input T2 image> --obias=<output bias field image> --oT1im=<output corrected T1 image> --oT1brain=<output corrected T1 brain> --oT2im=<output corrected T2 image> --oT2brain=<output corrected T2 brain>"
-}
 
 # function for parsing options
 getopt1() {
@@ -67,11 +91,6 @@ defaultopt() {
 #      $OutputT2wRestoredBrainImage $OutputT2wRestoredImage
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 8 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

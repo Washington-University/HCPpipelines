@@ -5,6 +5,48 @@
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+Usage() {
+	cat <<EOF
+
+`basename $0`: Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)
+
+Usage: `basename $0` 
+  [--workingdir=<working dir>]
+  --t1=<t1w image>
+  --t1rest=<bias corrected t1w image>
+  --t1restbrain=<bias corrected, brain extracted t1w image>
+  --t2=<t2w image>
+  --t2rest=<bias corrected t2w image>
+  --t2restbrain=<bias corrected, brain extracted t2w image>
+  --ref=<reference image>
+  --refbrain=<reference brain image>
+  --refmask=<reference brain mask>
+  [--ref2mm=<reference 2mm image>]
+  [--ref2mmmask=<reference 2mm brain mask>]
+  --owarp=<output warp>
+  --oinvwarp=<output inverse warp>
+  --ot1=<output t1w to MNI>
+  --ot1rest=<output bias corrected t1w to MNI>
+  --ot1restbrain=<output bias corrected, brain extracted t1w to MNI>
+  --ot2=<output t2w to MNI>
+  --ot2rest=<output bias corrected t2w to MNI>
+  --ot2restbrain=<output bias corrected, brain extracted t2w to MNI>
+  [--fnirtconfig=<FNIRT configuration file>]
+
+EOF
+	exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
 
@@ -25,32 +67,6 @@ fi
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "`basename $0`: Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)"
-  echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>]"
-  echo "                --t1=<t1w image>"
-  echo "                --t1rest=<bias corrected t1w image>"
-  echo "                --t1restbrain=<bias corrected, brain extracted t1w image>"
-  echo "                --t2=<t2w image>"
-  echo "                --t2rest=<bias corrected t2w image>"
-  echo "                --t2restbrain=<bias corrected, brain extracted t2w image>"
-  echo "                --ref=<reference image>"
-  echo "                --refbrain=<reference brain image>"
-  echo "                --refmask=<reference brain mask>"
-  echo "                [--ref2mm=<reference 2mm image>]"
-  echo "                [--ref2mmmask=<reference 2mm brain mask>]"
-  echo "                --owarp=<output warp>"
-  echo "                --oinvwarp=<output inverse warp>"
-  echo "                --ot1=<output t1w to MNI>"
-  echo "                --ot1rest=<output bias corrected t1w to MNI>"
-  echo "                --ot1restbrain=<output bias corrected, brain extracted t1w to MNI>"
-  echo "                --ot2=<output t2w to MNI>"
-  echo "                --ot2rest=<output bias corrected t2w to MNI>"
-  echo "                --ot2restbrain=<output bias corrected, brain extracted t2w to MNI>"
-  echo "                [--fnirtconfig=<FNIRT configuration file>]"
-}
 
 # function for parsing options
 getopt1() {
@@ -83,11 +99,6 @@ defaultopt() {
 #                       ${OutputT2wImageRestoreBrain}
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 17 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
