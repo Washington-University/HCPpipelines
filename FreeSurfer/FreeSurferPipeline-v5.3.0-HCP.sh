@@ -12,14 +12,6 @@
 
 #TODO
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                   # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
-
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
 # --------------------------------------------------------------------------------
@@ -27,9 +19,31 @@ source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 # --------------------------------------------------------------------------------
 
 show_usage() {
-    echo "Usage information To Be Written"
+	cat <<EOF
+
+$(basename "${0}"): Run FreeSurfer processing pipeline using FS v5.3-HCP
+
+Usage: $(basename "${0}") [options]
+
+Usage information To Be Written
+
+EOF
     exit 1
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# --------------------------------------------------------------------------------
+#  Load Function Libraries
+# --------------------------------------------------------------------------------
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                   # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
 # --------------------------------------------------------------------------------
 #   Establish tool name for logging

@@ -135,7 +135,7 @@ validate_freesurfer_version()
 }
 
 # Show usage information
-usage()
+show_usage()
 {
 	cat <<EOF
 
@@ -209,7 +209,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
-  [--processing-mode={HCPStyleData, LegacyStyleData}]
+  [--processing-mode=(HCPStyleData|LegacyStyleData)]
       Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
       "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
          and requires 'HCP-Style' data acquistion. 
@@ -256,7 +256,7 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
+				show_usage
 				exit 1
 				;;
 			--subject-dir=*)
@@ -321,7 +321,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -884,6 +884,12 @@ main()
 # Global processing - everything above here should be in a function
 
 g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
 
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
