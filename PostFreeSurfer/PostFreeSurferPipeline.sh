@@ -2,7 +2,7 @@
 
 # Requirements for this script
 #  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_PostFS
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
@@ -30,7 +30,7 @@ Usage: ${script_name} [options]
 Usage information To Be Written
 
 EOF
-    exit 1
+	exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking
@@ -40,35 +40,27 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
-
-if [ -z "${HCPPIPEDIR_PostFS}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_PostFS environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
-fi
-
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-log_SetToolName "PostFreeSurferPipeline.sh"
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_PostFS
 
 ################################################## OPTION PARSING #####################################################
 
@@ -77,6 +69,9 @@ opts_ShowVersionIfRequested $@
 if opts_CheckForHelpRequest $@; then
     show_usage
 fi
+
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -127,8 +122,10 @@ verbose_echo " Using environment setting ..."
 verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
 verbose_echo " "
 
-#Naming Conventions
-# Do NOT include spaces in any of these names
+# ------------------------------------------------------------------------------
+#  Naming Conventions
+#  Do NOT include spaces in any of these names
+# ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
 T1wFolder="T1w" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
@@ -178,7 +175,6 @@ FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
-
 # ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
@@ -207,6 +203,9 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
+# ------------------------------------------------------------------------------
+#  Start work
+# ------------------------------------------------------------------------------
 
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
@@ -299,5 +298,5 @@ argList+="$RegName "                                  # ${39}
 verbose_green_echo "---> Finished ${script_name}"
 verbose_echo " "
 
-log_Msg "Completed"
+log_Msg "Completed!"
 

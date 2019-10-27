@@ -891,19 +891,30 @@ if [ "$#" = "0" ]; then
     exit 1
 fi
 
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
-# Load Function Libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+${HCPPIPEDIR}/show_version
 
-# Verify any other needed environment variables are set
-log_Check_Env_Var FSLDIR
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FREESURFER_HOME
+
+# Platform info
+log_Msg "Platform Information Follows: "
+uname -a
 
 # Configure the use of FreeSurfer v6 custom tools
 configure_custom_tools
@@ -935,5 +946,5 @@ else
 
 fi
 
-log_Msg "Complete"
+log_Msg "Completed!"
 exit 0

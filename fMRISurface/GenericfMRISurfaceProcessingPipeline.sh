@@ -40,35 +40,39 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
+${HCPPIPEDIR}/show_version
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-log_SetToolName "GenericfMRISurfaceProcessingPipeline.sh"
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
 
-################################################## OPTION PARSING #####################################################
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+# ------------------------------------------------------------------------------
+#  Parse Command Line Options
+# ------------------------------------------------------------------------------
 
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
     show_usage
 fi
+
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -147,4 +151,4 @@ log_Msg "Subcortical Processing"
 log_Msg "Generation of Dense Timeseries"
 "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 
-log_Msg "Completed"
+log_Msg "Completed!"

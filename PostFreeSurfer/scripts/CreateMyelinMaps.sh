@@ -1,26 +1,50 @@
 #!/bin/bash
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-if [ -z "${CARET7DIR}" ]; then
-	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Sub-script of PostFreeSurferPipeline.sh
+
+EOF
+    exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
 fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 
-log_Msg "START: CreateMyelinMaps"
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+# ------------------------------------------------------------------------------
+#  Start work
+# ------------------------------------------------------------------------------
+
+log_Msg "START"
 
 StudyFolder="${1}"
 Subject="${2}"
@@ -62,10 +86,10 @@ ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
 
-log_Msg "CreateMyelinMaps.sh: RegName: ${RegName}"
+log_Msg "RegName: ${RegName}"
 
 verbose_echo " "
-verbose_red_echo " ===> Running CreateMyelinMaps"
+verbose_red_echo " ===> Running ${script_name}"
 verbose_echo " "
 
 # -- check for presence of T2w image
@@ -249,7 +273,7 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
   done
 done
 
-verbose_green_echo "---> Finished CreateMyelinMaps"
+verbose_green_echo "---> Finished ${script_name}"
 verbose_echo " "
 
-log_Msg "END: CreateMyelinMaps"
+log_Msg "END"

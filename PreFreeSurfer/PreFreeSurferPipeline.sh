@@ -163,12 +163,14 @@ GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 show_usage() {
   cat <<EOF
 
-PreFreeSurferPipeline.sh
+${script_name}
 
-Usage: PreFreeSurferPipeline.sh [options]
+Usage: ${script_name} [options]
 
   --path=<path>                       Path to study data folder (required)
                                       Used with --subject input to create full path to root
@@ -278,51 +280,28 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
 
 if [ -z "${HCPPIPEDIR}" ]; then
   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
-
-if [ -z "${FSLDIR}" ]; then
-  echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_Global}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
-
-if [ -z "${HCPPIPEDIR_PreFS}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
-fi
-
-# ------------------------------------------------------------------------------
-#  Load Function Libraries
-# ------------------------------------------------------------------------------
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
+${HCPPIPEDIR}/show_version
+
 # ------------------------------------------------------------------------------
-#  Establish tool name for logging
+#  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
-log_SetToolName "PreFreeSurferPipeline.sh"
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
+log_Check_Env_Var HCPPIPEDIR_PreFS
 
 # ------------------------------------------------------------------------------
 #  Parse Command Line Options
@@ -403,7 +382,6 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-
 # ------------------------------------------------------------------------------
 #  Show Command Line Options
 # ------------------------------------------------------------------------------
@@ -442,16 +420,6 @@ log_Msg "UseJacobian: ${UseJacobian}"
 log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
 log_Msg "CustomBrain: ${CustomBrain}"
 log_Msg "ProcessingMode: ${ProcessingMode}"
-
-# ------------------------------------------------------------------------------
-#  Show Environment Variables
-# ------------------------------------------------------------------------------
-
-log_Msg "FSLDIR: ${FSLDIR}"
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-${HCPPIPEDIR}/show_version
-log_Msg "HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-log_Msg "HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
 
 # Naming Conventions
 T1wImage="T1w"
@@ -862,5 +830,5 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
   --fnirtconfig=${FNIRTConfig} 
 
-log_Msg "Completed"
+log_Msg "Completed!"
 
