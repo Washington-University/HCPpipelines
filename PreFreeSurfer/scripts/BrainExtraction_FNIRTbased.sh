@@ -8,12 +8,14 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 Usage() {
 	cat <<EOF
 
-$(basename $0): Tool for performing brain extraction using non-linear (FNIRT) results
+${script_name}: Tool for performing brain extraction using non-linear (FNIRT) results
 
-Usage: $(basename $0)
+Usage: ${script_name}
   [--workingdir=<working dir>]
   --in=<input image>
   [--ref=<reference highres image>]
@@ -35,33 +37,25 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 
-if [ -z "${HCPPIPEDIR_Templates}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Templates environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR_Templates: ${HCPPIPEDIR_Templates}"
-fi
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Templates
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # function for parsing options
 getopt1() {

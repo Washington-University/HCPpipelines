@@ -12,18 +12,19 @@
 
 #TODO
 
-########################################## SUPPORT FUNCTIONS ########################################## 
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 show_usage() {
 	cat <<EOF
 
-$(basename "${0}"): Run FreeSurfer processing pipeline using FS v5.3-HCP
+${script_name}: Run FreeSurfer processing pipeline using FS v5.3-HCP
 
-Usage: $(basename "${0}") [options]
+Usage: ${script_name} [options]
 
 Usage information To Be Written
 
@@ -37,18 +38,34 @@ if [ "$#" = "0" ]; then
     exit 1
 fi
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                   # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-log_SetToolName "FreeSurferPipeline.sh"
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FREESURFER_HOME
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var HCPPIPEDIR_FS
+
+########################################## SUPPORT FUNCTIONS ########################################## 
+
+# NONE
 
 ################################################## OPTION PARSING #####################################################
 
@@ -57,6 +74,9 @@ opts_ShowVersionIfRequested $@
 if opts_CheckForHelpRequest $@; then
     show_usage
 fi
+
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -108,14 +128,6 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-
-# ------------------------------------------------------------------------------
-#  Show Environment Variables
-# ------------------------------------------------------------------------------
-
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-log_Msg "HCPPIPEDIR_FS: ${HCPPIPEDIR_FS}"
-
 # ------------------------------------------------------------------------------
 #  Identify Tools
 # ------------------------------------------------------------------------------
@@ -152,7 +164,9 @@ mri_watershed_version=`mri_watershed --version`
 log_Msg "which mri_watershed: ${which_mri_watershed}"
 log_Msg "mri_watershed --version: ${mri_watershed_version}"
 
-# Start work
+# ------------------------------------------------------------------------------
+#  Start work
+# ------------------------------------------------------------------------------
 
 T1wImageFile=`remove_ext $T1wImage`;
 T1wImageBrainFile=`remove_ext $T1wImageBrain`;
@@ -216,5 +230,5 @@ log_Msg "High Resolution pial surface"
 log_Msg "Final Recon-all Steps"
 recon-all -subjid $SubjectID -sd $SubjectDIR -surfvolume -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon -segstats -aparc2aseg -wmparc -balabels -label-exvivo-ec -openmp ${num_cores} ${seed_cmd_appendix}
 
-log_Msg "Completed"
+log_Msg "Completed!"
 

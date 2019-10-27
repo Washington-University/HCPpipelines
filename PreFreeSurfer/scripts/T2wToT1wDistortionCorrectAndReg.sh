@@ -17,12 +17,14 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 Usage() {
 	cat <<EOF
 
-$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-induced distortion correction on T1w and T2w images, then also registering T2w to T1w
+${script_name}: Script for performing gradient-nonlinearity and susceptibility-induced distortion correction on T1w and T2w images, then also registering T2w to T1w
 
-Usage: $(basename ${0})
+Usage: ${script_name}
   [--workingdir=<working directory>]
   --t1=<input T1w image>
   --t1brain=<input T1w brain-extracted image>
@@ -74,33 +76,25 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-if [ -z "${FSLDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 
-if [ -z "${HCPPIPEDIR_Global}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Global environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # function for parsing options
 getopt1() {

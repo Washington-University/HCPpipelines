@@ -7,13 +7,17 @@
 # ------------------------------------------------------------------------------
 #  Usage Description Function
 # ------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
 Usage() {
 	cat <<EOF
 
-$(basename ${0}): Script for registering T2w to T1w
+${script_name}: Script for registering T2w to T1w
 
-Usage: $(basename ${0})
-  To be written
+Usage: ${script_name}
+
+Usage information To Be Written
 
 EOF
 	exit 1
@@ -26,26 +30,26 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 fi
 
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+# NONE
 
 ########################################## DO WORK ########################################## 
 

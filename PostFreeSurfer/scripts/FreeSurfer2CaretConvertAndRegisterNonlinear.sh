@@ -1,43 +1,46 @@
 #!/bin/bash
 
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Sub-script of PostFreeSurferPipeline.sh
+
+EOF
+    exit 1
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-    echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-    exit 1
-else
-    echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 fi
 
-# ------------------------------------------------------------------------------
-#  Load function libraries
-# ------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 
 # ------------------------------------------------------------------------------
-#  Verify other needed environment variables are set
+#  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
 
-if [ -z "${MSMBINDIR}" ]; then
-    log_Err_Abort "MSMBINDIR environment variable must be set"
-else
-    log_Msg "MSMBINDIR: ${MSMBINDIR}"
-fi
-
-if [ -z "${MSMCONFIGDIR}" ]; then
-    log_Err_Abort "MSMCONFIGDIR environment variable must be set"
-else
-    log_Msg "MSMCONFIGDIR: ${MSMCONFIGDIR}"
-fi
-
-if [ -z "${CARET7DIR}" ]; then
-    log_Err_Abort "CARET7DIR environment variable must be set"
-else
-    log_Msg "CARET7DIR: ${CARET7DIR}"
-fi
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var MSMBINDIR
+log_Check_Env_Var MSMCONFIGDIR
 
 # ------------------------------------------------------------------------------
 #  Gather and show positional parameters

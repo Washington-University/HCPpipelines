@@ -4,10 +4,12 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 Usage() {
 	cat <<EOF
 
-Usage: `basename $0` [options] <image1> ... <imageN>
+Usage: ${script_name} [options] <image1> ... <imageN>
 
 Compulsory arguments
   -o <name>        : output basename
@@ -20,7 +22,7 @@ Optional arguments
   -v               : verbose output
   -h               : display this help message
 
-e.g.:  `basename $0` -n -o output_name im1 im2
+e.g.:  ${script_name} -n -o output_name im1 im2
 
 Note that N>=2 (i.e., there must be at least two images in the list)
 
@@ -35,26 +37,24 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
 fi
 
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 get_arg2() {
     if [ X$2 = X ] ; then

@@ -8,12 +8,14 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 Usage() {
 	cat <<EOF
 
-`basename $0`: Tool for bias field correction based on T1w image only
+${script_name}: Tool for bias field correction based on T1w image only
 
-Usage: `basename $0` 
+Usage: ${script_name}
   --workingdir=<working directory> 
   --T1im=<input T1 image> 
   [--oT1im=<output T1 image>] 
@@ -31,26 +33,24 @@ if [ "$#" = "0" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
 if [ -z "${HCPPIPEDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
 fi
 
-if [ -z "${FSLDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 # function for parsing options
 getopt1() {
