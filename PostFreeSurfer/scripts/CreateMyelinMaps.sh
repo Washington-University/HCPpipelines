@@ -166,9 +166,9 @@ if [ "${T2wPresent}" = "YES" ] ; then
 fi
 
 
-STRINGList="corrThickness@shape"
+MapListFunc="corrThickness@shape"
 if [ "${T2wPresent}" = "YES" ] ; then
-  STRINGList+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
+  MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
 fi
 
 for Hemisphere in L R ; do
@@ -216,7 +216,7 @@ for Hemisphere in L R ; do
     rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap_s"$CorrectionSigma".native.func.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap_s"$CorrectionSigma".native.func.gii
   fi
 
-  for STRING in $STRINGList ; do
+  for STRING in $MapListFunc ; do
     Map=`echo $STRING | cut -d "@" -f 1`
     Ext=`echo $STRING | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -set-map-name "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native."$Ext".gii 1 "$Subject"_"$Hemisphere"_"$Map"
@@ -230,18 +230,18 @@ for Hemisphere in L R ; do
   done
 done
 
-STRINGII=""
+LowResMeshList=""
 for LowResMesh in ${LowResMeshes} ; do
-  STRINGII=`echo "${STRINGII}${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR@atlasroi "`
+  LowResMeshList+="${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR@atlasroi "
 done
 
 #Create CIFTI Files
-for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"@"$HighResMesh"k_fs_LR@atlasroi ${STRINGII} ; do
+for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"@"$HighResMesh"k_fs_LR@atlasroi ${LowResMeshList} ; do
   Folder=`echo $STRING | cut -d "@" -f 1`
   Mesh=`echo $STRING | cut -d "@" -f 2`
   ROI=`echo $STRING | cut -d "@" -f 3`
 
-  for STRINGII in $STRINGList ; do
+  for STRINGII in $MapListFunc ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -cifti-create-dense-scalar "$Folder"/"$Subject".${Map}."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L.${Map}."$Mesh"."$Ext".gii -roi-left "$Folder"/"$Subject".L."$ROI"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R.${Map}."$Mesh"."$Ext".gii -roi-right "$Folder"/"$Subject".R."$ROI"."$Mesh".shape.gii
@@ -250,23 +250,24 @@ for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"
   done
 done
 
-STRINGII=""
-for LowResMesh in ${LowResMeshes} ; do
-  STRINGII=`echo "${STRINGII}${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR ${T1wFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR "`
-done
-
 #Add CIFTI Maps to Spec Files
-STRINGIIList="corrThickness@dscalar"
+
+MapListDscalar="corrThickness@dscalar"
 if [ "${T2wPresent}" = "YES" ] ; then
-  STRINGIIList+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
+  MapListDscalar+=" MyelinMap_BC@dscalar SmoothedMyelinMap_BC@dscalar"
 fi
 
-for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"@"$AtlasSpaceFolder"@"$HighResMesh"k_fs_LR ${STRINGII} ; do
+LowResMeshListII=""
+for LowResMesh in ${LowResMeshes} ; do
+  LowResMeshListII+="${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR ${T1wFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR "
+done
+
+for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@native "$AtlasSpaceFolder"@"$AtlasSpaceFolder"@"$HighResMesh"k_fs_LR ${LowResMeshListII} ; do
   FolderI=`echo $STRING | cut -d "@" -f 1`
   FolderII=`echo $STRING | cut -d "@" -f 2`
   Mesh=`echo $STRING | cut -d "@" -f 3`
 
-  for STRINGII in $STRINGIIList ; do
+  for STRINGII in $MapListDscalar ; do
     Map=`echo $STRINGII | cut -d "@" -f 1`
     Ext=`echo $STRINGII | cut -d "@" -f 2`
     ${CARET7DIR}/wb_command -add-to-spec-file "$FolderI"/"$Subject"."$Mesh".wb.spec INVALID "$FolderII"/"$Subject"."$Map"."$Mesh"."$Ext".nii
