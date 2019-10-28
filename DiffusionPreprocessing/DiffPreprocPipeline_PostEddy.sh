@@ -377,19 +377,12 @@ main()
 	from_directory="${outdir}/eddy"
 	log_Msg "Copying eddy log files to package location: ${to_location}"
 
-	from_files=""
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_outlier_map "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_outlier_n_sqr_stdev_map "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_outlier_n_stdev_map"
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_outlier_report "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_movement_rms "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_restricted_movement_rms "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_parameters "
-	from_files+=" ${from_directory}/eddy_unwarped_images.eddy_post_eddy_shell_alignment_parameters "
+	# Log files are any 'eddy' output that doesn't have a .nii extension
+	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 
 	mkdir -p ${to_location}
 	for filename in ${from_files} ; do
-		cp ${filename} ${to_location}
+		cp -p ${filename} ${to_location}
 	done
 	
 	log_Msg "Completed"
