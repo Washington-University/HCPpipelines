@@ -66,7 +66,6 @@ Usage: ${script_name}
   [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]
 
 EOF
-	exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking

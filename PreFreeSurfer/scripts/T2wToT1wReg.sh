@@ -20,7 +20,6 @@ Usage: ${script_name}
 Usage information To Be Written
 
 EOF
-	exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking

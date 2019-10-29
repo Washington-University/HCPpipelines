@@ -27,7 +27,6 @@ e.g.:  ${script_name} -n -o output_name im1 im2
 Note that N>=2 (i.e., there must be at least two images in the list)
 
 EOF
-    exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking

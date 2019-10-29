@@ -27,7 +27,6 @@ Usage: ${script_name}
   --oT2brain=<output corrected T2 brain>
 
 EOF
-	exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking

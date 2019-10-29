@@ -12,7 +12,6 @@ show_usage() {
 ${script_name}: Sub-script of GenericfMRISurfaceProcessingPipeline_1res.sh
 
 EOF
-    exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking
@@ -31,6 +30,14 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+	exit 0
+fi
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value

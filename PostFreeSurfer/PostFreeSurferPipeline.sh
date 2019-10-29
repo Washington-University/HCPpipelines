@@ -30,7 +30,6 @@ Usage: ${script_name} [options]
 Usage information To Be Written
 
 EOF
-	exit 1
 }
 
 # Allow script to return a Usage statement, before any other output or checking
@@ -52,6 +51,13 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging funct
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+	exit 0
+fi
+
 ${HCPPIPEDIR}/show_version
 
 # ------------------------------------------------------------------------------
@@ -63,12 +69,6 @@ log_Check_Env_Var FSLDIR
 log_Check_Env_Var HCPPIPEDIR_PostFS
 
 ################################################## OPTION PARSING #####################################################
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-    show_usage
-fi
 
 log_Msg "Platform Information Follows: "
 uname -a
