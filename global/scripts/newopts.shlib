@@ -115,7 +115,7 @@ function opts_add_switch()
 {
     if (($# < 5))
     then
-        log_Err_Abort "parameter '$1' added improperly, check number of arguments and quoting"
+        log_Err_Abort "parameter '$1' added improperly, too few arguments"
     fi
     if [[ "$1" != --* ]]
     then
@@ -137,6 +137,10 @@ function opts_add_switch()
     fi
     for ((index = 7; index <= $#; ++index))
     do
+        if [[ "${!index}" != --* ]]
+        then
+            log_Err_Abort "parameter '$1' added improperly, legacy switch ${!index} doesn't start with '--', check your quoting"
+        fi
         opts_compat_aliases+=("${!index}" "$new_index")
     done
 }
