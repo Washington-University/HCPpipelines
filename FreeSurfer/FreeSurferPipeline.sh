@@ -257,7 +257,7 @@ get_options()
 		case ${argument} in
 			--help)
 				show_usage
-				exit 1
+				exit 0
 				;;
 			--subject-dir=*)
 				p_subject_dir=${argument#*=}
@@ -901,7 +901,15 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+    show_usage
+	exit 0
+fi
 
 ${HCPPIPEDIR}/show_version
 
