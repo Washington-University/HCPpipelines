@@ -53,7 +53,7 @@ source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-    show_usage
+	show_usage
 	exit 0
 fi
 

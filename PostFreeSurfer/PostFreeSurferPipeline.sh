@@ -34,8 +34,8 @@ EOF
 
 # Allow script to return a Usage statement, before any other output or checking
 if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+	show_usage
+	exit 1
 fi
 
 # ------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processin
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-    show_usage
+	show_usage
 	exit 0
 fi
 
