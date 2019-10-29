@@ -11,9 +11,9 @@
 opts_GetOpt1() {
     sopt="$1"
     shift 1
-    for fn in $@ ; do
+    for fn in "$@" ; do
     if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-        echo $fn | sed "s/^${sopt}=//"
+        echo "$fn" | sed "s/^${sopt}=//"
         return 0
     fi
     done
@@ -44,7 +44,7 @@ opts_DefaultOpt() {
 #
 # Description: 
 #
-#   checks command line arguments for "--version" indicating that 
+#   checks command line arguments for "--version" indicating that
 #   version information has been requested
 #
 # Input: 
@@ -52,7 +52,7 @@ opts_DefaultOpt() {
 #   The full list of command line arguments
 #   
 opts_CheckForVersionRequest() {
-    for fn in $@ ; do
+    for fn in "$@" ; do
         if [ "$fn" = "--version" ]; then
             return 0
         fi
@@ -63,7 +63,7 @@ opts_CheckForVersionRequest() {
 #
 # Description: 
 #
-#   checks command line arguments for "--help" indicating that 
+#   checks command line arguments for "--help" or "-h" indicating that
 #   help has been requested
 #
 # Input: 
@@ -71,8 +71,8 @@ opts_CheckForVersionRequest() {
 #   The full list of command line arguments
 #   
 opts_CheckForHelpRequest() {
-    for fn in $@ ; do
-        if [ "$fn" = "--help" ]; then
+    for fn in "$@" ; do
+        if [ "$fn" = "--help" ] || [ "$fn" = "-h" ]; then
             return 0
         fi
     done

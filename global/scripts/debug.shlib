@@ -125,7 +125,7 @@ debug_enable_trap()
 {
     HCP_DEBUG_USETRAP=ON
     #if we will exit on error, are noninteractive, and have set -u, also enable -e
-    if [[ "$HCP_DEBUG_EXIT_ON_ERROR" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    if [[ "${HCP_DEBUG_EXIT_ON_ERROR:-}" == "ON" && "$-" != *i* && "$-" == *u* ]]
     then
         set -e
     fi
@@ -150,7 +150,7 @@ debug_enable_exit()
 {
     HCP_DEBUG_EXIT_ON_ERROR=ON
     #if we will exit on error, are noninteractive, and have set -u, also enable -e
-    if [[ "$HCP_DEBUG_USETRAP" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    if [[ "${HCP_DEBUG_USETRAP:-}" == "ON" && "$-" != *i* && "$-" == *u* ]]
     then
         set -e
     fi
