@@ -35,7 +35,7 @@ source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line op
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-    show_usage
+	show_usage
 	exit 0
 fi
 
