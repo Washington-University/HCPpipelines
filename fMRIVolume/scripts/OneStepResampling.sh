@@ -188,8 +188,8 @@ if [ ${fMRIReferencePath} != "NONE" ] ; then
   verbose_echo " ... computing linear transform to external reference"
 
   # -- create a brain only reference and register scout to it linearly
-  ${FSLDIR}/bin/fslmaths ${fMRIReferenceImage} -mas ${fMRIReferenceImageMask} ${fMRIReferenceImageBrain}
-  ${FSLDIR}/bin/flirt -interp spline -in ${ScoutInputgdc} -ref ${fMRIReferenceImageBrain} -omat ${WD}/Scout_gdc2Reference_gdc.mat -out ${WD}/Scout_gdc2Reference_gdc
+  # ${FSLDIR}/bin/fslmaths ${fMRIReferenceImage} -mas ${fMRIReferenceImageMask} ${fMRIReferenceImageBrain}
+  ${FSLDIR}/bin/flirt -interp spline -in ${ScoutInputgdc} -ref ${fMRIReferenceImage} -omat ${WD}/Scout_gdc2Reference_gdc.mat -out ${WD}/Scout_gdc2Reference_gdc
 
   # -- are we also doing a nonlinear transform?
   if [ ${fMRIReferenceReg} = "nonlinear" ] ; then
@@ -303,7 +303,7 @@ ${FSLDIR}/bin/convertwarp --relout --rel --ref=${fMRI2Struct} --warp1=${Gradient
 ${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
 
 #and resample it to MNI space
-${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 
 # Compute average motion across frames
 cat ${fMRIFolder}/Movement_RelativeRMS.txt | awk '{ sum += $1} END { print sum / NR }' >> ${fMRIFolder}/Movement_RelativeRMS_mean.txt

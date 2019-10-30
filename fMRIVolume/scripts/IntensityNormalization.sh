@@ -95,7 +95,7 @@ verbose_echo "           --ofmri: ${OutputfMRI}"
 verbose_echo "         --inscout: ${ScoutInput}"
 verbose_echo "          --oscout: ${ScoutOutput}"
 verbose_echo "     --usejacobian: ${UseJacobian}"
-verbose_echo "         --boldmask: ${BOLDMask}"
+verbose_echo "        --boldmask: ${BOLDMask}"
 verbose_echo " "
 
 # default parameters
