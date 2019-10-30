@@ -17,6 +17,18 @@ globalscriptsdir=${HCPPIPEDIR_Global}
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
+echo "Generating eddy QC report in ${eddy_dir}/eddy_unwarped_images.qc"
+qc_command="${FSLDIR}/bin/eddy_quad "
+qc_command+="${eddydir}/eddy_unwarped_images "
+qc_command+="-idx ${eddydir}/index.txt "
+qc_command+="-par ${eddydir}/acqparams.txt "
+qc_command+="-m ${eddydir}/nodif_brain_mask.nii.gz "
+qc_command+="-b ${eddydir}/Pos_Neg.bvals "
+qc_command+="-g ${eddydir}/Pos_Neg.bvecs "
+qc_command+="-f ${workingdir}/topup/topup_Pos_Neg_b0_fieldcoef.nii.gz "
+qc_command+="-v "
+${qc_command}
+
 #Prepare for next eddy Release
 #if [ ! -e ${eddydir}/${EddyJacFlag} ]; then 
 #    echo "LSR resampling has been used. Eddy Output has already been combined."
