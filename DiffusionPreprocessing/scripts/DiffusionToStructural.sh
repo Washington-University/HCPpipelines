@@ -46,8 +46,6 @@ QAImage=`getopt1 "--QAimage" $@`                   # "$14" #Temporary file for s
 # Set default option values
 dof=`defaultopt $dof 6`
 
-echo $T1wOutputDirectory
-
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 GlobalScripts=${HCPPIPEDIR_Global}
 
@@ -97,30 +95,57 @@ done
 ${GlobalScripts}/Rotate_bvecs.sh "$DataDirectory"/bvecs "$WorkingDirectory"/diff2str.mat "$T1wOutputDirectory"/bvecs
 cp "$DataDirectory"/bvals "$T1wOutputDirectory"/bvals
 
-#Register diffusion data to T1w space. Account for gradient nonlinearities if requested
+DilateDistance=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
+
+# Register diffusion data to T1w space. Account for gradient nonlinearities (using one-step resampling)  if requested
 if [ ${GdcorrectionFlag} -eq 1 ]; then
     echo "Correcting Diffusion data for gradient nonlinearities and registering to structural space"
 	# We combine the GDC warp with the diff2str affine, and apply to warped/data_warped (i.e., the post-eddy, pre-GDC data)
 	# so that we can have a one-step resampling following 'eddy'
     ${FSLDIR}/bin/convertwarp --rel --relout --warp1="$DataDirectory"/warped/fullWarp --postmat="$WorkingDirectory"/diff2str.mat --ref="$T1wRestoreImage"_${DiffRes} --out="$WorkingDirectory"/grad_unwarp_diff2str
-    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
+    # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/data_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/data_warped_dilated.nii.gz
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
 
-    #Now register the grad_dev tensor 
+    # Transforms field of view mask to T1-weighted space
+    # (Be sure to use the fov_mask derived prior to application of GDC)
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
+
+    # Now register the grad_dev tensor
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
+    ${FSLDIR}/bin/imrm $DataDirectory/warped/data_warped_dilated
 else
-    #Register diffusion data to T1w space without considering gradient nonlinearities
-    ${FSLDIR}/bin/flirt -in "$DataDirectory"/data -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
+    # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/data.nii.gz $DilateDistance NEAREST $DataDirectory/data_dilated.nii.gz
+    # Register diffusion data to T1w space without considering gradient nonlinearities
+    ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
+
+    # Transforms field of view mask to T1-weighted space
+    ${FSLDIR}/bin/flirt -in "$DataDirectory"/fov_mask -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp trilinear -out "$T1wOutputDirectory"/fov_mask
+    ${FSLDIR}/bin/imrm $DataDirectory/data_dilated
 fi
 
-${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/data  #Mask-out data outside the brain 
-${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (caused by spline interpolation) from final data
+# only include voxels fully(!) within the field of view for every volume
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/fov_mask -thr 0.999 -bin "$T1wOutputDirectory"/fov_mask
+
+# Mask out data outside the brain and outside the fov
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp -mas "$T1wOutputDirectory"/fov_mask "$T1wOutputDirectory"/data
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (from eddy) from final data
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
 
 # Identify any voxels that are zeros across all frames and remove those from the final nodif_brain_mask
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/immv "$T1wOutputDirectory"/nodif_brain_mask.nii.gz "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/nodif_brain_mask_old.nii.gz -mas "$T1wOutputDirectory"/temp "$T1wOutputDirectory"/nodif_brain_mask
+
+# Create a simple summary text file of the percentage of spatial coverage of the dMRI data inside the FS-derived brain mask
+NvoxBrainMask=`fslstats "$T1wOutputDirectory"/nodif_brain_mask_old -V | awk '{print $1}'`
+NvoxFinalMask=`fslstats "$T1wOutputDirectory"/nodif_brain_mask -V | awk '{print $1}'`
+PctCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxBrainMask}" | bc -l`
+echo "PctCoverage, NvoxFinalMask, NvoxBrainMask" >| "$T1wOutputDirectory"/nodif_brain_mask.stats.txt
+echo "${PctCoverage}, ${NvoxFinalMask}, ${NvoxBrainMask}" >> "$T1wOutputDirectory"/nodif_brain_mask.stats.txt
+
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/temp
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_old
 
