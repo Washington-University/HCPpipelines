@@ -31,7 +31,7 @@
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-usage()
+show_usage()
 {
 	cat <<EOF
 
@@ -115,8 +115,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--path=*)
 				p_StudyFolder=${argument#*=}
@@ -159,7 +159,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -678,7 +678,7 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    usage
+    show_usage
     exit 1
 fi
 
@@ -689,11 +689,21 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
-# Verify any other needed environment variables are set
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
@@ -701,7 +711,7 @@ log_Check_Env_Var FSL_FIXDIR
 # Show tool versions
 show_tool_versions
 
-# Determine whether named or positional parameters are used
+# Determine whether named or positional parameters are used and invoke the 'main' function
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
 	log_Msg "Using named parameters"
