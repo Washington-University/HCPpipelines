@@ -1,19 +1,61 @@
 #!/bin/bash
 
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
 g_script_name=`basename ${0}`
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-log_SetToolName "${g_script_name}"
+show_usage() {
+	cat <<EOF
+
+${g_script_name}: Generate Spin Echo Bias Field Prerequisites
+
+Usage: ${g_script_name} [options]
+
+Usage information To Be Written
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+	show_usage
+	exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
 log_Debug_On
 
-usage()
-{
-	echo ""
-	echo "  Generate Spin Echo Bias Field Prerequisites "
-	echo ""
-	echo "  Usage: ${g_script_name} - TO BE WRITTEN"
-	echo ""
-}
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+
+# ------------------------------------------------------------------------------
+#  Support Functions
+# ------------------------------------------------------------------------------
 
 get_options() 
 {
@@ -35,8 +77,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--path=*)
 				g_path_to_study_folder=${argument#*=}
@@ -59,10 +101,8 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
-				echo "ERROR: unrecognized option: ${argument}"
-				echo ""
-				exit 1
+				show_usage
+				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
 	done
@@ -109,6 +149,10 @@ show_tool_versions()
 	log_Msg "Showing HCP Pipelines version"
 	cat ${HCPPIPEDIR}/version.txt
 }
+
+# ------------------------------------------------------------------------------
+#  Main Function
+# ------------------------------------------------------------------------------
 
 main()
 {
@@ -202,6 +246,6 @@ main()
 }
 
 #
-# Invoke the main function to get things started
+# Invoke the 'main' function to get things started
 #
 main $@
