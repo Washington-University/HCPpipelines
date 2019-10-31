@@ -72,9 +72,9 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-# Verify that any other needed environment variables are set
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var MATLAB_HOME
 
 # Invoke the main processing
