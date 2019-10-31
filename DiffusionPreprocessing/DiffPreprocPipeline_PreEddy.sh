@@ -62,29 +62,21 @@
 #
 #~ND~END~
 
-# Load Function Libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-# Global values
-DEFAULT_B0_MAX_BVAL=50
-SCRIPT_NAME=$(basename ${0})
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-#
-# Function Description
-#  Show usage information for this script
-#
-usage()
+show_usage()
 {
 	cat << EOF
 
 Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline
 
-Usage: ${SCRIPT_NAME} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are: [ ] = optional; < > = user supplied value
-  [--help]                show usage information and exit with non-zero return
-                          code
+  [--help]                show usage information and exit with non-zero return code
   [--version]             show version information and exit with 0 as return code
   --path=<study-path>     path to subject's data folder
   --subject=<subject-id>  subject ID
@@ -115,10 +107,9 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 Return Status Value:
 
-  0                       if help was not requested, all parameters were properly
-                          formed, and processing succeeded
-  Non-zero                Otherwise - malformed parameters, help requested, or a
-                          processing failure was detected
+  0                       All parameters were properly formed and processing succeeded,
+                          or help requested.
+  Non-zero                otherwise - malformed parameters or a processing failure was detected
 
 Required Environment Variables:
 
@@ -150,6 +141,11 @@ EOF
 #                         instead of actually executed. Otherwise, set to
 #                         empty string.
 #
+
+# --------------------------------------------------------------------------------
+#  Support Functions
+# --------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
@@ -175,8 +171,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--version)
 				version_show $@
@@ -219,7 +215,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				echo "ERROR: Unrecognized Option: ${argument}"
 				exit 1
 				;;
@@ -262,14 +258,14 @@ get_options()
 	fi
 
 	if [ ! -z "${error_msgs}" ] ; then
-		usage
+		show_usage
 		echo -e ${error_msgs}
 		echo ""
 		exit 1
 	fi
 
 	# report parameters
-	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - Start --"
+	echo "-- ${g_script_name}: Specified Command-Line Parameters - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
 	echo "   Subject: ${Subject}"
 	echo "   PEdir: ${PEdir}"
@@ -279,27 +275,16 @@ get_options()
 	echo "   DWIName: ${DWIName}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
-	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - End --"
+	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
 #
 # Function Description
-#  Validate necessary environment variables
+#  Validate necessary scripts exist
 #
-validate_environment_vars()
+validate_scripts()
 {
 	local error_msgs=""
-
-	# validate
-	if [ -z ${HCPPIPEDIR} ] ; then
-		error_msgs+="\nERROR: HCPPIPEDIR environment variable not set"
-	fi
-
-	if [ -z ${FSLDIR} ] ; then
-		error_msgs+="\nERROR: FSLDIR environment variable not set"
-	fi
-
-	HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 
 	if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ] ; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
@@ -310,17 +295,11 @@ validate_environment_vars()
 	fi
 
 	if [ ! -z "${error_msgs}" ] ; then
-		usage
+		show_usage
 		echo -e ${error_msgs}
 		echo ""
 		exit 1
 	fi
-
-	# report
-	echo "-- ${SCRIPT_NAME}: Environment Variables Used - Start --"
-	echo "   HCPPIPEDIR: ${HCPPIPEDIR}"
-	echo "   FSLDIR: ${FSLDIR}"
-	echo "-- ${SCRIPT_NAME}: Environment Variables Used - End --"
 }
 
 #
@@ -350,13 +329,10 @@ main()
 	b0dist=45                # Minimum distance in volumes between b0s considered for preprocessing
 
 	# Get Command Line Options
-	get_options $@
+	get_options "$@"
 
-	# Validate environment variables
-	validate_environment_vars $@
-
-	# Establish tool name for logging
-	log_SetToolName "${SCRIPT_NAME}"
+	# Validate scripts
+	validate_scripts "$@"
 
 	# Establish output directory paths
 	outdir=${StudyFolder}/${Subject}/${DWIName}
@@ -490,11 +466,54 @@ main()
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
 
-	log_Msg "Completed"
+	log_Msg "Completed!"
 	exit 0
 }
 
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+# Establish defaults
+DEFAULT_B0_MAX_BVAL=50
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# Verify that HCPPIPEDIR Environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib	           # version_ functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+# Set other necessary variables, contingent on HCPPIPEDIR
+HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+
 #
-# Invoke the main function to get things started
+# Invoke the 'main' function to get things started
 #
 main $@

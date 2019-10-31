@@ -91,30 +91,21 @@
 #
 #~ND~END~
 
-# Load Function Libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/version.shlib	   # version_ functions
 
-# Global values
-DEFAULT_B0_MAX_BVAL=50
-DEFAULT_DEGREES_OF_FREEDOM=6
-SCRIPT_NAME=$(basename ${0})
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-#
-# Function Descripton
-#  Show usage information for this script
-#
-usage()
+show_usage()
 {
 	cat << EOF
 
 Perform the steps of the HCP Diffusion Preprocessing Pipeline
 
-Usage: ${SCRIPT_NAME} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are: [ ] = optional; < > = user supplied value
-  [--help]                show usage information and exit with a non-zero return
-                          code
+  [--help]                show usage information and exit with a non-zero return code
   [--version]             show version information and exit with 0 as return code
   --path=<study-path>     path to subject's data folder
   --subject=<subject-id>  subject ID
@@ -196,10 +187,9 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 Return Status Value:
 
-  0                       if help was not requested, all parameters were properly
-                          formed, and processing succeeded
-  Non-zero                Otherwise - malformed parameters, help requested, or a
-                          processing failure was detected
+  0                       All parameters were properly formed and processing succeeded,
+                          or help requested.
+  Non-zero                otherwise - malformed parameters or a processing failure was detected
 
 Required Environment Variables:
 
@@ -244,6 +234,11 @@ EOF
 #                         DiffPreprocPipeline_PostEddy.sh script and
 #                         subsequently to eddy_postproc.sh script
 #
+
+# --------------------------------------------------------------------------------
+#  Support Functions
+# --------------------------------------------------------------------------------
+
 get_options()
 {
 	local arguments=($@)
@@ -273,8 +268,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--version)
 				version_show $@
@@ -334,7 +329,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				echo "ERROR: Unrecognized Option: ${argument}"
 				exit 1
 				;;
@@ -385,14 +380,14 @@ get_options()
 	fi
 
 	if [ ! -z "${error_msgs}" ] ; then
-		usage
+		show_usage
 		echo -e ${error_msgs}
 		echo ""
 		exit 1
 	fi
 
 	# report parameters
-	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - Start --"
+	echo "-- ${g_script_name}: Specified Command-Line Parameters - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
 	echo "   Subject: ${Subject}"
 	echo "   PEdir: ${PEdir}"
@@ -406,18 +401,17 @@ get_options()
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
-	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - End --"
+	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
 #
 # Function Description
-#  Validate necessary environment variables
+#  Validate necessary scripts exist
 #
-validate_environment_vars()
+validate_scripts()
 {
 	local error_msgs=""
 
-	# validate
 	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ] ; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
 	fi
@@ -430,21 +424,12 @@ validate_environment_vars()
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
-	if [ -z ${FSLDIR} ] ; then
-		error_msgs+="\nERROR: FSLDIR environment variable not set"
-	fi
-
 	if [ ! -z "${error_msgs}" ] ; then
-		usage
+		show_usage
 		echo -e ${error_msgs}
 		echo ""
 		exit 1
 	fi
-
-	# report
-	echo "-- ${SCRIPT_NAME}: Environment Variables Used - Start --"
-	echo "   FSLDIR: ${FSLDIR}"
-	echo "-- ${SCRIPT_NAME}: Environment Variables Used - End --"
 }
 
 #
@@ -454,13 +439,10 @@ validate_environment_vars()
 main()
 {
 	# Get Command Line Options
-	get_options $@
+	get_options "$@"
 
-	# Validate environment variables
-	validate_environment_vars $@
-
-	# Establish tool name for logging
-	log_SetToolName "${SCRIPT_NAME}"
+	# Validate scripts
+	validate_scripts "$@"
 
 	log_Msg "Invoking Pre-Eddy Steps"
 	local pre_eddy_cmd=""
@@ -509,12 +491,53 @@ main()
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
 	${post_eddy_cmd}
 
-	log_Msg "Completed"
+	log_Msg "Completed!"
 	exit 0
 }
 
+# ------------------------------------------------------------------------------
+#  "Global" processing - everything above here should be in a function
+# ------------------------------------------------------------------------------
+
+# Establish defaults
+DEFAULT_B0_MAX_BVAL=50
+DEFAULT_DEGREES_OF_FREEDOM=6
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# Verify that HCPPIPEDIR Environment variable is set
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib	           # version_ functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
 #
-# Invoke the main function to get things started
+# Invoke the 'main' function to get things started
 #
 main $@
 
