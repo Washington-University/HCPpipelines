@@ -180,28 +180,31 @@ ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${
 if [ ${fMRIReferencePath} != "NONE" ] ; then
 
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"
-  fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_mask
   fMRIReferenceImageBrain="$WD"/fMRIReference_gdc_brain
+  ScoutImageBrain="$WD"/Scout_gdc_brain
 
   # -- compute a linear transform
 
   verbose_echo " ... computing linear transform to external reference"
 
-  # -- create a brain only reference and register scout to it linearly
-  # ${FSLDIR}/bin/fslmaths ${fMRIReferenceImage} -mas ${fMRIReferenceImageMask} ${fMRIReferenceImageBrain}
-  ${FSLDIR}/bin/flirt -interp spline -in ${ScoutInputgdc} -ref ${fMRIReferenceImage} -omat ${WD}/Scout_gdc2Reference_gdc.mat -out ${WD}/Scout_gdc2Reference_gdc
+  # -- create brain only scout and reference and register scout to reference linearly
+  ${FSLDIR}/bin/bet ${fMRIReferenceImage} ${fMRIReferenceImageBrain}
+  ${FSLDIR}/bin/bet ${ScoutInputgdc} ${ScoutImageBrain}
+
+  ${FSLDIR}/bin/flirt -interp spline -in ${ScoutImageBrain} -ref ${fMRIReferenceImageBrain} -omat ${WD}/Scout_gdc2Reference_gdc.mat -out ${WD}/Scout_gdc2Reference_gdc_brain
 
   # -- are we also doing a nonlinear transform?
   if [ ${fMRIReferenceReg} = "nonlinear" ] ; then
 
     verbose_echo " ... computing nonlinear transform to external reference"
-    ${FSLDIR}/bin/fnirt --in=${ScoutInputgdc} --ref=${fMRIReferenceImage} --aff=${WD}/Scout_gdc2Reference_gdc.mat --refmask=${fMRIReferenceImageMask} --fout=${WD}/Scout_gdc2Reference_gdc_nonlin --cout=${WD}/Scout_gdc2Reference_gdc_nonlin_warp    
+    ${FSLDIR}/bin/fnirt --in=${ScoutInputgdc} --ref=${fMRIReferenceImage} --aff=${WD}/Scout_gdc2Reference_gdc.mat --iout=${WD}/Scout_gdc2Reference_gdc_nonlin --fout=${WD}/Scout_gdc2Reference_gdc_nonlin_warp    
 
     verbose_echo " ... computing combined warp to standard"
     ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/Scout_gdc2Reference_gdc_nonlin_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/fMRI2Ref2Struct_warp
     
     # -- We now use the combined fMRI to reference to structural warp
-    fMRI2Struct="${WD}/fMRI2Ref2Struct_warp"
+    prematstr=""
+    fMRI2Struct="${WD}/fMRI2Ref2Struct_warp"    
   else
     # -- we need a premat for computing the combined warp if only linear registration to external reference is used, and we are using the adopted fMRI2STructural warp
     prematstr="--premat=${WD}/Scout_gdc2Reference_gdc.mat"
