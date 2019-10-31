@@ -19,9 +19,13 @@ export CARET7DIR=
 #export FSLDIR=/usr/local/fsl
 #source "$FSLDIR/etc/fslconf/fsl.sh"
 
+## Let FreeSurfer explicitly know what version of FSL to use (this shouldn't need changing)
+export FSL_DIR="${FSLDIR}"
+
 ## Set up FreeSurfer (if not already done so in the running environment)
-## Uncomment the following line (remove the leading #) and correct the FREESURFER_HOME setting for your setup
+## Uncomment the following 2 lines (remove the leading #) and correct the FREESURFER_HOME setting for your setup
 #export FREESURFER_HOME=/usr/local/bin/freesurfer
+#source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Trick to allow certain setups to source an unmodified SetUp... and get some functionality
 if [[ -z "$HCPPIPEDIR" ]]
@@ -85,12 +89,6 @@ if [[ ! -x "$CARET7DIR/wb_command" ]]
 then
     echo "CARET7DIR ($CARET7DIR) does not contain wb_command, please fix the settings in the setup script" 1>&2
 fi
-
-# Complete the setup of FreeSurfer
-# Let FreeSurfer know what version of FSL to use
-# FreeSurfer uses FSL_DIR instead of FSLDIR to determine the FSL version
-export FSL_DIR="${FSLDIR}"
-source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Add the specified versions of some things to the front of $PATH, so we can stop using absolute paths everywhere
 export PATH="$CARET7DIR:$FSLDIR/bin:$PATH"
