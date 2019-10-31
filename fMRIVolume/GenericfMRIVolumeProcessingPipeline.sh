@@ -471,11 +471,26 @@ if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_prestc
 fi
 
-#Create fake "Scout" if it doesn't exist
-if [ $fMRIScout = "NONE" ] ; then
-  ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
-else
-  ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+# --- Copy over scout (own or reference if specified), create fake if none exists
+
+if [ "$fMRIReference" != "NONE" ]; then
+    # --- copy over exisiting scout images
+    log_Msg "Copying Scout from Reference BOLD"
+    ${FSLDIR}/bin/imcp ${fMRIReferencePath}/Scout* ${fMRIFolder}
+
+    for simage in SBRef_nonlin SBRef_nonlin_norm
+    do
+        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_simage" ${fMRIFolder}/"${NameOffMRI}_simage"
+    done
+
+    ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/"${fMRIReference}_SBRef" ${ResultsFolder}/"${NameOffMRI}_SBRef"
+else    
+    # --- Create fake "Scout" if it doesn't exist
+    if [ $fMRIScout = "NONE" ] ; then
+      ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
+    else
+      ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+    fi
 fi
 
 if [ $DistortionCorrection = "NONE" ] ; then
@@ -508,9 +523,11 @@ if [ $DistortionCorrection = "NONE" ] ; then
       ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
 
       # --- reorient SCOUT
-      ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
-      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
-      ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
+      if [ "$fMRIReference" != "NONE" ]; then
+          ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
+          ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
+          ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
+      fi
     fi
 fi
 
@@ -564,7 +581,8 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
        "$MotionMatrixPrefix" \
-       "$MotionCorrectionType"
+       "$MotionCorrectionType" \
+       "$fMRIReferenceReg"
 
 # EPI Distortion Correction and EPI to T1w Registration
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased

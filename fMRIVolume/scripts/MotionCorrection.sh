@@ -21,6 +21,21 @@ OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
 MotionCorrectionType="$8"
+fMRIReferenceReg="$9"
+
+verbose_red_echo "---> ${MotionCorrectionType} based motion correction"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "             WorkingDirectory: ${WorkingDirectory}"
+verbose_echo "                    InputfMRI: ${InputfMRI}"
+verbose_echo "                        Scout: ${Scout}"
+verbose_echo "                   OutputfMRI: ${OutputfMRI}"
+verbose_echo "       OutputMotionRegressors: ${OutputMotionRegressors}"
+verbose_echo "     OutputMotionMatrixFolder: ${OutputMotionMatrixFolder}"
+verbose_echo " OutputMotionMatrixNamePrefix: ${OutputMotionMatrixNamePrefix}"
+verbose_echo "         MotionCorrectionType: ${MotionCorrectionType}"
+verbose_echo "             fMRIReferenceReg: ${fMRIReferenceReg}"
+verbose_echo " "
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
@@ -41,6 +56,32 @@ case "$MotionCorrectionType" in
     ;;
 esac
 
+# Run nonlinear registration if needed
+
+# If registering across runs, perform nonlinear registration if requested.
+# (If using linear registration, don't need to do anything extra here, since
+# linear registration is handled implicitly via the motion correction).
+# Note that if registering across runs, the "$Scout" input to MotionCorrection will
+# be the *reference* scout image (by construction in GenericfMRIVolume).
+
+if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
+  verbose_echo " ... computing nonlinear transform to reference"
+  verbose_echo "     ... generating bold average"
+  # Generating a mean image to increase SNR to noise ratio when registering to scout.
+  ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
+
+  # Note that the name of the warp is hard-coded into OneStepResampling.sh
+  cmd=("${FSLDIR}/bin/fnirt" --in="${WorkingDirectory}/${OutputfMRIBasename}_avg" --ref="${Scout}" --iout="${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin" --cout="${WorkingDirectory}/postmc2fmriref_warp")
+  verbose_echo "     ... running fnirt: ${cmd[*]}"
+  "${cmd[@]}"
+
+  verbose_echo "     ... applying warp"
+  tmcbold="_nonlin"
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/postmc2fmriref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}
+else
+  tmcbold=""
+fi
+
 # Move output files about
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par
 if [ -e $OutputMotionMatrixFolder ] ; then
@@ -49,7 +90,7 @@ fi
 mkdir $OutputMotionMatrixFolder
 
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/* ${OutputMotionMatrixFolder}
-mv -f ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${OutputfMRI}.nii.gz
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}.nii.gz ${OutputfMRI}.nii.gz
 
 # Change names of all matrices in OutputMotionMatrixFolder
 log_Msg "Change names of all matrices in OutputMotionMatrixFolder"
