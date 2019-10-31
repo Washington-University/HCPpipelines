@@ -7,7 +7,7 @@
 # ## Copyright Notice
 #
 # Copyright (C) 2012-2016 The Human Connectome Project
-# 
+#
 # * Washington University in St. Louis
 # * University of Minnesota
 # * Oxford University
@@ -30,10 +30,10 @@
 #
 # ## Description
 #
-# This script, <code>DiffPreprocPipeline_PreEddy.sh</code>, implements the first part of the 
+# This script, <code>DiffPreprocPipeline_PreEddy.sh</code>, implements the first part of the
 # Preprocessing Pipeline for diffusion MRI describe in [Glasser et al. 2013][GlasserEtAl].
 # The entire Preprocessing Pipeline for diffusion MRI is split into pre-eddy, eddy,
-# and post-eddy scripts so that the running of eddy processing can be submitted 
+# and post-eddy scripts so that the running of eddy processing can be submitted
 # to a cluster scheduler to take advantage of running on a set of GPUs without forcing
 # the entire diffusion preprocessing to occur on a GPU enabled system.  This particular
 # script implements the pre-eddy part of the diffusion preprocessing.
@@ -41,7 +41,7 @@
 # ## Prerequisite Installed Software for the Diffusion Preprocessing Pipeline
 #
 # * [FSL][FSL] - FMRIB's Software Library (version 5.0.6)
-#   
+#
 #   FSL's environment setup script must also be sourced
 #
 # * [FreeSurfer][FreeSurfer] (version 5.3.0-HCP)
@@ -51,7 +51,7 @@
 # ## Prerequisite Environment Variables
 #
 # See output of usage function: e.g. <code>$ ./DiffPreprocPipeline_PreEddy.sh --help</code>
-# 
+#
 # <!-- References -->
 #
 # [HCP]: http://www.humanconnectome.org
@@ -70,7 +70,7 @@ source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 DEFAULT_B0_MAX_BVAL=50
 SCRIPT_NAME=$(basename ${0})
 
-# 
+#
 # Function Description
 #  Show usage information for this script
 #
@@ -96,7 +96,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                             data_RL1@data_RL2@...data_RLn, or
                             data_PA1@data_PA2@...data_PAn
   --negData=<negative-phase-encoding-data>
-                          @ symbol separated list of data with 'negative' phase 
+                          @ symbol separated list of data with 'negative' phase
                           encoding direction; e.g.,
                             data_LR1@data_LR2@...data_LRn, or
                             data_AP1@data_AP2@...data_APn
@@ -105,7 +105,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--dwiname=<DWIname>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--b0maxbval=<b0-max-bval>]
-                          Volumes with a bvalue smaller than this value will be 
+                          Volumes with a bvalue smaller than this value will be
                           considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
@@ -115,19 +115,15 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
 Return Status Value:
 
-  0                       if help was not requested, all parameters were properly 
+  0                       if help was not requested, all parameters were properly
                           formed, and processing succeeded
   Non-zero                Otherwise - malformed parameters, help requested, or a
                           processing failure was detected
 
 Required Environment Variables:
 
-  HCPPIPEDIR              The home directory for the version of the HCP Pipeline 
+  HCPPIPEDIR              The home directory for the version of the HCP Pipeline
                           Scripts being used.
-  HCPPIPEDIR_dMRI         Location of the Diffusion MRI Preprocessing sub-scripts
-                          that are used to carry out some of the steps of the 
-                          Diffusion Preprocessing Pipeline
-                          (e.g. \${HCPPIPEDIR}/DiffusionPreprocessing/scripts)
   FSLDIR                  The home directory for FSL
 
 EOF
@@ -141,23 +137,23 @@ EOF
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
 #  ${PEdir}	              Phase Encoding Direction, 1=RL/LR, 2=PA/AP
-#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase 
+#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase
 #                         encoding direction
 #  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
-#                         encoding direction 
+#                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
 #  ${DWIName}             Name to give DWI output directories
-#  ${b0maxbval}           Volumes with a bvalue smaller than this value will 
+#  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
-#  ${runcmd}              Set to a user specified command to use if user has 
-#                         requested that commands be echo'd (or printed) 
-#                         instead of actually executed. Otherwise, set to 
+#  ${runcmd}              Set to a user specified command to use if user has
+#                         requested that commands be echo'd (or printed)
+#                         instead of actually executed. Otherwise, set to
 #                         empty string.
 #
 get_options()
 {
 	local arguments=($@)
-	
+
 	# initialize global output variables
 	unset StudyFolder
 	unset Subject
@@ -168,15 +164,15 @@ get_options()
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
-	
+
 	# parse arguments
 	local index=0
 	local numArgs=${#arguments[@]}
 	local argument
-	
+
 	while [ ${index} -lt ${numArgs} ] ; do
 		argument=${arguments[index]}
-		
+
 		case ${argument} in
 			--help)
 				usage
@@ -229,38 +225,38 @@ get_options()
 				;;
 		esac
 	done
-	
+
 	local error_msgs=""
 
 	# check required parameters
 	if [ -z ${StudyFolder} ] ; then
 		error_msgs+="\nERROR: <study-path> not specified"
 	fi
-	
+
 	if [ -z ${Subject} ] ; then
 		error_msgs+="\nERROR: <subject-id> not specified"
 	fi
-	
+
 	if [ -z ${PEdir} ] ; then
 		error_msgs+="\nERROR: <phase-encoding-dir> not specified"
 	fi
-	
+
 	if [ -z ${PosInputImages} ] ; then
 		error_msgs+="\nERROR: <positive-phase-encoded-data> not specified"
 	fi
-	
+
 	if [ -z ${NegInputImages} ] ; then
 		error_msgs+="\nERROR: <negative-phase-encoded-data> not specified"
 	fi
-	
+
 	if [ -z ${echospacing} ] ; then
 		error_msgs+="\nERROR: <echo-spacing> not specified"
 	fi
-	
+
 	if [ -z ${b0maxbval} ] ; then
 		error_msgs+="\nERROR: <b0-max-bval> not specified"
 	fi
-	
+
 	if [ -z ${DWIName} ] ; then
 		error_msgs+="\nERROR: <DWIName> not specified"
 	fi
@@ -271,7 +267,7 @@ get_options()
 		echo ""
 		exit 1
 	fi
-	
+
 	# report parameters
 	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - Start --"
 	echo "   StudyFolder: ${StudyFolder}"
@@ -286,29 +282,31 @@ get_options()
 	echo "-- ${SCRIPT_NAME}: Specified Command-Line Parameters - End --"
 }
 
-# 
+#
 # Function Description
 #  Validate necessary environment variables
 #
-validate_environment_vars() 
+validate_environment_vars()
 {
 	local error_msgs=""
 
-	# validate	
-	if [ -z ${HCPPIPEDIR_dMRI} ] ; then
-		error_msgs+="\nERROR: HCPPIPEDIR_dMRI environment variable not set"
+	# validate
+	if [ -z ${HCPPIPEDIR} ] ; then
+		error_msgs+="\nERROR: HCPPIPEDIR environment variable not set"
 	fi
-	
-	if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ] ; then
-		error_msgs+="\nERROR: HCPPIPEDIR_dMRI/basic_preproc.sh not found"
-	fi
-	
-	if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ] ; then
-		error_msgs+="\nERROR: HCPPIPEDIR_dMRI/run_topup.sh not found"
-	fi
-	
+
 	if [ -z ${FSLDIR} ] ; then
 		error_msgs+="\nERROR: FSLDIR environment variable not set"
+	fi
+
+	HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+
+	if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ] ; then
+		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
+	fi
+
+	if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ] ; then
+		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
 	fi
 
 	if [ ! -z "${error_msgs}" ] ; then
@@ -317,10 +315,10 @@ validate_environment_vars()
 		echo ""
 		exit 1
 	fi
-	
+
 	# report
 	echo "-- ${SCRIPT_NAME}: Environment Variables Used - Start --"
-	echo "   HCPPIPEDIR_dMRI: ${HCPPIPEDIR_dMRI}"
+	echo "   HCPPIPEDIR: ${HCPPIPEDIR}"
 	echo "   FSLDIR: ${FSLDIR}"
 	echo "-- ${SCRIPT_NAME}: Environment Variables Used - End --"
 }
@@ -350,20 +348,20 @@ main()
 	# Hard-Coded variables for the pipeline
 	MissingFileFlag="EMPTY"  # String used in the input arguments to indicate that a complete series is missing
 	b0dist=45                # Minimum distance in volumes between b0s considered for preprocessing
-	
+
 	# Get Command Line Options
 	get_options $@
-	
+
 	# Validate environment variables
 	validate_environment_vars $@
-	
+
 	# Establish tool name for logging
 	log_SetToolName "${SCRIPT_NAME}"
-	
+
 	# Establish output directory paths
 	outdir=${StudyFolder}/${Subject}/${DWIName}
 	outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
-	
+
 	# Delete any existing output sub-directories
 	if [ -d ${outdir} ] ; then
 		${runcmd} rm -rf ${outdir}/rawdata
@@ -372,11 +370,11 @@ main()
 		${runcmd} rm -rf ${outdir}/data
 		${runcmd} rm -rf ${outdir}/reg
 	fi
-	
+
 	# Make sure output directories exist
 	${runcmd} mkdir -p ${outdir}
 	${runcmd} mkdir -p ${outdirT1w}
-	
+
 	log_Msg "outdir: ${outdir}"
 	${runcmd} mkdir ${outdir}/rawdata
 	${runcmd} mkdir ${outdir}/topup
@@ -393,18 +391,18 @@ main()
 	baseNeg="Neg"
 	log_Msg "basePos: ${basePos}"
 	log_Msg "baseNeg: ${baseNeg}"
-	
+
 	# copy positive raw data
 	log_Msg "Copying positive raw data to working directory"
 	PosInputImages=`echo ${PosInputImages} | sed 's/@/ /g'`
 	log_Msg "PosInputImages: ${PosInputImages}"
-	
+
 	Pos_count=1
 	for Image in ${PosInputImages} ; do
 		if [[ ${Image} =~ ^.*EMPTY.*$  ]] ; then
 			Image=EMPTY
 		fi
-		
+
 		if [ ${Image} = ${MissingFileFlag} ] ; then
 			PosVols[${Pos_count}]=0
 		else
@@ -416,18 +414,18 @@ main()
 		fi
 		Pos_count=$((${Pos_count} + 1))
 	done
-	
+
 	# copy negative raw data
 	log_Msg "Copying negative raw data to working directory"
 	NegInputImages=`echo ${NegInputImages} | sed 's/@/ /g'`
 	log_Msg "NegInputImages: ${NegInputImages}"
-	
+
 	Neg_count=1
 	for Image in ${NegInputImages} ; do
 		if [[ ${Image} =~ ^.*EMPTY.*$  ]] ; then
 			Image=EMPTY
 		fi
-		
+
 		if [ ${Image} = ${MissingFileFlag} ] ; then
 			NegVols[${Neg_count}]=0
 		else
@@ -439,7 +437,7 @@ main()
 		fi
 		Neg_count=$((${Neg_count} + 1))
 	done
-	
+
 	# verify positive and negative datasets are provided in pairs
 	if [ ${Pos_count} -ne ${Neg_count} ] ; then
 		log_Msg "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
@@ -447,16 +445,16 @@ main()
 		exit 1
 	fi
 
-	# Create two files for each phase encoding direction, that for each series contain the number of 
+	# Create two files for each phase encoding direction, that for each series contain the number of
 	# corresponding volumes and the number of actual volumes. The file e.g. Pos_SeriesCorrespVolNum.txt
-	# will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M 
+	# will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M
 	# from 'positive' series J has corresponding 'negative' polarity volumes. This file is used in basic_preproc
-	# to generate topup/eddy indices and extract corresponding b0s for topup. The file e.g. Pos_SeriesVolNum.txt 
-	# will have as many rows as maximum series pairs (even unmatched pairs). The entry M N in row J 
+	# to generate topup/eddy indices and extract corresponding b0s for topup. The file e.g. Pos_SeriesVolNum.txt
+	# will have as many rows as maximum series pairs (even unmatched pairs). The entry M N in row J
 	# indicates that the 'positive' series J has its 0-M volumes corresponding to 'negative' series J and
 	# 'positive' series J has N volumes in total. This file is used in eddy_combine.
 	log_Msg "Create two files for each phase encoding direction"
-	
+
 	Paired_flag=0
 	for (( j=1; j<${Pos_count}; j++ )) ; do
 		CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
@@ -470,7 +468,7 @@ main()
 			fi
 		fi
 	done
-	
+
 	for (( j=1; j<${Neg_count}; j++ )) ; do
 		CorrVols=`min ${NegVols[${j}]} ${PosVols[${j}]}`
 		${runcmd} echo ${CorrVols} ${NegVols[${j}]} >> ${outdir}/eddy/Neg_SeriesVolNum.txt
@@ -479,19 +477,19 @@ main()
 			${runcmd} echo ${CorrVols} >> ${outdir}/rawdata/${baseNeg}_SeriesCorrespVolNum.txt
 		fi
 	done
-	
+
 	if [ ${Paired_flag} -eq 0 ] ; then
 		log_Msg "Wrong Input! No pairs of phase encoding directions have been found!"
 		log_Msg "At least one pair is needed!"
 		exit 1
 	fi
-	
+
 	log_Msg "Running Basic Preprocessing"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
-	
+
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
-	
+
 	log_Msg "Completed"
 	exit 0
 }

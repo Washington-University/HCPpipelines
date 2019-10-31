@@ -26,16 +26,16 @@
 #
 # This script is a simple dispatching script for running Task fMRI Analysis.  It determines what
 # version of [FSL][FSL] is installed and in use and then invokes either V1.0 of the Task fMRI Analysis
-# if the version of [FSL][FSL] is 5.0.6 or earlier or V2.0 of the Task fMRI Analysis if the version 
+# if the version of [FSL][FSL] is 5.0.6 or earlier or V2.0 of the Task fMRI Analysis if the version
 # of [FSL][FSL] is 5.0.7 or later.
 #
 # The ${FSLDIR}/etc/fslversion file is used to determine the version of [FSL][FSL] in use.
 #
-# <!-- References -->                                                                                                             
+# <!-- References -->
 # [HCP]: http://www.humanconnectome.org
 # [FSL]: http://fsl.fmrib.ox.ac.uk
 #
-#~ND~END~   
+#~ND~END~
 
 
 # --------------------------------------------------------------------------------
@@ -91,7 +91,8 @@ ${HCPPIPEDIR}/show_version
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
-log_Check_Env_Var HCPPIPEDIR_tfMRIAnalysis
+
+HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 
 # ------------------------------------------------------------------------------
 #  Support Functions
@@ -100,10 +101,10 @@ log_Check_Env_Var HCPPIPEDIR_tfMRIAnalysis
 # function to test FSL versions
 determine_old_or_new_fsl()
 {
-	# NOTE: 
+	# NOTE:
 	#   Don't echo anything in this function other than the last echo
 	#   that outputs the return value
-	#   
+	#
 	local fsl_version=${1}
 	local old_or_new
 	local fsl_version_array
@@ -116,23 +117,23 @@ determine_old_or_new_fsl()
 
 	fsl_primary_version="${fsl_version_array[0]}"
 	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-	
+
 	fsl_secondary_version="${fsl_version_array[1]}"
 	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-	
+
 	fsl_tertiary_version="${fsl_version_array[2]}"
 	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
 
-	# determine whether we are using "OLD" or "NEW" FSL 
+	# determine whether we are using "OLD" or "NEW" FSL
 	# 5.0.6 and below is "OLD"
 	# 5.0.7 and above is "NEW"
 	if [[ $(( ${fsl_primary_version} )) -lt 5 ]]
 	then
-		# e.g. 4.x.x    
+		# e.g. 4.x.x
 		old_or_new="OLD"
 	elif [[ $(( ${fsl_primary_version} )) -gt 5 ]]
 	then
-		# e.g. 6.x.x    
+		# e.g. 6.x.x
 		old_or_new="NEW"
 	else
 		# e.g. 5.x.x
@@ -152,7 +153,7 @@ determine_old_or_new_fsl()
 			fi
 		fi
 	fi
-	
+
 	echo ${old_or_new}
 }
 
@@ -230,7 +231,7 @@ log_Msg "RUN_LEVEL1: Running Level 1 Analysis for Both Phase Encoding Directions
 i=1
 # Level 1 analysis names were delimited by '@' in command-line; change to space in for loop
 for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
-	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"	
+	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"
 	# Get corresponding fsf name from $LevelOnefsfNames list
 	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
 	log_Msg "RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"

@@ -67,7 +67,8 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
 log_Check_Env_Var CARET7DIR
-log_Check_Env_Var HCPPIPEDIR_FS
+
+ HCPPIPEDIR_FS=${HCPPIPEDIR}/FreeSurfer/scripts
 
 ########################################## SUPPORT FUNCTIONS ########################################## 
 
