@@ -35,7 +35,7 @@
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-usage()
+show_usage()
 {
 	cat <<EOF
 
@@ -127,8 +127,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--path=*)
 				p_StudyFolder=${argument/*=/""}
@@ -234,7 +234,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -1330,7 +1330,7 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    usage
+    show_usage
     exit 1
 fi
 
@@ -1341,24 +1341,27 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 
-# Verify that other needed environment variables are set
-if [ -z "${CARET7DIR}" ]; then
-	log_Err_Abort "CARET7DIR environment variable must be set"
-fi
-log_Msg "CARET7DIR: ${CARET7DIR}"
+opts_ShowVersionIfRequested $@
 
-if [ -z "${MSMBINDIR}" ]; then
-	log_Err_Abort "MSMBINDIR environment variable must be set"
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
 fi
-log_Msg "MSMBINDIR: ${MSMBINDIR}"
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var CARET7DIR
+log_Check_Env_Var MSMBINDIR
 
 # Show tool versions
 show_tool_versions
 
-# Determine whether named or positional parameters are used
+# Determine whether named or positional parameters are used and invoke the 'main' function
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
 	log_Msg "Using named parameters"
