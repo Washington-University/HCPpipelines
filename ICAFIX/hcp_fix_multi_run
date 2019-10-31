@@ -30,7 +30,7 @@
 
 #############################################################
 
-Usage() {
+show_usage() {
     cat <<EOF
 
 hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
@@ -79,13 +79,12 @@ e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMR
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF
-    exit 1
 }
 
 if (( $# < 4 ))
 then
-    #Usage does an exit
-    Usage
+    show_usage
+	exit 1
 fi
 
 #############################################################
