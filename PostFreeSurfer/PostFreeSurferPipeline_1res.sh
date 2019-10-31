@@ -2,7 +2,7 @@
 
 # Requirements for this script
 #  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_PostFS
+#  environment: HCPPIPEDIR, FSLDIR
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
@@ -66,7 +66,8 @@ ${HCPPIPEDIR}/show_version
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var HCPPIPEDIR_PostFS
+
+HCPPIPEDIR_PostFS=${HCPPIPEDIR}/PostFreeSurfer/scripts
 
 # ------------------------------------------------------------------------------
 #  Parse Command Line Options

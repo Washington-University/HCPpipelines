@@ -64,11 +64,6 @@
 #   The "home" directory for the version of the HCP Pipeline Tools product
 #   being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-V3.0
 #
-# * HCPPIPEDIR_PreFS
-#
-#   Location of PreFreeSurfer sub-scripts that are used to carry out some of
-#   steps of the PreFreeSurfer pipeline
-#
 # * HCPPIPEDIR_Global
 #
 #   Location of shared sub-scripts that are used to carry out some of the
@@ -308,7 +303,8 @@ ${HCPPIPEDIR}/show_version
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var HCPPIPEDIR_Global
-log_Check_Env_Var HCPPIPEDIR_PreFS
+
+HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
 
 # ------------------------------------------------------------------------------
 #  Parse Command Line Options
