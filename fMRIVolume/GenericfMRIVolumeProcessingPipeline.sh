@@ -480,9 +480,10 @@ if [ "$fMRIReference" != "NONE" ]; then
 
     for simage in SBRef_nonlin SBRef_nonlin_norm
     do
-        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_simage" ${fMRIFolder}/"${NameOffMRI}_simage"
+        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_${simage}" ${fMRIFolder}/"${NameOffMRI}_${simage}"
     done
 
+    mkdir -p ${ResultsFolder}
     ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/"${fMRIReference}_SBRef" ${ResultsFolder}/"${NameOffMRI}_SBRef"
 else    
     # --- Create fake "Scout" if it doesn't exist

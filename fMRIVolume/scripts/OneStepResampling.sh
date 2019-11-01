@@ -257,7 +257,7 @@ ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI}_mask $FrameMergeSTRINGII $TR_vol
 # (gets applied in IntensityNormalization.sh; so don't change name here without changing it in that script as well).
 fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
-if [ ${fMRIReferencePath} != "NONE" ] ; then
+if [ ${fMRIReferencePath} = "NONE" ] ; then
   # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
   ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}

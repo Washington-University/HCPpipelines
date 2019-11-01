@@ -71,13 +71,13 @@ if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
   # Note that the name of the warp is hard-coded into OneStepResampling.sh
-  cmd=("${FSLDIR}/bin/fnirt" --in="${WorkingDirectory}/${OutputfMRIBasename}_avg" --ref="${Scout}" --iout="${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin" --cout="${WorkingDirectory}/postmc2fmriref_warp")
+  cmd=("${FSLDIR}/bin/fnirt" --in="${WorkingDirectory}/${OutputfMRIBasename}_avg" --ref="${Scout}" --iout="${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin" --fout="${WorkingDirectory}/postmc2fmriref_warp")
   verbose_echo "     ... running fnirt: ${cmd[*]}"
   "${cmd[@]}"
 
   verbose_echo "     ... applying warp"
   tmcbold="_nonlin"
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/postmc2fmriref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/postmc2fmriref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}  
 else
   tmcbold=""
 fi
@@ -103,6 +103,12 @@ if [ -e $OutputMotionMatrixFolder ] ; then
     mv $Matrix `echo ${OutputMotionMatrixNamePrefix}${MatrixNumber} | cut -d "." -f 1`
   done
   cd $DIR
+fi
+
+# Move over the nonlinear warp to be used in OneStepResampling
+if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
+  verbose_echo "     ... moving warp to ${OutputMotionMatrixFolder}"
+  mv -f ${WorkingDirectory}/postmc2fmriref_warp.nii.gz ${OutputMotionMatrixFolder} 
 fi
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries
