@@ -391,6 +391,7 @@ main()
 	for filename in ${from_files} ; do
 		cp ${filename} ${to_location}
 	done
+    cp -r ${outdir}/qc ${to_location}/qc
 	
 	log_Msg "Completed"
 	exit 0
