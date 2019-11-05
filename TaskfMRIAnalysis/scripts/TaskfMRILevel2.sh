@@ -1,9 +1,56 @@
 #!/bin/bash
 
-########################################## PREPARE FUNCTIONS ########################################## 
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib  # Function for getting FSL version
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Sub-script of TaskfMRIAnalysis.sh
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+# ------------------------------------------------------------------------------
+#  Support Functions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
@@ -19,9 +66,10 @@ show_tool_versions()
 	fsl_version_get fsl_ver
 }
 
+# Log versions of tools used by this script
+show_tool_versions
 
-
-########################################## READ COMMAND-LINE ARGUMENTS ##################################
+########################################## READ_ARGS ##################################
 
 Subject="$1"
 ResultsFolder="$2"
@@ -37,10 +85,7 @@ VolumeBasedProcessing="${11}"
 RegName="${12}"
 Parcellation="${13}"
 
-# Log how the script was launched
-g_script_name=`basename ${0}`
-log_SetToolName "${g_script_name}"
-log_Msg "READ_ARGS: ${g_script_name} arguments: $@"
+log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
 # Log variables parsed from command line arguments
 log_Msg "READ_ARGS: Subject: ${Subject}"
@@ -57,8 +102,6 @@ log_Msg "READ_ARGS: VolumeBasedProcessing: ${VolumeBasedProcessing}"
 log_Msg "READ_ARGS: RegName: ${RegName}"
 log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
 
-# Log versions of tools used by this script
-show_tool_versions
 
 ########################################## MAIN ##################################
 
@@ -175,9 +218,7 @@ for Analysis in ${Analyses} ; do
 	### Exit if cope files are not present in Level 1 folders
 	fileCount=$( ls ${FirstFolder}/${Analysis}/cope1.${Extension} 2>/dev/null | wc -l );
 	if [ "$fileCount" -eq 0 ]; then
-		log_Msg "ERROR: Missing expected cope files in ${FirstFolder}/${Analysis}"
-		log_Msg "ERROR: Exiting $g_script_name"
-		exit 1
+		log_Err_Abort "Missing expected cope files in ${FirstFolder}/${Analysis}"
 	fi
 
 	### Copy Level 1 stats folders into Level 2 analysis directory

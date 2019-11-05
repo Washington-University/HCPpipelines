@@ -33,16 +33,13 @@
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-usage()
+show_usage()
 {
-	local script_name
-	script_name=$(basename "${0}")
-
 	cat <<EOF
 
-${script_name}: Make average dataset
+${g_script_name}: Make average dataset
 
-Usage: ${script_name} PARAMETER...
+Usage: ${g_script_name} PARAMETER...
 
 PARAMETERs are [ ] = optional; < > = user supplied value
 
@@ -50,19 +47,28 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --subject-list=<@ delimited list of subject ids>
    --study-folder=<path to study folder>
    --group-average-name=<output group average name> (e.g. S900)
-   --surface-atlas-dir=<path/to/folder> location of the standard surfaces (e.g. ${HCPPIPEDIR}/global/templates/standard_mesh_atlases)
-   --grayordinates-space-dir=<path/to/folder> location of the standard grayorinates space (e.g. ${HCPPIPEDIR}/global/templates/91282_Greyordinates)
+   --surface-atlas-dir=<path/to/folder> location of the standard surfaces
+        (e.g. \${HCPPIPEDIR}/global/templates/standard_mesh_atlases)
+   --grayordinates-space-dir=<path/to/folder> location of the standard grayorinates space 
+        (e.g. \${HCPPIPEDIR}/global/templates/91282_Greyordinates)
    --high-res-mesh=<numstring> representing the highres mesh (e.g. 164)
    --low-res-meshes=<numstring> representing the low res mesh (@ delimited list) (e.g. 32)
-   --freesurfer-labels=<path/to/file> location of the FreeSurfer look up table (path to a file) (e.g. ${HCPPIPEDIR}/global/config/FreeSurferAllLut.txt)
+   --freesurfer-labels=<path/to/file> location of the FreeSurfer look up table (path to a file) 
+        (e.g. \${HCPPIPEDIR}/global/config/FreeSurferAllLut.txt)
    --sigma=<num> Sigma of pregradient smoothing (e.g. 1)
    --reg-name=<string> Name of the registration (e.g. MSMAll)
-   --videen-maps=<mapstring@mapstring> Maps you want to use the videen palette (@ delimited list) (e.g. corrThickness@thickness@MyelinMap_BC@SmoothedMyelinMap_BC)
-   --greyscale-maps=<mapstring@mapstring> Maps you want to use the grayscale palette (@ delimited list) (e.g. sulc@curvature)
-   --distortion-maps=<mapstring@mapstring> Distortion maps (@ delimited list) (e.g. SphericalDistortion@ArealDistortion@EdgeDistortion)
-   --gradient-maps=<mapstring@mapstring> Maps you want to compute the gradietn on (@ delimited list) (e.g. MyelinMap_BC@SmoothedMyelinMap_BC@corrThickness)
-   --std-maps=<mapstring@mapstring> maps you want to compute a standard deviation on (@ delimited list) (e.g. sulc@curvature@corrThickness@thickness@MyelinMap_BC)
-   --multi-maps=<mapstring@mapstring> Maps with more than one map (column) that cannot be merged and must be averaged (@ delimited list) (e.g. NONE)
+   --videen-maps=<mapstring@mapstring> Maps you want to use the videen palette (@ delimited list) 
+        (e.g. corrThickness@thickness@MyelinMap_BC@SmoothedMyelinMap_BC)
+   --greyscale-maps=<mapstring@mapstring> Maps you want to use the grayscale palette (@ delimited list) 
+        (e.g. sulc@curvature)
+   --distortion-maps=<mapstring@mapstring> Distortion maps (@ delimited list) 
+        (e.g. SphericalDistortion@ArealDistortion@EdgeDistortion)
+   --gradient-maps=<mapstring@mapstring> Maps you want to compute the gradietn on (@ delimited list) 
+        (e.g. MyelinMap_BC@SmoothedMyelinMap_BC@corrThickness)
+   --std-maps=<mapstring@mapstring> maps you want to compute a standard deviation on (@ delimited list) 
+        (e.g. sulc@curvature@corrThickness@thickness@MyelinMap_BC)
+   --multi-maps=<mapstring@mapstring> Maps with more than one map (column) that cannot be merged and 
+                                      must be averaged (@ delimited list) (e.g. NONE)
 
 EOF
 }
@@ -181,7 +187,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -1045,32 +1051,53 @@ main()
 
 	done
 
-	log_Msg "Completed main functionality"
+	log_Msg "Completed!"
 }
 
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
 # ------------------------------------------------------------------------------
 
+# Establish defaults
+
+# Set global variables
+g_script_name=$(basename "${0}")
+
+# Allow script to return a Usage statement, before any other output
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
 # Verify HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Function for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
-# Verify any other needed environment variables are set
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 
 # Show tool versions
 show_tool_versions
 
-# Determine whether named or positional parameters are used
+# Determine whether named or positional parameters are used and invoke the 'main' function
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
 	log_Msg "Using named parameters"

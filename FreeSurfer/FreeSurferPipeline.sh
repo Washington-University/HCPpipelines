@@ -135,7 +135,7 @@ validate_freesurfer_version()
 }
 
 # Show usage information
-usage()
+show_usage()
 {
 	cat <<EOF
 
@@ -209,7 +209,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
             (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
                  e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
 
-  [--processing-mode={HCPStyleData, LegacyStyleData}]
+  [--processing-mode=(HCPStyleData|LegacyStyleData)]
       Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
       "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
          and requires 'HCP-Style' data acquistion. 
@@ -256,8 +256,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--subject-dir=*)
 				p_subject_dir=${argument#*=}
@@ -321,7 +321,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -885,19 +885,44 @@ main()
 
 g_script_name=$(basename "${0}")
 
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
 if [ -z "${HCPPIPEDIR}" ]; then
 	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
 	exit 1
 fi
 
-# Load Function Libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+opts_ShowVersionIfRequested $@
 
-# Verify any other needed environment variables are set
-log_Check_Env_Var FSLDIR
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FREESURFER_HOME
+
+# Platform info
+log_Msg "Platform Information Follows: "
+uname -a
 
 # Configure the use of FreeSurfer v6 custom tools
 configure_custom_tools
@@ -929,5 +954,5 @@ else
 
 fi
 
-log_Msg "Complete"
+log_Msg "Completed!"
 exit 0

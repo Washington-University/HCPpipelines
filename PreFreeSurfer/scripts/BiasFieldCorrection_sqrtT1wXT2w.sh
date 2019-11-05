@@ -1,38 +1,60 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), caret7 (a.k.a. Connectome Workbench) (version 1.0)
-#  environment: FSLDIR  CARET7DIR
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=
-
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${CARET7DIR}" ]; then
-	echo "$(basename ${0}): ABORTING: CARET7DIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): CARET7DIR: ${CARET7DIR}"
-fi
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
 Usage() {
-  echo "$(basename $0): Tool for bias field correction based on square root of T1w * T2w"
-  echo " "
-  echo "Usage: $(basename $0) --workingdir=<working directory> --T1im=<input T1 image> --T1brain=<input T1 brain> --T2im=<input T2 image> --obias=<output bias field image> --oT1im=<output corrected T1 image> --oT1brain=<output corrected T1 brain> --oT2im=<output corrected T2 image> --oT2brain=<output corrected T2 brain>"
+	cat <<EOF
+
+${script_name}: Tool for bias field correction based on square root of T1w * T2w
+
+Usage: ${script_name}
+  --workingdir=<working directory>
+  --T1im=<input T1 image>
+  --T1brain=<input T1 brain>
+  --T2im=<input T2 image>
+  --obias=<output bias field image>
+  --oT1im=<output corrected T1 image>
+  --oT1brain=<output corrected T1 brain>
+  --oT2im=<output corrected T2 image>
+  --oT2brain=<output corrected T2 brain>
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -62,11 +84,6 @@ defaultopt() {
 #      $OutputT2wRestoredBrainImage $OutputT2wRestoredImage
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 8 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

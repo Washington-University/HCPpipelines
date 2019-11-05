@@ -1,7 +1,15 @@
 #!/bin/bash
 set -eu
 
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname "$0")/../.."
+fi
+
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 #FIXME: no compiled matlab support
 g_matlab_default_mode=1
@@ -50,6 +58,11 @@ function main()
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
     opts_ParseArguments "$@"
+    
+    if ((pipedirguessed))
+    then
+        log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+    fi
     
     #display the parsed/default values
     opts_ShowValues
@@ -263,7 +276,7 @@ function cleanup()
 #disabled for debug
 trap cleanup EXIT
 
-if (($# == 0)) || [[ "$1" == --* ]]
+if (($# == 0)) || [[ "$1" == -* ]]
 then
     #named parameters
     main "$@"

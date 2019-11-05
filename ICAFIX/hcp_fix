@@ -24,7 +24,7 @@
 
 #############################################################
 
-Usage() {
+show_usage() {
     cat <<EOF
 
 hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
@@ -59,13 +59,12 @@ e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 FALSE
      You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 EOF
-    exit 1
 }
 
 if (( $# < 3 ))
 then
-    #Usage does an exit
-    Usage
+    show_usage
+	exit 1
 fi
 
 #############################################################
@@ -82,9 +81,9 @@ fi
 #  Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-# Verify any other needed environment variables are set
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
 

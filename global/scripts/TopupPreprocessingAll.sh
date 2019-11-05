@@ -1,8 +1,19 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (version 1.0.2)
-#  environment: as in SetUpHCPPipeline.sh  (or individually: FSLDIR, HCPPIPEDIR_Global, and PATH for gradient_unwarp.py)
+#  installed versions of: FSL, gradunwarp (HCP version)
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+else
+	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+fi
 
 if [ -z "${FSLDIR}" ]; then
 	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
@@ -39,10 +50,13 @@ Usage() {
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
   echo "            [--ofmap=<output scaled topup field map image>]"
-  echo "            [--ojacobian=<output Jacobian image>]"
+  echo "            [--ojacobian=<output Jacobian image> (of the TOPUP warp field)]"
   echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "            [--topupconfig=<topup config file>]"
   echo "            --usejacobian=<\"true\" or \"false\">"
+  echo "                 Whether to apply the jacobian of the gradient non-linearity distortion correction"
+  echo "                 Irrelevant if --gdcoeffs=NONE"
+  echo "                 (Has nothing to do with the jacobian of the TOPUP warp field)"
   echo " "
   echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
 }
@@ -268,6 +282,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/BothPhases -abs -add 1 -mas ${WD}/Mask -dilM -dilM 
 
 # RUN TOPUP
 # Needs FSL (version 5.0.6 or later)
+# Note: All the jacobian stuff from here onward is related to the TOPUP warp field
 ${FSLDIR}/bin/topup --imain=${WD}/BothPhases --datain=$txtfname --config=${TopupConfig} --out=${WD}/Coefficents --iout=${WD}/Magnitudes --fout=${WD}/TopupField --dfout=${WD}/WarpField --rbmout=${WD}/MotionMatrix --jacout=${WD}/Jacobian -v 
 
 #Remove Z slice padding if needed
