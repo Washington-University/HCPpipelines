@@ -114,7 +114,7 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
 
     # Transform CNR maps
     ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/cnr_maps_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/cnr_maps_dilated.nii.gz
-    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/cnr_maps_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str -o "$T1wOutputDirectory"/cnr_maps
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/cnr_maps_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/cnr_maps
     ${FSLDIR}/bin/imrm $DataDirectory/warped/cnr_maps_dilated
 
     # Now register the grad_dev tensor
