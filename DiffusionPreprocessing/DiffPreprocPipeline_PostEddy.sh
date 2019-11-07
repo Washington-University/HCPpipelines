@@ -353,6 +353,8 @@ main()
 		cp -p ${filename} ${to_location}
 	done
 
+  immv ${outdirT1w}/cnr_maps ${to_location}/cnr_maps
+
 	log_Msg "Completed!"
 	exit 0
 }
