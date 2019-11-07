@@ -110,12 +110,12 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
 
     # Transforms field of view mask to T1-weighted space
     # (Be sure to use the fov_mask derived prior to application of GDC)
-    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/cnr_maps.nii.gz $DilateDistance NEAREST $DataDirectory/warped/cnr_maps_dilated.nii.gz
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
-    ${FSLDIR}/bin/imrm $DataDirectory/warped/cnr_maps_dilated
 
     # Transform CNR maps
-    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/cnr_maps_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/cnr_maps
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/cnr_maps_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/cnr_maps_dilated.nii.gz
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/cnr_maps_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str -o "$T1wOutputDirectory"/cnr_maps
+    ${FSLDIR}/bin/imrm $DataDirectory/warped/cnr_maps_dilated
 
     # Now register the grad_dev tensor
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
