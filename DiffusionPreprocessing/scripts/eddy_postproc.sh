@@ -101,6 +101,8 @@ else
 fi
 #fi
 
+imcp ${eddydir}/eddy_unwarped_images.eddy_cnr_maps ${datadir}/cnr_maps
+
 # Create a mask representing voxels within the field of view for all volumes prior to dilation
 # 'eddy' can return negative values in some low signal locations, so use -abs for determining the fov mask
 ${FSLDIR}/bin/fslmaths ${datadir}/data -abs -Tmin -bin -fillh ${datadir}/fov_mask
@@ -111,21 +113,28 @@ if [ ! $GdCoeffs = "NONE" ] ; then
 	  # Note: data in the warped directory is eddy-current and suspectibility distortion corrected (via 'eddy'), but prior to gradient distortion correction
 	  # i.e., "data_posteddy_preGDC" would be another way to think of it
     mkdir -p ${datadir}/warped
-    ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/warped
-    ${FSLDIR}/bin/immv ${datadir}/fov_mask ${datadir}/warped
+    ${FSLDIR}/bin/immv ${datadir}/data ${datadir}/warped/data_warped
+    ${FSLDIR}/bin/immv ${datadir}/fov_mask ${datadir}/warped/fov_mask_warped
+    ${FSLDIR}/bin/immv ${datadir}/cnr_maps ${datadir}/warped/cnr_maps_warped
 
     # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
-	  DiffRes=`${FSLDIR}/bin/fslval ${datadir}/data_warped pixdim1`
+	  DiffRes=`${FSLDIR}/bin/fslval ${datadir}/warped/data_warped pixdim1`
     DilateDistance=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
-    ${CARET7DIR}/wb_command -volume-dilate ${datadir}/warped/data.nii.gz $DilateDistance NEAREST ${datadir}/warped/data_dilated.nii.gz
+    ${CARET7DIR}/wb_command -volume-dilate ${datadir}/warped/data_warped.nii.gz $DilateDistance NEAREST ${datadir}/warped/data_dilated.nii.gz
 
     # apply gradient distortion correction
     ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${datadir}/warped/data_dilated" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
     ${FSLDIR}/bin/immv ${datadir}/fullWarp ${datadir}/warped
     ${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${datadir}/warped
+    ${FSLDIR}/bin/imrm ${datadir}/warped/data_dilated
+
+    # Transform CNR maps
+    ${CARET7DIR}/wb_command -volume-dilate ${datadir}/warped/cnr_maps_warped.nii.gz $DilateDistance NEAREST ${datadir}/warped/cnr_maps_dilated.nii.gz
+    ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${datadir}/warped/cnr_maps_dilated -r ${datadir}/warped/cnr_maps_dilated -w ${datadir}/warped/fullWarp -o ${datadir}/cnr_maps
+    ${FSLDIR}/bin/imrm ${datadir}/warped/cnr_maps_dilated
 
     # Transform field of view mask (using conservative trilinear interpolation with high threshold)
-    ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${datadir}/warped/fov_mask -r ${datadir}/warped/fov_mask -w ${datadir}/warped/fullWarp -o ${datadir}/fov_mask
+    ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${datadir}/warped/fov_mask_warped -r ${datadir}/warped/fov_mask_warped -w ${datadir}/warped/fullWarp -o ${datadir}/fov_mask
     ${FSLDIR}/bin/fslmaths ${datadir}/fov_mask -thr 0.999 -bin ${datadir}/fov_mask
 
     echo "Computing gradient coil tensor to correct for gradient nonlinearities"
@@ -134,12 +143,12 @@ if [ ! $GdCoeffs = "NONE" ] ; then
     ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
     ${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
     ${FSLDIR}/bin/imrm ${datadir}/trilinear
-    ${FSLDIR}/bin/imrm ${datadir}/data_warped_vol1
-    ${FSLDIR}/bin/imrm ${datadir}/data_warped_dilated
+    ${FSLDIR}/bin/imrm ${datadir}/warped/data_dilated_vol1
 fi
 
 # mask out any data outside the field of view
 ${FSLDIR}/bin/fslmaths ${datadir}/data -mas ${datadir}/fov_mask ${datadir}/data
+${FSLDIR}/bin/fslmaths ${datadir}/cnr_maps -mas ${datadir}/fov_mask ${datadir}/cnr_maps
 
 # Remove negative intensity values (from eddy) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
