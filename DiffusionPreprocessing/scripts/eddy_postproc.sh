@@ -18,14 +18,14 @@ eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
 echo "Generating eddy QC report in ${workingdir}/qc"
-rm -r ${workingdir}/qc
+if [ -d "{workingdir}/qc" ]; then rm -r ${workingdir}/qc; fi
 qc_command=("${FSLDIR}/bin/eddy_quad")
 qc_command+=("${eddydir}/eddy_unwarped_images")
 qc_command+=(-idx "${eddydir}/index.txt")
 qc_command+=(-par "${eddydir}/acqparams.txt")
 qc_command+=(-m "${eddydir}/nodif_brain_mask.nii.gz")
 qc_command+=(-b "${eddydir}/Pos_Neg.bvals")
-qc_command+=(-g "${eddydir}/Pos_Neg.bvecs")
+qc_command+=(-g "${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs")
 qc_command+=(-o "${workingdir}/qc")
 qc_command+=(-f "${workingdir}/topup/topup_Pos_Neg_b0_field.nii.gz")
 qc_command+=(-v)
@@ -41,7 +41,8 @@ ${qc_command[@]}
 if [ ${CombineDataFlag} -eq 2 ]; then
 	${FSLDIR}/bin/imcp  ${eddydir}/eddy_unwarped_images ${datadir}/data
 	cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
-	cp ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs
+	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
+	cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
 else
 	echo "JAC resampling has been used. Eddy Output is now combined."
 	PosVols=`wc ${eddydir}/Pos.bval | awk {'print $2'}`
