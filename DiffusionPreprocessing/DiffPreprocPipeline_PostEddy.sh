@@ -353,7 +353,7 @@ main()
 		cp -p ${filename} ${to_location}
 	done
 
-  mkdir -p ${outdirT1w/qc
+  mkdir -p ${outdirT1w}/qc
   cp ${outdir}/qc/* ${outdirT1w}/qc
   immv ${outdirT1w}/cnr_maps ${outdirT1w}/qc/cnr_maps
 
