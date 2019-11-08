@@ -17,8 +17,8 @@ globalscriptsdir=${HCPPIPEDIR_Global}
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
-echo "Generating eddy QC report in ${workingdir}/qc"
-if [ -d "{workingdir}/qc" ]; then rm -r ${workingdir}/qc; fi
+echo "Generating eddy QC report in ${workingdir}/QC"
+if [ -d "{workingdir}/QC" ]; then rm -r ${workingdir}/QC; fi
 qc_command=("${FSLDIR}/bin/eddy_quad")
 qc_command+=("${eddydir}/eddy_unwarped_images")
 qc_command+=(-idx "${eddydir}/index.txt")
@@ -26,7 +26,7 @@ qc_command+=(-par "${eddydir}/acqparams.txt")
 qc_command+=(-m "${eddydir}/nodif_brain_mask.nii.gz")
 qc_command+=(-b "${eddydir}/Pos_Neg.bvals")
 qc_command+=(-g "${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs")
-qc_command+=(-o "${workingdir}/qc")
+qc_command+=(-o "${workingdir}/QC")
 qc_command+=(-f "${workingdir}/topup/topup_Pos_Neg_b0_field.nii.gz")
 qc_command+=(-v)
 ${qc_command[@]}
