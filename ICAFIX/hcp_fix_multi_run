@@ -140,6 +140,12 @@ log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
 
+# Show specific FIX version, if available
+if [ -f ${FSL_FIXDIR}/fixversion ]; then
+	fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+	log_Msg "FIX version: $fixversion"
+fi
+
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
@@ -738,8 +744,8 @@ fi
 log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command
+# use array for whitespace safety, even if the rest of the script isn't
 if [[ ${doMotionRegression} == "TRUE" ]]; then
-    #use array for whitespace safety, even if the rest of the script isn't
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 else
     #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m

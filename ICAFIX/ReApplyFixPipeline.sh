@@ -268,6 +268,13 @@ show_tool_versions()
 	log_Msg "Showing FSL version"
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
+
+	# Show specific FIX version, if available
+	if [ -f ${FSL_FIXDIR}/fixversion ]; then
+		fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+		log_Msg "FIX version: $fixversion"
+	fi
+
 }
 
 # ------------------------------------------------------------------------------
