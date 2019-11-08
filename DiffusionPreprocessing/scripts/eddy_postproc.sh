@@ -18,7 +18,7 @@ eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
 echo "Generating eddy QC report in ${workingdir}/QC"
-if [ -d "{workingdir}/QC" ]; then rm -r ${workingdir}/QC; fi
+if [ -d "${workingdir}/QC" ]; then rm -r ${workingdir}/QC; fi
 qc_command=("${FSLDIR}/bin/eddy_quad")
 qc_command+=("${eddydir}/eddy_unwarped_images")
 qc_command+=(-idx "${eddydir}/index.txt")
