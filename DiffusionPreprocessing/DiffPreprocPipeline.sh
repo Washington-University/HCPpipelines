@@ -458,7 +458,7 @@ main()
 	pre_eddy_cmd+=" --printcom=${runcmd} "
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
-	#${pre_eddy_cmd}
+	${pre_eddy_cmd}
 
 	log_Msg "Invoking Eddy Step"
 	local eddy_cmd=""
@@ -475,7 +475,7 @@ main()
 	fi
 
 	log_Msg "eddy_cmd: ${eddy_cmd}"
-	#${eddy_cmd}
+	${eddy_cmd}
 
 	log_Msg "Invoking Post-Eddy Steps"
 	local post_eddy_cmd=""
