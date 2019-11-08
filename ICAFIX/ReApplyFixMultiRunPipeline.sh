@@ -366,6 +366,12 @@ show_tool_versions()
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 
+	# Show specific FIX version, if available
+	if [ -f ${FSL_FIXDIR}/fixversion ]; then
+		fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+		log_Msg "FIX version: $fixversion"
+	fi
+
 	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 	if [ "${old_or_new_version}" == "OLD" ] ; then
 		log_Err_Abort "FSL version 6.0.1 or greater is required."
@@ -414,9 +420,6 @@ main()
 	else
 		local this_script_dir=$(dirname "$0")
 	fi
-
-	# Show tool versions
-	show_tool_versions
 
 	log_Msg "Starting main functionality"
 
@@ -1104,6 +1107,9 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
+
+# Show tool versions
+show_tool_versions
 
 # Determine whether named or positional parameters are used and invoke 'main' function
 if [[ ${1} == --* ]]; then

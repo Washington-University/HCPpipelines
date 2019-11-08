@@ -397,8 +397,8 @@ fi
 log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command
+# use array for whitespace safety, even if the rest of the script isn't
 if [[ ${doMotionRegression} == "TRUE" ]]; then
-    #use array for whitespace safety, even if the rest of the script isn't
     fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
 else
 	old_or_new_fix=$(determine_old_or_new_fix)
