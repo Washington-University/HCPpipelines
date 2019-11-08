@@ -69,10 +69,14 @@ fi
 
 #############################################################
 
-# Need at least fix version 1.06.12 for proper handling of the do_motion_regression=FALSE condition
+# Function to return whether FIX version is "NEW" (i.e., 1.06.12 or later).
+# Need at least that fix version for proper handling of the
+# do_motion_regression=FALSE condition (when highpass>=0)
+
 # NOTE:
 #   Don't echo anything in this function other than the last echo
 #   that outputs the return value
+
 determine_old_or_new_fix()
 {
 	# Default to "OLD", and change to "NEW" only if version is 1.06.12 or later

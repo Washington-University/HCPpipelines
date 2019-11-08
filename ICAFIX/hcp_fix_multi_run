@@ -749,6 +749,9 @@ if [[ ${doMotionRegression} == "TRUE" ]]; then
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 else
     #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+	# Update (11/8/2019): No longer true as of FIX 1.06.12, but since filtering of the CIFTI in MR-FIX occurs in
+	# functionhighpassandvariancenormalize it doesn't matter, so we leave the code unchanged so that we don't
+	# need to add a FIX version dependency to the script
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
 log_Msg "fix_cmd: ${fix_cmd[*]}"
