@@ -132,7 +132,7 @@ if [ ! $GdCoeffs = "NONE" ] ; then
 
     # Transform CNR maps
     ${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/cnr_maps_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/cnr_maps_dilated.nii.gz
-    ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
+    ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
     ${FSLDIR}/bin/imrm ${warpedDir}/cnr_maps_dilated
 
     # Transform field of view mask (using conservative trilinear interpolation with high threshold)
