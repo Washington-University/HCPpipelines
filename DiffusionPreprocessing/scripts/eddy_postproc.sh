@@ -29,7 +29,7 @@ qc_command+=(-g "${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs")
 qc_command+=(-o "${workingdir}/QC")
 qc_command+=(-f "${workingdir}/topup/topup_Pos_Neg_b0_field.nii.gz")
 qc_command+=(-v)
-${qc_command[@]}
+"${qc_command[@]}"
 
 #Prepare for next eddy Release
 #if [ ! -e ${eddydir}/${EddyJacFlag} ]; then 
