@@ -354,7 +354,7 @@ main()
 	done
 
   mkdir -p ${outdirT1w}/QC
-  cp ${outdir}/QC/* ${outdirT1w}/QC
+  cp -p ${outdir}/QC/* ${outdirT1w}/QC
   immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 
 	log_Msg "Completed!"
