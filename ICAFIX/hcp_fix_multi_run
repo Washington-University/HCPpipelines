@@ -156,7 +156,8 @@ FSL_FIX_WBC=${Caret7_Command}  # Used by fix_3_clean in interpreted matlab/octav
 	
 #############################################################
 
-#
+### Support Functions
+
 # NOTE:
 #   Don't echo anything in this function other than the last echo
 #   that outputs the return value
@@ -247,18 +248,40 @@ demeanMovementRegressors() {
 	echo "${AllOut}" > ${Out}
 }
 
-fsl_version_get fsl_ver
-log_Msg "FSL version: ${fsl_ver}"
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
+#############################################################
+
+## ---------------------------------------------------------------------------
+## Check whether FSL version is recent enough
+## ---------------------------------------------------------------------------
 
 old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-
 if [ "${old_or_new_version}" == "OLD" ] ; then
 	log_Err_Abort "FSL version 6.0.1 or greater is required."
 fi
 
+## ---------------------------------------------------------------------------
+## Parse and check parameters
+## ---------------------------------------------------------------------------
+
+fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
+
 hp=$2
 if [[ "${hp}" == "0" ]]; then
-	log_Msg "hp=0 corresponds to a linear detrend"
 	pdFlag=TRUE
 fi
 if [[ "${hp}" == pd* ]]; then
@@ -277,27 +300,7 @@ if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then  #Logic of this script does no
     log_Err_Abort "highpass value must not be negative"
 fi
 
-log_Msg "hp: ${hp}"
-
-fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
-log_Msg "fmris: ${fmris}"
 ConcatName="${3}"
-log_Msg "ConcatName: ${ConcatName}"
-
-function interpret_as_bool()
-{
-    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
-    (true | yes | 1)
-        echo TRUE
-        ;;
-    (false | no | none | 0)
-        echo FALSE
-        ;;
-    (*)
-        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
-        ;;
-    esac
-}
 
 doMotionRegression=$(interpret_as_bool "$4")
 
@@ -316,10 +319,23 @@ if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
 
-DIR=`pwd`
-log_Msg "PWD : $DIR"
+## ---------------------------------------------------------------------------
+## Report parameters
+## ---------------------------------------------------------------------------
 
-#echo $fmris | tr ' ' '\n' #separates paths separated by ' '
+log_Msg "fMRI Names: ${fmris}"
+log_Msg "highpass: ${hp}"
+if [[ "${hp}" == "0" ]]; then
+	log_Msg "hp=0 corresponds to a linear detrend"
+fi
+log_Msg "ConcatName: ${ConcatName}"
+log_Msg "doMotionRegression: ${doMotionRegression}"
+log_Msg "TrainingData: ${TrainingData}"
+log_Msg "FixThresh: ${FixThresh}"
+log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
+
+DIR=`pwd`
+log_Msg "PWD: $DIR"
 
 ## ---------------------------------------------------------------------------
 ## Preparation (highpass) on the individual runs
