@@ -69,6 +69,8 @@ fi
 
 #############################################################
 
+### Support Functions
+
 # Function to return whether FIX version is "NEW" (i.e., 1.06.12 or later).
 # Need at least that fix version for proper handling of the
 # do_motion_regression=FALSE condition (when highpass>=0)
@@ -76,7 +78,7 @@ fi
 # NOTE:
 #   Don't echo anything in this function other than the last echo
 #   that outputs the return value
-
+#
 determine_old_or_new_fix()
 {
 	# Default to "OLD", and change to "NEW" only if version is 1.06.12 or later
@@ -118,6 +120,21 @@ determine_old_or_new_fix()
 	fi
 
 	echo ${old_or_new}
+}
+
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
 }
 
 #############################################################
@@ -170,6 +187,10 @@ log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
 #############################################################
 
+## ---------------------------------------------------------------------------
+## Parse and check parameters
+## ---------------------------------------------------------------------------
+
 fmri=$1
 cd `dirname $fmri`
 fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
@@ -179,21 +200,6 @@ if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
 fi
 
 hp=$2
-
-function interpret_as_bool()
-{
-    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
-    (true | yes | 1)
-        echo TRUE
-        ;;
-    (false | no | none | 0)
-        echo FALSE
-        ;;
-    (*)
-        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
-        ;;
-    esac
-}
 
 doMotionRegression=$(interpret_as_bool "$3")
 # do_motion_regression=FALSE combined with hp filtering doesn't work properly with single-run FIX,
@@ -225,12 +231,22 @@ if [ -z "${FixThresh}" ]; then
 fi
 
 ## ---------------------------------------------------------------------------
+## Report parameters
+## ---------------------------------------------------------------------------
+
+log_Msg "fMRI Name: ${fmri}"
+log_Msg "highpass: ${hp}"
+log_Msg "doMotionRegression: ${doMotionRegression}"
+log_Msg "TrainingData: ${TrainingData}"
+log_Msg "FixThresh: ${FixThresh}"
+log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
+
+## ---------------------------------------------------------------------------
 ## Preparation (highpass)
 ## ---------------------------------------------------------------------------
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 log_Msg "tr: ${tr}"
-log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 fmrihp=${fmri}_hp${hp}
 if (( hp > 0 )); then
