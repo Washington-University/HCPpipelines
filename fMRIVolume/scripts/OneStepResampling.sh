@@ -133,8 +133,6 @@ verbose_echo " "
 BiasFieldFile=`basename "$BiasField"`
 T1wImageFile=`basename $T1wImage`
 FreeSurferBrainMaskFile=`basename "$FreeSurferBrainMask"`
-ScoutName=`basename "$ScoutInputgdc"`
-
 
 echo " "
 echo " START: OneStepResampling"
