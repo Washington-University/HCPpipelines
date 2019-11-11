@@ -298,6 +298,9 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNI
                                                                          #   provide major advantages for fMRI denoising, and are recommended. 
                                                                          #   No slice timing correction is done by default.  
 
+fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
+BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
+
 # If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. 
                                                                          #   This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of 
                                                                          #   the distorted fMRI to the undistorted T1w image. Distorted portions of the fMRI data will not align with 
@@ -308,10 +311,6 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNI
                                                                          #   shown to demonstrate clear improvement according to the accuracy standards of HCP-Style data analysis when 
                                                                          #   compared to gold-standard fieldmap-based correction.
 
-# Defaults
-
-fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
-BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -404,11 +403,12 @@ else
   # print warning
 
   log_Warn "You are using an external reference (--fmriref=${fMRIReference}) for motion registration and"
-  log_Warn "  distortion correction and registration to T1w image. Pleaase consider using this option only"
-  log_Warn "  in cases when only one BOLD Reference image is available or when processing low resolution"
-  log_Warn "  legacy BOLD images. Please make sure that the reference BOLD (--fmriref=${fMRIReference})"
-  log_Warn "  and the current bold (--fmriname=${NameOffMRI}) were acquired using the same acquisition"
-  log_Warn "  parameters, e.g. phase encoding direction."
+  log_Warn "  distortion correction and registration to T1w image. Please consider using this option only"
+  log_Warn "  in cases when only one BOLD Reference image is available or when processing low spatial"
+  log_Warn "  resolution legacy BOLD images (as in this cases within BOLD registration might be more robust" 
+  log_Warn "  than independent registration to structural images. Please make sure that the reference BOLD"
+  log_Warn "  (--fmriref=${fMRIReference}) and the current bold (--fmriname=${NameOffMRI}) were acquired "
+  log_Warn "  using the same acquisition parameters, e.g. phase encoding direction."
 fi
 
 # -- Use of nonlinear registration to external BOLD reference
@@ -460,8 +460,12 @@ fi
 ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 
 # --- Do slice time correction if indicated
+# Note that in the case of STC, $fMRIFolder/$OrigTCSName will NOT be the "original" time-series
+# but rather the slice-time corrected version thereof.
+
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
-    log_Msg "Running slice timing correction using FSL's 'slicetimer' tool"
+    log_Msg "Running slice timing correction using FSL's 'slicetimer' tool ..."
+    log_Msg "... $fMRIFolder/$OrigTCSName will be a slice-time-corrected version of the original data"
     TR=`${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4`
     log_Msg "TR: ${TR}"
 
@@ -524,7 +528,7 @@ if [ $DistortionCorrection = "NONE" ] ; then
       ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
 
       # --- reorient SCOUT
-      if [ "$fMRIReference" != "NONE" ]; then
+      if [ "$fMRIReference" = "NONE" ]; then
           ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
           ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
           ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
