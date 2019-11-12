@@ -277,6 +277,8 @@ fi
 ${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
 
 #and resample it to MNI space
+# Note that trilinear instead of spline interpolation is used with the purpose to minimize the ringing artefacts that occur 
+# with downsampling of the jacobian field and are then propagated to the BOLD image itself.
 ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 
 # Compute average motion across frames

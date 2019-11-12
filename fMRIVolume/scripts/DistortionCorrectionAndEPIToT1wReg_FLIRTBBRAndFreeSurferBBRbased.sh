@@ -406,10 +406,10 @@ case $DistortionCorrection in
 
         if [ $PreregisterTool = "epi_reg" ] ; then
           log_Msg "... running epi_reg (dof ${dof})"
-          ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}_undistorted --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted2T1w_init
+          ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}${ScoutExtension} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
         elif [ $PreregisterTool = "flirt" ] ; then
           log_Msg "... running flirt"
-          ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}_undistorted -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}_undistorted2T1w_init -omat ${WD}/${ScoutInputFile}_undistorted2T1w_init.mat -dof ${dof}
+          ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof ${dof}
         else
           log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
         fi
@@ -462,12 +462,7 @@ case $DistortionCorrection in
 
     ${NONE_METHOD_OPT})
 
-            # NOTE: To work with later code a number of fake files are created 
-            #       with names that do not reflect the true nature of the file
-            #       this is to be considered an initial fix for datasets that 
-            #       do not include data that enable distortion correction and
-            #       will be replaced with a cleaner code. 
-
+            # NOTE: To work with later code a uniform Jacobian is created.
 
             log_Msg "---> No distortion correction"
 
@@ -476,7 +471,7 @@ case $DistortionCorrection in
             log_Msg "---> Copy Scout image"
             ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
             
-            log_Msg "---> FAKE Jacobian Volume"
+            log_Msg "---> Creating uniform Jacobian Volume"
             # Create fake Jacobian Volume for Regular Fieldmaps (all ones)
             ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 -bin ${WD}/Jacobian.nii.gz
             

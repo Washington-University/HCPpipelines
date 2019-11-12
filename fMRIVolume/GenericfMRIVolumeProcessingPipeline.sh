@@ -289,13 +289,12 @@ fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In th
 # Defaults
 PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
 DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction 
-                                                                         #   (as is typically done in legacy-style brain imaging) and thus assumes that the brain is motionless. 
-                                                                         #   Errors in temporal interpolation will occur in the presence of head motion and may also disrupt 
-                                                                         #   data quality measures as shown in Power et al 2017 PLOS One "Temporal interpolation alters motion in fMRI
-                                                                         #   scans: Magnitudes and consequences for artifact detection." Slice timing correction and motion correction 
-                                                                         #   would ideally be performed simultaneously; however, this is not currently supported by any major software 
-                                                                         #   tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, 
-                                                                         #   provide major advantages for fMRI denoising, and are recommended. 
+                                                                         #   and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence
+                                                                         #   of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One "Temporal 
+                                                                         #   interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection." Slice timing
+                                                                         #   correction and motion correction would ideally be performed simultaneously; however, this is not currently 
+                                                                         #   supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for 
+                                                                         #   slice timing correction, provide major advantages for fMRI denoising, and are recommended. 
                                                                          #   No slice timing correction is done by default.  
 
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
@@ -405,8 +404,8 @@ else
   log_Warn "You are using an external reference (--fmriref=${fMRIReference}) for motion registration and"
   log_Warn "  distortion correction and registration to T1w image. Please consider using this option only"
   log_Warn "  in cases when only one BOLD Reference image is available or when processing low spatial"
-  log_Warn "  resolution legacy BOLD images (as in this cases within BOLD registration might be more robust" 
-  log_Warn "  than independent registration to structural images. Please make sure that the reference BOLD"
+  log_Warn "  resolution legacy BOLD images (for which within BOLD registration might be more robust"
+  log_Warn "  than independent registration to structural images). Please make sure that the reference BOLD"
   log_Warn "  (--fmriref=${fMRIReference}) and the current bold (--fmriname=${NameOffMRI}) were acquired "
   log_Warn "  using the same acquisition parameters, e.g. phase encoding direction."
 fi

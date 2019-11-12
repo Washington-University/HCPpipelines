@@ -67,7 +67,7 @@ esac
 if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
   verbose_echo " ... computing nonlinear transform to reference"
   verbose_echo "     ... generating bold average"
-  # Generating a mean image to increase SNR to noise ratio when registering to scout.
+  # Generating a mean image to increase signal-to-noise ratio when registering to scout.
   ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
 
   # Note that the name of the warp is hard-coded into OneStepResampling.sh
