@@ -271,9 +271,7 @@ BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                  # Speci
                                                                          #   T1_fMRI_FOV: combined T1w brain mask and fMRI FOV masks (the default), 
                                                                          #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
                                                                          #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
-                                                                         #   fMRI_FOV: a fMRI FOV mask
-                                                                         #   NOTE: When using SEBASED bias field correction, the mask will default to T1_fMRI_FOV
-                                                                         #   as the bias field is masked already.
+                                                                         #   fMRI_FOV: a fMRI FOV mask                                                                         
 fMRIReference=`opts_GetOpt1 "--fmriref" $@`                              # Reference BOLD run name (i.e., --fmriname from run to be used as *reference*) to use as 
                                                                          #   motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
                                                                          #   NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
@@ -283,8 +281,6 @@ fMRIReference=`opts_GetOpt1 "--fmriref" $@`                              # Refer
 fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In the cases when BOLD image is registered to a specified BOLD reference, this option 
                                                                          #   specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
                                                                          #   Default is 'linear'.
-
-
 
 # Defaults
 PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`

@@ -118,7 +118,8 @@ fi
 biascom=""
 if [[ "$BiasField" != "" ]]
 then
-    biascom="-div $BiasField"
+    ${FSLDIR}/bin/fslmaths ${BiasField} -dilall ${BiasField}_dilated
+    biascom="-div ${BiasField}_dilated"
 fi
 
 # sanity checking
