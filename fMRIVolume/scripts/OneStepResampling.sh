@@ -261,8 +261,8 @@ if [ ${fMRIReferencePath} = "NONE" ] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 fi
 
-# Create spline interpolated version of Jacobian  (T1w space, fMRI resolution)
-#${FSLDIR}/bin/applywarp --rel --interp=spline -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
+# Create trilinear interpolated version of Jacobian (T1w space, fMRI resolution)
+#${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 #fMRI2Struct is from gdc space to T1w space (optionally through an external reference), ie, only fieldmap-based distortions (like topup)
 #output jacobian is both gdc and topup/fieldmap jacobian, but not the to MNI jacobian
 #JacobianIn was removed from inputs, now we just compute it from the combined warpfield of gdc and dc (NOT MNI)

@@ -263,28 +263,8 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 
 
 PreregisterTool=`opts_GetOpt1 "--preregistertool" $@`                    # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
-DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit
-SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
-                                                                         # Verbose (-v) is already turned on. TR is read from 'pixdim4' of the input NIFTI itself.
-                                                                         # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
-BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                  # Specifies what mask to use for the final bold:
-                                                                         #   T1_fMRI_FOV: combined T1w brain mask and fMRI FOV masks (the default), 
-                                                                         #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
-                                                                         #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
-                                                                         #   fMRI_FOV: a fMRI FOV mask                                                                         
-fMRIReference=`opts_GetOpt1 "--fmriref" $@`                              # Reference BOLD run name (i.e., --fmriname from run to be used as *reference*) to use as 
-                                                                         #   motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
-                                                                         #   NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
-                                                                         #   that a distortion correction and atlas (MNI152) registration solution for the reference
-                                                                         #   BOLD already exists. Also, the reference BOLD must have been acquired using the same
-                                                                         #   phase encoding direction, or it can not serve as a valid reference. 
-fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In the cases when BOLD image is registered to a specified BOLD reference, this option 
-                                                                         #   specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
-                                                                         #   Default is 'linear'.
-
-# Defaults
-PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
-DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction 
+DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit.
+                                                                         # WARNING: This LegacyStyleData option of slice timing correction is performed before motion correction 
                                                                          #   and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence
                                                                          #   of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One "Temporal 
                                                                          #   interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection." Slice timing
@@ -293,6 +273,32 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   # WARNI
                                                                          #   slice timing correction, provide major advantages for fMRI denoising, and are recommended. 
                                                                          #   No slice timing correction is done by default.  
 
+SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@' separated list of FSL slicetimer options. Please see FSL slicetimer documentation for details.
+                                                                         # Verbose (-v) is already turned on. TR is read from 'pixdim4' of the input NIFTI itself.
+                                                                         # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
+
+BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                  # Specifies what mask to use for the final bold:
+                                                                         #   T1_fMRI_FOV: combined T1w brain mask and fMRI FOV masks (the default), 
+                                                                         #   T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
+                                                                         #   T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV, 
+                                                                         #   fMRI_FOV: a fMRI FOV mask    
+
+fMRIReference=`opts_GetOpt1 "--fmriref" $@`                              # Reference BOLD run name (i.e., --fmriname from run to be used as *reference*) to use as 
+                                                                         #   motion correction target and to copy atlas (MNI152) registration from (or NONE; default).
+                                                                         #   NOTE: The reference BOLD has to have been fully processed using fMRIVolume pipeline, so
+                                                                         #   that a distortion correction and atlas (MNI152) registration solution for the reference
+                                                                         #   BOLD already exists. Also, the reference BOLD must have been acquired using the same
+                                                                         #   phase encoding direction, or it can not serve as a valid reference. 
+                                                                         # WARNING: This option excludes tbe use of --fmriscout option, as the scout from the specified
+                                                                         #   reference BOLD is used. 
+
+fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In the cases when BOLD image is registered to a specified BOLD reference, this option 
+                                                                         #   specifies whether to use 'linear' or 'nonlinear' registration to reference BOLD.
+                                                                         #   Default is 'linear'.
+
+# Defaults
+PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
+DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
@@ -340,15 +346,14 @@ fi
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   ComplianceMsg+=" --doslicetime=TRUE --slicetimerparams=${SliceTimerCorrectionParameters}"
   Compliance="LegacyStyleData"
-  log_Warn "This LegacyStyleData option of slice timing correction is performed before motion"
-  log_Warn "  correction (as is typically done in legacy-style brain imaging) and thus assumes that the"
-  log_Warn "  brain is motionless. Errors in temporal interpolation will occur in the presence of head"
-  log_Warn "  motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One "
-  log_Warn "  'Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for"
-  log_Warn "  artifact detection.' Slice timing correction and motion correction would ideally be performed"
-  log_Warn "  simultaneously; however, this is not currently supported by any major software tool. HCP-Style"
-  log_Warn "  fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide"
-  log_Warn "  major advantages for fMRI denoising, and are recommended."
+  log_Warn "This LegacyStyleData option of slice timing correction is performed before motion correction "
+  log_Warn "   and thus assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence"
+  log_Warn "   of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 'Temporal "
+  log_Warn "   interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact detection.' Slice timing"
+  log_Warn "   correction and motion correction would ideally be performed simultaneously; however, this is not currently "
+  log_Warn "   supported by any major software tool. HCP-Style fast TR fMRI data acquisitions (TR<=1s) avoid the need for "
+  log_Warn "   slice timing correction, provide major advantages for fMRI denoising, and are recommended. "
+  log_Warn "   No slice timing correction is done by default"
 fi
 
 
