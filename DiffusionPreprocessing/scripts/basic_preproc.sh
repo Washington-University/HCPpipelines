@@ -64,7 +64,7 @@ do
 		echo "${scriptName}: ERROR: Mean file: ${basename}_mean.nii.gz not created"
 		exit 1
 	fi
-	
+
 	echo "${scriptName}: Getting Posbvals from ${basename}.bval"
 	Posbvals=`cat ${basename}.bval`
 	echo "${scriptName}: Posbvals: ${Posbvals}"
@@ -98,6 +98,85 @@ do
 	fi
 	entry_cnt=$((${entry_cnt} + 1))
 	${FSLDIR}/bin/imrm ${basename}_mean
+done
+
+
+################################################################################################
+## Identifying the best b0's to use in topup
+################################################################################################
+# This code in this section was adapted from a script written for the developing HCP (https://git.fmrib.ox.ac.uk/matteob/dHCP_neo_dMRI_pipeline_release/blob/master/utils/pickBestB0s.sh)
+# The original script was released under the Apache license 2.0 (https://git.fmrib.ox.ac.uk/matteob/dHCP_neo_dMRI_pipeline_release/blob/master/LICENSE)
+
+select_b0_dir=${rawdir}/select_b0
+mkdir -p ${select_b0_dir}
+
+# Merge all b0's to do a rough initial aligment using topup
+merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_b0s")
+for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
+do
+	basename=`imglob ${entry}`
+	select_dwi_vols ${basename} ${basename}.bvals ${basename}_b0s 0
+  qc_command+=("${basename}_b0s")
+done
+"${merge_command[@]}"
+
+# Create the acqparams file for the initial alignment
+for entry in ${rawdir}/${basePos}_[0-9]*.nii*
+do
+	basename=`imglob ${entry}`
+  for idx in {1..`fslval ${basename_b0s} dim3`} ; do
+      if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+        echo 1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+      elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
+        echo 0 1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+      fi
+  done
+done
+
+for entry in ${rawdir}/${baseNeg}_[0-9]*.nii*
+do
+	basename=`imglob ${entry}`
+  for idx in {1..`fslval ${basename}_b0s dim3`} ; do
+      if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+        echo -1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+      elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
+        echo 0 -1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+      fi
+  done
+done
+
+# run topup to roughly align the b0's
+configdir=${HCPPIPEDIR_Config}
+topup_config_file=${configdir}/best_b0.cnf
+${FSLDIR}/bin/topup --imain=${select_b0_dir}/all_b0s \
+	 --datain=${select_b0_dir}/acqparams.txt \
+	 --config=${topup_config_file} \
+	 --fout=${select_b0_dir}/fieldmap \
+	 --iout=${select_b0_dir}/topup_b0s \
+	 --out=${select_b0_dir}/topup_results \
+	 -v
+
+# compute squared residual from the mean b0
+${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
+${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
+
+# Get brain mask from averaged results
+${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+
+# compute average squared residual over brain mask
+scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+echo "b0 scores: " ${scores[@]}
+
+# store scores for each series
+idx_all_b0s=1
+for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
+do
+	basename=`imglob ${entry}`
+	rm ${basename}_scores
+  for idx in {1..`fslval ${basename}_b0s dim3`} ; do
+    echo scores[${idx_all_b0s}] >> ${basename}_scores
+    idx_all_b0s=$((${idx_all_b0s}+1))
+  done
 done
 
 
