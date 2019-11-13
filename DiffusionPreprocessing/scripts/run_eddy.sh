@@ -576,6 +576,7 @@ main()
 	eddy_command+="${sep_offs_moveOption} "
 	eddy_command+="${rmsOption} "
 	eddy_command+="${ff_valOption} "
+	eddy_command+="--cnr_maps "
 	eddy_command+="--imain=${workingdir}/Pos_Neg "
 	eddy_command+="--mask=${workingdir}/nodif_brain_mask "
 	eddy_command+="--index=${workingdir}/index.txt "
