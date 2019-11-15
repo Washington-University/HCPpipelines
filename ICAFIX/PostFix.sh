@@ -464,6 +464,11 @@ main()
 	esac
 
 	# N.B. ${ComponentList} doesn't exist until after prepareICAs
+	# If it doesn't exist at this point, we should abort
+	if [ ! -e ${ComponentList} ] ; then
+		log_Err_Abort "ComponentList (${ComponentList}) does not exist"
+	fi
+
 	log_Msg "Convert melodic volume maps to dscalar. Output ${ICAFolder}/melodic_oIC_vol.dscalar.nii"
 	${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC_vol.dtseries.nii ROW ${ICAFolder}/melodic_oIC_vol.dscalar.nii -name-file ${ComponentList}
 
