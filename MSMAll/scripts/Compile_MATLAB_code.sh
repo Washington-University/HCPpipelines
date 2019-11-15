@@ -32,12 +32,29 @@
 #
 #~ND~END~
 
-# NOTE: In principle, the use of the @gifti -> gifti-1.6/@gifti symlink should 
-# have allowed the use of a single "-I global/matlab", but that doesn't work.
-# (Perhaps the compiler doesn't follow symlinks?)
-# NOTE: Need to do "-I" on global/matlab/gifti-1.6 BEFORE "-I" on global/matlab 
-# otherwise the compile for some reason doesn't find the GIFTI tools.
- 
+
+# NOTE: The use of '${HCPPIPEDIR}/global/matlab/@gifti' as a symlink to '${HCPPIPEDIR}/global/matlab/gifti-1.6/@gifti'
+# works just fine to ensure that adding '${HCPPIPEDIR}/global/matlab' to the matlab path within scripts
+# is sufficient to enable GIFTI I/O functionality within INTERPRETED matlab (or Octave) mode.
+# However, for compilation, using a single "-I ${HCPPIPEDIR}/global/matlab" option is NOT sufficient to enable
+# GIFTI I/O functionality within compiled matlab executables -- perhaps because the matlab compiler
+# doesn't follow or recognize the @gifti symlink?
+# Thence the need for explicitly also including "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" as an option
+# in the compiler commands below.
+
+# FURTHER, the "-I" option *appends* folders to the search path, and
+# "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" must come BEFORE
+# "-I ${HCPPIPEDIR}/global/matlab", OTHERWISE, the presence of the @gifti symlink actually
+# *prevents* the GIFTI I/O functionality from being included.
+
+# Simply deleting the @gifti symlink from ${HCPPIPEDIR}/global/matlab is NOT an option,
+# because the pipeline scripts have come to rely on that convenience for interpreted matlab mode.
+# We COULD delete the @gifti symlink and simultaneously move the actual '@gifti' folder
+# into '${HCPPIPEDIR}/global/matlab', in which case interpreted matlab mode would continue to work,
+# and we could then consolidate the two different "-I" options into one.
+# But, sticking with the symlink for now, since it was already in place.
+
+
 # ------------------------------------------------------------------------------
 #  Compile the ComputeVN MATLAB code
 # ------------------------------------------------------------------------------
