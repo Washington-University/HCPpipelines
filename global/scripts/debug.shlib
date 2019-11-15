@@ -105,10 +105,10 @@ fi
 #but until a disable function is called, it is harmless (for non-interactive), so only warn
 #except, 'trap ... ERR' by default doesn't get inherited by functions except with the errtrace shopt
 #for now, just disable the warning, until we have time for testing
-if [[ "$-" != *u* && "$-" == *e* ]]
-then
-    #log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
-fi
+#if [[ "$-" != *u* && "$-" == *e* ]]
+#then
+#    log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
+#fi
 
 #if interactive, always disable set -e
 if [[ "$-" == *i* ]]
