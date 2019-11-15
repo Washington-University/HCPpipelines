@@ -423,12 +423,14 @@ for fmri in $fmris ; do
 	## (We cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
 	## specific script that is not part of the FIX distribution).
 
-	# For interpreted modes, make sure that matlab/octave has access to the functions it needs.
+	# For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 	# normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
 	# Note that the call_matlab.sh script itself adds ${FSL_FIXDIR} (all the fix-related functions)
 	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
-	# Note that the ciftiopen.m, ciftisave.m functions are added to the path through the ${FSL_FIX_WBC} 
-	# environment variable within fix_3_clean.m itself.
+	# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} (defined in ${FSL_FIXDIR}/settings.sh)
+	# to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
+	# BUT the CIFTI I/O functions are also now included within '${HCPPIPEDIR}/global/matlab' as well.
+	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence!
 	ML_PATHS="addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	case ${FSL_FIX_MATLAB_MODE} in
