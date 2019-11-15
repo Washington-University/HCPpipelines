@@ -17,8 +17,8 @@ possible modes, controlled by the `--matlab-run-mode` input argument:
 If using Compiled Matlab, the `MATLAB_COMPILER_RUNTIME` environment variable
 must be set to the directory containing the "MATLAB Compiler Runtime" (MCR)
 version (installed on your system) that was used for the compilation, which
-was 'R2016b/v91'.
+was 'R2017b/v93'.
 
 i.e.,
 
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
+	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93

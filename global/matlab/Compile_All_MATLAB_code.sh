@@ -22,12 +22,6 @@
 # See the [LICENSE](https://github.com/Washington-University/HCPpipelines/blob/master/LICENSE.md) file
 #
 
-# NOTE: In principle, the use of the @gifti -> gifti-1.6/@gifti symlink should 
-# have allowed the use of a single "-I global/matlab", but that doesn't work.
-# (Perhaps the compiler doesn't follow symlinks?)
-# NOTE: Need to do "-I" on global/matlab/gifti-1.6 BEFORE "-I" on global/matlab 
-# otherwise the compile for some reason doesn't find the GIFTI tools.
-
 g_script_name=$(basename "${0}")
 
 # ------------------------------------------------------------------------------
