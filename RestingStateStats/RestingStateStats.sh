@@ -44,14 +44,12 @@
 #
 # ### Installed Software
 #
-# * Connectome Workbench (v1.0 or above)
-# * FSL (version 5.0.6 or above)
+# * Connectome Workbench
+# * FSL
+# * Matlab
+#   - Necessary only if interpreted Matlab (non-compiled) is indicated as the Matlab run mode.
 # * Octave - Open source MATLAB alternative 
-#   - Necessary only if Octave is indicated as the Matlab 
-#     run mode
-# * Matlab (version R2013a)
-#   - Necessary only if Matlab (non-compiled) is indicated
-#     as the Matlab run mode.
+#   - Necessary only if Octave is indicated as the Matlab run mode
 #
 # ### Environment Variables
 # 
@@ -940,6 +938,8 @@ main()
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
+			log_Check_Env_Var MATLAB_COMPILER_RUNTIME
+
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/scripts/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
@@ -1124,7 +1124,6 @@ ${HCPPIPEDIR}/show_version
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var MATLAB_COMPILER_RUNTIME
 
 # Show tool versions
 show_tool_versions
