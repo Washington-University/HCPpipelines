@@ -22,7 +22,12 @@
 # See the [LICENSE](https://github.com/Washington-University/HCPpipelines/blob/master/LICENSE.md) file
 #
 
-
+# NOTE: In principle, the use of the @gifti -> gifti-1.6/@gifti symlink should 
+# have allowed the use of a single "-I global/matlab", but that doesn't work.
+# (Perhaps the compiler doesn't follow symlinks?)
+# NOTE: Need to do "-I" on global/matlab/gifti-1.6 BEFORE "-I" on global/matlab 
+# otherwise the compile for some reason doesn't find the GIFTI tools.
+ 
 # ------------------------------------------------------------------------------
 # Compile the RestingStateStats MATLAB function
 # ------------------------------------------------------------------------------
@@ -38,14 +43,10 @@ compile_RestingStateStats()
 	mkdir -p ${output_directory}
 	
 	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
-				  -a ${HCPPIPEDIR}/global/matlab/demean.m \
-				  -a ${HCPPIPEDIR}/global/matlab/normalise.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
+				  -I ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 	
 	popd > /dev/null
