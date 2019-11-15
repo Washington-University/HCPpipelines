@@ -121,6 +121,10 @@ fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
 log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
 
 fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
+fMRIScout=`opts_DefaultOpt $fMRIScout NONE` # Set to NONE if no scout is provided. 
+                                            # NOTE: If external BOLD reference is to be used (--fmriref), --fmriscout 
+                                            #   should not be provided or it needs to be set to NONE. The two options 
+                                            #   are mutualy exclusive.
 log_Msg "fMRIScout: ${fMRIScout}"
 
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
@@ -289,7 +293,7 @@ fMRIReference=`opts_GetOpt1 "--fmriref" $@`                              # Refer
                                                                          #   that a distortion correction and atlas (MNI152) registration solution for the reference
                                                                          #   BOLD already exists. Also, the reference BOLD must have been acquired using the same
                                                                          #   phase encoding direction, or it can not serve as a valid reference. 
-                                                                         # WARNING: This option excludes tbe use of --fmriscout option, as the scout from the specified
+                                                                         # WARNING: This option excludes the use of --fmriscout option, as the scout from the specified
                                                                          #   reference BOLD is used. 
 
 fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In the cases when BOLD image is registered to a specified BOLD reference, this option 
@@ -299,6 +303,7 @@ fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In th
 # Defaults
 PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
 DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   
+fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
@@ -375,6 +380,13 @@ if [ "$fMRIReference" = "NONE" ]; then
   ReferenceResultsFolder="NONE"
 else
   fMRIReferenceReg=`opts_DefaultOpt $fMRIReferenceReg "linear"`
+
+  # check if reference bold is specified
+
+  if [ $fMRIScout != "NONE" ] ; then
+    log_Err_Abort "Both fMRI reference (--fmriref=${fMRIReference}) and fMRI Scout (--fmriscout=${fMRIScout}) were specified! The two options are mutualy exclusive."
+  fi
+
 
   # set reference and check if external reference (if one is specified) exists 
 
