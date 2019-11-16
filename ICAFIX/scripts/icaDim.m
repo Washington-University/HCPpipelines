@@ -5,7 +5,7 @@ function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
 %Variables
 Out.VNDIM=VN; %Variance Normalization Dimensionality initially set to 1
 lnb = 0.5; %Lower noise bound for Golden Section Search
-stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for legacy converged results, -1 for new converged results, >3 for fixed iterations)
+stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for 2 coincidences of legacy converged results, 3 for 3 coincidences of legacy converged results, -1 for new converged results, >3 for fixed iterations)
 
 if Iterate < 0
      stabThresh=0.25; %Difference in running average
