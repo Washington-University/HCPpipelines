@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP) , gradunwarp (HCP version 1.0.2) 
-#  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
+#  installed versions of: FSL, FreeSurfer, gradunwarp (HCP version) 
+#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
 ########################################## PIPELINE OVERVIEW ########################################## 
 
@@ -12,57 +12,80 @@
 
 # TODO
 
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "GenericfMRIVolumeProcessingPipeline.sh: ABORTING - HCPPIPEDIR environment variable not set"
+########################################## SUPPORT FUNCTIONS ##########################################
+
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Run fMRIVolume processing pipeline
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+	show_usage
 	exit 1
 fi
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
+if [ -z "${HCPPIPEDIR}" ]; then
+	echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
-################################################ SUPPORT FUNCTIONS ##################################################
+opts_ShowVersionIfRequested $@
 
-# Validate necesary environment variables
-validate_environment_vars()
-{
-	if [ -z "${FSLDIR}" ]; then
-		log_Err_Abort "FSLDIR environment variable not set"
-	fi
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
 
-	log_Msg "Environment variables used - Start"
-	log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-	log_Msg "FSLDIR: ${FSLDIR}"
-	log_Msg "Environment variables used - End"
-}
+${HCPPIPEDIR}/show_version
 
-# check for incompatible FSL version
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FREESURFER_HOME
+log_Check_Env_Var HCPPIPEDIR_Global
+
+GlobalScripts=${HCPPIPEDIR_Global}
+PipelineScripts=${HCPPIPEDIR}/fMRIVolume/scripts
+
+# ------------------------------------------------------------------------------
+#  Check for incompatible FSL version
+# ------------------------------------------------------------------------------
+
 check_fsl_version()
 {
-	local fsl_version_file
-	local fsl_version
+	local fsl_version=${1}
 	local fsl_version_array
 	local fsl_primary_version
 	local fsl_secondary_version
 	local fsl_tertiary_version
 
-	# get the current version of FSL in use
-	fsl_version_file="${FSLDIR}/etc/fslversion"
-
-	if [ -f ${fsl_version_file} ]; then
-		fsl_version=$(cat ${fsl_version_file})
-		log_Msg "Determined that the FSL version in use is ${fsl_version}"
-	else
-		log_Err_Abort "Cannot tell which version of FSL is in use"
-	fi
-
-	# break FSL version string into components: primary, secondary, and tertiary
-	# FSL X.Y.Z would have X as primary, Y as secondary, and Z as tertiary versions
-
+	# parse the FSL version information into primary, secondary, and tertiary parts
 	fsl_version_array=(${fsl_version//./ })
 	
 	fsl_primary_version="${fsl_version_array[0]}"
@@ -84,26 +107,13 @@ check_fsl_version()
 	fi
 }
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-show_usage() {
-    echo "Usage information To Be Written"
-    exit 1
-}
-
-validate_environment_vars
-
-check_fsl_version
+fsl_version_get fsl_ver
+check_fsl_version ${fsl_ver}
 
 ################################################## OPTION PARSING #####################################################
 
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-    show_usage
-fi
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -124,7 +134,7 @@ fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
 fMRIScout=`opts_DefaultOpt $fMRIScout NONE` # Set to NONE if no scout is provided. 
                                             # NOTE: If external BOLD reference is to be used (--fmriref), --fmriscout 
                                             #   should not be provided or it needs to be set to NONE. The two options 
-                                            #   are mutualy exclusive.
+                                            #   are mutually exclusive.
 log_Msg "fMRIScout: ${fMRIScout}"
 
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
@@ -224,10 +234,6 @@ then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
-# Setup PATHS
-PipelineScripts=${HCPPIPEDIR_fMRIVol}
-GlobalScripts=${HCPPIPEDIR_Global}
-
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
@@ -264,7 +270,6 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 # ------------------------------------------------------------------------------
 #  Legacy Style Data Options
 # ------------------------------------------------------------------------------
-
 
 PreregisterTool=`opts_GetOpt1 "--preregistertool" $@`                    # what to use to preregister BOLDs before FSL BBR - epi_reg (default) or flirt
 DoSliceTimeCorrection=`opts_GetOpt1 "--doslicetime" $@`                  # Whether to do slicetime correction (TRUE), FALSE to omit.
@@ -361,7 +366,6 @@ if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   log_Warn "   No slice timing correction is done by default"
 fi
 
-
 # -- Use of nonstandard BOLD mask
 
 if [ "${BOLDMask}" != 'T1_fMRI_FOV' ]; then
@@ -386,7 +390,6 @@ else
   if [ $fMRIScout != "NONE" ] ; then
     log_Err_Abort "Both fMRI reference (--fmriref=${fMRIReference}) and fMRI Scout (--fmriscout=${fMRIScout}) were specified! The two options are mutualy exclusive."
   fi
-
 
   # set reference and check if external reference (if one is specified) exists 
 
@@ -432,7 +435,10 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-# -- End compliance check
+# ------------------------------------------------------------------------------
+#  End Compliance check
+# ------------------------------------------------------------------------------
+
 
 #error check bias correction opt
 case "$BiasCorrection" in
@@ -778,5 +784,5 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 #${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc
 #${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc
 
-log_Msg "Completed"
+log_Msg "Completed!"
 

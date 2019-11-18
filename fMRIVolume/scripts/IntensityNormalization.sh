@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
 # Intensity normalisation, and bias field correction, and optional Jacobian modulation, applied to fMRI images (all inputs must be in fMRI space)
 
 #  This code is released to the public domain.
@@ -10,38 +8,80 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 #  Mark Jenkinson, FMRIB Centre, University of Oxford
 #  2011-2012
 #
-#  Neither Washington Univeristy in St Louis, the FMRIB Centre, the
+#  Neither Washington University in St Louis, the FMRIB Centre, the
 #  University of Oxford, nor any of their employees imply any warranty
 #  of usefulness of this software for any purpose, and do not assume
 #  any liability for damages, incidental or otherwise, caused by any
 #  use of this document.
 
-################################################ REQUIREMENTS ##################################################
-
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}
+
+Usage: ${script_name} [options]
+
+  --infmri=<input fmri data>
+  --biasfield=<bias field, already registered to fmri data>
+  --jacobian=<jacobian image, already registered to fmri data>
+  --brainmask=<brain mask in fmri space>
+  --ofmri=<output basename for fmri data>
+  --usejacobian=<apply jacobian modulation: true/false>
+  [--inscout=<input name for scout image (pre-sat EPI)>]
+  [--oscout=<output name for normalized scout image>]
+  [--workingdir=<working dir>]
+  [--boldmask=<what mask to use for generating final BOLD timeseries:
+           T1_fMRI_FOV (default): mask based on T1 and voxels available at all timepoints (i.e., the fMRI FOV)
+           T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
+           T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV
+           fMRI_FOV: a fMRI FOV mask"
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-Usage() {
-  echo "`basename $0`: "
-  echo " "
-  echo "Usage: `basename $0` --infmri=<input fmri data>"
-  echo "             --biasfield=<bias field, already registered to fmri data>"
-  echo "             --jacobian=<jacobian image, already registered to fmri data>"
-  echo "             --brainmask=<brain mask in fmri space>"
-  echo "             --ofmri=<output basename for fmri data>"
-  echo "             --usejacobian=<apply jacobian modulation: true/false>"
-  echo "             [--inscout=<input name for scout image (pre-sat EPI)>]"
-  echo "             [--oscout=<output name for normalized scout image>]"
-  echo "             [--workingdir=<working dir>]"
-  echo "             [--boldmask=<what mask to use for generating final BOLD timeseries:"
-  echo "                         T1_fMRI_FOV (default): mask based on T1 and voxels available at all timepoints (i.e., the fMRI FOV)"
-  echo "                         T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV"
-  echo "                         T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV,"
-  echo "                         fMRI_FOV: a fMRI FOV mask"
-}
 
 # function for parsing options
 getopt1() {
@@ -50,7 +90,6 @@ getopt1() {
     for fn in $@ ; do
   if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
       echo $fn | sed "s/^${sopt}=//"
-      # if [ ] ; then Usage ; echo " " ; echo "Error:: option ${sopt} requires an argument"; exit 1 ; end
       return 0
   fi
     done
@@ -66,11 +105,6 @@ defaultopt() {
 # ${ScoutOutput}  (optional)
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 4 ] ; then Usage; exit 1; fi
 
 # parse arguments
 InputfMRI=`getopt1 "--infmri" $@`  # "$1"

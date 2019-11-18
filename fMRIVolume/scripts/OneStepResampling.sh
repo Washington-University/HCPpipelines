@@ -1,39 +1,81 @@
 #!/bin/bash 
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}: Script to combine warps and affine transforms together and do a single resampling, with specified output resolution
+
+Usage: ${script_name} [options]
+
+  --workingdir=<working dir>
+  --infmri=<input fMRI 4D image>
+  --t1=<input T1w restored image>
+  --fmriresout=<output resolution for images, typically the fmri resolution>
+  --fmrifolder=<fMRI processing folder>
+  --atlasspacedir=<output directory for several resampled images>
+  --fmri2structin=<input fMRI to T1w warp>
+  --struct2std=<input T1w to MNI warp>
+  --owarp=<output fMRI to MNI warp>
+  --oiwarp=<output MNI to fMRI warp>
+  --motionmatdir=<input motion correcton matrix directory>
+  --motionmatprefix=<input motion correcton matrix filename prefix>
+  --ofmri=<input fMRI 4D image>
+  --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in atlas (MNI152) space>
+  --biasfield=<input biasfield image, in atlas (MNI152) space>
+  --gdfield=<input warpfield for gradient non-linearity correction>
+  --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>
+  --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>
+  --oscout=<output transformed + distortion corrected scout image>
+  --ojacobian=<output transformed + distortion corrected Jacobian image>
+  [--fmrirefpath=<path to an external BOLD reference or NONE (default)>]
+  [--fmrirefreg=<whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image>]
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-Usage() {
-  echo "`basename $0`: Script to combine warps and affine transforms together and do a single resampling, with specified output resolution"
-  echo " "
-  echo "Usage: `basename $0` --workingdir=<working dir>"
-  echo "             --infmri=<input fMRI 4D image>"
-  echo "             --t1=<input T1w restored image>"
-  echo "             --fmriresout=<output resolution for images, typically the fmri resolution>"
-  echo "             --fmrifolder=<fMRI processing folder>"
-  echo "             --atlasspacedir=<output directory for several resampled images>"
-  echo "             --fmri2structin=<input fMRI to T1w warp>"
-  echo "             --struct2std=<input T1w to MNI warp>"
-  echo "             --owarp=<output fMRI to MNI warp>"
-  echo "             --oiwarp=<output MNI to fMRI warp>"
-  echo "             --motionmatdir=<input motion correcton matrix directory>"
-  echo "             --motionmatprefix=<input motion correcton matrix filename prefix>"
-  echo "             --ofmri=<input fMRI 4D image>"
-  echo "             --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in atlas (MNI152) space>"
-  echo "             --biasfield=<input biasfield image, in atlas (MNI152) space>"
-  echo "             --gdfield=<input warpfield for gradient non-linearity correction>"
-  echo "             --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>"
-  echo "             --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>"
-  echo "             --oscout=<output transformed + distortion corrected scout image>"
-  echo "             --ojacobian=<output transformed + distortion corrected Jacobian image>"
-  echo "             [--fmrirefpath=<path to an external BOLD reference or NONE (default)>]"
-  echo "             [--fmrirefreg=<whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image>]"
-}
 
 # function for parsing options
 getopt1() {
@@ -69,10 +111,6 @@ defaultopt() {
 #          NB: last three images are all in low-res standard space
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
