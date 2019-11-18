@@ -35,34 +35,22 @@ PARAMETERs are [ ] = optional; < > = user supplied value
     #do not use exit, the parsing code takes care of it
 }
 
-function main()
-{
-    #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-    #help info for option gets printed like "--foo=<$3> - $4"
-    opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-    opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
-    opts_ParseArguments "$@"
-    
-    if ((pipedirguessed))
-    then
-        log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
-    fi
-    
-    #display the parsed/default values
-    opts_ShowValues
-    
-    #processing code goes here
-}
+#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
+#help info for option gets printed like "--foo=<$3> - $4"
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
+opts_ParseArguments "$@"
 
-if (($# == 0)) || [[ "$1" == -* ]]
+if ((pipedirguessed))
 then
-    #named parameters
-    main "$@"
-else
-    #positional support goes here - just call main with named parameters built from $1, etc
-    log_Err_Abort "positional parameter support is not currently implemented"
-    main --foo="$1" --bar="$2"
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+#display the parsed/default values
+opts_ShowValues
+
+#processing code goes here
+
 EXAMPLE_END
 
 #we want a "log error and abort" function, so use the shlib for that
