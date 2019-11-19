@@ -255,7 +255,8 @@ function opts_print_help_line()
 {
     local maxwidth=79 ncols minaccept=30 maxaccept=300
     #check the terminal width and fill accordingly, but don't go crazy until this code is well-tested
-    if ncols=$(tput cols 2>/dev/null)
+    #WARNING: tput tests stderr, so redirecting it makes it return the default (generally 80)
+    if ncols=$(tput cols)
     then
         if ((ncols < minaccept))
         then
@@ -283,7 +284,6 @@ function opts_print_help_line()
         local firstloop=1
         while ((firstloop || ${#linemod} > 0))
         do
-            firstloop=0
             local string=""
             if ((firstline == 1))
             then
@@ -294,6 +294,7 @@ function opts_print_help_line()
                     string="   "
                 fi
             else
+                #consider two different indentings depending on firstloop, to distinguish wrap from intentional newline
                 string="        "
             fi
             string+="$linemod"
@@ -316,6 +317,7 @@ function opts_print_help_line()
                 fi
             fi
             echo "$toprint"
+            firstloop=0
             firstline=0
         done
     done
