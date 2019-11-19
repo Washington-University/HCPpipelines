@@ -1,28 +1,8 @@
 #!/bin/bash
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6 or later)
-#  environment: HCPPIPEDIR
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_PostFS}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_PostFS environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_PostFS: ${HCPPIPEDIR_PostFS}"
-fi
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
@@ -32,37 +12,69 @@ fi
 
 #TODO
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Checking processing mode compliance
-
 ########################################## SUPPORT FUNCTIONS ##########################################
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 show_usage() {
-    echo "Usage information To Be Written"
-    exit 1
+	cat <<EOF
+
+${script_name}: Run PostFreeSurfer processing pipeline
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
 }
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-log_SetToolName "PostFreeSurferPipeline_1res.sh"
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
 
-################################################## OPTION PARSING #####################################################
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-    show_usage
+	show_usage
+	exit 0
 fi
+
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+HCPPIPEDIR_PostFS=${HCPPIPEDIR}/PostFreeSurfer/scripts
+
+# ------------------------------------------------------------------------------
+#  Parse Command Line Options
+# ------------------------------------------------------------------------------
+
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -111,8 +123,10 @@ verbose_echo " "
 verbose_echo " Using environment setting ..."
 verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
 
-#Naming Conventions
-# Do NOT include spaces in any of these names
+# ------------------------------------------------------------------------------
+#  Naming Conventions
+#  Do NOT include spaces in any of these names
+# ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
 T1wFolder="T1w" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
@@ -162,7 +176,6 @@ FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
-
 # ------------------------------------------------------------------------------
 #  Compliance check
 # ------------------------------------------------------------------------------
@@ -191,7 +204,9 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-
+# ------------------------------------------------------------------------------
+#  Start work
+# ------------------------------------------------------------------------------
 
 #Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
@@ -271,4 +286,4 @@ argList+="$RegName "                                  # ${39}
 verbose_green_echo "---> Finished ${script_name}"
 verbose_echo " "
 
-log_Msg "Completed"
+log_Msg "Completed!"

@@ -95,7 +95,7 @@ debug_defaults()
 
 if [[ "$(type -t log_Err)" != "function" ]]
 then
-    source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@" # Debugging functions; also sources log.shlib
+    source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"
 fi
 
 # == Sanity checking and convenience with set -u and interactive shells
@@ -103,10 +103,12 @@ fi
 #note: 'set -u' complaints will not call 'trap ... ERR', but will do a 'set -e' exit
 #if we don't have -u but we do have -e, we are in an unintended state
 #but until a disable function is called, it is harmless (for non-interactive), so only warn
-if [[ "$-" != *u* && "$-" == *e* ]]
-then
-    log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
-fi
+#except, 'trap ... ERR' by default doesn't get inherited by functions except with the errtrace shopt
+#for now, just disable the warning, until we have time for testing
+#if [[ "$-" != *u* && "$-" == *e* ]]
+#then
+#    log_Warn "this script is using debug.shlib, but also specifies 'set -e', which is redundant"
+#fi
 
 #if interactive, always disable set -e
 if [[ "$-" == *i* ]]
@@ -125,7 +127,7 @@ debug_enable_trap()
 {
     HCP_DEBUG_USETRAP=ON
     #if we will exit on error, are noninteractive, and have set -u, also enable -e
-    if [[ "$HCP_DEBUG_EXIT_ON_ERROR" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    if [[ "${HCP_DEBUG_EXIT_ON_ERROR:-}" == "ON" && "$-" != *i* && "$-" == *u* ]]
     then
         set -e
     fi
@@ -150,7 +152,7 @@ debug_enable_exit()
 {
     HCP_DEBUG_EXIT_ON_ERROR=ON
     #if we will exit on error, are noninteractive, and have set -u, also enable -e
-    if [[ "$HCP_DEBUG_USETRAP" == "ON" && "$-" != *i* && "$-" == *u* ]]
+    if [[ "${HCP_DEBUG_USETRAP:-}" == "ON" && "$-" != *i* && "$-" == *u* ]]
     then
         set -e
     fi

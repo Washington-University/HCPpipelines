@@ -1,32 +1,56 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6) (including python with numpy, needed to run aff2rigid - part of FSL)
-#  environment: FSLDIR
+#  installed versions of: FSL (including python with numpy, needed to run aff2rigid - part of FSL)
+#  environment: HCPPIPEDIR, FSLDIR
 
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
 
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
 Usage() {
-  echo "$(basename $0): Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
-  echo " "
-  echo "Usage: $(basename $0) --workingdir=<working dir> --in=<input image> --ref=<reference image> --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>]"
+	cat <<EOF
+
+${script_name}: Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space
+
+Usage: ${script_name}
+  --workingdir=<working dir> 
+  --in=<input image> 
+  --ref=<reference image> 
+  --out=<output image> 
+  --omat=<output matrix> 
+  [--brainsize=<brainsize>]
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -54,11 +78,6 @@ defaultopt() {
 #     "$Output"  (the ACPC aligned image)
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 5 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

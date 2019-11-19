@@ -30,7 +30,7 @@
 
 #############################################################
 
-Usage() {
+show_usage() {
     cat <<EOF
 
 hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
@@ -79,13 +79,12 @@ e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMR
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
 
 EOF
-    exit 1
 }
 
 if (( $# < 4 ))
 then
-    #Usage does an exit
-    Usage
+    show_usage
+	exit 1
 fi
 
 #############################################################
@@ -104,9 +103,9 @@ fi
 #  Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-# Verify any other needed environment variables are set
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
@@ -141,6 +140,12 @@ log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
 
+# Show specific FIX version, if available
+if [ -f ${FSL_FIXDIR}/fixversion ]; then
+	fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+	log_Msg "FIX version: $fixversion"
+fi
+
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
@@ -151,7 +156,8 @@ FSL_FIX_WBC=${Caret7_Command}  # Used by fix_3_clean in interpreted matlab/octav
 	
 #############################################################
 
-#
+### Support Functions
+
 # NOTE:
 #   Don't echo anything in this function other than the last echo
 #   that outputs the return value
@@ -242,18 +248,40 @@ demeanMovementRegressors() {
 	echo "${AllOut}" > ${Out}
 }
 
-fsl_version_get fsl_ver
-log_Msg "FSL version: ${fsl_ver}"
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
+
+#############################################################
+
+## ---------------------------------------------------------------------------
+## Check whether FSL version is recent enough
+## ---------------------------------------------------------------------------
 
 old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
-
 if [ "${old_or_new_version}" == "OLD" ] ; then
 	log_Err_Abort "FSL version 6.0.1 or greater is required."
 fi
 
+## ---------------------------------------------------------------------------
+## Parse and check parameters
+## ---------------------------------------------------------------------------
+
+fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
+
 hp=$2
 if [[ "${hp}" == "0" ]]; then
-	log_Msg "hp=0 corresponds to a linear detrend"
 	pdFlag=TRUE
 fi
 if [[ "${hp}" == pd* ]]; then
@@ -272,27 +300,7 @@ if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then  #Logic of this script does no
     log_Err_Abort "highpass value must not be negative"
 fi
 
-log_Msg "hp: ${hp}"
-
-fmris=`echo ${1} | sed 's/@/ /g'` # replaces the @ that combines the filenames with ' '
-log_Msg "fmris: ${fmris}"
 ConcatName="${3}"
-log_Msg "ConcatName: ${ConcatName}"
-
-function interpret_as_bool()
-{
-    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
-    (true | yes | 1)
-        echo TRUE
-        ;;
-    (false | no | none | 0)
-        echo FALSE
-        ;;
-    (*)
-        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
-        ;;
-    esac
-}
 
 doMotionRegression=$(interpret_as_bool "$4")
 
@@ -311,10 +319,23 @@ if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
 
-DIR=`pwd`
-log_Msg "PWD : $DIR"
+## ---------------------------------------------------------------------------
+## Report parameters
+## ---------------------------------------------------------------------------
 
-#echo $fmris | tr ' ' '\n' #separates paths separated by ' '
+log_Msg "fMRI Names: ${fmris}"
+log_Msg "highpass: ${hp}"
+if [[ "${hp}" == "0" ]]; then
+	log_Msg "hp=0 corresponds to a linear detrend"
+fi
+log_Msg "ConcatName: ${ConcatName}"
+log_Msg "doMotionRegression: ${doMotionRegression}"
+log_Msg "TrainingData: ${TrainingData}"
+log_Msg "FixThresh: ${FixThresh}"
+log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
+
+DIR=`pwd`
+log_Msg "PWD: $DIR"
 
 ## ---------------------------------------------------------------------------
 ## Preparation (highpass) on the individual runs
@@ -402,12 +423,14 @@ for fmri in $fmris ; do
 	## (We cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
 	## specific script that is not part of the FIX distribution).
 
-	# For interpreted modes, make sure that matlab/octave has access to the functions it needs.
+	# For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 	# normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
 	# Note that the call_matlab.sh script itself adds ${FSL_FIXDIR} (all the fix-related functions)
 	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
-	# Note that the ciftiopen.m, ciftisave.m functions are added to the path through the ${FSL_FIX_WBC} 
-	# environment variable within fix_3_clean.m itself.
+	# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} (defined in ${FSL_FIXDIR}/settings.sh)
+	# to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
+	# BUT the CIFTI I/O functions are also now included within '${HCPPIPEDIR}/global/matlab' as well.
+	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence!
 	ML_PATHS="addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	case ${FSL_FIX_MATLAB_MODE} in
@@ -739,11 +762,14 @@ fi
 log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command
+# use array for whitespace safety, even if the rest of the script isn't
 if [[ ${doMotionRegression} == "TRUE" ]]; then
-    #use array for whitespace safety, even if the rest of the script isn't
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 else
     #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+	# Update (11/8/2019): No longer true as of FIX 1.06.12, but since filtering of the CIFTI in MR-FIX occurs in
+	# functionhighpassandvariancenormalize it doesn't matter, so we leave the code unchanged so that we don't
+	# need to add a FIX version dependency to the script
     fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
 log_Msg "fix_cmd: ${fix_cmd[*]}"

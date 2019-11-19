@@ -44,14 +44,12 @@
 #
 # ### Installed Software
 #
-# * Connectome Workbench (v1.0 or above)
-# * FSL (version 5.0.6 or above)
+# * Connectome Workbench
+# * FSL
+# * Matlab
+#   - Necessary only if interpreted Matlab (non-compiled) is indicated as the Matlab run mode.
 # * Octave - Open source MATLAB alternative 
-#   - Necessary only if Octave is indicated as the Matlab 
-#     run mode
-# * Matlab (version R2013a)
-#   - Necessary only if Matlab (non-compiled) is indicated
-#     as the Matlab run mode.
+#   - Necessary only if Octave is indicated as the Matlab run mode
 #
 # ### Environment Variables
 # 
@@ -81,39 +79,42 @@
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-usage()
+show_usage()
 {
-	echo ""
-	echo "  Compute Resting State Statistics"
-	echo ""
-	echo "  Usage: ${g_script_name} <options>"
-	echo ""
-	echo "  Options: [ ] = optional; < > = user supplied value"
-	echo ""
-	echo "   [--help] : show usage information and exit"
-	echo "    --path=<path to study folder> OR --study-folder=<path to study folder>"
-	echo "    --subject=<subject ID>"
-	echo "    --fmri-name=<fMRI name>"
-	echo "    --high-pass=<high pass>"
-	echo "   [--reg-name=<registration name> (e.g. NONE or MSMSulc)] defaults to NONE if not specified"
-	echo "    --low-res-mesh=<low resolution mesh size> (in thousands, e.g. 32 --> 32k)"
-	echo "    --final-fmri-res=<final fMRI resolution> (in millimeters)"
-	echo "    --brain-ordinates-res=<brain ordinates resolution> (in millimeters)"
-	echo "    --smoothing-fwhm=<smoothing full width at half max>"
-	echo "    --output-proc-string=<output processing string>"
-	echo "   [--dlabel-file=<dlabel file>] defaults to NONE if not specified"
-	echo "   [--matlab-run-mode={0, 1, 2}] defaults to 1 (Interpreted Matlab)"
-	echo "     0 = Use compiled Matlab"
-	echo "     1 = Use interpreted Matlab"
-	echo "     2 = Use Octave"
-	echo "   [--bc-mode={REVERT,NONE,CORRECT}] defaults to REVERT"
-	echo "     REVERT = Revert minimal preprocessing pipelines bias field correction"
-	echo "     NONE = Do not change bias field correction"
-	echo "     CORRECT = Revert and apply corrected bias field correction, requires ${ResultsFolder}/${fMRIName}_Atlas[${RegName}]_real_bias.dscalar.nii"
-	echo "   [--out-string=<out-string> defaults to 'stats'"
-	echo "   [--wm=<NONE | FreeSurfer Label Config File>]"
-	echo "   [--csf=<NONE | FreeSurfer Label Config File>]"
-	echo ""
+	cat <<EOF
+
+${g_script_name}: Compute Resting State Statistics
+
+Usage: ${g_script_name} <options>
+
+Options: [ ] = optional; < > = user supplied value
+
+  [--help] : show usage information and exit
+  --path=<path to study folder> OR --study-folder=<path to study folder>
+  --subject=<subject ID>
+  --fmri-name=<fMRI name>
+  --high-pass=<high pass>
+  [--reg-name=<registration name> (e.g. NONE or MSMSulc)] defaults to NONE if not specified
+  --low-res-mesh=<low resolution mesh size> (in thousands, e.g. 32 --> 32k)
+  --final-fmri-res=<final fMRI resolution> (in millimeters)
+  --brain-ordinates-res=<brain ordinates resolution> (in millimeters)
+  --smoothing-fwhm=<smoothing full width at half max>
+  --output-proc-string=<output processing string>
+  [--dlabel-file=<dlabel file>] defaults to NONE if not specified
+  [--matlab-run-mode={0, 1, 2}] defaults to 1 (Interpreted Matlab)
+       0 = Use compiled Matlab
+       1 = Use interpreted Matlab
+       2 = Use Octave
+  [--bc-mode={REVERT,NONE,CORRECT}] defaults to REVERT
+       REVERT = Revert minimal preprocessing pipelines bias field correction
+       NONE = Do not change bias field correction
+       CORRECT = Revert and apply corrected bias field correction
+                 Requires \${ResultsFolder}/\${fMRIName}_Atlas[\${RegName}]_real_bias.dscalar.nii
+  [--out-string=<out-string> defaults to 'stats'
+  [--wm=<NONE | FreeSurfer Label Config File>]
+  [--csf=<NONE | FreeSurfer Label Config File>]
+
+EOF
 }
 
 # ------------------------------------------------------------------------------
@@ -185,8 +186,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--path=*)
 				g_path_to_study_folder=${argument#*=}
@@ -257,7 +258,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				echo "ERROR: unrecognized option: ${argument}"
 				echo ""
 				exit 1
@@ -446,9 +447,6 @@ main()
 	# Get command line options
 	# See documentation for get_options function for global variables set
 	get_options $@
-
-	# show the versions of tools used
-	show_tool_versions
 
 	# Naming Conventions
 	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
@@ -940,6 +938,8 @@ main()
 	case ${g_matlab_run_mode} in
 		0)
 			# Use Compiled Matlab
+			log_Check_Env_Var MATLAB_COMPILER_RUNTIME
+
 			matlab_exe="${HCPPIPEDIR}"
 			matlab_exe+="/RestingStateStats/scripts/Compiled_RestingStateStats/run_RestingStateStats.sh"
 
@@ -1096,7 +1096,7 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    usage
+    show_usage
     exit 1
 fi
 
@@ -1107,17 +1107,28 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-log_SetToolName "${g_script_name}"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
 
 # Verify any other needed environment variables are set
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var MATLAB_COMPILER_RUNTIME
+
+# Show tool versions
+show_tool_versions
 
 # 
-# Invoke the main function to get things started
+# Invoke the 'main' function to get things started
 #
 main $@

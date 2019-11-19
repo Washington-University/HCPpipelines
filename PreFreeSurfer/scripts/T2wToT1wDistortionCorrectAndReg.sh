@@ -1,33 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), HCP-gradunwarp (HCP version 1.0.2)
-#  environment: FSLDIR and PATH for gradient_unwarp.py
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
-
-if [ -z "${FSLDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_Global}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Global environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
+#  installed versions of: FSL, gradunwarp (HCP version)
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
 # -----------------------------------------------------------------------------------
 #  Constants for specification of Averaging and Readout Distortion Correction Method
@@ -38,53 +13,87 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 FIELDMAP_METHOD_OPT="FIELDMAP"
 
-################################################ SUPPORT FUNCTIONS ##################################################
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
 Usage() {
-  echo "$(basename ${0}): Script for performing gradient-nonlinearity and susceptibility-inducted distortion correction on T1w and T2w images, then also registering T2w to T1w"
-  echo " "
-  echo "Usage: $(basename ${0}) [--workingdir=<working directory>]"
-  echo "            --t1=<input T1w image>"
-  echo "            --t1brain=<input T1w brain-extracted image>"
-  echo "            --t2=<input T2w image>"
-  echo "            --t2brain=<input T2w brain-extracted image>"
-  echo "            [--fmapmag=<input fieldmap magnitude image>]"
-  echo "            [--fmapphase=<input fieldmap phase images (single 4D image containing 2x3D volumes)>]"
-  echo "            [--fmapgeneralelectric=<input General Electric field map (two volumes: 1. field map in deg, 2. magnitude)>]"
-  echo "            [--echodiff=<echo time difference for fieldmap images (in milliseconds)>]"
-  echo "            [--SEPhaseNeg=<input spin echo negative phase encoding image>]"
-  echo "            [--SEPhasePos=<input spin echo positive phase encoding image>]"
-  echo "            [--seechospacing=<effective echo spacing of SEPhaseNeg and SEPhasePos, in seconds>]"
-  echo "            [--seunwarpdir=<direction of distortion of the SEPhase images according to *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>]"
-  echo "            --t1sampspacing=<sample spacing (readout direction) of T1w image - in seconds>"
-  echo "            --t2sampspacing=<sample spacing (readout direction) of T2w image - in seconds>"
-  echo "            --unwarpdir=<direction of distortion of T1 and T2 according to *voxel* axes (post fslreorient2std): {x,y,z,x-,y-,z-}, or {i,j,k,i-,j-,k-}>"
-  echo "            --ot1=<output corrected T1w image>"
-  echo "            --ot1brain=<output corrected, brain-extracted T1w image>"
-  echo "            --ot1warp=<output warpfield for distortion correction of T1w image>"
-  echo "            --ot2=<output corrected T2w image>"
-  echo "            --ot2brain=<output corrected, brain-extracted T2w image>"
-  echo "            --ot2warp=<output warpfield for distortion correction of T2w image>"
-  echo "            --method=<method used for readout distortion correction>"
-  echo ""
-  echo "                ${FIELDMAP_METHOD_OPT}"
-  echo "                  equivalent to ${SIEMENS_METHOD_OPT} (see below)"
-  echo "                  ${SIEMENS_METHOD_OPT} is preferred. This option is maintained for"
-  echo "                  backward compatibility."
-  echo "                ${SPIN_ECHO_METHOD_OPT}"
-  echo "                  use Spin Echo Field Maps for readout distortion correction"
-  echo "                ${GENERAL_ELECTRIC_METHOD_OPT}"
-  echo "                  use General Electric specific Gradient Echo Field Maps for"
-  echo "                  readout distortion correction"
-  echo "                ${SIEMENS_METHOD_OPT}"
-  echo "                  use Siemens specific Gradient Echo Field Maps for readout"
-  echo "                  distortion correction"
-  echo ""
-  echo "            [--topupconfig=<topup config file>]"
-  echo "            [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]"
+	cat <<EOF
+
+${script_name}: Script for performing gradient-nonlinearity and susceptibility-induced distortion correction on T1w and T2w images, then also registering T2w to T1w
+
+Usage: ${script_name}
+  [--workingdir=<working directory>]
+  --t1=<input T1w image>
+  --t1brain=<input T1w brain-extracted image>
+  --t2=<input T2w image>
+  --t2brain=<input T2w brain-extracted image>
+  [--fmapmag=<input fieldmap magnitude image>]
+  [--fmapphase=<input fieldmap phase images (single 4D image containing 2x3D volumes)>]
+  [--fmapgeneralelectric=<input General Electric field map (two volumes: 1. field map in deg, 2. magnitude)>]
+  [--echodiff=<echo time difference for fieldmap images (in milliseconds)>]
+  [--SEPhaseNeg=<input spin echo negative phase encoding image>]
+  [--SEPhasePos=<input spin echo positive phase encoding image>]
+  [--seechospacing=<effective echo spacing of SEPhaseNeg and SEPhasePos, in seconds>]
+  [--seunwarpdir=<direction of distortion of the SEPhase images according to *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>]
+  --t1sampspacing=<sample spacing (readout direction) of T1w image - in seconds>
+  --t2sampspacing=<sample spacing (readout direction) of T2w image - in seconds>
+  --unwarpdir=<direction of distortion of T1 and T2 according to *voxel* axes (post fslreorient2std): {x,y,z,x-,y-,z-}, or {i,j,k,i-,j-,k-}>
+  --ot1=<output corrected T1w image>
+  --ot1brain=<output corrected, brain-extracted T1w image>
+  --ot1warp=<output warpfield for distortion correction of T1w image>
+  --ot2=<output corrected T2w image>
+  --ot2brain=<output corrected, brain-extracted T2w image>
+  --ot2warp=<output warpfield for distortion correction of T2w image>
+  --method=<method used for readout distortion correction>
+
+        "${SPIN_ECHO_METHOD_OPT}"
+           use Spin Echo Field Maps for readout distortion correction
+
+        "${GENERAL_ELECTRIC_METHOD_OPT}"
+           use General Electric specific Gradient Echo Field Maps for readout distortion correction
+
+        "${SIEMENS_METHOD_OPT}"
+           use Siemens specific Gradient Echo Field Maps for readout distortion correction
+
+        "${FIELDMAP_METHOD_OPT}"
+           equivalent to ${SIEMENS_METHOD_OPT} (preferred)
+           This option is maintained for backward compatibility.
+
+  [--topupconfig=<topup config file>]
+  [--gdcoeffs=<gradient distortion coefficients (SIEMENS file)>]
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -126,11 +135,6 @@ defaultopt() {
 #        Note that these outputs are copies of the last two images (respectively) from the T2w2T1w subdirectory
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 17 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  

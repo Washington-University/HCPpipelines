@@ -87,35 +87,34 @@ Does not use any Matlab code.
 
 If your cluster compute environment doesn't support the use of interpreted
 MATLAB, your options are either to use compiled MATLAB or Octave.
-Unfortunately, due to different development paths, the setup of compiled
-MATLAB differs across the different scripts in this directory. We hope to be
-able to harmonize this in the future.
 
 #### hcp_fix, ReApplyFixPipeline
 
 The `FSL_FIX_MCRROOT` environment variable in the `${FSL_FIXDIR}/settings.sh`
 file must be set to the "root" of the directory containing the "MATLAB
 Compiler Runtime" (MCR) version for the MATLAB release under which the FIX
-distribution was compiled (i.e., 'R2014a' for FIX version 1.067;
-'R2017b' for FIX version 1.068).
+distribution was compiled (i.e., 'R2014a' for FIX version 1.067; 'R2017b' for
+FIX version 1.06.12 and later. Note that due to a bug in the compilation of
+GIFTI I/O functionality, compiled Matlab mode is not functional for FIX
+versions 1.068 - 1.06.11).
 [Note that the `${FSL_FIXDIR}/settings.sh` file automatically determines the MCR version number].
 
 #### hcp_fix_multi_run, ReApplyFixMultiRunPipeline
 
 * First, `${FSL_FIXDIR}/settings.sh` must be set up correctly.
-* Second, because some MATLAB functions (that are part of the HCPpipelines, rather
-than the FIX distribution) were compiled under a different version of the MCR,
-the `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
-directory containing the 'R2016b/v91' MCR.
+* Second, the `MATLAB_COMPILER_RUNTIME` environment variable must to set to
+the directory containing the 'R2017b/v93' MCR, which is the version of the MCR
+used to compile the MATLAB functions specific to the HCPpipelines (as opposed
+to the FIX distribution).
 
 i.e.,
 
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
+	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
 
 #### PostFix
 
 The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
-directory containing the 'R2016b/v91' MCR (i.e., same as with
+directory containing the 'R2017b/v93' MCR (i.e., same as with
 `hcp_fix_multi_run` and `ReApplyFixMultiRunPipeline`.
 
 

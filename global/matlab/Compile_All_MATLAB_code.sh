@@ -41,9 +41,9 @@ ${g_script_name}
   MATLAB code, it should not be necessary for a user of the HCP Pipelines to 
   use this script to compile the MATLAB code.
 
-  Currently, the compiled MATLAB code was created with MATLAB release R2016b
+  Currently, the compiled MATLAB code was created with MATLAB release R2017b
   and, therefore, is intended to be run using the MATLAB Compiler Runtime (MCR)
-  version R2016b/v91. 
+  version R2017b/v93. 
 
   Use of this script by users of the HCP Pipelines should only be necessary if
   a user wants or needs to use a different release of MATLAB. 
@@ -61,7 +61,7 @@ ${g_script_name}
   * The MATLAB_HOME environment variable must be set to the directory in which
     the version of MATLAB to use for the compilation is installed. For example:
 
-      export MATLAB_HOME=/usr/local/MATLAB/R2016b
+      export MATLAB_HOME=/usr/local/MATLAB/R2017b
 
   Requirements for Running Compiled MATLAB functions
   ==================================================
@@ -73,7 +73,7 @@ ${g_script_name}
   * The MATLAB_COMPILER_RUNTIME environment variable must be set to the directory
     in which the MCR is installed. For example:
 
-      export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2016b/v91
+      export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
 
   Usage: ${g_script_name} [--help]
 

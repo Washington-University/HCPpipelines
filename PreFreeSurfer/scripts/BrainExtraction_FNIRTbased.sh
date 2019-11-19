@@ -1,43 +1,60 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Templates
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Usage Description Function
 # ------------------------------------------------------------------------------
 
-if [ -z "${FSLDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_Templates}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Templates environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR_Templates: ${HCPPIPEDIR_Templates}"
-fi
-
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
 Usage() {
-  echo "$(basename $0): Tool for performing brain extraction using non-linear (FNIRT) results"
-  echo " "
-  echo "Usage: $(basename $0) [--workingdir=<working dir>] --in=<input image> [--ref=<reference highres image>] [--refmask=<reference brain mask>] [--ref2mm=<reference image 2mm>] [--ref2mmmask=<reference brain mask 2mm>] --outbrain=<output brain extracted image> --outbrainmask=<output brain mask> [--fnirtconfig=<fnirt config file>]"
+	cat <<EOF
+
+${script_name}: Tool for performing brain extraction using non-linear (FNIRT) results
+
+Usage: ${script_name}
+  [--workingdir=<working dir>]
+  --in=<input image>
+  [--ref=<reference highres image>]
+  [--refmask=<reference brain mask>]
+  [--ref2mm=<reference image 2mm>]
+  [--ref2mmmask=<reference brain mask 2mm>]
+  --outbrain=<output brain extracted image>
+  --outbrainmask=<output brain mask>
+  [--fnirtconfig=<fnirt config file>]
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Templates
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -66,11 +83,6 @@ defaultopt() {
 #    "$OutputBrainMask" "$OutputBrainExtractedImage"
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 4 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"

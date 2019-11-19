@@ -31,7 +31,7 @@
 #  Show usage information for this script
 # ------------------------------------------------------------------------------
 
-usage()
+show_usage()
 {
 	cat <<EOF
 
@@ -120,8 +120,8 @@ get_options()
 
 		case ${argument} in
 			--help)
-				usage
-				exit 1
+				show_usage
+				exit 0
 				;;
 			--path=*)
 				p_StudyFolder=${argument#*=}
@@ -168,7 +168,7 @@ get_options()
 				index=$(( index + 1 ))
 				;;
 			*)
-				usage
+				show_usage
 				log_Err_Abort "unrecognized option: ${argument}"
 				;;
 		esac
@@ -366,6 +366,12 @@ show_tool_versions()
 	fsl_version_get fsl_ver
 	log_Msg "FSL version: ${fsl_ver}"
 
+	# Show specific FIX version, if available
+	if [ -f ${FSL_FIXDIR}/fixversion ]; then
+		fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+		log_Msg "FIX version: $fixversion"
+	fi
+
 	old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 	if [ "${old_or_new_version}" == "OLD" ] ; then
 		log_Err_Abort "FSL version 6.0.1 or greater is required."
@@ -414,9 +420,6 @@ main()
 	else
 		local this_script_dir=$(dirname "$0")
 	fi
-
-	# Show tool versions
-	show_tool_versions
 
 	log_Msg "Starting main functionality"
 
@@ -490,15 +493,16 @@ main()
 
 	log_Msg "RegString: ${RegString}"
 
-	# For interpreted modes, make sure that matlab/octave has access to the functions it needs.
+	# For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 	# normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
 	# Since we are NOT using the ${FSL_FIXDIR}/call_matlab.sh script to invoke matlab (unlike 'hcp_fix_multi_run')
 	# we need to explicitly add ${FSL_FIXDIR} (all the fix-related functions)
 	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path as well.
 	# Several additional necessary environment variables (e.g., ${FSL_FIX_CIFTIRW} and ${FSL_FIX_WBC})
-	# are set in FSL_FIXDIR/settings.sh, which is sourced below for interpreted modes.
-	# Note that the ciftiopen.m, ciftisave.m functions are added to the path through the ${FSL_FIX_WBC} 
-	# environment variable within fix_3_clean.m itself.
+	# are set in ${FSL_FIXDIR}/settings.sh, which is sourced below for interpreted modes.
+	# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
+	# BUT the CIFTI I/O functions are also now included within '${HCPPIPEDIR}/global/matlab' as well.
+	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence!
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
@@ -530,6 +534,9 @@ main()
 	# It is for that reason that the code below needs to use separate calls to fix_3_clean, with and without DoVol
 	# as an argument, rather than simply passing in the value of DoVol as set within this script.
 	# Not sure if/when this non-intuitive behavior of fix_3_clean will change, but this is accurate as of fix1.067
+	# UPDATE (11/8/2019): As of FIX 1.06.12, fix_3_clean interprets its 5th argument ("DoVol") in the usual boolean
+	# manner. However, since we already had a work-around to this problem, we will leave the code unchanged so that
+	# we don't need to add a FIX version dependency to the script.
 
 	log_Msg "Use fixlist=$fixlist"
 	
@@ -1075,7 +1082,7 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    usage
+    show_usage
     exit 1
 fi
 
@@ -1086,16 +1093,29 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
-# Verify any other needed environment variables are set
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
 
-# Determine whether named or positional parameters are used
+# Show tool versions
+show_tool_versions
+
+# Determine whether named or positional parameters are used and invoke 'main' function
 if [[ ${1} == --* ]]; then
 	# Named parameters (e.g. --parameter-name=parameter-value) are used
 	log_Msg "Using named parameters"

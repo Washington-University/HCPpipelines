@@ -24,7 +24,7 @@
 
 #############################################################
 
-Usage() {
+show_usage() {
     cat <<EOF
 
 hcp_fix <4D_FMRI_data> <highpass> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
@@ -59,14 +59,83 @@ e.g.  hcp_fix rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz 2000 FALSE
      You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
 
 EOF
-    exit 1
 }
 
 if (( $# < 3 ))
 then
-    #Usage does an exit
-    Usage
+    show_usage
+	exit 1
 fi
+
+#############################################################
+
+### Support Functions
+
+# Function to return whether FIX version is "NEW" (i.e., 1.06.12 or later).
+# Need at least that fix version for proper handling of the
+# do_motion_regression=FALSE condition (when highpass>=0)
+
+# NOTE:
+#   Don't echo anything in this function other than the last echo
+#   that outputs the return value
+#
+determine_old_or_new_fix()
+{
+	# Default to "OLD", and change to "NEW" only if version is 1.06.12 or later
+	local old_or_new="OLD"
+	
+	fix_version_file="${FSL_FIXDIR}/fixversion"
+
+	if [ -f "${fix_version_file}" ]; then
+		
+		fix_version=$(cat "${fix_version_file}")
+
+		# parse the FIX version information into primary, secondary, and tertiary parts
+		fix_version_array=(${fix_version//./ })
+		
+		fix_primary_version="${fix_version_array[0]}"
+		fix_primary_version=${fix_primary_version//[!0-9]/}
+	
+		fix_secondary_version="${fix_version_array[1]}"
+		fix_secondary_version=${fix_secondary_version//[!0-9]/}
+	
+		fix_tertiary_version="${fix_version_array[2]}"
+		fix_tertiary_version=${fix_tertiary_version//[!0-9]/}
+
+		# Important: Use single bracket for following tests, since double bracket results in interpretation
+		# of a leading zero as an octal number.
+		# [Alternatively, could force a base-10 interpretation using a "$(( 10#$ver ))" construction].
+		if [ ${fix_primary_version} -ge 2 ] ; then
+			old_or_new="NEW"
+		elif [ ${fix_primary_version} -eq 1 ] ; then
+			if [ ${fix_secondary_version} -ge 7 ] ; then
+				old_or_new="NEW"
+			elif [ ${fix_secondary_version} -eq 6 ] ; then
+				if [ ${fix_tertiary_version} -ge 12 ] ; then
+					old_or_new="NEW"
+				fi
+			fi
+		fi
+
+	fi
+
+	echo ${old_or_new}
+}
+
+function interpret_as_bool()
+{
+    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+    (true | yes | 1)
+        echo TRUE
+        ;;
+    (false | no | none | 0)
+        echo FALSE
+        ;;
+    (*)
+        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
+        ;;
+    esac
+}
 
 #############################################################
 
@@ -82,9 +151,9 @@ fi
 #  Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" # Functions for getting FSL version
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-# Verify any other needed environment variables are set
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
 
@@ -107,10 +176,20 @@ log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
 
+# Show specific FIX version, if available
+if [ -f ${FSL_FIXDIR}/fixversion ]; then
+	fixversion=$(cat ${FSL_FIXDIR}/fixversion )
+	log_Msg "FIX version: $fixversion"
+fi
+
 # Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
 #############################################################
+
+## ---------------------------------------------------------------------------
+## Parse and check parameters
+## ---------------------------------------------------------------------------
 
 fmri=$1
 cd `dirname $fmri`
@@ -122,28 +201,18 @@ fi
 
 hp=$2
 
-function interpret_as_bool()
-{
-    case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
-    (true | yes | 1)
-        echo TRUE
-        ;;
-    (false | no | none | 0)
-        echo FALSE
-        ;;
-    (*)
-        log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
-        ;;
-    esac
-}
-
 doMotionRegression=$(interpret_as_bool "$3")
-# 5/20/2019: For the time being, do_motion_regression=FALSE doesn't work properly with single-run FIX,
-# so don't allow that mode of operation
+# do_motion_regression=FALSE combined with hp filtering doesn't work properly with single-run FIX,
+# for fix versions earlier than 1.06.12, so don't allow that mode of operation if the fix version
+# isn't recent enough.
 # https://github.com/Washington-University/HCPpipelines/issues/108
+# Check and abort early if we can't implement the requested options with the fix version in use.
 if [[ "$doMotionRegression" == "FALSE" ]]
 then
-    log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not currently supported"
+	old_or_new_fix=$(determine_old_or_new_fix)
+	if [ "${old_or_new_fix}" == "OLD" ] && (( hp >= 0 )) ; then
+		log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not supported for FIX versions prior to 1.06.12"
+	fi
 fi
 
 unset TrainingData
@@ -162,12 +231,22 @@ if [ -z "${FixThresh}" ]; then
 fi
 
 ## ---------------------------------------------------------------------------
+## Report parameters
+## ---------------------------------------------------------------------------
+
+log_Msg "fMRI Name: ${fmri}"
+log_Msg "highpass: ${hp}"
+log_Msg "doMotionRegression: ${doMotionRegression}"
+log_Msg "TrainingData: ${TrainingData}"
+log_Msg "FixThresh: ${FixThresh}"
+log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
+
+## ---------------------------------------------------------------------------
 ## Preparation (highpass)
 ## ---------------------------------------------------------------------------
 
 tr=`$FSLDIR/bin/fslval $fmri pixdim4`
 log_Msg "tr: ${tr}"
-log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
 fmrihp=${fmri}_hp${hp}
 if (( hp > 0 )); then
@@ -338,12 +417,24 @@ fi
 log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command
+# use array for whitespace safety, even if the rest of the script isn't
 if [[ ${doMotionRegression} == "TRUE" ]]; then
-    #use array for whitespace safety, even if the rest of the script isn't
     fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${hp}")
 else
-    #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-    fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
+	old_or_new_fix=$(determine_old_or_new_fix)
+	if [[ "${old_or_new_fix}" == "NEW" ]]; then
+		# In the "NEW" (1.06.12 or later) version of FIX, -h is no longer a subargument to -m, and can occur by itself
+		fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}" -h "${hp}")
+
+	elif (( hp < 0 )); then
+		# Ok to proceed regardless of FIX version, since not filtering, so we don't need the filtering of the CIFTI
+		# that occurs in fix_3_clean. Simply don't supply either the -m or -h flags.
+		fix_cmd=("${FSL_FIXDIR}/fix" "${fmrihp}.ica" "${TrainingData}" "${FixThresh}")
+
+	else  # "OLD" and (hp >= 0)
+		# Already aborted in this case earlier, but include again here for completeness
+		log_Err_Abort "Due to a restriction in the FIX argument parsing, do_motion_regression=$3 is not supported for FIX versions prior to 1.06.12"
+	fi
 fi
 log_Msg "fix_cmd: ${fix_cmd[*]}"
 ## MPH: The 'fix' script itself will continue to log to its own custom files
