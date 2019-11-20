@@ -9,7 +9,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2017-2019 The Human Connectome Project
+# Copyright (C) 2019 The Connectome Coordination Facility (CCF)
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -32,6 +32,29 @@
 #
 #~ND~END~
 
+
+# NOTE: The use of '${HCPPIPEDIR}/global/matlab/@gifti' as a symlink to '${HCPPIPEDIR}/global/matlab/gifti-1.6/@gifti'
+# works just fine to ensure that adding '${HCPPIPEDIR}/global/matlab' to the matlab path within scripts
+# is sufficient to enable GIFTI I/O functionality within INTERPRETED matlab (or Octave) mode.
+# However, for compilation, using a single "-I ${HCPPIPEDIR}/global/matlab" option is NOT sufficient to enable
+# GIFTI I/O functionality within compiled matlab executables -- perhaps because the matlab compiler
+# doesn't follow or recognize the @gifti symlink?
+# Thence the need for explicitly also including "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" as an option
+# in the compiler commands below.
+
+# FURTHER, the "-I" option *appends* folders to the search path, and
+# "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" must come BEFORE
+# "-I ${HCPPIPEDIR}/global/matlab", OTHERWISE, the presence of the @gifti symlink actually
+# *prevents* the GIFTI I/O functionality from being included.
+
+# Simply deleting the @gifti symlink from ${HCPPIPEDIR}/global/matlab is NOT an option,
+# because the pipeline scripts have come to rely on that convenience for interpreted matlab mode.
+# We COULD delete the @gifti symlink and simultaneously move the actual '@gifti' folder
+# into '${HCPPIPEDIR}/global/matlab', in which case interpreted matlab mode would continue to work,
+# and we could then consolidate the two different "-I" options into one.
+# But, sticking with the symlink for now, since it was already in place.
+
+ 
 # ------------------------------------------------------------------------------
 #  Compile the prepareICAs MATLAB code
 # ------------------------------------------------------------------------------
@@ -48,11 +71,10 @@ compile_prepareICAs()
 	mkdir -p ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
+				  -I ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 
 	popd > /dev/null
@@ -74,15 +96,11 @@ compile_functionhighpassandvariancenormalize()
 	mkdir -p ${output_directory}
 
 	log_Msg "Compiling ${app_name} application"
-	${MATLAB_HOME}/bin/mcc -mv ${app_name}.m \
-				  -a ${HCPPIPEDIR}/ICAFIX/scripts/icaDim.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftiopen.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisave.m \
-				  -a ${HCPPIPEDIR}/global/matlab/ciftisavereset.m \
-				  -a ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -a ${HCPPIPEDIR}/global/matlab/normalise.m \
-				  -a ${HCPPIPEDIR}/global/fsl/etc/matlab \
+	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
+				  -I ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
+				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 	
 	popd > /dev/null

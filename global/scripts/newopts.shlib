@@ -35,34 +35,22 @@ PARAMETERs are [ ] = optional; < > = user supplied value
     #do not use exit, the parsing code takes care of it
 }
 
-function main()
-{
-    #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-    #help info for option gets printed like "--foo=<$3> - $4"
-    opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-    opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
-    opts_ParseArguments "$@"
-    
-    if ((pipedirguessed))
-    then
-        log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
-    fi
-    
-    #display the parsed/default values
-    opts_ShowValues
-    
-    #processing code goes here
-}
+#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
+#help info for option gets printed like "--foo=<$3> - $4"
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
+opts_ParseArguments "$@"
 
-if (($# == 0)) || [[ "$1" == -* ]]
+if ((pipedirguessed))
 then
-    #named parameters
-    main "$@"
-else
-    #positional support goes here - just call main with named parameters built from $1, etc
-    log_Err_Abort "positional parameter support is not currently implemented"
-    main --foo="$1" --bar="$2"
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+#display the parsed/default values
+opts_ShowValues
+
+#processing code goes here
+
 EXAMPLE_END
 
 #we want a "log error and abort" function, so use the shlib for that
@@ -267,7 +255,8 @@ function opts_print_help_line()
 {
     local maxwidth=79 ncols minaccept=30 maxaccept=300
     #check the terminal width and fill accordingly, but don't go crazy until this code is well-tested
-    if ncols=$(tput cols 2>/dev/null)
+    #WARNING: tput tests stderr, so redirecting it makes it return the default (generally 80)
+    if ncols=$(tput cols)
     then
         if ((ncols < minaccept))
         then
@@ -295,7 +284,6 @@ function opts_print_help_line()
         local firstloop=1
         while ((firstloop || ${#linemod} > 0))
         do
-            firstloop=0
             local string=""
             if ((firstline == 1))
             then
@@ -306,6 +294,7 @@ function opts_print_help_line()
                     string="   "
                 fi
             else
+                #consider two different indentings depending on firstloop, to distinguish wrap from intentional newline
                 string="        "
             fi
             string+="$linemod"
@@ -328,6 +317,7 @@ function opts_print_help_line()
                 fi
             fi
             echo "$toprint"
+            firstloop=0
             firstline=0
         done
     done
