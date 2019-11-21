@@ -1,16 +1,63 @@
 #!/bin/bash 
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 # --------------------------------------------------------------------------------
-#  Establish tool name for logging
+#  Usage Description Function
 # --------------------------------------------------------------------------------
 
-log_SetToolName "MotionCorrection.sh"
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+# --------------------------------------------------------------------------------
+#  Do work
+# --------------------------------------------------------------------------------
+
 log_Msg "START"
 
 WorkingDirectory="$1"

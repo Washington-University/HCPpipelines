@@ -14,77 +14,118 @@ GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 
-################################################ SUPPORT FUNCTIONS ##################################################
-
 # --------------------------------------------------------------------------------
-#  Load Function Libraries
+#  Usage Description Function
 # --------------------------------------------------------------------------------
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
-Usage() {
-  echo "`basename $0`: Script to register EPI to T1w, with distortion correction"
-  echo " "
-  echo "Usage: `basename $0` [--workingdir=<working dir>]"
-  echo "             --scoutin=<input scout image (pre-sat EPI)>"
-  echo "             --t1=<input T1-weighted image>"
-  echo "             --t1restore=<input bias-corrected T1-weighted image>"
-  echo "             --t1brain=<input bias-corrected, brain-extracted T1-weighted image>"
-  echo "             --fmapmag=<input Siemens field map magnitude image>"
-  echo "             --fmapphase=<input Siemens field map phase image>"
-  echo "             --fmapgeneralelectric=<input General Electric field map image>"
-  echo "             --echodiff=<difference of echo times for fieldmap, in milliseconds>"
-  echo "             --SEPhaseNeg=<input spin echo negative phase encoding image>"
-  echo "             --SEPhasePos=<input spin echo positive phase encoding image>"
-  echo "             --echospacing=<effective echo spacing of fMRI image, in seconds>"
-  echo "             --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>"
-  echo "             --owarp=<output filename for warp of EPI to T1w>"
-  echo "             --biasfield=<input T1w bias field estimate image, in fMRI space>"
-  echo "             --oregim=<output registered image (EPI to T1w)>"
-  echo "             --freesurferfolder=<directory of FreeSurfer folder>"
-  echo "             --freesurfersubjectid=<FreeSurfer Subject ID>"
-  echo "             --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
-  echo "             [--qaimage=<output name for QA image>]"
-  echo ""
-  echo "             --method=<method used for susceptibility distortion correction>"
-  echo ""
-  echo "               \"${FIELDMAP_METHOD_OPT}\""
-  echo "                 equivalent to ${SIEMENS_METHOD_OPT} (see below)"
-  echo ""
-  echo "               \"${SIEMENS_METHOD_OPT}\""
-  echo "                 use Siemens specific Gradient Echo Field Maps for"
-  echo "                 susceptibility distortion correction"
-  echo ""
-  echo "               \"${SPIN_ECHO_METHOD_OPT}\""
-  echo "                 use Spin Echo Field Maps for susceptibility distortion correction"
-  echo ""
-  echo "               \"${GENERAL_ELECTRIC_METHOD_OPT}\""
-  echo "                 use General Electric specific Gradient Echo Field Maps"
-  echo "                 for susceptibility distortion correction"
-  echo ""
-  echo "               \"${NONE_METHOD_OPT}\""
-  echo "                 do not use any susceptibility distortion correction"
-  echo "                 NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData"
-  echo ""
-  echo "             [--topupconfig=<topup config file>]"
-  echo "             --ojacobian=<output filename for Jacobian image (in T1w space)>"
-  echo "             --dof=<degrees of freedom for EPI-T1 FLIRT> (default 6)"
-  echo "             --fmriname=<name of fmri run> (only needed for SEBASED bias correction method)"
-  echo "             --subjectfolder=<subject processing folder> (only needed for TOPUP distortion correction method)"
-  echo "             --biascorrection=<method of bias correction>"
-  echo ""
-  echo "               \"SEBASED\""
-  echo "                 use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}"
-  echo ""
-  echo "               \"LEGACY\""
-  echo "                 use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older"
-  echo ""
-  echo "               \"NONE\""
-  echo "                 don't do bias correction"
-  echo ""
-  echo "             --usejacobian=<\"true\" or \"false\">"
-  echo "             --preregistertool=<epi_reg (default) or flirt>"
+show_usage() {
+	cat <<EOF
+
+${script_name}: Script to register EPI to T1w, with distortion correction
+
+Usage: ${script_name} [options]
+
+  [--workingdir=<working dir>]
+  --scoutin=<input scout image (pre-sat EPI)>
+  --t1=<input T1-weighted image>
+  --t1restore=<input bias-corrected T1-weighted image>
+  --t1brain=<input bias-corrected, brain-extracted T1-weighted image>
+  --fmapmag=<input Siemens field map magnitude image>
+  --fmapphase=<input Siemens field map phase image>
+  --fmapgeneralelectric=<input General Electric field map image>
+  --echodiff=<difference of echo times for fieldmap, in milliseconds>
+  --SEPhaseNeg=<input spin echo negative phase encoding image>
+  --SEPhasePos=<input spin echo positive phase encoding image>
+  --echospacing=<effective echo spacing of fMRI image, in seconds>
+  --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>
+  --owarp=<output filename for warp of EPI to T1w>
+  --biasfield=<input T1w bias field estimate image, in fMRI space>
+  --oregim=<output registered image (EPI to T1w)>
+  --freesurferfolder=<directory of FreeSurfer folder>
+  --freesurfersubjectid=<FreeSurfer Subject ID>
+  --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
+  [--qaimage=<output name for QA image>]
+
+  --method=<method used for susceptibility distortion correction>
+
+        "${FIELDMAP_METHOD_OPT}"
+            equivalent to ${SIEMENS_METHOD_OPT} (see below)
+
+        "${SIEMENS_METHOD_OPT}"
+             use Siemens specific Gradient Echo Field Maps for
+             susceptibility distortion correction
+
+        "${SPIN_ECHO_METHOD_OPT}"
+             use Spin Echo Field Maps for susceptibility distortion correction
+
+        "${GENERAL_ELECTRIC_METHOD_OPT}"
+             use General Electric specific Gradient Echo Field Maps
+             for susceptibility distortion correction
+
+        "${NONE_METHOD_OPT}"
+             do not use any susceptibility distortion correction"
+             NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData
+
+  [--topupconfig=<topup config file>]
+  --ojacobian=<output filename for Jacobian image (in T1w space)>
+  --dof=<degrees of freedom for EPI-T1 FLIRT> (default 6)
+  --fmriname=<name of fmri run> (only needed for SEBASED bias correction method)
+  --subjectfolder=<subject processing folder> (only needed for TOPUP distortion correction method)
+
+  --biascorrection=<method of bias correction>
+
+        "SEBASED"
+             use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}
+
+        "LEGACY"
+             use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older"
+
+        "NONE"
+             don't do bias correction
+
+  --usejacobian=<"true" or "false">
+  --preregistertool=<epi_reg (default) or flirt>
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var FREESURFER_HOME
+
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -102,11 +143,6 @@ defaultopt() {
     echo $1
 }
 
-# --------------------------------------------------------------------------------
-#  Establish tool name for logging
-# --------------------------------------------------------------------------------
-
-log_SetToolName "DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh"
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -136,12 +172,6 @@ log_SetToolName "DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbase
 #       ${RegOutput}  ${OutputTransform}  ${JacobianOut}  ${QAImage}
 
 ################################################## OPTION PARSING #####################################################
-
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 21 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`
