@@ -17,8 +17,8 @@ log_SetToolName()
 {
 	log_ToolName="$*"
 }
-#also set the default toolname on sourcing
-log_SetToolName "$(basename "$0")"
+#also set the default toolname on sourcing so that logging functions don't crash under set -eu
+log_SetToolName "$(basename -- "$0")"
 
 #
 # Description:

@@ -8,7 +8,7 @@ function prob=pca_dim(lambda,N);
 % Methods described in
 %   Thomas Minka:
 %                  Automatic choice of dimensionality for PCA
-%   Implemented by Christian Beckmann
+%   Implemented by Christian Beckmann, Bugfix by Alex Yang and Tim Coalson
    
    logLambda=log(lambda);
    d=length(lambda);
@@ -41,7 +41,8 @@ function prob=pca_dim(lambda,N);
    t2(t2<=0)=1;
    t1=cumsum(sum(log(t1),2));
    t2=cumsum(sum(log(t2),2));
-   l_Az=0.5*(t1+t1)';
+   %l_Az=0.5*(t1+t1)'; %typo t1+t1, 0.5 not present in melodic c++
+   l_Az=(t1+t2)'; 
 
 
    l_lam=-(N/2)*cumsum(log(lambda));

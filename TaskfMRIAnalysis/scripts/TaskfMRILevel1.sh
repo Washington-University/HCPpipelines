@@ -1,15 +1,60 @@
 #!/bin/bash
 
-# Must first source SetUpHCPPipeline.sh to set up pipeline environment variables and software
 # Requirements for this script
-#  installed versions of FSL 5.0.7 or greater
-#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
 
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-########################################## PREPARE FUNCTIONS ########################################## 
+script_name=$(basename "${0}")
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"  # Debugging functions
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib   # Function for getting FSL version
+show_usage() {
+	cat <<EOF
+
+${script_name}: Sub-script of TaskfMRIAnalysis.sh
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+# ------------------------------------------------------------------------------
+#  Support Functions
+# ------------------------------------------------------------------------------
 
 show_tool_versions()
 {
@@ -24,6 +69,9 @@ show_tool_versions()
 	# Show fsl version
 	fsl_version_get fsl_ver
 }
+
+# Log versions of tools used by this script
+show_tool_versions
 
 
 ########################################## READ_ARGS ##################################
@@ -46,10 +94,9 @@ RegName="${14}"
 Parcellation="${15}"
 ParcellationFile="${16}"
 
-# Explicitly set tool name for logging
-g_script_name=`basename ${0}`
-log_SetToolName "${g_script_name}"
-log_Msg "READ_ARGS: ${g_script_name} arguments: $@"
+log_Msg "READ_ARGS: ${script_name} arguments: $@"
+
+# Log variables parsed from command line arguments
 log_Msg "READ_ARGS: Subject: ${Subject}"
 log_Msg "READ_ARGS: ResultsFolder: ${ResultsFolder}"
 log_Msg "READ_ARGS: ROIsFolder: ${ROIsFolder}"
@@ -67,7 +114,6 @@ log_Msg "READ_ARGS: RegName: ${RegName}"
 log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
 log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}" 
 
-show_tool_versions
 
 ########################################## MAIN ##################################
 

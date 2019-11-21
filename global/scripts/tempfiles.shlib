@@ -1,0 +1,28 @@
+#!/bin/echo This script should not be run directly:
+
+#call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason)
+function tempfiles_add()
+{
+    tempfiles_list+=("$@")
+}
+
+#call 'tempfiles_keep 1' to disable deletion
+function tempfiles_keep()
+{
+    tempfiles_keepvar="$1"
+}
+
+#implementation details
+tempfiles_list=()
+tempfiles_keep 0
+
+function tempfiles_cleanup()
+{
+    if [[ "$tempfiles_keepvar" == "0" ]] && ((${#tempfiles_list[@]} > 0))
+    then
+        rm -f -- "${tempfiles_list[@]}" || true
+    fi
+}
+
+trap tempfiles_cleanup EXIT
+

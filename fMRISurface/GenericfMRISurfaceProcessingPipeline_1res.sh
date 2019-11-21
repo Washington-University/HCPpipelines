@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6), FreeSurfer (version 5.3.0-HCP) , gradunwarp (HCP version 1.0.2)
-#  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
@@ -12,36 +12,67 @@
 
 # TODO
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
+script_name=$(basename "${0}")
+
 show_usage() {
-    echo "Usage information To Be Written"
-    exit 1
+	cat <<EOF
+
+${script_name}: Run fMRISurface processing pipeline
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
 }
 
-# --------------------------------------------------------------------------------
-#   Establish tool name for logging
-# --------------------------------------------------------------------------------
-log_SetToolName "GenericfMRISurfaceProcessingPipeline_1res.sh"
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
 
-################################################## OPTION PARSING #####################################################
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-    show_usage
+	show_usage
+	exit 0
 fi
+
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
+
+# ------------------------------------------------------------------------------
+#  Parse Command Line Options
+# ------------------------------------------------------------------------------
+
+log_Msg "Platform Information Follows: "
+uname -a
 
 log_Msg "Parsing Command Line Options"
 
@@ -123,4 +154,4 @@ log_Msg "Subcortical Processing"
 log_Msg "Generation of Dense Timeseries"
 "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 
-log_Msg "Completed"
+log_Msg "Completed!"

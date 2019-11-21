@@ -1,29 +1,55 @@
 #!/bin/bash
 
 # Requirements for this script
-#  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Usage Description Function
 # ------------------------------------------------------------------------------
 
-if [ -z "${FSLDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+script_name=$(basename "${0}")
 
 Usage() {
-  echo "`basename $0`: Tool for bias field correction based on T1w image only"
-  echo " "
-  echo "Usage: `basename $0` --workingdir=<working directory> --T1im=<input T1 image> [--oT1im=<output T1 image>] [-oT1brain=<output T1 brain>] [--bfsigma=<input T1 image>]"
+	cat <<EOF
+
+${script_name}: Tool for bias field correction based on T1w image only
+
+Usage: ${script_name}
+  --workingdir=<working directory> 
+  --T1im=<input T1 image> 
+  [--oT1im=<output T1 image>] 
+  [--oT1brain=<output T1 brain>] 
+  [--bfsigma=<input T1 image>]
+
+EOF
 }
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    Usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -53,11 +79,6 @@ defaultopt() {
 # T1_fast_bias_init.nii.gz          T1_initfast2_brain_mask.nii.gz
 
 ################################################## OPTION PARSING #####################################################
-
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 2 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  

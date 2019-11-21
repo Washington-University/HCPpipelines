@@ -309,7 +309,6 @@ fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In th
 PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
 DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
-fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
 # If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. 

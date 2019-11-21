@@ -63,7 +63,8 @@ ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$Bi
 
 SUBJECTS_DIR="$FreeSurferSubjectFolder"
 export SUBJECTS_DIR
-${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
+# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
+${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
 ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
 
 ${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
@@ -106,24 +107,34 @@ if [ ${GdcorrectionFlag} -eq 1 ]; then
     # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
     ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/data_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/data_warped_dilated.nii.gz
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/data_warped_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/data
+    ${FSLDIR}/bin/imrm $DataDirectory/warped/data_warped_dilated
 
     # Transforms field of view mask to T1-weighted space
     # (Be sure to use the fov_mask derived prior to application of GDC)
     ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/fov_mask_warped -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=trilinear -o "$T1wOutputDirectory"/fov_mask
 
+    # Transform CNR maps
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/warped/cnr_maps_warped.nii.gz $DilateDistance NEAREST $DataDirectory/warped/cnr_maps_dilated.nii.gz
+    ${FSLDIR}/bin/applywarp --rel -i "$DataDirectory"/warped/cnr_maps_dilated -r "$T1wRestoreImage"_${DiffRes} -w "$WorkingDirectory"/grad_unwarp_diff2str --interp=spline -o "$T1wOutputDirectory"/cnr_maps
+    ${FSLDIR}/bin/imrm $DataDirectory/warped/cnr_maps_dilated
+
     # Now register the grad_dev tensor
     ${FSLDIR}/bin/vecreg -i "$DataDirectory"/grad_dev -o "$T1wOutputDirectory"/grad_dev -r "$T1wRestoreImage"_${DiffRes} -t "$WorkingDirectory"/diff2str.mat --interp=spline
     ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/grad_dev -mas "$T1wOutputDirectory"/nodif_brain_mask_temp "$T1wOutputDirectory"/grad_dev  #Mask-out values outside the brain 
-    ${FSLDIR}/bin/imrm $DataDirectory/warped/data_warped_dilated
 else
     # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
     ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/data.nii.gz $DilateDistance NEAREST $DataDirectory/data_dilated.nii.gz
     # Register diffusion data to T1w space without considering gradient nonlinearities
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/data_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/data
+    ${FSLDIR}/bin/imrm $DataDirectory/data_dilated
+
+    # Transform CNR maps
+    ${CARET7DIR}/wb_command -volume-dilate $DataDirectory/cnr_maps.nii.gz $DilateDistance NEAREST $DataDirectory/cnr_maps_dilated.nii.gz
+    ${FSLDIR}/bin/flirt -in "$DataDirectory"/cnr_maps_dilated -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp spline -out "$T1wOutputDirectory"/cnr_maps
+    ${FSLDIR}/bin/imrm $DataDirectory/cnr_maps_dilated
 
     # Transforms field of view mask to T1-weighted space
     ${FSLDIR}/bin/flirt -in "$DataDirectory"/fov_mask -ref "$T1wRestoreImage"_${DiffRes} -applyxfm -init "$WorkingDirectory"/diff2str.mat -interp trilinear -out "$T1wOutputDirectory"/fov_mask
-    ${FSLDIR}/bin/imrm $DataDirectory/data_dilated
 fi
 
 # only include voxels fully(!) within the field of view for every volume
@@ -133,6 +144,8 @@ ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/fov_mask -thr 0.999 -bin "$T1wOutpu
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -mas "$T1wOutputDirectory"/nodif_brain_mask_temp -mas "$T1wOutputDirectory"/fov_mask "$T1wOutputDirectory"/data
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -thr 0 "$T1wOutputDirectory"/data      #Remove negative intensity values (from eddy) from final data
 ${FSLDIR}/bin/imrm "$T1wOutputDirectory"/nodif_brain_mask_temp
+
+${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/cnr_maps -mas "$T1wOutputDirectory"/fov_mask "$T1wOutputDirectory"/cnr_maps
 
 # Identify any voxels that are zeros across all frames and remove those from the final nodif_brain_mask
 ${FSLDIR}/bin/fslmaths "$T1wOutputDirectory"/data -Tmean "$T1wOutputDirectory"/temp

@@ -162,13 +162,13 @@ end
 %% Compute VN map
 if hp>=0
     if dovol > 0
-        Outcts=icaDim(cts,0,1,2,2); %Volume fits two distributions to deal with processing interpolation and multiband
+        Outcts=icaDim(cts,0,1,-1,2); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform 
     end
     
-    OutBO=icaDim(BO.cdata,0,1,2,3); %CIFTI fits three because of the effects of volume to CIFTI mapping and regularization
+    OutBO=icaDim(BO.cdata,0,1,-1,3); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, CIFTI fits three distributions to deal with volume to CIFTI mapping
 else
     if dovol > 0
-        Outcts=icaDim(cts,0,1,2,3); %Volume fits three distributions to deal with processing interpolation and multiband and concatenation effects
+        Outcts=icaDim(cts,0,1,-1,2); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform  
     end
 end
 

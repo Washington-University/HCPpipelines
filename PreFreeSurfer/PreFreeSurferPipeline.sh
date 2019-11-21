@@ -64,11 +64,6 @@
 #   The "home" directory for the version of the HCP Pipeline Tools product
 #   being used. E.g. /nrgpackages/tools.release/hcp-pipeline-tools-V3.0
 #
-# * HCPPIPEDIR_PreFS
-#
-#   Location of PreFreeSurfer sub-scripts that are used to carry out some of
-#   steps of the PreFreeSurfer pipeline
-#
 # * HCPPIPEDIR_Global
 #
 #   Location of shared sub-scripts that are used to carry out some of the
@@ -111,7 +106,7 @@
 # * ${T2wFolder}/xfms - transformation matrices and warp fields
 #
 # * ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-# * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+# * ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w
 #
 # * ${AtlasSpaceFolder}
 # * ${AtlasSpaceFolder}/xfms
@@ -160,57 +155,17 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 
 # ------------------------------------------------------------------------------
-#  Verify required environment variables are set
+#  Usage Description Function
 # ------------------------------------------------------------------------------
 
 script_name=$(basename "${0}")
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR: ${HCPPIPEDIR}"
-fi
-
-if [ -z "${FSLDIR}" ]; then
-  echo "${script_name}: ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: FSLDIR: ${FSLDIR}"
-fi
-
-if [ -z "${HCPPIPEDIR_Global}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_Global environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-fi
-
-if [ -z "${HCPPIPEDIR_PreFS}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR_PreFS environment variable must be set"
-  exit 1
-else
-  echo "${script_name}: HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
-fi
-
-# ------------------------------------------------------------------------------
-#  Load Function Libraries
-# ------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
-
-# ------------------------------------------------------------------------------
-#  Usage Description Function
-# ------------------------------------------------------------------------------
-
 show_usage() {
   cat <<EOF
 
-PreFreeSurferPipeline.sh
+${script_name}
 
-Usage: PreeFreeSurferPipeline.sh [options]
+Usage: ${script_name} [options]
 
   --path=<path>                       Path to study data folder (required)
                                       Used with --subject input to create full path to root
@@ -262,28 +217,27 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       or a spin echo field map)
   --gdcoeffs=<file path>              File containing gradient distortion
                                       coefficients, Set to "NONE" to turn off
-  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction
-                                      method. See below for supported values.
+  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction method. 
+                                      See below for supported values.
 
-    "${NONE_METHOD_OPT}"
-     average any repeats with no readout distortion correction
+      "${NONE_METHOD_OPT}"
+         average any repeats with no readout distortion correction
 
-    "${FIELDMAP_METHOD_OPT}"
-       equivalent to "${SIEMENS_METHOD_OPT}" (see below)
-       SiemensFieldMap is preferred. This option value is maintained for
-       backward compatibility.
+      "${SPIN_ECHO_METHOD_OPT}"
+         average any repeats and use Spin Echo Field Maps for readout
+         distortion correction
 
-    "${SPIN_ECHO_METHOD_OPT}"
-       average any repeats and use Spin Echo Field Maps for readout
-       distortion correction
+      "${GENERAL_ELECTRIC_METHOD_OPT}"
+         average any repeats and use General Electric specific Gradient
+         Echo Field Maps for readout distortion correction
 
-    "${GENERAL_ELECTRIC_METHOD_OPT}"
-       average any repeats and use General Electric specific Gradient
-       Echo Field Maps for readout distortion correction
+      "${SIEMENS_METHOD_OPT}"
+         average any repeats and use Siemens specific Gradient Echo
+         Field Maps for readout distortion correction
 
-    "${SIEMENS_METHOD_OPT}"
-       average any repeats and use Siemens specific Gradient Echo
-       Field Maps for readout distortion correction
+      "${FIELDMAP_METHOD_OPT}"
+         equivalent to "${SIEMENS_METHOD_OPT}" (preferred)
+         This option value is maintained for backward compatibility.
 
   --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
   [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
@@ -310,24 +264,51 @@ Usage: PreeFreeSurferPipeline.sh [options]
                                       "LegacyStyleData" allows additional processing functionality and use of some acquisitions
                                          that do not conform to 'HCP-Style' expectations.
                                          In this script, it allows not having a high-resolution T2w image.
+
 EOF
-  exit 1
 }
 
-# ------------------------------------------------------------------------------
-#  Establish tool name for logging
-# ------------------------------------------------------------------------------
-log_SetToolName "PreFreeSurferPipeline.sh"
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
 
 # ------------------------------------------------------------------------------
-#  Parse Command Line Options
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
 
 opts_ShowVersionIfRequested $@
 
 if opts_CheckForHelpRequest $@; then
-  show_usage
+	show_usage
+	exit 0
 fi
+
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
+
+HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
+
+# ------------------------------------------------------------------------------
+#  Parse Command Line Options
+# ------------------------------------------------------------------------------
 
 log_Msg "Platform Information Follows: "
 uname -a
@@ -398,7 +379,6 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-
 # ------------------------------------------------------------------------------
 #  Show Command Line Options
 # ------------------------------------------------------------------------------
@@ -437,16 +417,6 @@ log_Msg "UseJacobian: ${UseJacobian}"
 log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
 log_Msg "CustomBrain: ${CustomBrain}"
 log_Msg "ProcessingMode: ${ProcessingMode}"
-
-# ------------------------------------------------------------------------------
-#  Show Environment Variables
-# ------------------------------------------------------------------------------
-
-log_Msg "FSLDIR: ${FSLDIR}"
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
-${HCPPIPEDIR}/show_version
-log_Msg "HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-log_Msg "HCPPIPEDIR_PreFS: ${HCPPIPEDIR_PreFS}"
 
 # Naming Conventions
 T1wImage="T1w"
@@ -716,12 +686,12 @@ if [ "$CustomBrain" = "NONE" ] ; then
   if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
     log_Msg "Performing Bias Field Correction using sqrt(T1w x T2w)"    
-    log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w"
+    log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w"
 
-    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w
+    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w
 
-    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT1w.sh \
-      --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT1w \
+    ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT2w.sh \
+      --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w \
       --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
       --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
       --T2im=${T1wFolder_T2wImageWithPath_acpc_dc} \
@@ -857,5 +827,5 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
   --fnirtconfig=${FNIRTConfig} 
 
-log_Msg "Completed"
+log_Msg "Completed!"
 

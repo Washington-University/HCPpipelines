@@ -7,7 +7,16 @@ EXAMPLE_START
 #!/bin/bash
 set -eu
 
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 #this function gets called by opts_ParseArguments when --help is specified
 function usage()
@@ -22,30 +31,26 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 "
     #automatic argument descriptions
     opts_ShowArguments
+    
+    #do not use exit, the parsing code takes care of it
 }
 
-function main()
-{
-    #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag], ...
-    opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-    opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
-    opts_ParseArguments "$@"
-    
-    #display the parsed/default values
-    opts_ShowValues
-    
-    #processing code goes here
-}
+#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
+#help info for option gets printed like "--foo=<$3> - $4"
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
+opts_ParseArguments "$@"
 
-if (($# == 0)) || [[ "$1" == --* ]]
+if ((pipedirguessed))
 then
-    #named parameters
-    main "$@"
-else
-    #positional support goes here - just call main with named parameters built from $1, etc
-    log_Err_Abort "positional parameter support is not currently implemented"
-    main --foo="$1" --bar="$2"
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+#display the parsed/default values
+opts_ShowValues
+
+#processing code goes here
+
 EXAMPLE_END
 
 #we want a "log error and abort" function, so use the shlib for that
@@ -98,11 +103,11 @@ function opts_add_switch()
 {
     if (($# < 5))
     then
-        error "parameter '$1' added improperly, check number of arguments and quoting"
+        log_Err_Abort "parameter '$1' added improperly, too few arguments"
     fi
     if [[ "$1" != --* ]]
     then
-        error "parameter switches must start with --, attempted to create switch '$1'"
+        log_Err_Abort "parameter switches must start with --, attempted to create switch '$1'"
     fi
     #only the index is local, the arrays must be global
     local new_index="${#opts_param_switches[@]}"
@@ -120,6 +125,10 @@ function opts_add_switch()
     fi
     for ((index = 7; index <= $#; ++index))
     do
+        if [[ "${!index}" != --* ]]
+        then
+            log_Err_Abort "parameter '$1' added improperly, legacy switch ${!index} doesn't start with '--', check your quoting"
+        fi
         opts_compat_aliases+=("${!index}" "$new_index")
     done
 }
@@ -132,7 +141,7 @@ function opts_ParseArguments()
         usage
         exit 2
     fi
-    #initialize all output variables to empty string, so optional ones don't error with 'set -eu')
+    #initialize all output variables to their defaults, so optional ones don't error with 'set -eu')
     #print -v sets global variables without having declare -g
     #use opts_ even for local variables in this function to reduce chance of collision with the output variable names
     for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
@@ -151,11 +160,11 @@ function opts_ParseArguments()
         local opts_switch="${1%%=*}"
         local opts_argument="${1#*=}"
         shift
-        #the convention of "--help"
-        if [[ "$opts_switch" == "--help" ]]
+        #the convention of "--help" or "-h"
+        if [[ "$opts_switch" == "--help" || "$opts_switch" == "-h" ]]
         then
             usage
-            exit 2
+            exit 0
         fi
         local opts_found=0
         local opts_index
@@ -186,12 +195,14 @@ function opts_ParseArguments()
         then
             if ((opts_used_params[opts_index] == 1))
             then
-                error "parameter specified multiple times: '$opts_switch'"
+                log_Err_Abort "parameter specified multiple times: '$opts_switch'"
             fi
             opts_used_params["$opts_index"]=1
             printf -v "${opts_param_variable_names[$opts_index]}" '%s' "$opts_argument"
         else
-            log_Err_Abort "unrecognized option: '$opts_switch'"
+            log_Err "unrecognized option: '$opts_switch'"
+            usage
+            exit 2
         fi
     done
     local opts_missing_list=()
@@ -221,7 +232,7 @@ function opts_ShowValues()
 
 function opts_ShowArguments()
 {
-    opts_print_help_line '[--help] - show usage information and exit'
+    opts_print_help_line '[--help or -h] - show usage information and exit'
     local index
     for ((index = 0; index < ${#opts_param_switches[@]}; ++index))
     do
@@ -242,7 +253,21 @@ function opts_ShowArguments()
 
 function opts_print_help_line()
 {
-    local maxwidth=79
+    local maxwidth=79 ncols minaccept=30 maxaccept=300
+    #check the terminal width and fill accordingly, but don't go crazy until this code is well-tested
+    #WARNING: tput tests stderr, so redirecting it makes it return the default (generally 80)
+    if ncols=$(tput cols)
+    then
+        if ((ncols < minaccept))
+        then
+            ncols="$minaccept"
+        fi
+        if ((ncols > maxaccept))
+        then
+            ncols="$maxaccept"
+        fi
+        maxwidth=$((ncols - 1))
+    fi
     local -a mylines
     #read -a only reads one line, and mac's old bash doesn't have readarray, so time for some trickery
     #could use just IFS without quoting inside =(), but that would remove intentional blank lines
@@ -259,7 +284,6 @@ function opts_print_help_line()
         local firstloop=1
         while ((firstloop || ${#linemod} > 0))
         do
-            firstloop=0
             local string=""
             if ((firstline == 1))
             then
@@ -270,6 +294,7 @@ function opts_print_help_line()
                     string="   "
                 fi
             else
+                #consider two different indentings depending on firstloop, to distinguish wrap from intentional newline
                 string="        "
             fi
             string+="$linemod"
@@ -292,6 +317,7 @@ function opts_print_help_line()
                 fi
             fi
             echo "$toprint"
+            firstloop=0
             firstline=0
         done
     done

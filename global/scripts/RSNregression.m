@@ -52,7 +52,7 @@ function RSNregression(InputFile, InputVNFile, GroupMaps, Method, ParamsFile, VA
     if ~strcmp(optional.VolCiftiTemplate, '')
         doVol = true;
         outVolTemplate = ciftiopen(optional.VolCiftiTemplate, wbcommand);
-        clear outVolTemplate.cdata;
+        outVolTemplate.cdata = [];
         if ~strcmp(optional.VolInputFile, '')
             volinputArray = myreadtext(optional.VolInputFile);
             volinputVNArray = myreadtext(optional.VolInputVNFile);
@@ -91,7 +91,7 @@ function RSNregression(InputFile, InputVNFile, GroupMaps, Method, ParamsFile, VA
         tempvncii.cdata = max(tempvncii.cdata / mean(tempvncii.cdata), 0.001);
         %VN file is really just variance of BC data - to restore to close to original variance, turn the variance back into non-bc space and take the mean
         tempnorm = ScaleFactor * demean(tempcii.cdata, 2) ./ repmat(tempvncii.cdata, 1, size(tempcii.cdata, 2));
-        clear tempcii.cdata;
+        tempcii.cdata = [];
         % for output, make the vn data reference new BC space
         if doFixBC
             tempBCcifti = ciftiopen(goodBCArray{i}, wbcommand);
@@ -145,8 +145,8 @@ function RSNregression(InputFile, InputVNFile, GroupMaps, Method, ParamsFile, VA
             end
             WRSmoothingSigma = str2double(optional.WRSmoothingSigma);
             paramsArray = myreadtext(ParamsFile);
-            if length(paramsArray) <= 1
-                error('"weighted" method needs more parameters, use method "dual" to do only vertex area weighted regression');
+            if length(paramsArray) == 0
+                error('"weighted" method needs at least one low dimensionality file to estimate weighting, use method "dual" to do only vertex area weighted regression');
             end
             surfArray = textscan(optional.SurfString, '%s', 'Delimiter', {'@'}); %left right
             surfArray = surfArray{1};
