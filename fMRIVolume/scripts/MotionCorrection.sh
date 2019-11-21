@@ -1,16 +1,63 @@
 #!/bin/bash 
 
-# --------------------------------------------------------------------------------
-#  Load Function Libraries
-# --------------------------------------------------------------------------------
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 # --------------------------------------------------------------------------------
-#  Establish tool name for logging
+#  Usage Description Function
 # --------------------------------------------------------------------------------
 
-log_SetToolName "MotionCorrection.sh"
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}
+
+Usage: ${script_name} [options]
+
+Usage information To Be Written
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+# --------------------------------------------------------------------------------
+#  Do work
+# --------------------------------------------------------------------------------
+
 log_Msg "START"
 
 WorkingDirectory="$1"
@@ -21,10 +68,23 @@ OutputMotionRegressors="$5"
 OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
 MotionCorrectionType="$8"
+fMRIReferenceReg="$9"
+
+verbose_red_echo "---> ${MotionCorrectionType} based motion correction"
+verbose_echo " "
+verbose_echo " Using parameters ..."
+verbose_echo "             WorkingDirectory: ${WorkingDirectory}"
+verbose_echo "                    InputfMRI: ${InputfMRI}"
+verbose_echo "                        Scout: ${Scout}"
+verbose_echo "                   OutputfMRI: ${OutputfMRI}"
+verbose_echo "       OutputMotionRegressors: ${OutputMotionRegressors}"
+verbose_echo "     OutputMotionMatrixFolder: ${OutputMotionMatrixFolder}"
+verbose_echo " OutputMotionMatrixNamePrefix: ${OutputMotionMatrixNamePrefix}"
+verbose_echo "         MotionCorrectionType: ${MotionCorrectionType}"
+verbose_echo "             fMRIReferenceReg: ${fMRIReferenceReg}"
+verbose_echo " "
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
-
-
 
 # Do motion correction
 log_Msg "Do motion correction"
@@ -43,6 +103,32 @@ case "$MotionCorrectionType" in
     ;;
 esac
 
+# Run nonlinear registration if needed
+
+# If registering across runs, perform nonlinear registration if requested.
+# (If using linear registration, don't need to do anything extra here, since
+# linear registration is handled implicitly via the motion correction).
+# Note that if registering across runs, the "$Scout" input to MotionCorrection will
+# be the *reference* scout image (by construction in GenericfMRIVolume).
+
+if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
+  verbose_echo " ... computing nonlinear transform to reference"
+  verbose_echo "     ... generating bold average"
+  # Generating a mean image to increase signal-to-noise ratio when registering to scout.
+  ${FSLDIR}/bin/fslmaths ${WorkingDirectory}/${OutputfMRIBasename} -Tmean ${WorkingDirectory}/${OutputfMRIBasename}_avg
+
+  # Note that the name of the warp is hard-coded into OneStepResampling.sh
+  cmd=("${FSLDIR}/bin/fnirt" --in="${WorkingDirectory}/${OutputfMRIBasename}_avg" --ref="${Scout}" --iout="${WorkingDirectory}/${OutputfMRIBasename}_avg_nonlin" --fout="${WorkingDirectory}/postmc2fmriref_warp")
+  verbose_echo "     ... running fnirt: ${cmd[*]}"
+  "${cmd[@]}"
+
+  verbose_echo "     ... applying warp"
+  tmcbold="_nonlin"
+  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WorkingDirectory}/${OutputfMRIBasename} -r ${Scout}  -w ${WorkingDirectory}/postmc2fmriref_warp -o ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}  
+else
+  tmcbold=""
+fi
+
 # Move output files about
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/mc.par ${WorkingDirectory}/${OutputfMRIBasename}.par
 if [ -e $OutputMotionMatrixFolder ] ; then
@@ -51,7 +137,7 @@ fi
 mkdir $OutputMotionMatrixFolder
 
 mv -f ${WorkingDirectory}/${OutputfMRIBasename}/* ${OutputMotionMatrixFolder}
-mv -f ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${OutputfMRI}.nii.gz
+mv -f ${WorkingDirectory}/${OutputfMRIBasename}${tmcbold}.nii.gz ${OutputfMRI}.nii.gz
 
 # Change names of all matrices in OutputMotionMatrixFolder
 log_Msg "Change names of all matrices in OutputMotionMatrixFolder"
@@ -64,6 +150,12 @@ if [ -e $OutputMotionMatrixFolder ] ; then
     mv $Matrix `echo ${OutputMotionMatrixNamePrefix}${MatrixNumber} | cut -d "." -f 1`
   done
   cd $DIR
+fi
+
+# Move over the nonlinear warp to be used in OneStepResampling
+if [ "${fMRIReferenceReg}" == "nonlinear" ] ; then
+  verbose_echo "     ... moving warp to ${OutputMotionMatrixFolder}"
+  mv -f ${WorkingDirectory}/postmc2fmriref_warp.nii.gz ${OutputMotionMatrixFolder} 
 fi
 
 # Make 4dfp style motion parameter and derivative regressors for timeseries
