@@ -48,24 +48,23 @@ Usage: ${script_name} [options]
   --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
   [--qaimage=<output name for QA image>]
 
-  --method=<method used for susceptibility distortion correction>
+  --method=<method to use for susceptibility distortion correction (SDC)>
 
         "${FIELDMAP_METHOD_OPT}"
             equivalent to ${SIEMENS_METHOD_OPT} (see below)
 
         "${SIEMENS_METHOD_OPT}"
-             use Siemens specific Gradient Echo Field Maps for
-             susceptibility distortion correction
+             use Siemens specific Gradient Echo Field Maps for SDC
 
         "${SPIN_ECHO_METHOD_OPT}"
-             use Spin Echo Field Maps for susceptibility distortion correction
+             use a pair of Spin Echo EPI images ("Spin Echo Field Maps") acquired with
+             opposing polarity for SDC
 
         "${GENERAL_ELECTRIC_METHOD_OPT}"
-             use General Electric specific Gradient Echo Field Maps
-             for susceptibility distortion correction
+             use General Electric specific Gradient Echo Field Maps for SDC
 
         "${NONE_METHOD_OPT}"
-             do not use any susceptibility distortion correction"
+             do not use any SDC
              NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData
 
   [--topupconfig=<topup config file>]
@@ -74,18 +73,19 @@ Usage: ${script_name} [options]
   --fmriname=<name of fmri run> (only needed for SEBASED bias correction method)
   --subjectfolder=<subject processing folder> (only needed for TOPUP distortion correction method)
 
-  --biascorrection=<method of bias correction>
+  --biascorrection=<method to use for receive coil bias field correction>
 
         "SEBASED"
-             use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}
+             use bias field derived from spin echo images, must also use --method=${SPIN_ECHO_METHOD_OPT}
 
         "LEGACY"
-             use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older
+             use the bias field derived from T1w and T2w images, same as was used in
+             pipeline version 3.14.1 or older. No longer recommended.
 
         "NONE"
              don't do bias correction
 
-  --usejacobian=<"true" or "false">
+  --usejacobian=<TRUE or FALSE>
   --preregistertool=<epi_reg (default) or flirt>
 
 EOF
