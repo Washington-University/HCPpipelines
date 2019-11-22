@@ -2,7 +2,7 @@
 
 # Requirements for this script
 #  installed versions of: FSL, FreeSurfer
-#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME
+#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, HCPPIPEDIR_Global 
 
 # ---------------------------------------------------------------------------
 #  Constants for specification of susceptibility distortion Correction Method
@@ -123,7 +123,7 @@ fi
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
-
+log_Check_Env_Var HCPPIPEDIR_Global
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
