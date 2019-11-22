@@ -3,7 +3,6 @@
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 echo -e "\n START: run_topup"
 
-
 workingdir=$1
 
 configdir=${HCPPIPEDIR_Config}
