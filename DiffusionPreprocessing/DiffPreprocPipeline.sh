@@ -193,12 +193,11 @@ Return Status Value:
 
 Required Environment Variables:
 
-  HCPPIPEDIR              The home directory for the version of the HCP Pipeline
-                          Scripts being used.
+  HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
   FSLDIR                  The home directory for FSL
   FREESURFER_HOME         The home directory for FreeSurfer
   PATH                    Standard PATH environment variable must be set to find
-                          HCP-customized version of gradient_unwarp.py
+                            HCP-customized version of gradient_unwarp.py
 
 EOF
 }

@@ -2,7 +2,7 @@
 
 # Requirements for this script
 #  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR
+#  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -53,6 +53,7 @@ fi
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
 
 # --------------------------------------------------------------------------------
 #  Do work

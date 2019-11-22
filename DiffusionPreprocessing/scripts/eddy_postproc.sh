@@ -11,7 +11,6 @@ CombineDataFlag=$3   #2 for including in the ouput all volumes uncombined (i.e. 
                      #1 for including in the ouput and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
                      #0 As 1, but also include uncombined single volumes"
 
-configdir=${HCPPIPEDIR_Config}
 globalscriptsdir=${HCPPIPEDIR_Global}
 
 eddydir=${workingdir}/eddy
