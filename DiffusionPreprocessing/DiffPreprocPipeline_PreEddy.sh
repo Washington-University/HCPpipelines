@@ -113,9 +113,9 @@ Return Status Value:
 
 Required Environment Variables:
 
-  HCPPIPEDIR              The home directory for the version of the HCP Pipeline
-                          Scripts being used.
+  HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
   FSLDIR                  The home directory for FSL
+  HCPPIPEDIR_Config       Location of global configuration files
 
 EOF
 }
@@ -509,6 +509,7 @@ ${HCPPIPEDIR}/show_version
 # Verify required environment variables are set and log value
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Config  # Needed in run_topup.sh
 
 # Set other necessary variables, contingent on HCPPIPEDIR
 HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
