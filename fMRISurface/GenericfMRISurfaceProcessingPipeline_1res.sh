@@ -27,7 +27,14 @@ ${script_name}: Run fMRISurface processing pipeline
 
 Usage: ${script_name} [options]
 
-Usage information To Be Written
+  --path=<path to study folder>
+  --subject=<subject ID>
+  --fmriname=<fMRI name> 
+  --lowresmesh=<low res mesh number>
+  --fmrires=<final fMRI resolution (mm), as used in fMRIVolume pipeline>
+  --smoothingFWHM=<smoothing FWHM (mm)>
+  --grayordinatesres=<grayordinates res (mm)>
+  [--regname=<surface registration name>] defaults to 'MSMSulc'
 
 EOF
 }
@@ -79,13 +86,13 @@ uname -a
 log_Msg "Parsing Command Line Options"
 
 # parse arguments
-Path=`opts_GetOpt1 "--path" $@`  # "$1"
-Subject=`opts_GetOpt1 "--subject" $@`  # "$2"
-NameOffMRI=`opts_GetOpt1 "--fmriname" $@`  # "$6"
-LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`  # "$6"
-FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  # "${14}"
-SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`  # "${14}"
-GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`  # "${14}"
+Path=`opts_GetOpt1 "--path" $@`
+Subject=`opts_GetOpt1 "--subject" $@`
+NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
+LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`
+SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`
+GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
 
 if [ -z "${RegName}" ]; then
