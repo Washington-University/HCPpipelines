@@ -80,7 +80,7 @@ Usage: ${script_name} [options]
              use bias field derived from spin echo, must also use --method=${SPIN_ECHO_METHOD_OPT}
 
         "LEGACY"
-             use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older"
+             use the bias field derived from T1w and T2w images, same as pipeline version 3.14.1 or older
 
         "NONE"
              don't do bias correction

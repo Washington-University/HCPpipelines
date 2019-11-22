@@ -44,7 +44,7 @@ Usage: ${script_name} [options]
            T1_fMRI_FOV (default): mask based on T1 and voxels available at all timepoints (i.e., the fMRI FOV)
            T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
            T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV
-           fMRI_FOV: a fMRI FOV mask"
+           fMRI_FOV: a fMRI FOV mask
 
 EOF
 }

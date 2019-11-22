@@ -15,9 +15,17 @@ show_usage() {
 
 ${script_name}
 
-Usage: ${script_name} [options]
+Script currently parses arguments positionally, as follows:
 
-Usage information To Be Written
+WorkingDirectory="\$1"
+InputfMRI="\$2"
+Scout="\$3"
+OutputfMRI="\$4"
+OutputMotionRegressors="\$5"
+OutputMotionMatrixFolder="\$6"
+OutputMotionMatrixNamePrefix="\$7"
+MotionCorrectionType="\$8"
+fMRIReferenceReg="\$9"
 
 EOF
 }
