@@ -67,6 +67,8 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
+HCPPIPEDIR_fMRISurf=${HCPPIPEDIR}/fMRISurface/scripts
+
 # ------------------------------------------------------------------------------
 #  Parse Command Line Options
 # ------------------------------------------------------------------------------
