@@ -14,6 +14,16 @@
 
 ########################################## SUPPORT FUNCTIONS ##########################################
 
+# ---------------------------------------------------------------------------
+#  Constants for specification of susceptibility distortion Correction Method
+# ---------------------------------------------------------------------------
+
+FIELDMAP_METHOD_OPT="FIELDMAP"
+SIEMENS_METHOD_OPT="SiemensFieldMap"
+GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+SPIN_ECHO_METHOD_OPT="TOPUP"
+NONE_METHOD_OPT="NONE"
+
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
@@ -27,7 +37,92 @@ ${script_name}: Run fMRIVolume processing pipeline
 
 Usage: ${script_name} [options]
 
-Usage information To Be Written
+  --path=<path to study folder>
+  --subject=<subject ID>
+  --fmritcs=<input fMRI time series (NIFTI)>
+  --fmriname=<name (prefix) to use for the output>
+  --fmrires=<final resolution (mm) of the output data>
+
+  [--fmriscout=<input "scout" volume>
+      Used as the target for motion correction and for BBR registration to the structurals.
+      In HCP-Style acquisitions, the "SBRef" (single-band reference) volume associated with a run is 
+      typically used as the "scout".
+      Default: NONE (in which case the first volume of the time-series is extracted and used as the "scout")
+      It must have identical dimensions, voxel resolution, and distortions (i.e., phase-encoding polarity
+      and echo-spacing) as the input time series
+
+  [--mctype=<type of motion correction to use: MCFLIRT (default) or FLIRT>]
+
+  --echospacing=<*effective* echo spacing of fMRI input, in seconds>
+
+  --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
+       Set to NONE to skip gradient non-linearity distortion correction (GDC).
+
+  --dcmethod=<method to use for susceptibility distortion correction (SDC)>
+
+        "${FIELDMAP_METHOD_OPT}"
+            equivalent to ${SIEMENS_METHOD_OPT} (see below)
+
+        "${SIEMENS_METHOD_OPT}"
+             use Siemens specific Gradient Echo Field Maps for SDC
+
+        "${SPIN_ECHO_METHOD_OPT}"
+             use a pair of Spin Echo EPI images ("Spin Echo Field Maps") acquired with
+             opposing polarity for SDC
+
+        "${GENERAL_ELECTRIC_METHOD_OPT}"
+             use General Electric specific Gradient Echo Field Maps for SDC
+
+        "${NONE_METHOD_OPT}"
+             do not use any SDC
+             NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData
+
+  Options related to all SDC options except for ${NONE_METHOD_OPT}:
+    [--unwarpdir=<PE direction for unwarping according to the *voxel* axes: 
+       {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]
+          Polarity matters!  If your distortions are twice as bad as in the original images, 
+          try using the opposite polarity for --unwarpdir.
+
+  Options related to using ${SPIN_ECHO_METHOD_OPT}:
+    [--SEPhaseNeg=<"negative" polarity SE-EPI image>]
+    [--SEPhasePos=<"positive" polarity SE-EPI image>]
+    [--topupconfig=<topup config file>]
+
+  Options related to using ${SIEMENS_METHOD_OPT}:
+    [--fmapmag=<input Siemens field map magnitude image>]
+    [--fmapphase=input Siemens field map phase image>]
+    [--echodiff=<difference of echo times for fieldmap, in milliseconds>]
+
+  Options related to using ${GENERAL_ELECTRIC_METHOD_OPT}:
+    [--fmapgeneralelectric=<input General Electric field map image> if using ${GENERAL_ELECTRIC_METHOD_OPT}>]
+
+  
+  --biascorrection=<method to use for receive coil bias field correction>
+
+        "SEBASED"
+             use bias field derived from spin echo images, must also use --method=${SPIN_ECHO_METHOD_OPT}
+
+        "LEGACY"
+             use the bias field derived from T1w and T2w images, same as was used in 
+             pipeline version 3.14.1 or older. No longer recommended.
+
+        "NONE"
+             don't do bias correction
+
+  [--dof=<Degrees of freedom for the EPI to T1 registration: 6 (default), 9, or 12>]
+
+  [--usejacobian=<TRUE or FALSE>]
+      Controls whether the jacobian of the *distortion corrections* (GDC and SDC) are applied to the output data.
+      (The jacobian of the nonlinear T1 to template (MNI152) registration is NOT applied, regardless of value).
+      Default: TRUE if using ${SPIN_ECHO_METHOD_OPT}; FALSE for all other SDC methods.
+
+  [--processing-mode=<HCPStyleData (default) or LegacyStyleData>
+      Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
+      "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
+        and requires 'HCP-Style' data acquistion. 
+      "LegacyStyleData" allows additional processing functionality and use of some acquisitions
+        that do not conform to 'HCP-Style' expectations.  
+        Review this script directly to see the available options and associated comments/warnings.
 
 EOF
 }
