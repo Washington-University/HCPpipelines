@@ -125,6 +125,8 @@ log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
 log_Check_Env_Var HCPPIPEDIR_Global
 
+HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
+
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options

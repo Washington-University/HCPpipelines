@@ -70,8 +70,7 @@ log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
 log_Check_Env_Var HCPPIPEDIR_Global
 
-GlobalScripts=${HCPPIPEDIR_Global}
-PipelineScripts=${HCPPIPEDIR}/fMRIVolume/scripts
+HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 
 # ------------------------------------------------------------------------------
 #  Check for incompatible FSL version
@@ -233,6 +232,10 @@ if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
+
+# Setup PATHS
+GlobalScripts=${HCPPIPEDIR_Global}
+PipelineScripts=${HCPPIPEDIR_fMRIVol}
 
 #Naming Conventions
 T1wImage="T1w_acpc_dc"
