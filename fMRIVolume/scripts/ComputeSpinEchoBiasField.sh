@@ -1,6 +1,66 @@
 #!/bin/bash
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
+
+script_name=$(basename "${0}")
+
+show_usage() {
+	cat <<EOF
+
+${script_name}
+
+Usage: ${script_name} [options]
+
+  --workingdir=<working dir>
+  --subjectfolder=<subject processing folder>
+  --fmriname=<name of fmri run>
+  --corticallut=<FreeSurfer cortical label table>
+  --subcorticallut=<FreeSurfer subcortical label table>
+  --smoothingfwhm=<smoothing FWHM (in mm)>
+  --inputdir=<input dir>
+
+EOF
+}
+
+# Allow script to return a Usage statement, before any other output or checking
+if [ "$#" = "0" ]; then
+    show_usage
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ]; then
+  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+  exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+################################################ SUPPORT FUNCTIONS ##################################################
 
 # function for parsing options
 getopt1() {
@@ -14,6 +74,8 @@ getopt1() {
     done
 }
 
+################################################## OPTION PARSING #####################################################
+
 WD=`getopt1 "--workingdir" "$@"`
 SubjectFolder=`getopt1 "--subjectfolder" "$@"` #replaces StudyFolder and Subject
 fMRIName=`getopt1 "--fmriname" "$@"`
@@ -26,6 +88,8 @@ if [[ -n $HCPPIPEDEBUG ]]
 then
     set -x
 fi
+
+########################################## DO WORK ##########################################
 
 Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command
