@@ -37,6 +37,7 @@ ${script_name}: Run fMRIVolume processing pipeline
 
 Usage: ${script_name} [options]
 
+  [--help] : show usage information and exit
   --path=<path to study folder>
   --subject=<subject ID>
   --fmritcs=<input fMRI time series (NIFTI)>
@@ -59,14 +60,14 @@ Usage: ${script_name} [options]
       Used as the target for motion correction and for BBR registration to the structurals.
       In HCP-Style acquisitions, the "SBRef" (single-band reference) volume associated with a run is 
       typically used as the "scout".
-      Default: NONE (in which case the first volume of the time-series is extracted and used as the "scout")
+      Default: "NONE" (in which case the first volume of the time-series is extracted and used as the "scout")
       It must have identical dimensions, voxel resolution, and distortions (i.e., phase-encoding polarity
       and echo-spacing) as the input time series
 
-  [--mctype=<type of motion correction to use: MCFLIRT (default) or FLIRT>]
+  [--mctype=<type of motion correction to use: "MCFLIRT" (default) or "FLIRT">]
 
   --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
-      Set to NONE to skip gradient non-linearity distortion correction (GDC).
+      Set to "NONE" to skip gradient non-linearity distortion correction (GDC).
 
   --dcmethod=<method to use for susceptibility distortion correction (SDC)>
 
@@ -85,44 +86,50 @@ Usage: ${script_name} [options]
 
         "${NONE_METHOD_OPT}"
              do not use any SDC
-             NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData
+             NOTE: Only valid when Pipeline is called with --processing-mode="LegacyStyleData"
 
-  Options required for all SDC options except for ${NONE_METHOD_OPT}:
+  Options required for all --demethod options except for "${NONE_METHOD_OPT}":
     [--echospacing=<*effective* echo spacing of fMRI input, in seconds>]
     [--unwarpdir=<PE direction for unwarping according to the *voxel* axes: 
        {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]
           Polarity matters!  If your distortions are twice as bad as in the original images, 
           try using the opposite polarity for --unwarpdir.
 
-  Options required if using ${SPIN_ECHO_METHOD_OPT}:
+  Options required if using --dcmethod="${SPIN_ECHO_METHOD_OPT}":
     [--SEPhaseNeg=<"negative" polarity SE-EPI image>]
     [--SEPhasePos=<"positive" polarity SE-EPI image>]
     [--topupconfig=<topup config file>]
 
-  Options required if using ${SIEMENS_METHOD_OPT}:
+  Options required if using --dcmethod="${SIEMENS_METHOD_OPT}":
     [--fmapmag=<input Siemens field map magnitude image>]
     [--fmapphase=input Siemens field map phase image>]
     [--echodiff=<difference of echo times for fieldmap, in milliseconds>]
 
-  Options required if using ${GENERAL_ELECTRIC_METHOD_OPT}:
-    [--fmapgeneralelectric=<input General Electric field map image> if using ${GENERAL_ELECTRIC_METHOD_OPT}>]
+  Options required if using --dcmethod="${GENERAL_ELECTRIC_METHOD_OPT}":
+    [--fmapgeneralelectric=<input General Electric field map image>]
 
 
-  Other options:
+  OTHER OPTIONS:
   [--dof=<Degrees of freedom for the EPI to T1 registration: 6 (default), 9, or 12>]
 
-  [--usejacobian=<TRUE or FALSE>]
+  [--usejacobian=<"TRUE" or "FALSE">]
       Controls whether the jacobian of the *distortion corrections* (GDC and SDC) are applied to the output data.
       (The jacobian of the nonlinear T1 to template (MNI152) registration is NOT applied, regardless of value).
-      Default: TRUE if using ${SPIN_ECHO_METHOD_OPT}; FALSE for all other SDC methods.
+      Default: "TRUE" if using --dcmethod="${SPIN_ECHO_METHOD_OPT}"; "FALSE" for all other SDC methods.
 
-  [--processing-mode=<HCPStyleData (default) or LegacyStyleData>
+  [--processing-mode=<"HCPStyleData" (default) or "LegacyStyleData">
       Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
       "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
         and requires 'HCP-Style' data acquistion. 
       "LegacyStyleData" allows additional processing functionality and use of some acquisitions
         that do not conform to 'HCP-Style' expectations.  
-        Review this script directly to see the available options and associated comments/warnings.
+
+
+  "LegacyStyleData" MODE OPTIONS:
+      Use --processing-mode-info to see important additional information and warnings about the use of 
+      the following options!
+
+  [LISTING OF LegacyStyleData mode options to follow]
 
 EOF
 }
