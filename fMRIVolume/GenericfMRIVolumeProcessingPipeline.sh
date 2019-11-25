@@ -65,8 +65,8 @@ Usage: ${script_name} [options]
 
   [--mctype=<type of motion correction to use: MCFLIRT (default) or FLIRT>]
 
-  [--gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>]
-       Default: NONE [skips gradient non-linearity distortion correction (GDC)].
+  --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
+      Set to NONE to skip gradient non-linearity distortion correction (GDC).
 
   --dcmethod=<method to use for susceptibility distortion correction (SDC)>
 
@@ -269,7 +269,6 @@ BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
 log_Msg "BiasCorrection: ${BiasCorrection}"
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
-GradientDistortionCoeffs=`opts_DefaultOpt $GradientDistortionCoeffs "NONE"` # Set to NONE as default
 log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
 
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
