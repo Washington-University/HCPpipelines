@@ -214,18 +214,33 @@ log_Msg "Parsing Command Line Options"
 # parse arguments
 Path=`opts_GetOpt1 "--path" $@`
 log_Msg "Path: ${Path}"
+if [ -z ${Path} ]; then
+	log_Err_Abort "--path must be specified"
+fi
 
 Subject=`opts_GetOpt1 "--subject" $@`
 log_Msg "Subject: ${Subject}"
+if [ -z ${Subject} ]; then
+	log_Err_Abort "--subject must be specified"
+fi
 
 fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
 log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
+if [ -z ${fMRITimeSeries} ]; then
+	log_Err_Abort "--fmritcs must be specified"
+fi
 
 NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
 log_Msg "NameOffMRI: ${NameOffMRI}"
+if [ -z ${NameOffMRI} ]; then
+	log_Err_Abort "--fmriname must be specified"
+fi
 
 FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
 log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
+if [ -z ${FinalfMRIResolution} ]; then
+	log_Err_Abort "--fmrires must be specified"
+fi
 
 fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
 fMRIScout=`opts_DefaultOpt $fMRIScout NONE` # Set to NONE if no scout is provided. 
@@ -338,6 +353,9 @@ esac
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
 log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
+if [ -z ${GradientDistortionCoeffs} ]; then
+	log_Err_Abort "--gdcoeffs must be specified"
+fi
 
 dof=`opts_GetOpt1 "--dof" $@`
 dof=`opts_DefaultOpt $dof 6`
