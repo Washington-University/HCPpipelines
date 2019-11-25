@@ -218,11 +218,14 @@ log_Msg "Path: ${Path}"
 Subject=`opts_GetOpt1 "--subject" $@`
 log_Msg "Subject: ${Subject}"
 
+fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
+log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
+
 NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
 log_Msg "NameOffMRI: ${NameOffMRI}"
 
-fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
-log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
+FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
+log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
 
 fMRIScout=`opts_GetOpt1 "--fmriscout" $@`
 fMRIScout=`opts_DefaultOpt $fMRIScout NONE` # Set to NONE if no scout is provided. 
@@ -231,11 +234,20 @@ fMRIScout=`opts_DefaultOpt $fMRIScout NONE` # Set to NONE if no scout is provide
                                             #   are mutually exclusive.
 log_Msg "fMRIScout: ${fMRIScout}"
 
+EchoSpacing=`opts_GetOpt1 "--echospacing" $@`  # *Effective* Echo Spacing of fMRI image, in seconds
+log_Msg "EchoSpacing: ${EchoSpacing}"
+
+UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
+log_Msg "UnwarpDir: ${UnwarpDir}"
+
 SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
 log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
 
 SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
 log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
+
+TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
+log_Msg "TopupConfig: ${TopupConfig}"
 
 MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`  # Expects 4D volume with two 3D timepoints
 log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
@@ -243,54 +255,77 @@ log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
 PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`  
 log_Msg "PhaseInputName: ${PhaseInputName}"
 
-GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
-log_Msg "GEB0InputName: ${GEB0InputName}"
-
-EchoSpacing=`opts_GetOpt1 "--echospacing" $@`  # *Effective* Echo Spacing of fMRI image, in seconds
-log_Msg "EchoSpacing: ${EchoSpacing}"
-
 deltaTE=`opts_GetOpt1 "--echodiff" $@`  
 log_Msg "deltaTE: ${deltaTE}"
 
-UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`  
-log_Msg "UnwarpDir: ${UnwarpDir}"
-
-FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`  
-log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
+GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
+log_Msg "GEB0InputName: ${GEB0InputName}"
 
 # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
 # Note: FIELDMAP and SiemensFieldMap are equivalent
 DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
 log_Msg "DistortionCorrection: ${DistortionCorrection}"
+case "$DistortionCorrection" in
+	${SPIN_ECHO_METHOD_OPT})
+		if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
+			log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${SpinEchoPhaseEncodePositive} ]; then
+			log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${TopupConfig} ]; then
+			log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		;;
+
+	${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
+		if [ -z ${MagnitudeInputName} ]; then
+			log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${PhaseInputName} ]; then
+			log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${deltaTE} ]; then
+			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		;;
+
+	${GENERAL_ELECTRIC_METHOD_OPT})
+		if [ -z ${GEB0InputName} ]; then
+			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		;;
+
+	${NONE_METHOD_OPT})
+		# Do nothing
+		;;
+
+	"")
+		log_Err_Abort "--dcmethod must be specified"
+		;;
+
+	*)
+		log_Err_Abort "unrecognized value for --dcmethod (${DistortionCorrection})"
+		;;
+
+esac
+# Additionally, EchoSpacing and UnwarpDir needed for all except NONE
+if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" ]]; then
+	if [ -z ${EchoSpacing} ]; then
+		log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
+	fi
+	if [ -z ${UnwarpDir} ]; then
+		log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
+	fi
+fi
 
 BiasCorrection=`opts_GetOpt1 "--biascorrection" $@`
 # Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
 BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
 log_Msg "BiasCorrection: ${BiasCorrection}"
 
-GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
-log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
-
-TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
-log_Msg "TopupConfig: ${TopupConfig}"
-
-dof=`opts_GetOpt1 "--dof" $@`
-dof=`opts_DefaultOpt $dof 6`
-log_Msg "dof: ${dof}"
-
-RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
-log_Msg "RUN: ${RUN}"
-
-#NOTE: the jacobian option only applies the jacobian of the distortion corrections to the fMRI data, and NOT from the nonlinear T1 to template registration
-UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
-# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
-UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
-log_Msg "UseJacobian: ${UseJacobian}"
-
 MotionCorrectionType=`opts_GetOpt1 "--mctype" $@`  # use = "FLIRT" to run FLIRT-based mcflirt_acc.sh, or "MCFLIRT" to run MCFLIRT-based mcflirt.sh
 MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflirt by default
-
-#error check
 case "$MotionCorrectionType" in
     MCFLIRT|FLIRT)
 		log_Msg "MotionCorrectionType: ${MotionCorrectionType}"
@@ -301,15 +336,28 @@ case "$MotionCorrectionType" in
     ;;
 esac
 
+GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
+
+dof=`opts_GetOpt1 "--dof" $@`
+dof=`opts_DefaultOpt $dof 6`
+log_Msg "dof: ${dof}"
+
+#NOTE: the jacobian option only applies the jacobian of the distortion corrections to the fMRI data, and NOT from the nonlinear T1 to template registration
+UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
+# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
+UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+log_Msg "UseJacobian: ${UseJacobian}"
+
 JacobianDefault="true"
-if [[ $DistortionCorrection != "TOPUP" ]]
+if [[ $DistortionCorrection != "${SPIN_ECHO_METHOD_OPT}" ]]
 then
     #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians
     JacobianDefault="false"
     #warn if the user specified it
     if [[ $UseJacobian == "true" ]]
     then
-        log_Msg "WARNING: using --jacobian=true with --dcmethod other than TOPUP is not recommended, as the distortion warpfield is less stable than TOPUP"
+        log_Msg "WARNING: using --jacobian=true with --dcmethod other than ${SPIN_ECHO_METHOD_OPT} is not recommended, as the distortion warpfield is less stable than ${SPIN_ECHO_METHOD_OPT}"
     fi
 fi
 log_Msg "JacobianDefault: ${JacobianDefault}"
@@ -317,15 +365,18 @@ log_Msg "JacobianDefault: ${JacobianDefault}"
 UseJacobian=`opts_DefaultOpt $UseJacobian $JacobianDefault`
 log_Msg "After taking default value if necessary, UseJacobian: ${UseJacobian}"
 
-if [[ -n $HCPPIPEDEBUG ]]
-then
-    set -x
-fi
-
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
+fi
+
+RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+log_Msg "RUN: ${RUN}"
+
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
 fi
 
 # Setup PATHS
@@ -364,6 +415,30 @@ SubjectFolder="$Path"/"$Subject"
 sebasedBiasFieldMNI="$SubjectFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
 
 fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
+
+# Set UseBiasFieldMNI variable, and error check BiasCorrection variable
+# (needs to go after "Naming Conventions" rather than the the initial argument parsing)
+case "$BiasCorrection" in
+    NONE)
+        UseBiasFieldMNI=""
+		;;
+    LEGACY)
+        UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
+		;;    
+    SEBASED)
+        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
+        then
+            log_Err_Abort "SEBASED bias correction is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
+        fi
+        UseBiasFieldMNI="$sebasedBiasFieldMNI"
+		;;
+    "")
+        log_Err_Abort "--biascorrection option not specified"
+		;;
+    *)
+        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
+		;;
+esac
 
 # ------------------------------------------------------------------------------
 #  Legacy Style Data Options
@@ -421,7 +496,7 @@ BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
 
 
 # ------------------------------------------------------------------------------
-#  Compliance check
+#  Compliance check of Legacy Style Data options
 # ------------------------------------------------------------------------------
 
 ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
@@ -536,29 +611,6 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 #  End Compliance check
 # ------------------------------------------------------------------------------
 
-
-#error check bias correction opt
-case "$BiasCorrection" in
-    NONE)
-        UseBiasFieldMNI=""
-		;;
-    LEGACY)
-        UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
-		;;    
-    SEBASED)
-        if [[ "$DistortionCorrection" != "TOPUP" ]]
-        then
-            log_Err_Abort "SEBASED bias correction is only available with --dcmethod=TOPUP"
-        fi
-        UseBiasFieldMNI="$sebasedBiasFieldMNI"
-		;;
-    "")
-        log_Err_Abort "--biascorrection option not specified"
-		;;
-    *)
-        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-		;;
-esac
 
 ########################################## DO WORK ########################################## 
 
@@ -801,7 +853,7 @@ mkdir -p ${ResultsFolder}
 #now that we have the final MNI fMRI space, resample the T1w-space sebased bias field related outputs
 #the alternative is to add a bunch of optional arguments to OneStepResampling that just do the same thing
 #we need to do this before intensity normalization, as it uses the bias field output
-if [[ ${DistortionCorrection} == "TOPUP" ]]
+if [[ ${DistortionCorrection} == "${SPIN_ECHO_METHOD_OPT}" ]]
 then
     if [ "$fMRIReference" = "NONE" ]; then        
         #create MNI space corrected fieldmap images
