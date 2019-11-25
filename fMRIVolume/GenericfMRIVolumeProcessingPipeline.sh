@@ -43,6 +43,18 @@ Usage: ${script_name} [options]
   --fmriname=<name (prefix) to use for the output>
   --fmrires=<final resolution (mm) of the output data>
 
+  --biascorrection=<method to use for receive coil bias field correction>
+
+        "SEBASED"
+             use bias field derived from spin echo images, must also use --dcmethod=${SPIN_ECHO_METHOD_OPT}
+
+        "LEGACY"
+             use the bias field derived from T1w and T2w images, same as was used in 
+             pipeline version 3.14.1 or older. No longer recommended.
+
+        "NONE"
+             don't do bias correction
+
   [--fmriscout=<input "scout" volume>
       Used as the target for motion correction and for BBR registration to the structurals.
       In HCP-Style acquisitions, the "SBRef" (single-band reference) volume associated with a run is 
@@ -53,10 +65,8 @@ Usage: ${script_name} [options]
 
   [--mctype=<type of motion correction to use: MCFLIRT (default) or FLIRT>]
 
-  --echospacing=<*effective* echo spacing of fMRI input, in seconds>
-
-  --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
-       Set to NONE to skip gradient non-linearity distortion correction (GDC).
+  [--gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>]
+       Default: NONE [skips gradient non-linearity distortion correction (GDC)].
 
   --dcmethod=<method to use for susceptibility distortion correction (SDC)>
 
@@ -77,38 +87,28 @@ Usage: ${script_name} [options]
              do not use any SDC
              NOTE: Only valid when Pipeline is called with --processing-mode=LegacyStyleData
 
-  Options related to all SDC options except for ${NONE_METHOD_OPT}:
+  Options required for all SDC options except for ${NONE_METHOD_OPT}:
+    [--echospacing=<*effective* echo spacing of fMRI input, in seconds>]
     [--unwarpdir=<PE direction for unwarping according to the *voxel* axes: 
        {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]
           Polarity matters!  If your distortions are twice as bad as in the original images, 
           try using the opposite polarity for --unwarpdir.
 
-  Options related to using ${SPIN_ECHO_METHOD_OPT}:
+  Options required if using ${SPIN_ECHO_METHOD_OPT}:
     [--SEPhaseNeg=<"negative" polarity SE-EPI image>]
     [--SEPhasePos=<"positive" polarity SE-EPI image>]
     [--topupconfig=<topup config file>]
 
-  Options related to using ${SIEMENS_METHOD_OPT}:
+  Options required if using ${SIEMENS_METHOD_OPT}:
     [--fmapmag=<input Siemens field map magnitude image>]
     [--fmapphase=input Siemens field map phase image>]
     [--echodiff=<difference of echo times for fieldmap, in milliseconds>]
 
-  Options related to using ${GENERAL_ELECTRIC_METHOD_OPT}:
+  Options required if using ${GENERAL_ELECTRIC_METHOD_OPT}:
     [--fmapgeneralelectric=<input General Electric field map image> if using ${GENERAL_ELECTRIC_METHOD_OPT}>]
 
-  
-  --biascorrection=<method to use for receive coil bias field correction>
 
-        "SEBASED"
-             use bias field derived from spin echo images, must also use --method=${SPIN_ECHO_METHOD_OPT}
-
-        "LEGACY"
-             use the bias field derived from T1w and T2w images, same as was used in 
-             pipeline version 3.14.1 or older. No longer recommended.
-
-        "NONE"
-             don't do bias correction
-
+  Other options:
   [--dof=<Degrees of freedom for the EPI to T1 registration: 6 (default), 9, or 12>]
 
   [--usejacobian=<TRUE or FALSE>]
@@ -269,6 +269,7 @@ BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
 log_Msg "BiasCorrection: ${BiasCorrection}"
 
 GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`  
+GradientDistortionCoeffs=`opts_DefaultOpt $GradientDistortionCoeffs "NONE"` # Set to NONE as default
 log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
 
 TopupConfig=`opts_GetOpt1 "--topupconfig" $@`  # NONE if Topup is not being used
@@ -293,7 +294,7 @@ MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflir
 #error check
 case "$MotionCorrectionType" in
     MCFLIRT|FLIRT)
-        #nothing
+		log_Msg "MotionCorrectionType: ${MotionCorrectionType}"
     ;;
     
     *)
@@ -485,7 +486,7 @@ else
   # check if reference bold is specified
 
   if [ $fMRIScout != "NONE" ] ; then
-    log_Err_Abort "Both fMRI reference (--fmriref=${fMRIReference}) and fMRI Scout (--fmriscout=${fMRIScout}) were specified! The two options are mutualy exclusive."
+    log_Err_Abort "Both fMRI reference (--fmriref=${fMRIReference}) and fMRI Scout (--fmriscout=${fMRIScout}) were specified! The two options are mutually exclusive."
   fi
 
   # set reference and check if external reference (if one is specified) exists 
