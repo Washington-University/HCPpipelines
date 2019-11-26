@@ -129,7 +129,45 @@ Usage: ${script_name} [options]
       Use --processing-mode-info to see important additional information and warnings about the use of 
       the following options!
 
-  [LISTING OF LegacyStyleData mode options to follow]
+  [--preregistertool=<"epi_reg" (default) or "flirt">]
+      Specifies which tool to use to preregister BOLDs before FSL BBR. "epi_reg" is default, whereas "flirt"
+      might give better results with some legacy type (single band, low resolution) data.
+
+  [--doslicetime=<"FALSE" (default) or "TRUE">]
+      Specifies whether slice timing correction should be run on the BOLD image. If set to "YES" FSL slicetimer
+      is run before motion correction. Please run with --processing-mode-info flag for additional information
+      on the issues relevant for slice timing correction.
+
+  [--slicetimerparams=<"@" separated list of slicetimer parameters>]
+      Enables passing additional parameters to FSL slicetimer if slice timing correction is turned on. 
+      The parameters to pass should be provided as a "@" separated string, e.g.:
+      --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
+      For details about valid parameters please consult FSL slicetimer documentation. 
+
+  [--boldmask=<mask to use for BOLD image, default: "T1_fMRI_FOV">]
+      Specifies what mask to use to mask the final BOLD image. Valid options are:
+      - "T1_fMRI_FOV" - combined T1w brain mask and fMRI FOV masks (the default), 
+      - "T1_DILATED_fMRI_FOV" - once dilated T1w brain based mask combined with fMRI FOV
+      - "T1_DILATED2x_fMRI_FOV" - twice dilated T1w brain based mask combined with fMRI FOV, 
+      - "fMRI_FOV" - fMRI FOV mask 
+      Note that mask is used in intensity normalization, so the size of the mask will affect the
+      final results.
+
+  [--fmriref=<"NONE" (default) or reference bold name>]
+      Specifies whether to use another BOLD run as a reference for processing. The specified BOLD will be used as a 
+      reference for motion correction and its distortion correction and atlas (MNI152) registration will be copied
+      over and used. The reference BOLD has to have been fully processed using fMRIVolume pipeline, so that a distortion 
+      correction and atlas (MNI152) registration solution for the reference BOLD already exists. The reference BOLD 
+      must have been acquired using the same imaging parameters (e.g. phase encoding direction), or it can not serve 
+      as a valid reference. WARNING: This option excludes the use of --fmriscout option, as the scout from the specified
+      reference BOLD is used. Please run with --processing-mode-info flag for additional information on the issues 
+      related to the use of BOLD reference. 
+
+  [--fmrirefreg=<"linear" (default) or "nonlinear">]
+      Specifies whether to compute and apply a nonlinear transform to align the BOLD image to the reference BOLD,
+      if one is specified using --fmriref. The nonlinear transform is computed following the motion correction 
+      using the mean motion corrected BOLD image.
+
 
 EOF
 }
