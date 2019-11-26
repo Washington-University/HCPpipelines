@@ -40,11 +40,11 @@ Usage: ${script_name} [options]
   [--inscout=<input name for scout image (pre-sat EPI)>]
   [--oscout=<output name for normalized scout image>]
   [--workingdir=<working dir>]
-  [--boldmask=<what mask to use for generating final BOLD timeseries:
-           T1_fMRI_FOV (default): mask based on T1 and voxels available at all timepoints (i.e., the fMRI FOV)
-           T1_DILATED_fMRI_FOV: a once dilated T1w brain based mask combined with fMRI FOV
-           T1_DILATED2x_fMRI_FOV: a twice dilated T1w brain based mask combined with fMRI FOV
-           fMRI_FOV: a fMRI FOV mask
+  [--fmrimask=<type of mask to use for generating final fMRI output volume:
+        "T1_fMRI_FOV" (default) - T1w brain based mask combined with fMRI FOV mask
+        "T1_DILATED_fMRI_FOV" - once dilated T1w brain based mask combined with fMRI FOV
+        "T1_DILATED2x_fMRI_FOV" - twice dilated T1w brain based mask combined with fMRI FOV
+        "fMRI_FOV" - fMRI FOV mask only (i.e., voxels having spatial coverage at all time points)
 
 EOF
 }
@@ -115,7 +115,7 @@ OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
 ScoutInput=`getopt1 "--inscout" $@`  # "$6"
 ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
 UseJacobian=`getopt1 "--usejacobian" $@`  # 
-BOLDMask=`getopt1 "--boldmask" $@`
+fMRIMask=`getopt1 "--fmrimask" $@`
 
 verbose_red_echo "---> Intensity normalization"
 
@@ -129,13 +129,13 @@ verbose_echo "           --ofmri: ${OutputfMRI}"
 verbose_echo "         --inscout: ${ScoutInput}"
 verbose_echo "          --oscout: ${ScoutOutput}"
 verbose_echo "     --usejacobian: ${UseJacobian}"
-verbose_echo "        --boldmask: ${BOLDMask}"
+verbose_echo "        --fmrimask: ${fMRIMask}"
 verbose_echo " "
 
 # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 WD=`defaultopt $WD ${OutputfMRI}.wdir`
-BOLDMask=`defaultopt $BOLDMask "T1_fMRI_FOV"`
+fMRIMask=`defaultopt $fMRIMask "T1_fMRI_FOV"`
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -181,31 +181,31 @@ FinalMask=`${FSLDIR}/bin/remove_ext ${InputfMRI}`_finalmask
 T1FOVMask=`${FSLDIR}/bin/remove_ext ${InputfMRI}`_T1FOVmask
 ${FSLDIR}/bin/fslmaths ${BrainMask} -bin -mas ${InputfMRI}_mask ${T1FOVMask}
 
-# Use the requested BOLD mask 
+# Use the requested fMRI mask 
 
-if [ "${BOLDMask}" = "T1_fMRI_FOV" ] ; then
+if [ "${fMRIMask}" = "T1_fMRI_FOV" ] ; then
     # FinalMask is a combination of the FS-derived brainmask, and the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
     ${FSLDIR}/bin/imcp ${T1FOVMask} ${FinalMask}
 
-elif [ "${BOLDMask}" = "T1_DILATED_fMRI_FOV" ] ; then
+elif [ "${fMRIMask}" = "T1_DILATED_fMRI_FOV" ] ; then
     # FinalMask is a combination of once dilated FS-derived brainmask, and the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
     ${FSLDIR}/bin/fslmaths ${BrainMask} -bin -dilF -mas ${InputfMRI}_mask ${FinalMask}
 
-elif [ "${BOLDMask}" = "T1_DILATED2x_fMRI_FOV" ] ; then
+elif [ "${fMRIMask}" = "T1_DILATED2x_fMRI_FOV" ] ; then
     # FinalMask is a combination of twice dilated FS-derived brainmask, and the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
     ${FSLDIR}/bin/fslmaths ${BrainMask} -bin -dilF -dilF -mas ${InputfMRI}_mask ${FinalMask}
 
-elif [ "${BOLDMask}" = "fMRI_FOV" ] ; then
+elif [ "${fMRIMask}" = "fMRI_FOV" ] ; then
     # FinalMask is the spatial coverage mask that captures the
     # voxels that have data available at *ALL* time points (derived in OneStepResampling)
     ${FSLDIR}/bin/imcp ${InputfMRI}_mask ${FinalMask}
 
 else
-    # No valid BOLDMask option was specified
-    log_Err_Abort "Invalid entry for specified BOLD mask (--boldmask=${BOLDMask})"
+    # No valid fMRIMask option was specified
+    log_Err_Abort "Invalid entry for specified fMRI mask (--fmrimask=${fMRIMask})"
 fi
 
 
@@ -215,8 +215,8 @@ NvoxT1FOVMask=`fslstats ${T1FOVMask} -V | awk '{print $1}'`
 NvoxFinalMask=`fslstats ${FinalMask} -V | awk '{print $1}'`
 PctBrainCoverage=`echo "scale=4; 100 * ${NvoxT1FOVMask} / ${NvoxBrainMask}" | bc -l`
 PctMaskCoverage=`echo "scale=4; 100 * ${NvoxFinalMask} / ${NvoxT1FOVMask}" | bc -l`
-echo "BOLDMask, PctBrainCoverage, PctMaskCoverage, NvoxT1FOVMask, NvoxBrainMask, NvoxFinalMask" >| ${FinalMask}.stats.txt
-echo "${BOLDMask}, ${PctBrainCoverage}, ${PctMaskCoverage}, ${NvoxT1FOVMask}, ${NvoxBrainMask}, ${NvoxFinalMask}" >> ${FinalMask}.stats.txt
+echo "fMRIMask, PctBrainCoverage, PctMaskCoverage, NvoxT1FOVMask, NvoxBrainMask, NvoxFinalMask" >| ${FinalMask}.stats.txt
+echo "${fMRIMask}, ${PctBrainCoverage}, ${PctMaskCoverage}, ${NvoxT1FOVMask}, ${NvoxBrainMask}, ${NvoxFinalMask}" >> ${FinalMask}.stats.txt
 
 
 # Run intensity normalisation, with bias field correction and optional jacobian modulation,

@@ -4,9 +4,6 @@
 #  installed versions of: FSL, FreeSurfer, gradunwarp (HCP version) 
 #  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
-########################################## PIPELINE OVERVIEW ########################################## 
-
-# TODO
 
 ########################################## OUTPUT DIRECTORIES ########################################## 
 
@@ -40,7 +37,7 @@ Usage: ${script_name} [options]
   [--help] : show usage information and exit
   --path=<path to study folder>
   --subject=<subject ID>
-  --fmritcs=<input fMRI (BOLD) time series (NIFTI)>
+  --fmritcs=<input fMRI time series (NIFTI)>
   --fmriname=<name (prefix) to use for the output>
   --fmrires=<final resolution (mm) of the output data>
 
@@ -160,9 +157,9 @@ Usage: ${script_name} [options]
         --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
       For details about valid parameters please consult FSL's 'slicetimer' documentation. 
 
-  [--boldmask=<mask to use for BOLD image, default: "T1_fMRI_FOV">]
+  [--fmrimask=<type of final mask to use for final fMRI output volume>]
 
-      Specifies the type of final mask to apply to the fMRI data. Valid options are:
+      Specifies the type of final mask to apply to the volumetric fMRI data. Valid options are:
         "T1_fMRI_FOV" (default) - T1w brain based mask combined with fMRI FOV mask
         "T1_DILATED_fMRI_FOV" - once dilated T1w brain based mask combined with fMRI FOV
         "T1_DILATED2x_fMRI_FOV" - twice dilated T1w brain based mask combined with fMRI FOV
@@ -544,7 +541,7 @@ SliceTimerCorrectionParameters=$(opts_GetOpt1 "--slicetimerparams" "$@") # A '@'
                                                                          # Verbose (-v) is already turned on. TR is read from 'pixdim4' of the input NIFTI itself.
                                                                          # e.g. --slicetimerparams="--odd@--ocustom=<CustomInterleaveFile>"
 
-BOLDMask=`opts_GetOpt1 "--boldmask" $@`                                  # Specifies what mask to use for the final bold:
+fMRIMask=`opts_GetOpt1 "--fmrimask" $@`                                  # Specifies what mask to use for the final fMRI output volume:
                                                                          #   T1_fMRI_FOV (default): T1w brain based mask combined fMRI FOV mask
                                                                          #   T1_DILATED_fMRI_FOV: once dilated T1w brain based mask combined with fMRI FOV
                                                                          #   T1_DILATED2x_fMRI_FOV: twice dilated T1w brain based mask combined with fMRI FOV
@@ -567,7 +564,7 @@ fMRIReferenceReg=`opts_GetOpt1 "--fmrirefreg" $@`                        # In th
 PreregisterTool=`opts_DefaultOpt $PreregisterTool "epi_reg"`
 DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`   
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
-BOLDMask=`opts_DefaultOpt $BOLDMask "T1_fMRI_FOV"`
+fMRIMask=`opts_DefaultOpt $fMRIMask "T1_fMRI_FOV"`
 
 # If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. 
                                                                          #   This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of 
@@ -623,13 +620,13 @@ if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
   log_Warn "   No slice timing correction is done by default"
 fi
 
-# -- Use of nonstandard BOLD mask
+# -- Use of nonstandard fMRI mask
 
-if [ "${BOLDMask}" != 'T1_fMRI_FOV' ]; then
-  if [ "${BOLDMask}" != "T1_DILATED_fMRI_FOV" ] && [ "${BOLDMask}" != "T1_DILATED2x_fMRI_FOV" ] && [ "${BOLDMask}" != "fMRI_FOV" ] ; then
-    log_Err_Abort "--boldmask=${BOLDMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV, fMRI_FOV."
+if [ "${fMRIMask}" != 'T1_fMRI_FOV' ]; then
+  if [ "${fMRIMask}" != "T1_DILATED_fMRI_FOV" ] && [ "${fMRIMask}" != "T1_DILATED2x_fMRI_FOV" ] && [ "${fMRIMask}" != "fMRI_FOV" ] ; then
+    log_Err_Abort "--fmrimask=${fMRIMask} is invalid! Valid options are: T1_fMRI_FOV (default), T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV, fMRI_FOV."
   fi
-  ComplianceMsg+=" --boldmask=${BOLDMask}"
+  ComplianceMsg+=" --fmrimask=${fMRIMask}"
   Compliance="LegacyStyleData"
 fi
 
@@ -991,7 +988,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
        --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
        --usejacobian=${UseJacobian} \
-       --boldmask=${BOLDMask}
+       --fmrimask=${fMRIMask}
 
 #Copy selected files to ResultsFolder
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
