@@ -124,3 +124,22 @@ opts_ShowVersionIfRequested() {
     fi
 }
 
+
+#
+# Description: 
+#
+#   checks command line arguments for existance of a specific flag
+#
+# Input: 
+#
+#   The full list of command line arguments
+#   
+opts_CheckForFlag() {
+    needle=$1
+    for fn in "${@:2}" ; do
+        if [ "$fn" = "$needle" ]
+            return 0
+        fi
+    done
+    return 1
+}
