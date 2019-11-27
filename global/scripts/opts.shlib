@@ -137,7 +137,7 @@ opts_ShowVersionIfRequested() {
 opts_CheckForFlag() {
     needle=$1
     for fn in "${@:2}" ; do
-        if [ "$fn" = "$needle" ]
+        if [ "$fn" = "$needle" ]; then
             return 0
         fi
     done
