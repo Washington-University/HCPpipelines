@@ -184,9 +184,9 @@ Usage: ${script_name} [options]
 
   [--fmrirefreg=<"linear" (default) or "nonlinear">]
 
-      Specifies whether to compute and apply a nonlinear transform to align the fMRI input to the
-      reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed
-      following the motion correction using the mean motion corrected fMRI image.
+      Specifies whether to compute and apply a nonlinear transform to align the inputfMRI to the 
+      reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed 
+      using 'fnirt' following the motion correction using the mean motion corrected fMRI image.
 
 EOF
 }
@@ -199,70 +199,74 @@ Processing mode additional information
 
 HCPpipelines were designed to provide state-of-the-art processing of MR datasets. To achieve 
 optimal results HCPpipelines expects the data to conform to a set of requirements such as the 
-presence of high resolution T1w and T2w images and appropriate set of images (i.e. filedmap 
+presence of high resolution T1w and T2w images and an appropriate set of images (i.e., field map 
 images) that enable performing susceptibility distortion correction (SDC). In addition 
-HCPpipelines expect the data to be of sufficient high quality to ensure best results, e.g. 
-multiband high-resolution fMRI images with short TR for which no slice timing correction need 
-to be performed. 
+HCPpipelines expect the data to be of sufficiently high quality to ensure best results, e.g., 
+multiband high-resolution fMRI images with short TR for which slice timing correction is
+not necessary.
 
-Many datasets do not meet the requriments and expectations of HCPpipelines, either because
+Many datasets do not meet the requirements and expectations of HCPpipelines, either because
 they are older and have been acquired using imaging protocols and sequences that are considered 
-outdated (e.g. single-band low-resolution, long TR fMRI images, no high-resolution T2w image), 
+outdated (e.g., single-band low-resolution, long TR fMRI images, no high-resolution T2w image), 
 or the specifics of the study or the equipment used does not allow optimal data collection.
-Whereas in these cases, the HCPpipelines can not ensure the standard of quality enabled by 
-the use of appropriate data, a need to process these datasets to the best possible extent is
-acknowledged. 
+In these cases, the HCPpipelines can not ensure the standard of quality enabled by 
+the use of appropriate data -- nonetheless, a need to process these datasets to the best 
+possible extent is acknowledged. 
 
 To enable processing of datasets that do not meet HCPpipelines reqirements and expectations,
 HCPpipelines offers a set of parameters and parameter choices that either extend the 
-processing options (e.g. enable slice timing correction) or allow processing despite
-missing data, which is required for ensuring optimal results (e.g. no T2w or field map images).
+processing options (e.g., enable slice timing correction) or allow processing despite
+missing data, which is required for ensuring optimal results (e.g., no T2w or field map images).
 To clearly distinguish between processing that meets HCPpipelines requirements and 
 expectations and processing of suboptimal data that does not meet HCP standards, these options
 are only enabled when legacy processing mode is explicitly turned on by setting
---processing-mode=LegacyStyleData. The following paragraphs describe the specific considersations
-when using the LegacyStyleData processing options.
+--processing-mode="LegacyStyleData". 
 
-Slice timing correction
+The following paragraphs describe the specific considerations when using the "LegacyStyleData" 
+processing options associated with ${script_name}.
+
+Slice timing correction:
 --doslicetime enables slice timing correction in the cases of fMRI images with longer TR. 
 If turned on, slice timing correction is performed before motion correction and thus implicitly 
 assumes that the brain is motionless. Errors in temporal interpolation will occur in the presence
-of head motion and may also disrupt data quality measures as shown in Power et al 2017 PLOS One 
+of head motion and may also disrupt data quality measures as shown in Power et al (2017, PLOS One, 
 "Temporal interpolation alters motion in fMRI scans: Magnitudes and consequences for artifact 
-detection." Slice timing correction and motion correction would ideally be performed 
+detection"). Slice timing correction and motion correction would ideally be performed 
 simultaneously; however, this is not currently supported by any major software tool. HCP-Style 
 fast TR fMRI data acquisitions (TR<=1s) avoid the need for slice timing correction, provide 
 major advantages for fMRI denoising, and are recommended. 
 
-Use of expanded fMRI masks
+Use of expanded fMRI masks:
 As the final step in processing of fMRI data, the data is intensity normalized. This is 
 optimally done when only the brain voxels are taken into account and the regions outside of
-the brain are masked out. When working with legacy data, e.g. when no field map images are 
+the brain are masked out. When working with legacy data, e.g., when no field map images are 
 available to support SDC, fMRI data might not be fully contained within the brain mask 
-generated from T1w image. To identify such issues in quality control or to enable full use 
-of the data in analysis of volume data, --fmrimask parameter allows widening the T1w mask 
-(T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV) or extending the mask to complete field of view 
-(fMRI_FOV). Do consider that these options will impact intensity normalization.
+generated from the T1w image. To identify such issues in quality control or to enable full use 
+of the data in analysis of volume data, the --fmrimask parameter allows widening the T1w mask 
+(T1_DILATED_fMRI_FOV, T1_DILATED2x_fMRI_FOV) or extending the mask to the complete available 
+field of view (fMRI_FOV, i.e., voxels having spatial coverage at all time points). 
+Do consider that these options will impact intensity normalization.
 
-Use of reference fMRI image
-In the cases of low-resolution fMRI images, registering the fMRI images to one another
-and using a common SDC and translation to atlas space instead of performing both independently
-for each fMRI image can lead to better within fMRI registration. This is enabled using the 
---fmriref parameter. Do note that using this parameter requires the reference fMRI to be acquired 
-using the same parameters and already processed. Also note that the use of this parameter is 
+Use of a reference fMRI run:
+In the cases of low-resolution fMRI images, registering the input fMRI images directly to
+another fMRI run and using a common SDC and translation to atlas space can lead to better 
+between-run fMRI registration, compared to performing both independently for each fMRI run. 
+This is enabled using the --fmriref parameter. Note that using this parameter requires the 
+reference fMRI to be acquired using the same parameters (e.g., phase encoding polarity and
+echo spacing) and already processed. Also note that the use of this parameter is 
 incompatible with the use of the --fmriscout parameter as the scout from the reference image 
-is used.
+is used instead.
 
-Nonlinear registration to reference fMRI image
-In cases when fMRI images are registered to a reference fMRI and there is significant
-movement between the two scanning runs, it can be beneficial to perform nonlinear 
-registration to the reference bold image. In this case --fmrirefreg can be set to 
-"nonlinear". 
+Nonlinear registration to reference fMRI run:
+In cases when the input fMRI images are registered to a reference fMRI and there is significant
+movement between the two scanning runs, it can be beneficial to perform nonlinear registration 
+(using 'fnirt') to the reference fMRI image. 
+In this case --fmrirefreg can be set to "nonlinear"; otherwise a linear registration is used.
 
-No available SDC method
+No available SDC method:
 When no field map images are available and therefore no SDC method can be used to correct
-the distorsion, --dcmethod can be set to "NONE". In this case fMRIVolume pipeline is run without 
-appropriate distortion correction of the fMRI image. This is NOT RECOMMENDED under normal 
+the distortion, --dcmethod can be set to "NONE". In this case fMRIVolume pipeline is run without 
+appropriate distortion correction of the fMRI images. This is NOT RECOMMENDED under normal 
 circumstances. The pipeline will attempt 6 DOF FreeSurfer BBR registration of the distorted 
 fMRI to the T1w image. Distorted portions of the fMRI data will not align with the cortical ribbon.
 In HCP data 30% of the cortical surface will be misaligned by at least half cortical thickness 
@@ -657,7 +661,7 @@ DoSliceTimeCorrection=`opts_DefaultOpt $DoSliceTimeCorrection "FALSE"`
 fMRIReference=`opts_DefaultOpt $fMRIReference "NONE"`
 fMRIMask=`opts_DefaultOpt $fMRIMask "T1_fMRI_FOV"`
 
-# If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI image. 
+# If --dcmethod=NONE                                                     # WARNING: The fMRIVolume pipeline is being run without appropriate distortion correction of the fMRI images. 
                                                                          #   This is NOT RECOMMENDED under normal circumstances. We will attempt 6 DOF FreeSurfer BBR registration of 
                                                                          #   the distorted fMRI to the undistorted T1w image. Distorted portions of the fMRI data will not align with 
                                                                          #   the cortical ribbon. In HCP data 30% of the cortical surface will be misaligned by at least half cortical 
@@ -684,7 +688,7 @@ if [ "${DistortionCorrection}" = 'NONE' ]; then
   ComplianceMsg+=" --dcmethod=NONE"
   Compliance="LegacyStyleData"
   log_Warn "The fMRIVolume pipeline is being run without appropriate distortion correction"
-  log_Warn "  of the fMRI image. This is NOT RECOMMENDED under normal circumstances. We will "
+  log_Warn "  of the fMRI images. This is NOT RECOMMENDED under normal circumstances. We will "
   log_Warn "  attempt 6 DOF FreeSurfer BBR registration of the distorted fMRI to the T1w image."
   log_Warn "  Distorted portions of the fMRI data will not align with the cortical ribbon."
   log_Warn "  In HCP data 30% of the cortical surface will be misaligned by at least half cortical "
