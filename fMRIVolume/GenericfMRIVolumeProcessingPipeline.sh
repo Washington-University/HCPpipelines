@@ -44,7 +44,7 @@ Usage: ${script_name} [options]
   --biascorrection=<method to use for receive coil bias field correction>
 
         "SEBASED"
-             use bias field derived from spin echo images, must also use --dcmethod=${SPIN_ECHO_METHOD_OPT}
+             use bias field derived from spin echo images, must also use --dcmethod="${SPIN_ECHO_METHOD_OPT}"
 
         "LEGACY"
              use the bias field derived from T1w and T2w images, same as was used in 
@@ -70,7 +70,7 @@ Usage: ${script_name} [options]
   --dcmethod=<method to use for susceptibility distortion correction (SDC)>
 
         "${FIELDMAP_METHOD_OPT}"
-            equivalent to ${SIEMENS_METHOD_OPT} (see below)
+            equivalent to "${SIEMENS_METHOD_OPT}" (see below)
 
         "${SIEMENS_METHOD_OPT}"
              use Siemens specific Gradient Echo Field Maps for SDC
@@ -86,7 +86,7 @@ Usage: ${script_name} [options]
              do not use any SDC
              NOTE: Only valid when Pipeline is called with --processing-mode="LegacyStyleData"
 
-  Options required for all --demethod options except for "${NONE_METHOD_OPT}":
+  Options required for all --dcmethod options except for "${NONE_METHOD_OPT}":
 
     [--echospacing=<*effective* echo spacing of fMRI input, in seconds>]
     [--unwarpdir=<PE direction for unwarping according to the *voxel* axes: 
@@ -138,8 +138,8 @@ Usage: ${script_name} [options]
 
   [--preregistertool=<"epi_reg" (default) or "flirt">]
 
-      Specifies which software tool to use to preregister the fMRI to T1w image (prior to the
-      final FreeSurfer BBR registration).
+      Specifies which software tool to use to preregister the fMRI to T1w image 
+      (prior to the final FreeSurfer BBR registration).
       "epi_reg" is default, whereas "flirt" might give better results with some 
       legacy type data (e.g., single band, low resolution).
 
@@ -605,7 +605,7 @@ case "$BiasCorrection" in
     SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
         then
-            log_Err_Abort "SEBASED bias correction is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
+            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
 		;;
