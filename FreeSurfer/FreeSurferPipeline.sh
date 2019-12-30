@@ -685,7 +685,7 @@ main()
 		recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
 		recon_all_cmd+=" -emregmask ${T1wImageBrain}"
 		if [ "${T2wImage}" != "NONE" ]; then
-			if [ "${flair}" = "TRUE"]; then
+			if [ "${flair}" = "TRUE" ]; then
 				recon_all_cmd+=" -FLAIR ${T2wImage}"
 			else
 				recon_all_cmd+=" -T2 ${T2wImage}"
@@ -697,7 +697,7 @@ main()
 	# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
 	# this can be accomplished using --extra-reconall-arg=-noT2pial
 	if [ "${T2wImage}" != "NONE" ]; then
-		if [ "${flair}" = "TRUE"]; then
+		if [ "${flair}" = "TRUE" ]; then
 			recon_all_cmd+=" -FLAIRpial"
 		else
 			recon_all_cmd+=" -T2pial"
