@@ -244,7 +244,8 @@ paste `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
 paste `echo ${rawdir}/${baseNeg}*.bval` >${rawdir}/Neg.bval
 paste `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
 
-rm ${rawdir}/index.txt
+# start with reference Pos_b0 volume
+echo 1 > ${rawdir}/index.txt
 for idx in {1..`${FSLDIR}/bin/fslval ${rawdir}/Pos dim4`} ; do
   echo 1 >> ${rawdir}/index.txt
 done
@@ -270,10 +271,15 @@ if [ `isodd $dimz` -eq 1 ];then
 fi
 
 echo "Perform final merge"
-${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/Pos ${rawdir}/Neg
 ${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/Pos_Neg_b0 ${select_b0_dir}/Pos_b0 ${select_b0_dir}/Neg_b0
-paste ${rawdir}/Pos.bval ${rawdir}/Neg.bval >${rawdir}/Pos_Neg.bvals
-paste ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
+# include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
+${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${select_b0_dir}/Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
+echo 0 >${rawdir}/Pos_Neg.bvals
+paste ${rawdir}/Pos_Neg.bvals ${rawdir}/Pos.bval ${rawdir}/Neg.bval >${rawdir}/Pos_Neg.bvals
+echo 0 >${rawdir}/Pos_Neg.bvecs
+echo 0 >${rawdir}/Pos_Neg.bvecs
+echo 0 >${rawdir}/Pos_Neg.bvecs
+paste ${rawdir}/Pos_Neg.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
 
 ${FSLDIR}/bin/imrm ${rawdir}/Pos
 ${FSLDIR}/bin/imrm ${rawdir}/Neg

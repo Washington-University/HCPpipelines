@@ -38,7 +38,8 @@ qc_command+=(-v)
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
 if [ ${CombineDataFlag} -eq 2 ]; then
-	${FSLDIR}/bin/imcp  ${eddydir}/eddy_unwarped_images ${datadir}/data
+  # remove first volume as this is the reference b0, which was added to the dataset before running eddy
+	${FSLDIR}/bin/fslroi  ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
 	cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
 	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
 	cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
