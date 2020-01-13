@@ -1,4 +1,4 @@
-#!/bin/bash
+short.q#!/bin/bash
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 scriptName="basic_preproc.sh"
 echo -e "\n START: ${scriptName}"
@@ -117,16 +117,16 @@ merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_b0s")
 for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
 do
 	basename=`imglob ${entry}`
-	select_dwi_vols ${basename} ${basename}.bvals ${basename}_b0s 0
-  qc_command+=("${basename}_b0s")
+	${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
+    merge_command+=("${basename}_b0s")
 done
 "${merge_command[@]}"
 
 # Create the acqparams file for the initial alignment
-for entry in ${rawdir}/${basePos}_[0-9]*.nii*
+for entry in ${rawdir}/${basePos}_[0-9]*_b0s.nii*
 do
-	basename=`imglob ${entry}`
-  for idx in {1..`${FSLDIR}/bin/fslval ${basename_b0s} dim4`} ; do
+	basename_b0s=`imglob ${entry}`
+  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename_b0s} dim4`) ; do
       if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
         echo 1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
@@ -135,10 +135,10 @@ do
   done
 done
 
-for entry in ${rawdir}/${baseNeg}_[0-9]*.nii*
+for entry in ${rawdir}/${baseNeg}_[0-9]*_b0s.nii*
 do
-	basename=`imglob ${entry}`
-  for idx in {1..`${FSLDIR}/bin/fslval ${basename}_b0s dim4`} ; do
+	basename_b0s=`imglob ${entry}`
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename_b0s} dim4`) ; do
       if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
         echo -1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
@@ -175,7 +175,7 @@ for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
 do
 	basename=`imglob ${entry}`
 	rm ${basename}_scores
-  for idx in {1..`${FSLDIR}/bin/fslval ${basename}_b0s dim4`} ; do
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
     echo scores[${idx_all_b0s}] >> ${basename}_scores
     idx_all_b0s=$((${idx_all_b0s}+1))
   done
@@ -194,7 +194,7 @@ min_score=scores[${idx_all_b0s}]
 for entry in ${rawdir}/${basePos}_[0-9]*.nii*
 do
 	basename=`imglob ${entry}`
-  for idx in {1..`${FSLDIR}/bin/fslval ${basename}_b0s dim4`} ; do
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
     if [[ scores[${idx_all_b0s}] -lt scores[${pos_idx}] ]] ; then
       pos_idx=idx_all_b0s
     fi
@@ -209,7 +209,7 @@ min_score=scores[${idx_all_b0s}]
 for entry in ${rawdir}/${basePos}_[0-9]*.nii*
 do
 	basename=`imglob ${entry}`
-  for idx in {1..`${FSLDIR}/bin/fslval ${basename}_b0s dim4`} ; do
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
     if [[ scores[${idx_all_b0s}] -lt scores[${neg_idx}] ]] ; then
       neg_idx=idx_all_b0s
     fi
@@ -246,10 +246,10 @@ paste `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
 
 # start with reference Pos_b0 volume
 echo 1 > ${rawdir}/index.txt
-for idx in {1..`${FSLDIR}/bin/fslval ${rawdir}/Pos dim4`} ; do
+for idx in $(seq 1 `${FSLDIR}/bin/fslval ${rawdir}/Pos dim4`) ; do
   echo 1 >> ${rawdir}/index.txt
 done
-for idx in {1..`${FSLDIR}/bin/fslval ${rawdir}/Neg dim4`} ; do
+for idx in $(seq 1 `${FSLDIR}/bin/fslval ${rawdir}/Neg dim4`) ; do
   echo 2 >> ${rawdir}/index.txt
 done
 
