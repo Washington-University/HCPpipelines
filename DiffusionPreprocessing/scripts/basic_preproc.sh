@@ -112,9 +112,9 @@ echo "Score all B0's based on alignment with mean B0 after topup"
 select_b0_dir=${rawdir}/select_b0
 mkdir -p ${select_b0_dir}
 
-# Merge all b0's to do a rough initial aligment using topup
-merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_b0s")
-for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
+# Merge b0's for both phase encoding directions
+merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_Pos_b0s")
+for entry in ${rawdir}/${basePos}_[0-9]*.nii*
 do
 	basename=`imglob ${entry}`
 	${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
@@ -122,64 +122,80 @@ do
 done
 "${merge_command[@]}"
 
-# Create the acqparams file for the initial alignment
-for entry in ${rawdir}/${basePos}_[0-9]*_b0s.nii*
+merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_Neg_b0s")
+for entry in ${rawdir}/${baseNeg}_[0-9]*.nii*
 do
-	basename_b0s=`imglob ${entry}`
-  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename_b0s} dim4`) ; do
+	basename=`imglob ${entry}`
+	${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
+    merge_command+=("${basename}_b0s")
+done
+"${merge_command[@]}"
+
+if [[ `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Pos_b0s dim4` -lt 5 ]] ; then
+  # Merge all b0's to do a rough initial aligment using topup
+  ${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/all_b0s ${select_b0_dir}/all_Pos_b0s ${select_b0_dir}/all_Neg_b0s
+
+  # Create the acqparams file for the initial alignment
+  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Pos_b0s dim4`) ; do
       if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
         echo 1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
         echo 0 1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       fi
   done
-done
 
-for entry in ${rawdir}/${baseNeg}_[0-9]*_b0s.nii*
-do
-	basename_b0s=`imglob ${entry}`
-    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename_b0s} dim4`) ; do
+  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Neg_b0s dim4`) ; do
       if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
         echo -1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
         echo 0 -1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
       fi
   done
-done
 
-# run topup to roughly align the b0's
-configdir=${HCPPIPEDIR_Config}
-topup_config_file=${configdir}/best_b0.cnf
-${FSLDIR}/bin/topup --imain=${select_b0_dir}/all_b0s \
-	 --datain=${select_b0_dir}/acqparams.txt \
-	 --config=${topup_config_file} \
-	 --fout=${select_b0_dir}/fieldmap \
-	 --iout=${select_b0_dir}/topup_b0s \
-	 --out=${select_b0_dir}/topup_results \
-	 -v
+  # run topup to roughly align the b0's
+  configdir=${HCPPIPEDIR_Config}
+  topup_config_file=${configdir}/best_b0.cnf
+  ${FSLDIR}/bin/topup --imain=${select_b0_dir}/all_b0s \
+     --datain=${select_b0_dir}/acqparams.txt \
+     --config=${topup_config_file} \
+     --fout=${select_b0_dir}/fieldmap \
+     --iout=${select_b0_dir}/topup_b0s \
+     --out=${select_b0_dir}/topup_results \
+     -v
 
-# compute squared residual from the mean b0
-${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
-${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
+  # compute squared residual from the mean b0
+  ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
+  ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
 
-# Get brain mask from averaged results
-${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+  # Get brain mask from averaged results
+  ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
 
-# compute average squared residual over brain mask
-scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
-echo "b0 scores: " ${scores[@]}
+  # compute average squared residual over brain mask
+  scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+  echo "b0 scores: " ${scores[@]}
 
-# store scores for each series
-idx_all_b0s=1
-for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*
-do
-	basename=`imglob ${entry}`
-	rm ${basename}_scores
-    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
-    echo scores[${idx_all_b0s}] >> ${basename}_scores
-    idx_all_b0s=$((${idx_all_b0s}+1))
+  # store scores for each series
+  idx_all_b0s=1
+  for pe_dir in ${basePose} ${baseNeg} ; do
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_${pe_dir}_b0s dim4`) ; do
+      echo scores[${idx_all_b0s}] >> ${select_b0_dir}/${pe_dir}_scores
+      idx_all_b0s=$((${idx_all_b0s}+1))
+    done
   done
-done
+else
+  for pe_dir in ${basePose} ${baseNeg} ; do
+    ${FSLDIR}/bin/mcflirt -in ${select_b0_dir}/all_${pe_dir}_b0s -out ${select_b0_dir}/all_${pe_dir}_b0s_mcf
+    ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_${pe_dir}_b0s_mcf -Tmean ${select_b0_dir}/all_${pe_dir}_b0s_mcf_avg
+    ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_${pe_dir}_b0s_mcf -sub ${select_b0_dir}/all_${pe_dir}_b0s_mcf_avg -sqr ${select_b0_dir}/all_${pe_dir}_b0s_mcf_res
+
+    # Get brain mask from averaged results
+    ${FSLDIR}/bin/bet ${select_b0_dir}/all_${pe_dir}_b0s_mcf_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+    scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_${pe_dir}_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+    echo "b0 scores for ${pe_dir}: " ${scores[@]}
+
+    printf "%s\n" "${scores[@]}" > ${select_b0_dir}/${pe_dir}_scores
+  done
+fi
 
 
 ################################################################################################
@@ -188,40 +204,16 @@ done
 echo "Find the best B0 in the positive and negative volumes"
 idx_all_b0s=1
 
-# argmin for positive volumes
-pos_idx=idx_all_b0s
-min_score=scores[${idx_all_b0s}]
-for entry in ${rawdir}/${basePos}_[0-9]*.nii*
-do
-	basename=`imglob ${entry}`
-    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
-    if [[ scores[${idx_all_b0s}] -lt scores[${pos_idx}] ]] ; then
-      pos_idx=idx_all_b0s
-    fi
-    idx_all_b0s=$((${idx_all_b0s}+1))
+rm ${select_b0_dir}/index_selected_b0s.txt
+for pe_dir in ${basePos} ${baseNeg} ; do
+  # find index of minimum score
+  min_idx=1
+  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_${pe_dir}_b0s dim4`) ; do
+    if scores[${idx - 1}] -lt scores[${min_idx - 1}] ; min_idx=idx
   done
+  ${FSLDIR}/bin/fslroi ${select_b0_dir}/all_${pe_dir}_b0s ${select_b0_dir}/best_${pe_dir}_b0 ${min_idx} 1
+  echo "${pe_dir} ${min_idx}" >> ${select_b0_dir}/index_best_b0s.txt
 done
-
-# argmin for negative volumes
-npos=idx_all_b0s
-neg_idx=idx_all_b0s
-min_score=scores[${idx_all_b0s}]
-for entry in ${rawdir}/${basePos}_[0-9]*.nii*
-do
-	basename=`imglob ${entry}`
-    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${basename}_b0s dim4`) ; do
-    if [[ scores[${idx_all_b0s}] -lt scores[${neg_idx}] ]] ; then
-      neg_idx=idx_all_b0s
-    fi
-    idx_all_b0s=$((${idx_all_b0s}+1))
-  done
-done
-
-# merge selected b0's
-echo ${pos_idx} > ${select_b0_dir}/index_selected_b0s.txt
-echo ${neg_idx} >> ${select_b0_dir}/index_selected_b0s.txt
-fslroi ${select_b0_dir}/topup_b0s ${select_b0}/Pos_b0 ${pos_idx} 1
-fslroi ${select_b0_dir}/topup_b0s ${select_b0}/Neg_b0 ${neg_idx} 1
 
 # producing acqparams.txt
 if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
@@ -258,20 +250,20 @@ if [ `isodd $dimz` -eq 1 ];then
 	echo "Remove one slice from data to get even number of slices"
 	${FSLDIR}/bin/fslroi ${rawdir}/Pos ${rawdir}/Posn 0 -1 0 -1 1 -1
 	${FSLDIR}/bin/fslroi ${rawdir}/Neg ${rawdir}/Negn 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${select_b0_dir}/Pos_b0 ${select_b0_dir}/Pos_b0n 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${select_b0_dir}/Neg_b0 ${select_b0_dir}/Neg_b0n 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/fslroi ${select_b0_dir}/best_Pos_b0 ${select_b0_dir}/best_Pos_b0n 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/fslroi ${select_b0_dir}/best_Neg_b0 ${select_b0_dir}/best_Neg_b0n 0 -1 0 -1 1 -1
 	${FSLDIR}/bin/imrm ${rawdir}/Pos
 	${FSLDIR}/bin/imrm ${rawdir}/Neg
-	${FSLDIR}/bin/imrm ${select_b0_dir}/Pos_b0
-	${FSLDIR}/bin/imrm ${select_b0_dir}/Neg_b0
+	${FSLDIR}/bin/imrm ${select_b0_dir}/best_Pos_b0
+	${FSLDIR}/bin/imrm ${select_b0_dir}/best_Neg_b0
 	${FSLDIR}/bin/immv ${rawdir}/Posn ${rawdir}/Pos
 	${FSLDIR}/bin/immv ${rawdir}/Negn ${rawdir}/Neg
-	${FSLDIR}/bin/immv ${select_b0_dir}/Pos_b0n ${select_b0_dir}/Pos_b0
-	${FSLDIR}/bin/immv ${select_b0_dir}/Neg_b0n ${select_b0_dir}/Neg_b0
+	${FSLDIR}/bin/immv ${select_b0_dir}/best_Pos_b0n ${select_b0_dir}/best_Pos_b0
+	${FSLDIR}/bin/immv ${select_b0_dir}/best_Neg_b0n ${select_b0_dir}/best_Neg_b0
 fi
 
 echo "Perform final merge"
-${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/Pos_Neg_b0 ${select_b0_dir}/Pos_b0 ${select_b0_dir}/Neg_b0
+${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/Pos_Neg_b0 ${select_b0_dir}/best_Pos_b0 ${select_b0_dir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${select_b0_dir}/Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
 echo 0 >${rawdir}/Pos_Neg.bvals
@@ -292,8 +284,8 @@ echo "Move files to appropriate directories"
 mv ${rawdir}/extractedb0.txt ${topupdir}
 mv ${rawdir}/acqparams.txt ${topupdir}
 ${FSLDIR}/bin/immv ${select_b0_dir}/Pos_Neg_b0 ${topupdir}
-${FSLDIR}/bin/immv ${select_b0_dir}/Pos_b0 ${topupdir}
-${FSLDIR}/bin/immv ${select_b0_dir}/Neg_b0 ${topupdir}
+${FSLDIR}/bin/immv ${select_b0_dir}/best_Pos_b0 ${topupdir}/Pos_b0
+${FSLDIR}/bin/immv ${select_b0_dir}/best_Neg_b0 ${topupdir}/Neg_b0
 
 cp ${topupdir}/acqparams.txt ${eddydir}
 mv ${rawdir}/index.txt ${eddydir}
