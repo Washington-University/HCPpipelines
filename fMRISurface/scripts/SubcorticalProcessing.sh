@@ -98,24 +98,25 @@ else
 fi
 
 log_Msg "Dilating out zeros"
-#dilate out any exact zeros in the input data, for instance if the brain mask is wrong
-${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+#dilate out any exact zeros in the input data, for instance if the brain mask is wrong. Note that the CIFTI space cannot contain zeros to produce a valid CIFTI file (dilation also occurs below).
+${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii
 
 log_Msg "Generate atlas subcortical template cifti"
 ${CARET7DIR}/wb_command -cifti-create-label ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii -volume "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz
 
+#Also predilate to ensure full atlas CIFTI space has non-zero values
 if [[ `echo "${Sigma} > 0" | bc -l | cut -f1 -d.` == "1" ]]
 then
     log_Msg "Smoothing and resampling"
     #this is the whole timeseries, so don't overwrite, in order to allow on-disk writing, then delete temporary
     ${CARET7DIR}/wb_command -cifti-smoothing ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii 0 ${Sigma} COLUMN ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii -fix-zeros-volume
     #resample, delete temporary
-    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 10
+    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 30
     rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject_smooth.dtseries.nii
 else
     log_Msg "Resampling"
-    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 10
+    ${CARET7DIR}/wb_command -cifti-resample ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii COLUMN ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii -volume-predilate 30
 fi
 
 #delete common temporaries
