@@ -122,14 +122,10 @@ fi
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii
 
-#don't allow zeros into the atlas space result (in case subject freesurfer segmentation is missing a big chunk)
-${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
-rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii
-
 #write output volume, delete temporary
 #NOTE: $VolumefMRI contains a path in it, it is not a file in the current directory
-${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii COLUMN -volume-all "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
-rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
+${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN -volume-all "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
+rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii
 
 log_Msg "END"
 
