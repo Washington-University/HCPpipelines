@@ -213,12 +213,11 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
     ${CARET7DIR}/wb_command -volume-label-import "$AtlasSpaceFolder"/ROIs/wmparc."$GrayordinatesResolution".nii.gz ${SubcorticalGrayLabels} "$AtlasSpaceFolder"/ROIs/ROIs."$GrayordinatesResolution".nii.gz -discard-others
     [ "${T2wImage}" != "NONE" ] && applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
     applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage"."$GrayordinatesResolution".nii.gz
-    applywarp --interp=nn -i "$AtlasSpaceFolder"/brainmask_fs.nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/brainmask_fs."$GrayordinatesResolution".nii.gz
-    ${CARET7DIR}/wb_command "((Brainmask-1)*-1)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -var Brainmask "$AtlasSpaceFolder"/brainmask_fs."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
+    applywarp --interp=nn -i "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz
+    ${CARET7DIR}/wb_command "((Brainmask-1)*-1)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
     MissingGrayordinates=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -V | awk '{print $1}'`
     echo "MissingGrayordinates" > "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
     echo "${MissingGrayordinates}" >> "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
-    rm "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz
 done
 
 #Loop through left and right hemispheres
