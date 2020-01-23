@@ -214,7 +214,7 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
     [ "${T2wImage}" != "NONE" ] && applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
     applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage"."$GrayordinatesResolution".nii.gz
     applywarp --interp=nn -i "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz
-    ${CARET7DIR}/wb_command "((Brainmask-1)*-1)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
+    ${CARET7DIR}/wb_command -volume-math "(1-Brainmask)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
     MissingGrayordinates=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -V | awk '{print $1}'`
     MissingBrainstem=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -l 15.9 -u 16.1 -V | awk '{print $1}'`
     echo "MissingGrayordinates,MissingBrainstem" > "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
