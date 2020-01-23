@@ -216,8 +216,9 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
     applywarp --interp=nn -i "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz
     ${CARET7DIR}/wb_command "((Brainmask-1)*-1)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
     MissingGrayordinates=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -V | awk '{print $1}'`
-    echo "MissingGrayordinates" > "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
-    echo "${MissingGrayordinates}" >> "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
+    MissingBrainstem=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.nii.gz -l 15.9 -u 16.1 -V | awk '{print $1}'`
+    echo "MissingGrayordinates,MissingBrainstem" > "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
+    echo "${MissingGrayordinates},${MissingBrainstem}" >> "$AtlasSpaceFolder"/ROIs/MissingGrayordinates.txt
 done
 
 #Loop through left and right hemispheres
