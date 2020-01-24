@@ -108,12 +108,9 @@ done
 # This code in this section was adapted from a script written for the developing HCP (https://git.fmrib.ox.ac.uk/matteob/dHCP_neo_dMRI_pipeline_release/blob/master/utils/pickBestB0s.sh)
 # The original script was released under the Apache license 2.0 (https://git.fmrib.ox.ac.uk/matteob/dHCP_neo_dMRI_pipeline_release/blob/master/LICENSE)
 
-select_b0_dir=${rawdir}/select_b0
-mkdir -p ${select_b0_dir}
-
 # Merge b0's for both phase encoding directions
 for pe_sign in ${basePos} ${baseNeg} ; do
-  merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_${pe_sign}_b0s")
+  merge_command=("${FSLDIR}/bin/fslmerge" -t "${rawdir}/all_${pe_sign}_b0s")
   for entry in ${rawdir}/${pe_sign}_[0-9]*.nii*
   do
     basename=`imglob ${entry}`
@@ -123,64 +120,68 @@ for pe_sign in ${basePos} ${baseNeg} ; do
   "${merge_command[@]}"
 done
 
-if [[ `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Pos_b0s dim4` -lt 5 ]] ; then
-  echo "Score all B0's based on alignment with mean B0 after topup"
+for pe_sign in ${basePos} ${baseNeg} ; do
+  if [ ${pe_sign} = ${basePos} ] ; then
+    pe_other=${baseNeg}
+  else
+    pe_other=${basePos}
+  fi
+  select_b0_dir=${rawdir}/select_b0_${pe_sign}
+  mkdir -p ${select_b0_dir}
 
-  # Merge all b0's to do a rough initial aligment using topup
-  ${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/all_b0s ${select_b0_dir}/all_Pos_b0s ${select_b0_dir}/all_Neg_b0s
+  N_b0s=`${FSLDIR}/bin/fslval ${rawdir}/all_${pe_sign}_b0s dim4`
 
-  # Create the acqparams file for the initial alignment
-  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Pos_b0s dim4`) ; do
-      if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
-        echo 1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
-      elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
-        echo 0 1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
-      fi
-  done
+  # if there are less than 5 B0's for a specific phase encoding use topup to find the best ones
+  # otherwise simply register the B0's of the same phase encoding to each other
+  if [[ ${N_b0s} -lt 5 ]] ; then
+    echo "Score all ${basePos} B0's based on alignment with mean B0 after topup with 5 ${baseNeg} B0's"
 
-  for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Neg_b0s dim4`) ; do
-      if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
-        echo -1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
-      elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
-        echo 0 -1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
-      fi
-  done
+    # Select sub-set of other B0's to run topup on
+    ${FSLDIR}/bin/fslroi ${rawdir}/all_b0s ${select_b0_dir}/opposite_b0s 0 5
 
-  # run topup to roughly align the b0's
-  configdir=${HCPPIPEDIR_Config}
-  topup_config_file=${configdir}/best_b0.cnf
-  ${FSLDIR}/bin/topup --imain=${select_b0_dir}/all_b0s \
-     --datain=${select_b0_dir}/acqparams.txt \
-     --config=${topup_config_file} \
-     --fout=${select_b0_dir}/fieldmap \
-     --iout=${select_b0_dir}/topup_b0s \
-     --out=${select_b0_dir}/topup_results \
-     -v
+    # Merge all b0's to do a rough initial aligment using topup
+    ${FSLDIR}/bin/fslmerge -t ${select_b0_dir}/all_b0s ${rawdir}/all_${pe_sign}_b0s ${select_b0_dir}/opposite_b0s
 
-  # compute squared residual from the mean b0
-  ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
-  ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
-
-  # Get brain mask from averaged results
-  ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
-
-  # compute average squared residual over brain mask
-  scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
-  echo "b0 scores: " ${scores[@]}
-
-  # store scores for each series
-  idx_all_b0s=1
-  echo $idx_all_b0s
-  for pe_sign in ${basePos} ${baseNeg} ; do
-    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/all_${pe_sign}_b0s dim4`) ; do
-      echo $pe_sign $idx_all_b0s $idx
-      echo ${scores[${idx_all_b0s}]} >> ${select_b0_dir}/${pe_sign}_scores
-      idx_all_b0s=$((${idx_all_b0s}+1))
+    # Create the acqparams file for the initial alignment
+    for idx in $(seq 1 ${N_b0s}) ; do
+        if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+          echo 1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+        elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
+          echo 0 1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+        fi
     done
-  done
-else
-  echo "Score B0's of the same phase encoding based on similarity with mean B0"
-  for pe_sign in ${basePos} ${baseNeg} ; do
+
+    for idx in $(seq 1 `${FSLDIR}/bin/fslval ${select_b0_dir}/opposite_b0s dim4`) ; do
+        if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+          echo -1 0 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+        elif [ ${PEdir} -eq 2 ]; then  #AP/PA phase encoding
+          echo 0 -1 0 ${ro_time} >> ${select_b0_dir}/acqparams.txt
+        fi
+    done
+
+    # run topup to roughly align the b0's
+    configdir=${HCPPIPEDIR_Config}
+    topup_config_file=${configdir}/best_b0.cnf
+    ${FSLDIR}/bin/topup --imain=${select_b0_dir}/all_b0s \
+       --datain=${select_b0_dir}/acqparams.txt \
+       --config=${topup_config_file} \
+       --fout=${select_b0_dir}/fieldmap \
+       --iout=${select_b0_dir}/topup_b0s \
+       --out=${select_b0_dir}/topup_results \
+       -v
+
+    # compute squared residual from the mean b0
+    ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
+    ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
+    ${FSLDIR}/bin/fslroi ${select_b0_dir}/topup_b0s_res ${select_b0_dir}/topup_b0s_res_${pe_sign} 0 ${N_b0s}
+
+    # Get brain mask from averaged results
+    ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+
+    # compute average squared residual over brain mask
+    scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res_${pe_sign} -k ${select_b0_dir}/nodif_brain_mask -M` )
+  else
+    echo "Score B0's of the same phase encoding based on similarity with mean B0"
     ${FSLDIR}/bin/mcflirt -in ${select_b0_dir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_${pe_sign}_b0s_mcf
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_${pe_sign}_b0s_mcf -Tmean ${select_b0_dir}/all_${pe_sign}_b0s_mcf_avg
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_${pe_sign}_b0s_mcf -sub ${select_b0_dir}/all_${pe_sign}_b0s_mcf_avg -sqr ${select_b0_dir}/all_${pe_sign}_b0s_mcf_res
@@ -188,11 +189,11 @@ else
     # Get brain mask from averaged results
     ${FSLDIR}/bin/bet ${select_b0_dir}/all_${pe_sign}_b0s_mcf_avg.nii.gz ${select_b0_dir}/${pe_sign}_brain -m -R -f 0.3
     scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/all_${pe_sign}_b0s_mcf_res -k ${select_b0_dir}/${pe_sign}_brain_mask -M` )
-    echo "b0 scores for ${pe_sign}: " ${scores[@]}
+  fi
+  echo "b0 scores for ${pe_sign}: " "${scores[@]}"
 
-    printf "%s\n" "${scores[@]}" > ${select_b0_dir}/${pe_sign}_scores
-  done
-fi
+  printf "%s\n" "${scores[@]}" > ${select_b0_dir}/${pe_sign}_scores
+done
 
 
 ################################################################################################
