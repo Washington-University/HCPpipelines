@@ -112,23 +112,16 @@ select_b0_dir=${rawdir}/select_b0
 mkdir -p ${select_b0_dir}
 
 # Merge b0's for both phase encoding directions
-merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_Pos_b0s")
-for entry in ${rawdir}/${basePos}_[0-9]*.nii*
-do
-	basename=`imglob ${entry}`
-	${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
-    merge_command+=("${basename}_b0s")
+for pe_sign in ${basePos} ${baseNeg} ; do
+  merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_${pe_sign}_b0s")
+  for entry in ${rawdir}/${pe_sign}_[0-9]*.nii*
+  do
+    basename=`imglob ${entry}`
+    ${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
+      merge_command+=("${basename}_b0s")
+  done
+  "${merge_command[@]}"
 done
-"${merge_command[@]}"
-
-merge_command=("${FSLDIR}/bin/fslmerge" -t "${select_b0_dir}/all_Neg_b0s")
-for entry in ${rawdir}/${baseNeg}_[0-9]*.nii*
-do
-	basename=`imglob ${entry}`
-	${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
-    merge_command+=("${basename}_b0s")
-done
-"${merge_command[@]}"
 
 if [[ `${FSLDIR}/bin/fslval ${select_b0_dir}/all_Pos_b0s dim4` -lt 5 ]] ; then
   echo "Score all B0's based on alignment with mean B0 after topup"
