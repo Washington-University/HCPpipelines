@@ -4,7 +4,7 @@
 # Resolution (knot-spacing) of warps in mm
 --warpres=20,14
 # Subsampling level (a value of 2 indicates that a 2x2x2 neighbourhood is collapsed to 1 voxel)
---subsamp=1,1
+--subsamp=2,2
 # FWHM of gaussian smoothing
 --fwhm=8,4
 # Maximum number of iterations
