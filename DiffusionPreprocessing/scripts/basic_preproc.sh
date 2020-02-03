@@ -118,6 +118,10 @@ for pe_sign in ${basePos} ${baseNeg} ; do
   done
   echo about to "${merge_command[@]}"
   "${merge_command[@]}"
+  for entry in ${rawdir}/${pe_sign}_[0-9]*_b0s.nii*
+  do
+      ${FSLDIR}/bin/imrm ${entry}
+  done
 done
 
 
@@ -277,12 +281,12 @@ echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
-echo 0 > ${rawdir}/Pos_Neg.bvals
-paste ${rawdir}/Pos_Neg.bvals ${rawdir}/Pos.bval ${rawdir}/Neg.bval >${rawdir}/Pos_Neg.bvals
-echo 0 > ${rawdir}/Pos_Neg.bvecs
-echo 0 >> ${rawdir}/Pos_Neg.bvecs
-echo 0 >> ${rawdir}/Pos_Neg.bvecs
-paste ${rawdir}/Pos_Neg.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
+echo 0 `paste ${rawdir}/Pos.bval ${rawdir}/Neg.bval` >${rawdir}/Pos_Neg.bvals
+echo 1. > ${rawdir}/zero.bvecs
+echo 0. >> ${rawdir}/zero.bvecs
+echo 0. >> ${rawdir}/zero.bvecs
+paste ${rawdir}/zero.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
+rm ${rawdir}/zero.bvecs
 
 ${FSLDIR}/bin/imrm ${rawdir}/Pos
 ${FSLDIR}/bin/imrm ${rawdir}/Neg
