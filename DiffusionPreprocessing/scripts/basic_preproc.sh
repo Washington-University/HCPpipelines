@@ -246,10 +246,10 @@ echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos `echo ${rawdir}/${basePos}_[0-9]*.nii*`
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg `echo ${rawdir}/${baseNeg}_[0-9]*.nii*`
 
-paste `echo ${rawdir}/${basePos}*.bval` >${rawdir}/Pos.bval
-paste `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
-paste `echo ${rawdir}/${baseNeg}*.bval` >${rawdir}/Neg.bval
-paste `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
+paste -d' ' `echo ${rawdir}/${basePos}*.bval` >${rawdir}/Pos.bval
+paste -d' ' `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
+paste -d' ' `echo ${rawdir}/${baseNeg}*.bval` >${rawdir}/Neg.bval
+paste -d' ' `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
 
 # start index file with a 1 to indicate the reference B0 image
 echo 1 > ${rawdir}/index.txt
@@ -281,11 +281,11 @@ echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
-echo 0 `paste ${rawdir}/Pos.bval ${rawdir}/Neg.bval` >${rawdir}/Pos_Neg.bvals
+echo 0 `paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval` >${rawdir}/Pos_Neg.bvals
 echo 1. > ${rawdir}/zero.bvecs
 echo 0. >> ${rawdir}/zero.bvecs
 echo 0. >> ${rawdir}/zero.bvecs
-paste ${rawdir}/zero.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
+paste -d' ' ${rawdir}/zero.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
 rm ${rawdir}/zero.bvecs
 
 ${FSLDIR}/bin/imrm ${rawdir}/Pos
