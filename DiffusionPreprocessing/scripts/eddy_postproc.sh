@@ -37,27 +37,26 @@ qc_command+=(-v)
 #    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
+cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals ${datadir}/bvals_noRot  # removes first value from bvals
+cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs_noRot  # removes first value from bvecs
 if [ ${CombineDataFlag} -eq 2 ]; then
   # remove first volume as this is the reference b0, which was added to the dataset before running eddy
 	${FSLDIR}/bin/fslroi  ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
-	cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
-	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-	cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
+	cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs  # removes first value from bvecs
+	cp ${datadir}/bvals_noRot ${datadir}/bvals
 else
 	echo "JAC resampling has been used. Eddy Output is now combined."
 	PosVols=`wc ${eddydir}/Pos.bval | awk {'print $2'}`
 	NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
-	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 0 ${PosVols}
-	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg ${PosVols} ${NegVols}
+	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos 1 ${PosVols}  # ignore extra first volume
+	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg $((PosVols+1)) ${NegVols}
 	# Note: 'eddy_combine' is apparently hard-coded to use "data" as the output NIFTI file name
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
              ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
-	cp ${datadir}/bvals ${datadir}/bvals_noRot
-	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-    
+
 	#rm ${eddydir}/Pos.bv*
 	#rm ${eddydir}/Neg.bv*
 
@@ -69,7 +68,7 @@ else
 	Posline1=""
 	Posline2=""
 	Posline3=""
-	for ((i=1; i<=$PosVols; i++)); do
+	for ((i=2; i<=$((PosVols + 1)); i++)); do
 	    Posline1="$Posline1 `echo $line1 | awk -v N=$i '{print $N}'`"
 	    Posline2="$Posline2 `echo $line2 | awk -v N=$i '{print $N}'`"
 	    Posline3="$Posline3 `echo $line3 | awk -v N=$i '{print $N}'`"
@@ -81,8 +80,8 @@ else
 	Negline1=""
 	Negline2=""
 	Negline3=""
-	Nstart=$((PosVols + 1 ))
-	Nend=$((PosVols + NegVols))
+	Nstart=$((PosVols + 2))
+	Nend=$((PosVols + NegVols + 1))
 	for  ((i=$Nstart; i<=$Nend; i++)); do
 	    Negline1="$Negline1 `echo $line1 | awk -v N=$i '{print $N}'`"
 	    Negline2="$Negline2 `echo $line2 | awk -v N=$i '{print $N}'`"
