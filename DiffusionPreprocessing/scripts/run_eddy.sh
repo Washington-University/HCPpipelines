@@ -100,8 +100,11 @@ PARAMETERS are: [ ] = optional; < > = user supplied value
   [--dont_peas] : pass the --dont_peas (Do NOT perform a post-eddy alignment of shells) option
                   to eddy invocation"
 
+  [--niter=<value>] : --niter value to pass to eddy
+                     If unspecified, defaults to --niter=7
+
   [--fwhm=<value>] : --fwhm value to pass to eddy
-                     If unspecified, defaults to --fwhm=0
+                     If unspecified, defaults to --fwhm=8,4,2,0,0,0,0
 
   [--resamp=<value>] : --resamp value to pass to eddy
                      If unspecified, no --resamp option is passed to eddy
@@ -175,7 +178,8 @@ get_options()
 	rms="False"
 	ff_val=""
 	dont_peas=""
-	fwhm_value="0"
+	fwhm_value="8,4,2,0,0,0,0"
+	niter_value="7"
 	resamp_value=""
 	unset ol_nstd_val
 	extra_eddy_args=""
@@ -233,6 +237,10 @@ get_options()
 				;;
 			--dont_peas)
 				dont_peas="--dont_peas"
+				index=$(( index + 1 ))
+				;;
+			--niter=*)
+				niter_value=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fwhm=*)
@@ -583,6 +591,7 @@ main()
 	eddy_command+="--acqp=${workingdir}/acqparams.txt "
 	eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
 	eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
+	eddy_command+="--niter=${niter_value} "
 	eddy_command+="--fwhm=${fwhm_value} "
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
