@@ -37,8 +37,8 @@ qc_command+=(-v)
 #    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
-cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals ${datadir}/bvals_noRot  # removes first value from bvals
-cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs_noRot  # removes first value from bvecs
+cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals_noRot  # removes first value from bvals
+cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot  # removes first value from bvecs
 if [ ${CombineDataFlag} -eq 2 ]; then
   # remove first volume as this is the reference b0, which was added to the dataset before running eddy
 	${FSLDIR}/bin/fslroi  ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
