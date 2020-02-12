@@ -214,14 +214,56 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
     [ "${T2wImage}" != "NONE" ] && applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
     applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage"."$GrayordinatesResolution".nii.gz
     
-    #Run these to check segmentation
+    ### Report on subcortical segmentation
+
+    # Generate brain mask at appropriate resolution
     applywarp --interp=nn -i "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz
-    ${CARET7DIR}/wb_command -volume-math "(!Brainmask)*CIFTIStandardSpace" "$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
-    MissingGrayordinates=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".nii.gz -V | awk '{print $1}'`
-    MissingBrainstem=`fslstats "$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".nii.gz -l 15.9 -u 16.1 -V | awk '{print $1}'`
-    echo "MissingGrayordinates,MissingBrainstem" > "$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
-    echo "${MissingGrayordinates},${MissingBrainstem}" >> "$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
-    #End run these
+
+	# Compute subcortical grayordinates missing from the "Atlas" space (CIFTI standard space) based on the overall brain mask
+	MissingGrayordinates="$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution"
+    ${CARET7DIR}/wb_command -volume-math "(!Brainmask)*CIFTIStandardSpace" ${MissingGrayordinates}.nii.gz -var Brainmask "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".nii.gz -var CIFTIStandardSpace "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
+    MissingGrayordinatesTotal=$(fslstats ${MissingGrayordinates}.nii.gz -V | awk '{print $1}')
+
+	# Split the Atlas and subject-specific ROIs into individual structures, so we can compute counts of missing voxels and overlap relative to specific structures
+	AtlasROIsSplit="$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".split
+	SubjROIsSplit="$AtlasSpaceFolder"/ROIs/ROIs."$GrayordinatesResolution".split
+	MissingSplit=${MissingGrayordinates}.split
+	${CARET7DIR}/wb_command -volume-all-labels-to-rois "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz 1 ${AtlasROIsSplit}.nii.gz
+	${CARET7DIR}/wb_command -volume-all-labels-to-rois "$AtlasSpaceFolder"/ROIs/ROIs."$GrayordinatesResolution".nii.gz 1 ${SubjROIsSplit}.nii.gz
+
+	# Volume with the *brainmask* voxels missing from the Atlas, with each structure as a separate frame
+	# (Note: need to binarize "Missing" to turn it into a mask, since it uses the original label values)
+	${CARET7DIR}/wb_command -volume-math "(Missing > 0) * Atlas" ${MissingSplit}.nii.gz -var Missing ${MissingGrayordinates}.nii.gz -repeat -var Atlas ${AtlasROIsSplit}.nii.gz
+	# Volume with the subject-specific subcortical labels that are *missing* from the corresponding Atlas label, with each structure as a separate frame
+	${CARET7DIR}/wb_command -volume-math "Atlas * (!Subj)" ${SubjROIsSplit}.missing.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+	# Volume with the subject-specific subcortical labels that *overlap* with the corresponding Atlas label, with each structure as a separate frame
+	${CARET7DIR}/wb_command -volume-math "(Atlas) * Subj" ${SubjROIsSplit}.overlap.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+	# Volume with the subject-specific subcortical labels that are *outside* of the corresponding Atlas label, with each structure as a separate frame
+	${CARET7DIR}/wb_command -volume-math "(!Atlas) * Subj" ${SubjROIsSplit}.outside.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+
+	# Extract summary counts
+	${CARET7DIR}/wb_command -volume-stats ${MissingSplit}.nii.gz -reduce SUM -show-map-name > ${MissingSplit}.stats.txt
+	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.missing.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.missing.stats.txt
+	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.overlap.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.overlap.stats.txt
+	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.outside.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.outside.stats.txt
+
+	# Assemble output csv
+	# We assume in the following (without checking) that the structures from -volume-stats -show-map-name are consistent across all files
+	cut -d ':' -f 2 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.roinames.txt
+	cut -d ':' -f 3 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.value.txt
+	cut -d ':' -f 3 ${SubjROIsSplit}.missing.stats.txt > ${SubjROIsSplit}.missing.stats.value.txt
+	cut -d ':' -f 3 ${SubjROIsSplit}.overlap.stats.txt > ${SubjROIsSplit}.overlap.stats.value.txt
+	cut -d ':' -f 3 ${SubjROIsSplit}.outside.stats.txt > ${SubjROIsSplit}.outside.stats.value.txt
+
+	outFile="$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
+	echo "Structure,nMissingBrainMaskFromAtlas,nMissingROIFromAtlas,nROIOverlapAtlas,nROIOutsideAtlas" > ${outFile}
+	echo "ALL,${MissingGrayordinatesTotal},,," >> ${outFile}
+	paste -d ',' ${MissingSplit}.stats.roinames.txt ${MissingSplit}.stats.value.txt ${SubjROIsSplit}.missing.stats.value.txt ${SubjROIsSplit}.overlap.stats.value.txt ${SubjROIsSplit}.outside.stats.value.txt | tr -d '[:blank:]' >> ${outFile}
+
+	# Cleanup
+	rm ${AtlasROIsSplit}* ${SubjROIsSplit}* ${MissingSplit}*
+
+    ### End report on subcortical segmentation
 done
 
 #Loop through left and right hemispheres
