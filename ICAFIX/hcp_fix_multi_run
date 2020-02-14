@@ -827,8 +827,7 @@ fi
 
 # Convert sICA+FIX cleaned movement regressors to text
 if [ -f ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
-  fslmaths ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -Tmean -mul 0 -add 1 ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean_mask.nii.gz
-  fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -m ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean_mask.nii.gz -o ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt --showall
+  fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt --showall
   cat ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt | tail -$(fslval ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz dim4) > ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt
 fi
 
@@ -873,16 +872,12 @@ for fmri in $fmris ; do
 
   if [ -f ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
     ${Caret7_Command} -volume-merge ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -volume ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-    fslmeants -i ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -m ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean_mask.nii.gz -o $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt --showall
+    fslmeants -i ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt --showall
     cat $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt | tail -$(fslval ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz dim4) > $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt
   fi
 
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
-
-if [ -f ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
-  rm ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean_mask.nii.gz
-fi
 
 cd ${DIR}
 
