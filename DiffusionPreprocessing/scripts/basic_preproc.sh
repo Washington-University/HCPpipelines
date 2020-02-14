@@ -55,7 +55,6 @@ echo "${scriptName}: Rescaling series to ensure consistency across baseline inte
 entry_cnt=0
 for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
 do
-    echo "Processing ${entry}"
 	basename=`imglob ${entry}`
 	echo "${scriptName}: Processing $basename"
 	
