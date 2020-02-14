@@ -222,7 +222,7 @@ get_options()
 	rms="False"
 	ff_val=""
 	dont_peas=""
-	fwhm_value="0"
+	fwhm_value="8,4,2,0,0,0,0"
 	resamp_value=""
 	unset ol_nstd_value
 	extra_eddy_args=""
