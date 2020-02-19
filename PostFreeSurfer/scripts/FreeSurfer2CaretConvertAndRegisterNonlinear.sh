@@ -285,8 +285,8 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
 
 	# Cleanup
 	rm ${AtlasROIsSplit}* ${SubjROIsSplit}* ${MissingSplit}*
-	rm "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".dil2x.nii.gz
 	rm ${MissingGrayordinates}.dil2xBrainMask.nii.gz
+	#rm "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".dil2x.nii.gz
 
     ### End report on subcortical segmentation
 done
