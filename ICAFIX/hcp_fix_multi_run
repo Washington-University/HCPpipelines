@@ -570,40 +570,13 @@ fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_co
 #MPH: Now we can switch to ${ConcatFolder}
 cd ${ConcatFolder}
 
-log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
-if [ ! -z "${log_debugOn}" ] ; then
-	ls -lRa ${concatfmrihp}.ica
-fi
-
-#grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
-#we need to do "if which ..." because the script currently uses ERR trap
-if which melodic &> /dev/null
-then
-    MELODIC=$(which melodic 2> /dev/null)
-else
-    #if it isn't even in $PATH, fall back on FSLDIR
-    MELODIC="${FSLDIR}/bin/melodic"
-fi
-
-log_Msg "Running MELODIC located at: $MELODIC"
-log_Debug_Msg "Beginning of melodic version log, help, and checksum"
-if [ ! -z "${log_debugOn}" ] ; then
-	log_Debug_Msg "$MELODIC --version"
-	$MELODIC --version
-	log_Debug_Msg "$MELODIC --help"
-	$MELODIC --help
-	log_Debug_Msg "md5sum $MELODIC"
-	md5sum $MELODIC
-fi
-log_Debug_Msg "End of melodic version log, help, and checksum"
-
-AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
-
 ## "2nd pass" VN
 ## This is solely so that we can apply our own variance normalization as part of the spatial ICA, 
 ## rather than using the VN algorithm internal to melodic
 ## (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
 ## See comments above about regarding the use of call_matlab here.
+
+AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
 case ${FSL_FIX_MATLAB_MODE} in
 	0)
@@ -636,6 +609,33 @@ log_Msg "Dim: ${Dim}"
 ## ---------------------------------------------------------------------------
 ## Run melodic on concatenated file
 ## ---------------------------------------------------------------------------
+
+log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
+if [ ! -z "${log_debugOn}" ] ; then
+	ls -lRa ${concatfmrihp}.ica
+fi
+
+#grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
+#we need to do "if which ..." because the script currently uses ERR trap
+if which melodic &> /dev/null
+then
+    MELODIC=$(which melodic 2> /dev/null)
+else
+    #if it isn't even in $PATH, fall back on FSLDIR
+    MELODIC="${FSLDIR}/bin/melodic"
+fi
+
+log_Msg "Running MELODIC located at: $MELODIC"
+log_Debug_Msg "Beginning of melodic version log, help, and checksum"
+if [ ! -z "${log_debugOn}" ] ; then
+	log_Debug_Msg "$MELODIC --version"
+	$MELODIC --version
+	log_Debug_Msg "$MELODIC --help"
+	$MELODIC --help
+	log_Debug_Msg "md5sum $MELODIC"
+	md5sum $MELODIC
+fi
+log_Debug_Msg "End of melodic version log, help, and checksum"
 
 # Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 # Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
