@@ -827,8 +827,11 @@ fi
 
 # Convert sICA+FIX cleaned movement regressors to text
 if [ -f ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
-  fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt --showall
-  cat ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt | tail -$(fslval ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz dim4) > ${ConcatFolder}/Movement_Regressors_hp${hp}_clean.txt
+  fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o Movement_Regressors_hp${hp}_clean.txt --showall
+  # Strip header lines included as part of '--showall' flag
+  nVols=$($FSLDIR/bin/fslnvols ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz)
+  # Execute tail in a subshell, so we can successfully overwrite file with same name
+  echo "$(tail -n ${nVols} Movement_Regressors_hp${hp}_clean.txt)" > Movement_Regressors_hp${hp}_clean.txt
 fi
 
 ## ---------------------------------------------------------------------------
@@ -870,10 +873,15 @@ for fmri in $fmris ; do
 	${Caret7_Command} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 
+  # Convert sICA+FIX cleaned movement regressors to text
   if [ -f ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
     ${Caret7_Command} -volume-merge ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -volume ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
-    fslmeants -i ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt --showall
-    cat $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt | tail -$(fslval ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz dim4) > $(dirname $fmri)/Movement_Regressors_hp${hp}_clean.txt
+	fmriDir=$(dirname $fmri)
+    fslmeants -i ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt --showall
+    # Strip header lines included as part of '--showall' flag
+	nVols=$($FSLDIR/bin/fslnvols ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz)
+    # Execute tail in a subshell, so we can successfully overwrite file with same name
+    echo "$(tail -n ${nVols} ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt)" > ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt
   fi
 
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
@@ -882,4 +890,3 @@ done
 cd ${DIR}
 
 log_Msg "Completed!"
-
