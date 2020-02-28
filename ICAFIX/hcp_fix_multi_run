@@ -59,7 +59,7 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
      Must be specified, use TRUE or FALSE
 
   [<TrainingFile>] (optional)
-     Defaults to "HCP_hp${hp}.RData"
+     Defaults to "HCP_hp<highpass>.RData"
      In the case of polynomial detrending, will use HCP_hp2000.RData
 
   [<FixThreshold>] (optional)
