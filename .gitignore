@@ -11,3 +11,6 @@
 # These are sometimes proprietary and should not be 
 # checked in to a repository.
 *.grad
+
+# nfs temporaries
+.nfs*
