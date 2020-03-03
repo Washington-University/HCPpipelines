@@ -95,9 +95,11 @@ end
 
 %% Load volume time series
 if dovol > 0
-    cts=single(read_avw([fmri '.nii.gz']));
-    ctsX=size(cts,1); ctsY=size(cts,2); ctsZ=size(cts,3); ctsT=size(cts,4); 
-    cts=reshape(cts,ctsX*ctsY*ctsZ,ctsT);
+    ctsfull=single(read_avw([fmri '.nii.gz']));
+    ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
+    ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
+    ctsmask=std(ctsfull,[],2)>0; 
+    cts=ctsfull(ctsmask,:); clear ctsfull;
 end
 
 %% Load the motion confounds, and the CIFTI (if hp>=0) (don't need either if hp<0)
@@ -119,7 +121,9 @@ if pdflag  % polynomial detrend case
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
         
         cts=detrendpoly(cts',hp)';
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]);
+        ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
+	      ctsfull(ctsmask,:)=cts;
+        save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); clear ctsfull;
 		% Use -d flag in fslcpgeom (even if not technically necessary) to reduce possibility of mistakes when editing script
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
     end
@@ -132,11 +136,18 @@ elseif hp>0  % "fslmaths -bptf" based filtering
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         call_fsl(sprintf(['fslmaths ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
 
-        save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]);
+        ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
+	      ctsfull(ctsmask,:)=cts;
+
+        save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); clear ctsfull;
         call_fsl(['fslmaths ' fmri hpstring '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
-        cts=single(read_avw([fmri hpstring '.nii.gz']));
-        cts=reshape(cts,ctsX*ctsY*ctsZ,ctsT);
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
+        ctsfull=single(read_avw([fmri hpstring '.nii.gz']));
+
+        ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
+        ctsmask=std(ctsfull,[],2)>0; 
+        cts=ctsfull(ctsmask,:); 
+
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']); clear ctsfull;
     end
     
     BOdimX=size(BO.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(BO.cdata,2);
@@ -177,7 +188,10 @@ end
 if hp>=0
     if dovol > 0
 	    fname=[fmri hpstring '_vn.nii.gz'];
-        save_avw(reshape(Outcts.noise_unst_std,ctsX,ctsY,ctsZ,1),fname,'f',[1 1 1 1]);
+      vnfull=single(zeros(ctsX*ctsY*ctsZ,1));
+	    vnfull(ctsmask)=Outcts.noise_unst_std;
+	      
+        save_avw(reshape(vnfull,ctsX,ctsY,ctsZ,1),fname,'f',[1 1 1 1]); clear vnfull;
 		call_fsl(['fslcpgeom ' fmri '_mean.nii.gz ' fname ' -d']);
     end
 
@@ -195,7 +209,9 @@ if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
 	% Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
 	fname=[fmri hpstring '_vnts.nii.gz'];
-	save_avw(reshape(cts,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 1]); 
+	ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
+	ctsfull(ctsmask,:)=cts;
+	save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 1]); clear ctsfull;
 	% N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
 	call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']); 
 end
