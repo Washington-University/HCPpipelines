@@ -159,7 +159,7 @@ elseif hp>0  % "fslmaths -bptf" based filtering
     call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
     grot=reshape(single(read_avw('Atlas')),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot;
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
-    call_fsl('rm Atlas.nii.gz');
+    delete('Atlas.nii.gz');
 
 elseif hp<0  % If no hp filtering, still need to at least demean the volumetric time series
     if dovol > 0
