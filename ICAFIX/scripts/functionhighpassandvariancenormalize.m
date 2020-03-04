@@ -142,7 +142,7 @@ elseif hp>0  % "fslmaths -bptf" based filtering
         call_fsl(sprintf(['fslmaths ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
 
         % bptf filtering; no masking here, so this is probably memory inefficient
-        call_fsl(['fslmaths ' fmri hpstring '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
+        call_fsl(['fslmaths ' fmri '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']); 
         
         % Load in result and reduce to just the non-zero voxels (for memory efficiency going forward)
