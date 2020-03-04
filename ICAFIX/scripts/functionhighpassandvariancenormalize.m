@@ -124,7 +124,7 @@ if pdflag  % polynomial detrend case
         cts=detrendpoly(cts',hp)';
         
         % Write out result, restoring to original size
-        ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
+        ctsfull=zeros(ctsX*ctsY*ctsZ,ctsT, 'single');
         ctsfull(ctsmask,:)=cts;
         save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); 
         clear ctsfull;
@@ -201,7 +201,7 @@ end
 if hp>=0
     if dovol > 0
         fname=[fmri hpstring '_vn.nii.gz'];
-        vnfull=single(zeros(ctsX*ctsY*ctsZ,1));
+        vnfull=zeros(ctsX*ctsY*ctsZ,1, 'single');
         vnfull(ctsmask)=Outcts.noise_unst_std;
           
         save_avw(reshape(vnfull,ctsX,ctsY,ctsZ,1),fname,'f',[1 1 1 1]); clear vnfull;
@@ -222,7 +222,7 @@ if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
 	% Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
 	fname=[fmri hpstring '_vnts.nii.gz'];
-	ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
+	ctsfull=zeros(ctsX*ctsY*ctsZ,ctsT, 'single');
 	ctsfull(ctsmask,:)=cts;
 	save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 1]); clear ctsfull;
 	% N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
