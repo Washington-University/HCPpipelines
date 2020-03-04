@@ -93,15 +93,6 @@ if isempty(hpstring) && hp>=0
     hpstring = ['_hp' pdstring num2str(hp)];
 end
 
-%% Load volume time series
-if dovol > 0
-    ctsfull=single(read_avw([fmri '.nii.gz']));
-    ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
-    ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
-    ctsmask=std(ctsfull,[],2)>0; 
-    cts=ctsfull(ctsmask,:); clear ctsfull;
-end
-
 %% Load the motion confounds, and the CIFTI (if hp>=0) (don't need either if hp<0)
 if hp>=0
     confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
@@ -116,15 +107,28 @@ end
 %% Apply hp filtering of the motion confounds, volume (if requested), and CIFTI
 if pdflag  % polynomial detrend case
     if dovol > 0
+        % Save and filter confounds, as a NIFTI, as expected by FIX
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         confounds=detrendpoly(confounds,hp);
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
-        
+    
+        % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
+        ctsfull=single(read_avw([fmri '.nii.gz']));
+        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
+        ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
+        ctsmask=std(ctsfull,[],2)>0; 
+        cts=ctsfull(ctsmask,:); 
+        clear ctsfull;
+    
+        % Polynomial detrend
         cts=detrendpoly(cts',hp)';
+        
+        % Write out result, restoring to original size
         ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
-	      ctsfull(ctsmask,:)=cts;
-        save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); clear ctsfull;
-		% Use -d flag in fslcpgeom (even if not technically necessary) to reduce possibility of mistakes when editing script
+        ctsfull(ctsmask,:)=cts;
+        save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); 
+        clear ctsfull;
+        % Use -d flag in fslcpgeom (even if not technically necessary) to reduce possibility of mistakes when editing script
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
     end
     
@@ -133,33 +137,42 @@ if pdflag  % polynomial detrend case
 
 elseif hp>0  % "fslmaths -bptf" based filtering
     if dovol > 0
+        % Save and filter confounds, as a NIFTI, as expected by FIX
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         call_fsl(sprintf(['fslmaths ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
 
-        ctsfull=single(zeros(ctsX*ctsY*ctsZ,ctsT));
-	      ctsfull(ctsmask,:)=cts;
-
-        save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),[fmri hpstring '.nii.gz'],'f',[1 1 1 TR]); clear ctsfull;
+        % bptf filtering; no masking here, so this is probably memory inefficient
         call_fsl(['fslmaths ' fmri hpstring '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']); 
+        
+        % Load in result and reduce to just the non-zero voxels (for memory efficiency going forward)
         ctsfull=single(read_avw([fmri hpstring '.nii.gz']));
-
+        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
         ctsmask=std(ctsfull,[],2)>0; 
         cts=ctsfull(ctsmask,:); 
-
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']); clear ctsfull;
+        clear ctsfull;
     end
     
     BOdimX=size(BO.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(BO.cdata,2);
     save_avw(reshape([BO.cdata ; zeros(100*BOdimZnew-BOdimX,BOdimT)],10,10,BOdimZnew,BOdimT),'Atlas','f',[1 1 1 TR]);
     call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
     grot=reshape(single(read_avw('Atlas')),100*BOdimZnew,BOdimT);  BO.cdata=grot(1:BOdimX,:);  clear grot;
-    call_fsl('rm Atlas.nii.gz');
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
+    call_fsl('rm Atlas.nii.gz');
 
 elseif hp<0  % If no hp filtering, still need to at least demean the volumetric time series
     if dovol > 0
-	    cts=demean(cts')';
+
+        % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
+        ctsfull=single(read_avw([fmri '.nii.gz']));
+        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
+        ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
+        ctsmask=std(ctsfull,[],2)>0; 
+        cts=ctsfull(ctsmask,:); 
+        clear ctsfull;
+        
+        cts=demean(cts')';
     end
 
 end
@@ -187,17 +200,17 @@ end
 % (Only need these for the individual runs, which, per above, are expected to be passed in with hp requested).
 if hp>=0
     if dovol > 0
-	    fname=[fmri hpstring '_vn.nii.gz'];
-      vnfull=single(zeros(ctsX*ctsY*ctsZ,1));
-	    vnfull(ctsmask)=Outcts.noise_unst_std;
-	      
+        fname=[fmri hpstring '_vn.nii.gz'];
+        vnfull=single(zeros(ctsX*ctsY*ctsZ,1));
+        vnfull(ctsmask)=Outcts.noise_unst_std;
+          
         save_avw(reshape(vnfull,ctsX,ctsY,ctsZ,1),fname,'f',[1 1 1 1]); clear vnfull;
-		call_fsl(['fslcpgeom ' fmri '_mean.nii.gz ' fname ' -d']);
+        call_fsl(['fslcpgeom ' fmri '_mean.nii.gz ' fname ' -d']);
     end
 
     VN=BO;
     VN.cdata=OutBO.noise_unst_std;
-	fname=[fmri '_Atlas' regstring hpstring '_vn.dscalar.nii'];
+    fname=[fmri '_Atlas' regstring hpstring '_vn.dscalar.nii'];
     disp(['saving ' fname]);
     ciftisavereset(VN,fname,WBC);    
 end
