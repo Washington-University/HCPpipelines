@@ -44,7 +44,9 @@ end
 [u,EigS,v]=nets_svds(data_detrend',0); %Eigenvalues of detrended data
 Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
 
+clear data_detrend;
 data_detrend_vn=0; %To allow clearing later in loop
+u(isnan(u))=0; v(isnan(v))=0;
 
 c=1;
 stabCount = 0;
@@ -56,10 +58,10 @@ while stabCount < stabThresh %Loop until dim output is stable
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
       Out.noise_unst_std = max(std(noise_unst,[],2),0.001); clear noise_unst;
-      data_detrend_vn = data_detrend ./ repmat(Out.noise_unst_std,1,size(data_detrend,2));
+      data_detrend_vn = (u*EigS*v')' ./ repmat(Out.noise_unst_std,1,size(data_trend,2));
     elseif VN==0
-      data_detrend_vn = data_detrend;
-      Out.noise_unst_std = single(ones(size(data_detrend,1),1));
+      data_detrend_vn = (u*EigS*v')';
+      Out.noise_unst_std = single(ones(size(data_detrend_vn,1),1));
     end
     if size(data_detrend_vn,1)<size(data_detrend_vn,2)
         if DEMDT~=-1
@@ -176,7 +178,6 @@ while stabCount < stabThresh %Loop until dim output is stable
         disp(['   dimavg: ' mat2str(priordimavg)]);
     end
 end %End while loop for dim calcs
-clear data_detrend;
 
 if Iterate < 0 
     Out.calcDim=round(priordimavg);
