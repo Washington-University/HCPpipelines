@@ -19,19 +19,23 @@ end
 
 %%%%%%%%%%%%%%%%%%%%
 
+OrigdataSizeOne=size(Origdata,1);
+OrigdataSizeTwo=size(Origdata,2);
+OrigdataMask=std(Origdata,[],2)>0;
+
 %Remove Constant Timeseries and Detrend Data
 if DEMDT==1
-    data = Origdata(std(Origdata,[],2)>0,:);
+    data = Origdata(OrigdataMask,:); clear Origdata;
     data_detrend = detrend(data')';
-    data_trend = data - data_detrend;
+    data_trend = data - data_detrend; clear data;
 elseif DEMDT==0
-    data = Origdata(std(Origdata,[],2)>0,:);
-    data_detrend = demean(data')';
-    data_trend = single(zeros(size(data,1),size(data,2)));
+    data = Origdata(OrigdataMask,:); clear Origdata;
+    data_detrend = demean(data')'; meandata=mean(data')'; clear data;
+    data_trend = data_detrend.*0 + repmat(meandata,1,size(data_detrend,2));
 elseif DEMDT==-1
-    data = Origdata(std(Origdata,[],2)>0,:);
-    data_detrend = data;
-    data_trend = single(zeros(size(data,1),size(data,2)));
+    data = Origdata(OrigdataMask,:); clear Origdata;
+    data_detrend = data; clear data;
+    data_trend = data_detrend.*0; 
 end
 
 %Precompute PCA reconstruction
@@ -169,6 +173,8 @@ while stabCount < stabThresh %Loop until dim output is stable
         disp(['   dimavg: ' mat2str(priordimavg)]);
     end
 end %End while loop for dim calcs
+clear data_detrend;
+
 if Iterate < 0 
     Out.calcDim=round(priordimavg);
 end
@@ -219,13 +225,14 @@ disp(['   NewDOF: ' mat2str(Out.NewDOF)]);
 
 Out.EigSAdj(1:length(Out.EN))=sqrt(Out.grot_six);
 
-Out.data=single(zeros(size(Origdata,1),size(Origdata,2)));
+
+Out.data=single(zeros(OrigdataSizeOne,OrigdataSizeTwo));
 if DEMDT~=-1
-    Out.data(std(Origdata,[],2)>0,:)=data_trend + (((u*diag(Out.EigSAdj)*v')'+repmat(mean(data_detrend_vn),size(data_detrend_vn,1),1)) .* repmat(Out.noise_unst_std,1,size(data_detrend_vn,2)));
+    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')'+repmat(mean(data_detrend_vn),size(data_detrend_vn,1),1)) .* repmat(Out.noise_unst_std,1,size(data_detrend_vn,2)));
 else
-    Out.data(std(Origdata,[],2)>0,:)=data_trend + (((u*diag(Out.EigSAdj)*v')') .* repmat(Out.noise_unst_std,1,size(data_detrend_vn,2)));
+    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')') .* repmat(Out.noise_unst_std,1,size(data_detrend_vn,2)));
 end
-temp=single(zeros(size(Origdata,1),1)); temp(std(Origdata,[],2)>0,:)=Out.noise_unst_std; Out.noise_unst_std=max(temp,0.001); clear temp;
+temp=single(zeros(OrigdataSizeOne,1)); temp(OrigdataMask,:)=Out.noise_unst_std; Out.noise_unst_std=max(temp,0.001); clear temp;
 
 end %End function
 
