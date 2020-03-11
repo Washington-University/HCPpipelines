@@ -1,4 +1,4 @@
-function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
+function [Out] = icaDim(data,DEMDT,VN,Iterate,NDist)
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 
 %%%%%%%%%%%%%%%%%%%%
@@ -19,63 +19,66 @@ end
 
 %%%%%%%%%%%%%%%%%%%%
 
-OrigdataSizeOne=size(Origdata,1);
-OrigdataSizeTwo=size(Origdata,2);
-OrigdataMask=std(Origdata,[],2)>0;
+Nvox = size(data,1);
+Ntp = size(data,2);
+
+% Mask of non-zero voxels
+mask = std(data,[],2)>0;
+% Apply mask, reusing 'data' variable for memory efficiency
+data = data(mask,:);
+Nmask = size(data,1);
 
 %Remove Constant Timeseries and Detrend Data
+% Again, reuse 'data' variable for memory efficiency
 if DEMDT==1
-    data = Origdata(OrigdataMask,:); clear Origdata;
+    % In this case, preserve the trend for adding back later
     data_detrend = detrend(data')';
-    data_trend = data - data_detrend; clear data;
+    data_trend = data - data_detrend; 
+	data = data_detrend;
+	clear data_detrend;
 elseif DEMDT==0
-    data = Origdata(OrigdataMask,:); clear Origdata;
-    data_detrend = demean(data')'; meandata=mean(data')'; clear data;
-    data_trend = data_detrend.*0;
-    data_trend = data_trend + repmat(meandata,1,size(data_detrend,2));
+	% In this case, preserve the mean (over time) for adding back later
+    data_mean = mean(data')';
+    data = demean(data')';
 elseif DEMDT==-1
-    data = Origdata(OrigdataMask,:); clear Origdata;
-    data_detrend = data; clear data;
-    data_trend = data_detrend.*0; 
+    % No demeaning or detrending; no additional prep necessary
 end
 
 %Precompute PCA reconstruction
 %octave doesn't have "rng", but it does accept "rand('twister', 0);" for matlab compatibility
 
-[u,EigS,v]=nets_svds(data_detrend',0); %Eigenvalues of detrended data
+[u,EigS,v]=nets_svds(data',0); %Eigenvalues of data
 Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
 
-clear data_detrend;
-data_detrend_vn=0; %To allow clearing later in loop
 u(isnan(u))=0; v(isnan(v))=0;
 
 c=1;
 stabCount = 0;
-while stabCount < stabThresh %Loop until dim output is stable
-        
+while stabCount < stabThresh 
+%Loop until dim output is stable
+% Note: within the while loop, 'data_vn' gets reused, but 'data' stays
+% constant (albeit, possibly demeaned and/or detrended previously, per above)    
     c
-    clear data_detrend_vn;
     %Variance normalization via PCA reconstruction: Isolate unstructured noise
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
       Out.noise_unst_std = max(std(noise_unst,[],2),0.001); clear noise_unst;
-      data_detrend_vn = (u*EigS*v')';
-      data_detrend_vn = data_detrend_vn ./ repmat(Out.noise_unst_std,1,size(data_trend,2));
+      data_vn = data ./ repmat(Out.noise_unst_std,1,Ntp);
     elseif VN==0
-      data_detrend_vn = (u*EigS*v')';
-      Out.noise_unst_std = single(ones(size(data_detrend_vn,1),1));
+      data_vn = data;
+      Out.noise_unst_std = ones(Nmask,1,'single');
     end
-    if size(data_detrend_vn,1)<size(data_detrend_vn,2)
+    if size(data_vn,1)<size(data_vn,2)
         if DEMDT~=-1
-            d_pcaNorm=eig(cov(data_detrend_vn'));
+            d_pcaNorm=eig(cov(data_vn'));
         else
-            d_pcaNorm=eig(data_detrend_vn*data_detrend_vn');
+            d_pcaNorm=eig(data_vn*data_vn');
         end
     else
         if DEMDT~=-1
-            d_pcaNorm=eig(cov(data_detrend_vn));
+            d_pcaNorm=eig(cov(data_vn));
         else
-            d_pcaNorm=eig(data_detrend_vn'*data_detrend_vn);
+            d_pcaNorm=eig(data_vn'*data_vn);
         end
     end
     Out.lambda_pcaNorm=flipud(d_pcaNorm);
@@ -83,7 +86,7 @@ while stabCount < stabThresh %Loop until dim output is stable
     %Enable fitting multiple noise distributions
     DOF=Out.DOF;
     %DOF=sum(Out.lambda_pcaNorm>std(Out.lambda_pcaNorm)*0.1); %Recompute DOF because of demeaning in cov
-    MaxX=length(data_detrend_vn); 
+    MaxX=length(data_vn); 
     if DEMDT==-1
         MaxX=2000000;
     end
@@ -93,11 +96,11 @@ while stabCount < stabThresh %Loop until dim output is stable
     for i=1:NDist
         [x(i),en] = FitWishart(lnb,S,DOF,MaxX,lambda(1:DOF));
         lambda=lambda(1:DOF)-en(1:DOF); 
-        en=[en;single(zeros(Out.DOF-length(en)+1,1))];
+        en=[en; zeros(Out.DOF-length(en)+1,1,'single')];
         EN(:,i)=en(1:Out.DOF);
         MaxX=x(i);
         DOF=min(find(lambda <= 0)); 
-        lambda=[lambda(1:DOF-1);single(zeros(Out.DOF-DOF+1,1))];
+        lambda=[lambda(1:DOF-1); zeros(Out.DOF-DOF+1,1,'single')];
         lambda=lambda(1:Out.DOF);
     end
       
@@ -116,7 +119,7 @@ while stabCount < stabThresh %Loop until dim output is stable
     %MaxS=5;
     %DOF=Out.DOF;
     %MaxX=round(Out.x(c));
-    %MaxX=length(data_detrend_vn);
+    %MaxX=length(data_vn);
     %lambda=Out.lambda_pcaNorm;
     %[Out.x(c),Out.EN,Out.s(c)] = SmoothEst(lnb,MaxS,DOF,MaxX,lambda);
 
@@ -188,19 +191,12 @@ if Iterate > 3
     Out.calcDim=round(mean(Out.VNDIM(4:end)));
 end
 
-%if DEMDT~=-1
-%    [u,EigS,v]=nets_svds(demean(data_detrend_vn)',0);
-%else
-    [u,EigS,v]=nets_svds(data_detrend_vn',0);
-%end
+[u,EigS,v]=nets_svds(data_vn',0);
 
-%mean_data_detrend_vn=mean(data_detrend_vn);
-size_data_detrend_vnOne=size(data_detrend_vn,1);
-size_data_detrend_vnTwo=size(data_detrend_vn,2);
-clear data_detrend_vn;
+clear data_vn;
 
 u(isnan(u))=0; v(isnan(v))=0;
-Out.EigSAdj=single(zeros(length(EigS),1));
+Out.EigSAdj=zeros(length(EigS),1,'single');
 Out.grot_one=diag(EigS(1:length(Out.EN),1:length(Out.EN)));
 Out.grot_two=Out.grot_one.^2;
 Out.grot_three=(Out.grot_two./max(Out.grot_two)).*max(Out.lambda_pcaNorm);
@@ -237,18 +233,36 @@ disp(['   NewDOF: ' mat2str(Out.NewDOF)]);
 
 Out.EigSAdj(1:length(Out.EN))=sqrt(Out.grot_six);
 
+% Form the masked voxel version of the output data
+tmp=(u*diag(Out.EigSAdj)*v')'; clear v;
+tmp = tmp .* repmat(Out.noise_unst_std,1,Ntp);
+if DEMDT==1
+    % Add the trend back in
+	tmp = tmp + data_trend;
+	clear data_trend;
+elseif DEMDT==0
+    % Add the mean back in
+	tmp = tmp + repmat(data_mean,1,Ntp);
+elseif DEMDT==-1
+    % No demeaning or detrending performed; nothing to add back in
+end
 
-Out.data=single(zeros(OrigdataSizeOne,OrigdataSizeTwo));
-%if DEMDT~=-1
-%    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')'+repmat(mean_data_detrend_vn,size_data_detrend_vnOne,1)) .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo));
-%else
-    Out.data(OrigdataMask,:)=((u*diag(Out.EigSAdj)*v')'); clear v;
-    Out.data(OrigdataMask,:)=Out.data(OrigdataMask,:) .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo); 
-    Out.data(OrigdataMask,:)=data_trend + Out.data(OrigdataMask,:);
-%end
-temp=single(zeros(OrigdataSizeOne,1)); temp(OrigdataMask,:)=Out.noise_unst_std; Out.noise_unst_std=max(temp,0.001); clear temp;
+% Create the fully-formed (non-masked) version of the output data
+Out.data=zeros(Nvox,Ntp,'single');
+Out.data(mask,:)=tmp;
+clear tmp;
 
-end %End function
+% Create fully-formed (non-masked) version of Out.noise_unst_std, and
+% make sure value is at least 0.001Make sure Out.noise_unst_std is at least 0.001
+temp=zeros(Nvox,1,'single');
+temp(mask,:)=Out.noise_unst_std;
+Out.noise_unst_std=max(temp,0.001);
+clear temp;
+
+end %End main function
+
+
+%% ----------- Internal Helper Functions ------------ %%
 
 function [out] = lpdist(in)
     out=pdist(log(in));
@@ -408,27 +422,27 @@ function [x,EN,s] = SmoothEst(lnb,MaxS,DOF,MaxX,lambda)
 end
 
 function [O] = Smooth(M,S)
-if S==0
+  if S==0
     O=M;
-else
-sigma = S/(2*sqrt(2*log(2)));
-%sz = S*6;    % length of gaussFilter vector
-%x = linspace(-sz / 2, sz / 2, sz);
-%gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
-%gaussFilter = gaussFilter / sum (gaussFilter); % normalize
+  else
+	sigma = S/(2*sqrt(2*log(2)));
+	%sz = S*6;    % length of gaussFilter vector
+	%x = linspace(-sz / 2, sz / 2, sz);
+	%gaussFilter = exp(-x .^ 2 / (2 * sigma ^ 2));
+	%gaussFilter = gaussFilter / sum (gaussFilter); % normalize
 
 
-width = round((6*sigma - 1)/2);
-support = (-width:width);
-gaussFilter = exp( -(support).^2 ./ (2*sigma^2) );
-gaussFilter = gaussFilter/ sum(gaussFilter);
+	width = round((6*sigma - 1)/2);
+	support = (-width:width);
+	gaussFilter = exp( -(support).^2 ./ (2*sigma^2) );
+	gaussFilter = gaussFilter/ sum(gaussFilter);
 
-O=single(zeros(size(M,1),size(M,2)));
+	O=zeros(size(M,1),size(M,2),'single');
 
-for i=1:size(M,2)
-    op
-    O(:,i) = conv (M(:,i), gaussFilter, 'same');
-    %O(:,i) = filter (gaussFilter,1,M(:,i));
-end
-end
+	for i=1:size(M,2)
+	  op
+	  O(:,i) = conv (M(:,i), gaussFilter, 'same');
+	  %O(:,i) = filter (gaussFilter,1,M(:,i));
+	end
+  end
 end
