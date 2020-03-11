@@ -31,7 +31,8 @@ if DEMDT==1
 elseif DEMDT==0
     data = Origdata(OrigdataMask,:); clear Origdata;
     data_detrend = demean(data')'; meandata=mean(data')'; clear data;
-    data_trend = data_detrend.*0 + repmat(meandata,1,size(data_detrend,2));
+    data_trend = data_detrend.*0;
+    data_trend = data_trend + repmat(meandata,1,size(data_detrend,2));
 elseif DEMDT==-1
     data = Origdata(OrigdataMask,:); clear Origdata;
     data_detrend = data; clear data;
@@ -58,7 +59,8 @@ while stabCount < stabThresh %Loop until dim output is stable
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
       Out.noise_unst_std = max(std(noise_unst,[],2),0.001); clear noise_unst;
-      data_detrend_vn = (u*EigS*v')' ./ repmat(Out.noise_unst_std,1,size(data_trend,2));
+      data_detrend_vn = (u*EigS*v')';
+      data_detrend_vn = data_detrend_vn ./ repmat(Out.noise_unst_std,1,size(data_trend,2));
     elseif VN==0
       data_detrend_vn = (u*EigS*v')';
       Out.noise_unst_std = single(ones(size(data_detrend_vn,1),1));
@@ -186,13 +188,13 @@ if Iterate > 3
     Out.calcDim=round(mean(Out.VNDIM(4:end)));
 end
 
-if DEMDT~=-1
-    [u,EigS,v]=nets_svds(demean(data_detrend_vn)',0);
-else
+%if DEMDT~=-1
+%    [u,EigS,v]=nets_svds(demean(data_detrend_vn)',0);
+%else
     [u,EigS,v]=nets_svds(data_detrend_vn',0);
-end
+%end
 
-mean_data_detrend_vn=mean(data_detrend_vn);
+%mean_data_detrend_vn=mean(data_detrend_vn);
 size_data_detrend_vnOne=size(data_detrend_vn,1);
 size_data_detrend_vnTwo=size(data_detrend_vn,2);
 clear data_detrend_vn;
@@ -237,11 +239,13 @@ Out.EigSAdj(1:length(Out.EN))=sqrt(Out.grot_six);
 
 
 Out.data=single(zeros(OrigdataSizeOne,OrigdataSizeTwo));
-if DEMDT~=-1
-    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')'+repmat(mean_data_detrend_vn,size_data_detrend_vnOne,1)) .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo));
-else
-    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')') .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo));
-end
+%if DEMDT~=-1
+%    Out.data(OrigdataMask,:)=data_trend + (((u*diag(Out.EigSAdj)*v')'+repmat(mean_data_detrend_vn,size_data_detrend_vnOne,1)) .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo));
+%else
+    Out.data(OrigdataMask,:)=((u*diag(Out.EigSAdj)*v')'); clear v;
+    Out.data(OrigdataMask,:)=Out.data(OrigdataMask,:) .* repmat(Out.noise_unst_std,1,size_data_detrend_vnTwo); 
+    Out.data(OrigdataMask,:)=data_trend + Out.data(OrigdataMask,:);
+%end
 temp=single(zeros(OrigdataSizeOne,1)); temp(OrigdataMask,:)=Out.noise_unst_std; Out.noise_unst_std=max(temp,0.001); clear temp;
 
 end %End function
