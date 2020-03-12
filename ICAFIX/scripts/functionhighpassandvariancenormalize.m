@@ -111,18 +111,20 @@ if pdflag  % polynomial detrend case
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         confounds=detrendpoly(confounds,hp);
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
-    
+
         % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
+        % Note: Use 'range' to identify non-zero voxels (which is very memory efficient)
+        % rather than 'std' (which requires additional memory equal to the size of the input)
         ctsfull=single(read_avw([fmri '.nii.gz']));
         ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
-        ctsmask=std(ctsfull,[],2)>0; 
+        ctsmask=range(ctsfull, 2) > 0;
         cts=ctsfull(ctsmask,:); 
         clear ctsfull;
-    
+
         % Polynomial detrend
         cts=detrendpoly(cts',hp)';
-        
+
         % Write out result, restoring to original size
         ctsfull=zeros(ctsX*ctsY*ctsZ,ctsT, 'single');
         ctsfull(ctsmask,:)=cts;
@@ -143,13 +145,13 @@ elseif hp>0  % "fslmaths -bptf" based filtering
 
         % bptf filtering; no masking here, so this is probably memory inefficient
         call_fsl(['fslmaths ' fmri '.nii.gz -bptf ' num2str(0.5*hp/TR) ' -1 ' fmri hpstring '.nii.gz']);
-        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']); 
+        call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
         
         % Load in result and reduce to just the non-zero voxels (for memory efficiency going forward)
         ctsfull=single(read_avw([fmri hpstring '.nii.gz']));
-        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
+        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4);
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
-        ctsmask=std(ctsfull,[],2)>0; 
+        ctsmask=range(ctsfull, 2) > 0;
         cts=ctsfull(ctsmask,:); 
         clear ctsfull;
     end
@@ -166,10 +168,10 @@ elseif hp<0  % If no hp filtering, still need to at least demean the volumetric 
 
         % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
         ctsfull=single(read_avw([fmri '.nii.gz']));
-        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
+        ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4);
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
-        ctsmask=std(ctsfull,[],2)>0; 
-        cts=ctsfull(ctsmask,:); 
+        ctsmask=range(ctsfull, 2) > 0;
+        cts=ctsfull(ctsmask,:);
         clear ctsfull;
         
         cts=demean(cts')';
