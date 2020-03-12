@@ -33,7 +33,7 @@ if useMask
     data = Origdata(mask,:);
 else
     data = Origdata;  % "copying" the input as-is doesn't use any memory
-	clear mask;
+    clear mask;
 end
 clear Origdata;
 
@@ -71,7 +71,7 @@ while stabCount < stabThresh
 % constant (albeit, possibly demeaned and/or detrended previously, per above)
 
     c
-	clear data_vn;
+    clear data_vn;
     %Variance normalization via PCA reconstruction: Isolate unstructured noise
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
@@ -275,7 +275,7 @@ clear tmp;
 % and make sure its value is at least 0.001
 if useMask
     temp = zeros(NvoxOrig,1,'single');
-	temp(mask,:) = Out.noise_unst_std;
+    temp(mask,:) = Out.noise_unst_std;
 else
     temp = Out.noise_unst_std;
 end
