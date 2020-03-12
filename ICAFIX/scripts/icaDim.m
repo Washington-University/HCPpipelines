@@ -1,4 +1,4 @@
-function [Out] = icaDim(data,DEMDT,VN,Iterate,NDist)
+function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 
 %%%%%%%%%%%%%%%%%%%%
@@ -19,17 +19,28 @@ end
 
 %%%%%%%%%%%%%%%%%%%%
 
-Nvox = size(data,1);
-Ntp = size(data,2);
+NvoxOrig = size(Origdata,1);
+Ntp = size(Origdata,2);
 
-% Mask of non-zero voxels
-mask = std(data,[],2)>0;
-% Apply mask, reusing 'data' variable for memory efficiency
-data = data(mask,:);
+% Derive mask of non-zero voxels
+% Note: Use 'range' to identify non-zero voxels (which is very memory efficient)
+% rather than 'std' (which requires additional memory equal to the size of the input)
+mask = range(Origdata,2) > 0;
+useMask = ~all(mask(:)); %if the mask doesn't exclude anything, we won't actually use it
+
+% Apply mask, if it is helpful
+if useMask
+    data = Origdata(mask,:);
+else
+    data = Origdata;  % "copying" the input as-is doesn't use any memory
+	clear mask;
+end
+clear Origdata;
+
 Nmask = size(data,1);
 
 %Remove Constant Timeseries and Detrend Data
-% Again, reuse 'data' variable for memory efficiency
+% Reuse 'data' variable for memory efficiency
 if DEMDT==1
     % In this case, preserve the trend for adding back later
     data_detrend = detrend(data')';
@@ -55,10 +66,12 @@ u(isnan(u))=0; v(isnan(v))=0;
 c=1;
 stabCount = 0;
 while stabCount < stabThresh 
-%Loop until dim output is stable
+% Loop until dim output is stable
 % Note: within the while loop, 'data_vn' gets reused, but 'data' stays
-% constant (albeit, possibly demeaned and/or detrended previously, per above)    
+% constant (albeit, possibly demeaned and/or detrended previously, per above)
+
     c
+	clear data_vn;
     %Variance normalization via PCA reconstruction: Isolate unstructured noise
     if VN~=0
       noise_unst = (u(:,Out.VNDIM(c):Out.DOF)*EigS(Out.VNDIM(c):Out.DOF,Out.VNDIM(c):Out.DOF)*v(:,Out.VNDIM(c):Out.DOF)')';
@@ -234,7 +247,7 @@ disp(['   NewDOF: ' mat2str(Out.NewDOF)]);
 Out.EigSAdj(1:length(Out.EN))=sqrt(Out.grot_six);
 
 % Form the masked voxel version of the output data
-tmp=(u*diag(Out.EigSAdj)*v')'; clear v;
+tmp = (u*diag(Out.EigSAdj)*v')'; clear v;
 tmp = tmp .* repmat(Out.noise_unst_std,1,Ntp);
 if DEMDT==1
     % Add the trend back in
@@ -248,14 +261,22 @@ elseif DEMDT==-1
 end
 
 % Create the fully-formed (non-masked) version of the output data
-Out.data=zeros(Nvox,Ntp,'single');
-Out.data(mask,:)=tmp;
+if useMask
+    Out.data = zeros(NvoxOrig,Ntp,'single');
+    Out.data(mask,:) = tmp;
+else
+    Out.data = tmp;
+end
 clear tmp;
 
-% Create fully-formed (non-masked) version of Out.noise_unst_std, and
-% make sure value is at least 0.001Make sure Out.noise_unst_std is at least 0.001
-temp=zeros(Nvox,1,'single');
-temp(mask,:)=Out.noise_unst_std;
+% Create fully-formed (non-masked) version of Out.noise_unst_std, 
+% and make sure its value is at least 0.001
+if useMask
+    temp = zeros(NvoxOrig,1,'single');
+	temp(mask,:) = Out.noise_unst_std;
+else
+    temp = Out.noise_unst_std;
+end
 Out.noise_unst_std=max(temp,0.001);
 clear temp;
 
