@@ -197,6 +197,9 @@ while stabCount < stabThresh
     end
 end %End while loop for dim calcs
 
+% Outside the while loop, no longer need 'data'
+clear data;
+
 if Iterate < 0 
     Out.calcDim=round(priordimavg);
 end
@@ -205,7 +208,6 @@ if Iterate > 3
 end
 
 [u,EigS,v]=nets_svds(data_vn',0);
-
 clear data_vn;
 
 u(isnan(u))=0; v(isnan(v))=0;
