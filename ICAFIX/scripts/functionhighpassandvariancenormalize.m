@@ -119,6 +119,7 @@ if pdflag  % polynomial detrend case
         ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4); 
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
         ctsmask=range(ctsfull, 2) > 0;
+        fprintf('Non-empty voxels: %d (= %.2f%% of %d)\n', sum(ctsmask), 100*sum(ctsmask)/size(ctsfull,1), size(ctsfull,1));
         cts=ctsfull(ctsmask,:); 
         clear ctsfull;
 
@@ -152,6 +153,7 @@ elseif hp>0  % "fslmaths -bptf" based filtering
         ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4);
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
         ctsmask=range(ctsfull, 2) > 0;
+        fprintf('Non-empty voxels: %d (= %.2f%% of %d)\n', sum(ctsmask), 100*sum(ctsmask)/size(ctsfull,1), size(ctsfull,1));
         cts=ctsfull(ctsmask,:); 
         clear ctsfull;
     end
@@ -171,6 +173,7 @@ elseif hp<0  % If no hp filtering, still need to at least demean the volumetric 
         ctsX=size(ctsfull,1); ctsY=size(ctsfull,2); ctsZ=size(ctsfull,3); ctsT=size(ctsfull,4);
         ctsfull=reshape(ctsfull,ctsX*ctsY*ctsZ,ctsT);
         ctsmask=range(ctsfull, 2) > 0;
+        fprintf('Non-empty voxels: %d (= %.2f%% of %d)\n', sum(ctsmask), 100*sum(ctsmask)/size(ctsfull,1), size(ctsfull,1));
         cts=ctsfull(ctsmask,:);
         clear ctsfull;
         

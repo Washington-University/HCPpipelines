@@ -30,8 +30,10 @@ useMask = ~all(mask(:)); %if the mask doesn't exclude anything, we won't actuall
 
 % Apply mask, if it is helpful
 if useMask
+    fprintf('icaDim: Non-empty voxels: %d (= %.2f%% of %d). Masking for memory efficiency.\n', sum(mask), 100*sum(mask)/NvoxOrig, NvoxOrig);
     data = Origdata(mask,:);
 else
+    fprintf('icaDim: No empty voxels -- not masking\n');
     data = Origdata;  % "copying" the input as-is doesn't use any memory
     clear mask;
 end
