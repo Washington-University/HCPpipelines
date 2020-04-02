@@ -228,8 +228,8 @@ case "$MatlabMode" in
 
         if [[ ! ${Method} == "single" ]]
         then
-        matlab_args+=", 'GroupMaps', '$GroupMaps'"
-        matlab_args+=", 'VAWeightsName', '$tempfile.91k.dscalar.nii'"
+            matlab_args+=", 'GroupMaps', '$GroupMaps'"
+            matlab_args+=", 'VAWeightsName', '$tempfile.91k.dscalar.nii'"
         fi
         if ((DoZ))
         then
