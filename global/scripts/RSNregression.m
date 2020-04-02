@@ -183,7 +183,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             NODEts=NODEts.cdata';
             betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
         otherwise
-            error(['unrecognized method: "' Method '", use "weighted," "dual," or "single"']);
+            error(['unrecognized method: "' Method '", use "weighted", "dual", or "single"']);
     end
     
     NODEtsnorm = normalise(NODEts);
