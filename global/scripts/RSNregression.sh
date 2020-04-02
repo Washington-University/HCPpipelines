@@ -32,12 +32,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value other than empty string if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddMandatory '--group-maps' 'GroupMaps' 'file' "the group template maps to regress"
+opts_AddOptional  '--group-maps' 'GroupMaps' 'file' "the group template spatial maps for weighted or dual regression"
+opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single regression"
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
-opts_AddMandatory '--method' 'Method' 'regression method' "'weighted' or 'dual' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information"
+opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', or 'single' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information.  single temporal regression requires a prior run of weighted or dual regression and is intended for adding an additional output space"
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
 opts_AddOptional '--low-ica-template-name' 'ICATemplateName' 'filename' "filename template where 'REPLACEDIM' will be replaced by each of the --low-ica-dims values in turn to form the low-dim inputs"
@@ -55,6 +56,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 0 = compiled MATLAB (not implemented)
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -160,6 +162,13 @@ case "$Method" in
     (dual)
         MethodStr="DR"
         ;;
+    (single)
+        if [ -e ${Timeseries} ] ; then
+            MethodStr="SR"
+        else 
+            log_Err_Abort "single method requires a prior run of weighted or dual"
+        fi
+        ;;
     (*)
         log_Err_Abort "unknown method string: '$Method'"
         ;;
@@ -183,10 +192,13 @@ then
     fi
 fi
 SpectraParams=""
-if ((nTPsForSpectra > 0))
+if [[ nTPsForSpectra -gt 0 ]] && [[ ! ${Method} == "single" ]]
 then
     #these files are temporary anyway
     SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+elif [[ ${Method} == "single" ]]
+then
+    SpectraParams="${Timeseries}"
 fi
 #the msmall script should do this for itself instead
 #OutputNorm=""
@@ -198,10 +210,13 @@ fi
 
 #fix the _va_norm file being surface-only
 #extract the all-voxels ROI file and use it in -from-template
-tempfile="$(mktemp --tmpdir XXXXXX.roi.nii.gz)"
-tempfiles_add "$tempfile" "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
-wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
-wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
+if [[ ! ${Method} == "single" ]]
+then
+    tempfile="$(mktemp --tmpdir XXXXXX.roi.nii.gz)"
+    tempfiles_add "$tempfile" "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
+    wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
+    wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
+fi
 
 case "$MatlabMode" in
     (0)
@@ -209,7 +224,13 @@ case "$MatlabMode" in
         ;;
     (1 | 2)
         #SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
-        matlab_args="'$tempname.input.txt', '$tempname.inputvn.txt', '$GroupMaps', '$Method', '$tempname.params.txt', '$tempfile.91k.dscalar.nii', '$OutBeta', 'SurfString', '$SurfString', 'WRSmoothingSigma', '$WRSmoothingSigma'"
+        matlab_args="'$tempname.input.txt', '$tempname.inputvn.txt', '$Method', '$tempname.params.txt', '$OutBeta', 'SurfString', '$SurfString', 'WRSmoothingSigma', '$WRSmoothingSigma'"
+
+        if [[ ! ${Method} == "single" ]]
+        then
+        matlab_args+=", 'GroupMaps', '$GroupMaps'"
+        matlab_args+=", 'VAWeightsName', '$tempfile.91k.dscalar.nii'"
+        fi
         if ((DoZ))
         then
             matlab_args+=", 'OutputZ', '$OutputZ'"
@@ -247,7 +268,7 @@ case "$MatlabMode" in
         ;;
 esac
 
-if [[ "$SpectraParams" != "" ]]
+if [[ "$SpectraParams" != "" ]] && [[ ! ${Method} == "single" ]]
 then
     wb_command -file-information "$GroupMaps" -only-map-names > "$tempname.mapnames.txt"
     TR=$(wb_command -file-information "$SpectraTRFile" -only-step-interval)
