@@ -34,7 +34,7 @@ then
     then
         export HCPPIPEDIR="$HOME/HCPpipelines"
     else
-        export HCPPIPEDIR="$SAVEHCPPPIPE"
+        export HCPPIPEDIR="$SAVEHCPPIPE"
     fi
 fi
 
