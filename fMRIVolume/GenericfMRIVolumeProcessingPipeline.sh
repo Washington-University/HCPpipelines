@@ -1106,8 +1106,8 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 
 #Econ
 #${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
-#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc
-#${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc
+${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
+${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
 log_Msg "Completed!"
 

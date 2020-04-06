@@ -227,7 +227,7 @@ if [ X${ScoutInput} != X ] ; then
 fi
 
 #Basic Cleanup
-rm ${InputfMRI}.nii.*
+#rm ${InputfMRI}.nii.* #Don't delete the unmasked spatially corrected unormalized data by default
 
 echo " "
 echo "END: IntensityNormalization"
