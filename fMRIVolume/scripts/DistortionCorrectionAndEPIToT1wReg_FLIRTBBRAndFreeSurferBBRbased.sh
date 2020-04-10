@@ -11,6 +11,7 @@
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 
@@ -74,6 +75,9 @@ Usage: ${script_name} [options]
         "${GENERAL_ELECTRIC_METHOD_OPT}"
              use General Electric specific Gradient Echo Field Maps for SDC
 
+        "${PHILIPS_METHOD_OPT}"
+             use Philips specific Gradient Echo Field Maps for SDC
+
         "${NONE_METHOD_OPT}"
              do not use any SDC
 
@@ -102,6 +106,10 @@ Usage: ${script_name} [options]
 
     [--fmapgeneralelectric=<input General Electric field map image>]
 
+  Options required if using --method="${PHILIPS_METHOD_OPT}":
+
+    [--fmapmag=<input Philips field map magnitude image>]
+    [--fmapphase=input Philips field map phase image>]
 
   OTHER OPTIONS:
 
@@ -171,7 +179,7 @@ defaultopt() {
 
 # Outputs (in $WD):
 #
-#    FIELDMAP, SiemensFieldMap, and GeneralElectricFieldMap:
+#    FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, and PhilipsFieldMap:
 #      Magnitude  Magnitude_brain  FieldMap
 #
 #    FIELDMAP and TOPUP sections:
@@ -328,7 +336,7 @@ fi
 
 case $DistortionCorrection in
 
-    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT})
+    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
         if [ $DistortionCorrection = "${FIELDMAP_METHOD_OPT}" ] || [ $DistortionCorrection = "${SIEMENS_METHOD_OPT}" ] ; then
             # --------------------------------------
@@ -355,6 +363,21 @@ case $DistortionCorrection in
             ${GlobalScripts}/GeneralElectricFieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
                 --fmap=${GEB0InputName} \
+                --ofmapmag=${WD}/Magnitude \
+                --ofmapmagbrain=${WD}/Magnitude_brain \
+                --ofmap=${WD}/FieldMap \
+                --gdcoeffs=${GradientDistortionCoeffs}
+
+        elif [ $DistortionCorrection = "${PHILIPS_METHOD_OPT}" ] ; then
+            # --------------------------------------
+            # -- Philips Gradient Echo Field Maps --
+            # --------------------------------------
+
+            # process fieldmap with gradient non-linearity distortion correction
+            ${GlobalScripts}/PhilipsFieldMapPreprocessingAll.sh \
+                --workingdir=${WD}/FieldMap \
+                --fmapmag=${MagnitudeInputName} \
+                --fmapphase=${PhaseInputName} \
                 --ofmapmag=${WD}/Magnitude \
                 --ofmapmagbrain=${WD}/Magnitude_brain \
                 --ofmap=${WD}/FieldMap \
