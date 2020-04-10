@@ -18,6 +18,7 @@
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 
@@ -82,6 +83,9 @@ Usage: ${script_name} [options]
         "${GENERAL_ELECTRIC_METHOD_OPT}"
              use General Electric specific Gradient Echo Field Maps for SDC
 
+        "${PHILIPS_METHOD_OPT}"
+             use Philips specific Gradient Echo Field Maps for SDC
+
         "${NONE_METHOD_OPT}"
              do not use any SDC
              NOTE: Only valid when Pipeline is called with --processing-mode="LegacyStyleData"
@@ -110,6 +114,10 @@ Usage: ${script_name} [options]
 
     [--fmapgeneralelectric=<input General Electric field map image>]
 
+  Options required if using --dcmethod="${PHILIPS_METHOD_OPT}":
+
+    [--fmapmag=<input Philips field map magnitude image>]
+    [--fmapphase=input Philips field map phase image>]
 
   OTHER OPTIONS:
 
@@ -435,7 +443,7 @@ log_Msg "deltaTE: ${deltaTE}"
 GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
 log_Msg "GEB0InputName: ${GEB0InputName}"
 
-# FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP
+# FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, PhilipsFieldMap, or TOPUP
 # Note: FIELDMAP and SiemensFieldMap are equivalent
 DistortionCorrection=`opts_GetOpt1 "--dcmethod" $@`
 log_Msg "DistortionCorrection: ${DistortionCorrection}"
@@ -469,6 +477,15 @@ case "$DistortionCorrection" in
 			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
 		fi
 		;;
+
+  ${PHILIPS_METHOD_OPT})
+    if [ -z ${MagnitudeInputName} ]; then
+      log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+    fi
+    if [ -z ${PhaseInputName} ]; then
+      log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+    fi
+    ;;
 
 	${NONE_METHOD_OPT})
 		# Do nothing
