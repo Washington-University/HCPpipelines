@@ -138,6 +138,8 @@ fMRIReferenceReg=`getopt1 "--fmrirefreg" $@`  # "${20}"
 #hidden: toggle for unreleased new resampling command, default off
 useWbResample=`getopt1 "--wb-resample" $@`
 useWbResample="${useWbResample:-0}"
+#with wb_command -volume-resample, the warpfields and per-frame motion affines do not need to be combined in advance,
+#and the timeseries can be resampled without splitting into one-frame files, resulting in much less file IO
 
 case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
     (yes | true | 1)
@@ -260,11 +262,9 @@ ${FSLDIR}/bin/imcp ${WD}/${T1wImageFile}.${FinalfMRIResolution} ${fMRIFolder}/${
 ${FSLDIR}/bin/imcp ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution} ${fMRIFolder}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/imcp ${WD}/${BiasFieldFile}.${FinalfMRIResolution} ${fMRIFolder}/${BiasFieldFile}.${FinalfMRIResolution}
 
-
 if ((useWbResample))
 then
-    affseries="$(mktemp --tmpdir OneStepResampleAffSeries_XXXXXX.txt)"
-    tempfiles_add "$affseries"
+    affseries="$(tempfiles_create OneStepResampleAffSeries_XXXXXX.txt)"
     
     for ((k=0; k < $NumFrames; k++))
     do
@@ -284,18 +284,19 @@ then
     done
     
     #gdc warp space is input to input, affine is input to input, OutputTransform is input to MNI
-    xfmargs=(-warp "$GradientDistortionField.nii.gz" -fnirt "$InputfMRI"
+    xfmargs=(-warp "$GradientDistortionField".nii.gz -fnirt "$InputfMRI"
              -affine-series "$affseries" -flirt "$InputfMRI" "$InputfMRI"
-             -warp "$OutputTransform.nii.gz" -fnirt "$InputfMRI")
+             -warp "$OutputTransform".nii.gz -fnirt "$InputfMRI")
     
-    wb_command -volume-resample "$InputfMRI" "$WD/$T1wImageFile.$FinalfMRIResolution.nii.gz" CUBIC "$OutputfMRI.nii.gz" "${xfmargs[@]}" -nifti-output-datatype INT32
+    wb_command -volume-resample "$InputfMRI" "$WD/$T1wImageFile.$FinalfMRIResolution".nii.gz CUBIC "$OutputfMRI".nii.gz "${xfmargs[@]}" -nifti-output-datatype INT32
     
     #resample all-ones volume series with enclosing voxel to determine FOV coverage
     #yes, this is the entire length of the timeseries on purpose
-    fovcheck="$(mktemp --tmpdir OneStepResampleFovCheck_XXXXXX.nii.gz)"
-    tempfiles_add "$fovcheck"
+    fovcheck="$(tempfiles_create OneStepResampleFovCheck_XXXXXX.nii.gz)"
     wb_command -volume-math '1' "$fovcheck" -var x "$InputfMRI"
-    wb_command -volume-resample "$fovcheck" "$WD/$T1wImageFile.$FinalfMRIResolution.nii.gz" ENCLOSING_VOXEL "${OutputfMRI}_mask.nii.gz" "${xfmargs[@]}" -nifti-output-datatype INT32
+    #fsl's "nn" interpolation is just as pessimistic about the FoV as non-extrapolating interpolation
+    #so, in wb_command, use trilinear here instead of enclosing voxel to get the same FoV behavior as CUBIC
+    wb_command -volume-resample "$fovcheck" "$WD/$T1wImageFile.$FinalfMRIResolution".nii.gz TRILINEAR "$OutputfMRI"_mask.nii.gz "${xfmargs[@]}" -nifti-output-datatype INT32
 
 else
     mkdir -p ${WD}/prevols
