@@ -185,6 +185,23 @@ for pe_sign in ${basePos} ${baseNeg} ; do
 
     # compute squared residual from the mean b0
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
+    for ((i=1;i<=3;i++));
+    do
+      ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
+
+      # Get brain mask from averaged results
+      ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+
+      # compute average squared residual over brain mask
+      scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+
+      # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
+      # where mad is the median absolute deviation.
+      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+      ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/topup_b0s -o ${select_b0_dir}/topup_b0s_avg --vols=${idx} -m
+    done
+
+    # compute offsets for only the polarity of interest
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
     ${FSLDIR}/bin/fslroi ${select_b0_dir}/topup_b0s_res ${select_b0_dir}/topup_b0s_res_${pe_sign} 0 ${N_b0s}
 
@@ -197,11 +214,19 @@ for pe_sign in ${basePos} ${baseNeg} ; do
     echo "Score all ${pe_sign} B0's based on similarity with the mean ${pe_sign} B0"
     ${FSLDIR}/bin/mcflirt -in ${rawdir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_b0s_mcf
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -Tmean ${select_b0_dir}/all_b0s_mcf_avg
-    ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -sub ${select_b0_dir}/all_b0s_mcf_avg -sqr ${select_b0_dir}/all_b0s_mcf_res
+    for ((i=1;i<=3;i++));
+    do
+      ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -sub ${select_b0_dir}/all_b0s_mcf_avg -sqr ${select_b0_dir}/all_b0s_mcf_res
 
-    # Get brain mask from averaged results
-    ${FSLDIR}/bin/bet ${select_b0_dir}/all_b0s_mcf_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
-    scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/all_b0s_mcf_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+      # Get brain mask from averaged results
+      ${FSLDIR}/bin/bet ${select_b0_dir}/all_b0s_mcf_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+      scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/all_b0s_mcf_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+
+      # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
+      # where mad is the median absolute deviation.
+      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+      ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/all_b0s_mcf -o ${select_b0_dir}/all_b0s_mcf_avg --vols=${idx} -m
+    done
   fi
   echo "b0 scores for ${pe_sign}: " "${scores[@]}"
 
