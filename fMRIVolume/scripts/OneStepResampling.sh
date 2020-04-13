@@ -296,6 +296,7 @@ then
     wb_command -volume-math '1' "$fovcheck" -var x "$InputfMRI"
     #fsl's "nn" interpolation is just as pessimistic about the FoV as non-extrapolating interpolation
     #so, in wb_command, use trilinear here instead of enclosing voxel to get the same FoV behavior as CUBIC
+    #still doesn't match FSL's "nn" (and the FoV edge on "spline" isn't the same as wb_command CUBIC), not sure why
     wb_command -volume-resample "$fovcheck" "$WD/$T1wImageFile.$FinalfMRIResolution".nii.gz TRILINEAR "$OutputfMRI"_mask.nii.gz "${xfmargs[@]}" -nifti-output-datatype INT32
 
 else
