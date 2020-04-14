@@ -92,7 +92,7 @@ case "$MatlabMode" in
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
         ;;
 esac
-matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
+matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$this_script_dir');
 "
 
 RegString=""
