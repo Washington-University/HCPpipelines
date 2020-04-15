@@ -208,15 +208,6 @@ get_options()
 				;;
 			1 | 2)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
-				# ${MATLAB_GIFTI_LIB} should contain the cifti{open,save,savereset}.m functions AND
-				# the definition of the gifti class (i.e., the '@gifti' directory (or a symlink to it)
-				# from the GIfTI library (https://www.artefact.tk/software/matlab/gifti)
-				# If not defined in the environment, we'll use what is provided within the HCPpipelines
-				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
-					MATLAB_GIFTI_LIB=${HCPPIPEDIR}/global/matlab
-					#log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
-				fi
-				log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
 				;;
 			*)
 				log_Err_Abort "MATLAB Run Mode value must be 0, 1 or 2"
@@ -409,7 +400,7 @@ main()
 
 	# For interpreted modes, make sure that matlab/octave have access to the functions they need
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${MATLAB_GIFTI_LIB}'); addpath('${this_script_dir}/scripts');"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 	
 	# run MATLAB prepareICAs function
 	case ${MatlabRunMode} in
