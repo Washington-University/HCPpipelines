@@ -48,8 +48,8 @@ compile_RestingStateStats()
 	
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
 	

@@ -399,7 +399,7 @@ main()
 	# CIFTI I/O functions as well), or HCPCIFTIRWDIR, so the versions in ${FSL_FIX_CIFTIRW} will be the ones that get used
 	# (assuming that the user hasn't further customized their matlab path, e.g., via a startup.m addition).
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}');"
+	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab');"
 
 	# Some defaults
 	local aggressive=0
