@@ -8,7 +8,7 @@ SAVEHCPPIPE="${HCPPIPEDIR:-}"
 ## that will be used instead (via the SAVEHCPPIPE variable, defined above)
 export HCPPIPEDIR=
 
-# Don't edit this section, it allows using the 
+# Don't edit this section, it allows sourcing SetUp... without editing it if you set things in advance
 if [[ -z "$HCPPIPEDIR" ]]
 then
     if [[ -z "$SAVEHCPPIPE" ]]
