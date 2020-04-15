@@ -501,10 +501,10 @@ main()
 	# Several additional necessary environment variables (e.g., ${FSL_FIX_CIFTIRW} and ${FSL_FIX_WBC})
 	# are set in ${FSL_FIXDIR}/settings.sh, which is sourced below for interpreted modes.
 	# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
-	# BUT the CIFTI I/O functions are also now included within '${HCPPIPEDIR}/global/matlab' as well.
-	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence!
+	# The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
+	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence.
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	# Some defaults
 	local aggressive=0
