@@ -395,8 +395,8 @@ main()
 	# are set in ${FSL_FIXDIR}/settings.sh, which is sourced below for interpreted modes.
 	# Note that the ciftiopen.m, ciftisave.m functions are *appended* to the path through the ${FSL_FIX_CIFTIRW} 
 	# environment variable within fix_3_clean.m itself.
-	# Note that we are NOT adding '${HCPPIPEDIR}/global/matlab' to the path (which also contains the
-	# CIFTI I/O functions as well), so the versions in ${FSL_FIX_CIFTIRW} will be the ones that get used
+	# Note that we are NOT adding '${HCPPIPEDIR}/global/matlab' to the path (which used to contain the
+	# CIFTI I/O functions as well), or HCPCIFTIRWDIR, so the versions in ${FSL_FIX_CIFTIRW} will be the ones that get used
 	# (assuming that the user hasn't further customized their matlab path, e.g., via a startup.m addition).
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}');"
