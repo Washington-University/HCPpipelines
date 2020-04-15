@@ -421,7 +421,7 @@ main()
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
 						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 						
-						matlabCode="addpath '$mPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath';
+						matlabCode="addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath';
 						ComputeVN('${cleandtseries}', '${bias}', '${ICAtcs}', '${ICANoise}', '${OutputVN}', '${Caret7_Command}');"
 						
 						log_Msg "$matlabCode"

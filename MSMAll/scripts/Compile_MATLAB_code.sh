@@ -59,8 +59,8 @@ compile_ComputeVN()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPCIFTIRWDIR} \
 				  -d ${output_directory}
 
 	popd > /dev/null
@@ -84,8 +84,8 @@ compile_MSMregression()
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I ${HCPPIPEDIR}/MSMAll/scripts \
-				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPCIFTIRWDIR} \
 				  -d ${output_directory}
 
 	popd > /dev/null

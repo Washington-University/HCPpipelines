@@ -722,7 +722,7 @@ main()
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
 						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 
-						matlabCode="addpath '$mPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
+						matlabCode="addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath'; MSMregression('${inputspatialmaps}','${inputdtseries}','${inputweights}','${outputspatialmaps}','${outputweights}','${Caret7_Command}','${Method}','${Params}','${VN}',${nTPsForSpectra},'${BC}','${VolParams}');"
 
 						log_Msg "$matlabCode"
 						"${interpreter[@]}" <<<"$matlabCode"
@@ -807,7 +807,7 @@ main()
 						mPath="${HCPPIPEDIR}/MSMAll/scripts"
 						mGlobalPath="${HCPPIPEDIR}/global/matlab"
 						
-						matlabCode="addpath '$mPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath';
+						matlabCode="addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath';
 						MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
 						
 						log_Msg "$matlabCode"
@@ -1225,7 +1225,7 @@ main()
 				mPath="${HCPPIPEDIR}/MSMAll/scripts"
 				mGlobalPath="${HCPPIPEDIR}/global/matlab"
 				
-				matlabCode="addpath '$mPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath';
+				matlabCode="addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath';
 				MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
 				
 				log_Msg "$matlabCode"
@@ -1294,7 +1294,7 @@ main()
 				mPath="${HCPPIPEDIR}/MSMAll/scripts"
 				mGlobalPath="${HCPPIPEDIR}/global/matlab"
 				
-				matlabCode="addpath '$mPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath';
+				matlabCode="addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath';
 				MSMregression('${inputspatialmaps}', '${inputdtseries}', '${inputweights}', '${outputspatialmaps}', '${outputweights}', '${Caret7_Command}', '${Method}', '${Params}', '${VN}', ${nTPsForSpectra}, '${BC}', '${VolParams}');"
 
 				log_Msg "$matlabCode"
