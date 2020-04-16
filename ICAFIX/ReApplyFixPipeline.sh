@@ -398,7 +398,7 @@ main()
 	# Note that previously we did not add '${HCPPIPEDIR}/global/matlab' to the path (which used to contain the
 	# CIFTI I/O functions as well), or HCPCIFTIRWDIR.
 	# Since addpath adds to the front of the matlab path, we are now overriding the fix settings for cifti IO,
-	# and adding '${HCPPIPEDIR}/global/matlab', so functions in these folders will replace what fix would normally run.
+	# and adding '${HCPPIPEDIR}/global/matlab', so functions in these folders will now replace what fix would normally run.
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
 	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab');"
 
