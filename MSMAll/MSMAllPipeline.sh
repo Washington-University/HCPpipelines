@@ -131,14 +131,14 @@ get_options()
 				p_fMRINames=${argument#*=}
 				;;
 			--multirun-fix-names=*)
-			    p_mrfixNames=${argument#*=}
-			    ;;
+				p_mrfixNames=${argument#*=}
+				;;
 			--multirun-fix-concat-name=*)
-			    p_mrfixConcatName=${argument#*=}
-			    ;;
-		    --multirun-fix-names-to-use=*)
-		        p_mrfixNamesToUse=${argument#*=}
-		        ;;
+				p_mrfixConcatName=${argument#*=}
+				;;
+			--multirun-fix-names-to-use=*)
+				p_mrfixNamesToUse=${argument#*=}
+				;;
 			--output-fmri-name=*)
 				p_OutputfMRIName=${argument#*=}
 				;;
@@ -203,7 +203,7 @@ get_options()
     	    fi
     	    if [[ -z "$p_mrfixNamesToUse" ]]
     	    then
-		        log_Err "--multirun-fix-concat-name is required when using --multirun-fix-names"
+		        log_Err "--multirun-fix-names-to-use is required when using --multirun-fix-names"
 		        error_count=$(( error_count + 1 ))
     	    fi
 	    fi
