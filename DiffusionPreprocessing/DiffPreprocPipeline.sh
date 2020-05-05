@@ -141,6 +141,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           output the commands that would be executed instead of
                           actually running them. --printcom=echo is intended to
                           be used for testing purposes
+  [--select-best-b0]
+                          If set selects the best b0 for each phase encoding direction
+                          to pass on to topup rather than the default behaviour of
+                          using equally spaced b0's throughout the scan. The best b0
+                          is identified as the least distorted (i.e., most similar to
+                          the average b0 after registration).
   [--extra-eddy-arg=<value>]
                           Generic single token (no whitespace) argument to pass
                           to the DiffPreprocPipeline_Eddy.sh script and subsequently
@@ -250,6 +256,7 @@ get_options()
 	unset NegInputImages
 	unset echospacing
 	unset GdCoeffs
+	unset SelectBestB0
 	DWIName="Diffusion"
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
@@ -316,6 +323,10 @@ get_options()
 				;;
 			--printcom=*)
 				runcmd=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+		  --select-best-b0)
+		    SelectBestB0="true"
 				index=$(( index + 1 ))
 				;;
 			--extra-eddy-arg=*)
@@ -455,6 +466,9 @@ main()
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
+	if [ -z "${SelectBestB0}" ] ; then
+	  pre_eddy_cmd+=" --select-best-b0 "
+  fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
 	${pre_eddy_cmd}
@@ -486,6 +500,9 @@ main()
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 	post_eddy_cmd+=" --printcom=${runcmd} "
+	if [ -z "${SelectBestB0}" ] ; then
+	  post_eddy_cmd+=" --select-best-b0 "
+  fi
 
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
 	${post_eddy_cmd}

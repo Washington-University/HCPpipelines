@@ -95,6 +95,9 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           output the commands that would be executed instead of
                           actually running them. --printcom=echo is intended to
                           be used for testing purposes
+  [--select_best_b0]
+                          Whether the --select-best-b0 was used in
+                          DiffPreprocPipeline_PreEddy.
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
                           for the eddy_postproc.sh script.
@@ -203,6 +206,10 @@ get_options()
 				CombineDataFlag=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+		  --select-best-b0)
+		    SelectBestB0="true"
+				index=$(( index + 1 ))
+				;;
 			*)
 				show_usage
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -254,6 +261,9 @@ get_options()
 	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
+	if [ -z "${SelectBestB0}" ] ; then
+    echo "   SelectBestB0"
+  fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
@@ -308,7 +318,11 @@ main()
 
 	log_Msg "Running Eddy PostProcessing"
 	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
-	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag}
+	select_flag="0"
+	if [ -z "${SelectBestB0}" ] ; then
+	  select_flag="1"
+	fi
+	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
 
 	# Establish variables that follow naming conventions
 	T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images

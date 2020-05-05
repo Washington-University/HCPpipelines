@@ -4,13 +4,13 @@ scriptName="basic_preproc.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
-echo_spacing=$2  #in msec
+ro_time=$2  #in msec
 PEdir=$3
 b0dist=$4
 b0maxbval=$5
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
-echo "${scriptName}: Input Parameter: echo_spacing: ${echo_spacing}"  # *Effective* Echo Spacing, in msec
+echo "${scriptName}: Input Parameter: ro_time: ${ro_time}"  # Readout time in ms
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
 echo "${scriptName}: Input Parameter: b0dist: ${b0dist}"
 echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
@@ -32,73 +32,6 @@ fi
 basePos="Pos"
 baseNeg="Neg"
 
-#Compute Total_readout in secs with up to 6 decimal places
-any=`ls ${rawdir}/${basePos}*.nii* | head -n 1`
-if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
-	dimP=`${FSLDIR}/bin/fslval ${any} dim1`
-elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
-	dimP=`${FSLDIR}/bin/fslval ${any} dim2`
-fi
-dimPminus1=$(($dimP - 1))
-#Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
-# Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
-# must already be accounted for as part of the "EffectiveEchoSpacing"
-ro_time=`echo "${echo_spacing} * ${dimPminus1}" | bc -l`
-ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`  # Convert from ms to sec
-echo "${scriptName}: Total readout time is $ro_time secs"
-
-
-################################################################################################
-## Intensity Normalisation across Series 
-################################################################################################
-echo "${scriptName}: Rescaling series to ensure consistency across baseline intensities"
-entry_cnt=0
-for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*  #For each series, get the mean b0 and rescale to match the first series baseline
-do
-	basename=`imglob ${entry}`
-	echo "${scriptName}: Processing $basename"
-	
-	echo "${scriptName}: About to fslmaths ${entry} -Xmean -Ymean -Zmean ${basename}_mean"
-	${FSLDIR}/bin/fslmaths ${entry} -Xmean -Ymean -Zmean ${basename}_mean
-	if [ ! -e ${basename}_mean.nii.gz ] ; then
-		echo "${scriptName}: ERROR: Mean file: ${basename}_mean.nii.gz not created"
-		exit 1
-	fi
-
-	echo "${scriptName}: Getting Posbvals from ${basename}.bval"
-	Posbvals=`cat ${basename}.bval`
-	echo "${scriptName}: Posbvals: ${Posbvals}"
-	
-	mcnt=0
-	for i in ${Posbvals} #extract all b0s for the series
-	do
-		echo "${scriptName}: Posbvals i: ${i}"
-		cnt=`$FSLDIR/bin/zeropad $mcnt 4`
-		echo "${scriptName}: cnt: ${cnt}"
-		if [ $i -lt ${b0maxbval} ]; then
-			echo "${scriptName}: About to fslroi ${basename}_mean ${basename}_b0_${cnt} ${mcnt} 1"
-			$FSLDIR/bin/fslroi ${basename}_mean ${basename}_b0_${cnt} ${mcnt} 1
-		fi
-		mcnt=$((${mcnt} + 1))
-	done
-	
-	echo "${scriptName}: About to fslmerge -t ${basename}_mean `echo ${basename}_b0_????.nii*`"
-	${FSLDIR}/bin/fslmerge -t ${basename}_mean `echo ${basename}_b0_????.nii*`
-	
-	echo "${scriptName}: About to fslmaths ${basename}_mean -Tmean ${basename}_mean"
-	${FSLDIR}/bin/fslmaths ${basename}_mean -Tmean ${basename}_mean #This is the mean baseline b0 intensity for the series
-	${FSLDIR}/bin/imrm ${basename}_b0_????
-	if [ ${entry_cnt} -eq 0 ]; then      #Do not rescale the first series
-		rescale=`fslmeants -i ${basename}_mean`
-	else
-		scaleS=`fslmeants -i ${basename}_mean`
-		${FSLDIR}/bin/fslmaths ${basename} -mul ${rescale} -div ${scaleS} ${basename}_new
-		${FSLDIR}/bin/imrm ${basename}   #For the rest, replace the original dataseries with the rescaled one
-		${FSLDIR}/bin/immv ${basename}_new ${basename}
-	fi
-	entry_cnt=$((${entry_cnt} + 1))
-	${FSLDIR}/bin/imrm ${basename}_mean
-done
 
 ################################################################################################
 ## Identifying the best b0's to use in topup
