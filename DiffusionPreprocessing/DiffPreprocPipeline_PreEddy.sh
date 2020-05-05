@@ -99,6 +99,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--b0maxbval=<b0-max-bval>]
                           Volumes with a bvalue smaller than this value will be
                           considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
+  [--select-best-b0]
+                          If set selects the best b0 for each phase encoding direction
+                          to pass on to topup rather than the default behaviour of
+                          using equally spaced b0's throughout the scan. The best b0
+                          is identified as the least distorted (i.e., most similar to
+                          the average b0 after registration).
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
                           output the commands that would be executed instead of
@@ -214,6 +220,10 @@ get_options()
 				runcmd=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+		  --select-best-b0)
+		    SelectBestB0="true"
+				index=$(( index + 1 ))
+				;;
 			*)
 				show_usage
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -275,6 +285,9 @@ get_options()
 	echo "   DWIName: ${DWIName}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
+	if [ -z "${SelectBestB0}" ] ; then
+    echo "   SelectBestB0"
+  fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
@@ -414,6 +427,21 @@ main()
 		Neg_count=$((${Neg_count} + 1))
 	done
 
+  #Compute Total_readout in secs with up to 6 decimal places
+  any=`ls ${rawdir}/${basePos}*.nii* | head -n 1`
+  if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
+    dimP=`${FSLDIR}/bin/fslval ${any} dim1`
+  elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
+    dimP=`${FSLDIR}/bin/fslval ${any} dim2`
+  fi
+  dimPminus1=$(($dimP - 1))
+  #Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
+  # Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
+  # must already be accounted for as part of the "EffectiveEchoSpacing"
+  ro_time=`echo "${echo_spacing} * ${dimPminus1}" | bc -l`
+  ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`  # Convert from ms to sec
+  log_Msg "Total readout time is $ro_time secs"
+
 	# verify positive and negative datasets are provided in pairs
 	if [ ${Pos_count} -ne ${Neg_count} ] ; then
 		log_Msg "Wrong number of input datasets! Make sure that you provide pairs of input filenames."
@@ -460,8 +488,14 @@ main()
 		exit 1
 	fi
 
-	log_Msg "Running Basic Preprocessing"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
+	log_Msg "Running Intensity Normalisation"
+  ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir}
+	if [ -z "${SelectBestB0}" ] ; then
+	  script_ext="best_b0"
+  else
+	  script_ext="sequence"
+  fi
+  ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_${script_ext}.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
