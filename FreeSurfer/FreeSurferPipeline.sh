@@ -75,8 +75,8 @@ show_tool_versions()
 	
 	# Show tkregister version
 	log_Msg "Showing tkregister version"
-	which "$TKREG"
-	"$TKREG" -version
+	which tkregister2_cmdl
+	tkregister2_cmdl -version
 
 	# Show mri_concatenate_lta version
 	log_Msg "Showing mri_concatenate_lta version"
@@ -92,11 +92,6 @@ show_tool_versions()
 	log_Msg "Showing fslmaths location"
 	which fslmaths
 }
-
-#default to freesurfer 6 value for tkregister command
-#this way, the script will usually still show something even if show_tool_versions is called before validate_freesurfer_version
-TKREG=tkregister
-TKREG2=tkregister2
 
 validate_freesurfer_version()
 {
@@ -137,10 +132,6 @@ validate_freesurfer_version()
 	if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
 		# e.g. 4.y.z, 5.y.z
 		log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
-	fi
-	if ((freesurfer_primary_version >= 7)); then
-		TKREG=tkregister2_cmdl
-		TKREG2=tkregister2_cmdl
 	fi
 }
 
@@ -787,7 +778,7 @@ main()
 		fi
 
 		log_Msg "...Create a registration between the original conformed space and the rawavg space"
-		tkregister_cmd="$TKREG"
+		tkregister_cmd="tkregister2_cmdl"
 		tkregister_cmd+=" --mov orig.mgz"
 		tkregister_cmd+=" --targ rawavg.mgz"
 		tkregister_cmd+=" --regheader"
@@ -820,7 +811,7 @@ main()
 		fi
 
 		log_Msg "...Convert to FSL format"
-		tkregister_cmd="$TKREG"
+		tkregister_cmd="tkregister2_cmdl"
 		tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
 		tkregister_cmd+=" --targ rawavg.mgz"
 		tkregister_cmd+=" --reg Q.lta"
@@ -856,7 +847,7 @@ main()
 	# Note that the convention of tkregister2 is that the resulting $reg is the registration
 	# matrix that maps from the "--targ" space into the "--mov" space. 
 	
-	"$TKREG2" --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
+	"tkregister2_cmdl" --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 	
 	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
 	mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
@@ -937,11 +928,11 @@ uname -a
 # Configure the use of FreeSurfer v6 custom tools
 configure_custom_tools
 
-# Validate version of FreeSurfer in use - keep this BEFORE show_tool_versions because it sets the tkregister command
-validate_freesurfer_version
-
 # Show tool versions
 show_tool_versions
+
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
 # Determine whether named or positional parameters are used
 if [[ ${1} == --* ]]; then
