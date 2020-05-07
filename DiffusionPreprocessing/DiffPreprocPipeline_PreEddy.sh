@@ -286,7 +286,7 @@ get_options()
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	if [ -z "${SelectBestB0}" ] ; then
-    echo "   SelectBestB0"
+    echo "   SelectBestB0: ${SelectBestB0}"
   fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
@@ -299,9 +299,11 @@ validate_scripts()
 {
 	local error_msgs=""
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc.sh ] ; then
-		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
-	fi
+    for extension in norm_intensity sequence best_b0 ; do
+        if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh ] ; then
+            error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh not found"
+        fi
+    done
 
 	if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ] ; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
@@ -428,7 +430,7 @@ main()
 	done
 
   #Compute Total_readout in secs with up to 6 decimal places
-  any=`ls ${rawdir}/${basePos}*.nii* | head -n 1`
+  any=`ls ${outdir}/rawdata/${basePos}*.nii* | head -n 1`
   if [ ${PEdir} -eq 1 ]; then    #RL/LR phase encoding
     dimP=`${FSLDIR}/bin/fslval ${any} dim1`
   elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
@@ -438,7 +440,7 @@ main()
   #Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
   # Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
   # must already be accounted for as part of the "EffectiveEchoSpacing"
-  ro_time=`echo "${echo_spacing} * ${dimPminus1}" | bc -l`
+  ro_time=`echo "${echospacing} * ${dimPminus1}" | bc -l`
   ro_time=`echo "scale=6; ${ro_time} / 1000" | bc -l`  # Convert from ms to sec
   log_Msg "Total readout time is $ro_time secs"
 
@@ -489,7 +491,7 @@ main()
 	fi
 
 	log_Msg "Running Intensity Normalisation"
-  ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir}
+  ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 	if [ -z "${SelectBestB0}" ] ; then
 	  script_ext="best_b0"
   else
@@ -497,11 +499,11 @@ main()
   fi
   ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_${script_ext}.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 
-	log_Msg "Running Topup"
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
+  log_Msg "Running Topup"
+  ${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
 
-	log_Msg "Completed!"
-	exit 0
+  log_Msg "Completed!"
+  exit 0
 }
 
 # ------------------------------------------------------------------------------

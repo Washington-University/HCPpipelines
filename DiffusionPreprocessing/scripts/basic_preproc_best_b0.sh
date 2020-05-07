@@ -1,10 +1,10 @@
 #!/bin/bash
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-scriptName="basic_preproc.sh"
+scriptName="basic_preproc_best_b0.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
-ro_time=$2  #in msec
+ro_time=$2  #in sec
 PEdir=$3
 b0dist=$4
 b0maxbval=$5
@@ -145,6 +145,7 @@ for pe_sign in ${basePos} ${baseNeg} ; do
     scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res_${pe_sign} -k ${select_b0_dir}/nodif_brain_mask -M` )
   else
     echo "Score all ${pe_sign} B0's based on similarity with the mean ${pe_sign} B0"
+    echo ${FSLDIR}/bin/mcflirt -in ${rawdir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_b0s_mcf
     ${FSLDIR}/bin/mcflirt -in ${rawdir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_b0s_mcf
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -Tmean ${select_b0_dir}/all_b0s_mcf_avg
     for ((i=1;i<=3;i++));
@@ -158,6 +159,8 @@ for pe_sign in ${basePos} ${baseNeg} ; do
       # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
       # where mad is the median absolute deviation.
       idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+      echo "scores: ${scores}"
+      echo "idx: ${idx}"
       ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/all_b0s_mcf -o ${select_b0_dir}/all_b0s_mcf_avg --vols=${idx} -m
     done
   fi

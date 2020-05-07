@@ -1,10 +1,10 @@
 #!/bin/bash
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-scriptName="basic_preproc.sh"
+scriptName="basic_preproc_sequence.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
-ro_time=$2  #in msec
+ro_time=$2  #in sec
 PEdir=$3
 b0dist=$4
 b0maxbval=$5
