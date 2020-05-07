@@ -1,16 +1,21 @@
 #!/bin/bash
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-scriptName="basic_preproc.sh"
+scriptName="basic_preproc_norm_intensity.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
+b0maxbval=$2
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
+echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
 
 # Use same convention for basePos and baseNeg names as in DiffPreprocPipeline_PreEddy.sh
 basePos="Pos"
 baseNeg="Neg"
 
+rawdir=${workingdir}/rawdata
+topupdir=${workingdir}/topup
+eddydir=${workingdir}/eddy
 
 ################################################################################################
 ## Intensity Normalisation across Series 
