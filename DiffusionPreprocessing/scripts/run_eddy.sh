@@ -104,7 +104,7 @@ PARAMETERS are: [ ] = optional; < > = user supplied value
                      If unspecified, defaults to --niter=7
 
   [--fwhm=<value>] : --fwhm value to pass to eddy
-                     If unspecified, defaults to --fwhm=8,4,2,0,0,0,0
+                     If unspecified, defaults to --fwhm=0
 
   [--resamp=<value>] : --resamp value to pass to eddy
                      If unspecified, no --resamp option is passed to eddy
@@ -178,7 +178,7 @@ get_options()
 	rms="False"
 	ff_val=""
 	dont_peas=""
-	fwhm_value="8,4,2,0,0,0,0"
+	fwhm_value="0"
 	niter_value="7"
 	resamp_value=""
 	unset ol_nstd_val
