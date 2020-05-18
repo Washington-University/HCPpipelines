@@ -415,6 +415,23 @@ get_options()
   fi
 	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
+
+	if [ -z "${SelectBestB0}" ] ; then
+	  fwhm_set=false
+    if [ ! -z "${extra_eddy_args}" ] ; then
+      for extra_eddy_arg in ${extra_eddy_args} ; do
+        if [[ ${extra_eddy_arg} == "--fwhm"* ]] ; then
+          fwhm_set=true
+        fi
+      done
+    fi
+    if [ ${fwhm_set} == false ] ; then
+      echo ""
+      echo "WARNING: Please increase the FWHM for the first few iterations if using --select-best-b0"
+      echo "         This can be done by setting the --extra_eddy_args=--fwhm=... flag"
+      echo ""
+    fi
+  fi
 }
 
 #
