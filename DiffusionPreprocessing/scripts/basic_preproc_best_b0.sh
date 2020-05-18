@@ -127,10 +127,11 @@ for pe_sign in ${basePos} ${baseNeg} ; do
 
       # compute average squared residual over brain mask
       scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+      scores_str="${scores[@]}"
 
       # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
       # where mad is the median absolute deviation.
-      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
       ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/topup_b0s -o ${select_b0_dir}/topup_b0s_avg --vols=${idx} -m
     done
 
@@ -155,12 +156,11 @@ for pe_sign in ${basePos} ${baseNeg} ; do
       # Get brain mask from averaged results
       ${FSLDIR}/bin/bet ${select_b0_dir}/all_b0s_mcf_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
       scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/all_b0s_mcf_res -k ${select_b0_dir}/nodif_brain_mask -M` )
+      scores_str="${scores[@]}"
 
       # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
       # where mad is the median absolute deviation.
-      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
-      echo "scores: ${scores}"
-      echo "idx: ${idx}"
+      idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
       ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/all_b0s_mcf -o ${select_b0_dir}/all_b0s_mcf_avg --vols=${idx} -m
     done
   fi
