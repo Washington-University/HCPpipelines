@@ -410,13 +410,13 @@ get_options()
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
-	if [ -z ${SelectBestB0} ] ; then
+	if [ ! -z ${SelectBestB0} ] ; then
     echo "   SelectBestB0: ${SelectBestB0}"
   fi
 	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
 	  fwhm_set=false
     if [ ! -z "${extra_eddy_args}" ] ; then
       for extra_eddy_arg in ${extra_eddy_args} ; do
@@ -486,7 +486,7 @@ main()
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
 	  pre_eddy_cmd+=" --select-best-b0 "
   fi
 
@@ -520,7 +520,7 @@ main()
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 	post_eddy_cmd+=" --printcom=${runcmd} "
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
 	  post_eddy_cmd+=" --select-best-b0 "
   fi
 

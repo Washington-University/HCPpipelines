@@ -163,6 +163,7 @@ get_options()
 	unset PosInputImages
 	unset NegInputImages
 	unset echospacing
+	unset SelectBestB0
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
@@ -285,7 +286,7 @@ get_options()
 	echo "   DWIName: ${DWIName}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
     echo "   SelectBestB0: ${SelectBestB0}"
   fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
@@ -492,7 +493,7 @@ main()
 
 	log_Msg "Running Intensity Normalisation"
   ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
 	  script_ext="best_b0"
   else
 	  script_ext="sequence"
