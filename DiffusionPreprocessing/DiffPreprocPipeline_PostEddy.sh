@@ -156,6 +156,7 @@ get_options()
 	unset StudyFolder
 	unset Subject
 	unset GdCoeffs
+	unset SelectBestB0
 	DWIName="Diffusion"
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	runcmd=""
@@ -262,7 +263,7 @@ get_options()
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
 	if [ -z "${SelectBestB0}" ] ; then
-    echo "   SelectBestB0"
+    echo "   SelectBestB0: ${SelectBestB0}"
   fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
@@ -319,7 +320,7 @@ main()
 	log_Msg "Running Eddy PostProcessing"
 	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 	select_flag="0"
-	if [ -z "${SelectBestB0}" ] ; then
+	if [ ! -z "${SelectBestB0}" ] ; then
 	  select_flag="1"
 	fi
 	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
