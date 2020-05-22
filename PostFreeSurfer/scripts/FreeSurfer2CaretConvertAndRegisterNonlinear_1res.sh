@@ -157,52 +157,52 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
 	# Create a version of subject-specific ROIs, dilated by 2 x GrayordinatesResolution
 	${CARET7DIR}/wb_command -volume-dilate ${SubjROIsSplit}.nii.gz $dilDist NEAREST ${SubjROIsSplit}.dil2x.nii.gz
 
-	# Volume with the *brainmask* voxels missing from the Atlas, with each structure as a separate frame
-	# (Note: need to binarize "Missing" to turn it into a mask, since it uses the original label values)
-	${CARET7DIR}/wb_command -volume-math "(Missing > 0) * Atlas" ${MissingSplit}.nii.gz -var Missing ${MissingGrayordinates}.nii.gz -repeat -var Atlas ${AtlasROIsSplit}.nii.gz
+    # Volume with the *brainmask* voxels missing from the Atlas, with each structure as a separate frame
+    # (Note: need to binarize "Missing" to turn it into a mask, since it uses the original label values)
+    ${CARET7DIR}/wb_command -volume-math "(Missing > 0) * Atlas" ${MissingSplit}.nii.gz -var Missing ${MissingGrayordinates}.nii.gz -repeat -var Atlas ${AtlasROIsSplit}.nii.gz
 
-	# Volume with the *brainmask* voxels after 2x dilation that are missing from the Atlas, with each structure as a separate frame
-	${CARET7DIR}/wb_command -volume-math "(MissingDil2x > 0) * Atlas" ${MissingSplit}.dil2xBrainMask.nii.gz -var MissingDil2x ${MissingGrayordinates}.dil2xBrainMask.nii.gz -repeat -var Atlas ${AtlasROIsSplit}.nii.gz
+    # Volume with the *brainmask* voxels after 2x dilation that are missing from the Atlas, with each structure as a separate frame
+    ${CARET7DIR}/wb_command -volume-math "(MissingDil2x > 0) * Atlas" ${MissingSplit}.dil2xBrainMask.nii.gz -var MissingDil2x ${MissingGrayordinates}.dil2xBrainMask.nii.gz -repeat -var Atlas ${AtlasROIsSplit}.nii.gz
 
-	# Volume with the subject-specific subcortical labels that are *missing* from the corresponding Atlas label, with each structure as a separate frame
-	${CARET7DIR}/wb_command -volume-math "Atlas * (!Subj)" ${SubjROIsSplit}.missing.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+    # Volume with the subject-specific subcortical labels that are *missing* from the corresponding Atlas label, with each structure as a separate frame
+    ${CARET7DIR}/wb_command -volume-math "Atlas * (!Subj)" ${SubjROIsSplit}.missing.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
 
-	# Volume with the subject-specific subcortical labels after 2x dilation that *overlap* with the corresponding Atlas label, with each structure as a separate frame
-	${CARET7DIR}/wb_command -volume-math "(Atlas) * SubjDil2x" ${SubjROIsSplit}.dil2x.overlap.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var SubjDil2x ${SubjROIsSplit}.dil2x.nii.gz
+    # Volume with the subject-specific subcortical labels that *overlap* with the corresponding Atlas label, with each structure as a separate frame
+    ${CARET7DIR}/wb_command -volume-math "(Atlas) * Subj" ${SubjROIsSplit}.overlap.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
 
-	# Volume with the subject-specific subcortical labels that *overlap* with the corresponding Atlas label, with each structure as a separate frame
-	${CARET7DIR}/wb_command -volume-math "(Atlas) * Subj" ${SubjROIsSplit}.overlap.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+    # Volume with the subject-specific subcortical labels that are *outside* of the corresponding Atlas label, with each structure as a separate frame
+    ${CARET7DIR}/wb_command -volume-math "(!Atlas) * Subj" ${SubjROIsSplit}.outside.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
 
-	# Volume with the subject-specific subcortical labels that are *outside* of the corresponding Atlas label, with each structure as a separate frame
-	${CARET7DIR}/wb_command -volume-math "(!Atlas) * Subj" ${SubjROIsSplit}.outside.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var Subj ${SubjROIsSplit}.nii.gz
+    # Volume with the subject-specific subcortical labels after 2x dilation that *overlap* with the corresponding Atlas label, with each structure as a separate frame
+    ${CARET7DIR}/wb_command -volume-math "(Atlas) * SubjDil2x" ${SubjROIsSplit}.dil2x.overlap.nii.gz -var Atlas ${AtlasROIsSplit}.nii.gz -var SubjDil2x ${SubjROIsSplit}.dil2x.nii.gz
 
-	# Extract summary counts
-	${CARET7DIR}/wb_command -volume-stats ${MissingSplit}.nii.gz -reduce SUM -show-map-name > ${MissingSplit}.stats.txt
-	${CARET7DIR}/wb_command -volume-stats ${MissingSplit}.dil2xBrainMask.nii.gz -reduce SUM -show-map-name > ${MissingSplit}.dil2xBrainMask.stats.txt
-	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.missing.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.missing.stats.txt
-	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.dil2x.overlap.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.dil2x.overlap.stats.txt
-	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.overlap.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.overlap.stats.txt
-	${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.outside.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.outside.stats.txt
+    # Extract summary counts
+    ${CARET7DIR}/wb_command -volume-stats ${MissingSplit}.dil2xBrainMask.nii.gz -reduce SUM -show-map-name > ${MissingSplit}.dil2xBrainMask.stats.txt
+    ${CARET7DIR}/wb_command -volume-stats ${MissingSplit}.nii.gz -reduce SUM -show-map-name > ${MissingSplit}.stats.txt
+    ${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.missing.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.missing.stats.txt
+    ${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.overlap.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.overlap.stats.txt
+    ${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.outside.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.outside.stats.txt
+    ${CARET7DIR}/wb_command -volume-stats ${SubjROIsSplit}.dil2x.overlap.nii.gz -reduce SUM -show-map-name > ${SubjROIsSplit}.dil2x.overlap.stats.txt
 
-	# Assemble output csv
-	# We assume in the following (without checking) that the structures from -volume-stats -show-map-name are consistent across all files
-	cut -d ':' -f 2 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.roinames.txt
-	cut -d ':' -f 3 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.value.txt
-	cut -d ':' -f 3 ${MissingSplit}.dil2xBrainMask.stats.txt > ${MissingSplit}.dil2xBrainMask.stats.value.txt
-	cut -d ':' -f 3 ${SubjROIsSplit}.missing.stats.txt > ${SubjROIsSplit}.missing.stats.value.txt
-	cut -d ':' -f 3 ${SubjROIsSplit}.dil2x.overlap.stats.txt > ${SubjROIsSplit}.dil2x.overlap.stats.value.txt
-	cut -d ':' -f 3 ${SubjROIsSplit}.overlap.stats.txt > ${SubjROIsSplit}.overlap.stats.value.txt
-	cut -d ':' -f 3 ${SubjROIsSplit}.outside.stats.txt > ${SubjROIsSplit}.outside.stats.value.txt
+    # Assemble output csv
+    # We assume in the following (without checking) that the structures from -volume-stats -show-map-name are consistent across all files
+    cut -d ':' -f 2 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.roinames.txt
+    cut -d ':' -f 3 ${MissingSplit}.dil2xBrainMask.stats.txt > ${MissingSplit}.dil2xBrainMask.stats.value.txt
+    cut -d ':' -f 3 ${MissingSplit}.stats.txt > ${MissingSplit}.stats.value.txt
+    cut -d ':' -f 3 ${SubjROIsSplit}.missing.stats.txt > ${SubjROIsSplit}.missing.stats.value.txt
+    cut -d ':' -f 3 ${SubjROIsSplit}.overlap.stats.txt > ${SubjROIsSplit}.overlap.stats.value.txt
+    cut -d ':' -f 3 ${SubjROIsSplit}.outside.stats.txt > ${SubjROIsSplit}.outside.stats.value.txt
+    cut -d ':' -f 3 ${SubjROIsSplit}.dil2x.overlap.stats.txt > ${SubjROIsSplit}.dil2x.overlap.stats.value.txt
 
-	outFile="$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
-	echo "Structure,nMissing2xDilBrainMaskFromAtlas,nMissingBrainMaskFromAtlas,nMissing2xDilROIFromAtlas,nMissingROIFromAtlas,nROIOverlapAtlas,nROIOutsideAtlas" > ${outFile}
-	echo "ALL,${MissingGrayordinatesDil2xTotal},${MissingGrayordinatesTotal},,,," >> ${outFile}
-	paste -d ',' ${MissingSplit}.stats.roinames.txt ${MissingSplit}.dil2xBrainMask.stats.value.txt ${MissingSplit}.stats.value.txt ${SubjROIsSplit}.missing.stats.value.txt ${SubjROIsSplit}.dil2x.overlap.stats.value.txt ${SubjROIsSplit}.overlap.stats.value.txt ${SubjROIsSplit}.outside.stats.value.txt | tr -d '[:blank:]' >> ${outFile}
+    outFile="$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
+    echo "Structure,nMissing2xDilBrainMaskFromAtlas,nMissingBrainMaskFromAtlas,nMissingROIFromAtlas,nOverlapROIWithAtlas,nROIOutsideAtlas,nOverlap2xDilROIWithAtlas" > ${outFile}
+    echo "ALL,${MissingGrayordinatesDil2xTotal},${MissingGrayordinatesTotal},,,," >> ${outFile}
+    paste -d ',' ${MissingSplit}.stats.roinames.txt ${MissingSplit}.dil2xBrainMask.stats.value.txt ${MissingSplit}.stats.value.txt ${SubjROIsSplit}.missing.stats.value.txt ${SubjROIsSplit}.overlap.stats.value.txt ${SubjROIsSplit}.outside.stats.value.txt ${SubjROIsSplit}.dil2x.overlap.stats.value.txt | tr -d '[:blank:]' >> ${outFile}
 
-	# Cleanup
-	rm ${AtlasROIsSplit}* ${SubjROIsSplit}* ${MissingSplit}*
-	rm ${MissingGrayordinates}.dil2xBrainMask.nii.gz
-	#rm "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".dil2x.nii.gz
+    # Cleanup
+    rm ${AtlasROIsSplit}* ${SubjROIsSplit}* ${MissingSplit}*
+    rm ${MissingGrayordinates}.dil2xBrainMask.nii.gz
+    #rm "$AtlasSpaceFolder"/"$T1wImageBrainMask"."$GrayordinatesResolution".dil2x.nii.gz
 
     ### End report on subcortical segmentation
 done
