@@ -279,7 +279,7 @@ for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
 	cut -d ':' -f 3 ${SubjROIsSplit}.outside.stats.txt > ${SubjROIsSplit}.outside.stats.value.txt
 
 	outFile="$AtlasSpaceFolder"/ROIs/MissingGrayordinates."$GrayordinatesResolution".txt
-	echo "Structure,nMissing2xDilBrainMaskFromAtlas,nMissingBrainMaskFromAtlas,nMissing2xDilROIFromAtlas,nMissingROIFromAtlas,nROIOverlapAtlas,nROIOutsideAtlas" > ${outFile}
+	echo "Structure,nMissing2xDilBrainMaskFromAtlas,nMissingBrainMaskFromAtlas,nMissingROIFromAtlas,nOverlap2xDilROIWithAtlas,nROIOverlapAtlas,nROIOutsideAtlas" > ${outFile}
 	echo "ALL,${MissingGrayordinatesDil2xTotal},${MissingGrayordinatesTotal},,,," >> ${outFile}
 	paste -d ',' ${MissingSplit}.stats.roinames.txt ${MissingSplit}.dil2xBrainMask.stats.value.txt ${MissingSplit}.stats.value.txt ${SubjROIsSplit}.missing.stats.value.txt ${SubjROIsSplit}.dil2x.overlap.stats.value.txt ${SubjROIsSplit}.overlap.stats.value.txt ${SubjROIsSplit}.outside.stats.value.txt | tr -d '[:blank:]' >> ${outFile}
 
