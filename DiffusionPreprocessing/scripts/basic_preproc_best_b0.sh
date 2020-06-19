@@ -192,6 +192,11 @@ for pe_sign in ${basePos} ${baseNeg} ; do
   echo "Selecting ${pe_sign} B0 with index ${min_idx} (counting from zero)"
   echo "${pe_sign} ${min_idx}" >> ${rawdir}/index_best_b0s.txt
   ${FSLDIR}/bin/fslroi ${rawdir}/all_${pe_sign}_b0s ${rawdir}/best_${pe_sign}_b0 ${min_idx} 1
+
+	if [ ${pe_sign} = ${basePos} ] ; then
+		# store this to extract the b-value later
+		best_pos_b0_index=${min_idx}
+	fi
 done
 
 # producing acqparams.txt
@@ -245,13 +250,16 @@ echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
-echo 0 `paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval` >${rawdir}/Pos_Neg.bvals
-echo 1. > ${rawdir}/zero.bvecs
-echo 0. >> ${rawdir}/zero.bvecs
-echo 0. >> ${rawdir}/zero.bvecs
-paste -d' ' ${rawdir}/zero.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
-rm ${rawdir}/zero.bvecs
 
+# extract b-value and bvec of best b0 in Pos set
+best_pos_bval=`cat ${rawdir}/Pos.bval | awk 'print $((${best_pos_b0_index} + 1))'`
+cat ${rawdir}/Pos.bvec | awk 'print $((${best_pos_b0_index} + 1))' > ${rawdir}/zero.bvecs
+
+# merge all b-values and bvecs
+echo $best_pos_bval `paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval` >${rawdir}/Pos_Neg.bvals
+paste -d' ' ${rawdir}/zero.bvecs ${rawdir}/Pos.bvec ${rawdir}/Neg.bvec >${rawdir}/Pos_Neg.bvecs
+
+rm ${rawdir}/zero.bvecs
 ${FSLDIR}/bin/imrm ${rawdir}/Pos
 ${FSLDIR}/bin/imrm ${rawdir}/Neg
 
