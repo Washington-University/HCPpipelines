@@ -20,7 +20,7 @@ topupdir=${workingdir}/topup
 eddydir=${workingdir}/eddy
 
 if [[ ${PEdir} -ne 1 && ${PEdir} -ne 2 ]] ; then
-	echo -e "\n ${scriptName}: ERROR: basic_preproc: Unrecognized PEdir: ${PEdir}"
+	echo -e "\n ERROR: ${scriptName}: Unrecognized PEdir: ${PEdir}"
 	exit 1
 fi
 
@@ -80,7 +80,7 @@ for pe_sign in ${basePos} ${baseNeg} ; do
     if [[ ${N_other} -gt 4 ]] ; then N_other=4 ; fi
     echo "Score all ${N_b0s} ${pe_sign} B0's based on alignment with mean B0 after topup with ${N_other} ${pe_other} B0's"
 
-    # Select sub-set of other B0's to run topup on
+    # Select sub-set of other B0's to run topup on; we use the first ${N_other}
     ${FSLDIR}/bin/fslroi ${rawdir}/all_${pe_other}_b0s ${select_b0_dir}/opposite_b0s 0 ${N_other}
 
     # Merge all b0's to do a rough initial aligment using topup
@@ -104,7 +104,7 @@ for pe_sign in ${basePos} ${baseNeg} ; do
     done
 
     dimz=`${FSLDIR}/bin/fslval ${select_b0_dir}/all_b0s dim3`
-    if [ `isodd $dimz` -eq 1 ];then
+    if [ `isodd $dimz` -eq 1 ]; then
         ${FSLDIR}/bin/fslroi ${select_b0_dir}/all_b0s ${select_b0_dir}/all_b0s_even 0 -1 0 -1 1 -1
     else
         ${FSLDIR}/bin/imcp ${select_b0_dir}/all_b0s ${select_b0_dir}/all_b0s_even
@@ -121,54 +121,65 @@ for pe_sign in ${basePos} ${baseNeg} ; do
        -v
 
     # compute squared residual from the mean b0
+    # once "bad" b0's are identified, the mean b0 will be recomputeed without them
+    # and the scores recomputed; this process is iterated 3 times
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
     for ((i=1;i<=3;i++));
     do
       ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
 
       # Get brain mask from averaged results
-      ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+      ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg ${select_b0_dir}/nodif_brain -m -R -f 0.3
 
       # compute average squared residual over brain mask
       scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res -k ${select_b0_dir}/nodif_brain_mask -M` )
       scores_str="${scores[@]}"
 
+		echo "Iteration ${i} in finding best b0 for ${pe_sign}"
+		echo "Current scores: ${scores_str}"
+
       # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
       # where mad is the median absolute deviation.
       idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+		echo "Recomputing average b0 using indices: ${idx}"
       ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/topup_b0s -o ${select_b0_dir}/topup_b0s_avg --vols=${idx} -m
     done
-
-    # compute offsets for only the polarity of interest
+    # recompute the squared residuals and brainmask using the final average
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -sub ${select_b0_dir}/topup_b0s_avg -sqr ${select_b0_dir}/topup_b0s_res
+    ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg ${select_b0_dir}/nodif_brain -m -R -f 0.3
+
+    # select only the polarity of interest and compute the final scores (average squared residual over the brainmask)
     ${FSLDIR}/bin/fslroi ${select_b0_dir}/topup_b0s_res ${select_b0_dir}/topup_b0s_res_${pe_sign} 0 ${N_b0s}
-
-    # Get brain mask from averaged results
-    ${FSLDIR}/bin/bet ${select_b0_dir}/topup_b0s_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
-
-    # compute average squared residual over brain mask
     scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/topup_b0s_res_${pe_sign} -k ${select_b0_dir}/nodif_brain_mask -M` )
-  else
+  else # Number of b0's with this phase encoding (${N_b0s}) >= 5
     echo "Score all ${pe_sign} B0's based on similarity with the mean ${pe_sign} B0"
     echo ${FSLDIR}/bin/mcflirt -in ${rawdir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_b0s_mcf
     ${FSLDIR}/bin/mcflirt -in ${rawdir}/all_${pe_sign}_b0s -out ${select_b0_dir}/all_b0s_mcf
     ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -Tmean ${select_b0_dir}/all_b0s_mcf_avg
+
+    # compute squared residual from the mean b0
+    # once "bad" b0's are identified, the mean b0 will be recomputeed without them
+    # and the scores recomputed; this process is iterated 3 times
     for ((i=1;i<=3;i++));
     do
       ${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -sub ${select_b0_dir}/all_b0s_mcf_avg -sqr ${select_b0_dir}/all_b0s_mcf_res
 
       # Get brain mask from averaged results
-      ${FSLDIR}/bin/bet ${select_b0_dir}/all_b0s_mcf_avg.nii.gz ${select_b0_dir}/nodif_brain -m -R -f 0.3
+      ${FSLDIR}/bin/bet ${select_b0_dir}/all_b0s_mcf_avg ${select_b0_dir}/nodif_brain -m -R -f 0.3
       scores=( `${FSLDIR}/bin/fslstats -t ${select_b0_dir}/all_b0s_mcf_res -k ${select_b0_dir}/nodif_brain_mask -M` )
       scores_str="${scores[@]}"
+
+		echo "Iteration ${i} in finding best b0 for ${pe_sign}"
+		echo "Current scores: ${scores_str}"
 
       # Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
       # where mad is the median absolute deviation.
       idx=`fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))"`
+		echo "Recomputing average b0 using indices: ${idx}"
       ${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/all_b0s_mcf -o ${select_b0_dir}/all_b0s_mcf_avg --vols=${idx} -m
     done
   fi
-  echo "b0 scores for ${pe_sign}: " "${scores[@]}"
+  echo "Final b0 scores for ${pe_sign}: " "${scores[@]}"
 
   printf "%s\n" "${scores[@]}" > ${select_b0_dir}/scores.txt
 done
@@ -230,7 +241,7 @@ for idx in $(seq 1 `${FSLDIR}/bin/fslval ${rawdir}/Neg dim4`) ; do
 done
 
 dimz=`${FSLDIR}/bin/fslval ${rawdir}/Pos dim3`
-if [ `isodd $dimz` -eq 1 ];then
+if [ `isodd $dimz` -eq 1 ]; then
 	echo "Remove one slice from data to get even number of slices"
 	${FSLDIR}/bin/fslroi ${rawdir}/Pos ${rawdir}/Posn 0 -1 0 -1 1 -1
 	${FSLDIR}/bin/fslroi ${rawdir}/Neg ${rawdir}/Negn 0 -1 0 -1 1 -1
@@ -282,6 +293,6 @@ mv ${rawdir}/Pos_Neg.bvecs ${eddydir}
 mv ${rawdir}/Pos.bv?? ${eddydir}
 mv ${rawdir}/Neg.bv?? ${eddydir}
 
-echo -e "\n END: basic_preproc"
+echo -e "\n END: ${scriptName}"
 
 
