@@ -91,14 +91,12 @@
 #
 #~ND~END~
 
-
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-show_usage()
-{
-	cat << EOF
+show_usage() {
+	cat <<EOF
 
 Perform the steps of the HCP Diffusion Preprocessing Pipeline
 
@@ -244,8 +242,7 @@ EOF
 #  Support Functions
 # --------------------------------------------------------------------------------
 
-get_options()
-{
+get_options() {
 	local arguments=($@)
 
 	# initialize global output variables
@@ -269,127 +266,127 @@ get_options()
 	local numArgs=${#arguments[@]}
 	local argument
 
-	while [ ${index} -lt ${numArgs} ] ; do
+	while [ ${index} -lt ${numArgs} ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
-			--help)
-				show_usage
-				exit 0
-				;;
-			--version)
-				version_show $@
-				exit 0
-				;;
-			--path=*)
-				StudyFolder=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--subject=*)
-				Subject=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--PEdir=*)
-				PEdir=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--posData=*)
-				PosInputImages=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--negData=*)
-				NegInputImages=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--echospacing=*)
-				echospacing=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--gdcoeffs=*)
-				GdCoeffs=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dwiname=*)
-				DWIName=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dof=*)
-				DegreesOfFreedom=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--b0maxbval=*)
-				b0maxbval=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--printcom=*)
-				runcmd=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-		  --select-best-b0)
-		    SelectBestB0="true"
-				index=$(( index + 1 ))
-				;;
-			--extra-eddy-arg=*)
-				extra_eddy_arg=${argument#*=}
-				extra_eddy_args+=" ${extra_eddy_arg} "
-				index=$(( index + 1 ))
-				;;
-			--combine-data-flag=*)
-				CombineDataFlag=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			*)
-				show_usage
-				echo "ERROR: Unrecognized Option: ${argument}"
-				exit 1
-				;;
+		--help)
+			show_usage
+			exit 0
+			;;
+		--version)
+			version_show "$@"
+			exit 0
+			;;
+		--path=*)
+			StudyFolder=${argument#*=}
+			index=$((index + 1))
+			;;
+		--subject=*)
+			Subject=${argument#*=}
+			index=$((index + 1))
+			;;
+		--PEdir=*)
+			PEdir=${argument#*=}
+			index=$((index + 1))
+			;;
+		--posData=*)
+			PosInputImages=${argument#*=}
+			index=$((index + 1))
+			;;
+		--negData=*)
+			NegInputImages=${argument#*=}
+			index=$((index + 1))
+			;;
+		--echospacing=*)
+			echospacing=${argument#*=}
+			index=$((index + 1))
+			;;
+		--gdcoeffs=*)
+			GdCoeffs=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dwiname=*)
+			DWIName=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dof=*)
+			DegreesOfFreedom=${argument#*=}
+			index=$((index + 1))
+			;;
+		--b0maxbval=*)
+			b0maxbval=${argument#*=}
+			index=$((index + 1))
+			;;
+		--printcom=*)
+			runcmd=${argument#*=}
+			index=$((index + 1))
+			;;
+		--select-best-b0)
+			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		--extra-eddy-arg=*)
+			extra_eddy_arg=${argument#*=}
+			extra_eddy_args+=" ${extra_eddy_arg} "
+			index=$((index + 1))
+			;;
+		--combine-data-flag=*)
+			CombineDataFlag=${argument#*=}
+			index=$((index + 1))
+			;;
+		*)
+			show_usage
+			echo "ERROR: Unrecognized Option: ${argument}"
+			exit 1
+			;;
 		esac
 	done
 
 	local error_msgs=""
 
 	# check required parameters
-	if [ -z ${StudyFolder} ] ; then
+	if [ -z ${StudyFolder} ]; then
 		error_msgs+="\nERROR: <study-path> not specified"
 	fi
 
-	if [ -z ${Subject} ] ; then
+	if [ -z ${Subject} ]; then
 		error_msgs+="\nERROR: <subject-id> not specified"
 	fi
 
-	if [ -z ${PEdir} ] ; then
+	if [ -z ${PEdir} ]; then
 		error_msgs+="\nERROR: <phase-encoding-dir> not specified"
 	fi
 
-	if [ -z ${PosInputImages} ] ; then
+	if [ -z ${PosInputImages} ]; then
 		error_msgs+="\nERROR: <positive-phase-encoded-data> not specified"
 	fi
 
-	if [ -z ${NegInputImages} ] ; then
+	if [ -z ${NegInputImages} ]; then
 		error_msgs+="\nERROR: <negative-phase-encoded-data> not specified"
 	fi
 
-	if [ -z ${echospacing} ] ; then
+	if [ -z ${echospacing} ]; then
 		error_msgs+="\nERROR: <echo-spacing> not specified"
 	fi
 
-	if [ -z ${GdCoeffs} ] ; then
+	if [ -z ${GdCoeffs} ]; then
 		error_msgs+="\nERROR: <path-to-gradients-coefficients-file> not specified"
 	fi
 
-	if [ -z ${b0maxbval} ] ; then
+	if [ -z ${b0maxbval} ]; then
 		error_msgs+="\nERROR: <b0-max-bval> not specified"
 	fi
 
-	if [ -z ${DWIName} ] ; then
+	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
 	fi
 
-	if [ -z ${CombineDataFlag} ] ; then
+	if [ -z ${CombineDataFlag} ]; then
 		error_msgs+="\nERROR: CombineDataFlag not specified"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -410,51 +407,50 @@ get_options()
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
-	if [ ! -z ${SelectBestB0} ] ; then
-    echo "   SelectBestB0: ${SelectBestB0}"
-  fi
+	if [ ! -z ${SelectBestB0} ]; then
+		echo "   SelectBestB0: ${SelectBestB0}"
+	fi
 	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
-	if [ ! -z "${SelectBestB0}" ] ; then
-	  fwhm_set=false
-    if [ ! -z "${extra_eddy_args}" ] ; then
-      for extra_eddy_arg in ${extra_eddy_args} ; do
-        if [[ ${extra_eddy_arg} == "--fwhm"* ]] ; then
-          fwhm_set=true
-        fi
-      done
-    fi
-    if [ ${fwhm_set} == false ] ; then
-      log_Warn "WARNING: Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy"
-      log_Warn "         To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
-      log_Warn "         we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
-      log_Warn "         This can be done by setting the --extra_eddy_args=--fwhm=... flag"
-    fi
-  fi
+	if [ ! -z "${SelectBestB0}" ]; then
+		fwhm_set=false
+		if [ ! -z "${extra_eddy_args}" ]; then
+			for extra_eddy_arg in ${extra_eddy_args}; do
+				if [[ ${extra_eddy_arg} == "--fwhm"* ]]; then
+					fwhm_set=true
+				fi
+			done
+		fi
+		if [ ${fwhm_set} == false ]; then
+			log_Warn "WARNING: Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy"
+			log_Warn "         To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
+			log_Warn "         we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
+			log_Warn "         This can be done by setting the --extra_eddy_args=--fwhm=... flag"
+		fi
+	fi
 }
 
 #
 # Function Description
 #  Validate necessary scripts exist
 #
-validate_scripts()
-{
+validate_scripts() {
 	local error_msgs=""
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -466,8 +462,7 @@ validate_scripts()
 # Function Description
 #  Main processing of script
 #
-main()
-{
+main() {
 	# Get Command Line Options
 	get_options "$@"
 
@@ -486,9 +481,9 @@ main()
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ] ; then
-	  pre_eddy_cmd+=" --select-best-b0 "
-  fi
+	if [ ! -z "${SelectBestB0}" ]; then
+		pre_eddy_cmd+=" --select-best-b0 "
+	fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
 	${pre_eddy_cmd}
@@ -501,8 +496,8 @@ main()
 	eddy_cmd+=" --dwiname=${DWIName} "
 	eddy_cmd+=" --printcom=${runcmd} "
 
-	if [ ! -z "${extra_eddy_args}" ] ; then
-		for extra_eddy_arg in ${extra_eddy_args} ; do
+	if [ ! -z "${extra_eddy_args}" ]; then
+		for extra_eddy_arg in ${extra_eddy_args}; do
 			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
 		done
 	fi
@@ -520,9 +515,9 @@ main()
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 	post_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ] ; then
-	  post_eddy_cmd+=" --select-best-b0 "
-  fi
+	if [ ! -z "${SelectBestB0}" ]; then
+		post_eddy_cmd+=" --select-best-b0 "
+	fi
 
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
 	${post_eddy_cmd}
@@ -544,8 +539,8 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+	show_usage
+	exit 1
 fi
 
 # Verify that HCPPIPEDIR Environment variable is set
@@ -555,13 +550,13 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib	           # version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-opts_ShowVersionIfRequested $@
+opts_ShowVersionIfRequested "$@"
 
-if opts_CheckForHelpRequest $@; then
+if opts_CheckForHelpRequest "$@"; then
 	show_usage
 	exit 0
 fi
@@ -575,5 +570,4 @@ log_Check_Env_Var FSLDIR
 #
 # Invoke the 'main' function to get things started
 #
-main $@
-
+main "$@"
