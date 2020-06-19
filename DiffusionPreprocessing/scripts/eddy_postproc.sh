@@ -40,7 +40,7 @@ qc_command+=(-v)
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
 if [ ${SelectBestB0} -eq 1 ] ; then
-  cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals_noRot  # removes first value from bvals
+  cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals  # removes first value from bvals
   cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot  # removes first value from bvecs
 fi
 if [ ${CombineDataFlag} -eq 2 ]; then
@@ -48,7 +48,6 @@ if [ ${CombineDataFlag} -eq 2 ]; then
   if [ ${SelectBestB0} -eq 1 ] ; then
     ${FSLDIR}/bin/fslroi  ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
     cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs  # removes first value from bvecs
-    cp ${datadir}/bvals_noRot ${datadir}/bvals
   else
   	${FSLDIR}/bin/imcp  ${eddydir}/eddy_unwarped_images ${datadir}/data
 	  cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
@@ -68,7 +67,6 @@ else
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
   if [ ${SelectBestB0} -eq 0 ] ; then
-    cp ${datadir}/bvals ${datadir}/bvals_noRot
     cp ${datadir}/bvecs ${datadir}/bvecs_noRot
   fi
 
