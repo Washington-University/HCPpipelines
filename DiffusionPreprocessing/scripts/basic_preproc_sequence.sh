@@ -10,7 +10,7 @@ b0dist=$4
 b0maxbval=$5
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
-echo "${scriptName}: Input Parameter: ro_time: ${ro_time}"  # Readout time in ms
+echo "${scriptName}: Input Parameter: ro_time: ${ro_time}"  # Readout time in sec
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
 echo "${scriptName}: Input Parameter: b0dist: ${b0dist}"
 echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
@@ -207,6 +207,6 @@ mv ${rawdir}/Pos_Neg.bvecs ${eddydir}
 mv ${rawdir}/Pos.bv?? ${eddydir}
 mv ${rawdir}/Neg.bv?? ${eddydir}
 
-echo -e "\n END: basic_preproc"
+echo -e "\n END: ${scriptName}"
 
 

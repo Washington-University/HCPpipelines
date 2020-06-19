@@ -68,3 +68,5 @@ do
 	entry_cnt=$((${entry_cnt} + 1))
 	${FSLDIR}/bin/imrm ${basename}_mean
 done
+
+echo -e "\n END: ${scriptName}"
