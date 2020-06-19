@@ -6,14 +6,10 @@ echo -e "\n START: ${scriptName}"
 workingdir=$1
 ro_time=$2  #in sec
 PEdir=$3
-b0dist=$4
-b0maxbval=$5
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
 echo "${scriptName}: Input Parameter: ro_time: ${ro_time}"  # Readout time in ms
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
-echo "${scriptName}: Input Parameter: b0dist: ${b0dist}"
-echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
 
 isodd(){
 	echo "$(( $1 % 2 ))"

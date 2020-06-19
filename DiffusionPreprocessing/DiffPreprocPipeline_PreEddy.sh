@@ -494,11 +494,10 @@ main()
 	log_Msg "Running Intensity Normalisation"
   ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 	if [ ! -z "${SelectBestB0}" ] ; then
-	  script_ext="best_b0"
+  	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir}
   else
-	  script_ext="sequence"
+  	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
   fi
-  ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_${script_ext}.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 
   log_Msg "Running Topup"
   ${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
