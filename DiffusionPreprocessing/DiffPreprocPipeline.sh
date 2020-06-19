@@ -414,11 +414,22 @@ get_options() {
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
 	if [ ! -z "${SelectBestB0}" ]; then
+		dont_peas_set=false
 		fwhm_set=false
 		if [ ! -z "${extra_eddy_args}" ]; then
 			for extra_eddy_arg in ${extra_eddy_args}; do
 				if [[ ${extra_eddy_arg} == "--fwhm"* ]]; then
 					fwhm_set=true
+				fi
+				if [[ ${extra_eddy_arg} == "--dont_peas"* ]]; then
+					show_usage
+					echo -e ""
+					echo -e "ERROR: When using --select-best-b0 post-alignment of shells in eddy is required, "
+					echo -e "       as the first b0 could be taken from anywhere within the diffusion data and "
+					echo -e "       hence might not be aligned to the first diffusion-weighted image."
+					echo -e "       Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
+					echo ""
+					exit 1
 				fi
 			done
 		fi
@@ -486,7 +497,7 @@ main() {
 	fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
-	${pre_eddy_cmd}
+	job=$(fsl_sub -N pre -l log ${pre_eddy_cmd})
 
 	log_Msg "Invoking Eddy Step"
 	local eddy_cmd=""
@@ -503,7 +514,7 @@ main() {
 	fi
 
 	log_Msg "eddy_cmd: ${eddy_cmd}"
-	${eddy_cmd}
+	job=$(fsl_sub -q cuda.q -N eddy -l log -j ${job} ${eddy_cmd})
 
 	log_Msg "Invoking Post-Eddy Steps"
 	local post_eddy_cmd=""
@@ -520,7 +531,7 @@ main() {
 	fi
 
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
-	${post_eddy_cmd}
+	fsl_sub -j ${job} -N post -l log ${post_eddy_cmd}
 
 	log_Msg "Completed!"
 	exit 0
