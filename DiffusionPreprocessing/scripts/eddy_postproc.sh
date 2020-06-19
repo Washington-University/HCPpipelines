@@ -3,15 +3,15 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 echo -e "\n START: eddy_postproc"
 
 #Hard-Coded filename. Flag from eddy to indicate that the jac method has been used for resampling
-EddyJacFlag="JacobianResampling" 
+EddyJacFlag="JacobianResampling"
 
 workingdir=$1
-GdCoeffs=$2  #Coefficients for gradient nonlinearity distortion correction. If "NONE" this corrections is turned off
-CombineDataFlag=$3   #2 for including in the ouput all volumes uncombined (i.e. output file of eddy)
-                     #1 for including in the ouput and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
-                     #0 As 1, but also include uncombined single volumes"
-SelectBestB0=$4      #0 only the actual diffusion data was fed into eddy
-                     #1 least distorted b0 was prepended to the eddy input
+GdCoeffs=$2        #Coefficients for gradient nonlinearity distortion correction. If "NONE" this corrections is turned off
+CombineDataFlag=$3 #2 for including in the ouput all volumes uncombined (i.e. output file of eddy)
+                   #1 for including in the ouput and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
+                   #0 As 1, but also include uncombined single volumes"
+SelectBestB0=$4 #0 only the actual diffusion data was fed into eddy
+                #1 least distorted b0 was prepended to the eddy input
 
 globalscriptsdir=${HCPPIPEDIR_Global}
 
@@ -33,81 +33,80 @@ qc_command+=(-v)
 "${qc_command[@]}"
 
 #Prepare for next eddy Release
-#if [ ! -e ${eddydir}/${EddyJacFlag} ]; then 
+#if [ ! -e ${eddydir}/${EddyJacFlag} ]; then
 #    echo "LSR resampling has been used. Eddy Output has already been combined."
 #    cp ${eddydir}/Pos.bval ${datadir}/bvals
 #    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
-if [ ${SelectBestB0} -eq 1 ] ; then
-  cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals  # removes first value from bvals
-  cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot  # removes first value from bvecs
+if [ ${SelectBestB0} -eq 1 ]; then
+	cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals       # removes first value from bvals
+	cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot # removes first value from bvecs
 fi
 if [ ${CombineDataFlag} -eq 2 ]; then
-  # remove first volume as this is the reference b0, which was added to the dataset before running eddy
-  if [ ${SelectBestB0} -eq 1 ] ; then
-    ${FSLDIR}/bin/fslroi  ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
-    cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs  # removes first value from bvecs
-  else
-  	${FSLDIR}/bin/imcp  ${eddydir}/eddy_unwarped_images ${datadir}/data
-	  cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
-  	cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-  	cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
- 	fi
+	# remove first volume as this is the reference b0, which was added to the dataset before running eddy
+	if [ ${SelectBestB0} -eq 1 ]; then
+		${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
+		cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs # removes first value from bvecs
+	else
+		${FSLDIR}/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
+		cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
+		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
+		cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
+	fi
 else
 	echo "JAC resampling has been used. Eddy Output is now combined."
-	PosVols=`wc ${eddydir}/Pos.bval | awk {'print $2'}`
-	NegVols=`wc ${eddydir}/Neg.bval | awk {'print $2'}`    #Split Pos and Neg Volumes
-  ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos ${SelectBestB0} ${PosVols}  # ignore extra first volume if ${SelectBestB0} is 1
-  ${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg $((PosVols+${SelectBestB0})) ${NegVols}
+	PosVols=$(wc ${eddydir}/Pos.bval | awk {'print $2'})
+	NegVols=$(wc ${eddydir}/Neg.bval | awk {'print $2'})                                                         #Split Pos and Neg Volumes
+	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos ${SelectBestB0} ${PosVols} # ignore extra first volume if ${SelectBestB0} is 1
+	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg $((PosVols + ${SelectBestB0})) ${NegVols}
 	# Note: 'eddy_combine' is apparently hard-coded to use "data" as the output NIFTI file name
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
-             ${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
+		${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
-  if [ ${SelectBestB0} -eq 0 ] ; then
-    cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-  fi
+	if [ ${SelectBestB0} -eq 0 ]; then
+		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
+	fi
 
 	#rm ${eddydir}/Pos.bv*
 	#rm ${eddydir}/Neg.bv*
 
-
 	# Divide Eddy-Rotated bvecs to Pos and Neg
-	line1=`awk 'NR==1 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs`
-	line2=`awk 'NR==2 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs`
-	line3=`awk 'NR==3 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs`
+	line1=$(awk 'NR==1 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs)
+	line2=$(awk 'NR==2 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs)
+	line3=$(awk 'NR==3 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs)
 	Posline1=""
 	Posline2=""
 	Posline3=""
-	for ((i=$((SelectBestB0 + 1)); i<=$((PosVols + ${SelectBestB0})); i++)); do
-	    Posline1="$Posline1 `echo $line1 | awk -v N=$i '{print $N}'`"
-	    Posline2="$Posline2 `echo $line2 | awk -v N=$i '{print $N}'`"
-	    Posline3="$Posline3 `echo $line3 | awk -v N=$i '{print $N}'`"
+	for ((i = $((SelectBestB0 + 1)); i <= $((PosVols + ${SelectBestB0})); i++)); do
+		Posline1="$Posline1 $(echo $line1 | awk -v N=$i '{print $N}')"
+		Posline2="$Posline2 $(echo $line2 | awk -v N=$i '{print $N}')"
+		Posline3="$Posline3 $(echo $line3 | awk -v N=$i '{print $N}')"
 	done
-	echo $Posline1 > ${eddydir}/Pos_rotated.bvec
-	echo $Posline2 >> ${eddydir}/Pos_rotated.bvec
-	echo $Posline3 >> ${eddydir}/Pos_rotated.bvec
-	
+	echo $Posline1 >${eddydir}/Pos_rotated.bvec
+	echo $Posline2 >>${eddydir}/Pos_rotated.bvec
+	echo $Posline3 >>${eddydir}/Pos_rotated.bvec
+
 	Negline1=""
 	Negline2=""
 	Negline3=""
 	Nstart=$((PosVols + 1 + ${SelectBestB0}))
 	Nend=$((PosVols + NegVols + ${SelectBestB0}))
-	for ((i=$Nstart; i<=$Nend; i++)); do
-	    Negline1="$Negline1 `echo $line1 | awk -v N=$i '{print $N}'`"
-	    Negline2="$Negline2 `echo $line2 | awk -v N=$i '{print $N}'`"
-	    Negline3="$Negline3 `echo $line3 | awk -v N=$i '{print $N}'`"
+	for ((i = $Nstart; i <= $Nend; i++)); do
+		Negline1="$Negline1 $(echo $line1 | awk -v N=$i '{print $N}')"
+		Negline2="$Negline2 $(echo $line2 | awk -v N=$i '{print $N}')"
+		Negline3="$Negline3 $(echo $line3 | awk -v N=$i '{print $N}')"
 	done
-	echo $Negline1 > ${eddydir}/Neg_rotated.bvec
-	echo $Negline2 >> ${eddydir}/Neg_rotated.bvec
-	echo $Negline3 >> ${eddydir}/Neg_rotated.bvec
-	
+	echo $Negline1 >${eddydir}/Neg_rotated.bvec
+	echo $Negline2 >>${eddydir}/Neg_rotated.bvec
+	echo $Negline3 >>${eddydir}/Neg_rotated.bvec
+
 	# Average Eddy-Rotated bvecs. Get for each direction the two b matrices, average those and then eigendecompose the average b-matrix to get the new bvec and bval.
 	# Also outputs an index file (1-based) with the indices of the input (Pos/Neg) volumes that have been retained in the output
 	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
-	
+
 	mv ${datadir}/avg_data.bval ${datadir}/bvals
 	mv ${datadir}/avg_data.bvec ${datadir}/bvecs
 	rm -f ${datadir}/avg_data.bv??
@@ -120,44 +119,43 @@ imcp ${eddydir}/eddy_unwarped_images.eddy_cnr_maps ${datadir}/cnr_maps
 # 'eddy' can return negative values in some low signal locations, so use -abs for determining the fov mask
 ${FSLDIR}/bin/fslmaths ${datadir}/data -abs -Tmin -bin -fillh ${datadir}/fov_mask
 
-	 
-if [ ! $GdCoeffs = "NONE" ] ; then
-    echo "Correcting for gradient nonlinearities"
-	  # Note: data in the warped directory is eddy-current and suspectibility distortion corrected (via 'eddy'), but prior to gradient distortion correction
-	  # i.e., "data_posteddy_preGDC" would be another way to think of it
-	  warpedDir=${datadir}/warped
-    mkdir -p ${warpedDir}
-    ${FSLDIR}/bin/immv ${datadir}/data ${warpedDir}/data_warped
-    ${FSLDIR}/bin/immv ${datadir}/fov_mask ${warpedDir}/fov_mask_warped
-    ${FSLDIR}/bin/immv ${datadir}/cnr_maps ${warpedDir}/cnr_maps_warped
+if [ ! $GdCoeffs = "NONE" ]; then
+	echo "Correcting for gradient nonlinearities"
+	# Note: data in the warped directory is eddy-current and suspectibility distortion corrected (via 'eddy'), but prior to gradient distortion correction
+	# i.e., "data_posteddy_preGDC" would be another way to think of it
+	warpedDir=${datadir}/warped
+	mkdir -p ${warpedDir}
+	${FSLDIR}/bin/immv ${datadir}/data ${warpedDir}/data_warped
+	${FSLDIR}/bin/immv ${datadir}/fov_mask ${warpedDir}/fov_mask_warped
+	${FSLDIR}/bin/immv ${datadir}/cnr_maps ${warpedDir}/cnr_maps_warped
 
-    # Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
-	  DiffRes=`${FSLDIR}/bin/fslval ${warpedDir}/data_warped pixdim1`
-    DilateDistance=`echo "$DiffRes * 4" | bc`  # Extrapolates the diffusion data up to 4 voxels outside of the FOV
-    ${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/data_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/data_dilated.nii.gz
+	# Dilation outside of the field of view to minimise the effect of the hard field of view edge on the interpolation
+	DiffRes=$(${FSLDIR}/bin/fslval ${warpedDir}/data_warped pixdim1)
+	DilateDistance=$(echo "$DiffRes * 4" | bc) # Extrapolates the diffusion data up to 4 voxels outside of the FOV
+	${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/data_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/data_dilated.nii.gz
 
-    # apply gradient distortion correction
-    ${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${warpedDir}/data_dilated" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
-    ${FSLDIR}/bin/immv ${datadir}/fullWarp ${warpedDir}
-    ${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${warpedDir}
-    ${FSLDIR}/bin/imrm ${warpedDir}/data_dilated
+	# apply gradient distortion correction
+	${globalscriptsdir}/GradientDistortionUnwarp.sh --workingdir="${datadir}" --coeffs="${GdCoeffs}" --in="${warpedDir}/data_dilated" --out="${datadir}/data" --owarp="${datadir}/fullWarp"
+	${FSLDIR}/bin/immv ${datadir}/fullWarp ${warpedDir}
+	${FSLDIR}/bin/immv ${datadir}/fullWarp_abs ${warpedDir}
+	${FSLDIR}/bin/imrm ${warpedDir}/data_dilated
 
-    # Transform CNR maps
-    ${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/cnr_maps_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/cnr_maps_dilated.nii.gz
-    ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
-    ${FSLDIR}/bin/imrm ${warpedDir}/cnr_maps_dilated
+	# Transform CNR maps
+	${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/cnr_maps_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/cnr_maps_dilated.nii.gz
+	${FSLDIR}/bin/applywarp --rel --interp=spline -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
+	${FSLDIR}/bin/imrm ${warpedDir}/cnr_maps_dilated
 
-    # Transform field of view mask (using conservative trilinear interpolation with high threshold)
-    ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${warpedDir}/fov_mask_warped -r ${warpedDir}/fov_mask_warped -w ${warpedDir}/fullWarp -o ${datadir}/fov_mask
-    ${FSLDIR}/bin/fslmaths ${datadir}/fov_mask -thr 0.999 -bin ${datadir}/fov_mask
+	# Transform field of view mask (using conservative trilinear interpolation with high threshold)
+	${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${warpedDir}/fov_mask_warped -r ${warpedDir}/fov_mask_warped -w ${warpedDir}/fullWarp -o ${datadir}/fov_mask
+	${FSLDIR}/bin/fslmaths ${datadir}/fov_mask -thr 0.999 -bin ${datadir}/fov_mask
 
-    echo "Computing gradient coil tensor to correct for gradient nonlinearities"
-    ${FSLDIR}/bin/calc_grad_perc_dev --fullwarp=${warpedDir}/fullWarp -o ${datadir}/grad_dev
-    ${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
-    ${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
-    ${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
-    ${FSLDIR}/bin/imrm ${datadir}/trilinear
-    ${FSLDIR}/bin/imrm ${warpedDir}/data_dilated_vol1
+	echo "Computing gradient coil tensor to correct for gradient nonlinearities"
+	${FSLDIR}/bin/calc_grad_perc_dev --fullwarp=${warpedDir}/fullWarp -o ${datadir}/grad_dev
+	${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
+	${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
+	${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
+	${FSLDIR}/bin/imrm ${datadir}/trilinear
+	${FSLDIR}/bin/imrm ${warpedDir}/data_dilated_vol1
 fi
 
 # mask out any data outside the field of view

@@ -63,14 +63,12 @@
 #
 #~ND~END~
 
-
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-show_usage()
-{
-	cat << EOF
+show_usage() {
+	cat <<EOF
 
 Perform the Eddy step of the HCP Diffusion Preprocessing Pipeline
 
@@ -206,8 +204,7 @@ EOF
 #  Support Functions
 # --------------------------------------------------------------------------------
 
-get_options()
-{
+get_options() {
 	local arguments=($@)
 
 	# initialize global output variables
@@ -226,7 +223,7 @@ get_options()
 	resamp_value=""
 	unset ol_nstd_value
 	extra_eddy_args=""
-    no_gpu=""
+	no_gpu=""
 	cuda_version=""
 
 	# parse arguments
@@ -234,131 +231,131 @@ get_options()
 	local numArgs=${#arguments[@]}
 	local argument
 
-	while [ ${index} -lt ${numArgs} ] ; do
+	while [ ${index} -lt ${numArgs} ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
-			--help)
-				show_usage
-				exit 0
-				;;
-			--version)
-				version_show $@
-				exit 0
-				;;
-			--path=*)
-				StudyFolder=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--subject=*)
-				Subject=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--detailed-outlier-stats=*)
-				DetailedOutlierStats=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--detailed-outlier-stats)
-				DetailedOutlierStats="True"
-				index=$(( index + 1 ))
-				;;
-			--replace-outliers=*)
-				ReplaceOutliers=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--replace-outliers)
-				ReplaceOutliers="True"
-				index=$(( index + 1 ))
-				;;
-			--printcom=*)
-				runcmd=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dwiname=*)
-				DWIName=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--nvoxhp=*)
-				nvoxhp=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--sep_offs_move=*)
-				sep_offs_move=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--sep_offs_move)
-				sep_offs_move="True"
-				index=$(( index + 1 ))
-				;;
-			--sep-offs-move)
-				sep_offs_move="True"
-				index=$(( index + 1 ))
-				;;
-			--rms=*)
-				rms=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--rms)
-				rms="True"
-				index=$(( index + 1 ))
-				;;
-			--ff=*)
-				ff_val=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dont_peas)
-				dont_peas="--dont_peas"
-				index=$(( index + 1 ))
-				;;
-			--fwhm=*)
-				fwhm_value=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--resamp=*)
-				resamp_value=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--ol_nstd=*)
-				ol_nstd_value=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--extra-eddy-arg=*)
-				extra_eddy_arg=${argument#*=}
-				extra_eddy_args+=" ${extra_eddy_arg} "
-				index=$(( index + 1 ))
-				;;
-			--no-gpu)
-				no_gpu="TRUE"
-				index=$(( index + 1 ))
-				;;
-			--cuda-version=*)
-				cuda_version=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			*)
-				show_usage
-				echo "ERROR: Unrecognized Option: ${argument}"
-				exit 1
-				;;
+		--help)
+			show_usage
+			exit 0
+			;;
+		--version)
+			version_show "$@"
+			exit 0
+			;;
+		--path=*)
+			StudyFolder=${argument#*=}
+			index=$((index + 1))
+			;;
+		--subject=*)
+			Subject=${argument#*=}
+			index=$((index + 1))
+			;;
+		--detailed-outlier-stats=*)
+			DetailedOutlierStats=${argument#*=}
+			index=$((index + 1))
+			;;
+		--detailed-outlier-stats)
+			DetailedOutlierStats="True"
+			index=$((index + 1))
+			;;
+		--replace-outliers=*)
+			ReplaceOutliers=${argument#*=}
+			index=$((index + 1))
+			;;
+		--replace-outliers)
+			ReplaceOutliers="True"
+			index=$((index + 1))
+			;;
+		--printcom=*)
+			runcmd=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dwiname=*)
+			DWIName=${argument#*=}
+			index=$((index + 1))
+			;;
+		--nvoxhp=*)
+			nvoxhp=${argument#*=}
+			index=$((index + 1))
+			;;
+		--sep_offs_move=*)
+			sep_offs_move=${argument#*=}
+			index=$((index + 1))
+			;;
+		--sep_offs_move)
+			sep_offs_move="True"
+			index=$((index + 1))
+			;;
+		--sep-offs-move)
+			sep_offs_move="True"
+			index=$((index + 1))
+			;;
+		--rms=*)
+			rms=${argument#*=}
+			index=$((index + 1))
+			;;
+		--rms)
+			rms="True"
+			index=$((index + 1))
+			;;
+		--ff=*)
+			ff_val=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dont_peas)
+			dont_peas="--dont_peas"
+			index=$((index + 1))
+			;;
+		--fwhm=*)
+			fwhm_value=${argument#*=}
+			index=$((index + 1))
+			;;
+		--resamp=*)
+			resamp_value=${argument#*=}
+			index=$((index + 1))
+			;;
+		--ol_nstd=*)
+			ol_nstd_value=${argument#*=}
+			index=$((index + 1))
+			;;
+		--extra-eddy-arg=*)
+			extra_eddy_arg=${argument#*=}
+			extra_eddy_args+=" ${extra_eddy_arg} "
+			index=$((index + 1))
+			;;
+		--no-gpu)
+			no_gpu="TRUE"
+			index=$((index + 1))
+			;;
+		--cuda-version=*)
+			cuda_version=${argument#*=}
+			index=$((index + 1))
+			;;
+		*)
+			show_usage
+			echo "ERROR: Unrecognized Option: ${argument}"
+			exit 1
+			;;
 		esac
 	done
 
 	local error_msgs=""
 
 	# check required parameters
-	if [ -z ${StudyFolder} ] ; then
+	if [ -z ${StudyFolder} ]; then
 		error_msgs+="\nERROR: <study-path> not specified"
 	fi
 
-	if [ -z ${Subject} ] ; then
+	if [ -z ${Subject} ]; then
 		error_msgs+="\nERROR: <subject-id> not specified"
 	fi
 
-	if [ -z ${DWIName} ] ; then
+	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -391,15 +388,14 @@ get_options()
 # Function Description
 #  Validate necessary scripts exist
 #
-validate_scripts()
-{
+validate_scripts() {
 	local error_msgs=""
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/run_eddy.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR_dMRI}/run_eddy.sh ]; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_eddy.sh not found"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -413,8 +409,7 @@ validate_scripts()
 #
 #  Gets user specified command line options, runs Eddy step of Diffusiong Preprocessing
 #
-main()
-{
+main() {
 	# Get Command Line Options
 	get_options "$@"
 
@@ -425,49 +420,49 @@ main()
 	outdir=${StudyFolder}/${Subject}/${DWIName}
 
 	# Determine stats_option value to pass to run_eddy.sh script
-	if [ "${DetailedOutlierStats}" = "True" ] ; then
+	if [ "${DetailedOutlierStats}" = "True" ]; then
 		stats_option="--wss"
 	else
 		stats_option=""
 	fi
 
 	# Determine replace_outliers_option value to pass to run_eddy.sh script
-	if [ "${ReplaceOutliers}" = "True" ] ; then
+	if [ "${ReplaceOutliers}" = "True" ]; then
 		replace_outliers_option="--repol"
 	else
 		replace_outliers_option=""
 	fi
 
 	# Determine nvoxhp_option value to pass to run_eddy.sh script
-	if [ "${nvoxhp}" != "" ] ; then
+	if [ "${nvoxhp}" != "" ]; then
 		nvoxhp_option="--nvoxhp=${nvoxhp}"
 	else
 		nvoxhp_option=""
 	fi
 
 	# Determine sep_offs_move_option value to pass to run_eddy.sh script
-	if [ "${sep_offs_move}" = "True" ] ; then
+	if [ "${sep_offs_move}" = "True" ]; then
 		sep_offs_move_option="--sep_offs_move"
 	else
 		sep_offs_move_option=""
 	fi
 
 	# Determine rms_option value to pass to run_eddy.sh script
-	if [ "${rms}" = "True" ] ; then
+	if [ "${rms}" = "True" ]; then
 		rms_option="--rms"
 	else
 		rms_option=""
 	fi
 
 	# Determine ff_option value to pass to run_eddy.sh script
-	if [ "${ff_val}" != "" ] ; then
+	if [ "${ff_val}" != "" ]; then
 		ff_option="--ff=${ff_val}"
 	else
 		ff_option=""
 	fi
 
 	# Determine ol_nstd value to pass to run_eddy.sh script
-	if [ -z ${ol_nstd_value} ] ; then
+	if [ -z ${ol_nstd_value} ]; then
 		ol_nstd_value_option=""
 	else
 		ol_nstd_value_option="--ol_nstd=${ol_nstd_value}"
@@ -494,18 +489,18 @@ main()
 
 	run_eddy_cmd+=" -w ${outdir}/eddy "
 
-	if [ ! -z "${dont_peas}" ] ; then
+	if [ ! -z "${dont_peas}" ]; then
 		run_eddy_cmd+=" --dont_peas "
 	fi
 
 	run_eddy_cmd+=" --fwhm=${fwhm_value} "
 
-	if [ ! -z "${resamp_value}" ] ; then
+	if [ ! -z "${resamp_value}" ]; then
 		run_eddy_cmd+=" --resamp=${resamp_value} "
 	fi
 
-	if [ ! -z "${extra_eddy_args}" ] ; then
-		for extra_eddy_arg in ${extra_eddy_args} ; do
+	if [ ! -z "${extra_eddy_args}" ]; then
+		for extra_eddy_arg in ${extra_eddy_args}; do
 			run_eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
 		done
 	fi
@@ -529,8 +524,8 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+	show_usage
+	exit 1
 fi
 
 # Verify that HCPPIPEDIR Environment variable is set
@@ -540,13 +535,13 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib	           # version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-opts_ShowVersionIfRequested $@
+opts_ShowVersionIfRequested "$@"
 
-if opts_CheckForHelpRequest $@; then
+if opts_CheckForHelpRequest "$@"; then
 	show_usage
 	exit 0
 fi
@@ -563,4 +558,4 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 #
 # Invoke the 'main' function to get things started
 #
-main $@
+main "$@"
