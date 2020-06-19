@@ -155,10 +155,10 @@ ${FSLDIR}/bin/imrm ${rawdir}/Neg_b0_????
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos `echo ${rawdir}/${basePos}_[0-9]*.nii*`
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg `echo ${rawdir}/${baseNeg}_[0-9]*.nii*`
 
-paste `echo ${rawdir}/${basePos}*.bval` >${rawdir}/Pos.bval
-paste `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
-paste `echo ${rawdir}/${baseNeg}*.bval` >${rawdir}/Neg.bval
-paste `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
+paste `echo ${rawdir}/${basePos}_[0-9]*.bval` >${rawdir}/Pos.bval
+paste `echo ${rawdir}/${basePos}_[0-9]*.bvec` >${rawdir}/Pos.bvec
+paste `echo ${rawdir}/${baseNeg}_[0-9]*.bval` >${rawdir}/Neg.bval
+paste `echo ${rawdir}/${baseNeg}_[0-9]*.bvec` >${rawdir}/Neg.bvec
 
 
 dimz=`${FSLDIR}/bin/fslval ${rawdir}/Pos dim3`

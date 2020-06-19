@@ -179,7 +179,7 @@ done
 ################################################################################################
 echo "Find the best B0 in the positive and negative volumes"
 
-if [[ -f ${rawdir}/index_best_b0s.txt ]] ; then rm ${rawdir}/index_best_b0s.txt ; fi
+rm -f ${rawdir}/index_best_b0s.txt
 
 for pe_sign in ${basePos} ${baseNeg} ; do
   # find index of minimum score
@@ -189,7 +189,7 @@ for pe_sign in ${basePos} ${baseNeg} ; do
   for idx in $(seq 0 $((`${FSLDIR}/bin/fslval ${rawdir}/all_${pe_sign}_b0s dim4` - 1))) ; do
     if [ $(echo "${scores[${idx}]} < ${scores[${min_idx}]}" | bc -l) -eq 1 ] ; then min_idx=$idx ; fi
   done
-  echo "Selecting ${pe_sign} B0 with index ${min_idx}" 
+  echo "Selecting ${pe_sign} B0 with index ${min_idx} (counting from zero)"
   echo "${pe_sign} ${min_idx}" >> ${rawdir}/index_best_b0s.txt
   ${FSLDIR}/bin/fslroi ${rawdir}/all_${pe_sign}_b0s ${rawdir}/best_${pe_sign}_b0 ${min_idx} 1
 done
@@ -210,10 +210,10 @@ echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos `echo ${rawdir}/${basePos}_[0-9]*.nii*`
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg `echo ${rawdir}/${baseNeg}_[0-9]*.nii*`
 
-paste -d' ' `echo ${rawdir}/${basePos}*.bval` >${rawdir}/Pos.bval
-paste -d' ' `echo ${rawdir}/${basePos}*.bvec` >${rawdir}/Pos.bvec
-paste -d' ' `echo ${rawdir}/${baseNeg}*.bval` >${rawdir}/Neg.bval
-paste -d' ' `echo ${rawdir}/${baseNeg}*.bvec` >${rawdir}/Neg.bvec
+paste -d' ' `echo ${rawdir}/${basePos}_[0-9]*.bval` >${rawdir}/Pos.bval
+paste -d' ' `echo ${rawdir}/${basePos}_[0-9]*.bvec` >${rawdir}/Pos.bvec
+paste -d' ' `echo ${rawdir}/${baseNeg}_[0-9]*.bval` >${rawdir}/Neg.bval
+paste -d' ' `echo ${rawdir}/${baseNeg}_[0-9]*.bvec` >${rawdir}/Neg.bvec
 
 # start index file with a 1 to indicate the reference B0 image
 echo 1 > ${rawdir}/index.txt
