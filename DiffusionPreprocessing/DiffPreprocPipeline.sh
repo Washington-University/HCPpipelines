@@ -491,7 +491,7 @@ main()
   fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
-	pre_eddy_job=`fsl_sub -l log -N pre_eddy ${pre_eddy_cmd}`
+	${pre_eddy_cmd}
 
 	log_Msg "Invoking Eddy Step"
 	local eddy_cmd=""
@@ -508,7 +508,7 @@ main()
 	fi
 
 	log_Msg "eddy_cmd: ${eddy_cmd}"
-	eddy_job=`fsl_sub -q cuda.q -l log -N eddy -j ${pre_eddy_job} ${eddy_cmd}`
+	${eddy_cmd}
 
 	log_Msg "Invoking Post-Eddy Steps"
 	local post_eddy_cmd=""
@@ -525,7 +525,7 @@ main()
   fi
 
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
-	fsl_sub -l log -N post_eddy -j ${eddy_job} ${post_eddy_cmd}
+	${post_eddy_cmd}
 
 	log_Msg "Completed!"
 	exit 0
