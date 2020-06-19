@@ -53,6 +53,14 @@ for pe_sign in ${basePos} ${baseNeg} ; do
 done
 
 
+# Here we identify the b0's that are least affected by motion artefacts to pass them on to topup.
+# These b0's are identified by being most similar to a reference b0, which is determined in one of two ways:
+# 1. If there are enough b0's with a given phase encoding (>= 5) we adopt the average b0 as a reference
+# 2. If there are fewer b0's than the average b0 might be contaminated by any motion artefacts in one or two b0's.
+#    So in this case we use topup to combine the b0's with the b0's with opposite phase encoding and get a reference b0
+# To further reduce the chance that our reference b0 is contaminated by motion we compute the average multiple times
+# each time only using those b0's that were most similar to the previous average b0 (and hence least likely to be
+# affected by motion)
 for pe_sign in ${basePos} ${baseNeg} ; do
   echo "Identifying best b0's for ${pe_sign} phase encoding"
   if [ ${pe_sign} = ${basePos} ] ; then
