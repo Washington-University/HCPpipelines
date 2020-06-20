@@ -486,7 +486,7 @@ main() {
 
 	if [ ! -z "${SelectBestB0}" ]; then
 		log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
-		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir}
+		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
 	else
 		log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
