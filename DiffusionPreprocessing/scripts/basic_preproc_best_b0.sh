@@ -253,6 +253,7 @@ fi
 echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
+# it will be removed after eddy is completed
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
 
 # extract b-value and bvec of best b0 in Pos set
