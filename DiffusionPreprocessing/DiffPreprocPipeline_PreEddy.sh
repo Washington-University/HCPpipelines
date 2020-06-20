@@ -483,9 +483,12 @@ main() {
 
 	log_Msg "Running Intensity Normalisation"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
+
 	if [ ! -z "${SelectBestB0}" ]; then
+		log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir}
 	else
+		log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 	fi
 
