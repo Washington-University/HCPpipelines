@@ -6,10 +6,12 @@ echo -e "\n START: ${scriptName}"
 workingdir=$1
 ro_time=$2 #in sec
 PEdir=$3
+b0maxbval=$4
 
 echo "${scriptName}: Input Parameter: workingdir: ${workingdir}"
-echo "${scriptName}: Input Parameter: ro_time: ${ro_time}" # Readout time in ms
+echo "${scriptName}: Input Parameter: ro_time: ${ro_time}" # Readout time in sec
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
+echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
 
 isodd() {
 	echo "$(($1 % 2))"
@@ -39,7 +41,8 @@ for pe_sign in ${basePos} ${baseNeg}; do
 	merge_command=("${FSLDIR}/bin/fslmerge" -t "${rawdir}/all_${pe_sign}_b0s")
 	for entry in ${rawdir}/${pe_sign}_[0-9]*.nii*; do
 		basename=$(imglob ${entry})
-		${FSLDIR}/bin/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0
+		# TODO: replace with FSL built-in version of select_dwi_vols once -db flag is supported (should be in 6.0.4)
+		${HCPPIPEDIR_Global}/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0 -db ${b0maxbval}
 		merge_command+=("${basename}_b0s")
 	done
 	echo about to "${merge_command[@]}"
