@@ -117,7 +117,7 @@ for pe_sign in ${basePos} ${baseNeg}; do
 			-v
 
 		# compute squared residual from the mean b0
-		# once "bad" b0's are identified, the mean b0 will be recomputeed without them
+		# once "bad" b0's are identified, the mean b0 will be recomputed without them
 		# and the scores recomputed; this process is iterated 3 times
 		${FSLDIR}/bin/fslmaths ${select_b0_dir}/topup_b0s -Tmean ${select_b0_dir}/topup_b0s_avg
 		for ((i = 1; i <= 3; i++)); do
@@ -153,7 +153,7 @@ for pe_sign in ${basePos} ${baseNeg}; do
 		${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -Tmean ${select_b0_dir}/all_b0s_mcf_avg
 
 		# compute squared residual from the mean b0
-		# once "bad" b0's are identified, the mean b0 will be recomputeed without them
+		# once "bad" b0's are identified, the mean b0 will be recomputed without them
 		# and the scores recomputed; this process is iterated 3 times
 		for ((i = 1; i <= 3; i++)); do
 			${FSLDIR}/bin/fslmaths ${select_b0_dir}/all_b0s_mcf -sub ${select_b0_dir}/all_b0s_mcf_avg -sqr ${select_b0_dir}/all_b0s_mcf_res
