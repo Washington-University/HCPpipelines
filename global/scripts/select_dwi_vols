@@ -6,11 +6,12 @@ if [ "$4" == "" ];then
     echo ""
     echo " Optional arguments:"
     echo ""
-    echo " -b <value>    additional bvalues to be extracted (can be used multiple times)"
-    echo " -m            output mean instead of concat"
-    echo " -v            output variance instead of concat"
-    echo " -obv <bvecs>  produce <output>.bval and <output>.bvec"
-    echo " -db <delta_bvals> only include volumes with offset in b-value less than this value (default: 100 s/mm2)"
+    echo " -b <value>        additional bvalues to be extracted (can be used multiple times)"
+    echo " -m                output mean instead of concat"
+    echo " -v                output variance instead of concat"
+    echo " -obv <bvecs>      produce <output>.bval and <output>.bvec"
+    echo " -db <delta_bvals> only include volumes with offset in b-value less than"
+    echo "                   this value in either direction (default: 100 s/mm2)"
     echo ""
     exit 1
 fi

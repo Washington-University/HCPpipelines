@@ -476,9 +476,8 @@ main() {
 	done
 
 	if [ ${Paired_flag} -eq 0 ]; then
-		log_Msg "Wrong Input! No pairs of phase encoding directions have been found!"
-		log_Msg "At least one pair is needed!"
-		exit 1
+		log_Err "Wrong Input! No pairs of phase encoding directions have been found!"
+		log_Err_Abort "At least one pair is needed!"
 	fi
 
 	log_Msg "Running Intensity Normalisation"
