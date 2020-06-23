@@ -423,18 +423,15 @@ get_options() {
 				fi
 				if [[ ${extra_eddy_arg} == "--dont_peas"* ]]; then
 					show_usage
-					echo -e ""
-					echo -e "ERROR: When using --select-best-b0 post-alignment of shells in eddy is required, "
-					echo -e "       as the first b0 could be taken from anywhere within the diffusion data and "
-					echo -e "       hence might not be aligned to the first diffusion-weighted image."
-					echo -e "       Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
-					echo ""
-					exit 1
+					log_Err "When using --select-best-b0, post-alignment of shells in eddy is required, "
+					log_Err "       as the first b0 could be taken from anywhere within the diffusion data and "
+					log_Err "       hence might not be aligned to the first diffusion-weighted image."
+					log_Err_Abort "       Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
 				fi
 			done
 		fi
 		if [ ${fwhm_set} == false ]; then
-			log_Warn "WARNING: Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy"
+			log_Warn "Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy."
 			log_Warn "         To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
 			log_Warn "         we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
 			log_Warn "         This can be done by setting the --extra_eddy_args=--fwhm=... flag"

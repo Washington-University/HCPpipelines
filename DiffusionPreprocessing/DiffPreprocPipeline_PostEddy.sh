@@ -94,7 +94,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           actually running them. --printcom=echo is intended to
                           be used for testing purposes
   [--select_best_b0]
-                          Whether the --select-best-b0 was used in
+                          Whether the --select-best-b0 flag was used in
                           DiffPreprocPipeline_PreEddy.
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
