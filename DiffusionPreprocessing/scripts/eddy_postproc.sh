@@ -59,7 +59,7 @@ if [ ${CombineDataFlag} -eq 2 ]; then
 else
 	echo "JAC resampling has been used. Eddy Output is now combined."
 	PosVols=$(wc ${eddydir}/Pos.bval | awk {'print $2'})
-	NegVols=$(wc ${eddydir}/Neg.bval | awk {'print $2'})                                                         #Split Pos and Neg Volumes
+	NegVols=$(wc ${eddydir}/Neg.bval | awk {'print $2'}) # Split Pos and Neg Volumes
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos ${SelectBestB0} ${PosVols} # ignore extra first volume if ${SelectBestB0} is 1
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg $((PosVols + ${SelectBestB0})) ${NegVols}
 	# Note: 'eddy_combine' is apparently hard-coded to use "data" as the output NIFTI file name
