@@ -260,8 +260,8 @@ ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/b
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
 
 # extract b-value and bvec of best b0 in Pos set
-best_pos_bval=$(cat ${rawdir}/Pos.bval | awk 'print $((${best_pos_b0_index} + 1))')
-cat ${rawdir}/Pos.bvec | awk 'print $((${best_pos_b0_index} + 1))' >${rawdir}/zero.bvecs
+best_pos_bval=$(cat ${rawdir}/Pos.bval | awk "{print \$$((${best_pos_b0_index} + 1))"})
+cat ${rawdir}/Pos.bvec | awk "{print \$$((${best_pos_b0_index} + 1))}" >${rawdir}/zero.bvecs
 
 # merge all b-values and bvecs
 echo $best_pos_bval $(paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval) >${rawdir}/Pos_Neg.bvals
