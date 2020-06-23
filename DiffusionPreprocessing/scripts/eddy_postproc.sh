@@ -12,6 +12,8 @@ CombineDataFlag=$3 #2 for including in the ouput all volumes uncombined (i.e. ou
                    #0 As 1, but also include uncombined single volumes"
 SelectBestB0=$4 #0 only the actual diffusion data was fed into eddy
                 #1 least distorted b0 was prepended to the eddy input
+                # Note: This numeric value is used within the script as a numeric that controls
+                # the number of volumes to skip, so it isn't just used as 0/1 "boolean".
 
 globalscriptsdir=${HCPPIPEDIR_Global}
 

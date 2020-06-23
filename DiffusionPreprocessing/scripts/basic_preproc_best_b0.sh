@@ -54,10 +54,10 @@ done
 
 # Here we identify the b0's that are least affected by motion artefacts to pass them on to topup.
 # These b0's are identified by being most similar to a reference b0, which is determined in one of two ways:
-# 1. If there are enough b0's with a given phase encoding (>= 5) we adopt the average b0 as a reference
-# 2. If there are fewer b0's than the average b0 might be contaminated by any motion artefacts in one or two b0's.
-#    So in this case we use topup to combine the b0's with the b0's with opposite phase encoding and get a reference b0
-# To further reduce the chance that our reference b0 is contaminated by motion we compute the average multiple times
+# 1. If there are enough b0's with a given phase encoding direction (>= 5) we adopt the average b0 as a reference.
+# 2. If there are fewer b0's, then the average b0 might be contaminated by any motion artefacts in one or two b0's.
+#    In that case we use topup to combine the b0's with the b0's with opposite phase encoding to get a reference b0.
+# To further reduce the chance that our reference b0 is contaminated by motion we compute the average multiple times,
 # each time only using those b0's that were most similar to the previous average b0 (and hence least likely to be
 # affected by motion)
 for pe_sign in ${basePos} ${baseNeg}; do
@@ -139,7 +139,7 @@ for pe_sign in ${basePos} ${baseNeg}; do
 			# Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
 			# where mad is the median absolute deviation.
 			idx=$(fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))")
-			echo "Recomputing average b0 using indices: ${idx}"
+			echo "Recomputing average b0 using indices (counting from zero): ${idx}"
 			${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/topup_b0s -o ${select_b0_dir}/topup_b0s_avg --vols=${idx} -m
 		done
 		# recompute the squared residuals and brainmask using the final average
@@ -172,7 +172,7 @@ for pe_sign in ${basePos} ${baseNeg}; do
 			# Recomputes the average using only the b0's with scores below (median(score) + 2 * mad(score)),
 			# where mad is the median absolute deviation.
 			idx=$(fslpython -c "from numpy import median, where; sc = [float(s) for s in '${scores_str}'.split()]; print(','.join(str(idx) for idx in where(sc < median(abs(sc - median(sc)) * 2 + median(sc)))[0]))")
-			echo "Recomputing average b0 using indices: ${idx}"
+			echo "Recomputing average b0 using indices (counting from zero): ${idx}"
 			${FSLDIR}/bin/fslselectvols -i ${select_b0_dir}/all_b0s_mcf -o ${select_b0_dir}/all_b0s_mcf_avg --vols=${idx} -m
 		done
 	fi
