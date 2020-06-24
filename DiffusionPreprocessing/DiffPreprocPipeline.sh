@@ -424,9 +424,9 @@ get_options() {
 				if [[ ${extra_eddy_arg} == "--dont_peas"* ]]; then
 					show_usage
 					log_Err "When using --select-best-b0, post-alignment of shells in eddy is required, "
-					log_Err "       as the first b0 could be taken from anywhere within the diffusion data and "
-					log_Err "       hence might not be aligned to the first diffusion-weighted image."
-					log_Err_Abort "       Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
+					log_Err "as the first b0 could be taken from anywhere within the diffusion data and "
+					log_Err "hence might not be aligned to the first diffusion-weighted image."
+					log_Err_Abort "Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
 				fi
 			done
 		fi
