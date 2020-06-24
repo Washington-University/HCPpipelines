@@ -432,9 +432,9 @@ get_options() {
 		fi
 		if [ ${fwhm_set} == false ]; then
 			log_Warn "Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy."
-			log_Warn "         To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
-			log_Warn "         we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
-			log_Warn "         This can be done by setting the --extra_eddy_args=--fwhm=... flag"
+			log_Warn "To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
+			log_Warn "we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
+			log_Warn "This can be done by setting the --extra_eddy_args=--fwhm=... flag"
 		fi
 	fi
 }
