@@ -73,6 +73,11 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        lists of runs in this option.
    [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
        timeseries, only required when using --multirun-fix-names.
+   [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+       fMRIName strings to extract from each multi-run ICA+FIX group, only required when using
+       --multirun-fix-extract-concat-names.
+   [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
+       concatenated extracted timeseries.
    [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will 
        have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Previously known as --rfmri-names.
    [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
@@ -112,8 +117,10 @@ get_options()
 	p_MyelinMaps=NONE				# @ delimited
 	p_mrFIXConcatNames=NONE			# @ delimited
 	p_mrFIXNames=NONE				# @ and % delimited, % is top-level and must match number of @s in ConcatNames
-	p_rfMRINames=NONE				# @ delimited
-	p_tfMRINames=NONE				# @ delimited
+	p_mrFIXExtractConcatNames=NONE  # @ delimited
+	p_mrFIXExtractNames=NONE        # @ and % delimited, % is top-level and must match number of @s in ExtractConcatNames
+	p_fixNames=NONE                 # @ delimited
+	p_dontFixNames=NONE             # @ delimited
 	unset p_SmoothingFWHM
 	unset p_HighPass
 	unset p_MotionRegression
@@ -184,12 +191,20 @@ get_options()
 				p_mrFIXNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+			--multirun-fix-extract-concat-names=*)
+				p_mrFIXExtractConcatNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-names=*)
+				p_mrFIXExtractNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			--fix-names=* | --rfmri-names=*)
-				p_rfMRINames=${argument#*=}
+				p_fixNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dont-fix-names=* | --tfmri-names=*)
-				p_tfMRINames=${argument#*=}
+				p_dontFixNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--smoothing-fwhm=*)
@@ -283,8 +298,8 @@ get_options()
 	fi
 
 	log_Msg "list of MRfix scans: ${p_mrFIXNames}"
-	log_Msg "list of fix scans: ${p_rfMRINames}"
-	log_Msg "list of non-fix scans: ${p_tfMRINames}"
+	log_Msg "list of fix scans: ${p_fixNames}"
+	log_Msg "list of non-fix scans: ${p_dontFixNames}"
 
 	if [ -z "${p_SmoothingFWHM}" ]; then
 		log_Err "smoothing value (--smoothing-fwhm=) required"
@@ -396,29 +411,29 @@ main()
 	local ConcatRegName="${7}"
 	local Maps="${8}"
 	local MyelinMaps="${9}"
-	local rfMRINames="${10}"
-	local tfMRINames="${11}"
+	local fixNames="${10}"
+	local dontFixNames="${11}"
 	local mrFIXNames="${12}"
 	local mrFIXConcatNames="${13}"
 	local SmoothingFWHM="${14}"
 	local HighPass="${15}"
 	local MotionRegression="${16}"
-	
 	local MyelinTargetFile="${17}"
+	local InRegName="${18}"
+	local MatlabRunMode="${19}"
+	local mrFIXExtractNames="${20}"
+	local mrFIXExtractConcatNames="${21}"
+
 	if [ "${MyelinTargetFile}" = "NONE" ]; then
 		MyelinTargetFile=""
 	fi
 
-	local InRegName="${18}"
 	if [ "${InRegName}" = "NONE" ]; then
 		InRegName=""
 	fi
 	
-	local MatlabRunMode
-	if [ -z "${19}" ]; then
-		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
-	else
-		MatlabRunMode="${19}"
+	if [ -z "$MatlabRunMode" ]; then
+		MatlabRunMode="$G_DEFAULT_MATLAB_RUN_MODE"
 	fi
 
 	# Log values retrieved from positional parameters
@@ -433,8 +448,8 @@ main()
 	log_Msg "MyelinMaps: ${MyelinMaps}"
 	log_Msg "mrFIXNames: ${mrFIXNames}"
 	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames}"
-	log_Msg "rfMRINames: ${rfMRINames}"
-	log_Msg "tfMRINames: ${tfMRINames}"
+	log_Msg "fixNames: ${fixNames}"
+	log_Msg "dontFixNames: ${dontFixNames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 	log_Msg "HighPass: ${HighPass}"
 	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
@@ -462,21 +477,21 @@ main()
 	fi
 	log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
-	if [ "${rfMRINames}" = "NONE" ] ; then
-		rfMRINames=()
+	if [ "${fixNames}" = "NONE" ] ; then
+		fixNames=()
 	else
-		#rfMRINames=`echo "$rfMRINames" | sed s/"@"/" "/g`
-		IFS=@ read -a rfMRINames <<< "${rfMRINames}"
+		#fixNames=`echo "$fixNames" | sed s/"@"/" "/g`
+		IFS=@ read -a fixNames <<< "${fixNames}"
 	fi
-	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames[@]}"
+	log_Msg "After delimiter substitution, fixNames: ${fixNames[@]}"
 
-	if [ "${tfMRINames}" = "NONE" ] ; then
-		tfMRINames=()
+	if [ "${dontFixNames}" = "NONE" ] ; then
+		dontFixNames=()
 	else
-		#tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
-		IFS=@ read -a tfMRINames <<< "${tfMRINames}"
+		#dontFixNames=`echo "$dontFixNames" | sed s/"@"/" "/g`
+		IFS=@ read -a dontFixNames <<< "${dontFixNames}"
 	fi
-	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames[@]}"
+	log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[@]}"
 
 	if [[ "${mrFIXNames}" == "NONE" ]] ; then
 		mrFIXNames=()
@@ -499,6 +514,32 @@ main()
 	if (( ${#mrFIXNames[@]} != ${#mrFIXConcatNames[@]} ))
 	then
 		log_Err_Abort "number of MR FIX concat names and run groups are different"
+	fi
+	
+	if [[ "${mrFIXExtractNames}" == "NONE" ]] ; then
+		mrFIXExtractNamesArr=()
+	else
+		#two-level list, % and @, parse only one stage here
+		IFS=% read -a mrFIXExtractNamesArr <<< "${mrFIXExtractNames}"
+	fi
+	log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[@]}"
+	
+	if [[ "$mrFIXExtractConcatNames" == "NONE" ]]
+	then
+		mrFIXExtractConcatNamesArr=()
+	else
+		IFS=@ read -a mrFIXExtractConcatNamesArr <<< "$mrFIXExtractConcatNames"
+	fi
+	log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[@]}"
+	
+	if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXConcatExtractNamesArr[@]} ))
+	then
+		log_Err_Abort "number of MR FIX extract concat names and run groups are different (use NONE for an empty group)"
+	fi
+	
+	if (( ${#mrFIXConcatExtractNamesArr[@]} > 0 && ${#mrFIXConcatNames[@]} != ${#mrFIXConcatExtractNamesArr[@]} ))
+	then
+	    log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE for an empty group)"
 	fi
 	
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
@@ -827,7 +868,7 @@ main()
 
 	# Resample (and resmooth) TS from Native 
 	log_Msg "Resample (and resmooth) TS from Native"
-	for fMRIName in "${rfMRINames[@]}" "${tfMRINames[@]}" "${mrFIXNamesAll[@]}" ; do
+	for fMRIName in "${fixNames[@]}" "${dontFixNames[@]}" "${mrFIXNamesAll[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
 		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
 		for Hemisphere in L R ; do
@@ -851,8 +892,8 @@ main()
 
 	# ReApply FIX Cleanup
 	log_Msg "ReApply FIX Cleanup"
-	log_Msg "rfMRINames: ${rfMRINames[@]}"
-	for fMRIName in "${rfMRINames[@]}" ; do
+	log_Msg "fixNames: ${fixNames[@]}"
+	for fMRIName in "${fixNames[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
 		reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 		log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
@@ -870,6 +911,26 @@ main()
 	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
+	    
+	    extract_cmd=("${HCPPIPEDIR}/DeDriftAndResample/scripts/ExtractFromMRFIXConcat.sh"
+	                    --study-folder="$StudyFolder"
+	                    --subject="$Subject"
+	                    --multirun-fix-names="${mrFIXNames[$i]}"
+	                    --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/$ConcatName/${ConcatName}_Runs.csv"
+	                    --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean.dtseries.nii")
+        
+	    if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
+	    then
+	        mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
+	        
+	        cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean_vn.dscalar.nii" \
+	            "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean_vn.dscalar.nii"
+            
+	        extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+	                      --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean.dtseries.nii")
+	    fi
+	    
+	    "${extract_cmd[@]}"
     done
 
 	log_Msg "Completing main functionality"
@@ -928,8 +989,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality use positional parameters
-	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
+	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}                ${20}                    ${21}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_fixNames}" "${p_dontFixNames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}" "${p_mrFIXExtractNames}" "${p_mrFIXExtractConcatNames}"
 	
 else
 	# Positional parameters are used
