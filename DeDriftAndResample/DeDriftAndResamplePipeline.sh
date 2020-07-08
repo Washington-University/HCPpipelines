@@ -74,10 +74,11 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
        timeseries, only required when using --multirun-fix-names.
    [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
-       fMRIName strings to extract from each multi-run ICA+FIX group, only required when using
-       --multirun-fix-extract-concat-names.
+       fMRIName strings to extract, one list for each multi-run ICA+FIX group in --multirun-fix-names (use
+       NONE to skip a group), only required when using --multirun-fix-extract-concat-names.
    [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
-       concatenated extracted timeseries.
+       concatenated extracted timeseries, one for each multi-run ICA+FIX group (i.e. name in
+       --multirun-fix-concat-names; use NONE to skip a group).
    [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will 
        have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Previously known as --rfmri-names.
    [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
@@ -448,6 +449,8 @@ main()
 	log_Msg "MyelinMaps: ${MyelinMaps}"
 	log_Msg "mrFIXNames: ${mrFIXNames}"
 	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames}"
+	log_Msg "mrFIXExtractNames: ${mrFIXExtractNames}"
+	log_Msg "mrFIXExtractConcatNames: ${mrFIXExtractConcatNames}"
 	log_Msg "fixNames: ${fixNames}"
 	log_Msg "dontFixNames: ${dontFixNames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
@@ -532,14 +535,14 @@ main()
 	fi
 	log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[@]}"
 	
-	if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXConcatExtractNamesArr[@]} ))
+	if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
 	then
-		log_Err_Abort "number of MR FIX extract concat names and run groups are different (use NONE for an empty group)"
+		log_Err_Abort "number of MR FIX extract concat names and run groups are different (use NONE to skip a group)"
 	fi
 	
-	if (( ${#mrFIXConcatExtractNamesArr[@]} > 0 && ${#mrFIXConcatNames[@]} != ${#mrFIXConcatExtractNamesArr[@]} ))
+	if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 && ${#mrFIXConcatNames[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
 	then
-	    log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE for an empty group)"
+	    log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE to skip a group)"
 	fi
 	
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
@@ -916,7 +919,7 @@ main()
 	                    --study-folder="$StudyFolder"
 	                    --subject="$Subject"
 	                    --multirun-fix-names="${mrFIXNames[$i]}"
-	                    --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/$ConcatName/${ConcatName}_Runs.csv"
+	                    --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
 	                    --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean.dtseries.nii")
         
 	    if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
