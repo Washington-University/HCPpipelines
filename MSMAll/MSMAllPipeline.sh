@@ -415,7 +415,8 @@ main()
 		mergeArgs=()
 		for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
 		do
-			runIndex="${runIndices[$index2]}"
+			#element may be unset
+			runIndex="${runIndices[$index2]+"${runIndices[$index2]}"}"
 			if [[ "$runIndex" == "" ]]
 			then
 				log_Err_Abort "requested run '${mrNamesUseArray[$index2]}' not found in list of MR fix runs"
