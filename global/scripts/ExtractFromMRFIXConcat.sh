@@ -35,6 +35,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all s
 opts_AddMandatory '--subject' 'Subject' 'ID' "the subject ID"
 opts_AddMandatory '--multirun-fix-names' 'mrfixNames' 'run1@run2...' "list of run names used in MR FIX, in the SAME ORDER, separated by @s"
 opts_AddOptional '--multirun-fix-names-to-use' 'mrfixNamesToUse' 'rest1@rest2...' "list of runs to extract (for cifti or volume outputs)"
+opts_AddOptional '--surf-reg-name' 'RegName' 'string' "registration name for which cifti files to get the run number of timepoints from"
 opts_AddOptional '--concat-cifti-input' 'concatCifti' 'file' "filename of the concatenated cifti (for making cifti output)"
 opts_AddOptional '--cifti-out' 'ciftiOut' 'file' "output filename for extracted cifti data"
 opts_AddOptional '--concat-volume-input' 'concatVol' 'file' "filename of the concatenated volume (for making volume output)"
@@ -72,18 +73,53 @@ then
     IFS=@ read -a mrNamesUseArray <<< "$mrfixNamesToUse"
 fi
 
+RegString=""
+if [[ -n "$RegName" ]]
+then
+    RegString="_$RegName"
+fi
+
 IFS=@ read -a mrNamesArray <<< "$mrfixNames"
 #sanity check for identical names
 for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
 do
-    for ((index2 = 0; index2 < ${#mrNamesArray[@]}; ++index2))
+    for ((index2 = index + 1; index2 < ${#mrNamesArray[@]}; ++index2))
     do
-        if ((index != index2)) && [[ "${mrNamesArray[$index]}" == "${mrNamesArray[$index2]}" ]]
+        if [[ "${mrNamesArray[$index]}" == "${mrNamesArray[$index2]}" ]]
         then
             log_Err_Abort "MR fix names list contains '${mrNamesArray[$index]}' more than once"
         fi
     done
 done
+
+#sanity check for bad names in to use
+runIndices=()
+if ((doMerge))
+then
+    for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
+    do
+        found=0
+        for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
+        do
+            if [[ "${mrNamesUseArray[$index2]}" == "${mrNamesArray[$index]}" ]]
+            then
+                runIndices[$index2]="$index"
+                found=1
+                break
+            fi
+        done
+        if ((!found))
+        then
+            log_Err_Abort "fMRI name '${mrNamesUseArray[$index2]}' in --multirun-fix-names-to-use was not found in --multirun-fix-names"
+        fi
+    done
+fi
+
+testVol=0
+if [[ -n "$volOut" && -z "$ciftiOut" ]]
+then
+    testVol=1
+fi
 
 if [[ -n "$csvOut" ]]
 then
@@ -91,7 +127,6 @@ then
 fi
 
 runSplits=()
-runIndices=()
 curTimepoints=0
 #convention: one before the first (1-based) index of the run
 runSplits[0]="$curTimepoints"
@@ -99,22 +134,27 @@ runSplits[0]="$curTimepoints"
 for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
 do
     fmriName="${mrNamesArray[$index]}"
-    NumTPS=$(wb_command -file-information "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps)
+    if ((testVol))
+    then
+        if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" ]]
+        then
+            log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz'"
+            continue
+        fi
+        NumTPS=$(fslval "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" dim4)
+    else
+        if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
+        then
+            log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
+            continue
+        fi
+        NumTPS=$(wb_command -file-information "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
+    fi
     ((curTimepoints += NumTPS))
     runSplits[$((index + 1))]="$curTimepoints"
     if [[ -n "$csvOut" ]]
     then
         echo "$fmriName,$((runSplits[index] + 1)),$((runSplits[index + 1]))" >> "$csvOut"
-    fi
-    if ((doMerge))
-    then
-        for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
-        do
-            if [[ "${mrNamesUseArray[$index2]}" == "${mrNamesArray[$index]}" ]]
-            then
-                runIndices[$index2]="$index"
-            fi
-        done
     fi
 done
 
@@ -129,11 +169,17 @@ then
         runIndex="${runIndices[$index2]+"${runIndices[$index2]}"}"
         if [[ "$runIndex" == "" ]]
         then
-            log_Err_Abort "requested run '${mrNamesUseArray[$index2]}' not found in list of MR fix runs"
+            log_Msg "requested run '${mrNamesUseArray[$index2]}' not found"
+            continue
         fi
         mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
         volMergeArgs+=(-subvolume $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
     done
+    
+    if ((${#mergeArgs[@]} == 0))
+    then
+        log_Err_Abort "no requested runs found in this subject (do you need to use --surf-reg-name?)"
+    fi
 
     if [[ -n "$ciftiOut" ]]
     then
