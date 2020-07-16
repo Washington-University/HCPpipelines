@@ -75,7 +75,9 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        timeseries, only required when using --multirun-fix-names.
    [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
        fMRIName strings to extract, one list for each multi-run ICA+FIX group in --multirun-fix-names (use
-       NONE to skip a group), only required when using --multirun-fix-extract-concat-names.
+       NONE to skip a group), only required when using --multirun-fix-extract-concat-names.  Exists to
+       enable extraction of a subset of the runs in a multi-run ICA+FIX group into a new concatenated
+       series (which is named using --multirun-fix-extract-concat-names).
    [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
        concatenated extracted timeseries, one for each multi-run ICA+FIX group (i.e. name in
        --multirun-fix-concat-names; use NONE to skip a group).
@@ -915,7 +917,7 @@ main()
 	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	    "${reapply_mr_fix_cmd[@]}"
 	    
-	    extract_cmd=("${HCPPIPEDIR}/DeDriftAndResample/scripts/ExtractFromMRFIXConcat.sh"
+	    extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
 	                    --study-folder="$StudyFolder"
 	                    --subject="$Subject"
 	                    --multirun-fix-names="${mrFIXNames[$i]}"
