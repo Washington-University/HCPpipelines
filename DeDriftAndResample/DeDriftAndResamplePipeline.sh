@@ -60,30 +60,34 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        (e.g. 32@59)
    --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name 
        (e.g. \${Subject}.\${Hemisphere}.sphere.\${RegName}.native.surf.gii)
-   [--dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>]
+  [--dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>]
        Path to the spheres output by the MSMRemoveGroupDrift pipeline
-   [--concat-reg-name=<regname>] String corresponding to the output name of the dedrifted registration
+  [--concat-reg-name=<regname>] String corresponding to the output name of the dedrifted registration
    --maps=<non@myelin@maps> @-delimited map name strings corresponding to maps that are not myelin maps 
        (e.g. sulc@curvature@corrThickness@thickness)
-   [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps 
+  [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps
        (e.g. MyelinMap@SmoothedMyelinMap). No _BC, this will be reapplied.
-   [--multirun-fix-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+  [--multirun-fix-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
        fMRIName strings that will have multi-run ICA+FIX reapplied to them (could be either rfMRI or
        tfMRI). Requires specifying --multirun-fix-concat-names also, with same number of concat names as
        lists of runs in this option.
-   [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
+  [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
        timeseries, only required when using --multirun-fix-names.
-   [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+  [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
        fMRIName strings to extract, one list for each multi-run ICA+FIX group in --multirun-fix-names (use
        NONE to skip a group), only required when using --multirun-fix-extract-concat-names.  Exists to
        enable extraction of a subset of the runs in a multi-run ICA+FIX group into a new concatenated
        series (which is named using --multirun-fix-extract-concat-names).
-   [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
+  [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
        concatenated extracted timeseries, one for each multi-run ICA+FIX group (i.e. name in
        --multirun-fix-concat-names; use NONE to skip a group).
-   [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will 
+  [--multirun-fix-extract-extra-regnames=<regname@regname>] extract MR FIX runs for additional surface
+       registrations, often MSMSulc.
+  [--multirun-fix-extract-volume={TRUE, FALSE}] whether to also extract the specified MR FIX runs from the
+       volume data, requires --multirun-fix-extract-concat-names to work, default FALSE.
+  [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will
        have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Previously known as --rfmri-names.
-   [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
+  [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
        will not have ICA+FIX reapplied to them (not recommended, ICA+FIX is recommended for all fMRI
        data). Previously known as --tfmri-names.
    --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
@@ -93,9 +97,9 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        pipeline when using a different mesh resolution than the original MSMAll registration.
   [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
-     0 = Use compiled MATLAB
-     1 = Use interpreted MATLAB
-     2 = Use interpreted Octave
+       0 = Use compiled MATLAB
+       1 = Use interpreted MATLAB
+       2 = Use interpreted Octave
 
 EOF
 }
@@ -122,6 +126,8 @@ get_options()
 	p_mrFIXNames=NONE				# @ and % delimited, % is top-level and must match number of @s in ConcatNames
 	p_mrFIXExtractConcatNames=NONE  # @ delimited
 	p_mrFIXExtractNames=NONE        # @ and % delimited, % is top-level and must match number of @s in ExtractConcatNames
+	p_mrFIXExtractExtraRegNames=NONE # @ delimited
+	p_mrFIXExtractDoVol=FALSE
 	p_fixNames=NONE                 # @ delimited
 	p_dontFixNames=NONE             # @ delimited
 	unset p_SmoothingFWHM
@@ -200,6 +206,14 @@ get_options()
 				;;
 			--multirun-fix-extract-names=*)
 				p_mrFIXExtractNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-extra-regnames=*)
+				p_mrFIXExtractExtraRegNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-volume=*)
+				p_mrFIXExtractDoVol=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--fix-names=* | --rfmri-names=*)
@@ -376,6 +390,22 @@ get_options()
 		esac
 	fi
 	
+    if [[ -n "$p_mrFIXExtractDoVol" ]]
+    then
+        case $(echo ${p_mrFIXExtractDoVol} | tr '[:upper:]' '[:lower:]') in
+            (true | yes | 1)
+                p_mrFIXExtractDoVol=1
+                ;;
+            (false | no | none | 0)
+                p_mrFIXExtractDoVol=0
+                ;;
+            *)
+                log_Err "--multirun-fix-extract-volume setting must be TRUE or FALSE"
+                error_count=$(( error_count + 1 ))
+                ;;
+        esac
+    fi
+	
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi
@@ -426,6 +456,8 @@ main()
 	local MatlabRunMode="${19}"
 	local mrFIXExtractNames="${20}"
 	local mrFIXExtractConcatNames="${21}"
+	local mrFIXExtractExtraRegNames="${22}"
+	local mrFIXExtractDoVol="${23}"
 
 	if [ "${MyelinTargetFile}" = "NONE" ]; then
 		MyelinTargetFile=""
@@ -453,6 +485,8 @@ main()
 	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames}"
 	log_Msg "mrFIXExtractNames: ${mrFIXExtractNames}"
 	log_Msg "mrFIXExtractConcatNames: ${mrFIXExtractConcatNames}"
+	log_Msg "mrFIXExtractExtraRegNames: ${mrFIXExtractExtraRegNames}"
+	log_Msg "mrFIXExtractDoVol: ${mrFIXExtractDoVol}"
 	log_Msg "fixNames: ${fixNames}"
 	log_Msg "dontFixNames: ${dontFixNames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
@@ -544,7 +578,20 @@ main()
 	
 	if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 && ${#mrFIXConcatNames[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
 	then
-	    log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE to skip a group)"
+		log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE to skip a group)"
+	fi
+	
+	if [[ "$mrFIXExtractExtraRegNames" == NONE ]]
+	then
+		extractExtraRegNamesArr=()
+	else
+		IFS=@ read -a extractExtraRegNamesArr <<< "$mrFIXExtractExtraRegNames"
+	fi
+	log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[@]}"
+	
+	if ((mrFIXExtractDoVol && ${#mrFIXExtractConcatNamesArr[@]} == 0))
+	then
+		log_Err_Abort "--multirun-fix-extract-volume=TRUE requires --multirun-fix-concat-names"
 	fi
 	
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
@@ -907,35 +954,64 @@ main()
 	
 	# reapply multirun fix
 	
-	for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
-	do
-	    log_Msg "ReApply MultiRun FIX Cleanup"
-	    log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
-	    log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
-	    #stage 2 parsing is done by reapply script
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
-	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
-	    "${reapply_mr_fix_cmd[@]}"
-	    
-	    extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
-	                    --study-folder="$StudyFolder"
-	                    --subject="$Subject"
-	                    --multirun-fix-names="${mrFIXNames[$i]}"
-	                    --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
-	                    --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean.dtseries.nii")
+    for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
+    do
+        log_Msg "ReApply MultiRun FIX Cleanup"
+        log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
+        log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
+        #stage 2 parsing is done by reapply script
+        reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+        log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
+        "${reapply_mr_fix_cmd[@]}"
         
-	    if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
-	    then
-	        mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
-	        
-	        cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean_vn.dscalar.nii" \
-	            "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean_vn.dscalar.nii"
+        for regname in "$ConcatRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
+        do
+            #MSMSulc special naming convention
+            if [[ "$regname" == "MSMSulc" ]]
+            then
+                regname=""
+                regstring=""
+            else
+                regstring=_"$regname"
+            fi
             
-	        extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
-	                      --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas_${ConcatRegName}_hp${HighPass}_clean.dtseries.nii")
-	    fi
-	    
-	    "${extract_cmd[@]}"
+            extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+                            --study-folder="$StudyFolder"
+                            --subject="$Subject"
+                            --multirun-fix-names="${mrFIXNames[$i]}"
+                            --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
+                            --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
+                            --surf-reg-name="$regname")
+            
+            if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
+            then
+                mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
+                
+                cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
+                    "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
+                
+                extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+                              --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
+            fi
+            
+            "${extract_cmd[@]}"
+        done
+        
+        if ((mrFIXExtractDoVol))
+        then
+            cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
+                "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
+            
+            extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+                            --study-folder="$StudyFolder"
+                            --subject="$Subject"
+                            --multirun-fix-names="${mrFIXNames[$i]}"
+                            --multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+                            --volume-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
+                            --concat-volume-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
+            
+            "${extract_cmd[@]}"
+        fi
     done
 
 	log_Msg "Completing main functionality"
@@ -994,8 +1070,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality use positional parameters
-	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}                ${20}                    ${21}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_fixNames}" "${p_dontFixNames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}" "${p_mrFIXExtractNames}" "${p_mrFIXExtractConcatNames}"
+	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}                ${20}                    ${21}                          ${22}                            ${23}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_fixNames}" "${p_dontFixNames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}" "${p_mrFIXExtractNames}" "${p_mrFIXExtractConcatNames}" "${p_mrFIXExtractExtraRegNames}" "${p_mrFIXExtractDoVol}"
 	
 else
 	# Positional parameters are used
