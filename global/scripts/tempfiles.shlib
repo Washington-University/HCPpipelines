@@ -1,6 +1,6 @@
 #!/bin/echo This script should not be run directly:
 
-#call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason)
+#call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason, including crash or interrupt)
 function tempfiles_add()
 {
     tempfiles_list+=("$@")
@@ -10,6 +10,31 @@ function tempfiles_add()
 function tempfiles_keep()
 {
     tempfiles_keepvar="$1"
+}
+
+#mac mktemp is much less useful, add a function to hack around it
+#for convenience, it automatically calls tempfiles_add on the file
+function tempfiles_create()
+{
+    if [[ "$OSTYPE" == darwin* ]]
+    then
+        #mac mktemp can't generate a file with a specified extension on it, placeholders must be the very last characters
+        #we only need non-collision with well-meaning things, so ignore the security advice
+        local pattend="${1##*XX}"
+        local beginchars=$((${#1} - ${#pattend}))
+        local pattbegin="${1:0:$beginchars}"
+        #-t doesn't even look at X's in the template
+        #so, handle the /tmp, $TMPDIR stuff manually
+        local retbase="$(mktemp "${TMPDIR:-/tmp}/$pattbegin")"
+        #don't immediately delete the mktemp result, for better non-collision
+        tempfiles_add "$retbase"
+        local ret="$retbase""$pattend"
+        echo -n "" > "$ret"
+    else
+        local ret="$(mktemp --tmpdir "$1")"
+    fi
+    tempfiles_add "$ret"
+    echo "$ret"
 }
 
 #implementation details

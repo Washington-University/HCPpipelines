@@ -46,7 +46,8 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"               # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/tempfiles.shlib"          # handle temporary files
 
 opts_ShowVersionIfRequested $@
 
@@ -181,7 +182,7 @@ function DeriveBackwards {
   # TCS becomes an array of the values from column $i in $in (derived from Var)
   TCS=($Var)
   # random is a random file name for temporary output
-  random=$RANDOM
+  random="$(tempfiles_create MotionCorrectionRandom_XXXXXX.txt)"
 
   # Cycle through our array of values from column $i
   j=0
@@ -209,7 +210,6 @@ function DeriveBackwards {
   done
   paste -d " " $out $random > ${out}_
   mv ${out}_ ${out}
-  rm $random
 }
 
 # Run the Derive function to generate appropriate regressors from the par file

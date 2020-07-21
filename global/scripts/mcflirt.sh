@@ -109,7 +109,7 @@ ${FSLDIR}/bin/fslmerge -t ${output}_mask `${FSLDIR}/bin/imglob ${output}_mask???
 ${FSLDIR}/bin/fslmaths ${output}_mask -Tmean -mul `$FSLDIR/bin/fslval ${output}_mask dim4` ${output}_mask
 
 # Cleanup
-${FSLDIR}/bin/imrm `${FSLDIR}/bin/imglob ${output}_mask????` ${output}_allones ${output}_ref
+${FSLDIR}/bin/imrm `${FSLDIR}/bin/imglob ${output}_mask????.*` ${output}_allones ${output}_ref
 
 if [ "$mcref" = "$ref" ]; then
   /bin/rm -rf ${output}.mat ${mcref2scout} 

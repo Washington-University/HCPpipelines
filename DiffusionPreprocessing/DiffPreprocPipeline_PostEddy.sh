@@ -63,14 +63,12 @@
 #
 #~ND~END~
 
-
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-show_usage()
-{
-	cat << EOF
+show_usage() {
+	cat <<EOF
 
 Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline
 
@@ -95,6 +93,9 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           output the commands that would be executed instead of
                           actually running them. --printcom=echo is intended to
                           be used for testing purposes
+  [--select_best_b0]
+                          Whether the --select-best-b0 flag was used in
+                          DiffPreprocPipeline_PreEddy.
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
                           for the eddy_postproc.sh script.
@@ -145,14 +146,14 @@ EOF
 #  ${CombineDataFlag}     CombineDataFlag value to pass to the eddy_postproc.sh
 #                         script.
 #
-get_options()
-{
+get_options() {
 	local arguments=($@)
 
 	# initialize global output variables
 	unset StudyFolder
 	unset Subject
 	unset GdCoeffs
+	unset SelectBestB0
 	DWIName="Diffusion"
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	runcmd=""
@@ -163,82 +164,86 @@ get_options()
 	local numArgs=${#arguments[@]}
 	local argument
 
-	while [ ${index} -lt ${numArgs} ] ; do
+	while [ ${index} -lt ${numArgs} ]; do
 		argument=${arguments[index]}
 
 		case ${argument} in
-			--help)
-				show_usage
-				exit 0
-				;;
-			--version)
-				version_show $@
-				exit 0
-				;;
-			--path=*)
-				StudyFolder=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--subject=*)
-				Subject=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--gdcoeffs=*)
-				GdCoeffs=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dof=*)
-				DegreesOfFreedom=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--printcom=*)
-				runcmd=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--dwiname=*)
-				DWIName=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--combine-data-flag=*)
-				CombineDataFlag=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			*)
-				show_usage
-				echo "ERROR: Unrecognized Option: ${argument}"
-				exit 1
-				;;
+		--help)
+			show_usage
+			exit 0
+			;;
+		--version)
+			version_show "$@"
+			exit 0
+			;;
+		--path=*)
+			StudyFolder=${argument#*=}
+			index=$((index + 1))
+			;;
+		--subject=*)
+			Subject=${argument#*=}
+			index=$((index + 1))
+			;;
+		--gdcoeffs=*)
+			GdCoeffs=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dof=*)
+			DegreesOfFreedom=${argument#*=}
+			index=$((index + 1))
+			;;
+		--printcom=*)
+			runcmd=${argument#*=}
+			index=$((index + 1))
+			;;
+		--dwiname=*)
+			DWIName=${argument#*=}
+			index=$((index + 1))
+			;;
+		--combine-data-flag=*)
+			CombineDataFlag=${argument#*=}
+			index=$((index + 1))
+			;;
+		--select-best-b0)
+			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		*)
+			show_usage
+			echo "ERROR: Unrecognized Option: ${argument}"
+			exit 1
+			;;
 		esac
 	done
 
 	local error_msgs=""
 
 	# check required parameters
-	if [ -z ${StudyFolder} ] ; then
+	if [ -z ${StudyFolder} ]; then
 		error_msgs+="\nERROR: <study-path> not specified"
 	fi
 
-	if [ -z ${Subject} ] ; then
+	if [ -z ${Subject} ]; then
 		error_msgs+="\nERROR: <subject-id> not specified"
 	fi
 
-	if [ -z ${GdCoeffs} ] ; then
+	if [ -z ${GdCoeffs} ]; then
 		error_msgs+="\nERROR: <path-to-gradients-coefficients-file> not specified"
 	fi
 
-	if [ -z ${DWIName} ] ; then
+	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
 	fi
 
-	if [ -z ${DegreesOfFreedom} ] ; then
+	if [ -z ${DegreesOfFreedom} ]; then
 		error_msgs+="\nERROR: DegreesOfFreedom not specified"
 	fi
 
-	if [ -z ${CombineDataFlag} ] ; then
+	if [ -z ${CombineDataFlag} ]; then
 		error_msgs+="\nERROR: CombineDataFlag not specified"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -254,6 +259,9 @@ get_options()
 	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
+	if [ -z "${SelectBestB0}" ]; then
+		echo "   SelectBestB0: ${SelectBestB0}"
+	fi
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
@@ -261,19 +269,18 @@ get_options()
 # Function Description
 #  Validate necessary scripts exist
 #
-validate_scripts()
-{
+validate_scripts() {
 	local error_msgs=""
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ]; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/eddy_postproc.sh not found"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh ] ; then
+	if [ ! -e ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh ]; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh not found"
 	fi
 
-	if [ ! -z "${error_msgs}" ] ; then
+	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
 		echo ""
@@ -287,8 +294,7 @@ validate_scripts()
 #
 #  Gets user specified command line options, runs Post-Eddy steps of Diffusion Preprocessing
 #
-main()
-{
+main() {
 	# Get Command Line Options
 	get_options "$@"
 
@@ -301,14 +307,18 @@ main()
 
 	# Determine whether Gradient Nonlinearity Distortion coefficients are supplied
 	GdFlag=0
-	if [ ! ${GdCoeffs} = "NONE" ] ; then
+	if [ ! ${GdCoeffs} = "NONE" ]; then
 		log_Msg "Gradient nonlinearity distortion correction coefficients found!"
 		GdFlag=1
 	fi
 
 	log_Msg "Running Eddy PostProcessing"
 	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
-	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag}
+	select_flag="0"
+	if [ ! -z "${SelectBestB0}" ]; then
+		select_flag="1"
+	fi
+	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
 
 	# Establish variables that follow naming conventions
 	T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
@@ -319,8 +329,8 @@ main()
 	FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
 	RegOutput="${outdir}"/reg/"Scout2T1w"
 	QAImage="${outdir}"/reg/"T1wMulEPI"
-	DiffRes=`${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1`
-	DiffRes=`printf "%0.2f" ${DiffRes}`
+	DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
+	DiffRes=$(printf "%0.2f" ${DiffRes})
 
 	log_Msg "Running Diffusion to Structural Registration"
 	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
@@ -340,7 +350,6 @@ main()
 		--gdflag=${GdFlag} \
 		--diffresol=${DiffRes}
 
-
 	to_location="${outdirT1w}/eddylogs"
 	from_directory="${outdir}/eddy"
 	log_Msg "Copying eddy log files to package location: ${to_location}"
@@ -349,13 +358,13 @@ main()
 	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 
 	mkdir -p ${to_location}
-	for filename in ${from_files} ; do
+	for filename in ${from_files}; do
 		cp -p ${filename} ${to_location}
 	done
 
-  mkdir -p ${outdirT1w}/QC
-  cp -p ${outdir}/QC/* ${outdirT1w}/QC
-  immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+	mkdir -p ${outdirT1w}/QC
+	cp -p ${outdir}/QC/* ${outdirT1w}/QC
+	immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 
 	log_Msg "Completed!"
 	exit 0
@@ -373,8 +382,8 @@ g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output
 if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+	show_usage
+	exit 1
 fi
 
 # Verify that HCPPIPEDIR Environment variable is set
@@ -384,13 +393,13 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib	           # version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-opts_ShowVersionIfRequested $@
+opts_ShowVersionIfRequested "$@"
 
-if opts_CheckForHelpRequest $@; then
+if opts_CheckForHelpRequest "$@"; then
 	show_usage
 	exit 0
 fi
@@ -400,7 +409,7 @@ ${HCPPIPEDIR}/show_version
 # Verify required environment variables are set and log value
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var HCPPIPEDIR_Global  # Needed in eddy_postproc.sh and DiffusionToStructural.sh
+log_Check_Env_Var HCPPIPEDIR_Global # Needed in eddy_postproc.sh and DiffusionToStructural.sh
 
 # Set other necessary variables, contingent on HCPPIPEDIR
 HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
@@ -408,4 +417,4 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 #
 # Invoke the 'main' function to get things started
 #
-main $@
+main "$@"

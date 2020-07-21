@@ -1,0 +1,82 @@
+#!/bin/bash
+
+if [ "$4" == "" ];then
+    echo ""
+    echo "Usage: select_dwi_vols <data> <bvals> <output> <approx_bval> [other options]"
+    echo ""
+    echo " Optional arguments:"
+    echo ""
+    echo " -b <value>        additional bvalues to be extracted (can be used multiple times)"
+    echo " -m                output mean instead of concat"
+    echo " -v                output variance instead of concat"
+    echo " -obv <bvecs>      produce <output>.bval and <output>.bvec"
+    echo " -db <delta_bvals> only include volumes with offset in b-value less than"
+    echo "                   this value in either direction (default: 100 s/mm2)"
+    echo ""
+    exit 1
+fi
+
+# parse compulsory arguments
+d=$1
+bvals=`cat $2`
+o=$3
+b=$4
+shift
+shift
+shift
+# parse optional arguments
+outmean=""
+outvar=""
+outbv=""
+delta_bvals="100"
+while [ ! -z "$1" ]
+do
+  case "$1" in
+      -m) outmean="-m";;
+      -v) outvar="-v";;
+      -obv) outbv=$2;shift;;
+      -b) b="$b $2";shift;;
+      -db) delta_bvals="$2";shift;;
+  esac
+  shift
+done
+
+if [ "$outmean" == "-m" ] && [ "$outvar" == "-v" ];then
+    echo "Error: you can either use -m or -v but not both"
+    exit 1
+fi
+
+list=""
+cmd="awk '{"
+echo "Extracting bvals=$b"
+for bval in $b;do
+    cnt=0
+    for i in $bvals;do
+	j=`echo $i | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}' `
+	j=${j/.*}
+	j=`echo "$j - $bval" |bc | awk ' { if($1>=0) { print $1} else {print $1*-1 }}'`
+	if [ $j -lt ${delta_bvals} ];then
+	    if [ "${list}" == "" ];then
+		list="${cnt}"
+        cmd="$cmd print \$$(($cnt+1)) \" \""
+	    else
+		list="${list},${cnt}"
+		cmd="$cmd \" \" \$$(($cnt+1))"
+	    fi
+	fi
+	cnt=$(($cnt + 1))
+    done
+done
+echo volume list = $list
+cmd="$cmd }'"
+
+
+if [ "$outbv" != "" ];then
+    bcmd="echo $bvals | `echo $cmd` > ${o}.bval"
+    eval $bcmd
+    vcmd="cat $outbv | `echo $cmd` > ${o}.bvec"
+    eval $vcmd
+fi
+
+echo $FSLDIR/bin/fslselectvols -i $d -o $o --vols=$list $outmean $outvar
+$FSLDIR/bin/fslselectvols -i $d -o $o --vols=$list $outmean $outvar
