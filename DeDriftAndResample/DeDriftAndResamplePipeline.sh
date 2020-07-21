@@ -987,6 +987,10 @@ main()
             then
                 mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
                 
+                # Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
+                # (i.e., estimate for the variance normalization map is based on the full concat group, not 
+                # the subset of extracted scans)
+                
                 cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
                     "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
                 
@@ -999,6 +1003,7 @@ main()
         
         if ((mrFIXExtractDoVol))
         then
+            # Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
             cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
                 "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
             

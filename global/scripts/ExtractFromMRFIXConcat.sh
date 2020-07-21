@@ -16,7 +16,9 @@ function usage()
 {
     #header text
     echo "
-$log_ToolName: does stuff
+$log_ToolName: extract a specified set of runs from an MR FIX
+    concatenated file and reconcatenate them.  Typically this is used to extract
+    the resting state runs from a combined task and resting state MR FIX run.
 
 Usage: $log_ToolName PARAMETER...
 
@@ -92,7 +94,7 @@ do
     done
 done
 
-#sanity check for bad names in to use
+#sanity check for bad names in --multirun-fix-names-to-use
 runIndices=()
 if ((doMerge))
 then
