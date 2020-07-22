@@ -37,7 +37,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all s
 opts_AddMandatory '--subject' 'Subject' 'ID' "the subject ID"
 opts_AddMandatory '--multirun-fix-names' 'mrfixNames' 'run1@run2...' "list of run names used in MR FIX, in the SAME ORDER, separated by @s"
 opts_AddOptional '--multirun-fix-names-to-use' 'mrfixNamesToUse' 'rest1@rest2...' "list of runs to extract (for cifti or volume outputs)"
-opts_AddOptional '--surf-reg-name' 'RegName' 'string' "registration name for which cifti files to get the run number of timepoints from"
+opts_AddOptional '--surf-reg-name' 'RegName' 'string' "registration name for which cifti files to get the number of timepoints per run from"
 opts_AddOptional '--concat-cifti-input' 'concatCifti' 'file' "filename of the concatenated cifti (for making cifti output)"
 opts_AddOptional '--cifti-out' 'ciftiOut' 'file' "output filename for extracted cifti data"
 opts_AddOptional '--concat-volume-input' 'concatVol' 'file' "filename of the concatenated volume (for making volume output)"
@@ -73,6 +73,12 @@ if [[ -n "$ciftiOut" || -n "$volOut" ]]
 then
     doMerge=1
     IFS=@ read -a mrNamesUseArray <<< "$mrfixNamesToUse"
+fi
+
+#naming convention quirk for MSMSulc
+if [[ "$RegName" == "MSMSulc" ]]
+then
+    RegName=""
 fi
 
 RegString=""
