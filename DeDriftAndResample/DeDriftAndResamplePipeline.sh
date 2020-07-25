@@ -1000,11 +1000,12 @@ main()
                 mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
                 
                 # Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
-                # (i.e., estimate for the variance normalization map is based on the full concat group, not 
+                # (i.e., estimate for the variance normalization map is based on the full concat group, not
                 #  the subset of extracted scans)
                 # The per-run differences in (unstructured) noise variance were removed before concatenation, and when
-                #  going back to "bias corrected" values, it just used this _clean_vn map in reverse (which is close to the
-                #  average of the original _vn maps), so it should be equally applicable to any subset of runs
+                #  going back to "bias corrected" values, it used something conceptually equivalent to this _clean_vn map
+                #  in reverse (which is close to the average of the original _vn maps), so it is equally applicable to
+                #  any subset of runs
                 
                 cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
                     "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
