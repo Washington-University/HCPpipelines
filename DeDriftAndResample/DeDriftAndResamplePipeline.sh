@@ -1002,10 +1002,20 @@ main()
                 # Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
                 # (i.e., estimate for the variance normalization map is based on the full concat group, not
                 #  the subset of extracted scans)
-                # The per-run differences in (unstructured) noise variance were removed before concatenation, and when
-                #  going back to "bias corrected" values, it used something conceptually equivalent to this _clean_vn map
-                #  in reverse (which is close to the average of the original _vn maps), so it is equally applicable to
-                #  any subset of runs
+                
+                # The per-run differences in (unstructured) noise variance were removed before concatenation.
+                # The average of those maps (across runs) was multiplied back into the concatenated time series
+                #  (in 'hcp_fix_multi_run'), so that the entire concatenated time series has a spatial pattern of
+                #  unstructured noise consistent with the average across runs.
+                # Given this manner of constructing the concatenated time series, any subset of runs extracted from
+                #  the full concatenated set should use this same average map for later variance normalization.
+                # We use the "clean_vn" map for this purpose and thus copy it from the full concatenated set to the
+                #  extracted set of runs.
+                # As a final subtlety, note that the "clean_vn" map itself is not identical to the aforementioned average of
+                #  the individual run vn maps, but it is conceptually very similar. In particular, clean_vn is derived within
+                #  FIX itself from the concatenated time series by regressing out all structured signals and using the
+                #  residual to estimate the unstructured noise, whereas the individual run vn maps were computed using
+                #  PCA-based reconstruction of the unstructured noise in 'icaDim.m'.
                 
                 cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
                     "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
