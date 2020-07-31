@@ -142,25 +142,26 @@ runSplits[0]="$curTimepoints"
 for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
 do
     fmriName="${mrNamesArray[$index]}"
+    NumTPs=0
     if ((testVol))
     then
         if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" ]]
         then
             log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz'"
-            continue
+        else
+            NumTPs=$(fslval "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" dim4)
         fi
-        NumTPS=$(fslval "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" dim4)
     else
         if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
         then
             log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
-            continue
+        else
+            NumTPs=$(wb_command -file-information "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
         fi
-        NumTPS=$(wb_command -file-information "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
     fi
-    ((curTimepoints += NumTPS))
+    curTimepoints=$((curTimepoints + NumTPs))
     runSplits[$((index + 1))]="$curTimepoints"
-    if [[ -n "$csvOut" ]]
+    if [[ -n "$csvOut" ]] && ((NumTPs != 0))
     then
         echo "$fmriName,$((runSplits[index] + 1)),$((runSplits[index + 1]))" >> "$csvOut"
     fi
@@ -180,8 +181,12 @@ then
             log_Msg "requested run '${mrNamesUseArray[$index2]}' not found"
             continue
         fi
-        mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
-        volMergeArgs+=(-subvolume $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
+        #missing runs will have start and end equal
+        if ((runSplits[runIndex] != runSplits[runIndex + 1]))
+        then
+            mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
+            volMergeArgs+=(-subvolume $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
+        fi
     done
     
     if ((${#mergeArgs[@]} == 0))

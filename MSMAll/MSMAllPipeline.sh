@@ -401,7 +401,7 @@ main()
 		do
 			fmriName="${mrNamesArray[$index]}"
 			NumTPS=`${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps`
-			((curTimepoints += NumTPS))
+			curTimepoints=$((curTimepoints + NumTPS))
 			runSplits[$((index + 1))]="$curTimepoints"
 			for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
 			do
