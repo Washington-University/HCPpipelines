@@ -141,7 +141,7 @@ MIRROR="http://cloud.r-project.org"
 
 for package in $PACKAGES
 do
-    wget "$MIRROR"/src/contrib/Archive/$(echo "$package" | cut -f1 -d_)/"$package".tar.gz || \
+    wget "$MIRROR"/src/contrib/Archive/${package%%_*}/"$package".tar.gz || \
         wget "$MIRROR"/src/contrib/"$package".tar.gz
     R CMD INSTALL "$package".tar.gz
 done
