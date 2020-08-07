@@ -4,6 +4,14 @@
 #  installed versions of: FSL, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
+# -----------------------------------------------------------------------------------
+#  Constants for specification of Averaging and Readout Distortion Correction Method
+# -----------------------------------------------------------------------------------
+
+SIEMENS_METHOD_OPT="SiemensFieldMap"
+GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+PHILIPS_METHOD_OPT="PhilipsFieldMap"
+
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set
 # ------------------------------------------------------------------------------
@@ -34,12 +42,15 @@ fi
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 
 Usage() {
-  echo "$(basename $0): Script for generating a fieldmap suitable for FSL from Philips Gradient Echo field map,"
+  echo "$(basename $0): Script for generating a fieldmap suitable for FSL from Siemens Gradient Echo field map,"
   echo "               and also do gradient non-linearity distortion correction of these"
   echo " "
   echo "Usage: $(basename $0) [--workingdir=<working directory>]"
-  echo "            --fmapmag=<input fieldmap magnitude image - can be a 4D containing more than one>"
-  echo "            --fmapphase=<input fieldmap phase image - in radians>"
+  echo "            --method=<distortion correction method (SiemensFieldMap/PhilipsFieldMap/GeneralElectricFieldMap)>"
+  echo "            --fmapmag=<input Siemens/Philips fieldmap magnitude image - can be a 4D containing more than one>"
+  echo "            --fmapphase=<input Siemens/Philips fieldmap phase image - in radians>"
+  echo "            --fmap=<input General Electric fieldmap with fieldmap in deg and magnitude image>"
+  echo "            --echodiff=<echo time difference for Siemens fieldmap images (in milliseconds)>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
   echo "            --ofmapmagbrain=<output distortion-corrected brain-extracted fieldmap magnitude image>"
   echo "            --ofmap=<output distortion corrected fieldmap image (rad/s)>"
@@ -78,14 +89,53 @@ if [ $# -eq 0 ] ; then Usage; exit 0; fi
 if [ $# -lt 5 ] ; then Usage; exit 1; fi
 
 # parse arguments
-WD=`getopt1 "--workingdir" $@` # "$1"
-MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
-PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
+WD=`getopt1 "--workingdir" $@`
+DistortionCorrection=`getopt1 "--method" $@`
+
+case $DistortionCorrection in
+
+    $SIEMENS_METHOD_OPT)
+
+        # --------------------------------------
+        # -- Siemens Gradient Echo Field Maps --
+        # --------------------------------------
+
+        MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
+		PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
+		DeltaTE=`getopt1 "--echodiff" $@`  # "$4"
+
+        ;;
+
+    ${GENERAL_ELECTRIC_METHOD_OPT})
+
+        # -----------------------------------------------
+        # -- General Electric Gradient Echo Field Maps --
+        # ----------------------------------------------- 
+
+        GEB0InputName=`getopt1 "--fmap" $@`
+
+        ;;
+
+    ${PHILIPS_METHOD_OPT})
+
+        # --------------------------------------
+        # -- Philips Gradient Echo Field Maps --
+        # --------------------------------------
+
+        MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
+		PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
+
+        ;;
+
+    *)
+        log_Err "Unable to create FSL-suitable readout distortion correction field map"
+        log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
+esac
+
 MagnitudeOutput=`getopt1 "--ofmapmag" $@`  # "$5"
 MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`  # "$6"
 FieldMapOutput=`getopt1 "--ofmap" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
-#GlobalScripts="${10}"
 
 # default parameters
 GlobalScripts=${HCPPIPEDIR_Global}
@@ -105,15 +155,57 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
-${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
-rm ${WD}/Magnitude_brain.nii.gz
-mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
+case $DistortionCorrection in
 
-${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMap_deg
-${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg -mul 6.28 ${WD}/FieldMap_rad
-${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rad.nii.gz -m --savefmap=${WD}/FieldMap.nii.gz
+    $SIEMENS_METHOD_OPT)
+
+        # --------------------------------------
+        # -- Siemens Gradient Echo Field Maps --
+        # --------------------------------------
+
+		${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
+		${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+
+        ;;
+
+    ${GENERAL_ELECTRIC_METHOD_OPT})
+
+        # -----------------------------------------------
+        # -- General Electric Gradient Echo Field Maps --
+        # ----------------------------------------------- 
+
+        ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
+		mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
+		mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
+		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
+
+        ;;
+
+    ${PHILIPS_METHOD_OPT})
+
+        # --------------------------------------
+        # -- Philips Gradient Echo Field Maps --
+        # --------------------------------------
+
+		${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
+		rm ${WD}/Magnitude_brain.nii.gz
+		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
+
+		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMap_deg
+		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg -mul 6.28 ${WD}/FieldMap_rad
+		${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rad.nii.gz -m --savefmap=${WD}/FieldMap.nii.gz
+
+        ;;
+
+    *)
+        log_Err "Unable to create FSL-suitable readout distortion correction field map"
+        log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
+esac
 
 log_Msg "DONE: fsl_prepare_fieldmap.sh"
 

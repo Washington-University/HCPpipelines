@@ -344,8 +344,9 @@ case $DistortionCorrection in
             # --------------------------------------
 
             # process fieldmap with gradient non-linearity distortion correction
-            ${GlobalScripts}/SiemensFieldMapPreprocessingAll.sh \
+            ${GlobalScripts}/FieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
+                --method="SiemensFieldMap" \
                 --fmapmag=${MagnitudeInputName} \
                 --fmapphase=${PhaseInputName} \
                 --echodiff=${deltaTE} \
@@ -360,8 +361,9 @@ case $DistortionCorrection in
             # -----------------------------------------------
 
             # process fieldmap with gradient non-linearity distortion correction
-            ${GlobalScripts}/GeneralElectricFieldMapPreprocessingAll.sh \
+            ${GlobalScripts}/FieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
+                --method="GeneralElectricFieldMap" \
                 --fmap=${GEB0InputName} \
                 --ofmapmag=${WD}/Magnitude \
                 --ofmapmagbrain=${WD}/Magnitude_brain \
@@ -374,8 +376,9 @@ case $DistortionCorrection in
             # --------------------------------------
 
             # process fieldmap with gradient non-linearity distortion correction
-            ${GlobalScripts}/PhilipsFieldMapPreprocessingAll.sh \
+            ${GlobalScripts}/FieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
+                --method="PhilipsFieldMap" \
                 --fmapmag=${MagnitudeInputName} \
                 --fmapphase=${PhaseInputName} \
                 --ofmapmag=${WD}/Magnitude \
