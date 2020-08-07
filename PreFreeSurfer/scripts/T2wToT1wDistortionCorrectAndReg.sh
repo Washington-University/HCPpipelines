@@ -241,8 +241,9 @@ case $DistortionCorrection in
         echo " "
         echo " "
 
-        ${HCPPIPEDIR_Global}/SiemensFieldMapPreprocessingAll.sh \
+        ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
             --workingdir=${WD}/FieldMap \
+            --method="SiemensFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
             --echodiff=${TE} \
@@ -264,8 +265,9 @@ case $DistortionCorrection in
         echo " "
         echo " " 
 
-        ${HCPPIPEDIR_Global}/GeneralElectricFieldMapPreprocessingAll.sh \
+        ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
             --workingdir=${WD}/FieldMap \
+            --method="GeneralElectricFieldMap" \
             --fmap=${GEB0InputName} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
@@ -285,8 +287,9 @@ case $DistortionCorrection in
         echo " "
         echo " "
 
-        ${HCPPIPEDIR_Global}/PhilipsFieldMapPreprocessingAll.sh \
+        ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
             --workingdir=${WD}/FieldMap \
+            --method="PhilipsFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
             --ofmapmag=${WD}/Magnitude \
