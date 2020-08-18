@@ -100,9 +100,9 @@ case $DistortionCorrection in
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
 
-        MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
-		PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
-		DeltaTE=`getopt1 "--echodiff" $@`  # "$4"
+        MagnitudeInputName=`getopt1 "--fmapmag" $@`
+		    PhaseInputName=`getopt1 "--fmapphase" $@`
+		    DeltaTE=`getopt1 "--echodiff" $@`
 
         ;;
 
@@ -122,8 +122,8 @@ case $DistortionCorrection in
         # -- Philips Gradient Echo Field Maps --
         # --------------------------------------
 
-        MagnitudeInputName=`getopt1 "--fmapmag" $@`  # "$2"
-		PhaseInputName=`getopt1 "--fmapphase" $@`  # "$3"
+        MagnitudeInputName=`getopt1 "--fmapmag" $@`
+		    PhaseInputName=`getopt1 "--fmapphase" $@`
 
         ;;
 
@@ -132,10 +132,10 @@ case $DistortionCorrection in
         log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
 esac
 
-MagnitudeOutput=`getopt1 "--ofmapmag" $@`  # "$5"
-MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`  # "$6"
-FieldMapOutput=`getopt1 "--ofmap" $@`  # "$8"
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
+MagnitudeOutput=`getopt1 "--ofmapmag" $@`
+MagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`
+FieldMapOutput=`getopt1 "--ofmap" $@`
+GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
 
 # default parameters
 GlobalScripts=${HCPPIPEDIR_Global}
@@ -163,10 +163,10 @@ case $DistortionCorrection in
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
 
-		${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
-		${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+		    ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		    ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
+		    ${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
         ;;
 
@@ -177,10 +177,10 @@ case $DistortionCorrection in
         # ----------------------------------------------- 
 
         ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
-		mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
-		mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
-		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
+		    mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
+		    mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
+		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		    ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
 
         ;;
 
@@ -190,15 +190,15 @@ case $DistortionCorrection in
         # -- Philips Gradient Echo Field Maps --
         # --------------------------------------
 
-		${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-		${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
-		rm ${WD}/Magnitude_brain.nii.gz
-		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
+		    ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+    		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+    		${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
+    		rm ${WD}/Magnitude_brain.nii.gz
+    		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
 
-		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMap_deg
-		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg -mul 6.28 ${WD}/FieldMap_rad
-		${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rad.nii.gz -m --savefmap=${WD}/FieldMap.nii.gz
+    		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMap_deg
+    		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg -mul 6.28 ${WD}/FieldMap_rad
+    		${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rad.nii.gz -m --savefmap=${WD}/FieldMap.nii.gz
 
         ;;
 
