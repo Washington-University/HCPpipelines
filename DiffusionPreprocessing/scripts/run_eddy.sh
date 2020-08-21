@@ -341,6 +341,16 @@ determine_eddy_tools_for_supported_six_series() {
 				log_Err "   (NOT RECOMMENDED since 'eddy' without any suffix is inherently ambiguous)"
 				log_Err_Abort ""
 			fi
+
+			# If g_stdEddy and g_gpuEnabledEddy are the same, we have a problem
+			# (probably a consequence of 'eddy' existing as a symlink to 'eddy_openmp')
+			if [ -e ${g_stdEddy} ]; then
+				diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null
+				return_code=$?
+				if [ "${return_code}" -eq "0" ]; then
+					log_Err_Abort "The supposed GPU/CUDA version of eddy (${g_gpuEnabledEddy}) is actually identical to the non-GPU version (${g_stdEddy})"
+				fi
+			fi
 		fi
 
 	else
@@ -572,7 +582,7 @@ main() {
 	eddy_command+="${sep_offs_moveOption} "
 	eddy_command+="${rmsOption} "
 	eddy_command+="${ff_valOption} "
-	eddy_command+="--cnr_maps "
+	eddy_command+="--cnr_maps "  #Hard-coded as an option to 'eddy', so we can run EDDY QC (QUAD)
 	eddy_command+="--imain=${workingdir}/Pos_Neg "
 	eddy_command+="--mask=${workingdir}/nodif_brain_mask "
 	eddy_command+="--index=${workingdir}/index.txt "
