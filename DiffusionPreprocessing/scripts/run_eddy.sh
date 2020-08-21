@@ -592,7 +592,6 @@ main() {
 	eddy_command+="--fwhm=${fwhm_value} "
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
-	eddy_command+="--flm=quadratic "
 
 	if [ ! -z "${dont_peas}" ]; then
 		eddy_command+="--dont_peas "
