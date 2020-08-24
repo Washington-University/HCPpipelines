@@ -175,6 +175,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           eddy binary, the following sequence will work:
 
                             --extra-eddy-arg=-flag --extra-eddy-arg=value
+  [--no-gpu]              If specified, use the non-GPU-enabled version of eddy.
+                          Defaults to using the GPU-enabled version of eddy.
+  [--cuda-version=X.Y]    If using the GPU-enabled version of eddy, then this
+                          option can be used to specify which eddy_cuda binary
+                          version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
+                          will be used.
 
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
@@ -233,6 +239,10 @@ EOF
 #                         empty string.
 #  ${extra_eddy_args}     Generic string of arguments to be passed to the
 #                         eddy binary
+#  ${no_gpu}              true if we should use the non-GPU-enabled version of eddy
+#                         Anything else or unset means use the GPU-enabled version of eddy
+#  ${cuda_version}        If using the GPU-enabled version, this value _may_ be
+#                         given to specify the version of the CUDA libraries in use.
 #  ${CombineDataFlag}     CombineDataFlag value to pass to
 #                         DiffPreprocPipeline_PostEddy.sh script and
 #                         subsequently to eddy_postproc.sh script
@@ -259,6 +269,8 @@ get_options() {
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 	extra_eddy_args=""
+	no_gpu=""
+	cuda_version=""
 	CombineDataFlag=1
 
 	# parse arguments
@@ -329,6 +341,14 @@ get_options() {
 		--extra-eddy-arg=*)
 			extra_eddy_arg=${argument#*=}
 			extra_eddy_args+=" ${extra_eddy_arg} "
+			index=$((index + 1))
+			;;
+		--no-gpu)
+			no_gpu="true"
+			index=$((index + 1))
+			;;
+		--cuda-version=*)
+			cuda_version=${argument#*=}
 			index=$((index + 1))
 			;;
 		--combine-data-flag=*)
@@ -411,6 +431,10 @@ get_options() {
 		echo "   SelectBestB0: ${SelectBestB0}"
 	fi
 	echo "   extra_eddy_args: ${extra_eddy_args}"
+	if [ ! -z ${no_gpu} ]; then
+		echo "   no_gpu: ${no_gpu}"
+	fi
+	echo "   cuda-version: ${cuda_version}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
 	if [ ! -z "${SelectBestB0}" ]; then
@@ -504,6 +528,14 @@ main() {
 	eddy_cmd+=" --dwiname=${DWIName} "
 	eddy_cmd+=" --printcom=${runcmd} "
 
+	if [ "${no_gpu}" != "true" ]; then
+		# default is to use the GPU-enabled version
+		run_eddy_cmd+=" --no_gpu "
+	else
+		if [ ! -z "${cuda_version}" ]; then
+			run_eddy_cmd+=" --cuda-version=${cuda_version}"
+		fi
+	fi
 	if [ ! -z "${extra_eddy_args}" ]; then
 		for extra_eddy_arg in ${extra_eddy_args}; do
 			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
