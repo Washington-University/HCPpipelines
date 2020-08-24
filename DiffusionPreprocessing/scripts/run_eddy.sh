@@ -345,9 +345,11 @@ determine_eddy_tools_for_supported_six_series() {
 			# If g_stdEddy and g_gpuEnabledEddy are the same, we have a problem
 			# (probably a consequence of 'eddy' existing as a symlink to 'eddy_openmp')
 			if [ -e ${g_stdEddy} ]; then
-				diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null
-				return_code=$?
-				if [ "${return_code}" -eq "0" ]; then
+				# Check if files differ (which is what we want) within an 'if' statement
+				# so that we don't trigger any active error trapping if they do differ.
+				# 'diff' returns "true" if files are the same, in which case we want to abort.
+				# Don't wrap the 'diff' command in () or [], as that will likely change the behavior.
+				if diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null; then
 					log_Err_Abort "The supposed GPU/CUDA version of eddy (${g_gpuEnabledEddy}) is actually identical to the non-GPU version (${g_stdEddy})"
 				fi
 			fi
