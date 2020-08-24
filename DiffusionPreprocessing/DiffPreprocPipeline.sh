@@ -214,12 +214,12 @@ EOF
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
 #  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages}	  @ symbol separated list of data with 'positive' phase
+#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase
 #                         encoding direction
 #  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
 #                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
-#  ${GdCoeffs}			  Path to file containing coefficients that describe
+#  ${GdCoeffs}            Path to file containing coefficients that describe
 #                         spatial variations of the scanner gradients. NONE
 #                         if not available.
 #  ${DWIName}             Name to give DWI output directories
@@ -230,7 +230,7 @@ EOF
 #  ${runcmd}              Set to a user specifed command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
-#						  empty string.
+#                         empty string.
 #  ${extra_eddy_args}     Generic string of arguments to be passed to the
 #                         eddy binary
 #  ${CombineDataFlag}     CombineDataFlag value to pass to
