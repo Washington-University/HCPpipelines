@@ -528,12 +528,12 @@ main() {
 	eddy_cmd+=" --dwiname=${DWIName} "
 	eddy_cmd+=" --printcom=${runcmd} "
 
-	if [ "${no_gpu}" != "true" ]; then
+	if [ "${no_gpu}" == "true" ]; then
 		# default is to use the GPU-enabled version
-		run_eddy_cmd+=" --no_gpu "
+		eddy_cmd+=" --no-gpu "
 	else
 		if [ ! -z "${cuda_version}" ]; then
-			run_eddy_cmd+=" --cuda-version=${cuda_version}"
+			eddy_cmd+=" --cuda-version=${cuda_version}"
 		fi
 	fi
 	if [ ! -z "${extra_eddy_args}" ]; then
