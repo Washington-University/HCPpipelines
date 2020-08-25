@@ -164,6 +164,7 @@ get_options() {
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
+	SelectBestB0="false"
 
 	# parse arguments
 	local index=0
@@ -283,9 +284,7 @@ get_options() {
 	echo "   DWIName: ${DWIName}"
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
-	if [ ! -z "${SelectBestB0}" ]; then
-		echo "   SelectBestB0: ${SelectBestB0}"
-	fi
+	echo "   SelectBestB0: ${SelectBestB0}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
@@ -483,7 +482,7 @@ main() {
 	log_Msg "Running Intensity Normalisation"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
 	else
