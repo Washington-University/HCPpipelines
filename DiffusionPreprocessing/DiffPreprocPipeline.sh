@@ -239,6 +239,8 @@ EOF
 #                         empty string.
 #  ${extra_eddy_args}     Generic string of arguments to be passed to the
 #                         eddy binary
+#  ${SelectBestB0}        true if we should preselect the least motion corrupted b0's for topup
+#                         Anything else or unset means use uniformly sampled b0's
 #  ${no_gpu}              true if we should use the non-GPU-enabled version of eddy
 #                         Anything else or unset means use the GPU-enabled version of eddy
 #  ${cuda_version}        If using the GPU-enabled version, this value _may_ be
@@ -269,7 +271,8 @@ get_options() {
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 	extra_eddy_args=""
-	no_gpu=""
+	SelectBestB0="false"
+	no_gpu="false"
 	cuda_version=""
 	CombineDataFlag=1
 
@@ -427,17 +430,13 @@ get_options() {
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
-	if [ ! -z ${SelectBestB0} ]; then
-		echo "   SelectBestB0: ${SelectBestB0}"
-	fi
+	echo "   SelectBestB0: ${SelectBestB0}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
-	if [ ! -z ${no_gpu} ]; then
-		echo "   no_gpu: ${no_gpu}"
-	fi
+	echo "   no_gpu: ${no_gpu}"
 	echo "   cuda-version: ${cuda_version}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		dont_peas_set=false
 		fwhm_set=false
 		if [ ! -z "${extra_eddy_args}" ]; then
@@ -513,12 +512,12 @@ main() {
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		pre_eddy_cmd+=" --select-best-b0 "
 	fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
-	${pre_eddy_cmd}
+	#${pre_eddy_cmd}
 
 	log_Msg "Invoking Eddy Step"
 	local eddy_cmd=""
@@ -543,7 +542,7 @@ main() {
 	fi
 
 	log_Msg "eddy_cmd: ${eddy_cmd}"
-	${eddy_cmd}
+	#${eddy_cmd}
 
 	log_Msg "Invoking Post-Eddy Steps"
 	local post_eddy_cmd=""
@@ -555,12 +554,12 @@ main() {
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 	post_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		post_eddy_cmd+=" --select-best-b0 "
 	fi
 
 	log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
-	${post_eddy_cmd}
+	#${post_eddy_cmd}
 
 	log_Msg "Completed!"
 	exit 0

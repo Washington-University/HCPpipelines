@@ -223,7 +223,7 @@ get_options() {
 	resamp_value=""
 	unset ol_nstd_value
 	extra_eddy_args=""
-	no_gpu=""
+	no_gpu="False"
 	cuda_version=""
 
 	# parse arguments
@@ -379,9 +379,7 @@ get_options() {
 	echo "   resamp_value: ${resamp_value}"
 	echo "   ol_nstd_value: ${ol_nstd_value}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
-	if [ ! -z ${no_gpu} ]; then
-		echo "   no_gpu: ${no_gpu}"
-	fi
+	echo "   no_gpu: ${no_gpu}"
 	echo "   cuda-version: ${cuda_version}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
