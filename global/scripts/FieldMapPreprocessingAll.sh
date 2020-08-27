@@ -50,7 +50,7 @@ Usage() {
   echo "            --fmapmag=<input Siemens/Philips fieldmap magnitude image - can be a 4D containing more than one>"
   echo "            --fmapphase=<input Siemens/Philips fieldmap phase image - in radians>"
   echo "            --fmap=<input General Electric fieldmap with fieldmap in deg and magnitude image>"
-  echo "            --echodiff=<echo time difference for Siemens fieldmap images (in milliseconds)>"
+  echo "            --echodiff=<echo time difference for Siemens and Philips fieldmap images (in milliseconds)>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
   echo "            --ofmapmagbrain=<output distortion-corrected brain-extracted fieldmap magnitude image>"
   echo "            --ofmap=<output distortion corrected fieldmap image (rad/s)>"
@@ -124,6 +124,7 @@ case $DistortionCorrection in
 
         MagnitudeInputName=`getopt1 "--fmapmag" $@`
 		    PhaseInputName=`getopt1 "--fmapphase" $@`
+        DeltaTE=`getopt1 "--echodiff" $@`
 
         ;;
 
@@ -203,8 +204,8 @@ case $DistortionCorrection in
         $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 3.14159 -div 180 -mas ${WD}/Mask.nii.gz ${WD}/FieldMap_rad -odt float
         # Unwrap phasemap
         $FSLDIR/bin/prelude -p ${WD}/FieldMap_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask.nii.gz -o ${WD}/FieldMap_rad_unwrapped -v
-        # Convert to rads/sec (dTE is echo time difference)
-        asym=`echo $dTE / 1000 | bc -l`
+        # Convert to rads/sec (DeltaTE is echo time difference)
+        asym=`echo ${DeltaTE} / 1000 | bc -l`
         $FSLDIR/bin/fslmaths ${WD}/FieldMap_rad_unwrapped -div $asym ${WD}/FieldMap_rps -odt float
         # Call FUGUE to extrapolate from mask (fill holes, etc)
         $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rps --mask=${WD}/Mask.nii.gz --savefmap=${WD}/FieldMap.nii.gz
