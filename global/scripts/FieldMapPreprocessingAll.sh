@@ -199,16 +199,18 @@ case $DistortionCorrection in
     		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
 
         # Create a binary brain mask
-        ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -thr 0.00000001 -bin ${WD}/Mask.nii.gz
-        # Convert phasemap to radians
-        $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 3.14159 -div 180 -mas ${WD}/Mask.nii.gz ${WD}/FieldMap_rad -odt float
-        # Unwrap phasemap
-        $FSLDIR/bin/prelude -p ${WD}/FieldMap_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask.nii.gz -o ${WD}/FieldMap_rad_unwrapped -v
+        ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -thr 0.00000001 -bin ${WD}/Mask_brain.nii.gz
+        # Convert fieldmap to radians
+        $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 3.14159 -div 180 -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap_rad -odt float
+        # Unwrap fieldmap
+        $FSLDIR/bin/prelude -p ${WD}/FieldMap_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask_brain.nii.gz -o ${WD}/FieldMap_rad_unwrapped -v
         # Convert to rads/sec (DeltaTE is echo time difference)
         asym=`echo ${DeltaTE} / 1000 | bc -l`
         $FSLDIR/bin/fslmaths ${WD}/FieldMap_rad_unwrapped -div $asym ${WD}/FieldMap_rps -odt float
         # Call FUGUE to extrapolate from mask (fill holes, etc)
-        $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rps --mask=${WD}/Mask.nii.gz --savefmap=${WD}/FieldMap.nii.gz
+        $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rps --mask=${WD}/Mask_brain.nii.gz --savefmap=${WD}/FieldMap.nii.gz
+        # Demean the image (avoid voxel translation)
+        $FSLDIR/bin/fslmaths ${WD}/FieldMap.nii.gz -sub `${FSLDIR}/bin/fslstats ${WD}/FieldMap.nii.gz -k ${WD}/Mask_brain.nii.gz -P 50` -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap.nii.gz -odt float
 
         ;;
 
