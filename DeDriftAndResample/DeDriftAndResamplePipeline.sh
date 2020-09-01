@@ -58,26 +58,40 @@ PARAMETERs are [ ] = optional; < > = user supplied value
    --high-res-mesh=<meshnum> String corresponding to high resolution mesh, e.g. 164
    --low-res-meshes=<meshnum@meshnum> String corresponding to low resolution meshes delimited by @, 
        (e.g. 32@59)
-   --registration-name=<regname> String corresponding to the MSMAll or other registration sphere name 
-       (e.g. \${Subject}.\${Hemisphere}.sphere.\${RegName}.native.surf.gii)
-   [--dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>]
-       Path to the spheres output by the MSMRemoveGroupDrift pipeline
-   [--concat-reg-name=<regname>] String corresponding to the output name of the dedrifted registration
+   --registration-name=<regname> String corresponding to the input registration sphere name
+       (e.g. \${Subject}.\${Hemisphere}.sphere.\${RegName}.native.surf.gii), usually MSMAll_InitialReg...
+  [--dedrift-reg-files=</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>]
+       Usually the spheres in global/templates/MSMAll/
+  [--concat-reg-name=<regname>] String corresponding to the output name for the dedrifted registration
+       (referred to as the concatenated registration), usually MSMAll. Requires --dedrift-reg-files
    --maps=<non@myelin@maps> @-delimited map name strings corresponding to maps that are not myelin maps 
        (e.g. sulc@curvature@corrThickness@thickness)
-   [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps 
+  [--myelin-maps=<myelin@maps>] @-delimited map name strings corresponding to myelin maps
        (e.g. MyelinMap@SmoothedMyelinMap). No _BC, this will be reapplied.
-   [--multirun-fix-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+  [--multirun-fix-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
        fMRIName strings that will have multi-run ICA+FIX reapplied to them (could be either rfMRI or
        tfMRI). Requires specifying --multirun-fix-concat-names also, with same number of concat names as
        lists of runs in this option.
-   [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
+  [--multirun-fix-concat-names=<day1_concat@day2_concat>] @-delimited list of names of the concatenated
        timeseries, only required when using --multirun-fix-names.
-   [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will 
-       have ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Previously known as --rfmri-names.
-   [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
-       will not have ICA+FIX reapplied to them (not recommended, ICA+FIX is recommended for all fMRI
-       data). Previously known as --tfmri-names.
+  [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
+       fMRIName strings to extract, one list for each multi-run ICA+FIX group in --multirun-fix-names (use
+       NONE to skip a group), only required when using --multirun-fix-extract-concat-names.  Exists to
+       enable extraction of a subset of the runs in a multi-run ICA+FIX group into a new concatenated
+       series (which is named using --multirun-fix-extract-concat-names).
+  [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
+       concatenated extracted timeseries, one for each multi-run ICA+FIX group (i.e. name in
+       --multirun-fix-concat-names; use NONE to skip a group).
+  [--multirun-fix-extract-extra-regnames=<regname@regname>] extract MR FIX runs for additional surface
+       registrations, e.g. --multirun-fix-extract-extra-regnames=MSMSulc
+  [--multirun-fix-extract-volume={TRUE, FALSE}] whether to also extract the specified MR FIX runs from the
+       volume data, requires --multirun-fix-extract-concat-names to work, default FALSE.
+  [--fix-names=<ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that will
+       have single-run ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Do not specify runs
+       processed with MR FIX here. Previously known as --rfmri-names.
+  [--dont-fix-names=<not@ICA+FIXed@fMRI@Names>] @-delimited fMRIName strings corresponding to maps that
+       will not have ICA+FIX reapplied to them (not recommended, MR FIX or at least single-run ICA+FIX is
+       recommended for all fMRI data). Previously known as --tfmri-names.
    --smoothing-fwhm=<number> Smoothing FWHM that matches what was used in the fMRISurface pipeline
    --high-pass=<high-pass filter used in ICA+FIX>
    --motion-regression={TRUE, FALSE} whether FIX should do motion regression
@@ -85,9 +99,9 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        pipeline when using a different mesh resolution than the original MSMAll registration.
   [--input-reg-name=<string>] A string to enable multiple fMRI resolutions (e.g._1.6mm)
   [--matlab-run-mode={0, 1, 2}] defaults to ${G_DEFAULT_MATLAB_RUN_MODE}
-     0 = Use compiled MATLAB
-     1 = Use interpreted MATLAB
-     2 = Use interpreted Octave
+       0 = Use compiled MATLAB
+       1 = Use interpreted MATLAB
+       2 = Use interpreted Octave
 
 EOF
 }
@@ -107,13 +121,17 @@ get_options()
 	unset p_LowResMeshes			# LowReshMeshes - @ delimited list, e.g. 32@59, multiple resolutions not currently supported for fMRI data
 	unset p_RegName
 	p_DeDriftRegFiles=NONE			# DeDriftRegFiles - @ delimited, L and R outputs from MSMRemoveGroupDrift.sh
-	unset p_ConcatRegName
+	p_ConcatRegName=""
 	unset p_Maps					# @ delimited
 	p_MyelinMaps=NONE				# @ delimited
 	p_mrFIXConcatNames=NONE			# @ delimited
 	p_mrFIXNames=NONE				# @ and % delimited, % is top-level and must match number of @s in ConcatNames
-	p_rfMRINames=NONE				# @ delimited
-	p_tfMRINames=NONE				# @ delimited
+	p_mrFIXExtractConcatNames=NONE  # @ delimited
+	p_mrFIXExtractNames=NONE        # @ and % delimited, % is top-level and must match number of @s in ExtractConcatNames
+	p_mrFIXExtractExtraRegNames=NONE # @ delimited
+	p_mrFIXExtractDoVol=FALSE
+	p_fixNames=NONE                 # @ delimited
+	p_dontFixNames=NONE             # @ delimited
 	unset p_SmoothingFWHM
 	unset p_HighPass
 	unset p_MotionRegression
@@ -184,12 +202,28 @@ get_options()
 				p_mrFIXNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
+			--multirun-fix-extract-concat-names=*)
+				p_mrFIXExtractConcatNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-names=*)
+				p_mrFIXExtractNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-extra-regnames=*)
+				p_mrFIXExtractExtraRegNames=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--multirun-fix-extract-volume=*)
+				p_mrFIXExtractDoVol=${argument#*=}
+				index=$(( index + 1 ))
+				;;
 			--fix-names=* | --rfmri-names=*)
-				p_rfMRINames=${argument#*=}
+				p_fixNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--dont-fix-names=* | --tfmri-names=*)
-				p_tfMRINames=${argument#*=}
+				p_dontFixNames=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--smoothing-fwhm=*)
@@ -261,12 +295,22 @@ get_options()
 		log_Msg "Registration Name: ${p_RegName}"
 	fi
 	
+	if [[ "$p_DeDriftRegFiles" == NONE ]]
+	then
+		p_DeDriftRegFiles=""
+	fi
+	
 	log_Msg "De-Drifting registration files: ${p_DeDriftRegFiles}"
 
 	if [ -z "${p_ConcatRegName}" ]; then
 		p_ConcatRegName="${p_RegName}"
+	else
+		if [[ -z "$p_DeDriftRegFiles" ]]; then
+			log_Err "--concat-reg-name must not be used unless dedrifting (just remove --concat-reg-name=<whatever> from your command)"
+			error_count=$(( error_count + 1 ))
+		fi
 	fi
-	log_Msg "concatenated registration name: ${p_ConcatRegName}"
+	log_Msg "registration name for outputs: ${p_ConcatRegName}"
 	
 	if [ -z "${p_Maps}" ]; then
 		log_Err "list of structural maps to be resampled (--maps=) required"
@@ -283,8 +327,8 @@ get_options()
 	fi
 
 	log_Msg "list of MRfix scans: ${p_mrFIXNames}"
-	log_Msg "list of fix scans: ${p_rfMRINames}"
-	log_Msg "list of non-fix scans: ${p_tfMRINames}"
+	log_Msg "list of fix scans: ${p_fixNames}"
+	log_Msg "list of non-fix scans: ${p_dontFixNames}"
 
 	if [ -z "${p_SmoothingFWHM}" ]; then
 		log_Err "smoothing value (--smoothing-fwhm=) required"
@@ -358,6 +402,22 @@ get_options()
 		esac
 	fi
 	
+    if [[ -n "$p_mrFIXExtractDoVol" ]]
+    then
+        case $(echo ${p_mrFIXExtractDoVol} | tr '[:upper:]' '[:lower:]') in
+            (true | yes | 1)
+                p_mrFIXExtractDoVol=1
+                ;;
+            (false | no | none | 0)
+                p_mrFIXExtractDoVol=0
+                ;;
+            *)
+                log_Err "--multirun-fix-extract-volume setting must be TRUE or FALSE"
+                error_count=$(( error_count + 1 ))
+                ;;
+        esac
+    fi
+	
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
 	fi
@@ -393,32 +453,34 @@ main()
 	local LowResMeshes="${4}"
 	local RegName="${5}"
 	local DeDriftRegFiles="${6}"
-	local ConcatRegName="${7}"
+	local OutputRegName="${7}"
 	local Maps="${8}"
 	local MyelinMaps="${9}"
-	local rfMRINames="${10}"
-	local tfMRINames="${11}"
+	local fixNames="${10}"
+	local dontFixNames="${11}"
 	local mrFIXNames="${12}"
 	local mrFIXConcatNames="${13}"
 	local SmoothingFWHM="${14}"
 	local HighPass="${15}"
 	local MotionRegression="${16}"
-	
 	local MyelinTargetFile="${17}"
+	local InRegName="${18}"
+	local MatlabRunMode="${19}"
+	local mrFIXExtractNames="${20}"
+	local mrFIXExtractConcatNames="${21}"
+	local mrFIXExtractExtraRegNames="${22}"
+	local mrFIXExtractDoVol="${23}"
+
 	if [ "${MyelinTargetFile}" = "NONE" ]; then
 		MyelinTargetFile=""
 	fi
 
-	local InRegName="${18}"
 	if [ "${InRegName}" = "NONE" ]; then
 		InRegName=""
 	fi
 	
-	local MatlabRunMode
-	if [ -z "${19}" ]; then
-		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
-	else
-		MatlabRunMode="${19}"
+	if [ -z "$MatlabRunMode" ]; then
+		MatlabRunMode="$G_DEFAULT_MATLAB_RUN_MODE"
 	fi
 
 	# Log values retrieved from positional parameters
@@ -428,13 +490,17 @@ main()
 	log_Msg "LowResMeshes: ${LowResMeshes}"
 	log_Msg "RegName: ${RegName}"
 	log_Msg "DeDriftRegFiles: ${DeDriftRegFiles}"
-	log_Msg "ConcatRegName: ${ConcatRegName}"
+	log_Msg "OutputRegName: ${OutputRegName}"
 	log_Msg "Maps: ${Maps}"
 	log_Msg "MyelinMaps: ${MyelinMaps}"
 	log_Msg "mrFIXNames: ${mrFIXNames}"
 	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames}"
-	log_Msg "rfMRINames: ${rfMRINames}"
-	log_Msg "tfMRINames: ${tfMRINames}"
+	log_Msg "mrFIXExtractNames: ${mrFIXExtractNames}"
+	log_Msg "mrFIXExtractConcatNames: ${mrFIXExtractConcatNames}"
+	log_Msg "mrFIXExtractExtraRegNames: ${mrFIXExtractExtraRegNames}"
+	log_Msg "mrFIXExtractDoVol: ${mrFIXExtractDoVol}"
+	log_Msg "fixNames: ${fixNames}"
+	log_Msg "dontFixNames: ${dontFixNames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 	log_Msg "HighPass: ${HighPass}"
 	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
@@ -462,21 +528,21 @@ main()
 	fi
 	log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
-	if [ "${rfMRINames}" = "NONE" ] ; then
-		rfMRINames=()
+	if [ "${fixNames}" = "NONE" ] ; then
+		fixNames=()
 	else
-		#rfMRINames=`echo "$rfMRINames" | sed s/"@"/" "/g`
-		IFS=@ read -a rfMRINames <<< "${rfMRINames}"
+		#fixNames=`echo "$fixNames" | sed s/"@"/" "/g`
+		IFS=@ read -a fixNames <<< "${fixNames}"
 	fi
-	log_Msg "After delimiter substitution, rfMRINames: ${rfMRINames[@]}"
+	log_Msg "After delimiter substitution, fixNames: ${fixNames[@]}"
 
-	if [ "${tfMRINames}" = "NONE" ] ; then
-		tfMRINames=()
+	if [ "${dontFixNames}" = "NONE" ] ; then
+		dontFixNames=()
 	else
-		#tfMRINames=`echo "$tfMRINames" | sed s/"@"/" "/g`
-		IFS=@ read -a tfMRINames <<< "${tfMRINames}"
+		#dontFixNames=`echo "$dontFixNames" | sed s/"@"/" "/g`
+		IFS=@ read -a dontFixNames <<< "${dontFixNames}"
 	fi
-	log_Msg "After delimiter substitution, tfMRINames: ${tfMRINames[@]}"
+	log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[@]}"
 
 	if [[ "${mrFIXNames}" == "NONE" ]] ; then
 		mrFIXNames=()
@@ -499,6 +565,45 @@ main()
 	if (( ${#mrFIXNames[@]} != ${#mrFIXConcatNames[@]} ))
 	then
 		log_Err_Abort "number of MR FIX concat names and run groups are different"
+	fi
+	
+	if [[ "${mrFIXExtractNames}" == "NONE" ]] ; then
+		mrFIXExtractNamesArr=()
+	else
+		#two-level list, % and @, parse only one stage here
+		IFS=% read -a mrFIXExtractNamesArr <<< "${mrFIXExtractNames}"
+	fi
+	log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[@]}"
+	
+	if [[ "$mrFIXExtractConcatNames" == "NONE" ]]
+	then
+		mrFIXExtractConcatNamesArr=()
+	else
+		IFS=@ read -a mrFIXExtractConcatNamesArr <<< "$mrFIXExtractConcatNames"
+	fi
+	log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[@]}"
+	
+	if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
+	then
+		log_Err_Abort "number of MR FIX extract concat names and run groups are different (use NONE to skip a group)"
+	fi
+	
+	if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 && ${#mrFIXConcatNames[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
+	then
+		log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE to skip a group)"
+	fi
+	
+	if [[ "$mrFIXExtractExtraRegNames" == NONE ]]
+	then
+		extractExtraRegNamesArr=()
+	else
+		IFS=@ read -a extractExtraRegNamesArr <<< "$mrFIXExtractExtraRegNames"
+	fi
+	log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[@]}"
+	
+	if ((mrFIXExtractDoVol && ${#mrFIXExtractConcatNamesArr[@]} == 0))
+	then
+		log_Err_Abort "--multirun-fix-extract-volume=TRUE requires --multirun-fix-concat-names"
 	fi
 	
 	CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
@@ -544,50 +649,50 @@ main()
 		log_Msg "Structure: ${Structure}"
 		log_Msg "DeDriftRegFile: ${DeDriftRegFile}"
 
-		if [ ! ${RegName} = ${ConcatRegName} ] ; then #Assume this file is already produced
-			${Caret7_Command} -surface-sphere-project-unproject ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii ${DeDriftRegFile} ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii
+		if [ ! ${RegName} = ${OutputRegName} ] ; then #RegName is already the completed registration, don't overwrite
+			${Caret7_Command} -surface-sphere-project-unproject ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${RegName}.native.surf.gii ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii ${DeDriftRegFile} ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii
 		fi
 
 		# Make MSM Registration Areal Distortion Maps
 		log_Msg "Make MSM Registration Areal Distortion Maps"
 		${Caret7_Command} -surface-vertex-areas ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii
-		${Caret7_Command} -surface-vertex-areas ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.shape.gii
-		${Caret7_Command} -metric-math "ln(spherereg / sphere) / ln(2)" ${NativeFolder}/${Subject}.${Hemisphere}.ArealDistortion_${ConcatRegName}.native.shape.gii -var sphere ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii -var spherereg ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.shape.gii
-		rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.shape.gii
+		${Caret7_Command} -surface-vertex-areas ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.shape.gii
+		${Caret7_Command} -metric-math "ln(spherereg / sphere) / ln(2)" ${NativeFolder}/${Subject}.${Hemisphere}.ArealDistortion_${OutputRegName}.native.shape.gii -var sphere ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii -var spherereg ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.shape.gii
+		rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.shape.gii
 
-		${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${ConcatRegName}.native.shape.gii -edge-method
+		${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${OutputRegName}.native.shape.gii -edge-method
 		
-		${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.${ConcatRegName}.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -local-affine-method
-	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -column 1
-	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${ConcatRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii -column 2
-	    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${ConcatRegName}.native.shape.gii
-	    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${ConcatRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${ConcatRegName}.native.shape.gii
-	    rm "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${ConcatRegName}.native.shape.gii
+		${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.${OutputRegName}.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -local-affine-method
+	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 1
+	    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 2
+	    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii
+	    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii
+	    rm "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii
 	done
 
-	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.ArealDistortion_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.ArealDistortion_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
-	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dscalar.nii
-	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_ArealDistortion_${ConcatRegName}
-	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-	rm ${NativeFolder}/${Subject}.ArealDistortion_${ConcatRegName}.native.dtseries.nii 
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.ArealDistortion_${OutputRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.ArealDistortion_${OutputRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dscalar.nii 1 ${Subject}_ArealDistortion_${OutputRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dtseries.nii 
 
-	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.EdgeDistortion_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.EdgeDistortion_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
-	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii
-	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_EdgeDistortion_${ConcatRegName}
-	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-	rm ${NativeFolder}/${Subject}.EdgeDistortion_${ConcatRegName}.native.dtseries.nii 
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.EdgeDistortion_${OutputRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.EdgeDistortion_${OutputRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dscalar.nii 1 ${Subject}_EdgeDistortion_${OutputRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.EdgeDistortion_${OutputRegName}.native.dtseries.nii 
 
-	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainJ_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainJ_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
-	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii
-	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_StrainJ_${ConcatRegName}
-	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-	rm ${NativeFolder}/${Subject}.StrainJ_${ConcatRegName}.native.dtseries.nii
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainJ_${OutputRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainJ_${OutputRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dscalar.nii 1 ${Subject}_StrainJ_${OutputRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.StrainJ_${OutputRegName}.native.dtseries.nii
 	
-	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainR_${ConcatRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainR_${ConcatRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
-	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii
-	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii 1 ${Subject}_StrainR_${ConcatRegName}
-	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-	rm ${NativeFolder}/${Subject}.StrainR_${ConcatRegName}.native.dtseries.nii
+	${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.StrainR_${OutputRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.StrainR_${OutputRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
+	${Caret7_Command} -cifti-convert-to-scalar ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dtseries.nii ROW ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii
+	${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii 1 ${Subject}_StrainR_${OutputRegName}
+	${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	rm ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dtseries.nii
 
 	DownSampleFolder=`echo ${DownSampleFolderNames} | cut -d " " -f 1`
 	log_Msg "DownSampleFolder: ${DownSampleFolder}"
@@ -618,20 +723,20 @@ main()
 			done
 		fi
 
-		if [ -e ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ] ; then
-			rm ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec
+		if [ -e ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ] ; then
+			rm ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec
 		fi
 
-		${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${AtlasFolder}/T1w_restore.nii.gz
-		${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${AtlasFolder}/T2w_restore.nii.gz
+		${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${AtlasFolder}/T1w_restore.nii.gz
+		${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${AtlasFolder}/T2w_restore.nii.gz
 
 		if [ ! ${Mesh} = ${HighResMesh} ] ; then
-			if [ -e ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ] ; then
-				rm ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec
+			if [ -e ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ] ; then
+				rm ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec
 			fi
 
-			${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${T1wFolder}/T1w_acpc_dc_restore.nii.gz
-			${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${T1wFolder}/T2w_acpc_dc_restore.nii.gz
+			${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${T1wFolder}/T1w_acpc_dc_restore.nii.gz
+			${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${T1wFolder}/T2w_acpc_dc_restore.nii.gz
 		fi
 
 		for Hemisphere in L R ; do
@@ -643,52 +748,52 @@ main()
 			log_Msg "Hemisphere: ${Hemisphere}"
 			log_Msg "Structure: ${Structure}"
 
-			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
+			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
 			if [ -e ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii ] ; then
-				${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii
 			fi
 
 			# Create downsampled fs_LR spec files.   
 			log_Msg "Create downsampled fs_LR spec files."
 			for Surface in white midthickness pial ; do
-				${Caret7_Command} -surface-resample ${NativeFolder}/${Subject}.${Hemisphere}.${Surface}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii BARYCENTRIC ${Folder}/${Subject}.${Hemisphere}.${Surface}_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
-				${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.${Surface}_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -surface-resample ${NativeFolder}/${Subject}.${Hemisphere}.${Surface}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii BARYCENTRIC ${Folder}/${Subject}.${Hemisphere}.${Surface}_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.${Surface}_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 			done
 
 			log_Debug_Msg "0.1"
-			local anatomical_surface_in=${Folder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+			local anatomical_surface_in=${Folder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 			log_File_Must_Exist "${anatomical_surface_in}"
-			${Caret7_Command} -surface-generate-inflated ${anatomical_surface_in} ${Folder}/${Subject}.${Hemisphere}.inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii ${Folder}/${Subject}.${Hemisphere}.very_inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii -iterations-scale ${Scale}
-			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
-			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.very_inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+			${Caret7_Command} -surface-generate-inflated ${anatomical_surface_in} ${Folder}/${Subject}.${Hemisphere}.inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii ${Folder}/${Subject}.${Hemisphere}.very_inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -iterations-scale ${Scale}
+			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
+			${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.very_inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
     
 			if [ ! ${Mesh} = ${HighResMesh} ] ; then
 				# Create downsampled fs_LR spec file in structural space.  
 				log_Msg "Create downsampled fs_LR spec file in structural space."
 				
 				for Surface in white midthickness pial ; do
-					${Caret7_Command} -surface-resample ${NativeT1wFolder}/${Subject}.${Hemisphere}.${Surface}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii BARYCENTRIC ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.${Surface}_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
-					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.${Surface}_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+					${Caret7_Command} -surface-resample ${NativeT1wFolder}/${Subject}.${Hemisphere}.${Surface}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii BARYCENTRIC ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.${Surface}_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
+					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.${Surface}_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 				done
 
 				log_Debug_Msg "0.2"
-				anatomical_surface_in=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+				anatomical_surface_in=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 				log_File_Must_Exist "${anatomical_surface_in}"
-				${Caret7_Command} -surface-generate-inflated ${anatomical_surface_in} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.very_inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii -iterations-scale ${Scale}
-				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
-				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.very_inflated_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -surface-generate-inflated ${anatomical_surface_in} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.very_inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -iterations-scale ${Scale}
+				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.very_inflated_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 
 				# Compute vertex areas for other analyses
 				log_Msg "Create vertex areas for other analyses"
 
 				log_Debug_Msg "0.3"
-				local surface=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+				local surface=${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 				log_File_Must_Exist "${surface}"
-				${Caret7_Command} -surface-vertex-areas ${surface} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.shape.gii 
+				${Caret7_Command} -surface-vertex-areas ${surface} ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.shape.gii 
 
-				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
 				if [ -e ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii ] ; then
-					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii
+					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec ${Structure} ${Folder}/${Subject}.${Hemisphere}.flat.${Mesh}k_fs_LR.surf.gii
 				fi
 			fi  
 		done
@@ -696,9 +801,9 @@ main()
 		if [ ! ${Mesh} = ${HighResMesh} ] ; then 
 			# Normalize vertex areas mean to 1 for other analyses
 			log_Msg "Normalize vertex areas mean to 1 for other analyses"
-			${Caret7_Command} -cifti-create-dense-scalar ${DownSampleT1wFolder}/${Subject}.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.dscalar.nii -left-metric ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-left ${Folder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii -right-metric ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-right ${Folder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
-			VAMean=`${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.dscalar.nii -reduce MEAN`
-			${Caret7_Command} -cifti-math "VA / ${VAMean}" ${DownSampleT1wFolder}/${Subject}.midthickness_${ConcatRegName}_va_norm.${Mesh}k_fs_LR.dscalar.nii -var VA ${DownSampleT1wFolder}/${Subject}.midthickness_${ConcatRegName}_va.${Mesh}k_fs_LR.dscalar.nii
+			${Caret7_Command} -cifti-create-dense-scalar ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii -left-metric ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-left ${Folder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii -right-metric ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-right ${Folder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+			VAMean=`${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii -reduce MEAN`
+			${Caret7_Command} -cifti-math "VA / ${VAMean}" ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va_norm.${Mesh}k_fs_LR.dscalar.nii -var VA ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii
 		fi
     
 		# Resample scalar maps and apply new bias field
@@ -723,9 +828,9 @@ main()
 					local cifti_template=${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
 					log_File_Must_Exist "${cifti_template}" # 2
 
-					local cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii
+					local cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
-					local left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${ConcatRegName}.native.surf.gii
+					local left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii
 					log_File_Must_Exist "${left_spheres_current_sphere}" # 3
 
 					local left_spheres_new_sphere=${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii
@@ -734,10 +839,10 @@ main()
 					local left_area_surfs_current_area=${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii
 					log_File_Must_Exist "${left_area_surfs_current_area}" # 5
 
-					local left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii
+					local left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
 					log_File_Must_Exist "${left_area_surfs_new_area}" # 6 - This is the one that doesn't exist
 
-					local right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${ConcatRegName}.native.surf.gii
+					local right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii
 					log_File_Must_Exist "${right_spheres_current_sphere}"
 
 					local right_spheres_new_sphere=${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii
@@ -746,7 +851,7 @@ main()
 					local right_area_surfs_current_area=${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
 					log_File_Must_Exist "${right_area_surfs_current_area}"
 
-					local right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii
+					local right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
 					log_File_Must_Exist "${right_area_surfs_new_area}"
 
 					log_Debug_Msg "Point 1.1"
@@ -763,13 +868,13 @@ main()
 						fi
 					fi
 
-					${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
-					${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii
-					${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${ConcatRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${ConcatRegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${ConcatRegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${ConcatRegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii 
+					${Caret7_Command} -cifti-math "Individual - Reference" ${DownSampleFolder}/${Subject}.BiasField_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Individual ${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii -var Reference ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii
+					${Caret7_Command} -cifti-smoothing ${DownSampleFolder}/${Subject}.BiasField_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii ${CorrectionSigma} 0 COLUMN ${DownSampleFolder}/${Subject}.BiasField_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left-surface ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -right-surface ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
+					${Caret7_Command} -cifti-resample ${DownSampleFolder}/${Subject}.BiasField_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii COLUMN ${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii -surface-postdilate 40 -left-spheres ${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii -left-area-surfs ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii -right-spheres ${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii -right-area-surfs ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii 
 
 					# ----- End moved statements -----
 
-					${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${Map}_BC_${ConcatRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${Map}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${ConcatRegName}.native.dscalar.nii
+					${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${Map}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${Map}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
 					Map="${Map}_BC"
 
 					log_Debug_Msg "Point 1.3"
@@ -779,7 +884,7 @@ main()
 			log_Debug_Msg "Point 2.0"
 
 			if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "StrainJ" || ${Map} = "StrainR" || ${Map} = "MyelinMap_BC" || ${Map} = "SmoothedMyelinMap_BC" ]] ; then
-				NativeMap="${Map}_${ConcatRegName}"
+				NativeMap="${Map}_${OutputRegName}"
 			else
 				NativeMap="${Map}"
 			fi
@@ -787,18 +892,18 @@ main()
 			log_Debug_Msg "Point 3.0"
 
 			if [ ! ${Mesh} = ${HighResMesh} ] ; then
-				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${ConcatRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii
+				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 				for MapMap in ${Maps} ${MyelinMaps} ; do
 					if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
-						${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${ConcatRegName}.${Mesh}k_fs_LR.dscalar.nii
-						${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${ConcatRegName}.${Mesh}k_fs_LR.dscalar.nii
+						${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
+						${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 					fi
 				done
 			else
-				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${ConcatRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${ConcatRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness_${ConcatRegName}.${Mesh}k_fs_LR.surf.gii   
+				${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii   
 				for MapMap in ${Maps} ${MyelinMaps} ; do
 					if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
-						${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${ConcatRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${ConcatRegName}.${Mesh}k_fs_LR.dscalar.nii
+						${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 					fi
 				done
 			fi
@@ -812,9 +917,9 @@ main()
 
 	for Map in ${MyelinMaps} ; do
 		log_Debug_Msg "Point 6.1"
-		${Caret7_Command} -add-to-spec-file ${NativeFolder}/${Subject}.native.wb.spec INVALID ${NativeFolder}/${Subject}.${Map}_BC_${ConcatRegName}.native.dscalar.nii
+		${Caret7_Command} -add-to-spec-file ${NativeFolder}/${Subject}.native.wb.spec INVALID ${NativeFolder}/${Subject}.${Map}_BC_${OutputRegName}.native.dscalar.nii
 		log_Debug_Msg "Point 6.2"
-		${Caret7_Command} -add-to-spec-file ${NativeT1wFolder}/${Subject}.native.wb.spec INVALID ${NativeFolder}/${Subject}.${Map}_BC_${ConcatRegName}.native.dscalar.nii
+		${Caret7_Command} -add-to-spec-file ${NativeT1wFolder}/${Subject}.native.wb.spec INVALID ${NativeFolder}/${Subject}.${Map}_BC_${OutputRegName}.native.dscalar.nii
 		log_Debug_Msg "Point 6.3"
 	done
 
@@ -827,9 +932,9 @@ main()
 
 	# Resample (and resmooth) TS from Native 
 	log_Msg "Resample (and resmooth) TS from Native"
-	for fMRIName in "${rfMRINames[@]}" "${tfMRINames[@]}" "${mrFIXNamesAll[@]}" ; do
+	for fMRIName in "${fixNames[@]}" "${dontFixNames[@]}" "${mrFIXNamesAll[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii
+		cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii
 		for Hemisphere in L R ; do
 			if [ $Hemisphere = "L" ] ; then 
 				Structure="CORTEX_LEFT"
@@ -840,36 +945,104 @@ main()
 			log_Msg "Hemisphere: ${Hemisphere}"
 			log_Msg "Structure: ${Structure}"
 
-			${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${ConcatRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
-			${Caret7_Command} -metric-dilate ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii 30 ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -nearest
-			${Caret7_Command} -metric-mask ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+			${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
+			${Caret7_Command} -metric-dilate ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -nearest
+			${Caret7_Command} -metric-mask ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
 			Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-			${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${ConcatRegName}.${LowResMesh}k_fs_LR.surf.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${Sigma} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-			${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${ConcatRegName}.dtseries.nii COLUMN -metric ${Structure} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${ConcatRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+			${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${Sigma} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+			${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
 		done
 	done
 
 	# ReApply FIX Cleanup
 	log_Msg "ReApply FIX Cleanup"
-	log_Msg "rfMRINames: ${rfMRINames[@]}"
-	for fMRIName in "${rfMRINames[@]}" ; do
+	log_Msg "fixNames: ${fixNames[@]}"
+	for fMRIName in "${fixNames[@]}" ; do
 		log_Msg "fMRIName: ${fMRIName}"
-		reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+		reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 		log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
 		"${reapply_fix_cmd[@]}"
 	done
 	
 	# reapply multirun fix
 	
-	for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
-	do
-	    log_Msg "ReApply MultiRun FIX Cleanup"
-	    log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
-	    log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
-	    #stage 2 parsing is done by reapply script
-	    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${ConcatRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
-	    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
-	    "${reapply_mr_fix_cmd[@]}"
+    for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
+    do
+        log_Msg "ReApply MultiRun FIX Cleanup"
+        log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
+        log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
+        #stage 2 parsing is done by reapply script
+        reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+        log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
+        "${reapply_mr_fix_cmd[@]}"
+        
+        for regname in "$OutputRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
+        do
+            #MSMSulc special naming convention
+            if [[ "$regname" == "MSMSulc" ]]
+            then
+                regname=""
+                regstring=""
+            else
+                regstring=_"$regname"
+            fi
+            
+            extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+                            --study-folder="$StudyFolder"
+                            --subject="$Subject"
+                            --multirun-fix-names="${mrFIXNames[$i]}"
+                            --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
+                            --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
+                            --surf-reg-name="$regname")
+            
+            if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
+            then
+                mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
+                
+                # Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
+                # (i.e., estimate for the variance normalization map is based on the full concat group, not
+                #  the subset of extracted scans)
+                
+                # The per-run differences in (unstructured) noise variance were removed before concatenation.
+                # The average of those maps (across runs) was multiplied back into the concatenated time series
+                #  (in 'hcp_fix_multi_run'), so that the entire concatenated time series has a spatial pattern of
+                #  unstructured noise consistent with the average across runs.
+                # Given this manner of constructing the concatenated time series, any subset of runs extracted from
+                #  the full concatenated set should use this same average map for later variance normalization.
+                # We use the "clean_vn" map for this purpose and thus copy it from the full concatenated set to the
+                #  extracted set of runs.
+                # As a final subtlety, note that the "clean_vn" map itself is not identical to the aforementioned average of
+                #  the individual run vn maps, but it is conceptually very similar. In particular, clean_vn is derived within
+                #  FIX itself from the concatenated time series by regressing out all structured signals and using the
+                #  residual to estimate the unstructured noise, whereas the individual run vn maps were computed using
+                #  PCA-based reconstruction of the unstructured noise in 'icaDim.m'.
+                
+                cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
+                    "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
+                
+                extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+                              --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
+            fi
+            
+            "${extract_cmd[@]}"
+        done
+        
+        if ((mrFIXExtractDoVol))
+        then
+            # Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
+            cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
+                "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
+            
+            extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+                            --study-folder="$StudyFolder"
+                            --subject="$Subject"
+                            --multirun-fix-names="${mrFIXNames[$i]}"
+                            --multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+                            --volume-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
+                            --concat-volume-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
+            
+            "${extract_cmd[@]}"
+        fi
     done
 
 	log_Msg "Completing main functionality"
@@ -928,8 +1101,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality use positional parameters
-	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_rfMRINames}" "${p_tfMRINames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}"
+	#     ${1}               ${2}           ${3}               ${4}                ${5}           ${6}                   ${7}                 ${8}        ${9}              ${10}             ${11}             ${12}             ${13}                  ${14}                ${15}           ${16}                   ${17}                   ${18}            ${19}                ${20}                    ${21}                          ${22}                            ${23}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_HighResMesh}" "${p_LowResMeshes}" "${p_RegName}" "${p_DeDriftRegFiles}" "${p_ConcatRegName}" "${p_Maps}" "${p_MyelinMaps}" "${p_fixNames}" "${p_dontFixNames}" "${p_mrFIXNames}" "${p_mrFIXConcatNames}" "${p_SmoothingFWHM}" "${p_HighPass}" "${p_MotionRegression}" "${p_MyelinTargetFile}" "${p_InRegName}" "${p_MatlabRunMode}" "${p_mrFIXExtractNames}" "${p_mrFIXExtractConcatNames}" "${p_mrFIXExtractExtraRegNames}" "${p_mrFIXExtractDoVol}"
 	
 else
 	# Positional parameters are used

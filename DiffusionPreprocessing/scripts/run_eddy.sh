@@ -310,32 +310,48 @@ determine_eddy_tools_for_supported_six_series() {
 		else
 			# The user has asked to use the GPU-enabled version but
 			# has not explicitly specified the CUDA version to use.
-			# So they need to have used the FSL recommended approach
-			# of having ${FSLDIR}/bin/eddy as a symbolic link to
-			# the appropriate eddy to run (e.g. eddy -> eddy_cuda8.0,
-			# or eddy -> eddy_cuda9.1) or having ${FSLDIR}/bin/eddy_cuda
-			# as a symbolic link to the appropriate eddy to run.
-			if [ -e ${FSLDIR}/bin/eddy ]; then
-				# They have an ${FSLDIR}/bin/eddy. So use it.
-				g_gpuEnabledEddy="${FSLDIR}/bin/eddy"
-			elif [ -e ${FSLDIR}/bin/eddy_cuda ]; then
+			# However, it may still be possible to proceed, assuming
+			# that the user has created a symbolic link of either
+			# 'eddy_cuda' or (more dangerously) 'eddy' to the specific
+			# desired CUDA binary (e.g., ${FSLDIR}/bin/eddy_cuda -> eddy_cuda9.1)
+			if [ -e ${FSLDIR}/bin/eddy_cuda ]; then
 				# They have an ${FSLDIR}/bin/eddy_cuda. So use it.
 				g_gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
+			elif [ -e ${FSLDIR}/bin/eddy ]; then
+				# They have an ${FSLDIR}/bin/eddy. It is dangerous to assume that this
+				# is a symlink to an eddy_cudaX.X version, esp. since recent FSL installers
+				# run an 'eddy_configuration.sh' script, that symlinks 'eddy' to 'eddy_openmp'
+				# (which is NOT a GPU/CUDA-enabled version). But we'll attempt to detect
+				# this situation below, and error out if it is detected.
+				g_gpuEnabledEddy="${FSLDIR}/bin/eddy"
 			else
-				# If they have neither an FSLDIR/bin/eddy or FSLDIR/bin/eddy_cuda,
+				# If neither an FSLDIR/bin/eddy_cuda or FSLDIR/bin/eddy exists,
 				# tell them that we can't figure out what eddy to use.
 				log_Err "Since you have requested the use of GPU-enabled eddy,"
-				log_Err "you must either have:"
-				log_Err "1. ${FSLDIR}/bin/eddy as a symbolic link to the version of"
-				log_Err "   eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
+				log_Err "you must either:"
+				log_Err "1. Set ${FSLDIR}/bin/eddy_cuda as a symbolic link to the version"
+				log_Err "   of eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
 				log_Err "   and is appropriate for the CUDA libraries installed"
 				log_Err "   on your system OR "
-				log_Err "2. ${FSLDIR}/bin/eddy_cuda as a symbolic link to the version"
-				log_Err "   of eddy_cudaX.Y in ${FSLDIR}/bin that you want to use OR"
-				log_Err "3. You must specify the --cuda-version=X.Y option to this "
+				log_Err "2. Specify the --cuda-version=X.Y option to this "
 				log_Err "   script in order to explicitly force the use of "
 				log_Err "   ${FSLDIR}/bin/eddy_cudaX.Y"
+				log_Err "3. Set ${FSLDIR}/bin/eddy as a symbolic link to the version of"
+				log_Err "   eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
+				log_Err "   (NOT RECOMMENDED since 'eddy' without any suffix is inherently ambiguous)"
 				log_Err_Abort ""
+			fi
+
+			# If g_stdEddy and g_gpuEnabledEddy are the same, we have a problem
+			# (probably a consequence of 'eddy' existing as a symlink to 'eddy_openmp')
+			if [ -e ${g_stdEddy} ]; then
+				# Check if files differ (which is what we want) within an 'if' statement
+				# so that we don't trigger any active error trapping if they do differ.
+				# 'diff' returns "true" if files are the same, in which case we want to abort.
+				# Don't wrap the 'diff' command in () or [], as that will likely change the behavior.
+				if diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null; then
+					log_Err_Abort "The supposed GPU/CUDA version of eddy (${g_gpuEnabledEddy}) is actually identical to the non-GPU version (${g_stdEddy})"
+				fi
 			fi
 		fi
 
@@ -568,7 +584,7 @@ main() {
 	eddy_command+="${sep_offs_moveOption} "
 	eddy_command+="${rmsOption} "
 	eddy_command+="${ff_valOption} "
-	eddy_command+="--cnr_maps "
+	eddy_command+="--cnr_maps "  #Hard-coded as an option to 'eddy', so we can run EDDY QC (QUAD)
 	eddy_command+="--imain=${workingdir}/Pos_Neg "
 	eddy_command+="--mask=${workingdir}/nodif_brain_mask "
 	eddy_command+="--index=${workingdir}/index.txt "
@@ -578,7 +594,6 @@ main() {
 	eddy_command+="--fwhm=${fwhm_value} "
 	eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
 	eddy_command+="--out=${workingdir}/eddy_unwarped_images "
-	eddy_command+="--flm=quadratic "
 
 	if [ ! -z "${dont_peas}" ]; then
 		eddy_command+="--dont_peas "

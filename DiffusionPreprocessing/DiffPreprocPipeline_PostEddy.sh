@@ -158,6 +158,7 @@ get_options() {
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	runcmd=""
 	CombineDataFlag=1
+	SelectBestB0="false"
 
 	# parse arguments
 	local index=0
@@ -259,9 +260,7 @@ get_options() {
 	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
-	if [ -z "${SelectBestB0}" ]; then
-		echo "   SelectBestB0: ${SelectBestB0}"
-	fi
+	echo "   SelectBestB0: ${SelectBestB0}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 }
 
@@ -315,7 +314,7 @@ main() {
 	log_Msg "Running Eddy PostProcessing"
 	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 	select_flag="0"
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		select_flag="1"
 	fi
 	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}

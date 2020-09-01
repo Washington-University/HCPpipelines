@@ -55,6 +55,8 @@ fi
 #  installed versions of: FSL, Connectome Workbench (wb_command)
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
 
+# NOTE: this script will error on subjects that are missing some fMRI runs that are specified in the MR FIX arguments
+
 #Set up pipeline environment variables and software
 source ${EnvironmentScript}
 

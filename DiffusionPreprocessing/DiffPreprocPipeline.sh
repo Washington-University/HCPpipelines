@@ -175,6 +175,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           eddy binary, the following sequence will work:
 
                             --extra-eddy-arg=-flag --extra-eddy-arg=value
+  [--no-gpu]              If specified, use the non-GPU-enabled version of eddy.
+                          Defaults to using the GPU-enabled version of eddy.
+  [--cuda-version=X.Y]    If using the GPU-enabled version of eddy, then this
+                          option can be used to specify which eddy_cuda binary
+                          version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
+                          will be used.
 
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
@@ -214,12 +220,12 @@ EOF
 #  ${StudyFolder}         Path to subject's data folder
 #  ${Subject}             Subject ID
 #  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages}	  @ symbol separated list of data with 'positive' phase
+#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase
 #                         encoding direction
 #  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
 #                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
-#  ${GdCoeffs}			  Path to file containing coefficients that describe
+#  ${GdCoeffs}            Path to file containing coefficients that describe
 #                         spatial variations of the scanner gradients. NONE
 #                         if not available.
 #  ${DWIName}             Name to give DWI output directories
@@ -230,9 +236,15 @@ EOF
 #  ${runcmd}              Set to a user specifed command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
-#						  empty string.
+#                         empty string.
 #  ${extra_eddy_args}     Generic string of arguments to be passed to the
 #                         eddy binary
+#  ${SelectBestB0}        true if we should preselect the least motion corrupted b0's for topup
+#                         Anything else or unset means use uniformly sampled b0's
+#  ${no_gpu}              true if we should use the non-GPU-enabled version of eddy
+#                         Anything else or unset means use the GPU-enabled version of eddy
+#  ${cuda_version}        If using the GPU-enabled version, this value _may_ be
+#                         given to specify the version of the CUDA libraries in use.
 #  ${CombineDataFlag}     CombineDataFlag value to pass to
 #                         DiffPreprocPipeline_PostEddy.sh script and
 #                         subsequently to eddy_postproc.sh script
@@ -259,6 +271,9 @@ get_options() {
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 	extra_eddy_args=""
+	SelectBestB0="false"
+	no_gpu="false"
+	cuda_version=""
 	CombineDataFlag=1
 
 	# parse arguments
@@ -329,6 +344,14 @@ get_options() {
 		--extra-eddy-arg=*)
 			extra_eddy_arg=${argument#*=}
 			extra_eddy_args+=" ${extra_eddy_arg} "
+			index=$((index + 1))
+			;;
+		--no-gpu)
+			no_gpu="true"
+			index=$((index + 1))
+			;;
+		--cuda-version=*)
+			cuda_version=${argument#*=}
 			index=$((index + 1))
 			;;
 		--combine-data-flag=*)
@@ -407,13 +430,13 @@ get_options() {
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
-	if [ ! -z ${SelectBestB0} ]; then
-		echo "   SelectBestB0: ${SelectBestB0}"
-	fi
+	echo "   SelectBestB0: ${SelectBestB0}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
+	echo "   no_gpu: ${no_gpu}"
+	echo "   cuda-version: ${cuda_version}"
 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
 
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		dont_peas_set=false
 		fwhm_set=false
 		if [ ! -z "${extra_eddy_args}" ]; then
@@ -489,7 +512,7 @@ main() {
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		pre_eddy_cmd+=" --select-best-b0 "
 	fi
 
@@ -504,6 +527,14 @@ main() {
 	eddy_cmd+=" --dwiname=${DWIName} "
 	eddy_cmd+=" --printcom=${runcmd} "
 
+	if [ "${no_gpu}" == "true" ]; then
+		# default is to use the GPU-enabled version
+		eddy_cmd+=" --no-gpu "
+	else
+		if [ ! -z "${cuda_version}" ]; then
+			eddy_cmd+=" --cuda-version=${cuda_version}"
+		fi
+	fi
 	if [ ! -z "${extra_eddy_args}" ]; then
 		for extra_eddy_arg in ${extra_eddy_args}; do
 			eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
@@ -523,7 +554,7 @@ main() {
 	post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 	post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 	post_eddy_cmd+=" --printcom=${runcmd} "
-	if [ ! -z "${SelectBestB0}" ]; then
+	if [ "${SelectBestB0}" == "true" ]; then
 		post_eddy_cmd+=" --select-best-b0 "
 	fi
 
