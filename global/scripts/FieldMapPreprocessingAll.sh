@@ -50,7 +50,7 @@ Usage() {
   echo "            --fmapmag=<input Siemens/Philips fieldmap magnitude image - can be a 4D containing more than one>"
   echo "            --fmapphase=<input Siemens/Philips fieldmap phase image - in radians>"
   echo "            --fmap=<input General Electric fieldmap with fieldmap in deg and magnitude image>"
-  echo "            --echodiff=<echo time difference for Siemens fieldmap images (in milliseconds)>"
+  echo "            --echodiff=<echo time difference for Siemens and Philips fieldmap images (in milliseconds)>"
   echo "            --ofmapmag=<output distortion corrected fieldmap magnitude image>"
   echo "            --ofmapmagbrain=<output distortion-corrected brain-extracted fieldmap magnitude image>"
   echo "            --ofmap=<output distortion corrected fieldmap image (rad/s)>"
@@ -124,6 +124,7 @@ case $DistortionCorrection in
 
         MagnitudeInputName=`getopt1 "--fmapmag" $@`
 		    PhaseInputName=`getopt1 "--fmapphase" $@`
+        DeltaTE=`getopt1 "--echodiff" $@`
 
         ;;
 
@@ -191,14 +192,25 @@ case $DistortionCorrection in
         # --------------------------------------
 
 		    ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-    		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+        # Brain extract the magnitude image
+    		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m
     		${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
     		rm ${WD}/Magnitude_brain.nii.gz
     		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
 
-    		${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMap_deg
-    		${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg -mul 6.28 ${WD}/FieldMap_rad
-    		${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rad.nii.gz -m --savefmap=${WD}/FieldMap.nii.gz
+        # Create a binary brain mask
+        ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -thr 0.00000001 -bin ${WD}/Mask_brain.nii.gz
+        # Convert fieldmap to radians
+        $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 3.14159 -div 180 -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap_rad -odt float
+        # Unwrap fieldmap
+        $FSLDIR/bin/prelude -p ${WD}/FieldMap_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask_brain.nii.gz -o ${WD}/FieldMap_rad_unwrapped -v
+        # Convert to rads/sec (DeltaTE is echo time difference)
+        asym=`echo ${DeltaTE} / 1000 | bc -l`
+        $FSLDIR/bin/fslmaths ${WD}/FieldMap_rad_unwrapped -div $asym ${WD}/FieldMap_rps -odt float
+        # Call FUGUE to extrapolate from mask (fill holes, etc)
+        $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rps --mask=${WD}/Mask_brain.nii.gz --savefmap=${WD}/FieldMap.nii.gz
+        # Demean the image (avoid voxel translation)
+        $FSLDIR/bin/fslmaths ${WD}/FieldMap.nii.gz -sub `${FSLDIR}/bin/fslstats ${WD}/FieldMap.nii.gz -k ${WD}/Mask_brain.nii.gz -P 50` -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap.nii.gz -odt float
 
         ;;
 

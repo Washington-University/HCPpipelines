@@ -292,6 +292,7 @@ case $DistortionCorrection in
             --method="PhilipsFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
+            --echodiff=${TE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \

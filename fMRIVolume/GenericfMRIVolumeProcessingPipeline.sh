@@ -485,6 +485,9 @@ case "$DistortionCorrection" in
     if [ -z ${PhaseInputName} ]; then
       log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
     fi
+    if [ -z ${deltaTE} ]; then
+      log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+    fi
     ;;
 
 	${NONE_METHOD_OPT})
