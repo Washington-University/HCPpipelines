@@ -39,17 +39,24 @@ baseNeg="Neg"
 # Merge b0's for both phase encoding directions
 for pe_sign in ${basePos} ${baseNeg}; do
 	merge_command=("${FSLDIR}/bin/fslmerge" -t "${rawdir}/all_${pe_sign}_b0s")
+	paste_bvals=("paste" -d' ')
+	paste_bvecs=("paste" -d' ')
 	for entry in ${rawdir}/${pe_sign}_[0-9]*.nii*; do
 		basename=$(imglob ${entry})
 		# TODO: replace with FSL built-in version of select_dwi_vols once -db flag is supported (should be in 6.0.4)
-		${HCPPIPEDIR_Global}/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0 -db ${b0maxbval}
+		${HCPPIPEDIR_Global}/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0 -db ${b0maxbval} -obv ${basename}.bvec
 		merge_command+=("${basename}_b0s")
+		paste_bvecs+=("${basename}_b0s.bvec")
+		paste_bvals+=("${basename}_b0s.bval")
 	done
 	echo about to "${merge_command[@]}"
 	"${merge_command[@]}"
+	"${paste_bvals[@]}" > ${rawdir}/all_${pe_sign}_b0s.bval
+	"${paste_bvecs[@]}" > ${rawdir}/all_${pe_sign}_b0s.bvec
 	for entry in ${rawdir}/${pe_sign}_[0-9]*_b0s.nii*; do
 		${FSLDIR}/bin/imrm ${entry}
 	done
+	rm ${rawdir}/${pe_sign}_[0-9]*_b0s.bv*
 done
 
 # Here we identify the b0's that are least affected by motion artefacts to pass them on to topup.
@@ -260,8 +267,8 @@ ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/b
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
 
 # extract b-value and bvec of best b0 in Pos set
-best_pos_bval=$(cat ${rawdir}/Pos.bval | awk "{print \$$((${best_pos_b0_index} + 1))"})
-cat ${rawdir}/Pos.bvec | awk "{print \$$((${best_pos_b0_index} + 1))}" >${rawdir}/zero.bvecs
+best_pos_bval=$(cat ${rawdir}/all_Pos_b0s.bval | awk "{print \$$((${best_pos_b0_index} + 1))"})
+cat ${rawdir}/all_Pos_b0s.bvec | awk "{print \$$((${best_pos_b0_index} + 1))}" >${rawdir}/zero.bvecs
 
 # merge all b-values and bvecs
 echo $best_pos_bval $(paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval) >${rawdir}/Pos_Neg.bvals
