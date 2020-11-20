@@ -43,7 +43,7 @@ qc_command+=(-v)
 #else
 
 # Across the combinations of CombineDataFlag and SelectBestB0, need to end up with each of the following
-# in ${datadir}: data, bvals, bvecs_noRot, bvecs
+# in ${datadir}: data.nii.gz, bvals, bvecs_noRot, bvecs
 if [ ${CombineDataFlag} -eq 2 ]; then
 	
 	if [ ${SelectBestB0} -eq 1 ]; then
@@ -71,13 +71,15 @@ else # Combining across diffusion directions with opposing phase-encoding polari
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
 		${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
-	if [ ${SelectBestB0} -eq 0 ]; then
-		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
-	fi
-
 	# Cleanup
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
+
+	# At this point, have data.nii.gz, bvals, and bvecs in ${datadir}
+	# But the bvecs are the non-rotated bvecs, so rename appropriately
+	mv ${datadir}/bvecs ${datadir}/bvecs_noRot
+	# averaged-based version of bvals get created below, but save the "non-rotated" version as well
+	mv ${datadir}/bvals ${datadir}/bvals_noRot
 
 	# The following is to average the *rotated* bvecs returned by 'eddy', accounting for $SelectBestB0.
 	# Divide Eddy-Rotated bvecs to Pos and Neg
