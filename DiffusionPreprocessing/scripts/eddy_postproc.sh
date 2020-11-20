@@ -53,7 +53,7 @@ if [ ${CombineDataFlag} -eq 2 ]; then
 	else
 		${FSLDIR}/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 		cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
-		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
+		cp ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs_noRot
 		cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
 	fi
 else
