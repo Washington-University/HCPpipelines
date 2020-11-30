@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 # Requirements for this script
 #  installed versions of: FSL
@@ -12,116 +13,84 @@
 
 #TODO
 
-########################################## SUPPORT FUNCTIONS ##########################################
+########################################## ARGUMENT PARSING ##########################################
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
-show_usage() {
-	cat <<EOF
-
-${script_name}: Run PostFreeSurfer processing pipeline
-
-Usage: ${script_name} [options]
-
-Usage information To Be Written
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
-
-${HCPPIPEDIR}/show_version
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
-
-HCPPIPEDIR_PostFS=${HCPPIPEDIR}/PostFreeSurfer/scripts
-
-# ------------------------------------------------------------------------------
-#  Parse Command Line Options
-# ------------------------------------------------------------------------------
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@" # Check processing mode requirements
 
 log_Msg "Platform Information Follows: "
 uname -a
+"$HCPPIPEDIR"/show_version
 
-log_Msg "Parsing Command Line Options"
+#this function gets called by opts_ParseArguments when --help is specified
+function usage()
+{
+    #header text
+    echo "
+$log_ToolName: takes FreeSurfer output folder and converts files into HCP format/organization, etc.
 
-# Input Variables
-StudyFolder=`opts_GetOpt1 "--path" $@`
-Subject=`opts_GetOpt1 "--subject" $@`
-SurfaceAtlasDIR=`opts_GetOpt1 "--surfatlasdir" $@`
-GrayordinatesSpaceDIR=`opts_GetOpt1 "--grayordinatesdir" $@`
-GrayordinatesResolutions=`opts_GetOpt1 "--grayordinatesres" $@`
-HighResMesh=`opts_GetOpt1 "--hiresmesh" $@`
-LowResMeshes=`opts_GetOpt1 "--lowresmesh" $@`
-SubcorticalGrayLabels=`opts_GetOpt1 "--subcortgraylabels" $@`
-FreeSurferLabels=`opts_GetOpt1 "--freesurferlabels" $@`
-ReferenceMyelinMaps=`opts_GetOpt1 "--refmyelinmaps" $@`
-CorrectionSigma=`opts_GetOpt1 "--mcsigma" $@`
-RegName=`opts_GetOpt1 "--regname" $@`
-InflateExtraScale=`opts_GetOpt1 "--inflatescale" $@`
-ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
+Usage: $log_ToolName PARAMETER...
 
-log_Msg "RegName: ${RegName}"
-# default parameters
-CorrectionSigma=`opts_DefaultOpt $CorrectionSigma $(echo "sqrt ( 200 )" | bc -l)`
-RegName=`opts_DefaultOpt $RegName MSMSulc`
-InflateExtraScale=`opts_DefaultOpt $InflateExtraScale 1`
-ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
+PARAMETERs are [ ] = optional; < > = user supplied value
+"
+    #automatic argument descriptions
+    opts_ShowArguments
+    
+    #do not use exit, the parsing code takes care of it
+}
 
-PipelineScripts=${HCPPIPEDIR_PostFS}
+defaultSigma=$(echo "sqrt(200)" | bc -l)
 
-verbose_red_echo "---> Starting ${script_name}"
-verbose_echo " "
-verbose_echo " Using parameters ..."
-verbose_echo "              --path: ${StudyFolder}"
-verbose_echo "           --subject: ${Subject}"
-verbose_echo "      --surfatlasdir: ${SurfaceAtlasDIR}"
-verbose_echo "  --grayordinatesdir: ${GrayordinatesSpaceDIR}"
-verbose_echo "  --grayordinatesres: ${GrayordinatesResolutions}"
-verbose_echo "         --hiresmesh: ${HighResMesh}"
-verbose_echo "        --lowresmesh: ${LowResMeshes}"
-verbose_echo " --subcortgraylabels: ${SubcorticalGrayLabels}"
-verbose_echo "  --freesurferlabels: ${FreeSurferLabels}"
-verbose_echo "     --refmyelinmaps: ${ReferenceMyelinMaps}"
-verbose_echo "           --mcsigma: ${CorrectionSigma}"
-verbose_echo "           --regname: ${RegName}"
-verbose_echo "   --processing-mode: ${ProcessingMode}"
+#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
+#help info for option gets printed like "--foo=<$3> - $4"
+
+#TSC:should --path or --study-folder be the flag displayed by the usage?
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
+opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
+opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
+opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
+opts_AddMandatory '--hiresmesh' 'HighResMesh' 'number' "usually '164', the standard mesh for T1w-resolution data data"
+opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the standard mesh for fMRI data"
+opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
+opts_AddMandatory '--freesurferlabels' 'FreeSurferLabels' 'file' "location of FreeSurferAllLut.txt"
+opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "high-resolution group myelin map to use for bias correction"
+
+opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
+opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
+opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
+opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
+#processing code goes here
+
+verbose_red_echo "---> Starting ${log_ToolName}"
 verbose_echo " "
 verbose_echo " Using environment setting ..."
 verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
+verbose_echo " "
+
+log_Check_Env_Var FSLDIR
+
+HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
+PipelineScripts="$HCPPIPEDIR_PostFS"
 
 # ------------------------------------------------------------------------------
 #  Naming Conventions
@@ -148,7 +117,7 @@ InitialT1wTransform="acpc.mat"
 dcT1wTransform="T1w_dc.nii.gz"
 InitialT2wTransform="acpc.mat"
 dcT2wTransform="T2w_reg_dc.nii.gz"
-FinalT2wTransform="${Subject}/mri/transforms/T2wtoT1w.mat"
+FinalT2wTransform="$Subject/mri/transforms/T2wtoT1w.mat"
 BiasField="BiasField_acpc_dc"
 OutputT1wImage="T1w_acpc_dc"
 OutputT1wImageRestore="T1w_acpc_dc_restore"
@@ -185,13 +154,13 @@ ComplianceMsg=""
 
 # -- T2w image
 
-if [ `${FSLDIR}/bin/imtest ${T2wFolder}/T2w` -eq 0 ]; then
+if [[ $("$FSLDIR"/bin/imtest "$T2wFolder/T2w") == '0' ]]; then
     ComplianceMsg+=" T2w image not present"
     Compliance="LegacyStyleData"
     T2wRestoreImage="NONE"
 fi
 
-if [ "${RegName}" = "FS" ] ; then
+if [[ "${RegName}" == "FS" ]]; then
     log_Warn "FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
     log_Warn "  HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
     log_Warn "  alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
@@ -208,82 +177,81 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 #  Start work
 # ------------------------------------------------------------------------------
 
-#Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration
 log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
 log_Msg "RegName: ${RegName}"
 
-argList="$StudyFolder "                # ${1}
-argList+="$Subject "                   # ${2}
-argList+="$T1wFolder "                 # ${3}
-argList+="$AtlasSpaceFolder "          # ${4}
-argList+="$NativeFolder "              # ${5}
-argList+="$FreeSurferFolder "          # ${6}
-argList+="$FreeSurferInput "           # ${7}
-argList+="$T1wRestoreImage "           # ${8}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh
-argList+="$T2wRestoreImage "           # ${9}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh
-argList+="$SurfaceAtlasDIR "           # ${10}
-argList+="$HighResMesh "               # ${11}
-argList+="$LowResMeshes "              # ${12}
-argList+="$AtlasTransform "            # ${13}
-argList+="$InverseAtlasTransform "     # ${14}
-argList+="$AtlasSpaceT1wImage "        # ${15}
-argList+="$AtlasSpaceT2wImage "        # ${16}
-argList+="$T1wImageBrainMask "         # ${17}
-argList+="$FreeSurferLabels "          # ${18}
-argList+="$GrayordinatesSpaceDIR "     # ${19}
-argList+="$GrayordinatesResolutions "  # ${20}
-argList+="$SubcorticalGrayLabels "     # ${21}
-argList+="$RegName "                   # ${22}
-argList+="$InflateExtraScale "         # ${23}
-"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh ${argList}
+argList=("$StudyFolder")                # ${1}
+argList+=("$Subject")                   # ${2}
+argList+=("$T1wFolder")                 # ${3}
+argList+=("$AtlasSpaceFolder")          # ${4}
+argList+=("$NativeFolder")              # ${5}
+argList+=("$FreeSurferFolder")          # ${6}
+argList+=("$FreeSurferInput")           # ${7}
+argList+=("$T1wRestoreImage")           # ${8}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh
+argList+=("$T2wRestoreImage")           # ${9}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh
+argList+=("$SurfaceAtlasDIR")           # ${10}
+argList+=("$HighResMesh")               # ${11}
+argList+=("$LowResMeshes")              # ${12}
+argList+=("$AtlasTransform")            # ${13}
+argList+=("$InverseAtlasTransform")     # ${14}
+argList+=("$AtlasSpaceT1wImage")        # ${15}
+argList+=("$AtlasSpaceT2wImage")        # ${16}
+argList+=("$T1wImageBrainMask")         # ${17}
+argList+=("$FreeSurferLabels")          # ${18}
+argList+=("$GrayordinatesSpaceDIR")     # ${19}
+argList+=("$GrayordinatesResolutions")  # ${20}
+argList+=("$SubcorticalGrayLabels")     # ${21}
+argList+=("$RegName")                   # ${22}
+argList+=("$InflateExtraScale")         # ${23}
+"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear_1res.sh "${argList[@]}"
 
 
-#Myelin Mapping
 log_Msg "Myelin Mapping"
 log_Msg "RegName: ${RegName}"
 
-argList="$StudyFolder "                # ${1}
-argList+="$Subject "
-argList+="$AtlasSpaceFolder "
-argList+="$NativeFolder "
-argList+="$T1wFolder "                 # ${5}
-argList+="$HighResMesh "
-argList+="$LowResMeshes "
-argList+="$T1wFolder"/"$OrginalT1wImage "
-argList+="$T2wFolder"/"$OrginalT2wImage "
-argList+="$T1wFolder"/"$T1wImageBrainMask "           # ${10}
-argList+="$T1wFolder"/xfms/"$InitialT1wTransform "
-argList+="$T1wFolder"/xfms/"$dcT1wTransform "
-argList+="$T2wFolder"/xfms/"$InitialT2wTransform "
-argList+="$T1wFolder"/xfms/"$dcT2wTransform "
-argList+="$T1wFolder"/"$FinalT2wTransform "           # ${15}
-argList+="$AtlasTransform "
-argList+="$T1wFolder"/"$BiasField "
-argList+="$T1wFolder"/"$OutputT1wImage "
-argList+="$T1wFolder"/"$OutputT1wImageRestore "
-argList+="$T1wFolder"/"$OutputT1wImageRestoreBrain "  # ${20}
-argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImage "
-argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore "
-argList+="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain "
-argList+="$T1wFolder"/"$OutputT2wImage "
-argList+="$T1wFolder"/"$OutputT2wImageRestore "       # ${25}
-argList+="$T1wFolder"/"$OutputT2wImageRestoreBrain "
-argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImage "
-argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore "
-argList+="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain "
-argList+="$T1wFolder"/xfms/"$OutputOrigT1wToT1w "     # {30}
-argList+="$T1wFolder"/xfms/"$OutputOrigT1wToStandard "
-argList+="$T1wFolder"/xfms/"$OutputOrigT2wToT1w "
-argList+="$T1wFolder"/xfms/"$OutputOrigT2wToStandard "
-argList+="$AtlasSpaceFolder"/"$BiasFieldOutput "
-argList+="$AtlasSpaceFolder"/"$T1wImageBrainMask "    # {35}  Called T1wMNIImageBrainMask in CreateMyelinMaps_1res.sh
-argList+="$AtlasSpaceFolder"/xfms/"$Jacobian "
-argList+="$ReferenceMyelinMaps "
-argList+="$CorrectionSigma "
-argList+="$RegName "                                  # ${39}
-"$PipelineScripts"/CreateMyelinMaps_1res.sh ${argList}
+argList=("$StudyFolder")                # ${1}
+argList+=("$Subject")
+argList+=("$AtlasSpaceFolder")
+argList+=("$NativeFolder")
+argList+=("$T1wFolder")                 # ${5}
+argList+=("$HighResMesh")
+argList+=("$LowResMeshes")
+argList+=("$T1wFolder"/"$OrginalT1wImage")
+argList+=("$T2wFolder"/"$OrginalT2wImage")
+argList+=("$T1wFolder"/"$T1wImageBrainMask")           # ${10}
+argList+=("$T1wFolder"/xfms/"$InitialT1wTransform")
+argList+=("$T1wFolder"/xfms/"$dcT1wTransform")
+argList+=("$T2wFolder"/xfms/"$InitialT2wTransform")
+argList+=("$T1wFolder"/xfms/"$dcT2wTransform")
+argList+=("$T1wFolder"/"$FinalT2wTransform")           # ${15}
+argList+=("$AtlasTransform")
+argList+=("$T1wFolder"/"$BiasField")
+argList+=("$T1wFolder"/"$OutputT1wImage")
+argList+=("$T1wFolder"/"$OutputT1wImageRestore")
+argList+=("$T1wFolder"/"$OutputT1wImageRestoreBrain")  # ${20}
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImage")
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore")
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain")
+argList+=("$T1wFolder"/"$OutputT2wImage")
+argList+=("$T1wFolder"/"$OutputT2wImageRestore")       # ${25}
+argList+=("$T1wFolder"/"$OutputT2wImageRestoreBrain")
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImage")
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore")
+argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain")
+argList+=("$T1wFolder"/xfms/"$OutputOrigT1wToT1w")     # {30}
+argList+=("$T1wFolder"/xfms/"$OutputOrigT1wToStandard")
+argList+=("$T1wFolder"/xfms/"$OutputOrigT2wToT1w")
+argList+=("$T1wFolder"/xfms/"$OutputOrigT2wToStandard")
+argList+=("$AtlasSpaceFolder"/"$BiasFieldOutput")
+argList+=("$AtlasSpaceFolder"/"$T1wImageBrainMask")    # {35}  Called T1wMNIImageBrainMask in CreateMyelinMaps_1res.sh
+argList+=("$AtlasSpaceFolder"/xfms/"$Jacobian")
+argList+=("$ReferenceMyelinMaps")
+argList+=("$CorrectionSigma")
+argList+=("$RegName")                                  # ${39}
+"$PipelineScripts"/CreateMyelinMaps_1res.sh "${argList[@]}"
 
-verbose_green_echo "---> Finished ${script_name}"
+verbose_green_echo "---> Finished ${log_ToolName}"
 verbose_echo " "
 
 log_Msg "Completed!"
+
