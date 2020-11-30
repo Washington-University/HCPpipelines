@@ -37,8 +37,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
-opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-opts_AddMandatory '--bar' 'mybar' 'your bar' "a required value, and this description is really long, but the opts_ShowArguments function automatically splits at spaces, or hyphenates if there aren't enough spaces"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
+opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise it will be defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddOptional '--bar' 'mybar' 'your bar' "an optional value, without an argument after the desription it defaults to empty string, and this description is really long, but the opts_ShowArguments function (called in the usage function above) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -232,7 +234,7 @@ function opts_ShowValues()
 
 function opts_ShowArguments()
 {
-    opts_print_help_line '[--help or -h] - show usage information and exit'
+    opts_print_help_line '[--help or -h] - show this usage information and exit'
     local index
     for ((index = 0; index < ${#opts_param_switches[@]}; ++index))
     do
