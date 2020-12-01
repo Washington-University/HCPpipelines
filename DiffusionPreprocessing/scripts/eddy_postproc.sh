@@ -51,7 +51,7 @@ if [ ${CombineDataFlag} -eq 2 ]; then
 		${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
 		cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals
 		cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot
-		cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
+		cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs >${datadir}/bvecs
 	else
 		${FSLDIR}/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 		cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
