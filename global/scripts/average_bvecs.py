@@ -190,6 +190,9 @@ def extract_overlaps(bvals1, bvecs1, bvals2, bvecs2, overlap1, overlap2, only_co
         session_bv1_indices.append(          bv1_indices + 1)
         session_bv2_indices.append(          bv2_indices + 1)
 
+        offset1 += overlaps
+        offset2 += overlaps
+
         if not only_combine:
             for phase_encoding, overlap, bvals, bvecs, offset in [
                 (1, overlap1, bvals1, bvecs1, offset1),
@@ -213,8 +216,8 @@ def extract_overlaps(bvals1, bvecs1, bvals2, bvecs2, overlap1, overlap2, only_co
                     session_bv1_indices.append([-1] * unique)
                     session_bv2_indices.append(indices)
 
-        offset1 += overlap1[session, 1]
-        offset2 += overlap2[session, 1]
+        offset1 += overlap1[session, 1] - overlaps
+        offset2 += overlap2[session, 1] - overlaps
 
     bvals1   = np.concatenate(session_bvals1)
     bvals2   = np.concatenate(session_bvals2)
