@@ -114,7 +114,7 @@ else # Combining across diffusion directions with opposing phase-encoding polari
 
 	# Average Eddy-Rotated bvecs. Get for each direction the two b matrices, average those and then eigendecompose the average b-matrix to get the new bvec and bval.
 	# Also outputs an index file (1-based) with the indices of the input (Pos/Neg) volumes that have been retained in the output
-	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
+	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${CombineDataFlag} ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
 
 	mv ${datadir}/avg_data.bval ${datadir}/bvals
 	mv ${datadir}/avg_data.bvec ${datadir}/bvecs
