@@ -10,6 +10,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
 #this function gets called by opts_ParseArguments when --help is specified
 function usage()
@@ -36,6 +37,7 @@ opts_AddMandatory '--output-folder' 'OutputSceneFolder' 'path' "output location 
 
 opts_AddOptional '--copy-templates' 'TemplatesMethod' 'no|links|files' "how to add the template files to the output directory, default 'files'" 'files'
 opts_AddOptional '--verbose' 'verboseArg' 'true|false' "whether to output more messages, default 'false'" 'false'
+opts_AddOptional '--mask-dilate' 'maskDilate' 'number' "how far to dilate the brain mask for removing background noise from linear-registered T1w, default 30, use -1 to disable masking" '30'
 
 opts_ParseArguments "$@"
 
@@ -248,10 +250,28 @@ if [[ -e "$acpc2MNILinear" ]]; then
     volumeIn="$AtlasSpaceFolder/../T1w/$nativeVol.nii.gz"
     volumeRef="$AtlasSpaceFolder/T1w_restore.nii.gz"
     volumeOut="$OutputSceneFolder/$Subject.${nativeVol}_to_MNILinear.nii.gz"
-    # Use -volume-affine-resample, rather than flirt, for resampling, to avoid adding need for FSL
-    wb_command -volume-affine-resample \
-        "$volumeIn" "$acpc2MNILinear" "$volumeRef" CUBIC "$volumeOut" \
-        -flirt "$volumeIn" "$volumeRef"
+    if [[ "$maskDilate" != "-1" ]]
+    then
+        tempresample=$(tempfiles_create strucQC_resamp_XXXXXX.nii.gz)
+        wb_command -volume-affine-resample \
+            "$volumeIn" "$acpc2MNILinear" "$volumeRef" CUBIC "$tempresample" \
+            -flirt "$volumeIn" "$volumeRef"
+        #noise in the background makes this file bigger than necessary, mask it out
+        #use the existing MNINonLinear brain mask, close enough with large dilation
+        tempmask=$(tempfiles_create strucQC_mask_XXXXXX.nii.gz)
+        wb_command -volume-dilate \
+            "$AtlasSpaceFolder/brainmask_fs.nii.gz" \
+            "$maskDilate" \
+            NEAREST \
+            "$tempmask"
+        wb_command -volume-math 'data * (mask > 0)' "$volumeOut" \
+            -var data "$tempresample" \
+            -var mask "$tempmask"
+    else
+        wb_command -volume-affine-resample \
+            "$volumeIn" "$acpc2MNILinear" "$volumeRef" CUBIC "$volumeOut" \
+            -flirt "$volumeIn" "$volumeRef"
+    fi
 fi
 
 ## Create a surface-mapped version of the FNIRT volume distortion (for easy visualization).
