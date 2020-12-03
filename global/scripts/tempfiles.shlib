@@ -14,15 +14,21 @@ function tempfiles_keep()
 
 #mac mktemp is much less useful, add a function to hack around it
 #for convenience, it automatically calls tempfiles_add on the file
+#use like 'tempmask=$(tempfiles_create strucQC_mask_XXXXXX.nii.gz)'
 function tempfiles_create()
 {
     if [[ "$OSTYPE" == darwin* ]]
     then
         #mac mktemp can't generate a file with a specified extension on it, placeholders must be the very last characters
         #we only need non-collision with well-meaning things, so ignore the security advice
-        local pattend="${1##*XX}"
+        local pattend="${1##*XXX}"
         local beginchars=$((${#1} - ${#pattend}))
         local pattbegin="${1:0:$beginchars}"
+        if [[ "$pattbegin" == "" ]]
+        then
+            echo "tempfiles_create pattern '$1' needs more consecutive X's" 1>&2
+            exit 1
+        fi
         #-t doesn't even look at X's in the template
         #so, handle the /tmp, $TMPDIR stuff manually
         local retbase="$(mktemp "${TMPDIR:-/tmp}/$pattbegin")"
