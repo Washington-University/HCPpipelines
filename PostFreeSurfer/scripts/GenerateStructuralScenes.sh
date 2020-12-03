@@ -62,7 +62,7 @@ opts_ShowValues
 ### Set Defaults
 ### --------------------------------------------- ###
 
-TemplatesFolder="$HCPPIPEDIR/PostFreeSurfer/scripts/QC_templates"
+TemplatesFolder="$HCPPIPEDIR/global/templates/StructuralQC"
 
 # Some of the scenes display files in $TemplatesFolder (specifically, the MNI152 
 # volume template and group myelin maps from the S1200 release of HCP-YA).
@@ -129,6 +129,7 @@ function copyTemplateFiles {
     local targetDir=$2
 
     # Remove any pre-existing template files
+    # note that we take the MNI T1 volume from a different folder than the rest, but put it into the same folder
     rm -f "$targetDir"/S1200.{MyelinMap,sulc}* 
     rm -f "$targetDir"/MNI152_T1_0.8mm.nii.gz
     
@@ -137,12 +138,12 @@ function copyTemplateFiles {
             echo "Copying template files to $targetDir as files"
         fi
         cp "$templateDir"/S1200.{MyelinMap,sulc}* "$targetDir"/.
-        cp "$templateDir"/MNI152_T1_0.8mm.nii.gz "$targetDir"/.
+        cp "$templateDir"/../MNI152_T1_0.8mm.nii.gz "$targetDir"/.
     else
         if ((verbose)); then
             echo "Copying template files to $targetDir as symlinks"
         fi
-        for FIL in $(find "$templateDir" -regextype posix-extended -regex  '^.*(MNI152|S1200.*(MyelinMap|sulc)).*$'); do
+        for FIL in "$templateDir"/S1200.{MyelinMap,sulc}* "$templateDir"/../MNI152_T1_0.8mm.nii.gz; do
             FN=$(basename "$FIL")
             ln -s "$FIL" "$targetDir/$FN"
             #TSC: all paths should always be absolute now, and readlink -f doesn't do the same thing on mac (and takes an extra argument)
@@ -192,7 +193,7 @@ scriptDir=$(pwd)
 OutputSceneFolderSubj=$OutputSceneFolder
 mkdir -p $OutputSceneFolderSubj
 relPathToStudy=$(relativePath $OutputSceneFolderSubj $StudyFolder)
-if [ "$CopyTemplates" = "TRUE" ]; then
+if [[ "$CopyTemplates" == "TRUE" ]]; then
    copyTemplateFiles $TemplatesFolder $OutputSceneFolderSubj
    relPathToTemplates="."
 else
