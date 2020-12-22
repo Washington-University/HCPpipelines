@@ -72,6 +72,9 @@ ${CARET7DIR}/wb_command -cifti-create-dense-timeseries \
 			-right-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii -roi-right "$DownSampleFolder"/"$Subject".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
 			-timestep "$TR_vol"
 
+# Generate temporal mean of timeseries, for display in fMRIQC
+${CARET7DIR}/wb_command -cifti-reduce "$OutputAtlasDenseTimeseries".dtseries.nii MEAN "$OutputAtlasDenseTimeseries"_mean.dscalar.nii
+
 #Assess for zeros in the final dtseries (e.g., due to incomplete spatial coverage)
 # (Note that earlier steps do an appreciable amount of dilation to eliminate zeros,
 # so zeros remaining in the CIFTI at this point represent a non-trivial issue with spatial coverage)
