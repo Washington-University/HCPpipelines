@@ -169,13 +169,13 @@ TemplatesFolderDummyStr="TemplatesFolder"
 
 scriptDir=$(pwd)
 
-mkdir -p $OutputSceneFolder
-relPathToStudy=$(relativePath $OutputSceneFolder $StudyFolder)
+mkdir -p "$OutputSceneFolder"
+relPathToStudy=$(relativePath "$OutputSceneFolder" "$StudyFolder")
 if [[ "$CopyTemplates" == "TRUE" ]]; then
-   copyTemplateFiles $TemplatesFolder $OutputSceneFolder
+   copyTemplateFiles "$TemplatesFolder" "$OutputSceneFolder"
    relPathToTemplates="."
 else
-   relPathToTemplates=$(relativePath $OutputSceneFolder $TemplatesFolder)
+   relPathToTemplates=$(relativePath "$OutputSceneFolder" "$TemplatesFolder")
 fi
 if ((verbose)); then
    echo "TemplatesFolder: $TemplatesFolder"
