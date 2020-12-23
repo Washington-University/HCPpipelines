@@ -11,6 +11,7 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/relativePath.shlib" "$@"
 
 #this function gets called by opts_ParseArguments when --help is specified
 function usage()
@@ -151,30 +152,6 @@ function copyTemplateFiles {
             #TSC: all paths should always be absolute now, and readlink -f doesn't do the same thing on mac (and takes an extra argument)
         done
     fi
-}
-
-# ----------------------------
-# Function to determine relative paths
-# ----------------------------
-
-# We want to use relative paths in the scene file, so that it is robust
-# against changes in the base directory path.  As long as the relative
-# paths between $OutputSceneFolder, $TemplatesFolder, and $StudyFolder are
-# preserved, the scene should still work, even if the base directory changes
-# (i.e., if the files are moved, or accessed via a different mount point).
-
-# To determine the relative paths, 'realpath --relative-to' is not a robust
-# solution, as 'realpath' is not present by default on MacOS, and the 
-# '--relative-to' option is not supported on older Ubuntu versions.
-# So, use the following perl one-liner instead, 
-# from https://stackoverflow.com/a/17110582
-
-function relativePath {
-    # both $1 and $2 are absolute paths beginning with /
-    # returns relative path from $1 to $2
-    local source=$(cd "$1"; pwd)
-    local target=$(cd "$2"; pwd)
-    perl -e 'use File::Spec; print File::Spec->abs2rel(@ARGV) . "\n"' "$target" "$source"
 }
 
 # ----------------------------

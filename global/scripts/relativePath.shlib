@@ -1,0 +1,24 @@
+#!/bin/echo This script should not be run directly:
+
+# ----------------------------
+# Function to determine relative paths
+# ----------------------------
+
+# We want to use relative paths in scene files, so that they are robust
+# against changes in the base directory path.  As long as the relative paths
+# are preserved, the scene should still work, even if the base directory changes
+# (i.e., if the files are moved, or accessed via a different mount point).
+
+# To determine the relative paths, 'realpath --relative-to' is not a robust
+# solution, as 'realpath' is not present by default on MacOS, and the
+# '--relative-to' option is not supported on older Ubuntu versions.
+# So, use the following perl one-liner instead,
+# from https://stackoverflow.com/a/17110582
+
+function relativePath {
+    # both $1 and $2 are absolute paths beginning with /
+    # returns relative path from $1 to $2
+    local source=$(cd "$1"; pwd)
+    local target=$(cd "$2"; pwd)
+    perl -e 'use File::Spec; print File::Spec->abs2rel(@ARGV) . "\n"' "$target" "$source"
+}
