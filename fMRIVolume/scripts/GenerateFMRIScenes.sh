@@ -83,8 +83,8 @@ fMRINameDummyStr="fMRIName"
 
 scriptDir=$(pwd)
 
-mkdir -p $OutputSceneFolder
-relPathToStudy=$(relativePath $OutputSceneFolder $StudyFolder)
+mkdir -p "$OutputSceneFolder"
+relPathToStudy=$(relativePath "$OutputSceneFolder" "$StudyFolder")
 if ((verbose)); then
    echo "TemplatesFolder: $TemplatesFolder"
    echo "StudyFolder: $StudyFolder"
