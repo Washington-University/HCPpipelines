@@ -119,7 +119,7 @@ verbose=$(opts_StringToBool "$verboseArg")
 
 mkdir -p "$OutputSceneFolder"
 
-# Convert TemplatesFolder and StudyFolder to absolute paths (for convenience in reporting locations).
+# Convert TemplatesFolder, StudyFolder, and OutputSceneFolder to absolute paths (for convenience in reporting locations).
 TemplatesFolder=$(cd "$TemplatesFolder"; pwd)
 StudyFolder=$(cd "$StudyFolder"; pwd)
 OutputSceneFolder=$(cd "$OutputSceneFolder"; pwd)
@@ -180,7 +180,7 @@ fi
 if ((verbose)); then
    echo "TemplatesFolder: $TemplatesFolder"
    echo "StudyFolder: $StudyFolder"
-   echo "OutputSceneFolder: $(cd $OutputSceneFolder; pwd)"
+   echo "OutputSceneFolder: $OutputSceneFolder"
    echo "... relative path to template files (from OutputSceneFolder): $relPathToTemplates"
    echo "... relative path to StudyFolder (from OutputSceneFolder): $relPathToStudy"
 fi
