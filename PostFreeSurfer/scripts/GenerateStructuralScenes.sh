@@ -169,19 +169,18 @@ TemplatesFolderDummyStr="TemplatesFolder"
 
 scriptDir=$(pwd)
 
-OutputSceneFolderSubj=$OutputSceneFolder
-mkdir -p $OutputSceneFolderSubj
-relPathToStudy=$(relativePath $OutputSceneFolderSubj $StudyFolder)
+mkdir -p $OutputSceneFolder
+relPathToStudy=$(relativePath $OutputSceneFolder $StudyFolder)
 if [[ "$CopyTemplates" == "TRUE" ]]; then
-   copyTemplateFiles $TemplatesFolder $OutputSceneFolderSubj
+   copyTemplateFiles $TemplatesFolder $OutputSceneFolder
    relPathToTemplates="."
 else
-   relPathToTemplates=$(relativePath $OutputSceneFolderSubj $TemplatesFolder)
+   relPathToTemplates=$(relativePath $OutputSceneFolder $TemplatesFolder)
 fi
 if ((verbose)); then
    echo "TemplatesFolder: $TemplatesFolder"
    echo "StudyFolder: $StudyFolder"
-   echo "OutputSceneFolder: $(cd $OutputSceneFolderSubj; pwd)"
+   echo "OutputSceneFolder: $(cd $OutputSceneFolder; pwd)"
    echo "... relative path to template files (from OutputSceneFolder): $relPathToTemplates"
    echo "... relative path to StudyFolder (from OutputSceneFolder): $relPathToStudy"
 fi
