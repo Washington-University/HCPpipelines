@@ -224,7 +224,7 @@ echo "${fMRIMask}, ${PctBrainCoverage}, ${PctMaskCoverage}, ${NvoxT1FOVMask}, ${
 ${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${FinalMask} -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
     # Generate both masked and unmasked versions of scout, but with consistent scaling within the mask
-    ScoutOutputNotMasked=${ScoutOutput}_notmasked
+    ScoutOutputNotMasked=${ScoutOutput}_nomask
     ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom ${ScoutOutputNotMasked} -odt float
     # Compute spatial mean within mask, and normalize to a mean of 10000 inside the mask
     scaleFactor=$(${FSLDIR}/bin/fslstats ${ScoutOutputNotMasked} -k ${FinalMask} -l 0 -M)
