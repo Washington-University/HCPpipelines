@@ -73,9 +73,9 @@ OutputSceneFolder=$(cd "$OutputSceneFolder"; pwd)
 # ----------------------------
 
 # The following are matched to actual strings in the TEMPLATE_fMRIQC.scene file
-StudyFolderDummyStr="StudyFolder"
-SubjectIDDummyStr="SubjectID"
-fMRINameDummyStr="fMRIName"
+StudyFolderDummyStr="STUDYDIR"
+SubjectIDDummyStr="SESSION"
+fMRINameDummyStr="FMRINAME"
 
 # ----------------------------
 # Begin main action of script
