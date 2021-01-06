@@ -35,6 +35,9 @@ Usage: ${script_name} [options]
   --smoothingFWHM=<smoothing FWHM (mm)>
   --grayordinatesres=<grayordinates res (mm)>
   [--regname=<surface registration name>] defaults to 'MSMSulc'
+  [--fmri-qc=<"YES|NO|ONLY">
+      Controls whether to generate a QC scene and snapshots (default=YES).
+      ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)
 
 EOF
 }
@@ -94,12 +97,29 @@ FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`
 SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`
 GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
 RegName=`opts_GetOpt1 "--regname" $@`
-
-if [ -z "${RegName}" ]; then
-    RegName="MSMSulc"
-fi
+RegName=`opts_DefaultOpt $RegName MSMSulc`
+QCMode=`opts_GetOpt1 "--fmri-qc" $@`
+QCMode=`opts_DefaultOpt $QCMode YES`
+QCMode="$(echo ${QCMode} | tr '[:upper:]' '[:lower:]')"  # Convert to all lowercase
 
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
+
+doProcessing=1
+doQC=1
+case "$QCMode" in
+    (yes)
+        ;;
+    (no)
+        doQC=0
+        ;;
+    (only)
+        doProcessing=0
+		log_Msg "NOTE: Only generating fMRI QC scene and snapshots from existing data (no other processing)"
+        ;;
+    (*)
+        log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
+        ;;
+esac
 
 log_Msg "Path: ${Path}"
 log_Msg "Subject: ${Subject}"
@@ -109,6 +129,7 @@ log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
 log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "RegName: ${RegName}"
+log_Msg "QCMode: $QCMode"
 log_Msg "RUN: ${RUN}"
 
 if [ "${RegName}" = "FS" ] ; then
@@ -139,25 +160,39 @@ T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
 
-#Make fMRI Ribbon
-#Noisy Voxel Outlier Exclusion
-#Ribbon-based Volume to Surface mapping and resampling to standard surface
+# ------------------------------------------------------------------------------
+#  Start work
+# ------------------------------------------------------------------------------
 
-log_Msg "Make fMRI Ribbon"
-log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
-mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-"$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
+if ((doProcessing)); then
+    #Make fMRI Ribbon
+    #Noisy Voxel Outlier Exclusion
+    #Ribbon-based Volume to Surface mapping and resampling to standard surface
+	log_Msg "Make fMRI Ribbon"
+	log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
+	mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
+	"$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
 
-#Surface Smoothing
-log_Msg "Surface Smoothing"
-"$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
+    #Surface Smoothing
+	log_Msg "Surface Smoothing"
+	"$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
 
-#Subcortical Processing
-log_Msg "Subcortical Processing"
-"$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
+    #Subcortical Processing
+	log_Msg "Subcortical Processing"
+	"$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
 
-#Generation of Dense Timeseries
-log_Msg "Generation of Dense Timeseries"
-"$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
+    #Generation of Dense Timeseries
+	log_Msg "Generation of Dense Timeseries"
+	"$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
+fi
+
+if ((doQC)); then
+    log_Msg "Generating fMRI QC scene and snapshots"
+    "$PipelineScripts"/GenerateFMRIScenes.sh \
+        --study-folder="$Path" \
+        --subject="$Subject" \
+        --fmriname="$NameOffMRI" \
+        --output-folder="$ResultsFolder/fMRIQC"
+fi
 
 log_Msg "Completed!"
