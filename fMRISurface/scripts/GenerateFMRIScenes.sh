@@ -110,4 +110,4 @@ for ind in $scenesToCapture; do
     wb_command -show-scene "$OutputSceneFolder/$sceneFile" $ind "${pngDir}/${sceneFile}${ind}.png" 1400 600 -logging OFF
 done
 
-log_Msg "fMRI scene generation completed"
+log_Msg "fMRI QC scene generation completed"
