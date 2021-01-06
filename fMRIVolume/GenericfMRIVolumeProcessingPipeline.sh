@@ -130,11 +130,6 @@ Usage: ${script_name} [options]
       is NOT applied, regardless of value).  
       Default: "TRUE" if using --dcmethod="${SPIN_ECHO_METHOD_OPT}"; "FALSE" for all other SDC methods.
 
-  [--fmri-qc=<"YES|NO|ONLY">
-
-      Controls whether to generate a QC scene and snapshots (YES=default).
-      ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)
-
   [--processing-mode=<"HCPStyleData" (default) or "LegacyStyleData">
 
       Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
@@ -573,18 +568,6 @@ then
 	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
-QCMode=`opts_GetOpt1 "--fmri-qc" $@`
-QCMode=`opts_DefaultOpt $QCMode YES`
-QCMode="$(echo ${QCMode} | tr '[:upper:]' '[:lower:]')"  # Convert to all lowercase
-case "$QCMode" in
-    (yes|no|only)
-        log_Msg "QCMode: $QCMode"
-        ;;
-    (*)
-        log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
-        ;;
-esac
-
 RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 log_Msg "RUN: ${RUN}"
 
@@ -830,16 +813,6 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 T1wFolder="$Path"/"$Subject"/"$T1wFolder"
 AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
-
-if [[ $QCMode == "only" ]] ; then  # Generate QC scene and return
-    log_Msg "Generating fMRI QC scene and snapshots, then exiting"
-    "$PipelineScripts"/GenerateFMRIScenes.sh \
-        --study-folder="$Path" \
-        --subject="$Subject" \
-        --fmriname="$NameOffMRI" \
-        --output-folder="$ResultsFolder/fMRIQC"
-    return
-fi
 
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
 
@@ -1148,16 +1121,6 @@ ${RUN} cp ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}
-
-# Generate fMRIQC scene and snapshots
-if [[ $QCMode == "yes" ]] ; then
-    log_Msg "Generating fMRI QC scene and snapshots"
-    "$PipelineScripts"/GenerateFMRIScenes.sh \
-        --study-folder="$Path" \
-        --subject="$Subject" \
-        --fmriname="$NameOffMRI" \
-        --output-folder="$ResultsFolder/fMRIQC"
-fi
 
 #Basic Cleanup
 ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
