@@ -836,7 +836,7 @@ if [[ $QCMode == "only" ]] ; then  # Generate QC scene and return
     "$PipelineScripts"/GenerateFMRIScenes.sh \
         --study-folder="$Path" \
         --subject="$Subject" \
-        --fmriname="$NameOffMRI"
+        --fmriname="$NameOffMRI" \
         --output-folder="$ResultsFolder/fMRIQC"
     return
 fi
@@ -1155,7 +1155,7 @@ if [[ $QCMode == "yes" ]] ; then
     "$PipelineScripts"/GenerateFMRIScenes.sh \
         --study-folder="$Path" \
         --subject="$Subject" \
-        --fmriname="$NameOffMRI"
+        --fmriname="$NameOffMRI" \
         --output-folder="$ResultsFolder/fMRIQC"
 fi
 
