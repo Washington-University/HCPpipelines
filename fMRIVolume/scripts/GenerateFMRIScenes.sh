@@ -106,7 +106,7 @@ mkdir -p "${pngDir}"
 #numScenes=$(grep "SceneInfo Index" "$OutputSceneFolder/$sceneFile" | wc -l)
 #for ((ind = 1; ind <= numScenes; ind++)); do
 scenesToCapture="1 2"
-for $ind in $scenesToCapture; do
+for ind in $scenesToCapture; do
     wb_command -show-scene "$OutputSceneFolder/$sceneFile" $ind "${pngDir}/${sceneFile}${ind}.png" 1400 600 -logging OFF
 done
 
