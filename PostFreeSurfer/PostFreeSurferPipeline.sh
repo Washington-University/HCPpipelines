@@ -80,6 +80,24 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+doProcessing=1
+doQC=1
+
+case "$QCMode" in
+    (yes)
+        ;;
+    (no)
+        doQC=0
+        ;;
+    (only)
+        doProcessing=0
+		log_Warn "Only generating structural QC scene and snapshots from existing data (no other processing)"
+        ;;
+    (*)
+        log_Err_Abort "unrecognized value '$QCMode' for --structural-qc, use 'yes', 'no', or 'only'"
+        ;;
+esac
+
 #processing code goes here
 
 verbose_red_echo "---> Starting ${log_ToolName}"
@@ -92,23 +110,6 @@ log_Check_Env_Var FSLDIR
 
 HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
 PipelineScripts="$HCPPIPEDIR_PostFS"
-
-doProcessing=1
-doQC=1
-
-case "$QCMode" in
-    (yes)
-        ;;
-    (no)
-        doQC=0
-        ;;
-    (only)
-        doProcessing=0
-        ;;
-    (*)
-        log_Err_Abort "unrecognized value '$QCMode' for --structural-qc, use 'yes', 'no', or 'only'"
-        ;;
-esac
 
 # ------------------------------------------------------------------------------
 #  Naming Conventions
@@ -282,6 +283,7 @@ if ((doProcessing)); then
 fi
 
 if ((doQC)); then
+	log_Msg "Generating structural QC scene and snapshots"
     "$PipelineScripts"/GenerateStructuralScenes.sh \
         --study-folder="$StudyFolder" \
         --subject="$Subject" \

@@ -301,3 +301,4 @@ done
 # Cleanup
 rm "$OutputSceneFolder/$Subject.$mapName."{L,R}".$mesh.func.gii"
 
+log_Msg "structural QC scene generation completed"

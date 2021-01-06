@@ -106,20 +106,6 @@ RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything a
 
 doProcessing=1
 doQC=1
-case "$QCMode" in
-    (yes)
-        ;;
-    (no)
-        doQC=0
-        ;;
-    (only)
-        doProcessing=0
-		log_Msg "NOTE: Only generating fMRI QC scene and snapshots from existing data (no other processing)"
-        ;;
-    (*)
-        log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
-        ;;
-esac
 
 log_Msg "Path: ${Path}"
 log_Msg "Subject: ${Subject}"
@@ -130,6 +116,20 @@ log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "RegName: ${RegName}"
 log_Msg "QCMode: $QCMode"
+case "$QCMode" in
+    (yes)
+        ;;
+    (no)
+        doQC=0
+        ;;
+    (only)
+        doProcessing=0
+		log_Warn "Only generating fMRI QC scene and snapshots from existing data (no other processing)"
+        ;;
+    (*)
+        log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
+        ;;
+esac
 log_Msg "RUN: ${RUN}"
 
 if [ "${RegName}" = "FS" ] ; then
