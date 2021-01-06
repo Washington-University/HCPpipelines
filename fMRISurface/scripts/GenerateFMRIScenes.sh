@@ -94,11 +94,11 @@ fi
 
 # Replace dummy strings in the template scenes to generate
 # a scene file appropriate for each subject and fMRI run
-sceneFile="$OutputSceneFolder/${Subject}_${fMRIName}.fMRIQC.wb_scene"
+sceneFile="${Subject}_${fMRIName}.fMRIQC.wb_scene"  # No path (file name only)
 sed -e "s|${StudyFolderDummyStr}|${relPathToStudy}|g" \
     -e "s|${SubjectIDDummyStr}|${Subject}|g" \
     -e "s|${fMRINameDummyStr}|${fMRIName}|g" \
-    "$TemplatesFolder"/TEMPLATE_fMRIQC.scene > "$sceneFile"
+    "$TemplatesFolder"/TEMPLATE_fMRIQC.scene > "$OutputSceneFolder/$sceneFile"
 
 # Generate snapshots
 pngDir="$OutputSceneFolder/snapshots"
