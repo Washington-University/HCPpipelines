@@ -133,14 +133,14 @@ esac
 log_Msg "RUN: ${RUN}"
 
 if [ "${RegName}" = "FS" ] ; then
-  log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
-  log_Warn "         HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
-  log_Warn "         alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
-  log_Warn "         dramatically higher surface distortion (both isotropic and anisotropic). These things"
-  log_Warn "         occur because FreeSurfer's registration has too little regularization of folding patterns"
-  log_Warn "         that are imperfectly correlated with function and cortical areas, resulting in overfitting"
-  log_Warn "         of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS"
-  log_Warn "         for more details."
+    log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
+    log_Warn "         HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
+    log_Warn "         alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
+    log_Warn "         dramatically higher surface distortion (both isotropic and anisotropic). These things"
+    log_Warn "         occur because FreeSurfer's registration has too little regularization of folding patterns"
+    log_Warn "         that are imperfectly correlated with function and cortical areas, resulting in overfitting"
+    log_Warn "         of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS"
+    log_Warn "         for more details."
 fi
 
 # Setup PATHS
@@ -168,22 +168,22 @@ if ((doProcessing)); then
     #Make fMRI Ribbon
     #Noisy Voxel Outlier Exclusion
     #Ribbon-based Volume to Surface mapping and resampling to standard surface
-	log_Msg "Make fMRI Ribbon"
-	log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
-	mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-	"$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
+    log_Msg "Make fMRI Ribbon"
+    log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
+    mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
+    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
 
     #Surface Smoothing
-	log_Msg "Surface Smoothing"
-	"$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
+    log_Msg "Surface Smoothing"
+    "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
 
     #Subcortical Processing
-	log_Msg "Subcortical Processing"
-	"$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
+    log_Msg "Subcortical Processing"
+    "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
 
     #Generation of Dense Timeseries
-	log_Msg "Generation of Dense Timeseries"
-	"$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
+    log_Msg "Generation of Dense Timeseries"
+    "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 fi
 
 if ((doQC)); then
