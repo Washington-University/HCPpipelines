@@ -1071,6 +1071,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 # Load function libraries
+set -e                                                         # debug trap doesn't trigger in functions, temporary fix - needs to be *before* sourcing debug.shlib for detection of interactive shell to disable it
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 
