@@ -24,12 +24,14 @@
 #
 # ## Description
 #
-# This script is a simple dispatching script for running Task fMRI Analysis.  It determines what
-# version of [FSL][FSL] is installed and in use and then invokes either V1.0 of the Task fMRI Analysis
-# if the version of [FSL][FSL] is 5.0.6 or earlier or V2.0 of the Task fMRI Analysis if the version
-# of [FSL][FSL] is 5.0.7 or later.
-#
-# The ${FSLDIR}/etc/fslversion file is used to determine the version of [FSL][FSL] in use.
+# This script is a simple dispatching script for running Task fMRI Analysis.  It checks 
+# the ${FSLDIR}/etc/fslversion file to determine which version of [FSL][FSL] is installed,
+# and aborts for [FSL][FSL] is 5.0.6 or earlier.
+# 
+# This script launches Level1 analyses (serially) for each value in the $LevelOnefMRINames
+# variable. After the Level1 analyses have completed, the script launches a single Level2
+# analysis instance to combine the multiple Level1 estimates into individual subject-level
+# estimates. (Level2 analysis is omitted if $LevelTwofMRIName equals "NONE")
 #
 # <!-- References -->
 # [HCP]: http://www.humanconnectome.org
