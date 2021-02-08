@@ -1,40 +1,132 @@
 #!/bin/bash
 
-echo "========================================"
+set -eu
 
-this_tools_dir=$(dirname "${BASH_SOURCE[0]}")
+scriptdir=$(cd "$(dirname -- "$0")" && pwd)
 
-first_char=${this_tools_dir:0:1}
-if [ "${first_char}" == "." ]; then
-	this_tools_dir="${PWD}${this_tools_dir:1}"
+if [[ "${HCPPIPEDIR:-}" != "" ]]
+then
+    setpipedir=$(cd "$HCPPIPEDIR" && pwd)
+    if [[ "$scriptdir" != "$setpipedir" ]]
+    then
+        #we haven't sourced anything, don't use logging functions
+        echo "warning: HCPPIPEDIR is set to $HCPPIPEDIR, which doesn't seem to be the location of this show_version script" 1>&2
+    fi
 fi
 
-echo "  DIRECTORY: ${this_tools_dir}"
+#ignore HCPPIPEDIR from environment, report on *this* pipelines directory
+HCPPIPEDIR="$scriptdir"
 
-product_file="${this_tools_dir}/product.txt"
-version_file="${this_tools_dir}/version.txt"
-branch_file="${this_tools_dir}/branch.txt"
-deployment_file="${this_tools_dir}/deployment.txt"
+verdir="$HCPPIPEDIR"/global/scripts/versioning
 
-if [ -e "${product_file}" ] ; then
-	echo -n "    PRODUCT: "
-	cat ${product_file}
+base=$(cat "$verdir"/base.txt)
+
+candidate=0
+release=0
+
+if [[ -f "$verdir"/release.txt ]]
+then
+    relstring=$(cat "$verdir"/release.txt)
+    if [[ "$relstring" != "$base" ]]
+    then
+        echo "ERROR: release.txt exists, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    release=1
 fi
 
-if [ -e "${version_file}" ] ; then
-	echo -n "    VERSION: "
-	cat ${version_file}
+if [[ -f "$verdir"/candidate.txt ]]
+then
+    canstring=$(cat "$verdir"/candidate.txt)
+    if [[ "$canstring" != "$base" ]]
+    then
+        echo "ERROR: candidate.txt exists, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    candidate=1
 fi
 
-if [ -e "${branch_file}" ] ; then
-	echo -n "     BRANCH: "
-	cat ${branch_file}
+if ((release && candidate))
+then
+    echo "ERROR: both release.txt and candidate.txt exist" 1>&2
+    exit 1
 fi
 
-
-if [ -e "${deployment_file}" ] ; then
-	echo -n " DEPLOYMENT: "
-	cat ${deployment_file}
+if [[ "${HCPPIPE_HIDE_RC:-}" != "" ]]
+then
+    if [[ "$HCPPIPE_HIDE_RC" != "$base" ]]
+    then
+        echo "ERROR: HCPPIPE_HIDE_RC is set, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    if ((candidate))
+    then
+        candidate=0
+        release=1
+    else
+        #error if it isn't a candidate and the "hide" variable exists?  could complicate rebuilding qunex on an actual release, so maybe remove this error
+        echo "ERROR: HCPPIPE_HIDE_RC is set, but this version is not a release candidate" 1>&2
+        exit 1
+    fi
 fi
 
-echo "========================================"
+if ((release))
+then
+    verstring="$base"
+else
+    if ((candidate))
+    then
+        verstring="$base"-rc
+    else
+        verstring=Post-"$base"
+    fi
+fi
+
+short=0
+while (($# > 0))
+do
+    case $1 in
+        (--short)
+            short=1
+            ;;
+    esac
+    shift
+done
+
+commit=''
+#plot twist: mac's which has -s for silent, but debian's doesn't
+if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
+then
+    modified=no
+    if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD)
+    then
+        modified=YES
+        verstring="$verstring"-MOD
+    fi
+    commit=$(cd "$HCPPIPEDIR"; git rev-parse HEAD)
+    shortcommit=$(cd "$HCPPIPEDIR"; git rev-parse --short HEAD)
+    if ((! release))
+    then
+        verstring="$verstring"-"$shortcommit"
+    fi
+fi
+
+if ((short))
+then
+    echo "$verstring"
+else
+    #use old formatting, I guess?
+    echo "========================================"
+    echo "  DIRECTORY: $HCPPIPEDIR"
+    echo "    PRODUCT: HCP Pipeline Scripts"
+    echo "    VERSION: $verstring"
+    if [[ "$commit" == "" ]]
+    then
+        echo "     COMMIT: unknown"
+    else
+        echo "     COMMIT: $commit"
+        echo "   MODIFIED: $modified"
+    fi
+    echo "========================================"
+fi
+
