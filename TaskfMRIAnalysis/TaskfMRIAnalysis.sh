@@ -39,56 +39,92 @@
 #
 #~ND~END~
 
-
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
-show_usage() {
-	cat <<EOF
-
-${script_name}: Run TaskfMRIAnalysis pipeline
-
-Usage: ${script_name} [options]
-
-Usage information To Be Written
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
+set -eu
 
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"          # Function for getting FSL version
 
-opts_ShowVersionIfRequested $@
 
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
+# --------------------------------------------------------------------------------
+#  Usage Description Function
+# --------------------------------------------------------------------------------
 
-${HCPPIPEDIR}/show_version
+#this function gets called by opts_ParseArguments when --help is specified
+function usage()
+{
+    #header text
+    echo "
+$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) analyses, and Level2 (single subject-level) analysis as specified.
+
+Usage: $log_ToolName arguments...
+[ ] = optional; < > = user supplied value
+"
+    #automatic argument descriptions
+    opts_ShowArguments
+    
+    #do not use exit, the parsing code takes care of it
+}
+
+# ------------------------------------------------------------------------------
+#  Parse Command Line Options
+# ------------------------------------------------------------------------------
+
+#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
+#help info for option gets printed like "--foo=<$3> - $4"
+opts_AddMandatory '--study-folder' 'Path' '/path/to/study/folder' "directory containing imaging data for all subjects"
+opts_AddMandatory '--subject' 'Subject' 'SubjectID' ""
+opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'tfMRI_TaskName_RL@tfMRI_TaskName_LR' "List of subdirectories containing each time series image for the TaskName task. Multiple scan subdirectories should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
+opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName_TaskName_RL@DesignName_TaskName_LR' "List of prefixes in the design.fsf filenames for each time series image for the TaskName task. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design files by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
+opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
+opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
+opts_AddOptional '--lowresmesh' 'LowResMesh' 'integer' "Default=32, which is appropriate for HCP minimal preprocessing pipeline outputs" '32'
+opts_AddOptional '--grayordinatesres' 'GrayordinatesResolution' 'integer' "Default=2mm, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
+opts_AddOptional '--origsmoothingFWHM' 'OriginalSmoothingFWHM' 'integer' "Default=2mm, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
+opts_AddOptional '--finalsmoothingFWHM' 'FinalSmoothingFWHM' 'integer' "Default=2mm, which is no additional smoothing above HCP minimal preprocessing pipelines outputs. Total desired smoothing (finalsmoothingFWHM) is reached by applying additional smoothing onto origsmoothingFWHM." '2'
+opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in SubjectID/MNINonLinear/Results/tfMRI_TaskName_Scan. Default='NONE'" 'NONE'
+opts_AddOptional '--highpassfilter' 'TemporalFilter' 'integer' "Value for nonlinear highpass filter (in seconds). Default=200. Use 2000 for linear detrend." '200'
+opts_AddOptional '--vba' 'VolumeBasedProcessing' 'YES/NO' "Default=NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced)" 'NO'
+opts_AddOptional '--regname' 'RegName' 'RegName' "Name of surface registration technique. Default=NONE, which will use the default surface registration." 'NONE'
+opts_AddOptional '--parcellation' 'Parcellation' 'ParcellationName' "Name of parcellation scheme to conduct parcellated analysis. Default=NONE, which will perform dense analysis instead. Non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation supersedes smoothing (i.e. no smoothing is done)" 'NONE'
+opts_AddOptional '--parcellationfile' 'ParcellationFile' '/path/to/dlabel' "Absolute path to the parcellation dlabel file. Default=NONE" 'NONE'
+
+opts_ParseArguments "$@"
+
+# if LevelOnefsfNames is blank, set equal to LevelOnefMRINames
+[ -z "$LevelOnefsfNames" ] && LevelOnefsfNames=${LevelOnefMRINames}
+# if LevelTwofsfName is blank, set equal to LevelTwofMRIName
+[ -z "$LevelTwofsfName" ] && LevelTwofsfName=${LevelTwofMRIName}
+
+#display the parsed/default values
+opts_ShowValues
+
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+log_Msg "Platform Information Follows: "
+uname -a
+
+opts_ShowVersionIfRequested $@
+${HCPPIPEDIR}/show_version
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
@@ -97,10 +133,10 @@ log_Check_Env_Var CARET7DIR
 HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 
 # ------------------------------------------------------------------------------
-#  Support Functions
+#  Determine if required FSL version is present
 # ------------------------------------------------------------------------------
 
-# function to test FSL versions
+# function to determine FSL version
 determine_old_or_new_fsl()
 {
 	# NOTE:
@@ -159,57 +195,6 @@ determine_old_or_new_fsl()
 	echo ${old_or_new}
 }
 
-# ------------------------------------------------------------------------------
-#  Parse Command Line Options
-# ------------------------------------------------------------------------------
-
-log_Msg "Platform Information Follows: "
-uname -a
-
-log_Msg "Parsing Command Line Options"
-
-Path=`opts_GetOpt1 "--path" $@`
-Subject=`opts_GetOpt1 "--subject" $@`
-LevelOnefMRINames=`opts_GetOpt1 "--lvl1tasks" $@`
-LevelOnefsfNames=`opts_GetOpt1 "--lvl1fsfs" $@`
-LevelTwofMRIName=`opts_GetOpt1 "--lvl2task" $@`
-LevelTwofsfNames=`opts_GetOpt1 "--lvl2fsf" $@`
-LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`
-GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
-OriginalSmoothingFWHM=`opts_GetOpt1 "--origsmoothingFWHM" $@`
-Confound=`opts_GetOpt1 "--confound" $@`
-FinalSmoothingFWHM=`opts_GetOpt1 "--finalsmoothingFWHM" $@`
-TemporalFilter=`opts_GetOpt1 "--temporalfilter" $@`
-VolumeBasedProcessing=`opts_GetOpt1 "--vba" $@`
-RegName=`opts_GetOpt1 "--regname" $@`
-Parcellation=`opts_GetOpt1 "--parcellation" $@`
-ParcellationFile=`opts_GetOpt1 "--parcellationfile" $@`
-
-# ------------------------------------------------------------------------------
-#  Show Command Line Options
-# ------------------------------------------------------------------------------
-
-log_Msg "Finished Parsing Command Line Options"
-log_Msg "Path: ${Path}"
-log_Msg "Subject: ${Subject}"
-log_Msg "LevelOnefMRINames: ${LevelOnefMRINames}"
-log_Msg "LevelOnefsfNames: ${LevelOnefsfNames}"
-log_Msg "LevelTwofMRIName: ${LevelTwofMRIName}"
-log_Msg "LevelTwofsfNames: ${LevelTwofsfNames}"
-log_Msg "LowResMesh: ${LowResMesh}"
-log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
-log_Msg "OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
-log_Msg "Confound: ${Confound}"
-log_Msg "FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
-log_Msg "TemporalFilter: ${TemporalFilter}"
-log_Msg "VolumeBasedProcessing: ${VolumeBasedProcessing}"
-log_Msg "RegName: ${RegName}"
-log_Msg "Parcellation: ${Parcellation}"
-log_Msg "ParcellationFile: ${ParcellationFile}"
-
-
-########################################## MAIN #########################################
-
 # Determine if required FSL version is present
 fsl_version_get fsl_ver
 old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
@@ -220,6 +205,10 @@ then
 else
 	log_Msg "Beginning analyses with FSL version ${fsl_ver}"
 fi
+
+
+
+########################################## MAIN #########################################
 
 # Determine locations of necessary directories (using expected naming convention)
 AtlasFolder="${Path}/${Subject}/MNINonLinear"
@@ -261,7 +250,7 @@ if [ "$LevelTwofMRIName" != "NONE" ]
 then
 	# Combine Data Across Phase Encoding Directions in the Level 2 Analysis
 	log_Msg "RUN_LEVEL2: Combine Data Across Phase Encoding Directions in the Level 2 Analysis"
-	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
+	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
 	  $Subject \
 	  $ResultsFolder \
@@ -269,7 +258,7 @@ then
 	  $LevelOnefMRINames \
 	  $LevelOnefsfNames \
 	  $LevelTwofMRIName \
-	  $LevelTwofsfNames \
+	  $LevelTwofsfName \
 	  $LowResMesh \
 	  $FinalSmoothingFWHM \
 	  $TemporalFilter \
