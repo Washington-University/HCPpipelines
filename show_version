@@ -82,17 +82,6 @@ else
     fi
 fi
 
-short=0
-while (($# > 0))
-do
-    case $1 in
-        (--short)
-            short=1
-            ;;
-    esac
-    shift
-done
-
 commit=''
 #plot twist: mac's which has -s for silent, but debian's doesn't
 if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
@@ -110,6 +99,17 @@ then
         verstring="$verstring"-"$shortcommit"
     fi
 fi
+
+short=0
+while (($# > 0))
+do
+    case $1 in
+        (--short)
+            short=1
+            ;;
+    esac
+    shift
+done
 
 if ((short))
 then
