@@ -1,5 +1,25 @@
 #!/bin/bash
 
+#This script exists for the following reasons:
+#1) We can ask a user to run it so we can get a good idea what version of the pipelines they have, including indicating whether it is dev, rc, or release
+#2) Pipelines can run it with --short to get a simple version string with the same indicators
+#3) To allow containers built with a release candidate to behave more like a final release, to avoid rebuilding again after processing, script logic can hide the "RC" status
+#4) Running a script can gather more information (and do sanity checking) compared to a simple text file
+#
+#Design:
+#Users may download the repo as a zip, or via git clone, so the main behavior needs to be implemented based on files in the source tree
+#To reduce the chance for typos, the formulaic -rc and Post- pre/suffixes (and other automatic things) are added by the script, so the version file contains only the main version string, like "v4.3.0".
+#To reduce the chance of accidental merge/cherry-pick/forgot-to-delete causing a commit to improperly claim rc or release status, everything that controls rc or release status display is checked to contain the exact same string as the main version text, otherwise an error is thrown
+#
+#Usage:
+#Run it with no arguments to get extended version information
+#Run it with --short to get just the version string
+#
+#Devops:
+#When starting an rc-dev branch, edit global/versioning/base.txt to the version that will be the release, and copy it to candidate.txt
+#When the release is final, move candidate.txt to release.txt and commit/tag, and on the dev branch, change base.txt to the newly released version (to update the "Post-" version)
+#To get an rc to use a release version string format, set HCPPIPE_HIDE_RC to the same as the contents of base.txt
+
 set -eu
 
 scriptdir=$(cd "$(dirname -- "$0")" && pwd)
@@ -63,10 +83,6 @@ then
     then
         candidate=0
         release=1
-    else
-        #error if it isn't a candidate and the "hide" variable exists?  could complicate rebuilding qunex on an actual release, so maybe remove this error
-        echo "ERROR: HCPPIPE_HIDE_RC is set, but this version is not a release candidate" 1>&2
-        exit 1
     fi
 fi
 
@@ -87,7 +103,8 @@ commit=''
 if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
 then
     modified=no
-    if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD)
+    #ignore modification of things in Examples?
+    if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- ':!/Examples/')
     then
         modified=YES
         verstring="$verstring"-MOD
