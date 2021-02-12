@@ -16,7 +16,7 @@
 #Run it with --short to get just the version string
 #
 #Devops:
-#When starting an rc-dev branch, edit global/versioning/base.txt to the version that will be the release, and copy it to candidate.txt
+#When starting an rc-dev branch, edit global/scripts/versioning/base.txt to the version that will be the release, and copy it to candidate.txt
 #When the release is final, move candidate.txt to release.txt and commit/tag, and on the dev branch, change base.txt to the newly released version (to update the "Post-" version)
 #To get an rc to use a release version string format, set HCPPIPE_HIDE_RC to the same as the contents of base.txt
 
