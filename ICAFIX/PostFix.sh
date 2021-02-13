@@ -237,7 +237,7 @@ get_options()
 show_tool_versions() {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
+	"${HCPPIPEDIR}"/show_version --short
 
 	# Show wb_command version
 	log_Msg "Showing wb_command version"

@@ -169,7 +169,7 @@ debug_enable_trap
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
-cat ${HCPPIPEDIR}/version.txt
+"${HCPPIPEDIR}"/show_version --short
 
 # Show FSL version
 log_Msg "Showing FSL version"

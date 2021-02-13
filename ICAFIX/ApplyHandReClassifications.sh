@@ -131,7 +131,7 @@ show_tool_versions()
 {
 	# Show HCP Pipelines Version
 	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
+	"${HCPPIPEDIR}"/show_version --short
 
 	# Show FSL version
 	log_Msg "Showing FSL version"
