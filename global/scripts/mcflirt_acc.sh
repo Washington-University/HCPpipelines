@@ -15,7 +15,20 @@ Usage() {
 
 input=`${FSLDIR}/bin/remove_ext ${1}`
 output=`${FSLDIR}/bin/remove_ext ${2}`
-TR=`fslval $input pixdim4`
+TR=`${FSLDIR}/bin/fslval $input pixdim4 | cut -d " " -f 1`
+TR_units=`${FSLDIR}/bin/fslval $input time_units | cut -d " " -f 1`
+TR_vol=${TR}
+
+#adjust TR_vol according to time_units for fslmerge -tr
+if [ ${TR_units} = "s" ] ; then
+        #this is correct;
+        break
+elif [ ${TR_units} = "ms" ] ; then
+        TR_vol=$( echo "scale=4;${TR_vol} / 1000.0" | bc -l );
+elif [ ${TR_units} = "us" ] ; then
+        TR_vol=$( echo "scale=4;${TR_vol} / 1000000.0" | bc -l );
+fi
+
 
 if [ `${FSLDIR}/bin/imtest $input` -eq 0 ];then
     echo "Input does not exist or is not in a supported format"
@@ -66,8 +79,8 @@ for i in `${FSLDIR}/bin/imglob ${output}_tmp????.*` ; do
     echo `printf "%.6f" $mmx` `printf "%.6f" $mmy` `printf "%.6f" $mmz` `printf "%.6f" $degx` `printf "%.6f" $degy` `printf "%.6f" $degz` >> ${output}/mc.par
 done
 
-${FSLDIR}/bin/fslmerge -tr $output `${FSLDIR}/bin/imglob ${output}_tmp????.*` $TR
-${FSLDIR}/bin/fslmerge -tr ${output}_mask `${FSLDIR}/bin/imglob ${output}_mask????.*` $TR
+${FSLDIR}/bin/fslmerge -tr $output `${FSLDIR}/bin/imglob ${output}_tmp????.*` $TR_vol
+${FSLDIR}/bin/fslmerge -tr ${output}_mask `${FSLDIR}/bin/imglob ${output}_mask????.*` $TR_vol
 ${FSLDIR}/bin/fslmaths ${output}_mask -Tmean -mul `$FSLDIR/bin/fslval ${output}_mask dim4` ${output}_mask
 
 /bin/rm ${output}_tmp????.* ${output}_mask????.* ${output}_allones.*
