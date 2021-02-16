@@ -109,25 +109,22 @@ validate_freesurfer_version()
 	fi
 
 	# strip out extraneous stuff from FreeSurfer version string
-	freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-	freesurfer_version=${freesurfer_version_string_array[5]}
-	freesurfer_version=${freesurfer_version#v} # strip leading "v"
+	freesurfer_version=`echo ${freesurfer_version_string} | grep -o -E "([0-9])+\.([0-9])+\.([0-9])+"`
 
 	log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
 
 	# break FreeSurfer version into components
 	# primary, secondary, and tertiary
 	# version X.Y.Z ==> X primary, Y secondary, Z tertiary
-	freesurfer_version_array=(${freesurfer_version//./ })
-
-	freesurfer_primary_version="${freesurfer_version_array[0]}"
-	freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
-
-	freesurfer_secondary_version="${freesurfer_version_array[1]}"
-	freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
-
-	freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-	freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
+	if [[ ${freesurfer_version} =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+		freesurfer_all_version=${BASH_REMATCH[0]}
+		freesurfer_primary_version=${BASH_REMATCH[1]}
+		freesurfer_secondary_version=${BASH_REMATCH[2]}
+		freesurfer_tertiary_version=${BASH_REMATCH[3]}
+	else
+		echo "Cannot tell which version of FreeSurfer you are using."
+		exit 1
+	fi
 
 	if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
 		# e.g. 4.y.z, 5.y.z
