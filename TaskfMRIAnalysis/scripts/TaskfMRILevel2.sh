@@ -159,7 +159,12 @@ else
 	RegString=""
 fi
 SmoothingString="_s${FinalSmoothingFWHM}"
-TemporalFilterString="_hp""$TemporalFilter"
+# Record additional hp filter in filenames
+if [ "${TemporalFilter}" != "NONE" ]; then
+	TemporalFilterString="_hp""$TemporalFilter"
+else
+	TemporalFilterString="_hp0"
+fi
 log_Msg "MAIN: SET_NAME_STRINGS: SmoothingString: ${SmoothingString}"
 log_Msg "MAIN: SET_NAME_STRINGS: TemporalFilterString: ${TemporalFilterString}"
 log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"

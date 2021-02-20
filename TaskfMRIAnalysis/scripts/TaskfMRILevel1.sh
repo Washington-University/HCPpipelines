@@ -149,7 +149,15 @@ fi
 
 ##### SET_NAME_STRINGS: smoothing and filtering string variables used for file naming #####
 SmoothingString="_s${FinalSmoothingFWHM}"
-TemporalFilterString="_hp""$TemporalFilter"
+
+# Record additional hp filter in filenames
+if [ "${TemporalFilter}" != "NONE" ]; then
+	TemporalFilterString="_hp""$TemporalFilter"
+else
+	TemporalFilterString="_hp0"
+	TemporalFilter="-1" # negative values turn filter off in fslmaths
+fi
+
 # Set variables used for different registration procedures
 if [ "${RegName}" != "NONE" ] ; then
 	RegString="_${RegName}"
@@ -351,12 +359,13 @@ fi # end Volume spatial smoothing
 
 
 ##### APPLY TEMPORAL FILTERING #####
-
 # Issue 1: Temporal filtering is conducted by fslmaths, but fslmaths is not CIFTI-compliant. 
 # Convert CIFTI to "fake" NIFTI file, use FSL tools (fslmaths), then convert "fake" NIFTI back to CIFTI.
 # Issue 2: fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward). film_gls expects mean in image. 
 # So, save the mean to file, then add it back after -bptf.
-if [[ $runParcellated == true || $runDense == true ]]; then
+if [ "${TemporalFilter}" = "-1" ]; then
+	log_Msg "MAIN: TEMPORAL_FILTER: Temporal filter set to NONE. Skipping..."
+elif [[ $runParcellated == true || $runDense == true ]]; then
 	log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to CIFTI file"
 	# Convert CIFTI to "fake" NIFTI
 	${CARET7DIR}/wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI.nii.gz
@@ -374,7 +383,11 @@ if [[ $runParcellated == true || $runDense == true ]]; then
 	rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ParcellationString}_FAKENIFTI_mean.nii.gz
 fi
 
-if $runVolume; then
+if [[ "${TemporalFilter}" == "-1" && $runVolume == true]]; then
+	# We drop the "dilMrim" string from the output file name, so as to avoid breaking
+	# any downstream scripts.
+	imcp ${SmoothedDilatedResultFile} ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}
+elif $runVolume; then
 	#Add temporal filtering to the output from above
 	log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to NIFTI file"
 	# Temporal filtering is conducted by fslmaths. 
