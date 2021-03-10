@@ -84,6 +84,9 @@ TemporalFilter="${10}"
 VolumeBasedProcessing="${11}"
 RegName="${12}"
 Parcellation="${13}"
+ProcSTRING="${14}"
+TemporalSmoothing="${15}"
+
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -101,6 +104,8 @@ log_Msg "READ_ARGS: TemporalFilter: ${TemporalFilter}"
 log_Msg "READ_ARGS: VolumeBasedProcessing: ${VolumeBasedProcessing}"
 log_Msg "READ_ARGS: RegName: ${RegName}"
 log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
+log_Msg "READ_ARGS: ProcSTRING: ${ProcSTRING}" 
+log_Msg "READ_ARGS: TemporalSmoothing: ${TemporalSmoothing}"
 
 
 ########################################## MAIN ##################################
