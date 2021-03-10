@@ -93,6 +93,8 @@ VolumeBasedProcessing="${13}"
 RegName="${14}"
 Parcellation="${15}"
 ParcellationFile="${16}"
+ProcSTRING="${17}"
+TemporalSmoothing="${18}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -113,6 +115,8 @@ log_Msg "READ_ARGS: VolumeBasedProcessing: ${VolumeBasedProcessing}"
 log_Msg "READ_ARGS: RegName: ${RegName}"
 log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
 log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}" 
+log_Msg "READ_ARGS: ProcSTRING: ${ProcSTRING}" 
+log_Msg "READ_ARGS: TemporalSmoothing: ${TemporalSmoothing}"
 
 
 ########################################## MAIN ##################################

@@ -227,7 +227,7 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"
 	# Get corresponding fsf name from $LevelOnefsfNames list
 	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
-	log_Msg "RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"
+	log_Msg "RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile $ProcSTRING $TemporalSmoothing"
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
 	  $Subject \
 	  $ResultsFolder \
@@ -244,7 +244,9 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	  $VolumeBasedProcessing \
 	  $RegName \
 	  $Parcellation \
-	  $ParcellationFile
+	  $ParcellationFile \
+	  $ProcSTRING \
+	  $TemporalSmoothing
 	i=$(($i+1))
 done
 
@@ -252,7 +254,7 @@ if [ "$LevelTwofMRIName" != "NONE" ]
 then
 	# Combine Data Across Phase Encoding Directions in the Level 2 Analysis
 	log_Msg "RUN_LEVEL2: Combine Data Across Phase Encoding Directions in the Level 2 Analysis"
-	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
+	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ProcSTRING $TemporalSmoothing"
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
 	  $Subject \
 	  $ResultsFolder \
@@ -266,7 +268,9 @@ then
 	  $TemporalFilter \
 	  $VolumeBasedProcessing \
 	  $RegName \
-	  $Parcellation
+	  $Parcellation \
+	  $ProcSTRING \
+	  $TemporalSmoothing
 fi
 
 log_Msg "Completed!"
