@@ -432,7 +432,7 @@ for fmri in $fmris ; do
 	# to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
 	# The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
 	# AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
-	ML_PATHS="addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+	ML_PATHS="addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	case ${FSL_FIX_MATLAB_MODE} in
 		0)

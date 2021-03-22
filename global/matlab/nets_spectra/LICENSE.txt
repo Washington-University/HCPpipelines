@@ -1,0 +1,56 @@
+via email between steve@fmrib, tsc5yc and glasserm on 2020/6/3:
+
+Hi Steve,
+
+Can we borrow code from FSL_Nets nets_spectra for the HCP Pipelines under a less restrictive license than the FSL license?  We just want to compute the normalized and unormalized spectra for an input timeseries without the other bells and whistles.  
+Thanks,
+ 
+Matt.
+
+---
+
+Hi - yes of course.  Actually IIRC I didn't really attach a licence to FSLNets yet anyway.
+xx
+
+---
+
+$ grep -C 4 licence FSLNets/README
+ 
+%%%  FSLNets v0.6.1
+%%%  FMRIB Analysis Group
+%%%  Copyright (C) 2012-2014 University of Oxford
+%%%  Licence is same as FSL licence
+%%%  See documentation at  http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSLNets
+ 
+%%%%%%%%%% list of backwards incompatibilities from v0.4 to v0.5
+nets_pics renamed to nets_nodepics
+ 
+Tim
+
+---
+
+Is it still okay Steve?
+
+Thanks,
+
+Matt.
+
+---
+
+Oh - doh!  Anyway yes it's fine - let's say I've personally sent you a version free of the licence.
+Cheers.
+
+---
+
+I plan to put only nets_demean.m and nets_spectra* in a folder in the HCP pipelines (our code is BSD licensed), with the attached "license" file summarizing these emails in case anyone recognizes them and wonders about the license situation.  If I missed any dependencies of those files, I will add them also.
+
+I assume by "version free of the license" you meant permissive terms to edit and redistribute, etc (the way copyright works, a work implicitly has all rights reserved to the author or organization only, with no permissions allowed to anyone else).
+
+Tim
+
+---
+
+sure - or you can just attach a BSD licence to those files
+
+[Steve Smith]
+

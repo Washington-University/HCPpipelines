@@ -504,7 +504,7 @@ main()
 	# The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
 	# AND since 'addpath' *prepends* to the matlab path, the versions in HCPCIFTIRWDIR will therefore take precedence over the fix settings file.
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+	local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	# Some defaults
 	local aggressive=0
