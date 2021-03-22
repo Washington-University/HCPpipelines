@@ -137,12 +137,9 @@ function opts_add_switch()
 
 function opts_ParseArguments()
 {
-    if (($# == 0))
-    then
-        #"usage" must be defined by the actual tool script
-        usage
-        exit 2
-    fi
+    #save a copy of arguments for later, since we use shift
+    local -a opts_OrigArguments=("$@")
+    
     #initialize all output variables to their defaults, so optional ones don't error with 'set -eu')
     #print -v sets global variables without having declare -g
     #use opts_ even for local variables in this function to reduce chance of collision with the output variable names
@@ -217,8 +214,19 @@ function opts_ParseArguments()
     done
     if ((${#opts_missing_list[@]} > 0))
     then
+        #only test for "no options" to trigger usage after we know there are mandatory options, so that a script without mandatory options can be run properly
+        if ((${#opts_OrigArguments[@]} == 0))
+        then
+            #"usage" must be defined by the actual tool script
+            usage
+            exit 2
+        fi
         log_Err_Abort "missing the following mandatory parameter(s): ${opts_missing_list[*]}"
     fi
+    #now we know the script can continue, print the arguments
+    #functions apparently leave $0 at its original value, but let's only use what we were given
+    #may be an empty array, so we need to be careful
+    log_Msg "arguments: ${opts_OrigArguments[*]+"${opts_OrigArguments[*]}"}"
 }
 
 #after parsing, call this to log all values

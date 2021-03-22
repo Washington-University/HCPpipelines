@@ -322,9 +322,14 @@ function [x,EN] = FitWishart(lnb,S,DOF,MaxX,lambda) %FitWishart(lnb,step,DOF,Max
     EN_x2=EN_x2*median(lambda(EigDn1:EigDn2)./EN_x2(EigDn1:EigDn2));
     f_x2 = lpdist([EN_x2(EigDn1:EigDn2)'; lambda(EigDn1:EigDn2)']);
     
+    disp(['golden search initial range: ' num2str(a) ' to ' num2str(b)]);
+    
     while (abs(b-a)>epsilon) && (k<iter) %Loop until low error OR max iter met
         %k=k+1;
-        disp([num2str(a) ' ' num2str(x1) ' ' num2str(x2) ' ' num2str(b)]);
+        
+        %previous search progress code, very noisy
+        %disp([num2str(a) ' ' num2str(x1) ' ' num2str(x2) ' ' num2str(b)]);
+        
         %Check both terms for minimal pairwise distance and continue toward minimum
         if (f_x1<f_x2)
             b=x2;
@@ -360,6 +365,9 @@ function [x,EN] = FitWishart(lnb,S,DOF,MaxX,lambda) %FitWishart(lnb,step,DOF,Max
     else
         x = x2;
     end
+    
+    disp(['golden search result: ' num2str(x)]);
+    
     EN=flipud(eig(cov(Smooth(randn(round(x),DOF),S))));
     
     x=x/1+S;
@@ -399,9 +407,14 @@ function [x,EN,s] = SmoothEst(lnb,MaxS,DOF,MaxX,lambda)
     EN_s2=EN_s2*median(lambda(EigDn1:EigDn2)./EN_s2(EigDn1:EigDn2));
     f_s2 = lpdist([EN_s2(EigDn1:EigDn2)'; lambda(EigDn1:EigDn2)']);
     
+    disp(['golden search initial range: ' num2str(a) ' to ' num2str(b)]);
+    
     while (abs(b-a)>epsilon) && (k<iter) %Loop until low error OR max iter met
         %k=k+1;
-        disp([num2str(a) ' ' num2str(s1) ' ' num2str(s2) ' ' num2str(b)]);
+        
+        %previous search progress code, very noisy
+        %disp([num2str(a) ' ' num2str(s1) ' ' num2str(s2) ' ' num2str(b)]);
+        
         %Check both terms for minimal pairwise distance and continue toward minimum
         if (f_s1<f_s2)
             b=s2;
@@ -437,6 +450,8 @@ function [x,EN,s] = SmoothEst(lnb,MaxS,DOF,MaxX,lambda)
     else
         s = s2;
     end
+    
+    disp(['golden search result: ' num2str(s)]);
     
     %EN = iFeta([0:step:5],DOF,x)';
     %EN=flipud(eig(cov(randn(round(x),DOF))));

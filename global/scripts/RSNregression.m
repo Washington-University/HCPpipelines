@@ -200,7 +200,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
            ts.Nsubjects = size(NODEts, 1) ./ nTPsForSpectra;
            ts.ts = NODEts;
            ts.NtimepointsPerSubject = nTPsForSpectra;
-           [ts_spectra] = nets_spectra(ts);
+           [ts_spectra] = nets_spectra_sp(ts);
            dlmwrite(OutputSpectraTS, NODEts, 'delimiter', '\t');
            dlmwrite(OutputSpectraFile, ts_spectra, 'delimiter', '\t');
         end

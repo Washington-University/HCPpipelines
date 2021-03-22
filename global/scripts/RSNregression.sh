@@ -92,7 +92,7 @@ case "$MatlabMode" in
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
         ;;
 esac
-matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
+matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$HCPPIPEDIR/global/matlab/nets_spectra'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
 "
 
 RegString=""
@@ -112,7 +112,7 @@ T1wFolder="$StudyFolder/$Subject/T1w"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
-tempname=$(tempfiles_create rsn_regr_matlab_XXXXXX)
+tempname="$(tempfiles_create rsn_regr_matlab_XXXXXX)"
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
