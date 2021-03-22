@@ -61,6 +61,7 @@ compile_prepareICAs()
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPPIPEDIR}/global/matlab/icaDim \
 				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}
@@ -87,6 +88,7 @@ compile_functionhighpassandvariancenormalize()
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
 				  -I ${HCPPIPEDIR}/global/matlab \
+				  -I ${HCPPIPEDIR}/global/matlab/icaDim \
 				  -I ${HCPCIFTIRWDIR} \
 				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
 				  -d ${output_directory}

@@ -1,3 +1,5 @@
+#!/bin/echo This script should not be run directly:
+
 #use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
 if (($# > 0))
 then

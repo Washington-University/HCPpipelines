@@ -92,7 +92,7 @@ case "$MatlabMode" in
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
         ;;
 esac
-matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
+matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$HCPPIPEDIR/global/matlab/nets_spectra'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
 "
 
 RegString=""
@@ -112,8 +112,8 @@ T1wFolder="$StudyFolder/$Subject/T1w"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
-tempname=$(mktemp --tmpdir rsn_regr_matlab_XXXXXX)
-tempfiles_add "$tempname" "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
+tempname="$(tempfiles_create rsn_regr_matlab_XXXXXX)"
+tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
@@ -212,8 +212,8 @@ fi
 #extract the all-voxels ROI file and use it in -from-template
 if [[ ! ${Method} == "single" ]]
 then
-    tempfile="$(mktemp --tmpdir XXXXXX.roi.nii.gz)"
-    tempfiles_add "$tempfile" "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
+    tempfile="$(tempfiles_create XXXXXX.roi.nii.gz)"
+    tempfiles_add "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
     wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
     wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
 fi
