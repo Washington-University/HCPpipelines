@@ -46,5 +46,5 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 `global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
 
-Compiled matlab binaries are released under GPL v3+, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
+Compiled matlab binaries are released under some version of GPL, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
 
