@@ -39,8 +39,8 @@
 # include the real location of the @gifti folder, before a folder that contains an @gifti symlink
 # (since the -I option *appends* folders to the search path, in the order listed).
 
-# This problem is now avoided by putting the @gifti folder directly into the main matlab folder, and moving
-# the gifti license/readme files into the @gifti/gifti-<version> folder, so that no symlinks are involved.
+# This problem is now avoided by putting a copy of the @gifti folder directly into the cifti-legacy folder, so
+# that no symlinks are involved, and @gifti will always be available if cifti-legacy is being used.
 
  
 # ------------------------------------------------------------------------------

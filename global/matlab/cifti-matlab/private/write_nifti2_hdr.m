@@ -5,7 +5,6 @@ function [fid, hdr, cleanupObj] = write_nifti2_hdr(hdr, filename)
         error(['unable to open file "' filename '" for writing']);
     end
     cleanupObj = onCleanup(@()cleanup(fid, filename));
-    %TODO: pad extension data, calculate vox_offset
     %vox_offset needs to start on a multiple of 16
     %first extension starts on byte 544 = 16 * 34
     %so, pad all extensions to align their data to 16 bytes, too, in case they are binary and something cares about their alignment

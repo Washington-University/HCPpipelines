@@ -3,17 +3,8 @@ function editor(tree)
 %  EDITOR(TREE) opens a new figure displaying the xmltree object TREE.
 %  H = EDITOR(TREE) also returns the figure handle H.
 %
-%  This is a beta version of <xmltree/view> successor
-%
 %  See also XMLTREE
-%__________________________________________________________________________
-% Copyright (C) 2002-2015  http://www.artefact.tk/
 
-% Guillaume Flandin
-% $Id: editor.m 6480 2015-06-13 01:08:30Z guillaume $
-
-
-%error(nargchk(1,1,nargin));
 
 if ~isempty(getfilename(tree))
     title = getfilename(tree);
@@ -291,6 +282,10 @@ function doAttributes(fig,evd,h)
     attr = attributes(tree,'get',uid);
     if ~isempty(attr)
         fprintf('This element has %d attributes.\n',length(attr));
+        if isstruct(attr), attr = {attr}; end
+        for i=1:numel(attr)
+            fprintf('  %s\t%s\n',attr{i}.key,attr{i}.val);
+        end
         %%%
         %%% Do what you want with 'attr'
         %%% to modify them, use:

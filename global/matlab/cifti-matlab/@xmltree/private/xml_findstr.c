@@ -1,21 +1,22 @@
 #include "mex.h"
 
 /*
- * $Id: xml_findstr.c 6480 2015-06-13 01:08:30Z guillaume $
- * Guillaume Flandin <guillaume@artefact.tk>
- */
+ Differences with built-in findstr:
+   - allows to search only the n first occurences of a pattern
+   - allows to search only in a substring (given an index of the beginning)
+   
+ MATLAB hack:
+   - doesn't use mxGetString to prevent a copy of the string.
+   - assumes MATLAB stores strings as unsigned short (Unicode 16 bits)
+     matrix.h: typedef uint16_T mxChar;
+     (that's the case for MATLAB 5.*, 6.* and 7.* but MATLAB 4.* stores
+      strings as double and GNU Octave as char, see src/mxarray.h)
+*/
 
 /*
-    Differences with built-in findstr:
-        - allows to search only the n first occurences of a pattern
-        - allows to search only in a substring (given an index of the beginning)
-   
-    MATLAB hack:
-        - doesn't use mxGetString to prevent a copy of the string.
-        - assumes MATLAB stores strings as unsigned short (Unicode 16 bits)
-          matrix.h: typedef uint16_T mxChar;
-          (that's the case for MATLAB 5.*, 6.* and 7.* but MATLAB 4.* stores
-           strings as double and GNU Octave as char, see src/mxarray.h)
+ Compilation:
+     mex xml_findstr.c
+     mkoctfile --mex xml_findstr.c
 */
 
 /* Comment the following line to use standard mxGetString (slower) */

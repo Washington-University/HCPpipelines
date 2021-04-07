@@ -4,20 +4,15 @@ function uid = root(tree)
 % 
 % tree   - XMLTree object
 % uid    - UID of the root element of tree
-%__________________________________________________________________________
 %
 % Return the uid of the root element of the tree.
-%__________________________________________________________________________
-% Copyright (C) 2002-2008  http://www.artefact.tk/
+%
+%  See also XMLTREE
 
-% Guillaume Flandin
-% $Id: root.m 4460 2011-09-05 14:52:16Z guillaume $
-
-% Actually root is necessarily the element whos UID is 1, by
-% construction. However, xml_parser should return a tree with a ROOT
-% element with as many children as needed but only ONE *element* child
-% who would be the real root (and this method should return the UID of
-% this element).
+% By construction, root is necessarily the element whos UID is 1.
+% However, xml_parser should return a tree with a ROOT element with as many
+% children as needed but only ONE *element* child who would be the real
+% root (and this method should return the UID of this element).
 
 uid = 1;
 

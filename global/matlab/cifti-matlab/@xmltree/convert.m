@@ -1,50 +1,41 @@
-function s = convert(tree,uid)
-% XMLTREE/CONVERT Converter an XML tree in a structure
+function s = convert(tree,uid,varargin)
+% XMLTREE/CONVERT Convert an XML tree into a structure
 % 
-% tree      - XMLTree object
-% uid       - uid of the root of the subtree, if provided.
-%             Default is root
-% s         - converted structure
-%__________________________________________________________________________
+% tree     - XMLTree object
+% uid      - uid of the root of the subtree, if provided.
+%            Default is root
+% s        - converted structure
 %
 % Convert an XMLTree into a structure, when possible.
 % When several identical tags are present, a cell array is used.
 % The root tag is not saved in the structure.
 % If provided, only the structure corresponding to the subtree defined
 % by the uid UID is returned.
-%__________________________________________________________________________
-% Copyright (C) 2002-2015  http://www.artefact.tk/
-
-% Guillaume Flandin
-% Edited 2020 by Tim Coalson to ignore processing instructions
-% $Id: convert.m 6480 2015-06-13 01:08:30Z guillaume $
-
+%
 % Example:
-% tree = '<a><b>field1</b><c>field2</c><b>field3</b></a>';
-% toto = convert(xmltree(tree));
-% <=> toto = struct('b',{{'field1', 'field3'}},'c','field2')
+% xml = '<a><b>field1</b><c>field2</c><b>field3</b></a>';
+% tree = convert(xmltree(xml));
+% <=> tree = struct('b',{{'field1', 'field3'}},'c','field2')
+%
+%  See also XMLTREE
 
-%error(nargchk(1,2,nargin));
 
 % Get the root uid of the output structure
-if nargin == 1
+if nargin == 1 || isempty(uid)
     % Get the root uid of the XML tree
-    root_uid = root(tree);
-else
-    % Uid provided by user
-    root_uid = uid;
+    uid = root(tree);
 end
 
-% Initialize the output structure
-% struct([]) should be used but this only works with Matlab 6
-% So we create a field that we delete at the end
-%s = struct(get(tree,root_uid,'name'),''); % struct([])
-s = struct('deletedummy','');
+% Get optional parameters
+sub_options({'attributes',false,'str2num',false});
+if nargin > 2
+    sub_options(varargin);
+end
 
-%s = sub_convert(tree,s,root_uid,{get(tree,root_uid,'name')});
-s = sub_convert(tree,s,root_uid,{});
+% Build the output structure
+s = struct();
+s = sub_convert(tree,s,uid,{}); % {get(tree,root_uid,'name')}
 
-s = rmfield(s,'deletedummy');
 
 %==========================================================================
 function s = sub_convert(tree,s,uid,arg)
@@ -56,7 +47,7 @@ function s = sub_convert(tree,s,uid,arg)
             ll = {};
             for i=1:length(child)
                 if isfield(tree,child(i),'name')
-                    ll = { ll{:}, get(tree,child(i),'name') };
+                    ll = [ll, get(tree,child(i),'name')];
                 end
             end
             for i=1:length(child)
@@ -64,11 +55,11 @@ function s = sub_convert(tree,s,uid,arg)
                     name = get(tree,child(i),'name');
                     nboccur = sum(ismember(l,name));
                     nboccur2 = sum(ismember(ll,name));
-                    l = { l{:}, name };
-                    if nboccur || (nboccur2>1)
-                        arg2 = { arg{:}, name, {nboccur+1} };
+                    l = [l, name];
+                    if nboccur || nboccur2 > 1
+                        arg2 = [arg, name, {{nboccur+1}}];
                     else
-                        arg2 = { arg{:}, name};
+                        arg2 = [arg, name];
                     end
                 else
                     arg2 = arg;
@@ -78,30 +69,40 @@ function s = sub_convert(tree,s,uid,arg)
             if isempty(child)
                 s = sub_setfield(s,arg{:},'');
             end
-            %- saving attributes : does not work with <a t='q'>b</a>
-            %- but ok with <a t='q'><c>b</c></a>
-%             attrb = attributes(tree,'get',uid);     %-
-%             if ~isempty(attrb)                      %-
-%                 arg2 = {arg{:} 'attributes'};       %-
-%                 s = sub_setfield(s,arg2{:},attrb);  %-
-%             end                                     %-
+            if sub_options('attributes')
+                attrb = attributes(tree,'get',uid);
+                if ~isempty(attrb)
+                    arg2 = [arg, 'attributes'];
+                    if ~isstruct(attrb), attrb = [attrb{:}]; end
+                    try
+                        % Saving attributes will work with <a t='q'><c>b</c></a>
+                        % but not with <a t='q'>b</a>
+                        s = sub_setfield(s,arg2{:},...
+                            cell2struct({attrb.val},{attrb.key},2));
+                    end
+                end
+            end
         case 'chardata'
             s = sub_setfield(s,arg{:},get(tree,uid,'value'));
-            %- convert strings into their numerical equivalent when possible
-            %- e.g. string '3.14159' becomes double scalar 3.14159
-%             v = get(tree,uid,'value');              %-
-%             cv = str2num(v);                        %-
-%             if isempty(cv)                          %-
-%                 s = sub_setfield(s,arg{:},v);       %-
-%             else                                    %-
-%                 s = sub_setfield(s,arg{:},cv);      %-
-%             end                                     %-
+            if sub_options('str2num')
+                % Convert strings into their numerical equivalent when possible
+                % e.g. string '3.14159' becomes double scalar 3.14159
+                v = get(tree,uid,'value');
+                cv = str2num(v);
+                if isempty(cv)
+                    s = sub_setfield(s,arg{:},v);
+                else
+                    s = sub_setfield(s,arg{:},cv);
+                end
+            end
         case 'cdata'
             s = sub_setfield(s,arg{:},get(tree,uid,'value'));
         case 'pi'
-            % TSC: ignore processing instructions
+            % Processing instructions are ignored
+            %PITarget = get(tree,uid,'target');
+            %PIContent = get(tree,uid,'value');
         case 'comment'
-            % Comments are forgotten
+            % Comments are ignored
         otherwise
             warning(sprintf('Type %s unknown : not saved',get(tree,uid,'type')));
     end
@@ -109,25 +110,20 @@ function s = sub_convert(tree,s,uid,arg)
 %==========================================================================
 function s = sub_setfield(s,varargin)
 % Same as setfield but using '{}' rather than '()'
-%if (isempty(varargin) | length(varargin) < 2)
-%    error('Not enough input arguments.');
-%end
 
 subs = varargin(1:end-1);
-for i = 1:length(varargin)-1
-    if (isa(varargin{i}, 'cell'))
-        types{i} = '{}';
-    elseif ischar(varargin{i})
-        types{i} = '.';
-        subs{i} = varargin{i}; %strrep(varargin{i},' ',''); % deblank field name
-    else
-        error('Inputs must be either cell arrays or strings.');
-    end
-end
+types = repmat({'{}'},1,numel(subs));
+types(cellfun(@ischar,subs)) = {'.'};
+s = builtin('subsasgn', s, struct('type',types,'subs',subs), varargin{end});
 
-% Perform assignment
-try
-   s = builtin('subsasgn', s, struct('type',types,'subs',subs), varargin{end});
-catch
-   error(lasterr)
+%==========================================================================
+function o = sub_options(opt)
+persistent opts
+if isempty(opts), opts = struct; end
+if iscell(opt)
+    for i=1:2:numel(opt)
+        opts.(lower(opt{i})) = opt{i+1};
+    end
+else
+    o = opts.(lower(opt));
 end
