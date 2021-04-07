@@ -5,18 +5,12 @@ function tree = copy(tree,subuid,uid)
 % tree      - XMLTree object
 % subuid    - UID of the subtree to copy
 % uid       - UID of the element where the subtree must be duplicated
-%__________________________________________________________________________
 %
 % Copy a subtree to another branch.
 % The tree parameter must be in input AND in output.
-%__________________________________________________________________________
-% Copyright (C) 2002-2015  http://www.artefact.tk/
+%
+%  See also XMLTREE
 
-% Guillaume Flandin
-% $Id: copy.m 6480 2015-06-13 01:08:30Z guillaume $
-
-
-%error(nargchk(2,3,nargin));
 
 if nargin == 2
     uid = parent(tree,subuid);

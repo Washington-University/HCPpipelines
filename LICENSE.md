@@ -40,11 +40,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Other licenses
 
-`global/matlab/gifti-1.6` is copyright Guillaume Flandin <Guillaume@artefact.tk>, released under GPL v2+, see `global/matlab/gifti-1.6/LICENCE`
+`global/matlab/cifti-legacy/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/cifti-legacy/@gifti/gifti-1.6/LICENCE`
 
-`global/matlab/cifti-matlab/@xmltree` is copyright Guillaume Flandin <Guillaume@artefact.tk>, released under GPL v2+, see `global/matlab/cifti-matlab/@xmltree/LICENSE`
+`global/matlab/cifti-matlab/@xmltree` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltree/LICENSE`
 
-`global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
+`global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under either BSD 2-clause or GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
 
-Compiled matlab binaries are released under some version of GPL, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
+`global/fsl/etc/matlab` is copyright The University of Oxford, released under BSD 2-clause, see `global/fsl/etc/matlab/LICENSE`
+
+Compiled matlab binaries are released under some combination of these licenses, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
 

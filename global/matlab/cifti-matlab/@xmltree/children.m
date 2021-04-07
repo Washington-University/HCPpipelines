@@ -5,16 +5,11 @@ function child = children(tree,uid)
 % tree   - a tree
 % uid    - uid of the element
 % child  - array of the UIDs of children of node uid
-%__________________________________________________________________________
 %
 % Return UID's of children of node uid
-%__________________________________________________________________________
-% Copyright (C) 2002-2011  http://www.artefact.tk/
+%
+%  See also XMLTREE
 
-% Guillaume Flandin
-% $Id: children.m 4460 2011-09-05 14:52:16Z guillaume $
-
-%error(nargchk(2,2,nargin));
 
 child = [];
 uid = uid(:);

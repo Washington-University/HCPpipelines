@@ -1,5 +1,5 @@
 % XMLTree: XML Toolbox for MATLAB and GNU Octave
-% Version 2.0  14-Aug-2015
+% Version 2.1  01-Apr-2021
 %
 % XML file I/O.
 %   xmltree     - Constructor (XML parser).
@@ -37,18 +37,14 @@
 %   xml_findstr - Find one string within another (C-MEX file).
 %
 % Conversions struct <=> XML.
-%   loadxml     - 
-%   savexml     - 
-%   mat2xml     - 
-%   xml2mat     - 
-%   struct2xml  - 
+%   loadxml     - Load workspace variables from disk.
+%   savexml     - Save workspace variables to disk in XML.
+%   mat2xml     - Convert a MAT-file into an XML file.
+%   xml2mat     - Convert an XML-file into a MAT-file.
 %
 % Demos.
 %   xmldemo1    - Create an XML tree from scratch and save it.
 %   xmldemo2    - Read an XML file and access fields.
 %   xmldemo3    - Read an XML file, modify some fields and save it.
 
-% Copyright 2002-2015  http://www.artefact.tk/
-
-% Guillaume Flandin <Guillaume@artefact.tk>
-% $Id: Contents.m 6480 2015-06-13 01:08:30Z guillaume $
+% Copyright 2002-2021  Guillaume Flandin

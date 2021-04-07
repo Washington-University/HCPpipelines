@@ -19,9 +19,36 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
     % Notably, the unused fields have been removed and the size has been
     % reduced from 560 to 540 bytes.
     %
-    % See also WRITE_NIFTI_HDR, READ_CIFTI, WRITE_CIFTI
+    % See also WRITE_NIFTI_HDR, CIFTI_READ, CIFTI_WRITE
 
     % Copyright (C) 2013, Robert Oostenveld
+    %
+    % The fieldtrip-derived version of this file has been dual licensed by its author,
+    % Robert Oostenveld, under BSD 2-clause or GPL v3+ as follows:
+    %
+    % Redistribution and use in source and binary forms, with or without modification,
+    % are permitted provided that the following conditions are met:
+    %
+    % 1. Redistributions of source code must retain the above copyright notice,
+    % this list of conditions and the following disclaimer.
+    %
+    % 2. Redistributions in binary form must reproduce the above copyright notice,
+    % this list of conditions and the following disclaimer in the documentation and/or
+    % other materials provided with the distribution.
+    %
+    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    % EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+    % MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+    % IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+    % INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    % PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+    % BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+    % STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+    % THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    %
+    % See the review of PR #8 here: https://github.com/Washington-University/cifti-matlab/pull/8
+    %
+    % At your option, you may instead use this file under the terms of GPL v3 or later:
     %
     % This file is part of FieldTrip, see http://www.fieldtriptoolbox.org
     % for the documentation and details.
@@ -41,7 +68,9 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
     %
     % $Id$
 
-    % Edited 2020 by Tim Coalson
+    % Edited by Tim Coalson
+    % Copyright (c) 2020 Washington University School of Medicine
+    % BSD 2-clause, see LICENSE in the top level of the repository
 
     hdr.endian = 'l';
     fid = fopen(filename, 'rb', hdr.endian);

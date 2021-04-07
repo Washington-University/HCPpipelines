@@ -16,19 +16,13 @@ function varargout = attributes(varargin)
 %     tree = attributes(tree,'add',uid,key,val)
 %     tree = attributes(tree,'del',uid[,n])
 %     l    = attributes(tree,'length',uid)
-%__________________________________________________________________________
 %
 % Handle attributes of an element node.
 % The tree parameter must be in input AND in output for 'set', 'add' and
 % 'del' methods.
-%__________________________________________________________________________
-% Copyright (C) 2002-2011  http://www.artefact.tk/
+%
+%  See also XMLTREE
 
-% Guillaume Flandin
-% $Id: attributes.m 4460 2011-09-05 14:52:16Z guillaume $
-
-
-%error(nargchk(3,6,nargin));
 
 tree = varargin{1};
 if ~ischar(varargin{2}) || ...

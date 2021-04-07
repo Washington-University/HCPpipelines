@@ -12,45 +12,14 @@ function tree = xml_parser(xmlstr)
     %
     % A description of the tree structure provided in output is detailed in 
     % the header of this m-file.
-    %__________________________________________________________________________
-    % Copyright (C) 2002-2015  http://www.artefact.tk/
-    
+    %
+    %  See also XMLTREE
+
     % edited 2020 by Tim S Coalson to leave whitespace as-is
 
-    % Guillaume Flandin
-    % $Id: xml_parser.m 6480 2015-06-13 01:08:30Z guillaume $
-
-    % XML Processor for GNU Octave and MATLAB (The Mathworks, Inc.)
-    % Copyright (C) 2002-2015 Guillaume Flandin <Guillaume@artefact.tk>
-    %
-    % This program is free software; you can redistribute it and/or
-    % modify it under the terms of the GNU General Public License
-    % as published by the Free Software Foundation; either version 2
-    % of the License, or any later version.
-    %
-    % This program is distributed in the hope that it will be useful,
-    % but WITHOUT ANY WARRANTY; without even the implied warranty of
-    % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    % GNU General Public License for more details.
-    % 
-    % You should have received a copy of the GNU General Public License
-    % along with this program; if not, write to the Free Software
-    % Foundation Inc, 59 Temple Pl. - Suite 330, Boston, MA 02111-1307, USA.
-    %--------------------------------------------------------------------------
-
-    % Suggestions for improvement and fixes are always welcome, although no
-    % guarantee is made whether and when they will be implemented.
-    % Send requests to <Guillaume@artefact.tk>
-    % Check also the latest developments on the following webpage:
-    %           <http://www.artefact.tk/software/matlab/xml/>
-    %--------------------------------------------------------------------------
-
-    % The implementation of this XML parser is much inspired from a 
-    % Javascript parser that used to be available at <http://www.jeremie.com/>
-
-    % A C-MEX file xml_findstr.c is also required, to encompass some
-    % limitations of the built-in FINDSTR function.
-    % Compile it on your architecture using 'mex -O xml_findstr.c' command
+    % A C-MEX file xml_findstr.c is also available, to improve performance
+    % compared to the built-in STRFIND function.
+    % Compile it on your architecture using the private/compile_mex.sh script
     % if the compiled version for your system is not provided.
     % If this function does not behave as expected, comment the line
     % '#define __HACK_MXCHAR__' in xml_findstr.c and compile it again.
@@ -76,7 +45,7 @@ function tree = xml_parser(xmlstr)
     %       |_ parent: uid of the parent
     %       |_ uid:    double
     %
-    %    cdata (a litteral string <![CDATA[value]]>)
+    %    cdata (a literal string <![CDATA[value]]>)
     %       |_ type:   'cdata'
     %       |_ value:  string
     %       |_ parent: uid of the parent
@@ -103,7 +72,6 @@ function tree = xml_parser(xmlstr)
     %  - [main] with normalize as a preprocessing, CDATA are modified
     %  - [prolog] look for a DOCTYPE in the whole string even if it occurs
     %    only in a far CDATA tag, bug even if the doctype is inside a comment
-    %  - [tag_element] erode should replace normalize here
     %  - remove globals? uppercase globals  rather persistent (clear mfile)?
     %  - xml_findstr is indeed xml_strfind according to Mathworks vocabulary
     %  - problem with entities: do we need to convert them here? (&eacute;)
@@ -113,7 +81,6 @@ function tree = xml_parser(xmlstr)
     global xmlstring Xparse_count xtree;
 
     %- Check input arguments
-    %error(nargchk(1,1,nargin));
     if isempty(xmlstr)
         error('[XML] Not enough parameters.')
     elseif ~ischar(xmlstr) || sum(size(xmlstr)>1)>1
@@ -123,8 +90,7 @@ function tree = xml_parser(xmlstr)
     %- Initialize number of tags (<=> uid)
     Xparse_count = 0;
 
-    %- Remove prolog and white space characters from the XML string
-    %xmlstring = normalize(prolog(xmlstr));
+    %- Remove only prolog from the XML string
     xmlstring = prolog(xmlstr);
 
     %- Initialize the XML tree
@@ -150,7 +116,7 @@ end
 function frag = compile(frag)
     global xmlstring xtree Xparse_count;
     
-    while 1,
+    while true
         if length(xmlstring)<=frag.str || ...
            (frag.str == length(xmlstring)-1 && strcmp(xmlstring(frag.str:end),' '))
             return
@@ -268,16 +234,16 @@ function frag = tag_pi(frag)
     global xmlstring xtree Xparse_count;
     close = xml_findstr(xmlstring,'?>',frag.str,1);
     if isempty(close)
-        warning('[XML] Tag <? opened but not closed.')
+        warning('[XML] Tag <? opened but not closed.');
     else
         nextspace = next_space(xmlstring, frag.str);
         Xparse_count = Xparse_count + 1;
         xtree{Xparse_count} = pri;
         if isempty(nextspace) || nextspace > close || nextspace == frag.str+2
-            xtree{Xparse_count}.value = erode(xmlstring(frag.str+2:close-1));
+            xtree{Xparse_count}.value = strtrim(xmlstring(frag.str+2:close-1));
         else
-            xtree{Xparse_count}.value = erode(xmlstring(nextspace+1:close-1));
-            xtree{Xparse_count}.target = erode(xmlstring(frag.str+2:nextspace));
+            xtree{Xparse_count}.value = strtrim(xmlstring(nextspace+1:close-1));
+            xtree{Xparse_count}.target = strtrim(xmlstring(frag.str+2:nextspace));
         end
         if frag.parent
             xtree{frag.parent}.contents = [xtree{frag.parent}.contents Xparse_count];
@@ -292,11 +258,11 @@ function frag = tag_comment(frag)
     global xmlstring xtree Xparse_count;
     close = xml_findstr(xmlstring,'-->',frag.str,1);
     if isempty(close)
-        warning('[XML] Tag <!-- opened but not closed.')
+        warning('[XML] Tag <!-- opened but not closed.');
     else
         Xparse_count = Xparse_count + 1;
         xtree{Xparse_count} = comment;
-        xtree{Xparse_count}.value = erode(xmlstring(frag.str+4:close-1));
+        xtree{Xparse_count}.value = strtrim(xmlstring(frag.str+4:close-1));
         if frag.parent
             xtree{frag.parent}.contents = [xtree{frag.parent}.contents Xparse_count];
             xtree{Xparse_count}.parent = frag.parent;
@@ -310,7 +276,7 @@ function frag = tag_cdata(frag)
     global xmlstring xtree Xparse_count;
     close = xml_findstr(xmlstring,']]>',frag.str,1);
     if isempty(close)
-        warning('[XML] Tag <![CDATA[ opened but not closed.')
+        warning('[XML] Tag <![CDATA[ opened but not closed.');
     else
         Xparse_count = Xparse_count + 1;
         xtree{Xparse_count} = cdata;
@@ -329,7 +295,7 @@ function all = attribution(str)
     nbattr = 0;
     all = cell(nbattr);
     %- Look for 'key="value"' substrings
-    while 1,
+    while true
         eq = xml_findstr(str,'=',1,1);
         if isempty(str) || isempty(eq), return; end
         id = min([xml_findstr(str, '"', eq, 1), xml_findstr(str, '''', eq, 1)]); %TSC: min instead of sort, and start searching from the =
@@ -383,7 +349,7 @@ function str = prolog(str)
     %- Initial tag
     start = xml_findstr(str,'<',1,1);
     if isempty(start) 
-        error('[XML] No tag found.')
+        error('[XML] No tag found.');
     end
     %- Header (<?xml version="1.0" ... ?>)
     if strcmpi(str(start:start+2),'<?x')
@@ -391,7 +357,7 @@ function str = prolog(str)
         if ~isempty(close) 
             b = close + 2;
         else 
-            warning('[XML] Header tag incomplete.')
+            warning('[XML] Header tag incomplete.');
         end
     end
     %- Doctype (<!DOCTYPE type ... [ declarations ]>)
@@ -406,11 +372,11 @@ function str = prolog(str)
                 if ~isempty(k)
                     b = k + 2;
                 else
-                    warning('[XML] Tag [ in DOCTYPE opened but not closed.')
+                    warning('[XML] Tag [ in DOCTYPE opened but not closed.');
                 end
             end
         else
-            warning('[XML] Tag DOCTYPE opened but not closed.')
+            warning('[XML] Tag DOCTYPE opened but not closed.');
         end
     end
     %- Skip prolog from the xml string
@@ -419,6 +385,7 @@ end
 
 %--------------------------------------------------------------------------
 function str = strip(str)
+    %str = regexprep(str,'\s+','');
     str(isspace(str)) = '';
 end
 
@@ -433,6 +400,8 @@ end
 
 %--------------------------------------------------------------------------
 function str = entity(str)
+    %str = regexprep(str,...
+    %    {'&lt;','&gt;','&quot;','&apos;','&amp;'},{'<','>','"','''','&'});
     str = strrep(str,'&lt;','<');
     str = strrep(str,'&gt;','>');
     str = strrep(str,'&quot;','"');
@@ -440,13 +409,3 @@ function str = entity(str)
     str = strrep(str,'&amp;','&');
 end
 
-%TSC: remove this function from anything we care about - only removes 1 space each side at most
-%--------------------------------------------------------------------------
-function str = erode(str)
-    if ~isempty(str) && isspace(str(1))
-        str(1)='';
-    end
-    if ~isempty(str) && isspace(str(end))
-        str(end)='';
-    end
-end

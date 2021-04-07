@@ -15,21 +15,12 @@ function list = find(varargin)
 % Grammar for addressing parts of an XML document: 
 %        XML Path Language XPath (http://www.w3.org/TR/xpath)
 % Example: /element1//element2[1]/element3[5]/element4
-%__________________________________________________________________________
 %
 % Find elements in an XML tree with specified characteristics or given
 % a path (using a subset of XPath language).
-%__________________________________________________________________________
-% Copyright (C) 2002-2011  http://www.artefact.tk/
+%
+%  See also XMLTREE
 
-% Guillaume Flandin
-% $Id: find.m 4460 2011-09-05 14:52:16Z guillaume $
-
-% TODO:
-%   - clean up subroutines
-%   - find should only be documented using XPath (other use is internal)
-%   - handle '*', 'last()' in [] and '@'
-%   - if a key is invalid, should rather return [] than error ?
 
 if nargin==0
     error('[XMLTree] A tree must be provided');

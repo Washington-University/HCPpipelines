@@ -3,7 +3,7 @@ function varargout = save_string(tree, formatting)
     % FORMAT varargout = save(tree,formatting)
     %
     % tree       - XMLTree
-    % formatting - 0 for indenting of tags, 1 for no formatting
+    % formatting - 1 for indenting of tags, 0 for no formatting
     % varargout  - XML string
     %__________________________________________________________________________
     %
@@ -24,7 +24,7 @@ function varargout = save_string(tree, formatting)
     order = 0;
     if nargin > 1
         switch formatting
-            case 1
+            case 0
                 order = -1;
         end
     end
@@ -63,7 +63,7 @@ function xmlstr = print_subtree(tree, uid, order)
                 contents = [contents indentstr '<?' tree.tree{child_uid}.target ' ' tree.tree{child_uid}.value '?>']; %#ok<AGROW>
             case 'comment'
                 allchildrentext = false;
-                contents = [contents indentstr '<!-- %s -->', tree.tree{child_uid}.value]; %#ok<AGROW>
+                contents = [contents indentstr '<!-- '  tree.tree{child_uid}.value ' -->']; %#ok<AGROW>
             otherwise
                 warning('Type %s unknown: not saved', tree.tree{child_uid}.type);
         end
@@ -86,7 +86,7 @@ end
 
 %==========================================================================
 function str = entity(str)
-    % xmltree() already strtrimmed everything
+    % TSC: avoid cellstr
     str = strrep(str, '&',  '&amp;' );
     str = strrep(str, '<',  '&lt;'  );
     str = strrep(str, '>',  '&gt;'  );
