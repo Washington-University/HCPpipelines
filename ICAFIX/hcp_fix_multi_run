@@ -109,6 +109,7 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
+log_Check_Env_Var HCPCIFTIRWDIR
 
 log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
                # Set to empty string to disable debugging related output
@@ -429,9 +430,9 @@ for fmri in $fmris ; do
 	# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
 	# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} (defined in ${FSL_FIXDIR}/settings.sh)
 	# to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
-	# BUT the CIFTI I/O functions are also now included within '${HCPPIPEDIR}/global/matlab' as well.
-	# AND since 'addpath' *prepends* to the matlab path, the versions in '${HCPPIPEDIR}/global/matlab' will therefore take precedence!
-	ML_PATHS="addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+	# The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
+	# AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
+	ML_PATHS="addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 	case ${FSL_FIX_MATLAB_MODE} in
 		0)

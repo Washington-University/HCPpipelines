@@ -1,10 +1,10 @@
 # HCP Pipelines
 
-## License
+## License (except for files/folders mentioned below in ["Other licenses"](#other-licenses)
 
 Human Connectome Project [Pipelines][Pipelines] = THIS SOFTWARE
 
-Copyright (c) 2011-2019 [The Human Connectome Project][HCP] and [The Connectome Coordination Facility][CCF]
+Copyright (c) 2011-2021 [The Human Connectome Project][HCP] and [The Connectome Coordination Facility][CCF]
 
 Redistribution and use in source and binary forms, with or without modification,
 is permitted provided that the following conditions are met:
@@ -37,3 +37,16 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 [HCP]: https://www.humanconnectome.org
 [Pipelines]: https://github.com/Washington-University/HCPpipelines
 [CCF]: https://www.humanconnectome.org
+
+## Other licenses
+
+`global/matlab/cifti-legacy/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/cifti-legacy/@gifti/gifti-1.6/LICENCE`
+
+`global/matlab/cifti-matlab/@xmltree` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltree/LICENSE`
+
+`global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under either BSD 2-clause or GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
+
+`global/fsl/etc/matlab` is copyright The University of Oxford, released under BSD 2-clause, see `global/fsl/etc/matlab/LICENSE`
+
+Compiled matlab binaries are released under some combination of these licenses, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
+
