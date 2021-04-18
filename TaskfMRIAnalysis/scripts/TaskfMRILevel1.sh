@@ -190,6 +190,46 @@ log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
 log_Msg "MAIN: SET_NAME_STRINGS: ParcellationString: ${ParcellationString}"
 log_Msg "MAIN: SET_NAME_STRINGS: Extension: ${Extension}"
 
+##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
+# Assemble list of input filenames that need to be checked
+Filenames="";
+
+# Need appropriate timeseries files
+if $runParcellated; then
+	Filenames="$Filenames ${ParcellationFile}"
+	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+fi
+if $runDense ; then
+	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+fi
+if $runVolume ; then
+	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}.nii.gz"
+fi
+
+# Need fsf files in scan-level directories
+Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
+# Need midthickness GIFTI surfaces
+Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii"
+# Need Atlas_ROIs volume file
+Filenames="$Filenames $ROIsFolder/Atlas_ROIs.${GrayordinatesResolution}.nii.gz"
+
+# Now check each file in list
+missingFiles="";
+for Filename in $Filenames; do
+	# if file does not exist, set errMsg
+	[ -e "$Filename" ] || missingFiles="${missingFiles} ${Filename} "
+done
+
+# if missing files, then throw an error and abort
+if [ -n "${missingFiles}" ]; then
+    errMsg="Missing necessary input files: ${missingFiles}"
+	log_Err_Abort $errMsg
+fi
+
+# if no missing files, then carry on
+log_Msg "CHECK INPUTS: Necessary input files exist"
+
+
 
 ##### IMAGE_INFO: DETERMINE TR AND SCAN LENGTH #####
 # Caution: Reading information for Parcellated and Volume analyses from original CIFTI file
@@ -254,7 +294,7 @@ fi
 
 # Run feat_model inside $FEATDir
 cd $FEATDir # so feat_model can interpret relative paths in fsf file
-feat_model ${FEATDir}/design ${confound_matrix}; # $confound_matrix string is blank if file is missing
+feat_model design ${confound_matrix}; # $confound_matrix string is blank if file is missing
 cd $OLDPWD	# OLDPWD is shell variable previous working directory
 
 # Set variables for additional design files

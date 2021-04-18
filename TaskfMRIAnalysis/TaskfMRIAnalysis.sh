@@ -52,9 +52,10 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
+source "$HCPPIPEDIR/global/scripts/opts.shlib"			# Function for getting HCPpipelines version
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"          # Function for getting FSL version
+source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"	# Function for getting FSL version
 
 
 # --------------------------------------------------------------------------------
