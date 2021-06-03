@@ -194,6 +194,17 @@ log_Msg "MAIN: SET_NAME_STRINGS: Extension: ${Extension}"
 # Assemble list of input filenames that need to be checked
 Filenames="";
 
+# Need fsf files in scan-level directories
+Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
+
+if [ -e "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf" ]; then
+	# Need EVs referenced in fsf file
+	while read line; do
+		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${line}"
+	done <<< "$(grep -e 'set fmri(custom' ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf | \
+	sed -e 's|../||' | cut -d'"' -f2)"
+fi
+
 # Need appropriate timeseries files
 if $runParcellated; then
 	Filenames="$Filenames ${ParcellationFile}"
@@ -206,12 +217,14 @@ if $runVolume ; then
 	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}.nii.gz"
 fi
 
-# Need fsf files in scan-level directories
-Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
 # Need midthickness GIFTI surfaces
 Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii"
+
 # Need Atlas_ROIs volume file
 Filenames="$Filenames $ROIsFolder/Atlas_ROIs.${GrayordinatesResolution}.nii.gz"
+
+# Need atlasroi GIFTI shape files
+Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${DownSampleFolder}/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii"
 
 # Now check each file in list
 missingFiles="";

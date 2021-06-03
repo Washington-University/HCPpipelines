@@ -202,13 +202,69 @@ for LevelOnefMRIName in $LevelOnefMRINames ; do
   LevelOneFEATDirSTRING="${LevelOneFEATDirSTRING}${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat "; # space character at end is needed to separate multiple FEATDir strings
 done
 
-### Determine list of contrasts for this analysis
-FirstFolder=`echo $LevelOneFEATDirSTRING | cut -d " " -f 1`
-ContrastNames=`cat ${FirstFolder}/design.con | grep "ContrastName" | cut -f 2`
-NumContrasts=`echo ${ContrastNames} | wc -w`
+##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
+# Assemble list of input filenames that need to be checked
+Filenames="";
+# Need template fsf file
+Filenames="${Filenames} ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf"
+
+errMsg="";
+# Check files in Level1 Analysis folders
+for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
+	Filenames="${Filenames} ${LevelOneFEATDir}/design.con"
+	analysisCounter=1;
+	for Analysis in ${Analyses} ; do
+		Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
+		### Save errors if cope files are not present in Level 1 folders
+		fileCount=$( ls ${LevelOneFEATDir}/${Analysis}/cope*.${Extension} 2>/dev/null | wc -l );
+		if [ "$fileCount" -eq 0 ]; then
+			errMsg="${errMsg}Missing all cope $Extension files in ${LevelOneFEATDir}/${Analysis}. "
+		fi
+		### Save errors if varcope files are not present in Level 1 folders
+		fileCount=$( ls ${LevelOneFEATDir}/${Analysis}/varcope*.${Extension} 2>/dev/null | wc -l );
+		if [ "$fileCount" -eq 0 ]; then
+			errMsg="${errMsg}Missing all varcope $Extension files in ${LevelOneFEATDir}/${Analysis}. "
+		fi
+		### Save error if res4d file is not present in Level 1 folders
+		fileCount=$( ls ${LevelOneFEATDir}/${Analysis}/res4d.${Extension} 2>/dev/null | wc -l );
+		if [ "$fileCount" -eq 0 ]; then
+			errMsg="${errMsg}Missing res4d $Extension files in ${LevelOneFEATDir}/${Analysis}. "
+		fi
+		### Save error if dof file is not present in Level 1 folders
+		fileCount=$( ls ${LevelOneFEATDir}/${Analysis}/dof 2>/dev/null | wc -l );
+		if [ "$fileCount" -eq 0 ]; then
+			errMsg="${errMsg}Missing dof file in ${LevelOneFEATDir}/${Analysis}. "
+		fi
+	done
+done
+
+# Now check each file in list
+missingFiles="";
+for Filename in $Filenames; do
+	# if file does not exist, set errMsg
+	[ -e "$Filename" ] || missingFiles="${missingFiles} ${Filename} "
+done
+
+# if missing files, save an error message
+if [ -n "${missingFiles}" ]; then
+    errMsg="${errMsg}Missing necessary input files: ${missingFiles}"
+fi
+
+# if there were errors, exit with appropriate error messages
+if [ -n "${errMsg}" ]; then
+	log_Err_Abort $errMsg
+fi
+
+# if no missing files, then carry on
+log_Msg "CHECK INPUTS: Necessary input files exist"
 
 
 ##### MAKE DESIGN FILES AND LEVEL2 DIRECTORY #####
+
+# Determine list of contrasts for this analysis
+FirstFolder=`echo $LevelOneFEATDirSTRING | cut -d " " -f 1`
+ContrastNames=`cat ${FirstFolder}/design.con | grep "ContrastName" | cut -f 2`
+NumContrasts=`echo ${ContrastNames} | wc -w`
 
 # Make LevelTwoFEATDir
 LevelTwoFEATDir="${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
@@ -225,7 +281,7 @@ cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf 
 # Make additional design files required by flameo
 log_Msg "Make design files"
 cd ${LevelTwoFEATDir}; # Run feat_model inside LevelTwoFEATDir so relative paths work
-feat_model ${LevelTwoFEATDir}/design
+feat_model design
 cd $OLDPWD; # Go back to previous directory using bash built-in $OLDPWD
 
 
@@ -342,7 +398,7 @@ for Analysis in ${Analyses} ; do
 	### Convert fakeNIFTI Files back to CIFTI (if necessary)
 	if [ "$fakeNIFTIused" = "YES" ] ; then
 		log_Msg "Convert fakeNIFTI files back to CIFTI"
-		CIFTItemplate="${LevelOneFEATDir}/${Analysis}/pe1.${Extension}"
+		CIFTItemplate=$( ls ${LevelOneFEATDir}/${Analysis}/cope*.${Extension} | head -1)
 
 		# convert flameo input files for review: ${LevelTwoFEATDir}/${Analysis}/*.nii.gz
 		# convert flameo output files for each cope: ${LevelTwoFEATDir}/${Analysis}/cope*.feat/*.nii.gz
