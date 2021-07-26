@@ -139,7 +139,7 @@ if [ "${Parcellation}" = "NONE" ]; then
 fi
 
 # Determine whether to run Volume, and set strings used for filenaming
-if [ $VolumeBasedProcessing = "YES" ] ; then
+if [ "$VolumeBasedProcessing" = "YES" ] ; then
 	runVolume=true;
 	ExtensionList="${ExtensionList}nii.gz "
 	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
@@ -235,6 +235,7 @@ for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
 		if [ "$fileCount" -eq 0 ]; then
 			errMsg="${errMsg}Missing dof file in ${LevelOneFEATDir}/${Analysis}. "
 		fi
+		analysisCounter=$(($analysisCounter+1))
 	done
 done
 

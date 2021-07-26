@@ -367,7 +367,7 @@ if $runVolume ; then
 	log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_NIFTI: Add edge-constrained volume smoothing"
 	FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 	InputfMRI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}
-	InputSBRef=${InputfMRI}_SBRef
+	InputSBRef=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef
 	fslmaths ${InputSBRef} -bin ${FEATDir}/mask_orig
 	fslmaths ${FEATDir}/mask_orig -kernel gauss ${FinalSmoothingSigma} -fmean ${FEATDir}/mask_orig_weight -odt float
 	fslmaths ${InputfMRI} -kernel gauss ${FinalSmoothingSigma} -fmean \
