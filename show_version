@@ -104,7 +104,7 @@ if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
 then
     modified=no
     #ignore modification of things in Examples?
-    if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- ':!/Examples/')
+    if ! (cd "$HCPPIPEDIR"; git diff-index HEAD -- '!Examples/')
     then
         modified=YES
         verstring="$verstring"-MOD
