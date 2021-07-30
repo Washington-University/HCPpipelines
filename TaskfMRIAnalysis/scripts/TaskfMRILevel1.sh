@@ -197,7 +197,7 @@ Filenames="";
 # Need fsf files in scan-level directories
 Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
 
-if [ -e "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf" ]; then
+if [[ -e "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf" ]]; then
 	# Need EVs referenced in fsf file
 	while read line; do
 		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${line}"
@@ -229,12 +229,14 @@ Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_f
 # Now check each file in list
 missingFiles="";
 for Filename in $Filenames; do
-	# if file does not exist, set errMsg
-	[ -e "$Filename" ] || missingFiles="${missingFiles} ${Filename} "
+	# if file does not exist, save $Filename for use by errMsg
+	if [[ ! -e "$Filename" ]]; then
+		missingFiles+="${Filename} "
+	fi
 done
 
 # if missing files, then throw an error and abort
-if [ -n "${missingFiles}" ]; then
+if [[ -n "${missingFiles}" ]]; then
     errMsg="Missing necessary input files: ${missingFiles}"
 	log_Err_Abort $errMsg
 fi
@@ -260,7 +262,7 @@ log_Msg "MAIN: IMAGE_INFO: npts: ${npts}"
 # Create output .feat directory ($FEATDir) for this analysis
 FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
 log_Msg "MAIN: MAKE_DESIGNS: FEATDir: ${FEATDir}"
-if [ -e ${FEATDir} ] ; then
+if [[ -e "${FEATDir}" ]] ; then
 	rm -r ${FEATDir}
 	mkdir ${FEATDir}
 else
@@ -296,6 +298,28 @@ else
 	sed -i -e  "s|set fmri(npts) \"\?${fsfnpts}\"\?|set fmri(npts) ${npts}|g" ${FEATDir}/design.fsf
 fi
 
+# Use grep to find lines in fsf that list EV text files. Those lines look like this:
+# set fmri(custom1) "../EVs/guess.txt"
+# set fmri(custom2) "../EVs/miss.txt"
+grep -e 'fmri(custom' < ${FEATDir}/design.fsf | while read line; do
+	# Figure out which EV number this is (sed to remove characters before and after EV number)
+	custom=`echo $line | sed -e 's|.*custom||' -e 's|).*||' `;
+	# get path to EV from text between double-quotes
+	ev=`echo $line | cut -d\" -f2`;
+	# Find length (number of lines) for EV, assuming path to EVs is relative to $FEATDir
+	count=`awk '{ if ($3 != 0) print $0 }' ${FEATDir}/$ev |wc -l`;
+
+	if [ $count -eq 0 ]; # if EV is empty
+	then
+		# Change the EV shape to Empty EV shape
+		# set fmri(shape2) 3  # custom 3-column
+		# set fmri(shape2) 10 # empty EV
+		sed -i -e "s|fmri(shape${custom}).*|fmri(shape${custom}) 10|" ${FEATDir}/design.fsf
+		log_Msg "EMPTY custom${custom} $ev $count in fsf";
+	else
+		log_Msg "FULL  custom${custom} $ev $count in fsf";
+	fi;
+done
 
 ### Use fsf to create additional design files used by film_gls
 log_Msg "MAIN: MAKE_DESIGNS: Create design files, model confounds if desired"
@@ -466,7 +490,7 @@ else
 		# Save mean image
 		fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI.nii.gz -Tmean ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI_mean.nii.gz
 		# Use fslmaths to apply high pass filter and then add mean back to image
-		fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI.nii.gz -bptf ${hp_sigma} -1 \
+		fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI.nii.gz -bptf ${hp_sigma} ${lp_sigma} \
 		   -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI_mean.nii.gz \
 		   ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_FAKENIFTI.nii.gz
 		# Convert "fake" NIFTI back to CIFTI
@@ -483,7 +507,7 @@ else
 		# We drop the "dilMrim" string from the output file name, so as to avoid breaking
 		# any downstream scripts.
 		fslmaths ${SmoothedDilatedResultFile} -Tmean ${SmoothedDilatedResultFile}_mean
-		fslmaths ${SmoothedDilatedResultFile} -bptf ${hp_sigma} -1 \
+		fslmaths ${SmoothedDilatedResultFile} -bptf ${hp_sigma} ${lp_sigma} \
 		  -add ${SmoothedDilatedResultFile}_mean \
 		  ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.nii.gz
 	fi
@@ -565,5 +589,21 @@ if $runVolume ; then
 	rm -f ${FEATDir}/${LevelOnefMRIName}${ProcSTRING}_dilM${SmoothingString}.nii.gz
 	rm -f ${SmoothedDilatedResultFile}*.nii.gz
 fi
+
+# Clean up contrasts where cope has no non-zero voxels (created from 'versus rest' contrasts from conditions with empty EVs)
+# NOTE WELL: This will not remove 'condition A versus condition B' contrasts where one condition has no events.
+for Analysis in GrayordinatesStats ParcellatedStats StandardVolumeStats; do
+	for file in $( ls ${FEATDir}/${Analysis}/cope*.nii* 2>/dev/null ); do 
+		filebase=$( basename $file )
+		sd=$( fslstats $file -V | awk '{ print $1 }' )
+		if [ $sd == 0 ]; then 
+			log_Msg "CLEANUP $filebase has 0 non-zero voxels. Removing all associated files."
+			prefixes=( cope pe tstat varcope zstat )
+			for pre in "${prefixes[@]}"; do 
+				rm -v "${FEATDir}/${Analysis}/$pre${filebase#cope}"
+			done
+		fi
+	done
+done
 
 log_Msg "MAIN: Complete"
