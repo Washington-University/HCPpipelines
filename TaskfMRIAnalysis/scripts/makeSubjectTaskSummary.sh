@@ -50,7 +50,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "$HCPPIPEDIR/global/scripts/opts.shlib"			# Function for getting HCPpipelines version
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"	# Function for getting FSL version
@@ -125,7 +124,6 @@ fi
 log_Msg "Platform Information Follows: "
 uname -a
 
-opts_ShowVersionIfRequested $@
 ${HCPPIPEDIR}/show_version
 
 log_Check_Env_Var HCPPIPEDIR
@@ -183,37 +181,33 @@ log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
 ResultsFolder="${Path}/${Subject}/MNINonLinear/Results"
 
 # Determine which analyses need to be packaged into summary directory
-# initialize run variables
-runParcellated=false; runVolume=false; runDense=false;
+# initialize list variables
 Analyses=""; ExtensionList=""; ScalarExtensionList="";
 
 # Determine whether to run Parcellated, and set strings used for filenaming
 if [ "${Parcellation}" != "NONE" ] ; then
 	# Run Parcellated Analyses
-	runParcellated=true;
 	ParcellationString="_${Parcellation}"
 	Extension="ptseries.nii"
 	ScalarExtensionList="${ScalarExtensionList}pscalar.nii "
-	Analyses="${Analyses}ParcellatedStats "; # space character at end to separate multiple analyses
+	Analyses+="ParcellatedStats "; # space character at end to separate multiple analyses
 fi
 
 # Determine whether to run Dense, and set strings used for filenaming
 if [ "${Parcellation}" = "NONE" ]; then
 	# Run Dense Analyses
-	runDense=true;
 	ParcellationString=""
 	Extension="dtseries.nii"
 	ExtensionList="${ExtensionList}dtseries.nii "
 	ScalarExtensionList="${ScalarExtensionList}dscalar.nii "
-	Analyses="${Analyses}GrayordinatesStats "; # space character at end to separate multiple analyses
+	Analyses+="GrayordinatesStats "; # space character at end to separate multiple analyses
 fi
 
 # Determine whether to run Volume, and set strings used for filenaming
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
-	runVolume=true;
 	ExtensionList="${ExtensionList}nii.gz "
 	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
-	Analyses="${Analyses}StandardVolumeStats "; # space character at end to separate multiple analyses	
+	Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
 fi
 
 
@@ -228,11 +222,7 @@ fi
 
 # Create new summary directory
 echo "Creating new summary directory at ${SummaryDirectory}..."
-mkdir -v $SummaryDirectory
-
-# Create log file with arguments from TaskfMRIAnalysis.sh call
-touch ${SummaryDirectory}/TaskfMRIAnalysis.log
-
+mkdir -pv "$SummaryDirectory"
 
 # Loop over analyses requested (runDense or runParcellation) && (runVolume)
 log_Msg "Loop over analyses requested: ${Analyses}"
@@ -241,7 +231,7 @@ for Analysis in ${Analyses} ; do
 	log_Msg "Make Summary for Analysis: ${Analysis}"
 	Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
 	ScalarExtension=`echo $ScalarExtensionList | cut -d' ' -f $analysisCounter`;
-	mkdir -p ${SummaryDirectory}/${Analysis}
+	mkdir -pv "${SummaryDirectory}/${Analysis}"
 	analysisCounter=$(($analysisCounter+1))
 
 	# Check if Level2 analysis was requested
@@ -253,32 +243,32 @@ for Analysis in ${Analyses} ; do
 		## Check for Contrasts.txt file in feat directory
 		if [ ! -e "${LevelTwoFEATDir}/Contrasts.txt" ]; then
 			# file is missing, write cope number and contrast name to log
-			echo "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+			echo "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			log_Err_Abort "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly."
 		else
-			cp -suv ${LevelTwoFEATDir}/Contrasts.txt ${SummaryDirectory}
+			ln -sv ${LevelTwoFEATDir}/Contrasts.txt ${SummaryDirectory}/
 		fi
 		
 		copeCounter=1;
 		cat ${LevelTwoFEATDir}/Contrasts.txt | while read Contrast ; do
 			# Check if necessary files exist in cope${i}.feat directory (cope1 should be mean of two runs)
 			if [ -e "${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/cope1.${Extension}" ]; then
-				echo "${Analysis}: cope${copeCounter} ($Contrast) exists" >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+				echo "${Analysis}: cope${copeCounter} ($Contrast) exists" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			fi
-			for File in {mask,cope1,varcope1,tdof_t1} ; do
+			for File in mask cope1 varcope1 tdof_t1 ; do
 				cifti_in=${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/${File}.${Extension}
 				if [ -e "$cifti_in" ]; then
 					outdir=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat
 					if [ ! -d "$outdir" ]; then
-						mkdir -pv $outdir;
+						mkdir -pv "$outdir";
 					fi
-					cifti_out=$(echo $cifti_in | sed -e "s|$LevelTwoFEATDir|$SummaryDirectory|")
+					cifti_out=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/${File}.${Extension}
 					# create symlink to summary directory
-					cp -suv $cifti_in $cifti_out
+					ln -sv $cifti_in $cifti_out
 				else
 					# file is missing, write cope number and contrast name to log
 					shortName=$( echo $cifti_in | sed -e "s|${ResultsFolder}/||" );
-					echo "${Analysis}: NOTE cope${copeCounter} ($Contrast) is missing file $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+					echo "${Analysis}: NOTE cope${copeCounter} ($Contrast) is missing file $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 				fi
 			done
 			copeCounter=$(($copeCounter+1))
@@ -296,19 +286,19 @@ for Analysis in ${Analyses} ; do
 		# Check if Level1 outputs are present, else throw error
 		if [ ! -e "${LevelOneFEATDir}/design.con" ]; then
 			# file is missing, write cope number and contrast name to log
-			echo "ERROR: Cannot find Contrasts list at ${LevelOneFEATDir}/design.con. Verify that Level1 analysis completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+			echo "ERROR: Cannot find Contrasts list at ${LevelOneFEATDir}/design.con. Verify that Level1 analysis completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			log_Err_Abort "ERROR: Cannot find Contrasts list at ${LevelOneFEATDir}/design.con. Verify that Level1 analysis completed correctly."
 		fi
 
 		# Create mask and tdof files in tmp directory, to copy them into place as needed
 		tmpdir=${SummaryDirectory}/${Analysis}/tmp
-		mkdir -pv $tmpdir
+		mkdir -pv "$tmpdir"
 		# Symlink Level1 dof and create tdof_t1 image file and mask file
 		dof=`cat ${LevelOneFEATDir}/${Analysis}/dof`;
 		if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" ]] ; then
 			${CARET7DIR}/wb_command -cifti-convert -to-nifti ${LevelOneFEATDir}/${Analysis}/res4d.${Extension} $tmpdir/res4d.nii.gz
 		else
-			cp -suv ${LevelOneFEATDir}/${Analysis}/res4d.nii.gz $tmpdir/res4d.nii.gz
+			ln -sv ${LevelOneFEATDir}/${Analysis}/res4d.nii.gz $tmpdir/res4d.nii.gz
 		fi
 		fslmaths $tmpdir/res4d.nii.gz -Tstd -bin $tmpdir/mask.nii.gz;
 		fslmaths $tmpdir/mask.nii.gz -mul $dof $tmpdir/tdof_t1.nii.gz;
@@ -323,41 +313,40 @@ for Analysis in ${Analyses} ; do
 		# Make Contrasts.txt file in feat directory
 		ContrastNames=`cat ${LevelOneFEATDir}/design.con | grep "ContrastName" | cut -f 2`
 		NumContrasts=`cat ${LevelOneFEATDir}/design.con | grep "ContrastName" | wc -l`
-		touch ${SummaryDirectory}/Contrasts.txt
 
 		copeCounter=1;
 		while [ "$copeCounter" -le "${NumContrasts}" ] ; do
 			Contrast=`echo $ContrastNames | cut -d " " -f $copeCounter`
 			# Contrasts.txt is used to store the contrast names for this analysis
 			# Avoid writing if contrasts have already been written
-			lenContrastTextFile=$(cat ${SummaryDirectory}/Contrasts.txt | wc -l)
+			lenContrastTextFile=$(cat ${SummaryDirectory}/Contrasts.txt 2>/dev/null | wc -l)
 			if [ "$lenContrastTextFile" -lt "$NumContrasts" ]; then
 				echo ${Contrast} >> ${SummaryDirectory}/Contrasts.txt
 			fi
 	
 			# Check if necessary files exist in analysis directory
 			# if files are missing, write cope number and contrast name to log
-			for File in {cope,varcope} ; do
+			for File in cope varcope ; do
 				cifti_in=${LevelOneFEATDir}/${Analysis}/${File}${copeCounter}.${Extension}
 				shortName=$( echo $cifti_in | sed -e "s|${ResultsFolder}/||" );
 				if [ -e "$cifti_in" ]; then
 					outdir=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat
 					if [ ! -d "$outdir" ]; then
-						mkdir -pv $outdir;
+						mkdir -pv "$outdir";
 					fi
 					cifti_out=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/${File}1.${Extension}
 					# create symlink to summary directory
-					cp -suv $cifti_in $cifti_out
-					echo "${Analysis}: NOTE ${File}${copeCounter} ($Contrast) copied from Level1 $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+					ln -sv $cifti_in $cifti_out
+					echo "${Analysis}: NOTE ${File}${copeCounter} ($Contrast) copied from Level1 $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 				else
 					# file is missing, write cope number and contrast name to log
-					echo "${Analysis}: NOTE ${File}${copeCounter} ($Contrast) Level1 is missing file $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysis.log
+					echo "${Analysis}: NOTE ${File}${copeCounter} ($Contrast) Level1 is missing file $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 				fi
 			done
 			cp -v $tmpdir/mask.${Extension} ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/
 			cp -v $tmpdir/tdof_t1.${Extension} ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/
 			copeCounter=$(($copeCounter+1))
 		done
-		rm -rv $tmpdir
+		rm -r $tmpdir
 	fi
 done

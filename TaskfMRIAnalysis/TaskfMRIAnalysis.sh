@@ -52,7 +52,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "$HCPPIPEDIR/global/scripts/opts.shlib"			# Function for getting HCPpipelines version
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"	# Function for getting FSL version
@@ -127,7 +126,6 @@ fi
 log_Msg "Platform Information Follows: "
 uname -a
 
-opts_ShowVersionIfRequested $@
 ${HCPPIPEDIR}/show_version
 
 log_Check_Env_Var HCPPIPEDIR
