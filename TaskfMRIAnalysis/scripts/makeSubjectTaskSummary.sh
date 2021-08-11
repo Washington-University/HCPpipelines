@@ -246,7 +246,7 @@ for Analysis in ${Analyses} ; do
 			echo "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			log_Err_Abort "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly."
 		else
-			ln -sv ${LevelTwoFEATDir}/Contrasts.txt ${SummaryDirectory}/Contrasts.txt
+			ln -svf ${LevelTwoFEATDir}/Contrasts.txt ${SummaryDirectory}/Contrasts.txt
 		fi
 		
 		copeCounter=1;
@@ -264,7 +264,7 @@ for Analysis in ${Analyses} ; do
 					fi
 					cifti_out=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/${File}.${Extension}
 					# create symlink to summary directory
-					ln -sv $cifti_in $cifti_out
+					ln -svf $cifti_in $cifti_out
 				else
 					# file is missing, write cope number and contrast name to log
 					shortName=$( echo $cifti_in | sed -e "s|${ResultsFolder}/||" );
@@ -298,7 +298,7 @@ for Analysis in ${Analyses} ; do
 		if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" ]] ; then
 			${CARET7DIR}/wb_command -cifti-convert -to-nifti ${LevelOneFEATDir}/${Analysis}/res4d.${Extension} $tmpdir/res4d.nii.gz
 		else
-			ln -sv ${LevelOneFEATDir}/${Analysis}/res4d.nii.gz $tmpdir/res4d.nii.gz
+			ln -svf ${LevelOneFEATDir}/${Analysis}/res4d.nii.gz $tmpdir/res4d.nii.gz
 		fi
 		fslmaths $tmpdir/res4d.nii.gz -Tstd -bin $tmpdir/mask.nii.gz;
 		fslmaths $tmpdir/mask.nii.gz -mul $dof $tmpdir/tdof_t1.nii.gz;
@@ -336,7 +336,7 @@ for Analysis in ${Analyses} ; do
 					fi
 					cifti_out=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/${File}1.${Extension}
 					# create symlink to summary directory
-					ln -sv $cifti_in $cifti_out
+					ln -svf $cifti_in $cifti_out
 					echo "${Analysis}: NOTE ${File}${copeCounter} ($Contrast) copied from Level1 $shortName" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 				else
 					# file is missing, write cope number and contrast name to log
