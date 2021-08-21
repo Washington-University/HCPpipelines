@@ -164,14 +164,6 @@ else
 	RegString=""
 fi
 
-if [[ "${SummaryName}" = "NONE" || "${SummaryName}" = "" ]]; then
-	if [ "${LevelTwofMRIName}" = "NONE" ]; then
-	    log_Err_Abort "Cannot determine summaryname. You must provide name for single-subject summary directory if Level2 analysis is not being run."
-	else
-		SummaryName="${LevelTwofMRIName}/${LevelTwofsfName}";
-	fi
-fi
-
 log_Msg "MAIN: SET_NAME_STRINGS: SmoothingString: ${SmoothingString}"
 log_Msg "MAIN: SET_NAME_STRINGS: TemporalFilterString: ${TemporalFilterString}"
 log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
@@ -188,7 +180,7 @@ Analyses=""; ExtensionList=""; ScalarExtensionList="";
 if [ "${Parcellation}" != "NONE" ] ; then
 	# Run Parcellated Analyses
 	ParcellationString="_${Parcellation}"
-	Extension="ptseries.nii"
+  ExtensionList="${ExtensionList}ptseries.nii "
 	ScalarExtensionList="${ScalarExtensionList}pscalar.nii "
 	Analyses+="ParcellatedStats "; # space character at end to separate multiple analyses
 fi
@@ -197,7 +189,6 @@ fi
 if [ "${Parcellation}" = "NONE" ]; then
 	# Run Dense Analyses
 	ParcellationString=""
-	Extension="dtseries.nii"
 	ExtensionList="${ExtensionList}dtseries.nii "
 	ScalarExtensionList="${ScalarExtensionList}dscalar.nii "
 	Analyses+="GrayordinatesStats "; # space character at end to separate multiple analyses
@@ -210,9 +201,18 @@ if [ "$VolumeBasedProcessing" = "YES" ] ; then
 	Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
 fi
 
-
-# Determine location where SummaryDirectory should be created
-SummaryDirectory="${ResultsFolder}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
+if [[ "${SummaryName}" = "NONE" || "${SummaryName}" = "" ]]; then
+	if [ "${LevelTwofMRIName}" = "NONE" ]; then
+	    log_Err_Abort "Cannot determine summaryname. You must provide name for single-subject summary directory (--summaryname) if Level2 analysis is not being run."
+	else
+		SummaryName="${LevelTwofMRIName}/${LevelTwofsfName}";
+	fi
+   # Determine location where SummaryDirectory should be created
+  SummaryDirectory="${ResultsFolder}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
+else
+   # Determine location where SummaryDirectory should be created
+  SummaryDirectory="${ResultsFolder}/${SummaryName}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
+fi
 
 # Check if summary directory already exists, and remove old summary directory
 if [ -d "$SummaryDirectory" ]; then
@@ -231,6 +231,7 @@ for Analysis in ${Analyses} ; do
 	log_Msg "Make Summary for Analysis: ${Analysis}"
 	Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
 	ScalarExtension=`echo $ScalarExtensionList | cut -d' ' -f $analysisCounter`;
+	log_Msg "Using ${Extension} and ${ScalarExtension}"
 	mkdir -pv "${SummaryDirectory}/${Analysis}"
 	analysisCounter=$(($analysisCounter+1))
 
@@ -314,6 +315,16 @@ for Analysis in ${Analyses} ; do
 		ContrastNames=`cat ${LevelOneFEATDir}/design.con | grep "ContrastName" | cut -f 2`
 		NumContrasts=`cat ${LevelOneFEATDir}/design.con | grep "ContrastName" | wc -l`
 
+
+	  ### Generate Files for Viewing
+	  log_Msg "Generate Files for Viewing"
+	  # Initialize strings used for fslmerge command
+	  zMergeSTRING=""
+	  bMergeSTRING=""
+	  touch ${SummaryDirectory}/Contrasttemp.txt
+  	[ "${Analysis}" = "StandardVolumeStats" ] && touch ${SummaryDirectory}/wbtemp.txt
+
+
 		copeCounter=1;
 		while [ "$copeCounter" -le "${NumContrasts}" ] ; do
 			Contrast=`echo $ContrastNames | cut -d " " -f $copeCounter`
@@ -326,7 +337,7 @@ for Analysis in ${Analyses} ; do
 	
 			# Check if necessary files exist in analysis directory
 			# if files are missing, write cope number and contrast name to log
-			for File in cope varcope ; do
+			for File in cope varcope zstat ; do
 				cifti_in=${LevelOneFEATDir}/${Analysis}/${File}${copeCounter}.${Extension}
 				shortName=$( echo $cifti_in | sed -e "s|${ResultsFolder}/||" );
 				if [ -e "$cifti_in" ]; then
@@ -345,8 +356,53 @@ for Analysis in ${Analyses} ; do
 			done
 			cp -v $tmpdir/mask.${Extension} ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/
 			cp -v $tmpdir/tdof_t1.${Extension} ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/
+
+
+  		# Contrasttemp.txt is a temporary file used to name the maps in the CIFTI scalar file			
+		  echo "${Subject}_${SummaryName}_level2_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}" >> ${SummaryDirectory}/Contrasttemp.txt
+
+		  if [ "${Analysis}" = "StandardVolumeStats" ] ; then
+
+			  ### Make temporary dtseries files to convert into scalar files
+			  # Converting volume to dense timeseries requires a volume label file
+			  echo "OTHER" >> ${SummaryDirectory}/wbtemp.txt
+			  echo "1 255 255 255 255" >> ${SummaryDirectory}/wbtemp.txt
+			  ${CARET7DIR}/wb_command -volume-label-import ${SummaryDirectory}/StandardVolumeStats/mask.nii.gz ${SummaryDirectory}/wbtemp.txt ${SummaryDirectory}/StandardVolumeStats/mask.nii.gz -discard-others -unlabeled-value 0
+			  rm ${SummaryDirectory}/wbtemp.txt
+
+			  # Convert temporary volume CIFTI timeseries files
+			  ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${SummaryDirectory}/StandardVolumeStats/cope${copeCounter}.feat/zstat1.nii.gz ${SummaryDirectory}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
+			  ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${SummaryDirectory}/StandardVolumeStats/cope${copeCounter}.feat/cope1.nii.gz ${SummaryDirectory}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
+
+			  # Convert volume CIFTI timeseries files to scalar files
+			  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${SummaryDirectory}/Contrasttemp.txt
+			  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${SummaryDirectory}/Contrasttemp.txt
+
+			  # Delete the temporary volume CIFTI timeseries files
+			  rm ${SummaryDirectory}/${Subject}_${SummaryName}_level2_{cope,zstat}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii
+		  else
+			  ### Convert CIFTI dense or parcellated timeseries to scalar files
+			  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/zstat1.${Extension} ROW ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${SummaryDirectory}/Contrasttemp.txt
+			  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat/cope1.${Extension} ROW ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${SummaryDirectory}/Contrasttemp.txt
+		  fi
+
+		  # These merge strings are used below to combine the multiple scalar files into a single file for visualization
+		  zMergeSTRING="${zMergeSTRING}-cifti ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} "
+		  bMergeSTRING="${bMergeSTRING}-cifti ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} "
+
+		  # Remove Contrasttemp.txt file
+		  rm ${SummaryDirectory}/Contrasttemp.txt
+
+			
 			copeCounter=$(($copeCounter+1))
 		done
+		
+		
+	  # Perform the merge into viewable scalar files
+	  ${CARET7DIR}/wb_command -cifti-merge ${SummaryDirectory}/${Subject}_${SummaryName}_level2_zstat${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${zMergeSTRING}
+	  ${CARET7DIR}/wb_command -cifti-merge ${SummaryDirectory}/${Subject}_${SummaryName}_level2_cope${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${bMergeSTRING}
+
+		
 		rm -r $tmpdir
 	fi
 done
