@@ -298,11 +298,15 @@ cp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf $
 
 # Change the highpass filter string to the desired highpass filter
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set highpass filter string to the desired highpass filter to ${TemporalFilter}"
-sed -i -e "s|set fmri(paradigm_hp) \"200\"|set fmri(paradigm_hp) \"${TemporalFilter}\"|g" ${FEATDir}/design.fsf
+sed -i -e "s|set fmri(paradigm_hp) 200|set fmri(paradigm_hp) ${TemporalFilter}|g" ${FEATDir}/design.fsf
+if [ ${TemporalFilter} -eq -1 ] ; then
+  sed -i -e "s|set fmri(temphp_yn) 1|set fmri(temphp_yn) 0|g" ${FEATDir}/design.fsf
+  sed -i -e "s|^\(set fmri(tempfilt_yn[0-9])\) 1|\1 0|g" ${FEATDir}/design.fsf  
+fi
 
 # Change smoothing to be equal to additional smoothing in FSF file
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set smoothing to be equal to final smoothing to ${FinalSmoothingFWHM}"
-sed -i -e "s|set fmri(smooth) \"4\"|set fmri(smooth) \"${FinalSmoothingFWHM}\"|g" ${FEATDir}/design.fsf
+sed -i -e "s|set fmri(smooth) 4|set fmri(smooth) ${FinalSmoothingFWHM}|g" ${FEATDir}/design.fsf
 
 # Change output directory name to match total smoothing and highpass
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Change string in output directory name to ${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}"
