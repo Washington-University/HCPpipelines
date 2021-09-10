@@ -10,6 +10,7 @@
 #Users may download the repo as a zip, or via git clone, so the main behavior needs to be implemented based on files in the source tree
 #To reduce the chance for typos, the formulaic -rc and Post- pre/suffixes (and other automatic things) are added by the script, so the version file contains only the main version string, like "v4.3.0".
 #To reduce the chance of accidental merge/cherry-pick/forgot-to-delete causing a commit to improperly claim rc or release status, everything that controls rc or release status display is checked to contain the exact same string as the main version text, otherwise an error is thrown
+#If the pipelines directory looks like a git repo, additionally report the commit hash and check for files modified by the user since the checked out commit (except for files in Examples, since some instructions have said to edit files there in-place), and add them to the version string if appropriate.
 #
 #Usage:
 #Run it with no arguments to get extended version information
@@ -102,9 +103,15 @@ commit=''
 #plot twist: mac's which has -s for silent, but debian's doesn't
 if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
 then
+    #if we have the git repo and git, we can check if the user has edited anything important
     modified=no
-    #ignore modification of things in Examples?
-    if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- '*' ':!/Examples/')
+    #ignore modification of things in Examples, they are not used by the scripts, and some of our instructions have said to edit things there
+    #if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- '*' ':!/Examples/')
+    #problem: centos 7 git doesn't have exclude pathspec magic, so use bash to give git everything except that folder - the complication is to be safe against spaces in file or folder names
+    if ! (cd "$HCPPIPEDIR"
+        topfiles=(*)
+        readarray -t noexamples < <(IFS=$'\n'; echo "${topfiles[*]}" | grep -v '^Examples$')
+        git diff-index --quiet HEAD -- "${noexamples[@]}")
     then
         modified=YES
         verstring="$verstring"-MOD
