@@ -107,11 +107,17 @@ then
     modified=no
     #ignore modification of things in Examples, they are not used by the scripts, and some of our instructions have said to edit things there
     #if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- '*' ':!/Examples/')
-    #problem: centos 7 git doesn't have exclude pathspec magic, so use bash to give git everything except that folder - the complication is to be safe against spaces in file or folder names
+    #problem: centos 7 git doesn't have exclude pathspec magic, so use bash to give git everything except that folder - the complication is to be safe against whitespace in file or folder names
     if ! (cd "$HCPPIPEDIR"
-        topfiles=(*)
-        readarray -t noexamples < <(IFS=$'\n'; echo "${topfiles[*]}" | grep -v '^Examples$')
-        git diff-index --quiet HEAD -- "${noexamples[@]}")
+        topfiles=()
+        for file in *
+        do
+            if [[ "$file" != "Examples" ]]
+            then
+                topfiles+=("$file")
+            fi
+        done
+        git diff-index --quiet HEAD -- "${topfiles[@]}")
     then
         modified=YES
         verstring="$verstring"-MOD
