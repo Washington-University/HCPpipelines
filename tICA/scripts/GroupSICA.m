@@ -1,11 +1,24 @@
 function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList, icadimIters, icadimOverride)
     cii = ciftiopen(indata, 'wb_command');
     vn = ciftiopen(indatavn, 'wb_command');
-    Out = icaDim(cii.cdata, -1, 1, icadimIters, numWisharts); %112
-    if icadimOverride >= 0
+    Out = icaDim(cii.cdata, -1, 1, icadimIters, numWisharts);
+    if icadimOverride > 0
         Out.calcDim = icadimOverride;
     end
     disp(['Out.calcDim (after possible override): ' num2str(Out.calcDim)]);
+    [status, msg]=mkdir(OutFolder);
+    if status == 0
+    	error(['failed to create ' OutFolder ' because of ' msg]);
+    end
+    [fid,msg] = fopen([OutFolder '/most_recent_dim.txt'], 'w');
+    if fid < 0
+    	error(['failed to write to "' OutFolder '/most_recent_dim.txt" because of ' msg]);
+    end
+    byteswritten = fprintf(fid, '%i', Out.calcDim);
+    fclose(fid);
+    if byteswritten < 1
+        error(['failed to write to "' OutFolder '/most_recent_dim.txt"']);
+    end
     cii.cdata = [];
     newcii = cii;
     newcii.cdata = Out.data;

@@ -1,11 +1,41 @@
-function MIGP(StudyFolder, Subjlist, fMRINames, ProcSTRING, dPCAinternal, dPCAout, outputPCA)
+function MIGP(StudyFolder, Subjlist, fMRINames, ProcSTRING, dPCAinternal, dPCAout, outputPCA, checkpointFile)
 
     wbcommand = 'wb_command';
     Subjlist = myreadtext(Subjlist);
 
     vnsum = [];
     c = 1;
-    for s = 1:length(Subjlist)
+    
+    start = 1;
+    if ~strcmp(checkpointFile, '')
+        if exist(checkpointFile, 'file')
+            prevstate = load(checkpointFile);
+            if ~strcmp(prevstate.StudyFolder, StudyFolder)
+                error('checkpoint file used a different StudyFolder, please relaunch with the original arguments or use a different checkpoint file');
+            end
+            if ~all(strcmp(prevstate.Subjlist, Subjlist))
+                error('checkpoint file used a different subject list, please relaunch with the original arguments or use a different checkpoint file');
+            end
+            if ~all(strcmp(prevstate.fMRINames, fMRINames))
+                error('checkpoint file used a different fMRINames list, please relaunch with the original arguments or use a different checkpoint file');
+            end
+            if ~strcmp(prevstate.ProcSTRING, ProcSTRING)
+                error('checkpoint file used a different ProcSTRING, please relaunch with the original arguments or use a different checkpoint file');
+            end
+            if prevstate.dPCAinternal ~= dPCAinternal
+                error('checkpoint file used a different dPCAinternal, please relaunch with the original arguments or use a different checkpoint file');
+            end
+            %don't check dPCAout, it isn't used until the entire process is completely done
+            disp(['NOTICE: resuming computation from checkpoint file "' checkpointFile '"']);
+            start = prevstate.s + 1;
+            W = prevstate.W;
+            vnsum = prevstate.vnsum;
+            vn = prevstate.vn; %just so that it will still work to resume from after the final subject without loading vn from a subject
+            clear prevstate;
+        end
+    end
+    
+    for s = start:length(Subjlist)
         s
         grot = [];
         for f = 1:length(fMRINames)
@@ -30,6 +60,21 @@ function MIGP(StudyFolder, Subjlist, fMRINames, ProcSTRING, dPCAinternal, dPCAou
             W = uu' * W;
             clear uu dd;
         end
+        
+        if ~strcmp(checkpointFile, '')
+            try
+                [filepath, ~, ~] = fileparts(checkpointFile);
+                safefile = [tempname(filepath) '.mat']; %save would add .mat, but movefile doesn't
+                %also save all the arguments that change the contents of the outputs, for sanity checking and provenance
+                save(safefile, 'W', 'vnsum', 'vn', 's', 'StudyFolder', 'Subjlist', 'fMRINames', 'ProcSTRING', 'dPCAinternal', 'dPCAout');
+                status = movefile(safefile, checkpointFile, 'f');
+                if status == 0
+                    warning('failed to move checkpoint file from temp name to final name');
+                end
+            catch
+                warning('failed to save to checkpoint file');
+            end
+        end
     end
 
     BO = dtseries;
@@ -38,6 +83,10 @@ function MIGP(StudyFolder, Subjlist, fMRINames, ProcSTRING, dPCAinternal, dPCAou
     VNMean = vn;
     VNMean.cdata = vnsum ./ c;
     ciftisavereset(VNMean, [outputPCA '_meanvn.dscalar.nii'], wbcommand);
+    
+    if ~strcmp(checkpointFile, '')
+        mydelete(checkpointFile);
+    end
 
 end
 
@@ -49,5 +98,15 @@ function lines = myreadtext(filename)
     array = textscan(fid, '%s', 'Delimiter', {'\n'});
     fclose(fid);
     lines = array{1};
+end
+
+function mydelete(filename)
+    %fix matlab's "error if doesn't exist" and braindead "send to recycling based on preference" misfeatures
+    if exist(filename, 'file')
+        recstatus = recycle();
+        cleanupObj = onCleanup(@()(recycle(recstatus)));
+        recycle('off');
+        delete(filename);
+    end
 end
 
