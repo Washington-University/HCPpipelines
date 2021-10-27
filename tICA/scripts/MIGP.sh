@@ -42,6 +42,7 @@ opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' 'name component used
 opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use for the output folder'
 opts_AddMandatory '--pca-internal-dim' 'PCAInternalDim' 'integer' 'internal MIGP dimensionality'
 opts_AddMandatory '--pca-out-dim' 'PCAOutputDim' 'integer' 'number of components to output'
+opts_AddOptional '--resumable' 'checkpointFile' 'filename' 'file to use to save and resume interrupted processing, must use .mat extension'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB (not implemented)
 1 = interpreted MATLAB
@@ -72,6 +73,13 @@ case "$MatlabMode" in
         ;;
 esac
 
+#matlab load() and save() look around for file extensions, while movefile() doesn't
+#so have the script require .mat for predictability
+if [[ "$checkpointFile" != "" && "$checkpointFile" != *.mat ]]
+then
+    log_Err_Abort "argument to --resumable must end in .mat"
+fi
+
 #Naming Conventions
 CommonAtlasFolder="$StudyFolder/$GroupAverageName/MNINonLinear"
 OutputFolder="$CommonAtlasFolder/Results/$OutputfMRIName"
@@ -84,8 +92,16 @@ tempfiles_add "$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}.txt"
 echo "$Subjlist" | tr @ '\n' > "$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}.txt"
 fMRINamesML="{'"$(echo "$fMRINames" | sed "s/@/';'/g")"'}"
 
-mlcode="addpath('$HCPPIPEDIR/global/matlab'); addpath('$HCPPIPEDIR/tICA/scripts'); addpath('$HCPCIFTIRWDIR'); MIGP('$StudyFolder', '$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}.txt', $fMRINamesML, '$fMRIProcSTRING', $PCAInternalDim, $PCAOutputDim, '$OutputPCA');"
+mlcode="addpath('$HCPPIPEDIR/global/matlab'); addpath('$HCPPIPEDIR/tICA/scripts'); addpath('$HCPCIFTIRWDIR'); MIGP('$StudyFolder', '$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}.txt', $fMRINamesML, '$fMRIProcSTRING', $PCAInternalDim, $PCAOutputDim, '$OutputPCA', '$checkpointFile');"
+
+#don't get fooled into thinking the run was fine if the output existed before we ran the matlab
+rm -f "${OutputPCA}_PCA.dtseries.nii" "${OutputPCA}_meanvn.dscalar.nii"
 
 log_Msg "running matlab code: $mlcode"
 "${matlab_interpreter[@]}" <<<"$mlcode"
+
+if [[ ! -f "${OutputPCA}_PCA.dtseries.nii" || ! -f "${OutputPCA}_meanvn.dscalar.nii" ]]
+then
+    log_Err_Abort "MIGP did not produce expected output, check above for errors from matlab"
+fi
 

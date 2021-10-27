@@ -36,10 +36,10 @@ opts_AddMandatory '--data' 'indata' 'file' "the input dtseries"
 opts_AddMandatory '--vn-file' 'invn' 'file' "the variance normalization dscalar"
 opts_AddMandatory '--out-folder' 'outfolder' 'path' "where to write the outputs"
 opts_AddMandatory '--num-wishart' 'numWisharts' 'integer' "how many wisharts to use in icaDim"
-#opts_AddMandatory '--wf-out-name' 'wfoutname' 'file' "output name for wishart-filtered data" #FIXME - move naming conventions to high-level script when ready
+opts_AddMandatory '--wf-out-name' 'wfoutname' 'file' "output name for wishart-filtered data"
 opts_AddOptional '--icadim-iters' 'icadimIters' 'integer' "number of iterations or mode for icaDim(), default 100" '100'
 opts_AddOptional '--process-dims' 'dimListRaw' 'num@num@num...' "process at these dimensionalities in addition to icaDim's estimate"
-opts_AddOptional '--icadim-override' 'icadimOverride' 'integer' "use this dimensionality instead of icaDim's estimate" '-1'
+opts_AddOptional '--icadim-override' 'icadimOverride' 'integer' "use this dimensionality instead of icaDim's estimate"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB (not implemented)
 1 = interpreted MATLAB
@@ -54,9 +54,15 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-#FIXME: move to high level script when ready
-inputbase="${indata%.dtseries.nii}"
-wfoutname="$inputbase"_WF"$numWisharts".dtseries.nii
+if [[ "$icadimOverride" == "" ]]
+then
+    icadimOverride='-1'
+else
+    if (( icadimOverride < 1 ))
+    then
+        log_Err_Abort "--icadim-override must be a positive integer"
+    fi
+fi
 
 IFS='@' read -a dimList <<<"$dimListRaw"
 
@@ -89,4 +95,10 @@ matlabcode="
 
 log_Msg "running matlab code: $matlabcode"
 "${matlab_interpreter[@]}" <<<"$matlabcode"
+
+actualDim=$(cat "$outfolder/most_recent_dim.txt")
+if [[ ! -f "$outfolder/melodic_oIC_$actualDim.dscalar.nii" || ! -f "$outfolder/melodic_oIC_${actualDim}_norm.dscalar.nii" ]]
+then
+    log_Err_Abort "GroupSICA did not produce expected output, check above for errors from matlab"
+fi
 

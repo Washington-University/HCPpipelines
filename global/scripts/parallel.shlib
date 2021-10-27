@@ -1,0 +1,123 @@
+#!/bin/echo This script should not be run directly:
+
+#code for bash-level parallelization
+#see code between USAGE_BEGIN and USAGE_END for an example
+true << "USAGE_END"
+USAGE_BEGIN
+
+par_addjob echo foo
+par_addjob_stdin cat << "foo"
+#run up to 4 jobs at once
+par_runjobs 4
+#par_runjobs clears the list after they are complete, so you can do another set:
+par_addjob echo and
+par_addjob echo now
+par_addjob echo more
+#run one job per auto-detected physical core
+par_runjobs -1
+#or just par_runjobs
+
+USAGE_END
+
+function par_addjob()
+{
+    par_addjob_stdin "$@" <<<""
+}
+
+function par_runjobs()
+{
+    local numpar
+    if (($# > 0 && $1 > 0))
+    then
+        numpar="$1"
+    else
+        numpar=$(par_numphys)
+    fi
+    #wait for all to ensure new job numbers start at 1 for bash <=4 (and to not use more cores than told to on bash >=5)
+    wait
+    local i
+    for ((i = 0; i < ${#par_jobarray[@]}; ++i))
+    do
+        IFS=' ' read -a encodedargs <<<"${par_jobarray[i]}"
+        local cmdargs=()
+        local encarg
+        for encarg in "${encodedargs[@]}"
+        do
+            cmdargs+=("$(echo "$encarg" | sed -e 's/%s/ /g' -e 's/%p/%/g')")
+        done
+        if ((i >= numpar))
+        then
+            #until bash 5, wait -n hangs the script if you ctrl+c
+            if ((${BASH_VERSINFO[0]} >= 5))
+            then
+                wait -n
+            else
+                wait %$((i - numpar + 1))
+            fi
+        fi
+        "${cmdargs[@]}" <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.o$$.$par_global_launch_count" | tee ./$par_global_scriptname.e$$.$par_global_launch_count 1>&2 &
+        par_global_launch_count=$((par_global_launch_count + 1))
+    done
+    #finish all jobs before continuing the main script
+    wait
+    par_jobarray=()
+    par_jobinputarray=()
+}
+
+#track number of total jobs run during this script, and the script name, to generate job output capture filenames
+par_global_launch_count=1
+par_global_scriptname=$(basename -- "$0")
+
+function par_numphys()
+{
+    case "$OSTYPE" in
+        (darwin*)
+            sysctl -n hw.physicalcpu
+        ;;
+        (linux*)
+            lscpu -p | grep -v '^#' | cut -f2,4 -d, | sort -u | wc -l
+        ;;
+        (*)
+            echo "WARNING: unknown OS, unable to determine number of cpu cores, assuming 2" 1>&2
+            echo 2
+        ;;
+    esac
+}
+
+function par_numlog()
+{
+    case "$OSTYPE" in
+        (darwin*)
+            sysctl -n hw.logicalcpu
+        ;;
+        (linux*)
+            lscpu -p | grep -v '^#' | wc -l
+        ;;
+        (*)
+            echo "WARNING: unknown OS, unable to determine number of cpu cores, assuming 2" 1>&2
+            echo 2
+        ;;
+    esac
+}
+
+par_jobarray=()
+par_jobinputarray=()
+function par_addjob_stdin()
+{
+    local encodedargs=()
+    local arg
+    for arg in "$@"
+    do
+        #handle spaces within arguments, so we can use space as delimiter within an array element
+        encodedargs+=("$(echo "$arg" | sed -e 's/%/%p/g' -e 's/ /%s/g')")
+    done
+    local saveifs="$IFS"
+    IFS=' '
+    par_jobarray+=("${encodedargs[*]}")
+    IFS="$saveifs"
+    local jobinput
+    #read builtin exits nonzero at EOF, but EOF is exactly what we want it to hit
+    IFS='' read -r -d '' jobinput || true
+    par_jobinputarray+=("$jobinput")
+}
+
