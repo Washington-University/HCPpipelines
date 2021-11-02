@@ -240,32 +240,32 @@ for i=1:length(tICATCS)
 end
 
 % runwise non-physio data
-for j=1:length(PhysiofMRINames)
-    r=rs(j);
-    RunwisetICATCS{r}=[];
-    RunwiseDVARS{r}=[];
-    RunwiseGS{r}=[];
-end
-c=1;
-for i=1:length(SubjFolderlist)
-    Subjlist{i}
-    Start=1;
-    End=0;
-    if exist([SubjFolderlist{i} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']) & length(tICATCS{i})==RunsXNumTimePoints
-        for j=1:length(PhysiofMRINames)
-            r=rs(j);
-                RunLength=RunLengths(j);
-                End=End+RunLength;
-                RuntICAtTCS=tICATCS{i}(:,Start:End);
-                RunDVARS=CIFTIDVARS{i}(:,Start:End);
-                RunGS=CIFTIGS{i}(:,Start:End);
-                RunwisetICATCS{r}=[RunwisetICATCS{r} RuntICAtTCS];
-                RunwiseDVARS{r}=[RunwiseDVARS{r} RunDVARS];
-                RunwiseGS{r}=[RunwiseGS{r} RunGS];
-                Start=Start+RunLength;
-        end
-    end
-end
+% for j=1:length(PhysiofMRINames)
+%     r=rs(j);
+%     RunwisetICATCS{r}=[];
+%     RunwiseDVARS{r}=[];
+%     RunwiseGS{r}=[];
+% end
+% c=1;
+% for i=1:length(SubjFolderlist)
+%     Subjlist{i}
+%     Start=1;
+%     End=0;
+%     if exist([SubjFolderlist{i} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']) & length(tICATCS{i})==RunsXNumTimePoints
+%         for j=1:length(PhysiofMRINames)
+%             r=rs(j);
+%                 RunLength=RunLengths(j);
+%                 End=End+RunLength;
+%                 RuntICAtTCS=tICATCS{i}(:,Start:End);
+%                 RunDVARS=CIFTIDVARS{i}(:,Start:End);
+%                 RunGS=CIFTIGS{i}(:,Start:End);
+%                 RunwisetICATCS{r}=[RunwisetICATCS{r} RuntICAtTCS];
+%                 RunwiseDVARS{r}=[RunwiseDVARS{r} RunDVARS];
+%                 RunwiseGS{r}=[RunwiseGS{r} RunGS];
+%                 Start=Start+RunLength;
+%         end
+%     end
+% end
 
 % generate strongest single subject parcel-based grayplots and spatial maps
 disp('generateing strongest single subject parcel-based grayplots and spatial maps...')
