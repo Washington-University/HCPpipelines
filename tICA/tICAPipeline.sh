@@ -262,7 +262,7 @@ OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaning
 
 #this doesn't get changed later, it is for convenience
 #we only write things here in ESTIMATE mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
-sICAoutfolder="${StudyFolder}/${tICACleaningGroupAverageName}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
+sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
 
 #use brainmask from cleaning folder if in USE mode
 if [[ "$tICAmode" == "USE" ]]
@@ -532,7 +532,7 @@ do
 
                 #    nameParamPart = ['_' num2str(tICAdim) '_' nlfunc IT];
                 #    dlmwrite([OutputFolder '/' tICAmixNamePart nameParamPart], tICAmix, '\t');
-                tica_cmd+=(--tICA-mixing-matrix="$tICACleaningFolder/MNINonLinear/Results/$OutputfMRIName/tICA_d$tICADim/melodic_mix_${tICADim}_tanhF")
+                tica_cmd+=(--tICA-mixing-matrix="$tICACleaningFolder/MNINonLinear/Results/$tICACleaningfMRIName/tICA_d$tICADim/melodic_mix_${tICADim}_tanhF")
             fi
             
             "${tica_cmd[@]}"

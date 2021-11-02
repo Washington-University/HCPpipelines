@@ -33,6 +33,11 @@ function par_runjobs()
     else
         numpar=$(par_numphys)
     fi
+    if ! [[ "$numpar" =~ ^[1-9][0-9]*$ || "$numpar" == "-1" ]]
+    then
+        echo "ERROR: requested '$numpar' jobs, expected positive integer or -1" 1>&2
+        exit 1
+    fi
     #wait for all to ensure new job numbers start at 1 for bash <=4 (and to not use more cores than told to on bash >=5)
     wait
     local i
