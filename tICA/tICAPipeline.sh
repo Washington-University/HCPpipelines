@@ -109,7 +109,7 @@ opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the d
 #not integrated yet
 
 #tICA Cleanup
-opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text file containing the component numbers to be removed by cleanup, separated by spaces, requires either --tica-mode=USE or --starting-step=CleanData"
+opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text file containing the component numbers to be removed by cleanup, separated by spaces, requires either --ica-mode=REUSE_TICA or --starting-step=CleanData"
 # It can either be a mandatory general input or optional input, even a varaible created by a check on process string
 # 'YES' only when dealing with old 3T HCP data with 'hp2000', 'NO' otherwise
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether the input data used the legacy bias correction' 'NO'
@@ -233,7 +233,7 @@ then
     #manual list specified, make sure the mode setting is appropriate
     if [[ "$tICAmode" != "USE" || "$startStep" != "CleanData" ]]
     then
-        log_Err_Abort "--manual-components-to-remove requires either --tica-mode=USE or --starting-step=CleanData"
+        log_Err_Abort "--manual-components-to-remove requires either --ica-mode=REUSE_TICA or --starting-step=CleanData"
     fi
 fi
 
