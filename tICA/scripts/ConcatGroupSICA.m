@@ -1,5 +1,11 @@
 function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListName, InputStats, sICAdim, RunsXNumTimePoints, OutTCSName, OutTCSMaskName, OutAnnsubName, OutAvgTCSName, OutAbsAvgTCSName, OutAvgSpectraName, OutAvgMapsName, OutAvgVolMapsName)
-
+    
+    %if isdeployed()
+        %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
+    %end
+    sICAdim = str2double(sICAdim);
+    RunsXNumTimePoints = str2double(RunsXNumTimePoints);
+    
     wbcommand = 'wb_command';
     
     TCSList = myreadtext(TCSListName);

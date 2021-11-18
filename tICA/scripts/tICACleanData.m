@@ -15,6 +15,10 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
     %VolGoodBCFile - same as GoodBCFile, but volume data
     %OutputVolNamesFile - text file containing output nifti filenames for cleaned volume runs
     
+    %if isdeployed()
+        %all arguments are strings
+    %end
+    
     wbcommand = 'wb_command';
     inputArray = myreadtext(InputFile);
     inputVNArray = myreadtext(InputVNFile);

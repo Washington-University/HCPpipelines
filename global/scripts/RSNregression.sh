@@ -11,7 +11,6 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
-#FIXME: no compiled matlab support
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
@@ -51,9 +50,8 @@ opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from t
 #old bias field
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'number' "multiply the input timeseries by some factor before processing"
-#FIXME: compiled matlab
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
-0 = compiled MATLAB (not implemented)
+0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 
@@ -79,7 +77,10 @@ else
 fi
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
+        then
+            log_Err_Abort "to use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+        fi
         ;;
     (1)
         #NOTE: figure() is required by the spectra option, and -nojvm prevents using figure()
@@ -92,8 +93,6 @@ case "$MatlabMode" in
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
         ;;
 esac
-matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$HCPPIPEDIR/global/matlab/nets_spectra'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$this_script_dir');
-"
 
 RegString=""
 if [[ "$RegName" != "" ]]
@@ -218,48 +217,68 @@ then
     wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
 fi
 
+#all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side, either, can do argument lists for each matlab mode with the same code
+#SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
+matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma'")
+if [[ "$Method" != "single" ]]
+then
+    matlab_argarray+=("GroupMaps" "$GroupMaps")
+    matlab_argarray+=("VAWeightsName" "$tempfile.91k.dscalar.nii")
+fi
+if ((DoZ))
+then
+    matlab_argarray+=("OutputZ" "$OutputZ")
+fi
+if [[ "$SpectraParams" != "" ]]
+then
+    matlab_argarray+=("SpectraParams" "$SpectraParams")
+fi
+if ((DoFixBias))
+then
+    matlab_argarray+=("GoodBCFile" "$tempname.goodbias.txt" "OldBias" "$OldBias")
+fi
+if [[ "$ScaleFactor" != "" ]]
+then
+    matlab_argarray+=("ScaleFactor" "$ScaleFactor")
+fi
+if ((DoVol))
+then
+    matlab_argarray+=("VolCiftiTemplate" "$VolCiftiTemplate" "VolInputFile" "$tempname.volinput.txt" "VolInputVNFile" "$tempname.volinputvn.txt" "OutputVolBeta" "$OutputVolBeta")
+    if ((DoZ))
+    then
+        matlab_argarray+=("OutputVolZ" "$OutputVolZ")
+    fi
+    if ((DoFixBias))
+    then
+        matlab_argarray+=("VolGoodBCFile" "$tempname.volgoodbias.txt" "OldVolBias" "$OldVolBias")
+    fi
+fi
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        #sadly, matlab 2017b compiler doesn't know how to write sh scripts that are whitespace safe...could write our own...
+        matlab_cmd=("$this_script_dir/Compiled_RSNregression/run_RSNregression.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+        log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+        "${matlab_cmd[@]}"
         ;;
     (1 | 2)
-        #SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
-        matlab_args="'$tempname.input.txt', '$tempname.inputvn.txt', '$Method', '$tempname.params.txt', '$OutBeta', 'SurfString', '$SurfString', 'WRSmoothingSigma', '$WRSmoothingSigma'"
-
-        if [[ ! ${Method} == "single" ]]
-        then
-            matlab_args+=", 'GroupMaps', '$GroupMaps'"
-            matlab_args+=", 'VAWeightsName', '$tempfile.91k.dscalar.nii'"
-        fi
-        if ((DoZ))
-        then
-            matlab_args+=", 'OutputZ', '$OutputZ'"
-        fi
-        if [[ "$SpectraParams" != "" ]]
-        then
-            matlab_args+=", 'SpectraParams', '$SpectraParams'"
-        fi
-        if ((DoFixBias))
-        then
-            matlab_args+=", 'GoodBCFile', '$tempname.goodbias.txt', 'OldBias', '$OldBias'"
-        fi
-        if [[ "$ScaleFactor" != "" ]]
-        then
-            matlab_args+=", 'ScaleFactor', '$ScaleFactor'"
-        fi
-        if ((DoVol))
-        then
-            matlab_args+=", 'VolCiftiTemplate', '$VolCiftiTemplate', 'VolInputFile', '$tempname.volinput.txt', 'VolInputVNFile', '$tempname.volinputvn.txt', 'OutputVolBeta', '$OutputVolBeta'"
-            if ((DoZ))
+        #reformat argument array so matlab sees them as strings
+        matlab_args=""
+        for thisarg in "${matlab_argarray[@]}"
+        do
+            if [[ "$matlab_args" != "" ]]
             then
-                matlab_args+=", 'OutputVolZ', '$OutputVolZ'"
+                matlab_args+=", "
             fi
-            if ((DoFixBias))
-            then
-                matlab_args+=", 'VolGoodBCFile', '$tempname.volgoodbias.txt', 'OldVolBias', '$OldVolBias'"
-            fi
-        fi
-        matlab_code="$matlab_paths RSNregression($matlab_args);"
+            matlab_args+="'$thisarg'"
+        done
+        matlab_code="
+            addpath('$FSLDIR/etc/matlab');
+            addpath('$HCPCIFTIRWDIR');
+            addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
+            addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$this_script_dir');
+            RSNregression($matlab_args);"
         
         log_Msg "running matlab code: $matlab_code"
         "${matlab_interpreter[@]}" <<<"$matlab_code"

@@ -15,7 +15,7 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 %     Subjlist: 
 %     fMRINames:
 %     OutputfMRIName: name to use for tICA pipeline outputs
-%     tICAdims: integer, the dimension after tICA decomposition
+%     tICAdims: string, the dimension after tICA decomposition
 %     fMRIProcString: string, file name component representing the
 %     preprocessing already done, like '_hp0_clean'
 %     nonlinear: string, could be 'tanh'
@@ -36,6 +36,9 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 %  Output:
 %     features: table, the output table consisting of all the features
 
+%if isdeployed()
+    %all arguments are actually strings, though 'tICAdims' gets turned into an integer below
+%end
 
 % hard coded
 nonlinear='tanhF';

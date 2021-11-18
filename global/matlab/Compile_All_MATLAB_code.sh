@@ -122,17 +122,27 @@ main()
 	log_Msg "----------------------------------------"
 	log_Msg "Compiling ICAFIX-related MATLAB code"
 	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/ICAFIX/scripts/Compile_MATLAB_code.sh
+	"${HCPPIPEDIR}"/ICAFIX/scripts/Compile_MATLAB_code.sh
 
 	log_Msg "----------------------------------------"
 	log_Msg "Compiling MSMAll-related MATLAB code"
 	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/MSMAll/scripts/Compile_MATLAB_code.sh
+	"${HCPPIPEDIR}"/MSMAll/scripts/Compile_MATLAB_code.sh
 
 	log_Msg "----------------------------------------"
 	log_Msg "Compiling RestingStateStats-related MATLAB code"
 	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/RestingStateStats/scripts/Compile_MATLAB_code.sh
+	"${HCPPIPEDIR}"/RestingStateStats/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling tICA-related MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/tICA/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling global script MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/global/scripts/Compile_MATLAB_code.sh
 }
 
 # ------------------------------------------------------------------------------
@@ -141,7 +151,7 @@ main()
 
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set" 1>&2
 	exit 1
 fi
 

@@ -1,5 +1,11 @@
 function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListName, fMRIListName, sICAdim, RunsXNumTimePoints, TCSConcatName, TCSMaskName, AvgTCSName, sICAAvgSpectraName, sICAMapsAvgName, sICAVolMapsAvgName, OutputFolder, OutString, RegName, LowResMesh, tICAmode, tICAMM)
-
+    
+    %if isdeployed()
+        %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
+    %end
+    sICAdim = str2double(sICAdim);
+    RunsXNumTimePoints = str2double(RunsXNumTimePoints);
+    
     wbcommand = 'wb_command';
     
     %naming conventions inside OutputFolder, probably don't need to be changeable

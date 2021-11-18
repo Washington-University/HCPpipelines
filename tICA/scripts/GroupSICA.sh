@@ -10,7 +10,6 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-#FIXME: no compiled matlab support
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
@@ -41,7 +40,7 @@ opts_AddOptional '--icadim-iters' 'icadimIters' 'integer' "number of iterations 
 opts_AddOptional '--process-dims' 'dimListRaw' 'num@num@num...' "process at these dimensionalities in addition to icaDim's estimate"
 opts_AddOptional '--icadim-override' 'icadimOverride' 'integer' "use this dimensionality instead of icaDim's estimate"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
-0 = compiled MATLAB (not implemented)
+0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 opts_ParseArguments "$@"
@@ -68,7 +67,10 @@ IFS='@' read -a dimList <<<"$dimListRaw"
 
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
+        then
+            log_Err_Abort "to use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+        fi
         ;;
     (1)
         #NOTE: figure() is required by the spectra option, and -nojvm prevents using figure()
@@ -82,19 +84,45 @@ case "$MatlabMode" in
         ;;
 esac
 
+#shortcut in case the folder gets renamed
+this_script_dir=$(dirname "$0")
+
+#matlab function arguments have been changed to strings, to avoid having two copies of the argument list in the script
 #dimList can validly be empty, which in older bash needs the below incantation under 'set -eu'
 #yes, "" nests inside ${}
-matlabcode="
-    addpath('$HCPPIPEDIR/global/matlab/icaDim');
-    addpath('$HCPPIPEDIR/global/matlab');
-    addpath('$HCPPIPEDIR/tICA/scripts/icasso122');
-    addpath('$HCPPIPEDIR/tICA/scripts/FastICA_25');
-    addpath('$HCPPIPEDIR/tICA/scripts');
-    addpath('$HCPCIFTIRWDIR');
-    GroupSICA('$indata', '$invn', '$outfolder', '$wfoutname', $numWisharts, [${dimList[*]+"${dimList[*]}"}], $icadimIters, $icadimOverride);"
+matlab_argarray=("$indata" "$invn" "$outfolder" "$wfoutname" "$numWisharts" "${dimList[*]+"${dimList[*]}"}" "$icadimIters" "$icadimOverride")
 
-log_Msg "running matlab code: $matlabcode"
-"${matlab_interpreter[@]}" <<<"$matlabcode"
+case "$MatlabMode" in
+    (0)
+        matlab_cmd=("$this_script_dir/Compiled_GroupSICA/run_GroupSICA.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+        log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+        "${matlab_cmd[@]}"
+        ;;
+    (1 | 2)
+        #reformat argument array so matlab sees them as strings
+        matlab_args=""
+        for thisarg in "${matlab_argarray[@]}"
+        do
+            if [[ "$matlab_args" != "" ]]
+            then
+                matlab_args+=", "
+            fi
+            matlab_args+="'$thisarg'"
+        done
+        matlabcode="
+            addpath('$HCPPIPEDIR/global/matlab/icaDim');
+            addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$this_script_dir/icasso122');
+            addpath('$this_script_dir/FastICA_25');
+            addpath('$this_script_dir');
+            addpath('$HCPCIFTIRWDIR');
+            GroupSICA($matlab_args);"
+
+        log_Msg "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
+        echo
+        ;;
+esac
 
 actualDim=$(cat "$outfolder/most_recent_dim.txt")
 if [[ ! -f "$outfolder/melodic_oIC_$actualDim.dscalar.nii" || ! -f "$outfolder/melodic_oIC_${actualDim}_norm.dscalar.nii" ]]

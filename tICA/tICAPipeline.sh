@@ -13,7 +13,6 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
-#FIXME: no compiled matlab support
 g_matlab_default_mode=1
 #add steps to this array and in the switch cases below
 pipelineSteps=(MIGP GroupSICA indProjSICA ConcatGroupSICA ComputeGroupTICA indProjTICA ComputeTICAFeatures ClassifyTICA CleanData)
@@ -120,7 +119,7 @@ $stepsText" "$defaultStart"
 opts_AddOptional '--stop-after-step' 'stopAfterStep' 'step' "what step to stop processing after, same valid values as --starting-step" "$defaultStopAfter"
 opts_AddOptional '--parallel-limit' 'parLimit' 'integer' "set how many subjects to do in parallel (local, not cluster-distributed) during individual projection" '-1'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
-0 = compiled MATLAB (not implemented)
+0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 opts_ParseArguments "$@"
@@ -241,12 +240,11 @@ tICACleaningGroupAverageName="$GroupAverageName"
 tICACleaningFolder="${StudyFolder}/${GroupAverageName}"
 tICACleaningfMRIName="$OutputfMRIName"
 
-#TODO: It seems we substitute an external tICA folder for the internal folder, even if we are re-estimating the tICA.  At a minimum the better thing to do seems to be to copy the folder (rather than modifying an external folder location).
-#TSC: in non-estimate modes, it is not intended to write anything to the "cleaning" folder, and the output group folder uses different variables (study folder and group name)
-#TSC: currently, run ComputeGroupTICA in all modes, so all modes can use the output folder as input for later steps
+#TSC: nothing should use the "cleaning" folder for output, outputs should always use the StudyFolder/GroupAverageName variables for output paths, this just selects input location based on mode
+#TSC: currently, run ComputeGroupTICA.sh in all modes, so all modes can use the output folder as input for later steps
 if [[ "$sICAmode" == "USE" ]]
 then
-    #all these modes operate almost identically (other than skipping things and compute tica), they don't need separate path variables
+    #all these modes operate almost identically (other than skipping things and compute tica mode), they don't need separate path variables
     if [[ "$precomputeTICAFolder" == "" || "$precomputeTICAfMRIName" == "" || "$precomputeGroupName" == "" ]]
     then
         log_Err_Abort "you must specify --precomputed-clean-folder, --precomputed-clean-fmri-name and --precomputed-group-name when using mode $ICAmode"
@@ -255,26 +253,17 @@ then
     tICACleaningFolder="$precomputeTICAFolder"
     tICACleaningfMRIName="$precomputeTICAfMRIName"
     tICACleaningGroupAverageName="$precomputeGroupName"
-    #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter?
+    #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter, do we need to support this?
 fi
 
 OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
 #this doesn't get changed later, it is for convenience
-#we only write things here in ESTIMATE mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
+#we only write things here in NEW (sICA ESTIMATE) mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
 sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
 
-#use brainmask from cleaning folder if in USE mode
-if [[ "$tICAmode" == "USE" ]]
-then
-    VolumeTemplateFile="${tICACleaningFolder}/MNINonLinear/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.dscalar.nii"
-    if [[ ! -f "$VolumeTemplateFile" ]]
-    then
-        log_Error_Abort "precomputed cleaning folder does not contain the expected cifti volume template: '$VolumeTemplateFile'"
-    fi
-else
-    VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.dscalar.nii"
-fi
+#generate new brainmasks for every group, because the fMRI resolution may not match
+VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.dscalar.nii"
 
 #functions so that we can do certain things across subjects in parallel
 function subjectMaxBrainmask()
@@ -391,43 +380,36 @@ do
             then
                 log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
             fi
-            if [[ "$tICAmode" != "USE" ]]
-            then
-                #generate volume template cifti
-                #use parallel and do subjects separately first to reduce memory (some added IO)
-                mergeArgs=()
-                for Subject in "${Subjlist[@]}"
-                do
-                    tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz" \
-                        "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz"
-                    #this function is above the stepInd loop
-                    par_addjob subjectMaxBrainmask "$Subject"
-                    mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz")
-                done
-                par_runjobs "$parLimit"
+            #generate volume template cifti
+            #use parallel and do subjects separately first to reduce memory (some added IO)
+            mergeArgs=()
+            for Subject in "${Subjlist[@]}"
+            do
+                tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz"
+                #this function is above the stepInd loop
+                par_addjob subjectMaxBrainmask "$Subject"
+                mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz")
+            done
+            par_runjobs "$parLimit"
 
-                tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
+            tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
+                
+                #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \ should be kept for feature processing
+            wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
+                "${mergeArgs[@]}"
+            wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
+                MAX \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz"
+            echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt"
+            wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
+            wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
+                -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
                     "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
-                    
-                    #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \ should be kept for feature processing
-                wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
-                    "${mergeArgs[@]}"
-                wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
-                    MAX \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz"
-                echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt"
-                wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
-                wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
-                    -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
-                        "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
-            else
-                #TODO: if "feature processing" is not supported in use mode (or takes this mask as an explicit argument), we may not need to copy this
-                cp "${tICACleaningFolder}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz"
-            fi
             
             for Subject in "${Subjlist[@]}"
             do
@@ -458,8 +440,8 @@ do
                     --volume-template-cifti="$VolumeTemplateFile" \
                     --output-z=1 \
                     --fix-legacy-bias="$FixLegacyBias" \
-                    --scale-factor=0.01
-
+                    --scale-factor=0.01 \
+                    --matlab-run-mode="$MatlabMode"
             done
             #run the jobs, this line also waits until they are complete
             par_runjobs "$parLimit"
@@ -483,7 +465,8 @@ do
                 --ica-dim="$sICAActualDim" \
                 --subject-expected-timepoints="$subjectExpectedTimepoints" \
                 --low-res-mesh="$LowResMesh" \
-                --sica-proc-string="${OutputString}_WR"
+                --sica-proc-string="${OutputString}_WR" \
+                --matlab-run-mode="$MatlabMode"
             ;;
         (ComputeGroupTICA)
             #running this step in USE mode generates files in the output folder, which removes the need for a second OutputString to track the input naming for that mode
@@ -503,6 +486,7 @@ do
                         --low-res-mesh="$LowResMesh"
                         --sica-proc-string="${OutputString}_WR"
                         --tICA-mode="$tICAmode"
+                        --matlab-run-mode="$MatlabMode"
                      )
             #estimate mode doesn't need a prior mixing matrix, and would error if given a bogus path
             if [[ "$tICAmode" != ESTIMATE ]]
@@ -583,7 +567,8 @@ do
                     --volume-template-cifti="$VolumeTemplateFile" \
                     --output-z=1 \
                     --fix-legacy-bias="$FixLegacyBias" \
-                    --scale-factor=0.01
+                    --scale-factor=0.01 \
+                    --matlab-run-mode="$MatlabMode"
             done
             par_runjobs "$parLimit"
             ;;
@@ -614,7 +599,8 @@ do
 				--low-res="$LowResMesh" \
 				--melodic-high-pass="$HighPass" \
 				--mrfix-concat-name="$MRFixConcatName" \
-				--reclean-mode="$RecleanModeString"
+				--reclean-mode="$RecleanModeString" \
+                --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
 	        if [[ "$sICAActualDim" == "" ]]
