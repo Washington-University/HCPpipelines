@@ -24,7 +24,7 @@ if isempty(rootname)
 end
 
 % Create an empty XML tree
-tree = xmltree;
+tree = xmltreemod;
 
 % Root element is the input argument name
 tree = set(tree,root(tree),'name',rootname);

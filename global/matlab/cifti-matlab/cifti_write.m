@@ -17,7 +17,7 @@ function cifti_write(cifti, filename, varargin)
     %   >> cifti.cdata = outdata;
     %   >> cifti.diminfo{2} = cifti_diminfo_make_scalars(size(outdata, 2));
     %   >> cifti_write(cifti, 'ciftiout.dscalar.nii');
-    libversion = '2.0.0';
+    libversion = '2.0.1';
     options = myargparse(varargin, {'stacklevel', 'disableprovenance', 'keepmetadata'}); %stacklevel is an implementation detail, don't add to help
     if isempty(options.stacklevel) %stacklevel is so that so it doesn't get "ciftisave" all the time
         options.stacklevel = 2;

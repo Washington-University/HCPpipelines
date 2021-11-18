@@ -5,7 +5,7 @@ function outstruct = cifti_parse_xml(bytes, filename)
     if any(nulls)
         bytes = bytes(1:(find(nulls, 1) - 1));
     end
-    tree = xmltree(bytes);
+    tree = xmltreemod(bytes);
     setfilename(tree, filename);%probably helps with error messages for malformed XML?
     attrs = myattrs(tree);
     for attr = attrs
@@ -546,7 +546,7 @@ function map = cifti_parse_labels(tree, map_uid, filename)
         end
         label_uids = child_match(tree, table_uid, 'Label');
         numlabels = length(label_uids);
-        thismap.table = struct('name', cell(1, numlabels), 'key', cell(1, numlabels), 'rgba', cell(1, numlabels));
+        temptable = struct('name', cell(1, numlabels), 'key', cell(1, numlabels), 'rgba', cell(1, numlabels));
         for j = 1:numlabels
             thislabel = struct();
             thislabel.name = mygettext(tree, label_uids(j));
@@ -590,8 +590,13 @@ function map = cifti_parse_labels(tree, map_uid, filename)
             if ~isfield(thislabel, 'key') || any(isnan(thislabel.rgba))
                 myerror('missing or invalid required attribute of Label', filename);
             end
-            thismap.table(j) = thislabel;
+            temptable(j) = thislabel;
         end
+        if length(unique([temptable.key])) ~= length(temptable)
+            warning(['label table contains duplicate key value in map ' num2str(i)]);
+        end
+        [~, torder] = sort([temptable.key]);
+        thismap.table = temptable(torder);
         map.maps(i) = thismap;
     end
 end
