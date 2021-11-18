@@ -1,4 +1,4 @@
-function tree = xmltree(varargin)
+function tree = xmltreemod(varargin)
 % XMLTREE/XMLTREE Constructor of the XMLTree class
 % FORMAT tree = xmltree(varargin)
 % 
@@ -25,9 +25,9 @@ if nargin == 0
         'parent',[],...
         'uid',1);
     tree.filename = '';
-    tree = class(tree,'xmltree');
+    tree = class(tree,'xmltreemod');
     
-elseif isa(varargin{1},'xmltree')
+elseif isa(varargin{1},'xmltreemod')
     tree = varargin{1};
     
 elseif ischar(varargin{1})
@@ -47,7 +47,7 @@ elseif ischar(varargin{1})
         tree.tree = xml_parser(xmlstr);
         tree.filename = varargin{1};
     end
-    tree = class(tree,'xmltree');
+    tree = class(tree,'xmltreemod');
     
 elseif isstruct(varargin{1})
     if nargin > 1

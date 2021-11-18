@@ -17,7 +17,7 @@ if uid > length(tree) || ...
     error('[XMLTree] Invalid UID.');
 end
 
-subtree = xmltree;
+subtree = xmltreemod;
 subtree = set(subtree,root(subtree),'name',tree.tree{uid}.name);
 %- fix by Piotr Dollar to copy attributes for the root node:
 subtree = set(subtree,root(subtree),'attributes',tree.tree{uid}.attributes); 
