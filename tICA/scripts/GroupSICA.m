@@ -1,4 +1,13 @@
 function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList, icadimIters, icadimOverride)
+    
+    %if isdeployed()
+        %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
+    %end
+    numWisharts = str2double(numWisharts);
+    dimList = str2num(dimList); %list, and str2double expects scalar
+    icadimIters = str2double(icadimIters);
+    icadimOverride = str2double(icadimOverride);
+    
     cii = ciftiopen(indata, 'wb_command');
     vn = ciftiopen(indatavn, 'wb_command');
     Out = icaDim(cii.cdata, -1, 1, icadimIters, numWisharts);
@@ -6,11 +15,11 @@ function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList,
         Out.calcDim = icadimOverride;
     end
     disp(['Out.calcDim (after possible override): ' num2str(Out.calcDim)]);
-    [status, msg]=mkdir(OutFolder);
+    [status, msg] = mkdir(OutFolder);
     if status == 0
     	error(['failed to create ' OutFolder ' because of ' msg]);
     end
-    [fid,msg] = fopen([OutFolder '/most_recent_dim.txt'], 'w');
+    [fid, msg] = fopen([OutFolder '/most_recent_dim.txt'], 'w');
     if fid < 0
     	error(['failed to write to "' OutFolder '/most_recent_dim.txt" because of ' msg]);
     end

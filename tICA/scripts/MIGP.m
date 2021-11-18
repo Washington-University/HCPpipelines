@@ -1,8 +1,16 @@
-function MIGP(StudyFolder, Subjlist, fMRINames, ProcSTRING, dPCAinternal, dPCAout, outputPCA, checkpointFile)
-
+function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPCAout, outputPCA, checkpointFile)
+    
+    %if isdeployed()
+        %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
+    %end
+    dPCAinternal = str2double(dPCAinternal);
+    dPCAout = str2double(dPCAout);
+    
     wbcommand = 'wb_command';
     Subjlist = myreadtext(Subjlist);
-
+    
+    fMRINames = strsplit(fMRINamesRaw, '@');
+    
     vnsum = [];
     c = 1;
     

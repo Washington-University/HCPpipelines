@@ -79,7 +79,7 @@ if ToRun==1
     % specific brain region masks
     unix(['wb_command -volume-label-import ' MNIPath '/' GroupAverageName '_Averagewmparc.nii.gz ' ConfigFilePath '/FreeSurferAllLut.txt ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz -drop-unused-labels']);
     % transform into nifti volume space
-    unix(['wb_command -volume-resample ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz ' MNIPath '/brainmask_fs_max.' Resolution '.nii.gz ENCLOSING_VOXEL ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz']);
+    unix(['wb_command -volume-resample ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz ' MNIPath '/brain_mask_max.' Resolution '.nii.gz ENCLOSING_VOXEL ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz']);
 
     unix(['wb_command -volume-label-import ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz ' ConfigFilePath '/FreeSurferCSFRegLut.txt ' MaskSavePath '/' GroupAverageName '_AverageCSF.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
     unix(['wb_command -volume-label-import ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz ' ConfigFilePath '/FreeSurferWMRegLut.txt ' MaskSavePath '/' GroupAverageName '_AverageWM.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
@@ -138,7 +138,7 @@ if ToRun==1
     % brain boundary mask
     for i=1:length(erode_mm)
         erode=erode_mm{i};
-        unix(['wb_command -volume-erode ' MNIPath '/brainmask_fs_max.' Resolution '.nii.gz ' erode ' ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
+        unix(['wb_command -volume-erode ' MNIPath '/brain_mask_max.' Resolution '.nii.gz ' erode ' ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
         unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
         unix(['wb_command -cifti-math ''(original > 0) && (!eroded)'' ' MaskSavePath '/' GroupAverageName '_brainboundary_' erode 'mm.' Resolution '.dscalar.nii -var original ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii -var eroded ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii']);
         unix(['rm ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);

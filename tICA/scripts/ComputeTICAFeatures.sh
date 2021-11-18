@@ -12,7 +12,6 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
-#FIXME: no compiled matlab support
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
@@ -55,7 +54,7 @@ opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the d
 opts_AddOptional '--save-features' 'ToSaveFeatures' 'YES or NO' 'whether to save feature spreadsheet' 'YES'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 
-0 = compiled MATLAB (not implemented)
+0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 opts_ParseArguments "$@"
@@ -79,7 +78,10 @@ fi
 
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
+        then
+            log_Err_Abort "to use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+        fi
         ;;
     (1)
         #NOTE: figure() is required by the spectra option, and -nojvm prevents using figure()
@@ -129,14 +131,39 @@ echo "${ParcelReorderFile}" >> "$ParcelReorderFileName"
 echo "${NiftiTemplateFile}" >> "$NiftiTemplateFileName"
 echo "${VascularTerritoryFile}" >> "$VascularTerritoryFileName"
 
-matlabcode="
-    addpath('$HCPPIPEDIR/global/matlab');
-    addpath('$HCPPIPEDIR/global/templates');
-    addpath('$HCPPIPEDIR/tICA/scripts/feature_helpers');
-    addpath('$HCPPIPEDIR/tICA/scripts');
-    ComputeTICAFeatures('$StudyFolder', '$GroupAverageName', '$SubjListName', '$fMRIListName','$OutputfMRIName', '$tICAdims', '$ProcString', '$tICAProcString', '$fMRIResolution', '$RegString', '$LowResMesh', '$ToSaveFeatures', '$HighPass', '$MRFixConcatName', '$RecleanModeString', '$CorticalParcellationFileName', '$ParcelReorderFileName', '$NiftiTemplateFileName', '$VascularTerritoryFileName');"
+#shortcut in case the folder gets renamed
+this_script_dir=$(dirname "$0")
 
-log_Msg "running matlab code: $matlabcode"
-"${matlab_interpreter[@]}" <<<"$matlabcode"
-echo
+#all arguments are strings, so we can can use the same argument list for compiled and interpreted
+matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdims" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName")
+
+case "$MatlabMode" in
+    (0)
+        matlab_cmd=("$this_script_dir/Compiled_ComputeTICAFeatures/run_ComputeTICAFeatures.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+        log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+        "${matlab_cmd[@]}"
+        ;;
+    (1 | 2)
+        #reformat argument array so matlab sees them as strings
+        matlab_args=""
+        for thisarg in "${matlab_argarray[@]}"
+        do
+            if [[ "$matlab_args" != "" ]]
+            then
+                matlab_args+=", "
+            fi
+            matlab_args+="'$thisarg'"
+        done
+        
+        matlabcode="
+            addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$this_script_dir/feature_helpers');
+            addpath('$this_script_dir');
+            ComputeTICAFeatures($matlab_args);"
+
+        log_Msg "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
+        echo
+        ;;
+esac
 

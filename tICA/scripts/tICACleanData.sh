@@ -11,7 +11,6 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
-#FIXME: no compiled matlab support
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
@@ -44,9 +43,8 @@ opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describ
 #opts_AddOptional '--volume-fmrires-brain-mask' 'fMRIBrainMask' 'file' "volume ROI of which voxels of the fMRI data to use"
 opts_AddOptional '--do-vol' 'DoVolString' 'YES or NO' "whether to generate voxel-based outputs"
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
-#FIXME: compiled matlab
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
-0 = compiled MATLAB (not implemented)
+0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 
@@ -71,7 +69,10 @@ else
 fi
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
+        then
+            log_Err_Abort "to use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+        fi
         ;;
     (1)
         #NOTE: figure() is required by the spectra option, and -nojvm prevents using figure()
@@ -84,8 +85,6 @@ case "$MatlabMode" in
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
         ;;
 esac
-matlab_paths="addpath('$FSLDIR/etc/matlab'); addpath('$HCPPIPEDIR/global/matlab'); addpath('$HCPCIFTIRWDIR'); addpath('$this_script_dir');
-"
 
 RegString=""
 if [[ "$RegName" != "" ]]
@@ -158,26 +157,47 @@ fi
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 
+#shortcut in case the folder gets renamed
+this_script_dir=$(dirname "$0")
+
+#matlab function arguments were already strings, we don't need two copies of the argument list logic in the script
+matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.outputnames.txt" "$tempname.vnoutnames.txt" "$Timeseries" "$NoiseList")
+if ((DoFixBias))
+then
+    matlab_argarray+=("GoodBCFile" "$tempname.goodbias.txt" "OldBias" "$OldBias")
+fi
+if ((DoVol))
+then
+    matlab_argarray+=("VolCiftiTemplate" "$VolCiftiTemplate" "VolInputFile" "$tempname.volinput.txt" "VolInputVNFile" "$tempname.volinputvn.txt" "OutputVolNamesFile" "$tempname.voloutputnames.txt" "OutputVolVNNamesFile" "$tempname.volvnoutnames.txt")
+    if ((DoFixBias))
+    then
+        matlab_argarray+=("VolGoodBCFile" "$tempname.volgoodbias.txt" "OldVolBias" "$OldVolBias")
+    fi
+fi
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "FIXME: compiled matlab support not yet implemented"
+        matlab_cmd=("$this_script_dir/Compiled_tICACleanData/run_tICACleanData.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+        log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+        "${matlab_cmd[@]}"
         ;;
-    (1 | 2)                                                          
-        matlab_args="'$tempname.input.txt', '$tempname.inputvn.txt', '$tempname.outputnames.txt', '$tempname.vnoutnames.txt', '$Timeseries', '$NoiseList'"
-
-        if ((DoFixBias))
-        then
-            matlab_args+=", 'GoodBCFile', '$tempname.goodbias.txt', 'OldBias', '$OldBias'"
-        fi
-        if ((DoVol))
-        then                                                                                                                                                 
-            matlab_args+=", 'VolCiftiTemplate', '$VolCiftiTemplate', 'VolInputFile', '$tempname.volinput.txt', 'VolInputVNFile', '$tempname.volinputvn.txt', 'OutputVolNamesFile', '$tempname.voloutputnames.txt', 'OutputVolVNNamesFile', '$tempname.volvnoutnames.txt'"
-            if ((DoFixBias))
+    (1 | 2)
+        #reformat argument array so matlab sees them as strings
+        matlab_args=""
+        for thisarg in "${matlab_argarray[@]}"
+        do
+            if [[ "$matlab_args" != "" ]]
             then
-                matlab_args+=", 'VolGoodBCFile', '$tempname.volgoodbias.txt', 'OldVolBias', '$OldVolBias'"
+                matlab_args+=", "
             fi
-        fi
-        matlab_code="$matlab_paths tICACleanData($matlab_args);"
+            matlab_args+="'$thisarg'"
+        done
+        matlab_code="
+            addpath('$FSLDIR/etc/matlab');
+            addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$HCPCIFTIRWDIR');
+            addpath('$this_script_dir');
+            tICACleanData($matlab_args);"
         
         log_Msg "running matlab code: $matlab_code"
         "${matlab_interpreter[@]}" <<<"$matlab_code"
