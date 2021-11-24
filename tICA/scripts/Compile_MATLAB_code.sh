@@ -52,5 +52,5 @@ compile_function tICACleanData \
     -I "$scriptdir" \
     -I "$HCPCIFTIRWDIR" \
     -I "$HCPPIPEDIR/global/matlab" \
-    -I "$FSLDIR/etc/matlab"
+    -I "$HCPPIPEDIR/global/fsl/etc/matlab"
 

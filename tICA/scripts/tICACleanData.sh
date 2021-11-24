@@ -193,7 +193,7 @@ case "$MatlabMode" in
             matlab_args+="'$thisarg'"
         done
         matlab_code="
-            addpath('$FSLDIR/etc/matlab');
+            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$HCPCIFTIRWDIR');
             addpath('$this_script_dir');

@@ -19,5 +19,5 @@ compile_function RSNregression \
     -I "$HCPPIPEDIR/global/matlab" \
     -I "$HCPPIPEDIR/global/matlab/nets_spectra" \
     -I "$HCPCIFTIRWDIR" \
-    -I "$FSLDIR/etc/matlab"
+    -I "$HCPPIPEDIR/global/fsl/etc/matlab"
 
