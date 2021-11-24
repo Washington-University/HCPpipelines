@@ -273,7 +273,7 @@ case "$MatlabMode" in
             matlab_args+="'$thisarg'"
         done
         matlab_code="
-            addpath('$FSLDIR/etc/matlab');
+            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
             addpath('$HCPCIFTIRWDIR');
             addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
             addpath('$HCPPIPEDIR/global/matlab');

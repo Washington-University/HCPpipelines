@@ -90,4 +90,3 @@ tmp=sprintf('FSLOUTPUTTYPE=NIFTI_PAIR; export FSLOUTPUTTYPE; $FSLDIR/bin/fslcrea
 if (status),
   error(output)
 end
-disp(' ');
