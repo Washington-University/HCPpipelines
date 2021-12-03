@@ -27,7 +27,7 @@ function par_addjob()
 function par_runjobs()
 {
     local numpar
-    if (($# > 0 && $1 > 0))
+    if (($# > 0)) && (($1 > 0))
     then
         numpar="$1"
     else
@@ -60,7 +60,14 @@ function par_runjobs()
                 wait %$((i - numpar + 1))
             fi
         fi
-        "${cmdargs[@]}" <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.o$$.$par_global_launch_count" | tee ./$par_global_scriptname.e$$.$par_global_launch_count 1>&2 &
+        (
+            tempfiles_par_shell_reset
+            
+            #WARNING: using a pipe puts the command in a different subshell, which breaks tempfiles, so all input/output redirect/pipe stuff is done on the outside of this subshell
+            "${cmdargs[@]}"
+            
+            tempfiles_cleanup
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.o$$.$par_global_launch_count" | tee ./$par_global_scriptname.e$$.$par_global_launch_count 1>&2 &
         par_global_launch_count=$((par_global_launch_count + 1))
     done
     #finish all jobs before continuing the main script
@@ -105,6 +112,11 @@ function par_numlog()
     esac
 }
 
+#we need to interact with tempfiles in case what is parallelized is a function
+if [[ "$(type -t tempfiles_par_shell_reset)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+fi
 par_jobarray=()
 par_jobinputarray=()
 function par_addjob_stdin()

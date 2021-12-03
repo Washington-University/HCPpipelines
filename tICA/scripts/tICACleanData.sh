@@ -97,7 +97,7 @@ T1wFolder="$StudyFolder/$Subject/T1w"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
-tempname=$(tempfiles_create rsn_regr_matlab_XXXXXX)
+tempfiles_create rsn_regr_matlab_XXXXXX tempname
 
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt" "$tempname.outputnames.txt" "$tempname.voloutputnames.txt" "$tempname.vnoutnames.txt" "$tempname.volvnoutnames.txt"
 DoVol=$(opts_StringToBool "$DoVolString")

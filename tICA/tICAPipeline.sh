@@ -294,7 +294,7 @@ function splitMRFIX()
         if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
         then
             curLength=$(wb_command -file-information -only-number-of-maps "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii")
-            tempfile=$(tempfiles_create tICAPipeline-mrsplit-XXXXXX.dtseries.nii)
+            tempfiles_create tICAPipeline-mrsplit-XXXXXX.dtseries.nii tempfile
             wb_command -cifti-merge "$tempfile" \
                 -cifti "${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}${fMRIProcSTRING}_tclean.dtseries.nii" \
                     -column "$curStart" -up-to $((curStart + curLength - 1))
@@ -305,10 +305,10 @@ function splitMRFIX()
                 -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii" -select 1 1 -repeat
             
             #NOTE: we currently always do volume in cleandata, so split it too
-            tempfilevol=$(tempfiles_create tICAPipeline-mrsplit-XXXXXX.nii.gz)
+            tempfiles_create tICAPipeline-mrsplit-XXXXXX.nii.gz tempfilevol
             wb_command -volume-merge "$tempfilevol" \
-                -volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}${fMRIProcSTRING/_Atlas${RegString}/''}_tclean.nii.gz" -subvolume "$curStart" -up-to $((curStart + curLength - 1))
-            wb_command -volume-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING/_Atlas${RegString}/''}_tclean.nii.gz" \
+                -volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}${fMRIProcSTRING/_Atlas${RegString}/}_tclean.nii.gz" -subvolume "$curStart" -up-to $((curStart + curLength - 1))
+            wb_command -volume-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING/_Atlas${RegString}/}_tclean.nii.gz" \
                 -var split "$tempfilevol" \
                 -var mr_vn "${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_hp${HighPass}_vn.nii.gz" -subvolume 1 -repeat \
                 -var orig_vn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz" -subvolume 1 -repeat \
@@ -431,7 +431,7 @@ do
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
-                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/''}" \
+                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
                     --method=weighted \
                     --low-ica-dims="$LowsICADims" \
                     --low-ica-template-name="$sICAoutfolder/melodic_oIC_REPLACEDIM.dscalar.nii" \
@@ -560,7 +560,7 @@ do
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
-                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/''}" \
+                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
                     --method=single \
                     --output-string="${OutputString}_WR_tICA" \
                     --output-spectra="$subjectExpectedTimepoints" \
@@ -592,7 +592,7 @@ do
 			    --fmri-list="$fMRINames" \
 			    --fmri-output-name="$OutputfMRIName" \
 			    --ica-dim="$tICADim" \
-			    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/''}" \
+			    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
 			    --tica-proc-string="${OutputString}_WR_tICA" \
 			    --fmri-resolution="$fMRIResolution" \
 				--surf-reg-name="$RegName" \
@@ -644,8 +644,8 @@ do
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
-                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/''}" \
-                    --output-string="${fMRIProcSTRING/_Atlas${RegString}/''}_tclean" \
+                    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
+                    --output-string="${fMRIProcSTRING/_Atlas${RegString}/}_tclean" \
                     --do-vol=YES \
                     --fix-legacy-bias="$FixLegacyBias" \
                     --matlab-run-mode="$MatlabMode"
