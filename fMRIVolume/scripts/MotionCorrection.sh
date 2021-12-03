@@ -182,7 +182,7 @@ function DeriveBackwards {
   # TCS becomes an array of the values from column $i in $in (derived from Var)
   TCS=($Var)
   # random is a random file name for temporary output
-  random="$(tempfiles_create MotionCorrectionRandom_XXXXXX.txt)"
+  tempfiles_create MotionCorrectionRandom_XXXXXX.txt random
 
   # Cycle through our array of values from column $i
   j=0

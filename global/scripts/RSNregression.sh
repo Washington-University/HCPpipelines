@@ -111,7 +111,7 @@ T1wFolder="$StudyFolder/$Subject/T1w"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
-tempname="$(tempfiles_create rsn_regr_matlab_XXXXXX)"
+tempfiles_create rsn_regr_matlab_XXXXXX tempname
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
@@ -211,7 +211,7 @@ fi
 #extract the all-voxels ROI file and use it in -from-template
 if [[ ! ${Method} == "single" ]]
 then
-    tempfile="$(tempfiles_create XXXXXX.roi.nii.gz)"
+    tempfiles_create XXXXXX.roi.nii.gz tempfile
     tempfiles_add "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
     wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
     wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped

@@ -13,8 +13,8 @@ function tempfiles_keep()
 }
 
 #mac mktemp is much less useful, add a function to hack around it
-#for convenience, it automatically calls tempfiles_add on the file
-#use like 'tempmask=$(tempfiles_create strucQC_mask_XXXXXX.nii.gz)'
+#use like 'tempfiles_create strucQC_mask_XXXXXX.nii.gz mytempvar'
+#for convenience, it automatically calls tempfiles_add on the file, though this has no effect inside $(), so warn for the old syntax
 function tempfiles_create()
 {
     if [[ "$OSTYPE" == darwin* ]]
@@ -34,13 +34,26 @@ function tempfiles_create()
         local retbase="$(mktemp "${TMPDIR:-/tmp}/$pattbegin")"
         #don't immediately delete the mktemp result, for better non-collision
         tempfiles_add "$retbase"
+        if (($# <= 1))
+        then
+            echo "developer warning: subshell use of tempfiles_create on mac leaves empty files behind" 1>&2
+        fi
         local ret="$retbase""$pattend"
         echo -n "" > "$ret"
     else
+        if (($# <= 1))
+        then
+            echo "developer warning: possible subshell usage of tempfiles_create detected" 1>&2
+        fi
         local ret="$(mktemp --tmpdir "$1")"
     fi
     tempfiles_add "$ret"
-    echo "$ret"
+    if (($# > 1))
+    then
+        printf -v "$2" '%s' "$ret"
+    else
+        echo "$ret"
+    fi
 }
 
 #implementation details
@@ -52,7 +65,15 @@ function tempfiles_cleanup()
     if [[ "$tempfiles_keepvar" == "0" ]] && ((${#tempfiles_list[@]} > 0))
     then
         rm -f -- "${tempfiles_list[@]}" || true
+        tempfiles_list=()
     fi
+}
+
+function tempfiles_par_shell_reset()
+{
+    tempfiles_list=()
+    #ignore setting for keeping temp files?
+    tempfiles_keep 0
 }
 
 trap tempfiles_cleanup EXIT
