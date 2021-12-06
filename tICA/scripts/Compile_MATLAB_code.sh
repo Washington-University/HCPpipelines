@@ -46,6 +46,7 @@ compile_function ComputeGroupTICA \
 compile_function ComputeTICAFeatures \
     -I "$scriptdir" \
     -I "$scriptdir/feature_helpers" \
+    -I "$HCPCIFTIRWDIR" \
     -I "$HCPPIPEDIR/global/matlab"
 
 compile_function tICACleanData \

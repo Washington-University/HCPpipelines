@@ -64,9 +64,9 @@ function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPC
             W = double(grot)'; clear grot;
         elseif s > 1
             W = [W; double(grot)']; clear grot;
-            [uu, dd] = eigs(W * W', min(dPCAinternal, size(W, 1) - 1)); % reduce W to dPCAinternal eigenvectors
+            [uu, ~] = eigs(W * W', min(dPCAinternal, size(W, 1) - 1)); % reduce W to dPCAinternal eigenvectors
             W = uu' * W;
-            clear uu dd;
+            clear uu;
         end
         
         if ~strcmp(checkpointFile, '')
@@ -74,7 +74,7 @@ function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPC
                 [filepath, ~, ~] = fileparts(checkpointFile);
                 safefile = [tempname(filepath) '.mat']; %save would add .mat, but movefile doesn't
                 %also save all the arguments that change the contents of the outputs, for sanity checking and provenance
-                save(safefile, 'W', 'vnsum', 'vn', 's', 'StudyFolder', 'Subjlist', 'fMRINames', 'ProcSTRING', 'dPCAinternal', 'dPCAout');
+                save(safefile, 'W', 'vnsum', 'vn', 's', 'StudyFolder', 'Subjlist', 'fMRINames', 'ProcSTRING', 'dPCAinternal', 'dPCAout', '-v7.3');
                 status = movefile(safefile, checkpointFile, 'f');
                 if status == 0
                     warning('failed to move checkpoint file from temp name to final name');
