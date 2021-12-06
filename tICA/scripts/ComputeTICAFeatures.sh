@@ -157,6 +157,7 @@ case "$MatlabMode" in
         
         matlabcode="
             addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$HCPCIFTIRWDIR');
             addpath('$this_script_dir/feature_helpers');
             addpath('$this_script_dir');
             ComputeTICAFeatures($matlab_args);"

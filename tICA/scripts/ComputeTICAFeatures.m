@@ -558,7 +558,7 @@ if strcmp(ToSave, 'YES')
     writetable(features, [OutputFolder '/features' clock_string '.csv'], 'WriteRowNames',true);
     % overwrite the current feature files
     unix(['cp ' OutputFolder '/features' clock_string '.csv ' OutputFolder '/features.csv']);
-    save([OutputFolder '/other_features' clock_string '.mat'], 'other_features');
+    save([OutputFolder '/other_features' clock_string '.mat'], 'other_features', '-v7.3');
     unix(['cp ' OutputFolder '/other_features' clock_string '.mat ' OutputFolder '/other_features.mat']);
 end
 disp('done!')

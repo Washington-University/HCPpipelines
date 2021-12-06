@@ -452,9 +452,9 @@ do
                 log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
             fi
             if [[ "$sICAmode" != "ESTIMATE" ]]
-        	then 
-        		mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
-        		cp "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/"
+            then
+                mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
+                cp "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/"
             fi
             "$HCPPIPEDIR"/tICA/scripts/ConcatGroupSICA.sh \
                 --study-folder="$StudyFolder" \
@@ -581,33 +581,33 @@ do
                 #skip to next pipeline stage
                 continue
             fi
-	        if [[ "$sICAActualDim" == "" ]]
-	        then
-	            log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-	        fi
-	        "$HCPPIPEDIR"/tICA/scripts/ComputeTICAFeatures.sh \
-				--study-folder="$StudyFolder" \
-				--out-group-name="$GroupAverageName" \
-				--subject-list="$SubjlistRaw" \
-			    --fmri-list="$fMRINames" \
-			    --fmri-output-name="$OutputfMRIName" \
-			    --ica-dim="$tICADim" \
-			    --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
-			    --tica-proc-string="${OutputString}_WR_tICA" \
-			    --fmri-resolution="$fMRIResolution" \
-				--surf-reg-name="$RegName" \
-				--low-res="$LowResMesh" \
-				--melodic-high-pass="$HighPass" \
-				--mrfix-concat-name="$MRFixConcatName" \
-				--reclean-mode="$RecleanModeString" \
+            if [[ "$sICAActualDim" == "" ]]
+            then
+                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
+            fi
+            "$HCPPIPEDIR"/tICA/scripts/ComputeTICAFeatures.sh \
+                --study-folder="$StudyFolder" \
+                --out-group-name="$GroupAverageName" \
+                --subject-list="$SubjlistRaw" \
+                --fmri-list="$fMRINames" \
+                --fmri-output-name="$OutputfMRIName" \
+                --ica-dim="$tICADim" \
+                --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
+                --tica-proc-string="${OutputString}_WR_tICA" \
+                --fmri-resolution="$fMRIResolution" \
+                --surf-reg-name="$RegName" \
+                --low-res="$LowResMesh" \
+                --melodic-high-pass="$HighPass" \
+                --mrfix-concat-name="$MRFixConcatName" \
+                --reclean-mode="$RecleanModeString" \
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
-	        if [[ "$sICAActualDim" == "" ]]
-	        then
-	            log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-	        fi
-	        log_Err_Abort "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
+            if [[ "$sICAActualDim" == "" ]]
+            then
+                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
+            fi
+            log_Err_Abort "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
             ;;
         (CleanData)
             if [[ "$sICAActualDim" == "" ]]
