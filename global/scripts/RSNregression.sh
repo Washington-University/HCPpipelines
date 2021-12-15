@@ -219,7 +219,7 @@ fi
 
 #all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side, either, can do argument lists for each matlab mode with the same code
 #SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
-matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma'")
+matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma")
 if [[ "$Method" != "single" ]]
 then
     matlab_argarray+=("GroupMaps" "$GroupMaps")
