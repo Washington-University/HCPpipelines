@@ -180,6 +180,10 @@ ComputeDVARSandGS(StudyFolder,Subjlist, hp, MRFixConcatName, fMRINames, RegStrin
 % identify strongest single subject
 disp('identifying strongest single subject corresponding to each component...')
 
+if ~isempty(MRFixConcatName)
+    fMRINames={MRFixConcatName};
+end
+
 c=1;
 tICATCS={};
 CIFTIGS={};

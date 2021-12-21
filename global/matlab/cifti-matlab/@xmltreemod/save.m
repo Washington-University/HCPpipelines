@@ -91,7 +91,7 @@ function save_subtree(tree,fid,uid,order)
             for i=1:length(tree.tree{uid}.attributes)
                 fprintf(fid,' %s="%s"',...
                 tree.tree{uid}.attributes{i}.key, ...
-                tree.tree{uid}.attributes{i}.val);
+                entity(tree.tree{uid}.attributes{i}.val));
             end
             if isempty(tree.tree{uid}.contents)
                 fprintf(fid,'/>\n');

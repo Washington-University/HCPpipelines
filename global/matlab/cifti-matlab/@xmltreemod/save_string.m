@@ -70,7 +70,7 @@ function xmlstr = print_subtree(tree, uid, order)
     end
     tagstr = ['<' tree.tree{uid}.name];
     for i = 1:length(tree.tree{uid}.attributes)
-        tagstr = [tagstr ' ' tree.tree{uid}.attributes{i}.key '="' tree.tree{uid}.attributes{i}.val '"']; %#ok<AGROW>
+        tagstr = [tagstr ' ' tree.tree{uid}.attributes{i}.key '="' entity(tree.tree{uid}.attributes{i}.val) '"']; %#ok<AGROW>
     end
     %tagstr isn't quite finished, but build xmlstr directly with it to save a little time
     if isempty(tree.tree{uid}.contents)
