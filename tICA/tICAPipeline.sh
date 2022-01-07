@@ -203,7 +203,9 @@ then
     then
         tICADim="$sICAActualDim"
     fi
+    OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 fi
+#leave OutputString unset if we don't know the dimensionality yet
 
 case "$ICAmode" in
     (NEW)
@@ -256,8 +258,6 @@ then
     #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter, do we need to support this?
 fi
 
-OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-
 #this doesn't get changed later, it is for convenience
 #we only write things here in NEW (sICA ESTIMATE) mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
 sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
@@ -304,6 +304,9 @@ function splitMRFIX()
                 -var orig_vn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_hp${HighPass}_vn.dscalar.nii" -select 1 1 -repeat \
                 -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii" -select 1 1 -repeat
             
+            #don't leave these large temporary timeseries around longer than needed
+            rm -f "$tempfile"
+            
             #NOTE: we currently always do volume in cleandata, so split it too
             tempfiles_create tICAPipeline-mrsplit-XXXXXX.nii.gz tempfilevol
             wb_command -volume-merge "$tempfilevol" \
@@ -313,6 +316,8 @@ function splitMRFIX()
                 -var mr_vn "${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_hp${HighPass}_vn.nii.gz" -subvolume 1 -repeat \
                 -var orig_vn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz" -subvolume 1 -repeat \
                 -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" -subvolume 1 -repeat
+            
+            rm -f "$tempfilevol"
             
             curStart=$((curStart + curLength))
         fi
@@ -374,6 +379,10 @@ do
             then
                 tICADim="$sICAActualDim"
             fi
+            
+            #now we have the dimensionality, set the output string
+            OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            
             ;;
         (indProjSICA)
             if [[ "$sICAActualDim" == "" ]]
