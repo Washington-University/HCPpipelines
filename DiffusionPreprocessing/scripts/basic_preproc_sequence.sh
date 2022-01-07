@@ -138,7 +138,7 @@ for entry in ${rawdir}/${baseNeg}_[0-9]*.nii*; do #For each Neg volume
 done
 
 ################################################################################################
-## Merging Files and correct number of slices
+## Merging Files
 ################################################################################################
 echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_b0 $(${FSLDIR}/bin/imglob ${rawdir}/Pos_b0_????.*)
@@ -152,23 +152,6 @@ paste $(echo ${rawdir}/${basePos}_[0-9]*.bval) >${rawdir}/Pos.bval
 paste $(echo ${rawdir}/${basePos}_[0-9]*.bvec) >${rawdir}/Pos.bvec
 paste $(echo ${rawdir}/${baseNeg}_[0-9]*.bval) >${rawdir}/Neg.bval
 paste $(echo ${rawdir}/${baseNeg}_[0-9]*.bvec) >${rawdir}/Neg.bvec
-
-dimz=$(${FSLDIR}/bin/fslval ${rawdir}/Pos dim3)
-if [ $(isodd $dimz) -eq 1 ]; then
-	echo "Remove one slice from data to get even number of slices"
-	${FSLDIR}/bin/fslroi ${rawdir}/Pos ${rawdir}/Posn 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/Neg ${rawdir}/Negn 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/Pos_b0 ${rawdir}/Pos_b0n 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/Neg_b0 ${rawdir}/Neg_b0n 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/imrm ${rawdir}/Pos
-	${FSLDIR}/bin/imrm ${rawdir}/Neg
-	${FSLDIR}/bin/imrm ${rawdir}/Pos_b0
-	${FSLDIR}/bin/imrm ${rawdir}/Neg_b0
-	${FSLDIR}/bin/immv ${rawdir}/Posn ${rawdir}/Pos
-	${FSLDIR}/bin/immv ${rawdir}/Negn ${rawdir}/Neg
-	${FSLDIR}/bin/immv ${rawdir}/Pos_b0n ${rawdir}/Pos_b0
-	${FSLDIR}/bin/immv ${rawdir}/Neg_b0n ${rawdir}/Neg_b0
-fi
 
 echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/Pos_b0 ${rawdir}/Neg_b0
