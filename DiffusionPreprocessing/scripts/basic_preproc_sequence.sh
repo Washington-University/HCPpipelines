@@ -14,9 +14,6 @@ echo "${scriptName}: Input Parameter: ro_time: ${ro_time}" # Readout time in sec
 echo "${scriptName}: Input Parameter: PEdir: ${PEdir}"
 echo "${scriptName}: Input Parameter: b0dist: ${b0dist}"
 echo "${scriptName}: Input Parameter: b0maxbval: ${b0maxbval}"
-isodd() {
-	echo "$(($1 % 2))"
-}
 
 rawdir=${workingdir}/rawdata
 topupdir=${workingdir}/topup
