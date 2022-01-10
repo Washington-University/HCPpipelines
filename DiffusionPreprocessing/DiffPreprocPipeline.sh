@@ -145,6 +145,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           using equally spaced b0's throughout the scan. The best b0
                           is identified as the least distorted (i.e., most similar to
                           the average b0 after registration).
+  [--ensure-even-slices]
+                          If set will ensure the input images to FSL's topup and eddy
+                          have an even number of slices by removing one slice if necessary.
+                          This behaviour used to be the default, but is now optional,
+                          because it is incompatible with using slice-to-volume correction
+                          in FSL eddy.
   [--extra-eddy-arg=<value>]
                           Generic single token (no whitespace) argument to pass
                           to the DiffPreprocPipeline_Eddy.sh script and subsequently
@@ -272,6 +278,7 @@ get_options() {
 	runcmd=""
 	extra_eddy_args=""
 	SelectBestB0="false"
+	EnsureEvenSlices="false"
 	no_gpu="false"
 	cuda_version=""
 	CombineDataFlag=1
@@ -339,6 +346,10 @@ get_options() {
 			;;
 		--select-best-b0)
 			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		--ensure-even-slices)
+			EnsureEvenSlices="true"
 			index=$((index + 1))
 			;;
 		--extra-eddy-arg=*)
@@ -514,6 +525,9 @@ main() {
 	pre_eddy_cmd+=" --printcom=${runcmd} "
 	if [ "${SelectBestB0}" == "true" ]; then
 		pre_eddy_cmd+=" --select-best-b0 "
+	fi
+	if [ "${EnsureEvenSlices}" == "true" ]; then
+		pre_eddy_cmd+=" --ensure-even-slices "
 	fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"

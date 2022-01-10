@@ -103,6 +103,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           using equally spaced b0's throughout the scan. The best b0
                           is identified as the least distorted (i.e., most similar to
                           the average b0 after registration).
+  [--ensure-even-slices]
+                          If set will ensure the input images to FSL's topup and eddy
+                          have an even number of slices by removing one slice if necessary.
+                          This behaviour used to be the default, but is now optional,
+                          because it is incompatible with using slice-to-volume correction
+                          in FSL eddy.
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
                           output the commands that would be executed instead of
@@ -140,6 +146,9 @@ EOF
 #  ${DWIName}             Name to give DWI output directories
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
+#  ${SelectBestB0}        If "true" will select the least distorted B0 for topup
+#  ${EnsureEvenSlices}    If "true" will ensure input images to topup/eddy has
+#                         even number of slices
 #  ${runcmd}              Set to a user specified command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
@@ -149,6 +158,10 @@ EOF
 # --------------------------------------------------------------------------------
 #  Support Functions
 # --------------------------------------------------------------------------------
+
+isodd() {
+	echo "$(($1 % 2))"
+}
 
 get_options() {
 	local arguments=($@)
@@ -165,6 +178,7 @@ get_options() {
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 	SelectBestB0="false"
+	EnsureEvenSlices="false"
 
 	# parse arguments
 	local index=0
@@ -221,6 +235,10 @@ get_options() {
 			;;
 		--select-best-b0)
 			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		--ensure-even-slices)
+			EnsureEvenSlices="true"
 			index=$((index + 1))
 			;;
 		*)
@@ -488,6 +506,25 @@ main() {
 	else
 		log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
+	fi
+
+	if [ "${EnsureEvenSlices}" == "true" ]; then
+		topupdir=${outdir}/topup
+		eddydir=${outdir}/eddy
+		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos dim3)
+		if [ $(isodd $dimz) -eq 1 ]; then
+			echo "Remove one slice from data to get even number of slices"
+			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
+				${FSLDIR}/bin/fslroi ${topupdir}/${filename} ${topupdir}/${filename}_tmp 0 -1 0 -1 1 -1
+				${FSLDIR}/bin/imrm ${topupdir}/${filename}
+				${FSLDIR}/bin/immv ${topupdir}/${filename}_tmp ${topupdir}/${filename}
+			done
+			${FSLDIR}/bin/fslroi ${eddydir}/Pos_Neg ${eddydir}/Pos_Neg_tmp 0 -1 0 -1 1 -1
+			${FSLDIR}/bin/imrm ${eddydir}/Pos_Neg
+			${FSLDIR}/bin/immv ${eddydir}/Pos_Neg_tmp ${eddydir}/Pos_Neg
+		else
+			echo "Slice removal skipped, because data already has an even number of slices"
+		fi
 	fi
 
 	log_Msg "Running Topup"
