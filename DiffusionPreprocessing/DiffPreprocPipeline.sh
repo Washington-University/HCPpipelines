@@ -134,6 +134,10 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--b0maxbval=<b0-max-bval>]
                           Volumes with a bvalue smaller than this value will be
                           considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
+  [--topup-config-file=<filename>]
+                          file containing the FSL topup configuration.
+                          Defaults to b02b0.cnf in the HCP configuration
+                          directory (as defined by ${HCPPIPEDIR_Config}).
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
                           output the commands that would be executed instead of
@@ -239,6 +243,7 @@ EOF
 #                         structural images
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
+#  ${TopupConfig}         Filename with topup configuration
 #  ${runcmd}              Set to a user specifed command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
@@ -275,6 +280,7 @@ get_options() {
 	DWIName="Diffusion"
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
+	TopupConfig=${HCPPIPEDIR_Config}/b02b0.cnf
 	runcmd=""
 	extra_eddy_args=""
 	SelectBestB0="false"
@@ -350,6 +356,10 @@ get_options() {
 			;;
 		--ensure-even-slices)
 			EnsureEvenSlices="true"
+			index=$((index + 1))
+			;;
+		--topup-config-file=*)
+			TopupConfig=${argument#*=}
 			index=$((index + 1))
 			;;
 		--extra-eddy-arg=*)
@@ -522,6 +532,7 @@ main() {
 	pre_eddy_cmd+=" --negData=${NegInputImages} "
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
+	pre_eddy_cmd+=" --topup-config-file=${TopupConfig} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
 	if [ "${SelectBestB0}" == "true" ]; then
 		pre_eddy_cmd+=" --select-best-b0 "
