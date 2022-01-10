@@ -4,10 +4,7 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 echo -e "\n START: run_topup"
 
 workingdir=$1
-
-configdir=${HCPPIPEDIR_Config}
-#topup_config_file=${FSLDIR}/etc/flirtsch/b02b0.cnf
-topup_config_file=${configdir}/b02b0.cnf
+topup_config_file=$2
 
 ${FSLDIR}/bin/topup --imain=${workingdir}/Pos_Neg_b0 --datain=${workingdir}/acqparams.txt --config=${topup_config_file} --out=${workingdir}/topup_Pos_Neg_b0 -v --fout=${workingdir}/topup_Pos_Neg_b0_field.nii.gz
 

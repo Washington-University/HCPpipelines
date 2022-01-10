@@ -92,6 +92,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                             data_AP1@data_AP2@...data_APn
   --echospacing=<echo-spacing>
                           Effective Echo Spacing in msecs
+  --topup-config-file=<filename>
+                          file containing the FSL topup configuration.
   [--dwiname=<DWIname>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--b0maxbval=<b0-max-bval>]
@@ -144,6 +146,7 @@ EOF
 #                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
 #  ${DWIName}             Name to give DWI output directories
+#  ${TopupConfig}         Filename with topup configuration
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
 #  ${SelectBestB0}        If "true" will select the least distorted B0 for topup
@@ -174,6 +177,7 @@ get_options() {
 	unset NegInputImages
 	unset echospacing
 	unset SelectBestB0
+	unset TopupConfig
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
@@ -229,6 +233,10 @@ get_options() {
 			b0maxbval=${argument#*=}
 			index=$((index + 1))
 			;;
+		--topup-config-file=*)
+			TopupConfig=${argument#*=}
+			index=$((index + 1))
+			;;
 		--printcom=*)
 			runcmd=${argument#*=}
 			index=$((index + 1))
@@ -282,6 +290,10 @@ get_options() {
 
 	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
+	fi
+
+	if [ -z ${TopupConfig} ]; then
+		error_msgs+="\nERROR: <TopupConfig> not specified"
 	fi
 
 	if [ ! -z "${error_msgs}" ]; then
@@ -528,7 +540,7 @@ main() {
 	fi
 
 	log_Msg "Running Topup"
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
 
 	log_Msg "Completed!"
 	exit 0
