@@ -474,6 +474,18 @@ main() {
 		exit 1
 	fi
 
+	# if the number of slices are odd, check that the user has a way to deal with that
+	if [ "${EnsureEvenSlices}" == "false" ] && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
+		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
+		if [ $(isodd $dimz) -eq 1 ]; then
+			log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
+			log_Msg "Either supply your own topup configuration file using the --topup-config-file=<file> flag (recommended)"
+			log_Msg "or instruct the HCP pipelines to remove a slice using the --ensure-even-slices flag (legacy option)."
+			log_Msg "Note that the legacy option is incompatible with slice-to-volume correction in FSL eddy"
+			exit 1
+		fi
+	fi
+
 	# Create two files for each phase encoding direction, that for each series contain the number of
 	# corresponding volumes and the number of actual volumes. The file e.g. Pos_SeriesCorrespVolNum.txt
 	# will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M
