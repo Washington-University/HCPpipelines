@@ -20,25 +20,10 @@ defaultStart="${pipelineSteps[0]}"
 defaultStopAfter="${pipelineSteps[${#pipelineSteps[@]} - 1]}"
 stepsText="$(IFS=$'\n'; echo "${pipelineSteps[*]}")"
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: does stuff
+#description to use in usage - syntax of parameters is now explained automatically
+opts_SetScriptDescription "does stuff"
 
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
-
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-#help info for option gets printed like "--foo=<$3> - $4"
+#mandatory (mrfix name must be specified if applicable, so including it here despite being mechanically optional)
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
 opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of subject IDs separated by @s"
@@ -46,47 +31,44 @@ opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' 
 opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to use for tICA pipeline outputs"
 opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_MSMAll_hp0_clean'"
-opts_AddMandatory '--melodic-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX'
+opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use for the group output folder'
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60' "
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
-#opts_AddOptional '--tica-mode' 'tICAmode' 'ESTIMATE, INITIALIZE, USE' "defaults to ESTIMATE, all other modes require specifying the --precomputed-* options
-#ESTIMATE estimates a new tICA mixing matrix
-#INITIALIZE initializes an estimation with a previously computed mixing matrix with matching sICA components
-#USE just applies a previously computed mixing matrix with matching sICA components" "ESTIMATE"
-#NEW, REUSE_SICA_ONLY, INITIALIZE_TICA, or REUSE_TICA
+#sICA
+opts_AddConfigMandatory '--num-wishart' 'numWisharts' 'numWisharts' 'integer' "how many wisharts to use in icaDim" #FIXME - We will need to think about how to help users set this.  Ideally it is established by running a null model, but that is timeconsuming. Valid values for humans have been WF5 or WF6.
+#sICA individual projection
+opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
+opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
+
+
+#optional
+#general
 opts_AddOptional '--ica-mode' 'ICAmode' 'string' "whether to use parts of a previous tICA run (for instance, if this group has too few subjects to simply estimate a new tICA).  Defaults to NEW, all other modes require specifying the --precomputed-* options.  Value must be one of:
 NEW - estimate a new sICA and a new tICA
 REUSE_SICA_ONLY - reuse an existing sICA and estimate a new tICA
 INITIALIZE_TICA - reuse an existing sICA and use an existing tICA to start the estimation
 REUSE_TICA - reuse an existing sICA and an existing tICA" \
     'NEW'
-#MFG: I see why this should be a folder, as there are the main sICA, the lowres dims, and the iq that must be handled.
-#TODO: What folder level is this?  MIGP level (containing the sICA folder and tICA folder) or tICA folder level
 #TSC: this is the output group folder, one above MNINonLinear
-#TODO: is "precomputed" a good name for these?
-opts_AddOptional '--precomputed-clean-folder' 'precomputeTICAFolder' 'folder' "group folder containing an existing tICA cleanup to make use of for USE or INITIALIZE modes"
-#TODO: I don't understand the need for precomputeTICAfMRIName and all the places it is used.
-#TSC: the precomputed sica/tica will use one fmriname, but the new data will probably use a different fmriname.  this argument is for the fmriname of the precomputed data
-opts_AddOptional '--precomputed-clean-fmri-name' 'precomputeTICAfMRIName' 'rfMRI_REST' "the output fMRI name used in the previously computed tICA"
-opts_AddOptional '--precomputed-group-name' 'precomputeGroupName' 'PrecomputedGroupName' "the group name used during the previously computed tICA"
+opts_AddConfigOptional '--precomputed-clean-folder' 'precomputeTICAFolder' 'precomputeTICAFolder' 'folder' "group folder containing an existing tICA cleanup to make use of for REUSE or INITIALIZE modes"
+opts_conf_SetIsPath 'precomputeTICAFolder'
+opts_AddConfigOptional '--precomputed-clean-fmri-name' 'precomputeTICAfMRIName' 'precomputeTICAfMRIName' 'rfMRI_REST' "the output fMRI name used in the previously computed tICA"
+opts_AddConfigOptional '--precomputed-group-name' 'precomputeGroupName' 'precomputeGroupName' 'PrecomputedGroupName' "the group name used during the previously computed tICA"
 opts_AddOptional '--extra-output-suffix' 'extraSuffix' 'string' "add something extra to most output filenames, for collision avoidance"
 
 #MIGP
-opts_AddOptional '--pca-out-dim' 'PCAOutputDim' 'integer' 'override number of PCA components to use for group sICA' #defaults to subjectExpectedTimepoints
-opts_AddOptional '--pca-internal-dim' 'PCAInternalDim' 'integer' 'override internal MIGP dimensionality'
+opts_AddConfigOptional '--pca-out-dim' 'PCAOutputDim' 'PCAOutputDim' 'integer' 'override number of PCA components to use for group sICA' #defaults to subjectExpectedTimepoints
+opts_AddConfigOptional '--pca-internal-dim' 'PCAInternalDim' 'PCAInternalDim' 'integer' 'override internal MIGP dimensionality'
 opts_AddOptional '--migp-resume' 'migpResume' 'YES or NO' 'resume from a previous interrupted MIGP run, if present, default YES' 'YES'
 
 #sICA
-opts_AddMandatory '--num-wishart' 'numWisharts' 'integer' "how many wisharts to use in icaDim" #FIXME - We will need to think about how to help users set this.  Ideally it is established by running a null model, but that is timeconsuming. Valid values for humans have been WF5 or WF6.
 opts_AddOptional '--sicadim-iters' 'sicadimIters' 'integer' "number of iterations or mode for estimating sICA dimensionality, default 100" '100'
-opts_AddOptional '--sicadim-override' 'sicadimOverride' 'integer' "use this dimensionality instead of icaDim's estimate"
+opts_AddConfigOptional '--sicadim-override' 'sicadimOverride' 'sicadimOverride' 'integer' "use this dimensionality instead of icaDim's estimate"
 
 #sICA individual projection
-opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA dimensionalities to use for determining weighting for individual projection, defaults to '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'" '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'
-opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'" #WONTFIX: Problem: reliably detecting a complete subject could be troublesome, leave it as mandatory for now. #TODO: This could be defaulted to the sum of the timepoints across all runs [in a complete subject] with the option to modify it and be optional.
 
 #sICA concatenation
 #uses hardcoded conventions
@@ -95,7 +77,7 @@ opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 's
 #TODO: sanity check that tICADim (when specified) is not higher than sICADim (once it is known)
 #FIXME: ComputeGroupTICA.m hardcodes "tICAdim = sICAdim;", line 76
 #TSC: remove option until ComputeGroupTICA.m allows different dimensionalities
-#opts_AddOptional '--tica-dim' 'tICADim' 'integer' "override the default of tICA dimensionality = sICA dimensionality. Must be less than or equal to sICA dimensionality"
+#opts_AddConfigOptional '--tica-dim' 'tICADim' 'tICADim' 'integer' "override the default of tICA dimensionality = sICA dimensionality. Must be less than or equal to sICA dimensionality"
 tICADim=""
 
 #tICA Individual Projection
@@ -114,6 +96,7 @@ opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text 
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether the input data used the legacy bias correction' 'NO'
 
 #general settings
+opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for rerunning with similar settings, or for reusing these results for future cleaning"
 opts_AddOptional '--starting-step' 'startStep' 'step' "what step to start processing at, one of:
 $stepsText" "$defaultStart"
 opts_AddOptional '--stop-after-step' 'stopAfterStep' 'step' "what step to stop processing after, same valid values as --starting-step" "$defaultStopAfter"
@@ -194,18 +177,6 @@ then
     PCAInternalDim=$((PCAOutputDim + 1))
 fi
 
-#set things needed for starting after the GroupSICA step
-sICAActualDim=""
-if [[ sicadimOverride != "" ]]
-then
-    sICAActualDim="$sicadimOverride"
-    if [[ "$tICADim" == "" ]]
-    then
-        tICADim="$sICAActualDim"
-    fi
-    OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-fi
-#leave OutputString unset if we don't know the dimensionality yet
 
 case "$ICAmode" in
     (NEW)
@@ -249,7 +220,7 @@ then
     #all these modes operate almost identically (other than skipping things and compute tica mode), they don't need separate path variables
     if [[ "$precomputeTICAFolder" == "" || "$precomputeTICAfMRIName" == "" || "$precomputeGroupName" == "" ]]
     then
-        log_Err_Abort "you must specify --precomputed-clean-folder, --precomputed-clean-fmri-name and --precomputed-group-name when using mode $ICAmode"
+        log_Err_Abort "you must specify --precomputed-clean-folder, --precomputed-clean-fmri-name and --precomputed-group-name when using --ica-mode=$ICAmode"
     fi
     
     tICACleaningFolder="$precomputeTICAFolder"
@@ -257,6 +228,33 @@ then
     tICACleaningGroupAverageName="$precomputeGroupName"
     #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter, do we need to support this?
 fi
+
+#set things needed for starting after the GroupSICA step
+#don't set sICAActualDim to something invalid, to catch errors
+#sICAActualDim=""
+if [[ "$sicadimOverride" == "" ]]
+then
+    #dim override not provided, check that we are not starting after the GroupSICA step
+    groupSICAind=$(stepNameToInd "GroupSICA")
+    if ((startInd > groupSICAind))
+    then
+        log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
+    fi
+    #or that we would skip it
+    if [[ "$sICAmode" != "ESTIMATE" ]]
+    then
+        log_Err_Abort "this --ica-mode skips doing the GroupSICA step, you must specify --sicadim-override to set the dimensionality to use"
+    fi
+else
+    #dim override provided, use it and set OutputString since we know all the pieces
+    sICAActualDim="$sicadimOverride"
+    if [[ "$tICADim" == "" ]]
+    then
+        tICADim="$sICAActualDim"
+    fi
+    OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+fi
+#leave OutputString unset if we don't know the dimensionality yet
 
 #this doesn't get changed later, it is for convenience
 #we only write things here in NEW (sICA ESTIMATE) mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
@@ -385,10 +383,6 @@ do
             
             ;;
         (indProjSICA)
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             #generate volume template cifti
             #use parallel and do subjects separately first to reduce memory (some added IO)
             mergeArgs=()
@@ -456,10 +450,6 @@ do
             par_runjobs "$parLimit"
             ;;
         (ConcatGroupSICA)
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             if [[ "$sICAmode" != "ESTIMATE" ]]
             then
                 mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
@@ -479,10 +469,6 @@ do
             ;;
         (ComputeGroupTICA)
             #running this step in USE mode generates files in the output folder, which removes the need for a second OutputString to track the input naming for that mode
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             tica_cmd=("$HCPPIPEDIR"/tICA/scripts/ComputeGroupTICA.sh
                         --study-folder="$StudyFolder"
                         --subject-list="$SubjlistRaw"
@@ -532,10 +518,6 @@ do
             
             ;;
         (indProjTICA)
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             for Subject in "${Subjlist[@]}"
             do
                 #build list of fMRI files, can either be generated by a function or just like this
@@ -590,10 +572,6 @@ do
                 #skip to next pipeline stage
                 continue
             fi
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             "$HCPPIPEDIR"/tICA/scripts/ComputeTICAFeatures.sh \
                 --study-folder="$StudyFolder" \
                 --out-group-name="$GroupAverageName" \
@@ -612,17 +590,17 @@ do
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
-            if [[ "$sICAActualDim" == "" ]]
+            #REUSE_TICA mode shouldn't attempt this (or give an error)
+            if [[ "$tICAmode" == "USE" ]]
             then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
+                #skip to next pipeline stage
+                continue
             fi
-            log_Err_Abort "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
+            #don't abort for "not implemented", we still want it to write the config if possible
+            log_Err "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
+            break
             ;;
         (CleanData)
-            if [[ "$sICAActualDim" == "" ]]
-            then
-                log_Err_Abort "starting step is after GroupSICA, you must specify --sicadim-override to set the dimensionality to use"
-            fi
             if [[ "$NuisanceListTxt" == "" ]]
             then
                 NuisanceListTxt="$tICACleaningFolder/MNINonLinear/Results/${tICACleaningfMRIName}/tICA_d${sICAActualDim}/Noise.txt"
@@ -677,4 +655,12 @@ do
     esac
     log_Msg "step $stepName complete"
 done
+
+if [[ "$confoutfile" != "" ]]
+then
+    #copy actual dims to the override option that is used for REUSE modes
+    #sICAActualDim could be unset if they do --stop-after-step=MIGP, so use this special construction
+    sicadimOverride="${sICAActualDim+"${sICAActualDim}"}"
+    opts_conf_WriteConfig "$confoutfile"
+fi
 
