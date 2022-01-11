@@ -523,7 +523,7 @@ main() {
 	if [ "${EnsureEvenSlices}" == "true" ]; then
 		topupdir=${outdir}/topup
 		eddydir=${outdir}/eddy
-		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos dim3)
+		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			echo "Remove one slice from data to get even number of slices"
 			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
