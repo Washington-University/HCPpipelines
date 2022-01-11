@@ -525,7 +525,7 @@ main() {
 		eddydir=${outdir}/eddy
 		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
-			echo "Remove one slice from data to get even number of slices"
+			echo "Removing one slice from data to get even number of slices"
 			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
 				${FSLDIR}/bin/fslroi ${topupdir}/${filename} ${topupdir}/${filename}_tmp 0 -1 0 -1 1 -1
 				${FSLDIR}/bin/imrm ${topupdir}/${filename}
@@ -535,7 +535,7 @@ main() {
 			${FSLDIR}/bin/imrm ${eddydir}/Pos_Neg
 			${FSLDIR}/bin/immv ${eddydir}/Pos_Neg_tmp ${eddydir}/Pos_Neg
 		else
-			echo "Slice removal skipped, because data already has an even number of slices"
+			echo "Skipping slice removal, because data already has an even number of slices"
 		fi
 	fi
 
