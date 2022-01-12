@@ -135,7 +135,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           Volumes with a bvalue smaller than this value will be
                           considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
   [--topup-config-file=<filename>]
-                          file containing the FSL topup configuration.
+                          File containing the FSL topup configuration.
                           Defaults to b02b0.cnf in the HCP configuration
                           directory (as defined by ${HCPPIPEDIR_Config}).
   [--printcom=<print-command>]
@@ -153,8 +153,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           If set will ensure the input images to FSL's topup and eddy
                           have an even number of slices by removing one slice if necessary.
                           This behaviour used to be the default, but is now optional,
-                          because it is incompatible with using slice-to-volume correction
-                          in FSL eddy.
+                          because discarding a slice is incompatible with using slice-to-volume correction
+                          in FSL's eddy.
   [--extra-eddy-arg=<value>]
                           Generic single token (no whitespace) argument to pass
                           to the DiffPreprocPipeline_Eddy.sh script and subsequently

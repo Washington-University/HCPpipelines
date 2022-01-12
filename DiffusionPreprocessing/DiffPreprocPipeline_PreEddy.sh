@@ -93,7 +93,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --echospacing=<echo-spacing>
                           Effective Echo Spacing in msecs
   --topup-config-file=<filename>
-                          file containing the FSL topup configuration.
+                          File containing the FSL topup configuration.
   [--dwiname=<DWIname>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--b0maxbval=<b0-max-bval>]
@@ -109,8 +109,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           If set will ensure the input images to FSL's topup and eddy
                           have an even number of slices by removing one slice if necessary.
                           This behaviour used to be the default, but is now optional,
-                          because it is incompatible with using slice-to-volume correction
-                          in FSL eddy.
+                          because discarding a slice is incompatible with using slice-to-volume correction
+                          in FSL's eddy.
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
                           output the commands that would be executed instead of
@@ -150,7 +150,7 @@ EOF
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
 #  ${SelectBestB0}        If "true" will select the least distorted B0 for topup
-#  ${EnsureEvenSlices}    If "true" will ensure input images to topup/eddy has
+#  ${EnsureEvenSlices}    If "true" will ensure input images to topup/eddy have
 #                         even number of slices
 #  ${runcmd}              Set to a user specified command to use if user has
 #                         requested that commands be echo'd (or printed)
@@ -479,9 +479,9 @@ main() {
 		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
-			log_Msg "Either supply your own topup configuration file using the --topup-config-file=<file> flag (recommended)"
+			log_Msg "Either supply a topup configuration file that doesn't use subsampling (e.g., FSL's 'b02b0_1.cnf') using the --topup-config-file=<file> flag (recommended)"
 			log_Msg "or instruct the HCP pipelines to remove a slice using the --ensure-even-slices flag (legacy option)."
-			log_Msg "Note that the legacy option is incompatible with slice-to-volume correction in FSL eddy"
+			log_Msg "Note that the legacy option is incompatible with slice-to-volume correction in FSL's eddy"
 			exit 1
 		fi
 	fi
