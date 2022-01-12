@@ -138,11 +138,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           File containing the FSL topup configuration.
                           Defaults to b02b0.cnf in the HCP configuration
                           directory (as defined by ${HCPPIPEDIR_Config}).
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
   [--select-best-b0]
                           If set selects the best b0 for each phase encoding direction
                           to pass on to topup rather than the default behaviour of
@@ -191,7 +186,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           option can be used to specify which eddy_cuda binary
                           version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
                           will be used.
-
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
                           for the eddy_postproc.sh script.
@@ -204,6 +198,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                               acquired
                           0 - As 1, but also include uncombined single volumes
                           Defaults to 1
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to
+                          be used for testing purposes
 
 Return Status Value:
 

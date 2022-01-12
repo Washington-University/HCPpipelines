@@ -88,11 +88,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--dof=<Degrees of Freedom>]
                           Degrees of Freedom for registration to structural
                           images. Defaults to ${DEFAULT_DEGREES_OF_FREEDOM}
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
   [--select_best_b0]
                           Whether the --select-best-b0 flag was used in
                           DiffPreprocPipeline_PreEddy.
@@ -108,6 +103,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                               acquired
                           0 - As 1, but also include uncombined single volumes
                           Defaults to 1
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to
+                          be used for testing purposes
 
 Return Status Value:
 
