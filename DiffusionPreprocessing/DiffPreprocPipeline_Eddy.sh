@@ -119,11 +119,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   --subject=<subject-id>  subject ID
   [--dwiname=<DWIName>]   name to give DWI output directories
                           Defaults to Diffusion
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
   [--dont_peas]           pass the --dont_peas (Do NOT perform a post-eddy
                           alignment of shells) option to the eddy invocation
   [--fwhm=<value>]        --fwhm value to pass to the eddy binary
@@ -149,6 +144,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           option can be used to specify which eddy_cuda binary
                           version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
                           will be used.
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to
+                          be used for testing purposes
 
 Return Status Value:
 
