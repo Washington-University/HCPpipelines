@@ -66,8 +66,6 @@ echo "$@"
     QUEUE="-q hcp_priority.q"
 #fi
 
-PRINTCOM=""
-#PRINTCOM="echo"
 #QUEUE="-q veryshort.q"
 
 
@@ -111,8 +109,7 @@ for Subject in $Subjlist ; do
       --subcortgraylabels="$SubcorticalGrayLabels" \
       --freesurferlabels="$FreeSurferLabels" \
       --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName" \
-      --printcom=$PRINTCOM
+      --regname="$RegName"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   
@@ -126,8 +123,7 @@ for Subject in $Subjlist ; do
       --subcortgraylabels="$SubcorticalGrayLabels" \
       --freesurferlabels="$FreeSurferLabels" \
       --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName" \
-      --printcom=$PRINTCOM"
+      --regname="$RegName"
       
    echo ". ${EnvironmentScript}"
 done
