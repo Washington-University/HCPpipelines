@@ -17,7 +17,7 @@ is permitted provided that the following conditions are met:
   and/or other materials provided with the distribution.
 
 * The names of Washington University in St. Louis, the University of Minnesota,
-  Oxford University, the Human Connectome Project, or any contributors
+  Oxford University, the Human Connectome Project (or HCP), or any contributors
   to this software may *not* be used to endorse or promote products derived
   from this software without specific prior written permission.
 
