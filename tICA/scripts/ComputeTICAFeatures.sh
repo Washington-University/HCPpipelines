@@ -106,15 +106,26 @@ CorticalParcellationFile="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedValidat
 ParcelReorderFile="$HCPPIPEDIR/global/templates/tICA/rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_tclean_nobias_vn_BC_CorticalAreas_dil_210V_MPM_Group_group_z_mean_TestII.txt"
 NiftiTemplateFile="$HCPPIPEDIR/global/templates/tICA/Nifti_Template.1.60.nii.gz"
 VascularTerritoryFile="$HCPPIPEDIR/global/templates/tICA/Vascular_Territory.1.60.nii.gz"
+VesselProbMapFile="$HCPPIPEDIR/global/templates/tICA/Vessel_Probabilities.1.60.nii.gz"
+MultiBandKspaceMapFile="$HCPPIPEDIR/global/templates/tICA/Multiband_Kspace.mat"
 
-CorticalParcellationFileName="$OutputFolder/CorticalParcellationFile.txt"
-ParcelReorderFileName="$OutputFolder/ParcelReorderFile.txt"
-NiftiTemplateFileName="$OutputFolder/NiftiTemplateFile.txt"
-VascularTerritoryFileName="$OutputFolder/VascularTerritoryFile.txt"
+#a single filename shouldn't need to be passed via a text file, the 4K limit in (older?) matlab isn't that harsh
 
-tempfiles_add "$SubjListName" "$fMRIListName" "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName"
+#CorticalParcellationFileName="$OutputFolder/CorticalParcellationFile.txt"
+#ParcelReorderFileName="$OutputFolder/ParcelReorderFile.txt"
+#NiftiTemplateFileName="$OutputFolder/NiftiTemplateFile.txt"
+#VascularTerritoryFileName="$OutputFolder/VascularTerritoryFile.txt"
+#VesselProbMapFileName="$OutputFolder/VesselProbMapFile.txt"
+#don't write to $HCPPIPEDIR
+#MultiBandKspaceMapFileName="$HCPPIPEDIR/global/templates/tICA/MultibandKspaceFile.txt"
 
-rm -f -- "$SubjListName" "$fMRIListName" "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName"
+tempfiles_add "$SubjListName" "$fMRIListName"
+# "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName" "$VesselProbMapFileName"
+# "$MultiBandKspaceMapFileName"
+
+rm -f -- "$SubjListName" "$fMRIListName"
+# "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName" "$VesselProbMapFileName"
+# "$MultiBandKspaceMapFileName"
 
 for Subject in "${SubjList[@]}"
 do
@@ -126,16 +137,18 @@ do
     echo "${fMRIName}" >> "$fMRIListName"
 done
 
-echo "${CorticalParcellationFile}" >> "$CorticalParcellationFileName"
-echo "${ParcelReorderFile}" >> "$ParcelReorderFileName"
-echo "${NiftiTemplateFile}" >> "$NiftiTemplateFileName"
-echo "${VascularTerritoryFile}" >> "$VascularTerritoryFileName"
+#echo "${CorticalParcellationFile}" >> "$CorticalParcellationFileName"
+#echo "${ParcelReorderFile}" >> "$ParcelReorderFileName"
+#echo "${NiftiTemplateFile}" >> "$NiftiTemplateFileName"
+#echo "${VascularTerritoryFile}" >> "$VascularTerritoryFileName"
+#echo "${VesselProbMapFile}" >> "$VesselProbMapFileName"
+#echo "${MultiBandKspaceMapFile}" >> "$MultiBandKspaceMapFileName"
 
 #shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdims" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName")
+matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdims" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile")
 
 case "$MatlabMode" in
     (0)
