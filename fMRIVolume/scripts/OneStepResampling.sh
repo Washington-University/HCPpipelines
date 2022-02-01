@@ -206,7 +206,17 @@ echo " " >> $WD/log.txt
 
 #Save TR for later
 TR_vol=`${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1`
+TR_units=`${FSLDIR}/bin/fslval ${InputfMRI} time_units | cut -d " " -f 1`
 NumFrames=`${FSLDIR}/bin/fslval ${InputfMRI} dim4`
+
+if [ ${TR_units} = "s" ] ; then
+        # this is fine
+        continue
+elif [ ${TR_units} = "ms" ] ; then
+        TR_vol=$( echo "scale=4;${TR_vol} / 1000.0" | bc -l );
+elif [ ${TR_units} = "us" ] ; then
+	TR_vol=$( echo "scale=4;${TR_vol} / 1000000.0" | bc -l );
+fi
 
 # Create fMRI resolution standard space files for T1w image, wmparc, and brain mask
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
