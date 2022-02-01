@@ -41,6 +41,7 @@ compile_function ComputeGroupTICA \
     -I "$scriptdir/FastICA_25" \
     -I "$scriptdir/icasso122" \
     -I "$HCPPIPEDIR/global/matlab" \
+    -I "$HCPPIPEDIR/global/matlab/nets_spectra" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 
 compile_function ComputeTICAFeatures \

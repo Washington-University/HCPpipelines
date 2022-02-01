@@ -146,6 +146,7 @@ case "$MatlabMode" in
         done
         matlabcode="
             addpath('$HCPPIPEDIR/global/matlab/icaDim');
+            addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$this_script_dir/icasso122');
             addpath('$this_script_dir/FastICA_25');
