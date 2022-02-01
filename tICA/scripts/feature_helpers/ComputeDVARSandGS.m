@@ -1,7 +1,7 @@
 function ComputeDVARSandGS(StudyFolder,Subjlist, hp, MRFixConcatName, fMRINames, RegString, ProcString, RecleanMode)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
-wbcommand="wb_command";
+wbcommand='wb_command';
 if strcmp(RecleanMode,"YES")
     rclean=1;
 elseif strcmp(RecleanMode,"NO")
@@ -37,14 +37,17 @@ for i=1:length(Subjlist)
             ~isfile([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_DVARS.sdseries.nii']) || ...
             ~isfile([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_DVARS_Medians.txt'])
             if exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt'],'file')
-                sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+                %sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+                sICA_table=readtable([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+                sICA=sICA_table{:,:};
+                sICA(find(isnan(sICA)))=0;
                 if rclean==1
                     Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt']);
                 else
                     Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt']);
                 end
-
-                CIFTIDenseTimeSeries=ciftiopen([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '.dtseries.nii'], wbcommand);
+                file_name=[SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '.dtseries.nii'];
+                CIFTIDenseTimeSeries=ciftiopen(file_name,wbcommand);
                 TR = CIFTIDenseTimeSeries.diminfo{2}.seriesStep;
                 CIFTIDenseTimeSeries.cdata=demean(CIFTIDenseTimeSeries.cdata,2);
                 BetaICA=pinv(normalise(sICA(:,Signal)))*CIFTIDenseTimeSeries.cdata';
@@ -104,6 +107,8 @@ for i=1:length(Subjlist)
 
                 CIFTIGS=cifti_struct_create_sdseries([GS GSsICA GSUnstruct]','step',TR,'namelist',{'GS';'GSsICA';'GSUnstruct'});
                 CIFTIDVARS=cifti_struct_create_sdseries([DVARS DVARSsICA DVARSUnstruct cDVARS cDVARSsICA cDVARSUnstruct]','step',TR,'namelist',{'DVARS';'DVARSsICA';'DVARSUnstruct';'CorticalDVARS';'CorticalDVARSsICA';'CorticalDVARSUnstruct'});
+                %CIFTIGS=cifti_struct_create_sdseries([GS(1:size(a,2)) GSsICA(1:size(a,2)) GSUnstruct(1:size(a,2))]','step',TR,'namelist',{'GS';'GSsICA';'GSUnstruct'});
+                %CIFTIDVARS=cifti_struct_create_sdseries([DVARS(1:size(a,2)) DVARSsICA(1:size(a,2)) DVARSUnstruct(1:size(a,2)) cDVARS(1:size(a,2)) cDVARSsICA(1:size(a,2)) cDVARSUnstruct(1:size(a,2))]','step',TR,'namelist',{'DVARS';'DVARSsICA';'DVARSUnstruct';'CorticalDVARS';'CorticalDVARSsICA';'CorticalDVARSUnstruct'});
 
                 ciftisave(CIFTIGS,[SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_GS.sdseries.nii'],'wb_command');
                 ciftisave(CIFTIDVARS,[SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_DVARS.sdseries.nii'],'wb_command');

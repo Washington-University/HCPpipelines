@@ -21,7 +21,7 @@ defaultStopAfter="${pipelineSteps[${#pipelineSteps[@]} - 1]}"
 stepsText="$(IFS=$'\n'; echo "${pipelineSteps[*]}")"
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "does stuff"
+opts_SetScriptDescription "implements temporal ICA decomposition and cleanup"
 
 #mandatory (mrfix name must be specified if applicable, so including it here despite being mechanically optional)
 #general inputs
@@ -100,7 +100,7 @@ opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for r
 opts_AddOptional '--starting-step' 'startStep' 'step' "what step to start processing at, one of:
 $stepsText" "$defaultStart"
 opts_AddOptional '--stop-after-step' 'stopAfterStep' 'step' "what step to stop processing after, same valid values as --starting-step" "$defaultStopAfter"
-opts_AddOptional '--parallel-limit' 'parLimit' 'integer' "set how many subjects to do in parallel (local, not cluster-distributed) during individual projection" '-1'
+opts_AddOptional '--parallel-limit' 'parLimit' 'integer' "set how many subjects to do in parallel (local, not cluster-distributed) during individual projection and cleanup, defaults to all detected physical cores" '-1'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -261,7 +261,7 @@ fi
 sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
 
 #generate new brainmasks for every group, because the fMRI resolution may not match
-VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.dscalar.nii"
+VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
 
 #functions so that we can do certain things across subjects in parallel
 function subjectMaxBrainmask()
@@ -272,15 +272,22 @@ function subjectMaxBrainmask()
         if [[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz" ]]
         then
             subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz")
+        elif [[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz" ]]
+        then
+            subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz")
         fi
     done
-    wb_command -volume-merge "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz" \
+    if [ -z "$subjMergeArgs" ]
+    then
+        log_Err "Please check if the individual mask for each fMRI run is provided with the right name/path"
+    fi
+    wb_command -volume-merge "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
         "${subjMergeArgs[@]}"
-    wb_command -volume-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz" \
+    wb_command -volume-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
         MAX \
-        "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz"
+        "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
     #remove this early rather than waiting for tempfiles to clean up
-    rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz"
+    rm -f "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
 }
 
 function splitMRFIX()
@@ -388,44 +395,51 @@ do
             mergeArgs=()
             for Subject in "${Subjlist[@]}"
             do
-                tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz"
+                tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
                 #this function is above the stepInd loop
                 par_addjob subjectMaxBrainmask "$Subject"
-                mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max.${fMRIResolution}.nii.gz")
+                mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz")
             done
             par_runjobs "$parLimit"
 
-            tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
+            tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
                 
-                #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \ should be kept for feature processing
-            wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
+                #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
+            wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                 "${mergeArgs[@]}"
-            wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all.${fMRIResolution}.nii.gz" \
+            wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                 MAX \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz"
-            echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt"
-            wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate.${fMRIResolution}.txt" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+            #this is a big file, don't keep it around
+            rm -f "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+            echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt"
+            wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
+                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
             wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
-                -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label.${fMRIResolution}.nii.gz"
+                -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
             
             for Subject in "${Subjlist[@]}"
             do
-                #build list of fMRI files, can either be generated by a function or just like this
-                fMRIExist=()
-                for fMRIName in "${fMRINamesArray[@]}"
-                do
-                    if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
-                    then
-                        fMRIExist+=("${fMRIName}")
-                    fi
-                done
-                fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
+                if [[ "$MRFixConcatName" != "" ]]
+                then
+                    fMRINamesForSub="$MRFixConcatName"
+                else
+                    #build list of fMRI files, can either be generated by a function or just like this
+                    fMRIExist=()
+                    for fMRIName in "${fMRINamesArray[@]}"
+                    do
+                        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+                        then
+                            fMRIExist+=("${fMRIName}")
+                        fi
+                    done
+                    fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
+                fi
                 #queue (local) parallel job
                 par_addjob "$HCPPIPEDIR"/global/scripts/RSNregression.sh \
                     --study-folder="$StudyFolder" \

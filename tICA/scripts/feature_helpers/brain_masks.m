@@ -1,4 +1,4 @@
-function brain_masks(StudyFolder, GroupAverageName, Resolution, MaskSavePath, ConfigFilePath, Dilate)
+function brain_masks(StudyFolder, GroupAverageName, Resolution, OutputfMRIName, MaskSavePath, ConfigFilePath, Dilate)
 %Generate cifti masks for spatial tICA features. There are two categories of masks, 1. specific brain region masks, including CSF, WM, GM and
 %subcortical area, 2. brain boundary masks
 %   Detailed explanation goes here
@@ -10,17 +10,19 @@ switch nargin
   case 2
     error('Must specify resolution!!!') 
   case 3
+    error('Must specify output fMRI name!!!') 
+  case 4
     MaskSavePath = [];
     ConfigFilePath = [];
     Dilate=[];
-  case 4
+  case 5
     ConfigFilePath = [];
     Dilate=[];
-  case 5
+  case 6
     Dilate=[];
-    case 6
+  case 7
   otherwise
-    error('<=6 inputs are accepted.')
+    error('<=7 inputs are accepted.')
 end
 
 if isempty(ConfigFilePath)
@@ -29,6 +31,8 @@ end
 if isempty(MaskSavePath)
   MaskSavePath = [StudyFolder '/' GroupAverageName '/MNINonLinear/ROIs'];
 end
+VolumeTemplate = [GroupAverageName '_CIFTIVolumeTemplate_' OutputfMRIName '.' Resolution '.dscalar.nii'];
+
 if isempty(Dilate)
   Dilate = '5.0';
 end
@@ -46,19 +50,19 @@ end
 %     error('Please specify resolution as 2 or 1.60')
 % end
 
-EssentialFileNames={[MaskSavePath '/' GroupAverageName '_AverageWM_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageGM_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageCSF_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{1} 'mm.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{2} 'mm.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{3} 'mm.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{4} 'mm.' Resolution '.dscalar.nii'], ...
-                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{5} 'mm.' Resolution '.dscalar.nii']};
+EssentialFileNames={[MaskSavePath '/' GroupAverageName '_AverageWM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageGM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageCSF_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{1} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{2} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{3} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{4} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'], ...
+                    [MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{5} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii']};
 
 % check if mask files are already there
 ToRun=0;
@@ -79,7 +83,7 @@ if ToRun==1
     % specific brain region masks
     unix(['wb_command -volume-label-import ' MNIPath '/' GroupAverageName '_Averagewmparc.nii.gz ' ConfigFilePath '/FreeSurferAllLut.txt ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz -drop-unused-labels']);
     % transform into nifti volume space
-    unix(['wb_command -volume-resample ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz ' MNIPath '/brain_mask_max.' Resolution '.nii.gz ENCLOSING_VOXEL ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz']);
+    unix(['wb_command -volume-resample ' MaskSavePath '/' GroupAverageName '_Averagewmparc_for_mask.nii.gz ' MNIPath '/brain_mask_max_' OutputfMRIName '.' Resolution '.nii.gz ENCLOSING_VOXEL ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz']);
 
     unix(['wb_command -volume-label-import ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz ' ConfigFilePath '/FreeSurferCSFRegLut.txt ' MaskSavePath '/' GroupAverageName '_AverageCSF.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
     unix(['wb_command -volume-label-import ' MaskSavePath '/' GroupAverageName '_Averagewmparc.' Resolution '.nii.gz ' ConfigFilePath '/FreeSurferWMRegLut.txt ' MaskSavePath '/' GroupAverageName '_AverageWM.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
@@ -125,23 +129,23 @@ if ToRun==1
     unix(['wb_command -volume-math ''(cerebellar > 0) && (! leftgmwm)'' ' MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.nii.gz -var leftgmwm ' MaskSavePath '/' GroupAverageName '_AverageLeftGMWM_Mask.' Resolution '.nii.gz -var cerebellar ' MaskSavePath '/' GroupAverageName '_AverageCerebellar_Mask.' Resolution '.nii.gz']);
 
     % dense from template
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageWM_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageWM_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageCSF_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageCSF_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageGM_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageGM_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageWM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageWM_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageCSF_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageCSF_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageGM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageGM_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask.' Resolution '.nii.gz']);
 
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask.' Resolution '.nii.gz']);
-    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask.' Resolution '.nii.gz']);
+    unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask.' Resolution '.nii.gz']);
 
     % brain boundary mask
     for i=1:length(erode_mm)
         erode=erode_mm{i};
-        unix(['wb_command -volume-erode ' MNIPath '/brain_mask_max.' Resolution '.nii.gz ' erode ' ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
-        unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
-        unix(['wb_command -cifti-math ''(original > 0) && (!eroded)'' ' MaskSavePath '/' GroupAverageName '_brainboundary_' erode 'mm.' Resolution '.dscalar.nii -var original ' MNIPath '/' GroupAverageName '_CIFTIVolumeTemplate.' Resolution '.dscalar.nii -var eroded ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii']);
-        unix(['rm ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
+        unix(['wb_command -volume-erode ' MNIPath '/brain_mask_max_' OutputfMRIName '.' Resolution '.nii.gz ' erode ' ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
+        unix(['wb_command -cifti-create-dense-from-template ' MNIPath '/' VolumeTemplate ' ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '_' OutputfMRIName '.dscalar.nii -volume-all ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
+        unix(['wb_command -cifti-math ''(original > 0) && (!eroded)'' ' MaskSavePath '/' GroupAverageName '_brainboundary_' erode 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii -var original ' MNIPath '/' VolumeTemplate ' -var eroded ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '_' OutputfMRIName '.dscalar.nii']);
+        unix(['rm ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '_' OutputfMRIName '.dscalar.nii ' MaskSavePath '/' GroupAverageName '_CIFTIVolumeTemplateErode_' erode '.nii.gz']);
     end
 end
 end

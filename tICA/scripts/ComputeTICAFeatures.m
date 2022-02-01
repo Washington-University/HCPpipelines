@@ -4,7 +4,7 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
                                                         Resolution, RegString, LowResMesh, ...
                                                         ToSave,...
                                                         hp, MRFixConcatName, RecleanMode, ...
-                                                        CorticalParcellationFileName, ParcelReorderFileName, NiftiTemplateFileName, VascularTerritoryFileName)
+                                                        CorticalParcellationFile, ParcelReorderFile, NiftiTemplateFile, VascularTerritoryFile, VesselProbMapFile, MultiBandKspaceMapFile)
 % Compute features for tICA components
 % Usage:
 %   >> features=ComputeTICAFeatures(StudyFolder,GroupAverageName,...)
@@ -48,14 +48,23 @@ Subjlist = myreadtext(SubjListName);
 fMRINames = myreadtext(fMRIListName);
 tICAdims=fix(str2num(tICAdims));
 % default files
-CorticalParcellationFile=myreadtext(CorticalParcellationFileName);
-ParcelReorderFile=myreadtext(ParcelReorderFileName);
-NiftiTemplateFile=myreadtext(NiftiTemplateFileName);
-VascularTerritoryFile=myreadtext(VascularTerritoryFileName);
-CorticalParcellationFile=CorticalParcellationFile{1};
-ParcelReorderFile=ParcelReorderFile{1};
-NiftiTemplateFile=NiftiTemplateFile{1};
-VascularTerritoryFile=VascularTerritoryFile{1};
+%CorticalParcellationFile=myreadtext(CorticalParcellationFileName);
+%ParcelReorderFile=myreadtext(ParcelReorderFileName);
+%NiftiTemplateFile=myreadtext(NiftiTemplateFileName);
+%VascularTerritoryFile=myreadtext(VascularTerritoryFileName);
+%VesselProbMapFile=myreadtext(VesselProbMapFileName);
+%MultiBandKspaceMapFile=myreadtext(MultiBandKspaceMapFileName);
+
+%CorticalParcellationFile=CorticalParcellationFile{1};
+%ParcelReorderFile=ParcelReorderFile{1};
+%NiftiTemplateFile=NiftiTemplateFile{1};
+%VascularTerritoryFile=VascularTerritoryFile{1};
+%VesselProbMapFile=VesselProbMapFile{1};
+%MultiBandKspaceMapFile=MultiBandKspaceMapFile{1};
+
+MultiBandKspaceMaskStruct=load(MultiBandKspaceMapFile,'multiband_nuisance_mask');
+MultiBandKspaceMaskOrig=MultiBandKspaceMaskStruct.multiband_nuisance_mask;
+MultiBandKspaceMask=reshape(MultiBandKspaceMaskStruct.multiband_nuisance_mask,[],1);
 %CorticalParcellationFile="Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii";
 %ParcelReorderFile="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_tclean_nobias_vn_BC_CorticalAreas_dil_210V_MPM_Group_group_z_mean_TestII.txt";
 %NiftiTemplateFile="Nifti_Template.1.60.nii.gz";
@@ -127,10 +136,12 @@ for i=1:max(CorticalParcellation.cdata)
 end
 % read mask files
 vas_mask=niftiread(VascularTerritoryFile);
+vessal_prob_map=niftiread(VesselProbMapFile);
+
 % create cifti masks
 disp('creating brain masks...')
 MaskSavePath = [StudyFolder '/' GroupAverageName '/MNINonLinear/ROIs_test'];
-brain_masks(StudyFolder, GroupAverageName, Resolution, MaskSavePath);
+brain_masks(StudyFolder, GroupAverageName, Resolution, OutputfMRIName, MaskSavePath);
 % check if dimension matches
 size_volnifti=size(tICAVolNifti);
 size_vas_mask=size(vas_mask);
@@ -138,35 +149,40 @@ if ~isequal(size_vas_mask,size_volnifti(1:3))
     error('Nifti template file is not the same dimension as vascular territory nifti file')
 end
 % reshape nifti files as an necessary preprocessing step
+tICAVolNiftiOrig=tICAVolNifti;
 tICAVolNifti=reshape(tICAVolNifti,[],size(tICAVolNifti,4));
+tICAVolNiftiGroupNormOrig=tICAVolNiftiGroupNorm;
 tICAVolNiftiGroupNorm=reshape(tICAVolNiftiGroupNorm,[],size(tICAVolNiftiGroupNorm,4));
 
 vas_mask=reshape(vas_mask,[],1);
 vas_mask_area=unique(vas_mask);
 vas_mask_area=setdiff(vas_mask_area,[0]);
 
-subcortical_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask.' Resolution '.dscalar.nii'], wbcommand);
-wm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageWM_Mask.' Resolution '.dscalar.nii'], wbcommand);
-gm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageGM_Mask.' Resolution '.dscalar.nii'], wbcommand);
-csf_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageCSF_Mask.' Resolution '.dscalar.nii'], wbcommand);
+vessal_prob_map=reshape(vessal_prob_map,[],1);
+
+
+subcortical_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageSubcortical_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+wm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageWM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+gm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageGM_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+csf_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageCSF_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
 subcortical_loc=find(subcortical_mask.cdata==1);
 wm_loc=find(wm_mask.cdata==1);
 gm_loc=find(gm_mask.cdata==1);
 csf_loc=find(csf_mask.cdata==1);
 
-right_cerebellar_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask.' Resolution '.dscalar.nii'], wbcommand);
-left_cerebellar_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask.' Resolution '.dscalar.nii'], wbcommand);
-leftgm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask.' Resolution '.dscalar.nii'], wbcommand);
-rightgm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask.' Resolution '.dscalar.nii'], wbcommand);
+right_cerebellar_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageRightCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+left_cerebellar_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageLeftCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+leftgm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageLeftGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
+rightgm_mask=ciftiopen([MaskSavePath '/' GroupAverageName '_AverageRightGM_NoCerebellar_Mask_' OutputfMRIName '.' Resolution '.dscalar.nii'], wbcommand);
 right_cerebellar_loc=find(right_cerebellar_mask.cdata==1);
 left_cerebellar_loc=find(left_cerebellar_mask.cdata==1);
 leftgm_loc=find(leftgm_mask.cdata==1);
 rightgm_loc=find(rightgm_mask.cdata==1);
 %boundary_mask1=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{1} 'mm.' Resolution '.dscalar.nii'],wbcommand);
-boundary_mask2=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{2} 'mm.' Resolution '.dscalar.nii'],wbcommand);
-boundary_mask3=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{3} 'mm.' Resolution '.dscalar.nii'],wbcommand);
-boundary_mask4=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{4} 'mm.' Resolution '.dscalar.nii'],wbcommand);
-boundary_mask5=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{5} 'mm.' Resolution '.dscalar.nii'],wbcommand);
+boundary_mask2=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{2} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'],wbcommand);
+boundary_mask3=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{3} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'],wbcommand);
+boundary_mask4=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{4} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'],wbcommand);
+boundary_mask5=ciftiopen([MaskSavePath '/' GroupAverageName '_brainboundary_' erode_mm{5} 'mm_' OutputfMRIName '.' Resolution '.dscalar.nii'],wbcommand);
 %boundary_mask1_loc=find(boundary_mask1.cdata==1);
 boundary_mask2_loc=find(boundary_mask2.cdata==1);
 boundary_mask3_loc=find(boundary_mask3.cdata==1);
@@ -227,7 +243,9 @@ end
 for i=1:length(tICATCS) % subjects
     if ~isempty(CIFTIGS{i})
         for j=1:tICAdims
+          %min_length=min([length(CIFTIGS{i}(1,:)) length(tICATCS{i}(j,:))])
           COV=cov(CIFTIGS{i}(1,:)',tICATCS{i}(j,:)');
+          %COV=cov(CIFTIGS{i}(1,1:min_length)',tICATCS{i}(j,1:min_length)');
           GSCOVS(i,j)=abs(COV(1,2));
           %CORRCOEF=corrcoef(CIFTIGS{i}(1,:)',tICATCS{i}(j,:)');
           %GSCORRCOEFS(i,j)=abs(CORRCOEF(1,2)); clear CORRCOEF;
@@ -294,7 +312,12 @@ for i=1:size(TCSVARS,2)
         tICAMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
         tICAVolMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
         tICAMaps_SS.cdata(:,i)=tICAMaps_sub.cdata(:,i);
-        tICAVolMaps_SS.cdata(:,i)=tICAVolMaps_sub.cdata(:,i);
+        try
+            tICAVolMaps_SS.cdata(:,i)=tICAVolMaps_sub.cdata(:,i);
+        catch
+           [StudyFolder '/' Subjlist{I(i)}]
+           tICAFeaturesProcString
+        end
         tICAMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
         tICAVolMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
         tICAMapsZ_SS.cdata(:,i)=tICAMapsZ_sub.cdata(:,i);
@@ -367,9 +390,11 @@ right_cerebellar_stat=zeros(tICAdims,num_space_metrics);
 left_cerebellar_stat=zeros(tICAdims,num_space_metrics);
 leftgm_stat=zeros(tICAdims,num_space_metrics);
 rightgm_stat=zeros(tICAdims,num_space_metrics);
-
 boundary_stat=zeros(tICAdims,num_space_metrics*4);
 vas_stat=zeros(tICAdims,length(vas_mask_area)*3);
+vessal_stat=zeros(tICAdims,5);
+kspace_mask_stat=zeros(tICAdims,6);
+
 subcortical_stat_groupnorm=zeros(tICAdims,num_space_metrics);
 wm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
 gm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
@@ -380,12 +405,17 @@ leftgm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
 rightgm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
 boundary_stat_groupnorm=zeros(tICAdims,num_space_metrics*4);
 vas_stat_groupnorm=zeros(tICAdims,length(vas_mask_area)*3);
+vessal_stat_groupnorm=zeros(tICAdims,5);
+kspace_mask_stat_groupnorm=zeros(tICAdims,6);
+
 % group spectrum
 spectrum_stat=zeros(tICAdims, 1);
 % single subject timeseries
 ss_tcs_stat=zeros(tICAdims,12);
 CE_ss_tcs_stat=zeros(tICAdims,1);
 sum_outlier_ss_tcs_stat=zeros(tICAdims,1);
+% single subject power spectrum
+ss_spectrum_stat=zeros(tICAdims,3);
 % single subject grayplot
 gp_coeff_var=zeros(tICAdims,4);
 gp_xcorr_stat=zeros(tICAdims,5);
@@ -418,6 +448,7 @@ for i=1:tICAdims
     % volume mask region (cifti + nifti)
     CiftiVolMapForFeature=tICAVolMaps;
     NiftiVolMapForFeature=tICAVolNifti;
+    NiftiVolMapForFeatureOrig=tICAVolNiftiOrig;
     subcortical_stat(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(subcortical_loc,i), CiftiVolMapForFeature.cdata(:,i), subcortical_mask);
     wm_stat(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(wm_loc,i), CiftiVolMapForFeature.cdata(:,i), wm_mask);
     gm_stat(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(gm_loc,i), CiftiVolMapForFeature.cdata(:,i), gm_mask);
@@ -436,9 +467,25 @@ for i=1:tICAdims
         vas_stat(i,3*j-1)=std(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
         vas_stat(i,3*j)=std_outlier(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
     end
+    vessal_stat(i,1)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map);
+    vessal_stat(i,2)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map);
+    vessal_stat(i,3)=std_outlier(NiftiVolMapForFeature(vessal_prob_map~=0,i));
+    vessal_stat(i,4)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    vessal_stat(i,5)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    tmp_volume=NiftiVolMapForFeatureOrig(:,:,:,i);
+    tmp_fftn_mag=abs(fftshift(fftn(tmp_volume)));
+    kspace_mask_stat(i,1)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat(i,2)=std(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat(i,3)=std_outlier(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat(i,4)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/mean(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+    kspace_mask_stat(i,5)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/max(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+    tmp=corrcoef(reshape(tmp_fftn_mag,[],1),MultiBandKspaceMask);
+    kspace_mask_stat(i,6)=tmp(1,2);
+    
     % group norm
     CiftiVolMapForFeature=tICAVolMapsGroupNorm;
     NiftiVolMapForFeature=tICAVolNiftiGroupNorm;
+    NiftiVolMapForFeatureOrig=tICAVolNiftiGroupNormOrig;
     subcortical_stat_groupnorm(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(subcortical_loc,i), CiftiVolMapForFeature.cdata(:,i), subcortical_mask);
     wm_stat_groupnorm(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(wm_loc,i), CiftiVolMapForFeature.cdata(:,i), wm_mask);
     gm_stat_groupnorm(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(gm_loc,i), CiftiVolMapForFeature.cdata(:,i), gm_mask);
@@ -457,6 +504,20 @@ for i=1:tICAdims
         vas_stat_groupnorm(i,3*j-1)=std(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
         vas_stat_groupnorm(i,3*j)=std_outlier(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
     end
+    vessal_stat_groupnorm(i,1)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map);
+    vessal_stat_groupnorm(i,2)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map);
+    vessal_stat_groupnorm(i,3)=std_outlier(NiftiVolMapForFeature(vessal_prob_map~=0,i));
+    vessal_stat_groupnorm(i,4)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    vessal_stat_groupnorm(i,5)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    tmp_volume=NiftiVolMapForFeatureOrig(:,:,:,i);
+    tmp_fftn_mag=abs(fftshift(fftn(tmp_volume)));
+    kspace_mask_stat_groupnorm(i,1)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat_groupnorm(i,2)=std(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat_groupnorm(i,3)=std_outlier(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat_groupnorm(i,4)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/mean(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+    kspace_mask_stat_groupnorm(i,5)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/max(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+    tmp=corrcoef(reshape(tmp_fftn_mag,[],1),MultiBandKspaceMask);
+    kspace_mask_stat_groupnorm(i,6)=tmp(1,2);
     % check if component is single subject related
     outlier_stat(i,1)=std_outlier(TCSVARS(:,i));
     outlier_stat(i,2)=std_outlier(GSCOVS(:,i));
@@ -467,7 +528,11 @@ for i=1:tICAdims
     ss_tcs_stat(i,:)=single_subject_tcs_features(ss_tcs.cdata(i,:));
     CE_ss_tcs_stat(i,1)=CE(ss_tcs.cdata(i,:));
     sum_outlier_ss_tcs_stat(i,1)=sum_outlier(ss_tcs.cdata(i,:));
-    
+    % single subject power spectrum statistics
+    power_spectrum=pwelch_ps(ss_tcs.cdata(i,:));
+    ss_spectrum_stat(i,1)=max(power_spectrum);
+    ss_spectrum_stat(i,2)=mean(power_spectrum);
+    ss_spectrum_stat(i,3)=std(power_spectrum);
     % group power spectrum stat
     spectrum_stat(i,1)=max(tICAspectranorm.cdata(i,:));
 
@@ -511,13 +576,14 @@ global_idx_groupnorm=2*max([sum(tICAMapsGroupNorm.cdata>0)./sum(tICAMapsGroupNor
 variability=(std(TCSVARS)./sqrt(Stats(:,2)'))';
 TCSConcat_tmp=TCSConcat;DVARSConcat_tmp=DVARSConcat;
 DVARS_measure=var(TCSConcat_tmp(:,abs(DVARSConcat_tmp(1,:))>12),[],2)./var(TCSConcat_tmp,[],2);
-features=table(brain_region_stat, boundary_stat, vas_stat, ...
-               brain_region_stat_groupnorm, boundary_stat_groupnorm, vas_stat_groupnorm, ...
+features=table(brain_region_stat, boundary_stat, vas_stat, vessal_stat, kspace_mask_stat, ...
+               brain_region_stat_groupnorm, boundary_stat_groupnorm, vas_stat_groupnorm, vessal_stat_groupnorm, kspace_mask_stat_groupnorm, ...
                spectrum_stat, ...
                spectrum_stat_groupscale, spectrum_stat_groupnorm, ...
                global_idx_old, global_idx, ...
                global_idx_groupnorm, ...
                ss_tcs_stat, CE_ss_tcs_stat, sum_outlier_ss_tcs_stat, ...
+               ss_spectrum_stat, ...
                outlier_stat, variability, DVARS_measure, ...
                gp_coeff_var, gp_xcorr_stat, gp_xcorr_fit_stat, gp_match_stat,...
                gp_match_stat_factor, gp_outlier_stat, ...
