@@ -1,5 +1,5 @@
 function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverageName, SubjListName, ...
-                                                        fMRIListName, OutputfMRIName, tICAdims, ...
+                                                        fMRIListName, OutputfMRIName, tICAdim, ...
                                                         fMRIProcString, tICAFeaturesProcString, ...
                                                         Resolution, RegString, LowResMesh, ...
                                                         ToSave,...
@@ -15,7 +15,7 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 %     Subjlist: 
 %     fMRINames:
 %     OutputfMRIName: name to use for tICA pipeline outputs
-%     tICAdims: string, the dimension after tICA decomposition
+%     tICAdim: string, the dimension after tICA decomposition
 %     fMRIProcString: string, file name component representing the
 %     preprocessing already done, like '_hp0_clean'
 %     nonlinear: string, could be 'tanh'
@@ -37,7 +37,7 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 %     features: table, the output table consisting of all the features
 
 %if isdeployed()
-    %all arguments are actually strings, though 'tICAdims' gets turned into an integer below
+    %all arguments are actually strings, though 'tICAdim' gets turned into an integer below
 %end
 
 % hard coded
@@ -46,21 +46,8 @@ wbcommand='wb_command';
 
 Subjlist = myreadtext(SubjListName);
 fMRINames = myreadtext(fMRIListName);
-tICAdims=fix(str2num(tICAdims));
+tICAdim=fix(str2num(tICAdim));
 % default files
-%CorticalParcellationFile=myreadtext(CorticalParcellationFileName);
-%ParcelReorderFile=myreadtext(ParcelReorderFileName);
-%NiftiTemplateFile=myreadtext(NiftiTemplateFileName);
-%VascularTerritoryFile=myreadtext(VascularTerritoryFileName);
-%VesselProbMapFile=myreadtext(VesselProbMapFileName);
-%MultiBandKspaceMapFile=myreadtext(MultiBandKspaceMapFileName);
-
-%CorticalParcellationFile=CorticalParcellationFile{1};
-%ParcelReorderFile=ParcelReorderFile{1};
-%NiftiTemplateFile=NiftiTemplateFile{1};
-%VascularTerritoryFile=VascularTerritoryFile{1};
-%VesselProbMapFile=VesselProbMapFile{1};
-%MultiBandKspaceMapFile=MultiBandKspaceMapFile{1};
 
 MultiBandKspaceMaskStruct=load(MultiBandKspaceMapFile,'multiband_nuisance_mask');
 MultiBandKspaceMaskOrig=MultiBandKspaceMaskStruct.multiband_nuisance_mask;
@@ -78,36 +65,36 @@ end
 % fMRINames=strsplit(fMRINames);
 % read necessary files
 disp('reading necessary files as beginning...')
-%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdims) '_test'];%% test purpose
-%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdims)];%% original
-OutputFolder=[StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' OutputfMRIName '/tICA_d' num2str(tICAdims)];
+%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdim) '_test'];%% test purpose
+%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdim)];%% original
+OutputFolder=[StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' OutputfMRIName '/tICA_d' num2str(tICAdim)];
 
-%tICAFeaturesProcString=[fMRINames '_d' num2str(tICAdims) '_WF6_' GroupAverageName '_WR'];
-tICAMaps=ciftiopen([OutputFolder '/tICA_Maps_' num2str(tICAdims) '_' nonlinear '.dscalar.nii'], wbcommand);
-tICAVolMaps=ciftiopen([OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '.dscalar.nii'], wbcommand);
-tICAtcsmean=ciftiopen([OutputFolder '/tICA_AVGTCS_' num2str(tICAdims) '_' nonlinear '.sdseries.nii'], wbcommand);
-%tICAtcsabsmean=ciftiopen([OutputFolder '/tICA_ABSAVGTCS_' num2str(tICAdims) '_' nonlinear '.sdseries.nii'], wbcommand);
-tICAspectra=ciftiopen([OutputFolder '/tICA_Spectra_' num2str(tICAdims) '_' nonlinear '.sdseries.nii'], wbcommand);
-tICAspectranorm=ciftiopen([OutputFolder '/tICA_Spectra_norm_' num2str(tICAdims) '_' nonlinear '.sdseries.nii'], wbcommand);
+%tICAFeaturesProcString=[fMRINames '_d' num2str(tICAdim) '_WF6_' GroupAverageName '_WR'];
+tICAMaps=ciftiopen([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
+tICAVolMaps=ciftiopen([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
+tICAtcsmean=ciftiopen([OutputFolder '/tICA_AVGTCS_' num2str(tICAdim) '_' nonlinear '.sdseries.nii'], wbcommand);
+%tICAtcsabsmean=ciftiopen([OutputFolder '/tICA_ABSAVGTCS_' num2str(tICAdim) '_' nonlinear '.sdseries.nii'], wbcommand);
+tICAspectra=ciftiopen([OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '.sdseries.nii'], wbcommand);
+tICAspectranorm=ciftiopen([OutputFolder '/tICA_Spectra_norm_' num2str(tICAdim) '_' nonlinear '.sdseries.nii'], wbcommand);
 % group norm surface map
 tICAMapsGroupNorm=tICAMaps;
 tICAMapsGroupNorm.cdata=(tICAMapsGroupNorm.cdata-mean(reshape(tICAMapsGroupNorm.cdata,[],1)))/std(reshape(tICAMapsGroupNorm.cdata,[],1));
-if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdims) '_' nonlinear '_GroupNorm.dscalar.nii'])
-    ciftisave(tICAMapsGroupNorm,[OutputFolder '/tICA_Maps_' num2str(tICAdims) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'])
+    ciftisave(tICAMapsGroupNorm,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
 end
 % group norm volume map
 tICAVolMapsGroupNorm=tICAVolMaps;
 tICAVolMapsGroupNorm.cdata=(tICAVolMapsGroupNorm.cdata-mean(reshape(tICAVolMapsGroupNorm.cdata,[],1)))/std(reshape(tICAVolMapsGroupNorm.cdata,[],1));
-if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '_GroupNorm.dscalar.nii'])
-    ciftisave(tICAVolMapsGroupNorm,[OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'])
+    ciftisave(tICAVolMapsGroupNorm,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
 end
 % convert to nifti space
 if ~isfile([OutputFolder '/volmap.nii.gz'])
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp.nii.gz']);
+    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp.nii.gz']);
     unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap.nii.gz']);
 end
 if ~isfile([OutputFolder '/volmap_GroupNorm.nii.gz'])
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '_GroupNorm.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp2.nii.gz']);
+    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp2.nii.gz']);
     unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp2.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap_GroupNorm.nii.gz']);
 end
 tICAVolNifti=niftiread([OutputFolder '/volmap.nii.gz']);
@@ -120,8 +107,8 @@ if isfile([OutputFolder '/volmap_tmp2.nii.gz'])
     unix(['rm ' OutputFolder '/volmap_tmp2.nii.gz'])
 end
 % additional information
-Stats=load([OutputFolder '/stats_' num2str(tICAdims) '_' nonlinear '.wb_annsub.csv']);
-Mix=load([OutputFolder '/melodic_mix_' num2str(tICAdims) '_' nonlinear]);
+Stats=load([OutputFolder '/stats_' num2str(tICAdim) '_' nonlinear '.wb_annsub.csv']);
+Mix=load([OutputFolder '/melodic_mix_' num2str(tICAdim) '_' nonlinear]);
 % in cifti space
 CorticalParcellation=ciftiopen(CorticalParcellationFile, wbcommand);
 CorticalROIs=zeros(length(tICAMaps.cdata),max(CorticalParcellation.cdata));
@@ -134,6 +121,8 @@ clear a
 for i=1:max(CorticalParcellation.cdata)
     a(i)=sum(VertexAreas.cdata(CorticalParcellation.cdata==i));
 end
+
+CorticalParcellation.cdata(length(CorticalParcellation.cdata)+1:size(tICAMaps.cdata,1),1)=0;
 % read mask files
 vas_mask=niftiread(VascularTerritoryFile);
 vessal_prob_map=niftiread(VesselProbMapFile);
@@ -242,7 +231,7 @@ end
 % strong single subject effect
 for i=1:length(tICATCS) % subjects
     if ~isempty(CIFTIGS{i})
-        for j=1:tICAdims
+        for j=1:tICAdim
           %min_length=min([length(CIFTIGS{i}(1,:)) length(tICATCS{i}(j,:))])
           COV=cov(CIFTIGS{i}(1,:)',tICATCS{i}(j,:)');
           %COV=cov(CIFTIGS{i}(1,1:min_length)',tICATCS{i}(j,1:min_length)');
@@ -353,77 +342,77 @@ for i=1:size(TCSVARS,2)
         end
     end
 end
-if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdims) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdims) '_tanhF_SS.dscalar.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
+    ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 end
-if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAVolMaps_SS,[OutputFolder '/tICA_VolMaps_' num2str(tICAdims) '_tanhF_SS.dscalar.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
+    ciftisave(tICAVolMaps_SS,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 end
-if ~isfile([OutputFolder '/tICA_MapsZ_' num2str(tICAdims) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAMapsZ_SS,[OutputFolder '/tICA_MapsZ_' num2str(tICAdims) '_tanhF_SS.dscalar.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
+    ciftisave(tICAMapsZ_SS,[OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 end
-if ~isfile([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdims) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAVolMapsZ_SS,[OutputFolder '/tICA_VolMapsZ_' num2str(tICAdims) '_tanhF_SS.dscalar.nii'],wbcommand);
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdims) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
+if ~isfile([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
+    ciftisave(tICAVolMapsZ_SS,[OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
+    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
     unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ_ss.nii.gz']);
 end
 if isfile([OutputFolder '/volmapZ_tmp.nii.gz'])
     unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
 end
-if ~isfile([OutputFolder '/tICA_TCS_' num2str(tICAdims) '_' nonlinear '_SS.sdseries.nii'])
-    ciftisave(tICAtcs_SS,[OutputFolder '/tICA_TCS_' num2str(tICAdims) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'])
+    ciftisave(tICAtcs_SS,[OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
 end
-if ~isfile([OutputFolder '/tICA_Spectra_' num2str(tICAdims) '_' nonlinear '_SS.sdseries.nii'])
-    ciftisave(tICAspectra_SS,[OutputFolder '/tICA_Spectra_' num2str(tICAdims) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
+if ~isfile([OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'])
+    ciftisave(tICAspectra_SS,[OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
 end
 
 disp('generateing features...')
 num_space_metrics=4;
-tICA_feature_row_names=cell(tICAdims, 1);
-outlier_stat=zeros(tICAdims,2);
+tICA_feature_row_names=cell(tICAdim, 1);
+outlier_stat=zeros(tICAdim,2);
 % group spatial maps
-subcortical_stat=zeros(tICAdims,num_space_metrics);
-wm_stat=zeros(tICAdims,num_space_metrics);
-gm_stat=zeros(tICAdims,num_space_metrics);
-csf_stat=zeros(tICAdims,num_space_metrics);
-right_cerebellar_stat=zeros(tICAdims,num_space_metrics);
-left_cerebellar_stat=zeros(tICAdims,num_space_metrics);
-leftgm_stat=zeros(tICAdims,num_space_metrics);
-rightgm_stat=zeros(tICAdims,num_space_metrics);
-boundary_stat=zeros(tICAdims,num_space_metrics*4);
-vas_stat=zeros(tICAdims,length(vas_mask_area)*3);
-vessal_stat=zeros(tICAdims,5);
-kspace_mask_stat=zeros(tICAdims,6);
+subcortical_stat=zeros(tICAdim,num_space_metrics);
+wm_stat=zeros(tICAdim,num_space_metrics);
+gm_stat=zeros(tICAdim,num_space_metrics);
+csf_stat=zeros(tICAdim,num_space_metrics);
+right_cerebellar_stat=zeros(tICAdim,num_space_metrics);
+left_cerebellar_stat=zeros(tICAdim,num_space_metrics);
+leftgm_stat=zeros(tICAdim,num_space_metrics);
+rightgm_stat=zeros(tICAdim,num_space_metrics);
+boundary_stat=zeros(tICAdim,num_space_metrics*4);
+vas_stat=zeros(tICAdim,length(vas_mask_area)*3);
+vessal_stat=zeros(tICAdim,5);
+kspace_mask_stat=zeros(tICAdim,6);
 
-subcortical_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-wm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-gm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-csf_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-right_cerebellar_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-left_cerebellar_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-leftgm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-rightgm_stat_groupnorm=zeros(tICAdims,num_space_metrics);
-boundary_stat_groupnorm=zeros(tICAdims,num_space_metrics*4);
-vas_stat_groupnorm=zeros(tICAdims,length(vas_mask_area)*3);
-vessal_stat_groupnorm=zeros(tICAdims,5);
-kspace_mask_stat_groupnorm=zeros(tICAdims,6);
+subcortical_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+wm_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+gm_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+csf_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+right_cerebellar_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+left_cerebellar_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+leftgm_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+rightgm_stat_groupnorm=zeros(tICAdim,num_space_metrics);
+boundary_stat_groupnorm=zeros(tICAdim,num_space_metrics*4);
+vas_stat_groupnorm=zeros(tICAdim,length(vas_mask_area)*3);
+vessal_stat_groupnorm=zeros(tICAdim,5);
+kspace_mask_stat_groupnorm=zeros(tICAdim,6);
 
 % group spectrum
-spectrum_stat=zeros(tICAdims, 1);
+spectrum_stat=zeros(tICAdim, 1);
 % single subject timeseries
-ss_tcs_stat=zeros(tICAdims,12);
-CE_ss_tcs_stat=zeros(tICAdims,1);
-sum_outlier_ss_tcs_stat=zeros(tICAdims,1);
+ss_tcs_stat=zeros(tICAdim,12);
+CE_ss_tcs_stat=zeros(tICAdim,1);
+sum_outlier_ss_tcs_stat=zeros(tICAdim,1);
 % single subject power spectrum
-ss_spectrum_stat=zeros(tICAdims,3);
+ss_spectrum_stat=zeros(tICAdim,3);
 % single subject grayplot
-gp_coeff_var=zeros(tICAdims,4);
-gp_xcorr_stat=zeros(tICAdims,5);
-gp_xcorr_fit_stat=zeros(tICAdims,2);
+gp_coeff_var=zeros(tICAdim,4);
+gp_xcorr_stat=zeros(tICAdim,5);
+gp_xcorr_fit_stat=zeros(tICAdim,2);
 lagdices=5;
-gp_match_stat=zeros(tICAdims,12);
-gp_match_stat_factor=zeros(tICAdims,12);
-gp_outlier_stat=zeros(tICAdims,2);
+gp_match_stat=zeros(tICAdim,12);
+gp_match_stat_factor=zeros(tICAdim,12);
+gp_outlier_stat=zeros(tICAdim,2);
 factor=1;
 
 %CiftiVolMapForFeature=tICAVolMapsGroupNorm;
@@ -431,12 +420,12 @@ factor=1;
 
 disp(['vas atlas start'])
 vas_atlas=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii','wb_command');
-vas_correlation_atlas=zeros(tICAdims, 2);
-%vas_dot_atlas_norm=zeros(tICAdims, 2);
-%vas_correlation_atlas_norm2=zeros(tICAdims, 1);
+vas_correlation_atlas=zeros(tICAdim, 2);
+%vas_dot_atlas_norm=zeros(tICAdim, 2);
+%vas_correlation_atlas_norm2=zeros(tICAdim, 1);
 vas_atlas_first=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.arrival_Atlas.dscalar.nii','wb_command');
 
-for i=1:tICAdims
+for i=1:tICAdim
     tmp=corrcoef(vas_atlas.cdata, tICAMaps.cdata(:,i));
     vas_correlation_atlas(i,1)=abs(tmp(1,2));
     tmp=corrcoef(vas_atlas_first.cdata, tICAMaps.cdata(:,i));
@@ -444,7 +433,9 @@ for i=1:tICAdims
 end
 disp(['vas atlas end'])
 
-for i=1:tICAdims
+parcel_features=zeros(tICAdim, max(CorticalParcellation.cdata));
+parcel_features_groupnorm=zeros(tICAdim, max(CorticalParcellation.cdata));
+for i=1:tICAdim
     % volume mask region (cifti + nifti)
     CiftiVolMapForFeature=tICAVolMaps;
     NiftiVolMapForFeature=tICAVolNifti;
@@ -482,6 +473,10 @@ for i=1:tICAdims
     tmp=corrcoef(reshape(tmp_fftn_mag,[],1),MultiBandKspaceMask);
     kspace_mask_stat(i,6)=tmp(1,2);
     
+    % parcel based features
+    for j=1:max(CorticalParcellation.cdata)
+        parcel_features(i,j)=mean(abs(CiftiVolMapForFeature.cdata(CorticalParcellation.cdata==j,i)));
+    end
     % group norm
     CiftiVolMapForFeature=tICAVolMapsGroupNorm;
     NiftiVolMapForFeature=tICAVolNiftiGroupNorm;
@@ -518,6 +513,10 @@ for i=1:tICAdims
     kspace_mask_stat_groupnorm(i,5)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/max(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
     tmp=corrcoef(reshape(tmp_fftn_mag,[],1),MultiBandKspaceMask);
     kspace_mask_stat_groupnorm(i,6)=tmp(1,2);
+    % parcel based features
+    for j=1:max(CorticalParcellation.cdata)
+        parcel_features_groupnorm(i,j)=mean(abs(CiftiVolMapForFeature.cdata(CorticalParcellation.cdata==j,i)));
+    end
     % check if component is single subject related
     outlier_stat(i,1)=std_outlier(TCSVARS(:,i));
     outlier_stat(i,2)=std_outlier(GSCOVS(:,i));
@@ -560,7 +559,7 @@ for i=1:tICAdims
     gp_outlier_stat(i,2)=gp_outlier_stat(i,1)*outlier_stat(i,1);
 
     % row names
-    tICA_feature_row_names{i,1}=[GroupAverageName '_' OutputfMRIName '_d' num2str(tICAdims) '_' num2str(i-1)];
+    tICA_feature_row_names{i,1}=[GroupAverageName '_' OutputfMRIName '_d' num2str(tICAdim) '_' num2str(i-1)];
 end
 
 brain_region_stat=[subcortical_stat, wm_stat, gm_stat, csf_stat, ...
@@ -577,7 +576,9 @@ variability=(std(TCSVARS)./sqrt(Stats(:,2)'))';
 TCSConcat_tmp=TCSConcat;DVARSConcat_tmp=DVARSConcat;
 DVARS_measure=var(TCSConcat_tmp(:,abs(DVARSConcat_tmp(1,:))>12),[],2)./var(TCSConcat_tmp,[],2);
 features=table(brain_region_stat, boundary_stat, vas_stat, vessal_stat, kspace_mask_stat, ...
+               parcel_features, ...
                brain_region_stat_groupnorm, boundary_stat_groupnorm, vas_stat_groupnorm, vessal_stat_groupnorm, kspace_mask_stat_groupnorm, ...
+               parcel_features_groupnorm, ...
                spectrum_stat, ...
                spectrum_stat_groupscale, spectrum_stat_groupnorm, ...
                global_idx_old, global_idx, ...
@@ -592,10 +593,10 @@ features=table(brain_region_stat, boundary_stat, vas_stat, vessal_stat, kspace_m
 % example: features.statistics_spectra_norm=statistics_spectra_norm, make
 % sure the feature size is equal to the total number of components 
 % vas_atlas=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii','wb_command');
-% vas_correlation_atlas=zeros(tICAdims, 3);
-% vas_correlation_atlas_norm=zeros(tICAdims, 3);
+% vas_correlation_atlas=zeros(tICAdim, 3);
+% vas_correlation_atlas_norm=zeros(tICAdim, 3);
 % 
-% for i=1:tICAdims
+% for i=1:tICAdim
 %     tmp=corrcoef(vas_atlas.cdata, tICAMaps.cdata(:,i));
 %     vas_correlation_atlas(i,1)=abs(tmp(1,2));
 %     vas_correlation_atlas(i,2)=abs(2*eta_calc_pair(vas_atlas.cdata, tICAMaps.cdata(:,i))-1);
