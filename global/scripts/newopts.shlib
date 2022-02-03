@@ -224,7 +224,6 @@ function opts_conf_NewConfig()
     done
 }
 
-#FIXME: don't try to write non-config arguments
 function opts_conf_WriteConfig()
 {
     local opts_outconf="$1"

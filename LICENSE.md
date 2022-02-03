@@ -48,5 +48,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 `global/fsl/etc/matlab` is copyright The University of Oxford, released under BSD 2-clause, see `global/fsl/etc/matlab/LICENSE`
 
+`tICA/scripts/FastICA_25` is copyright Aalto University, released under GPL v2, see `tICA/scripts/FastICA_25/LICENSE`
+
+`tICA/scripts/icasso122` is copyright Juha Vesanto, Johan Himberg and the SOM toolbox programming team, released under GPL v2+, see `tICA/scripts/icasso122/README_license.txt`
+
 Compiled matlab binaries are released under some combination of these licenses, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
 
