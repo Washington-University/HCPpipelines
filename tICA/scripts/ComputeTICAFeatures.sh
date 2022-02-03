@@ -38,7 +38,7 @@ opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use fo
 opts_AddMandatory '--subject-list' 'SubjListRaw' '100206@100307...' 'list of subject IDs separated by @s'
 opts_AddMandatory '--fmri-list' 'fMRIListRaw' 'rfMRI_REST1_RL@rfMRI_REST1_LR...' 'list of runs used in sICA, in the SAME ORDER, separated by @s'
 opts_AddMandatory '--fmri-output-name' 'OutputfMRIName' 'string' "name for the output fMRI data, like 'rfMRI_REST_7T'"
-opts_AddMandatory '--ica-dim' 'tICAdims' 'integer' "number of temporal ICA components"
+opts_AddMandatory '--ica-dim' 'tICAdim' 'integer' "number of temporal ICA components"
 opts_AddMandatory '--proc-string' 'ProcString' 'string' "preprocessing already done, like '_hp0_clean', '_hp2000_clean_reclean'"
 opts_AddMandatory '--tica-proc-string' 'tICAProcString' 'string' "name part to use for some outputs, like 'rfMRI_REST_d84_WF6_GROUPAVERAGENAME_WR'"
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60' "
@@ -68,7 +68,7 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/tICA_d$tICAdims"
+OutputFolder="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/tICA_d$tICAdim"
 
 RegString=""
 if [[ "$RegName" != "" && "$RegName" != "MSMSulc" ]]
@@ -111,21 +111,9 @@ MultiBandKspaceMapFile="$HCPPIPEDIR/global/templates/tICA/Multiband_Kspace.mat"
 
 #a single filename shouldn't need to be passed via a text file, the 4K limit in (older?) matlab isn't that harsh
 
-#CorticalParcellationFileName="$OutputFolder/CorticalParcellationFile.txt"
-#ParcelReorderFileName="$OutputFolder/ParcelReorderFile.txt"
-#NiftiTemplateFileName="$OutputFolder/NiftiTemplateFile.txt"
-#VascularTerritoryFileName="$OutputFolder/VascularTerritoryFile.txt"
-#VesselProbMapFileName="$OutputFolder/VesselProbMapFile.txt"
-#don't write to $HCPPIPEDIR
-#MultiBandKspaceMapFileName="$HCPPIPEDIR/global/templates/tICA/MultibandKspaceFile.txt"
-
 tempfiles_add "$SubjListName" "$fMRIListName"
-# "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName" "$VesselProbMapFileName"
-# "$MultiBandKspaceMapFileName"
 
 rm -f -- "$SubjListName" "$fMRIListName"
-# "$CorticalParcellationFileName" "$ParcelReorderFileName" "$NiftiTemplateFileName" "$VascularTerritoryFileName" "$VesselProbMapFileName"
-# "$MultiBandKspaceMapFileName"
 
 for Subject in "${SubjList[@]}"
 do
@@ -137,18 +125,11 @@ do
     echo "${fMRIName}" >> "$fMRIListName"
 done
 
-#echo "${CorticalParcellationFile}" >> "$CorticalParcellationFileName"
-#echo "${ParcelReorderFile}" >> "$ParcelReorderFileName"
-#echo "${NiftiTemplateFile}" >> "$NiftiTemplateFileName"
-#echo "${VascularTerritoryFile}" >> "$VascularTerritoryFileName"
-#echo "${VesselProbMapFile}" >> "$VesselProbMapFileName"
-#echo "${MultiBandKspaceMapFile}" >> "$MultiBandKspaceMapFileName"
-
 #shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdims" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile")
+matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile")
 
 case "$MatlabMode" in
     (0)
