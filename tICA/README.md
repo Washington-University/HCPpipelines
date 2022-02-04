@@ -8,12 +8,15 @@ The processing modes also allow for applying temporal ICA cleanup to datasets th
 large enough to reliably produce a new temporal ICA decomposition.  Briefly, the processing
 modes are:
 
-- NEW - do a full pipeline run from scratch, starting with a fresh MIGP, intended for large datasets
-
-- REUSE_SICA_ONLY - use a previous MIGP result, but estimate the temporal ICA from scratch
-
+- NEW - do a full pipeline run from scratch, starting with a fresh [MIGP], intended for large datasets
+- REUSE_SICA_ONLY - use a previous MIGP result, but estimate the temporal ICA from scratch ([ICASSO] with random seeds)
 - INITIALIZE_TICA - use a previous MIGP result, and estimate temporal ICA starting from a previous
-tICA mixing matrix, but allow it to change to fit the new data
-
+tICA mixing matrix, but allow it to change to fit the new data (ICASSO starting from prior result)
 - REUSE_TICA - use a previous MIGP and tICA mixing matrix (and signal/nuisance classification),
 intended for small datasets
+
+Automated classification of tICA components into signal versus nuisance is not yet integrated.
+
+<!-- References -->
+[MIGP]: https://www.sciencedirect.com/science/article/pii/S105381191400634X
+[ICASSO]: https://research.ics.aalto.fi/ica/icasso/documentation.shtml
