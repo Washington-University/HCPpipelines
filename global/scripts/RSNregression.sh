@@ -79,7 +79,7 @@ case "$MatlabMode" in
     (0)
         if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
         then
-            log_Err_Abort "to use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+            log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
         ;;
     (1)
@@ -217,7 +217,7 @@ then
     wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
 fi
 
-#all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side, either, can do argument lists for each matlab mode with the same code
+#all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side -- can do argument lists for each matlab mode with the same code
 #SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
 matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma")
 if [[ "$Method" != "single" ]]
@@ -258,7 +258,7 @@ case "$MatlabMode" in
     (0)
         #sadly, matlab 2017b compiler doesn't know how to write sh scripts that are whitespace safe...could write our own...
         matlab_cmd=("$this_script_dir/Compiled_RSNregression/run_RSNregression.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
-        log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+        log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
         "${matlab_cmd[@]}"
         ;;
     (1 | 2)

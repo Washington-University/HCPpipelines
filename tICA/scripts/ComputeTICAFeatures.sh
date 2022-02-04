@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eu
-# skeleton grabbed from ComputerGroupTICA.sh
+# skeleton grabbed from ComputeGroupTICA.sh
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
