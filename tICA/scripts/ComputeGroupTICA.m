@@ -104,6 +104,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         error('tICAmode not recognized');
     end
     
+    %We do different types of icasso, etc in different modes/iterations, but we do things in between all iterations, and save out some files the same way each time
+    %So, rely on iteration number as a mode switch, even though it is ugly
     for i = ITERATIONS
         if  i == 0
             IT = ['F'];
