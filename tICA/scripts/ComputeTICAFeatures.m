@@ -2,9 +2,12 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
                                                         fMRIListName, OutputfMRIName, tICAdim, ...
                                                         fMRIProcString, tICAFeaturesProcString, ...
                                                         Resolution, RegString, LowResMesh, ...
-                                                        ToSave,...
+                                                        ToSave, ...
                                                         hp, MRFixConcatName, RecleanMode, ...
-                                                        CorticalParcellationFile, ParcelReorderFile, NiftiTemplateFile, VascularTerritoryFile, VesselProbMapFile, MultiBandKspaceMapFile)
+                                                        ConfigFilePath, HelpFuncPath, ...
+                                                        CorticalParcellationFile, ParcelReorderFile, ...
+                                                        NiftiTemplateFile, VascularTerritoryFile, ...
+                                                        VesselProbMapFile, MultiBandKspaceMapFile)
 % Compute features for tICA components
 % Usage:
 %   >> features=ComputeTICAFeatures(StudyFolder,GroupAverageName,...)
@@ -12,29 +15,40 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 %  Input:
 %     StudyFolder: string, the full path of study folder to use,
 %     GroupAverageName: string, the group output folder name 
-%     Subjlist: 
-%     fMRINames:
+%     SubjListName: string, .txt file path including all the subject names
+%     fMRIListName: string, .txt file path including all the fMRI run names
 %     OutputfMRIName: name to use for tICA pipeline outputs
 %     tICAdim: string, the dimension after tICA decomposition
 %     fMRIProcString: string, file name component representing the
 %     preprocessing already done, like '_hp0_clean'
-%     nonlinear: string, could be 'tanh'
 %     tICAFeaturesProcString: string, processing string name representing the 
 %     task, dimension, number of Wisharts, group average name and weighted regression
 %     already done, like  'rfMRI_REST_d84_WF6_GROUPAVERAGENAME_WR_tICA'
 %     Resolution: string, resolution of data, like '2' or '1.60'
 %     RegString: the registration string corresponding to the input files, like '_MSMAll'
 %     LowResMesh: string, mesh resolution, like '32' for 32k_fs_LR
-%     CorticalParcellationFile: string, file full path for cortical
-%     parcellation
-%     ParcelReorderFile: string, file full path for parcel reorder
-%     NiftiTemplateFile: string, the nifti template file to use 
-%     VascularTerritoryFile: string, the label file for vascular territory
-%     ToSave: string, 'YES' if want to save the feature files as a csv in
-%     output folder, 'NO' otherwise
-%
+%     ToSave: string, 'YES' or 'NO', indicator of whether to save the
+%     feature files in output folder
+%     hp: string, like '2000' or '0', high pass filter parameter
+%     MRFixConcatName: string, if MultiRunFIX is applied, specify the
+%     concat fMRI name
+%     RecleanMode: string, 'YES' or 'NO', indicator of whether sICA dataset has
+%     been recleaned
+%     ConfigFilePath: string, template directory path, the location of
+%     freesurfer ROI files
+%     HelpFuncPath: string, help function location from launch script
+%     CorticalParcellationFile: string, template file path, the HCP-MMP1.0 cortical
+%     parcellation file
+%     ParcelReorderFile: string, template file path, the parcel reorder file
+%     NiftiTemplateFile: string, template file path, the nifti template file to use
+%     VascularTerritoryFile: string, template file path, the label file for vascular territory
+%     VesselProbMapFile: string, template file path, the probabilistic map file for vessel
+%     MultiBandKspaceMapFile: string, template file path, the .mat file for multiband features in kspace
+%     
 %  Output:
 %     features: table, the output table consisting of all the features
+%     other_features: matlab struct, the output consisting of all the other
+%     useful features that takes huge amounts of time to regenerate
 
 %if isdeployed()
     %all arguments are actually strings, though 'tICAdim' gets turned into an integer below
@@ -43,6 +57,7 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
 % hard coded
 nonlinear='tanhF';
 wbcommand='wb_command';
+Dilate='5.0';
 
 Subjlist = myreadtext(SubjListName);
 fMRINames = myreadtext(fMRIListName);
@@ -52,24 +67,21 @@ tICAdim=fix(str2num(tICAdim));
 MultiBandKspaceMaskStruct=load(MultiBandKspaceMapFile,'multiband_nuisance_mask');
 MultiBandKspaceMaskOrig=MultiBandKspaceMaskStruct.multiband_nuisance_mask;
 MultiBandKspaceMask=reshape(MultiBandKspaceMaskStruct.multiband_nuisance_mask,[],1);
-%CorticalParcellationFile="Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii";
-%ParcelReorderFile="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_tclean_nobias_vn_BC_CorticalAreas_dil_210V_MPM_Group_group_z_mean_TestII.txt";
-%NiftiTemplateFile="Nifti_Template.1.60.nii.gz";
-%VascularTerritoryFile="Vascular_Territory.1.60.nii.gz";
 resolution=str2double(Resolution);
+%erode_mm=cell(1,8);
 erode_mm=cell(1,5);
-for i=1:5
-    erode_mm{i}=num2str(resolution*i);
+c=1;
+%for i=[1.25 1.75 2.25 2.75 3.25 3.75 4.25 4.75] save for testing, could be
+%useful for ring effect
+for i=[1 2 3 4 5]
+    erode_mm{c}=num2str(resolution*i,'%.2f');
+    c=c+1;
 end
-% separate fMRI names into cell (no need to do this because now they are read from txt)
-% fMRINames=strsplit(fMRINames);
+
 % read necessary files
 disp('reading necessary files as beginning...')
-%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdim) '_test'];%% test purpose
-%OutputFolder = [StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' fMRINames '/tICA_d' num2str(tICAdim)];%% original
 OutputFolder=[StudyFolder '/' GroupAverageName '/MNINonLinear/Results/' OutputfMRIName '/tICA_d' num2str(tICAdim)];
 
-%tICAFeaturesProcString=[fMRINames '_d' num2str(tICAdim) '_WF6_' GroupAverageName '_WR'];
 tICAMaps=ciftiopen([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
 tICAVolMaps=ciftiopen([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
 tICAtcsmean=ciftiopen([OutputFolder '/tICA_AVGTCS_' num2str(tICAdim) '_' nonlinear '.sdseries.nii'], wbcommand);
@@ -129,8 +141,11 @@ vessal_prob_map=niftiread(VesselProbMapFile);
 
 % create cifti masks
 disp('creating brain masks...')
-MaskSavePath = [StudyFolder '/' GroupAverageName '/MNINonLinear/ROIs_test'];
-brain_masks(StudyFolder, GroupAverageName, Resolution, OutputfMRIName, MaskSavePath);
+MaskSavePath = [StudyFolder '/' GroupAverageName '/MNINonLinear/ROIs_test2'];
+%brain_masks(StudyFolder, GroupAverageName, Resolution, OutputfMRIName, MaskSavePath);
+launch_file=[HelpFuncPath '/brain_masks.sh'];
+
+unix([launch_file ' --study-folder="' StudyFolder '" --out-group-name="' GroupAverageName '" --fmri-resolution="' Resolution '" --output-fmri-name="' OutputfMRIName '" --mask-save-path="' MaskSavePath '" --label-text-folder="' ConfigFilePath '" --dilate="' Dilate '"'])
 % check if dimension matches
 size_volnifti=size(tICAVolNifti);
 size_vas_mask=size(vas_mask);
@@ -232,9 +247,7 @@ end
 for i=1:length(tICATCS) % subjects
     if ~isempty(CIFTIGS{i})
         for j=1:tICAdim
-          %min_length=min([length(CIFTIGS{i}(1,:)) length(tICATCS{i}(j,:))])
           COV=cov(CIFTIGS{i}(1,:)',tICATCS{i}(j,:)');
-          %COV=cov(CIFTIGS{i}(1,1:min_length)',tICATCS{i}(j,1:min_length)');
           GSCOVS(i,j)=abs(COV(1,2));
           %CORRCOEF=corrcoef(CIFTIGS{i}(1,:)',tICATCS{i}(j,:)');
           %GSCORRCOEFS(i,j)=abs(CORRCOEF(1,2)); clear CORRCOEF;
@@ -415,14 +428,9 @@ gp_match_stat_factor=zeros(tICAdim,12);
 gp_outlier_stat=zeros(tICAdim,2);
 factor=1;
 
-%CiftiVolMapForFeature=tICAVolMapsGroupNorm;
-%NiftiVolMapForFeature=tICAVolNiftiGroupNorm;
-
 disp(['vas atlas start'])
 vas_atlas=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii','wb_command');
 vas_correlation_atlas=zeros(tICAdim, 2);
-%vas_dot_atlas_norm=zeros(tICAdim, 2);
-%vas_correlation_atlas_norm2=zeros(tICAdim, 1);
 vas_atlas_first=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.arrival_Atlas.dscalar.nii','wb_command');
 
 for i=1:tICAdim
@@ -592,25 +600,8 @@ features=table(brain_region_stat, boundary_stat, vas_stat, vessal_stat, kspace_m
 % add new features here
 % example: features.statistics_spectra_norm=statistics_spectra_norm, make
 % sure the feature size is equal to the total number of components 
-% vas_atlas=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii','wb_command');
-% vas_correlation_atlas=zeros(tICAdim, 3);
-% vas_correlation_atlas_norm=zeros(tICAdim, 3);
-% 
-% for i=1:tICAdim
-%     tmp=corrcoef(vas_atlas.cdata, tICAMaps.cdata(:,i));
-%     vas_correlation_atlas(i,1)=abs(tmp(1,2));
-%     vas_correlation_atlas(i,2)=abs(2*eta_calc_pair(vas_atlas.cdata, tICAMaps.cdata(:,i))-1);
-%     tmp=cov(vas_atlas.cdata, tICAMaps.cdata(:,i));
-%     vas_correlation_atlas(i,3)=abs(tmp(1,2));
-%     
-%     tmp=corrcoef(vas_atlas.cdata, tICAMapsGroupNorm.cdata(:,i));
-%     vas_correlation_atlas_norm(i,1)=abs(tmp(1,2));
-%     vas_correlation_atlas_norm(i,2)=abs(2*eta_calc_pair(vas_atlas.cdata, tICAMapsGroupNorm.cdata(:,i))-1);
-%     tmp=cov(vas_atlas.cdata, tICAMapsGroupNorm.cdata(:,i));
-%     vas_correlation_atlas_norm(i,3)=abs(tmp(1,2));
-% end
+
 features.vas_correlation_atlas=vas_correlation_atlas;
-%features.vas_dot_atlas_norm=vas_dot_atlas_norm;
 
 % other useful features to output for further investigation
 other_features.tICATCS=tICATCS;
