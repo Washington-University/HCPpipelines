@@ -1,8 +1,8 @@
-# Temporal ICA
+# Temporal ICA, beta version
 
 This pipeline uses [temporal ICA][tICA] on a large amount of fMRI data (typically a large group of subjects),
 in order to separate global nuisance effects (such as due to respiration) from neural signals that
-have a nonzero spatial mean.
+have a nonzero spatial mean.  Some features are currently incomplete.
 
 The processing modes also allow for applying temporal ICA cleanup to datasets that are not
 large enough to reliably produce a new temporal ICA decomposition.  Briefly, the processing
