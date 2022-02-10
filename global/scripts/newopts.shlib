@@ -316,7 +316,7 @@ function opts_ParseArguments()
             opts_argument="$2"
             shift 2
         fi
-        if ((opts_script_supports_config)) && [[ "$opts_switch" == "--config" ]]
+        if ((opts_script_supports_config)) && [[ "$opts_switch" == "--config" && "$opts_argument" != "" ]]
         then
             if ((opts_configspecified))
             then

@@ -176,12 +176,15 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         if  i ~= 0
             iqsort = iq(Is);
             dlmwrite([OutputFolder '/' statsNamePart nameParamPart '.wb_annsub.csv'], [round(iqsort, 2) round(tICAPercentVariances, 2)], ',');
-            %does this work when compiled?
             save([OutputFolder '/' iqNamePart nameParamPart], 'iq', '-v7.3');
             save([OutputFolder '/' sRNamePart nameParamPart], 'sR', '-v7.3');
             figs = findall(0, 'type', 'figure');
-            for f = 1:length(figs)
-                savefig(figs(f), [OutputFolder '/' figsNamePart num2str(f) '_' nameParamPart]);
+            try
+                for f = 1:length(figs)
+                    savefig(figs(f), [OutputFolder '/' figsNamePart num2str(f) '_' nameParamPart]);
+                end
+            catch
+                warning('failed to save all figures, please check that matlab is set to use .mat v7.3 format by default, in MATLAB -> General -> MAT-Files');
             end
             close all;
 
