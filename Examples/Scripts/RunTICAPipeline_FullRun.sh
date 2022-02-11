@@ -3,9 +3,8 @@
 set -eu
 
 # this is an example script to run the full tICA pipeline with new estimations on both group sICA and group tICA
-# beginning from the first step 'MIGP' to the second last step 'ComputeTICAFeatures'
-# since the step ClassifyTICA is not integrated yet, manual classification should be done after ComputeTICAFeatures,
-# then please rerun the pipeline from step CleanData to CleanData and specify the text file containing the component numbers to be removed by cleanup
+# since the step ClassifyTICA is not integrated yet, manual classification must be done (the pipeline will stop and give a message about manual classification)
+# then please rerun the pipeline starting from step CleanData and specify the text file containing the component numbers to be removed by cleanup
 # please make sure that ICA-FIX, MSMAll and MakeAverageDataset are done properly matching the input arguments before running this tICA pipeline
 
 # Steps to finish this full run tICA pipeline
