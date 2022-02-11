@@ -2,8 +2,8 @@
 
 set -eu
 
-# this is an example script to run the tICA pipeline to clean a batch of subjects with group sICA and group tICA results that are both generated from a precomputation
-# beginning from the first step 'MIGP' to the last step 'CleanData', even if the 'MIGP' is skipped under this mode
+# this is an example script to run the tICA pipeline to clean a batch of subjects with group sICA and group tICA results that are both generated from a previous computation
+# steps that aren't needed for this mode are automaticaly skipped inside the pipeline
 # please make sure that pecomputed group sICA and group tICA exist
 # please make sure that ICA-FIX, MSMAll and MakeAverageDataset are done properly matching the input arguments before running this tICA pipeline
 
