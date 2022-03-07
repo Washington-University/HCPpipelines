@@ -496,12 +496,16 @@ main()
 	log_Msg "Making dual screen scene"
 	local sceneFileDual=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_dualscreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileDual}
+	cat "${TemplateSceneDualScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| "${sceneFileDual}"
+	#TSC: run it through workbench to simplify excessive ".."s in paths
+	"$CARET7DIR"/wb_command -scene-file-relocate "$sceneFileDual" "$sceneFileDual"
 
 	log_Msg "Making single screen scene"
 	local sceneFileSingle=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_singlescreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileSingle}
+	cat "${TemplateSceneSingleScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| "${sceneFileSingle}"
+	#TSC: run it through workbench to simplify excessive ".."s in paths
+	"$CARET7DIR"/wb_command -scene-file-relocate "$sceneFileSingle" "$sceneFileSingle"
 
 	# For legacy compatibility, we symlink the ReclassifyAs*.txt files into ResultsFolder.
 	# If ReclassifyAs*.txt files already exist in ResultsFolder, then those
