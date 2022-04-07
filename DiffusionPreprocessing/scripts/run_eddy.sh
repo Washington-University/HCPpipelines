@@ -350,7 +350,19 @@ determine_eddy_tools_for_supported_six_series() {
 				# 'diff' returns "true" if files are the same, in which case we want to abort.
 				# Don't wrap the 'diff' command in () or [], as that will likely change the behavior.
 				if diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null; then
-					log_Err_Abort "The supposed GPU/CUDA version of eddy (${g_gpuEnabledEddy}) is actually identical to the non-GPU version (${g_stdEddy})"
+					log_Err "Since you have requested the use of GPU-enabled eddy,"
+					log_Err "you must either:"
+					log_Err "1. Set ${FSLDIR}/bin/eddy_cuda as a symbolic link to the version"
+					log_Err "   of eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
+					log_Err "   and is appropriate for the CUDA libraries installed"
+					log_Err "   on your system OR "
+					log_Err "2. Specify the --cuda-version=X.Y option to this "
+					log_Err "   script in order to explicitly force the use of "
+					log_Err "   ${FSLDIR}/bin/eddy_cudaX.Y"
+					log_Err "3. Set ${FSLDIR}/bin/eddy as a symbolic link to the version of"
+					log_Err "   eddy_cudaX.Y in ${FSLDIR}/bin that you want to use"
+					log_Err "   (NOT RECOMMENDED since 'eddy' without any suffix is inherently ambiguous)"
+					log_Err_Abort ""
 				fi
 			fi
 		fi
