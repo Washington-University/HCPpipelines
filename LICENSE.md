@@ -42,7 +42,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 `global/matlab/cifti-legacy/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/cifti-legacy/@gifti/gifti-1.6/LICENCE`
 
-`global/matlab/cifti-matlab/@xmltree` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltree/LICENSE`
+`global/matlab/cifti-matlab/@xmltreemod` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltreemod/LICENSE`
 
 `global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under either BSD 2-clause or GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
 
