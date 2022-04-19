@@ -40,7 +40,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Other licenses
 
-`global/matlab/cifti-legacy/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/cifti-legacy/@gifti/gifti-1.6/LICENCE`
+`global/matlab/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/@gifti/gifti-1.6/LICENCE`
 
 `global/matlab/cifti-matlab/@xmltreemod` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltreemod/LICENSE`
 
