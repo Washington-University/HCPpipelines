@@ -7,7 +7,8 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
                                                         ConfigFilePath, HelpFuncPath, ...
                                                         CorticalParcellationFile, ParcelReorderFile, ...
                                                         NiftiTemplateFile, VascularTerritoryFile, ...
-                                                        VesselProbMapFile, MultiBandKspaceMapFile)
+                                                        VesselProbMapFile, MultiBandKspaceMapFile, ...
+                                                        PerfusionFile, ArrivalAtlasFile)
 % Compute features for tICA components
 % Usage:
 %   >> features=ComputeTICAFeatures(StudyFolder,GroupAverageName,...)
@@ -128,7 +129,15 @@ for i=1:max(CorticalParcellation.cdata)
     CorticalROIs([CorticalParcellation.cdata ; zeros(length(tICAMaps.cdata)-length(CorticalParcellation.cdata),1)]==i,i)=1;
 end
 ParcelReorder=load(ParcelReorderFile);
-VertexAreas=ciftiopen([StudyFolder '/' GroupAverageName '/MNINonLinear/fsaverage_LR32k/' GroupAverageName '.midthickness' RegString '_va.32k_fs_LR.dscalar.nii'], wbcommand);
+%VertexAreas=ciftiopen([StudyFolder '/' GroupAverageName '/MNINonLinear/fsaverage_LR32k/' GroupAverageName '.midthickness' RegString '_va.32k_fs_LR.dscalar.nii'], wbcommand);
+
+pipedir = getenv('HCPPIPEDIR');
+vertarealeft = gifti([pipedir 'global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.L.midthickness_va_avg.32k_fs_LR.shape.gii']);
+vertarearight = gifti([pipedir 'global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.R.midthickness_va_avg.32k_fs_LR.shape.gii']);
+VertexAreas = cifti_struct_create_from_template(tICAMaps, zeros(size(tICAMaps.cdata, 1), 1, 'single'), 'dscalar');
+VertexAreas = cifti_struct_dense_replace_surface_data(VertexAreas, vertarealeft.cdata, 'CORTEX_LEFT');
+VertexAreas = cifti_struct_dense_replace_surface_data(VertexAreas, vertarearight.cdata, 'CORTEX_RIGHT');
+
 clear a
 for i=1:max(CorticalParcellation.cdata)
     a(i)=sum(VertexAreas.cdata(CorticalParcellation.cdata==i));
@@ -308,7 +317,7 @@ tICAspectra_SS.cdata=tICAspectra.cdata*0;
 %Find strongest individual subjects for components
 [~, I]=max(TCSVARS);
 for i=1:size(TCSVARS,2)
-    if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii']) && ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
+    %if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii']) && ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
         %Subjlist{I(i)}
         SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
         tICAMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
@@ -353,7 +362,7 @@ for i=1:size(TCSVARS,2)
         if ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
             ciftisavereset(temp,[OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
         end
-    end
+    %end
 end
 if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
     ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
@@ -365,9 +374,9 @@ if ~isfile([OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dsca
     ciftisave(tICAMapsZ_SS,[OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 end
 if ~isfile([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAVolMapsZ_SS,[OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
-    unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ_ss.nii.gz']);
+ciftisave(tICAVolMapsZ_SS,[OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
+unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
+unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ_ss.nii.gz']);
 end
 if isfile([OutputFolder '/volmapZ_tmp.nii.gz'])
     unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
@@ -377,6 +386,22 @@ if ~isfile([OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseri
 end
 if ~isfile([OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'])
     ciftisave(tICAspectra_SS,[OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
+end
+
+tICAMapsZ_SS=ciftiopen([OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'], wbcommand);
+tICAVolMapsZ_SS=ciftiopen([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'], wbcommand);
+
+% convert to nifti space
+if ~isfile([OutputFolder '/volmapZ.nii.gz'])
+    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
+    unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ.nii.gz']);
+end
+
+tICAVolSSZNiftiOrig=niftiread([OutputFolder '/volmapZ.nii.gz']);
+tICAVolSSZNifti=reshape(tICAVolSSZNiftiOrig,[],size(tICAVolSSZNiftiOrig,4));
+
+if isfile([OutputFolder '/volmapZ_tmp.nii.gz'])
+    unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
 end
 
 disp('generateing features...')
@@ -396,6 +421,7 @@ boundary_stat=zeros(tICAdim,num_space_metrics*4);
 vas_stat=zeros(tICAdim,length(vas_mask_area)*3);
 vessal_stat=zeros(tICAdim,5);
 kspace_mask_stat=zeros(tICAdim,6);
+parcel_features=zeros(tICAdim, max(CorticalParcellation.cdata));
 
 subcortical_stat_groupnorm=zeros(tICAdim,num_space_metrics);
 wm_stat_groupnorm=zeros(tICAdim,num_space_metrics);
@@ -409,6 +435,22 @@ boundary_stat_groupnorm=zeros(tICAdim,num_space_metrics*4);
 vas_stat_groupnorm=zeros(tICAdim,length(vas_mask_area)*3);
 vessal_stat_groupnorm=zeros(tICAdim,5);
 kspace_mask_stat_groupnorm=zeros(tICAdim,6);
+parcel_features_groupnorm=zeros(tICAdim, max(CorticalParcellation.cdata));
+
+% single subject z statistic map
+subcortical_stat_Zss=zeros(tICAdim,num_space_metrics);
+wm_stat_Zss=zeros(tICAdim,num_space_metrics);
+gm_stat_Zss=zeros(tICAdim,num_space_metrics);
+csf_stat_Zss=zeros(tICAdim,num_space_metrics);
+right_cerebellar_stat_Zss=zeros(tICAdim,num_space_metrics);
+left_cerebellar_stat_Zss=zeros(tICAdim,num_space_metrics);
+leftgm_stat_Zss=zeros(tICAdim,num_space_metrics);
+rightgm_stat_Zss=zeros(tICAdim,num_space_metrics);
+boundary_stat_Zss=zeros(tICAdim,num_space_metrics*4);
+vas_stat_Zss=zeros(tICAdim,length(vas_mask_area)*3);
+vessal_stat_Zss=zeros(tICAdim,5);
+kspace_mask_stat_Zss=zeros(tICAdim,6);
+parcel_features_Zss=zeros(tICAdim, max(CorticalParcellation.cdata));
 
 % group spectrum
 spectrum_stat=zeros(tICAdim, 1);
@@ -429,9 +471,9 @@ gp_outlier_stat=zeros(tICAdim,2);
 factor=1;
 
 disp(['vas atlas start'])
-vas_atlas=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii','wb_command');
+vas_atlas=ciftiopen(PerfusionFile,'wb_command');
 vas_correlation_atlas=zeros(tICAdim, 2);
-vas_atlas_first=ciftiopen('/media/myelin/brainmappers/Connectome_Project/HCP_Lifespan/HCA/AABC_Version2_Prelim_Data_Visits/MNINonLinear/ASL/Partial.arrival_Atlas.dscalar.nii','wb_command');
+vas_atlas_first=ciftiopen(ArrivalAtlasFile,'wb_command');
 
 for i=1:tICAdim
     tmp=corrcoef(vas_atlas.cdata, tICAMaps.cdata(:,i));
@@ -441,8 +483,7 @@ for i=1:tICAdim
 end
 disp(['vas atlas end'])
 
-parcel_features=zeros(tICAdim, max(CorticalParcellation.cdata));
-parcel_features_groupnorm=zeros(tICAdim, max(CorticalParcellation.cdata));
+
 for i=1:tICAdim
     % volume mask region (cifti + nifti)
     CiftiVolMapForFeature=tICAVolMaps;
@@ -483,7 +524,7 @@ for i=1:tICAdim
     
     % parcel based features
     for j=1:max(CorticalParcellation.cdata)
-        parcel_features(i,j)=mean(abs(CiftiVolMapForFeature.cdata(CorticalParcellation.cdata==j,i)));
+        parcel_features(i,j)=mean(abs(tICAMaps.cdata(CorticalParcellation.cdata==j,i)));
     end
     % group norm
     CiftiVolMapForFeature=tICAVolMapsGroupNorm;
@@ -523,8 +564,55 @@ for i=1:tICAdim
     kspace_mask_stat_groupnorm(i,6)=tmp(1,2);
     % parcel based features
     for j=1:max(CorticalParcellation.cdata)
-        parcel_features_groupnorm(i,j)=mean(abs(CiftiVolMapForFeature.cdata(CorticalParcellation.cdata==j,i)));
+        parcel_features_groupnorm(i,j)=mean(abs(tICAMapsGroupNorm.cdata(CorticalParcellation.cdata==j,i)));
     end
+    % single subject spatial features
+    CiftiVolMapForFeature=tICAVolMapsZ_SS;
+    NiftiVolMapForFeature=tICAVolSSZNifti;
+    NiftiVolMapForFeatureOrig=tICAVolSSZNiftiOrig;
+    subcortical_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(subcortical_loc,i), CiftiVolMapForFeature.cdata(:,i), subcortical_mask);
+    wm_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(wm_loc,i), CiftiVolMapForFeature.cdata(:,i), wm_mask);
+    gm_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(gm_loc,i), CiftiVolMapForFeature.cdata(:,i), gm_mask);
+    csf_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(csf_loc,i), CiftiVolMapForFeature.cdata(:,i), csf_mask);
+    right_cerebellar_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(right_cerebellar_loc,i), CiftiVolMapForFeature.cdata(:,i), right_cerebellar_mask);
+    left_cerebellar_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(left_cerebellar_loc,i), CiftiVolMapForFeature.cdata(:,i), left_cerebellar_mask);
+    leftgm_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(leftgm_loc,i), CiftiVolMapForFeature.cdata(:,i), leftgm_mask);
+    rightgm_stat_Zss(i,:)=brain_region_features(CiftiVolMapForFeature.cdata(rightgm_loc,i), CiftiVolMapForFeature.cdata(:,i), rightgm_mask);
+    
+    boundary_stat_Zss(i,1:num_space_metrics)=brain_region_features(CiftiVolMapForFeature.cdata(boundary_mask2_loc,i), CiftiVolMapForFeature.cdata(:,i), boundary_mask2);
+    boundary_stat_Zss(i,num_space_metrics+1:num_space_metrics*2)=brain_region_features(CiftiVolMapForFeature.cdata(boundary_mask3_loc,i), CiftiVolMapForFeature.cdata(:,i), boundary_mask3);
+    boundary_stat_Zss(i,num_space_metrics*2+1:num_space_metrics*3)=brain_region_features(CiftiVolMapForFeature.cdata(boundary_mask4_loc,i), CiftiVolMapForFeature.cdata(:,i), boundary_mask4);
+    boundary_stat_Zss(i,num_space_metrics*3+1:num_space_metrics*4)=brain_region_features(CiftiVolMapForFeature.cdata(boundary_mask5_loc,i), CiftiVolMapForFeature.cdata(:,i), boundary_mask5);
+    for j=1:length(vas_mask_area)
+        vas_stat_Zss(i,3*j-2)=mean(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
+        vas_stat_Zss(i,3*j-1)=std(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
+        vas_stat_Zss(i,3*j)=std_outlier(NiftiVolMapForFeature(vas_mask==vas_mask_area(j),i));
+    end
+    vessal_stat_Zss(i,1)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map);
+    vessal_stat_Zss(i,2)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map);
+    vessal_stat_Zss(i,3)=std_outlier(NiftiVolMapForFeature(vessal_prob_map~=0,i));
+    vessal_stat_Zss(i,4)=sum(NiftiVolMapForFeature(:,i).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    vessal_stat_Zss(i,5)=sum(abs(NiftiVolMapForFeature(:,i)).*vessal_prob_map)/length(find(vessal_prob_map~=0));
+    tmp_volume=NiftiVolMapForFeatureOrig(:,:,:,i);
+    tmp_fftn_mag=abs(fftshift(fftn(tmp_volume)));
+    kspace_mask_stat_Zss(i,1)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat_Zss(i,2)=std(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    kspace_mask_stat_Zss(i,3)=std_outlier(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1));
+    if ~isempty(find(tmp_fftn_mag>0))
+        kspace_mask_stat_Zss(i,4)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/mean(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+        kspace_mask_stat_Zss(i,5)=mean(reshape(tmp_fftn_mag.*MultiBandKspaceMaskOrig,[],1))/max(reshape(tmp_fftn_mag(find(tmp_fftn_mag>0)),[],1));
+    else
+        kspace_mask_stat_Zss(i,4)=0;
+        kspace_mask_stat_Zss(i,5)=0;
+    end
+    tmp=corrcoef(reshape(tmp_fftn_mag,[],1),MultiBandKspaceMask);
+    kspace_mask_stat_Zss(i,6)=tmp(1,2);
+    % parcel based features
+    for j=1:max(CorticalParcellation.cdata)
+        parcel_features_Zss(i,j)=mean(abs(tICAMapsZ_SS.cdata(CorticalParcellation.cdata==j,i)));
+    end
+    
+    
     % check if component is single subject related
     outlier_stat(i,1)=std_outlier(TCSVARS(:,i));
     outlier_stat(i,2)=std_outlier(GSCOVS(:,i));
@@ -574,11 +662,14 @@ brain_region_stat=[subcortical_stat, wm_stat, gm_stat, csf_stat, ...
                    right_cerebellar_stat, left_cerebellar_stat, leftgm_stat, rightgm_stat];
 brain_region_stat_groupnorm=[subcortical_stat_groupnorm, wm_stat_groupnorm, gm_stat_groupnorm, csf_stat_groupnorm, ...
                             right_cerebellar_stat_groupnorm, left_cerebellar_stat_groupnorm, leftgm_stat_groupnorm, rightgm_stat_groupnorm];
+brain_region_stat_Zss=[subcortical_stat_Zss, wm_stat_Zss, gm_stat_Zss, csf_stat_Zss, ...
+                            right_cerebellar_stat_Zss, left_cerebellar_stat_Zss, leftgm_stat_Zss, rightgm_stat_Zss];
 spectrum_stat_groupscale=spectrum_stat/max(spectrum_stat);
 spectrum_stat_groupnorm=(spectrum_stat-mean(spectrum_stat))/std(spectrum_stat);
 global_idx_old=abs(log2(sum(tICAMaps.cdata>0)./sum(tICAMaps.cdata<0)))';
 global_idx=2*max([sum(tICAMaps.cdata>0)./sum(tICAMaps.cdata~=0);sum(tICAMaps.cdata<0)./sum(tICAMaps.cdata~=0)])'-1;
 global_idx_groupnorm=2*max([sum(tICAMapsGroupNorm.cdata>0)./sum(tICAMapsGroupNorm.cdata~=0);sum(tICAMapsGroupNorm.cdata<0)./sum(tICAMapsGroupNorm.cdata~=0)])'-1;
+global_idx_Zss=2*max([sum(tICAMapsZ_SS.cdata>0)./sum(tICAMapsZ_SS.cdata~=0);sum(tICAMapsZ_SS.cdata<0)./sum(tICAMapsZ_SS.cdata~=0)])'-1;
 
 variability=(std(TCSVARS)./sqrt(Stats(:,2)'))';
 TCSConcat_tmp=TCSConcat;DVARSConcat_tmp=DVARSConcat;
@@ -587,10 +678,13 @@ features=table(brain_region_stat, boundary_stat, vas_stat, vessal_stat, kspace_m
                parcel_features, ...
                brain_region_stat_groupnorm, boundary_stat_groupnorm, vas_stat_groupnorm, vessal_stat_groupnorm, kspace_mask_stat_groupnorm, ...
                parcel_features_groupnorm, ...
+               brain_region_stat_Zss, boundary_stat_Zss, vas_stat_Zss, vessal_stat_Zss, kspace_mask_stat_Zss, ...
+               parcel_features_Zss, ...
                spectrum_stat, ...
                spectrum_stat_groupscale, spectrum_stat_groupnorm, ...
                global_idx_old, global_idx, ...
                global_idx_groupnorm, ...
+               global_idx_Zss, ...
                ss_tcs_stat, CE_ss_tcs_stat, sum_outlier_ss_tcs_stat, ...
                ss_spectrum_stat, ...
                outlier_stat, variability, DVARS_measure, ...

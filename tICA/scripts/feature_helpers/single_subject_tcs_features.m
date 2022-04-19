@@ -10,12 +10,12 @@ for j_order=1:8
     residuals=infer(estmdl,double(ss_tcs_data)');
     var_all(j_order)=var(residuals);
 end
-ss_tcs_stat(1,1:2)=polyfit(1:8,var_all,1);
+ss_tcs_stat(1,1:2)=polyfit(1:8,var_all,1);% relation between order of AR and goodness of fit
 tmp=aryule(ss_tcs_data,1);
-ss_tcs_stat(1,3)=tmp(2);
+ss_tcs_stat(1,3)=tmp(2);% AR(1)
 tmp=aryule(ss_tcs_data,2);
-ss_tcs_stat(1,4:5)=tmp(2:3);
-ss_tcs_stat(1,6:7)=var_all(1:2); 
+ss_tcs_stat(1,4:5)=tmp(2:3);% AR(2)
+ss_tcs_stat(1,6:7)=var_all(1:2);% first two goodness of fit
 % original
 ss_tcs_stat(1,8)=max(abs(ss_tcs_data));
 ss_tcs_stat(1,9)=mean(ss_tcs_data);

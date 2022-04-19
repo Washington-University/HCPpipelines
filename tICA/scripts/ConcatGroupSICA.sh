@@ -72,6 +72,12 @@ OutAnnsubName="$OutputFolder/sICA_stats_$sICAdim.wb_annsub.csv"
 OutAvgMapsName="$OutputFolder/sICA_Maps_$sICAdim.dscalar.nii"
 OutAvgVolMapsName="$OutputFolder/sICA_VolMaps_$sICAdim.dscalar.nii"
 
+RegString=""
+if [[ "$RegName" != "" ]]
+then
+    RegString="_$RegName"
+fi
+
 case "$MatlabMode" in
     (0)
         if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
@@ -106,7 +112,7 @@ rm -f -- "$TCSListName" "$MapListName" "$VolMapListName" "$SpectraListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}_$RegName"
+    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}.${LowResMesh}k_fs_LR.dscalar.nii" >> "$MapListName"
     echo "${FilePrefix}_vol.${LowResMesh}k_fs_LR.dscalar.nii" >> "$VolMapListName"

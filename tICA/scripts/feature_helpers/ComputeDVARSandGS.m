@@ -37,10 +37,10 @@ for i=1:length(Subjlist)
             ~isfile([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_DVARS.sdseries.nii']) || ...
             ~isfile([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '_DVARS_Medians.txt'])
             if exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt'],'file')
-                %sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
-                sICA_table=readtable([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
-                sICA=sICA_table{:,:};
-                sICA(find(isnan(sICA)))=0;
+                sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+                %sICA_table=readtable([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+                %sICA=sICA_table{:,:};
+                %sICA(find(isnan(sICA)))=0;
                 if rclean==1
                     Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt']);
                 else

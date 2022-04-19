@@ -108,6 +108,8 @@ NiftiTemplateFile="$HCPPIPEDIR/global/templates/tICA/Nifti_Template.1.60.nii.gz"
 VascularTerritoryFile="$HCPPIPEDIR/global/templates/tICA/Vascular_Territory.1.60.nii.gz"
 VesselProbMapFile="$HCPPIPEDIR/global/templates/tICA/Vessel_Probabilities.1.60.nii.gz"
 MultiBandKspaceMapFile="$HCPPIPEDIR/global/templates/tICA/Multiband_Kspace.mat"
+PerfusionFile="$HCPPIPEDIR/global/templates/tICA/Partial.pvcorr_perfusion_calib_Atlas.dscalar.nii"
+ArrivalAtlasFile="$HCPPIPEDIR/global/templates/tICA/Partial.arrival_Atlas.dscalar.nii"
 ConfigFilePath="$HCPPIPEDIR/global/config/tICA"
 #a single filename shouldn't need to be passed via a text file, the 4K limit in (older?) matlab isn't that harsh
 
@@ -129,7 +131,7 @@ done
 this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/feature_helpers"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$ConfigFilePath" "$HelpFuncPath" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile")
+matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$ConfigFilePath" "$HelpFuncPath" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile" "$PerfusionFile" "$ArrivalAtlasFile")
 
 case "$MatlabMode" in
     (0)

@@ -162,8 +162,14 @@ then
     extraSuffixSTRING="_$extraSuffix"
 fi
 
+if [[ "$RegName" == "" || "$RegName" == "MSMSulc" ]]
+then
+    log_Err_Abort "folding-based alignment is insufficient for tICA"
+fi
+
+#TSC: if we don't support using MSMSulc anyway, then we don't need to special case it
 RegString=""
-if [[ "$RegName" != "" && "$RegName" != "MSMSulc" ]]
+if [[ "$RegName" != "" ]]
 then
     RegString="_$RegName"
 fi

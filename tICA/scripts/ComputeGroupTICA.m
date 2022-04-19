@@ -23,6 +23,11 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     tICAspectraNamePart = 'tICA_Spectra';
     tICAspectranormNamePart = 'tICA_Spectra_norm';
     
+    RegString = '';
+    if ~isempty(RegName)
+        RegString = ['_' RegName];
+    end
+    
     TCSList = myreadtext(TCSListName);
     %MapList = myreadtext(MapListName);
     %VolMapList = myreadtext(VolMapListName);
@@ -228,14 +233,14 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             tICASpectra = sICASpectra;
             SubjFolder = [StudyFolder '/' SubjectList{i} '/'];
             %FIXME: how to deal with subject ID in this filename without hardcoding conventions?
-            ciftisave(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA_' RegName '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], 'wb_command');
+            ciftisave(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], 'wb_command');
             ts.Nnodes = size(tICATCS.cdata, 1);
             ts.Nsubjects = 1;
             ts.ts = tICATCS.cdata';
             ts.NtimepointsPerSubject = size(tICATCS.cdata, 2);
             tICASpectra.cdata = nets_spectra_sp(ts)';
             %FIXME
-            ciftisave(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA_' RegName '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], 'wb_command');
+            ciftisave(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], 'wb_command');
         end
     end
 end

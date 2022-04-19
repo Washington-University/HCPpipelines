@@ -77,6 +77,12 @@ AvgSpectraName="$OutputFolder/sICA_Spectra_$sICAdim.sdseries.nii"
 AvgMapsName="$OutputFolder/sICA_Maps_$sICAdim.dscalar.nii"
 AvgVolMapsName="$OutputFolder/sICA_VolMaps_$sICAdim.dscalar.nii"
 
+RegString=""
+if [[ "$RegName" != "" ]]
+then
+    RegString="_$RegName"
+fi
+
 case "$MatlabMode" in
     (0)
         if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
@@ -110,7 +116,7 @@ rm -f -- "$TCSListName" "$SpectraListName" "$SubjListName" "$fMRIListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}_$RegName"
+    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" >> "$SpectraListName"
     echo "$Subject" >> "$SubjListName"
@@ -118,7 +124,7 @@ done
 
 for fMRIName in "${fMRIList[@]}"
 do
-    echo "MNINonLinear/Results/$fMRIName/${fMRIName}_Atlas_$RegName.dtseries.nii" >> "$fMRIListName"
+    echo "MNINonLinear/Results/$fMRIName/${fMRIName}_Atlas${RegString}.dtseries.nii" >> "$fMRIListName"
 done
 
 #shortcut in case the folder gets renamed
