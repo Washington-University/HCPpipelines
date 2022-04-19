@@ -66,7 +66,7 @@ function usage()
 {
     #header text
     echo "
-$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) analyses, and Level2 (single subject-level) analysis as specified.
+$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) and Level2 (single subject-level, across scans) analyses as specified.
 
 Usage: $log_ToolName arguments...
 [ ] = optional; < > = user supplied value
@@ -279,7 +279,7 @@ then
 fi
 
 
-if [ "$LevelTwofMRIName" != "NONE" ] || [ "$SummaryPrefix" != "NONE" ];
+if [ "$LevelTwofMRIName" != "NONE" ] || [ "$SummaryDir" != "NONE" ];
 then
 	log_Msg "CREATE SUMMARY DIRECTORY: Creating subject-level summary directory from requested analyses."
 	${HCPPIPEDIR_tfMRIAnalysis}/makeSubjectTaskSummary.sh \
