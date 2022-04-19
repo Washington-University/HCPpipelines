@@ -31,14 +31,29 @@ function tree = cifti_write_metadata(metadata, tree, matrix_uid)
 end
 
 function tree = cifti_write_maps(cifti, tree, matrix_uid)
-    %consider checking maps for equality and using AppliesToMatrixDimension to sometimes reduce xml size...
+    mapused = false(length(cifti.diminfo), 1);
     for i = 1:length(cifti.diminfo)
-        appliesto = i; %NOTE: first and second dims are swapped compared to on disk, because of ciftiopen convention
-        if (i < 3)
-            appliesto = 3 - i; %NOTE: no, this isn't complex
+        if mapused(i)
+            continue;
+        end
+        if i < 3 %NOTE: first and second dims are swapped compared to on disk, because of ciftiopen convention
+            appliesto = sprintf('%d', 2 - i); %NOTE: no, this isn't complex, and on disk needs 0-based numbers
+        else
+            appliesto = sprintf('%d', i - 1);
+        end
+        for j = (i + 1):length(cifti.diminfo)
+            %consider simplifying maps, like removing the volume space if voxels aren't used and sorting parcel member lists, to make this equality "less picky"
+            if ~mapused(j) && isequaln(cifti.diminfo{i}, cifti.diminfo{j})
+                if j < 3
+                    appliesto = [appliesto ',' sprintf('%d', 2 - j)]; %#ok<AGROW>
+                else
+                    appliesto = [appliesto ',' sprintf('%d', j - 1)]; %#ok<AGROW>
+                end
+                mapused(j) = true;
+            end
         end
         [tree, map_uid] = add(tree, matrix_uid, 'element', 'MatrixIndicesMap');
-        tree = attributes(tree, 'add', map_uid, 'AppliesToMatrixDimension', num2str(appliesto - 1)); %NOTE: 1-based matlab indexing
+        tree = attributes(tree, 'add', map_uid, 'AppliesToMatrixDimension', appliesto); %NOTE: 1-based matlab indexing
         switch cifti.diminfo{i}.type
             case 'dense'
                 tree = cifti_write_dense(cifti.diminfo{i}, tree, map_uid);
@@ -79,7 +94,7 @@ function tree = cifti_write_dense(map, tree, map_uid)
                 tree = attributes(tree, 'add', model_uid, 'ModelType', 'CIFTI_MODEL_TYPE_SURFACE');
                 tree = attributes(tree, 'add', model_uid, 'SurfaceNumberOfVertices', num2str(model{1}.numvert));
                 [tree, vert_uid] = add(tree, model_uid, 'element', 'VertexIndices');
-                tree = add(tree, vert_uid, 'chardata', matrix2str_int(model{1}.vertlist(:)')); %NOTE: 0-based vertex indices
+                tree = add(tree, vert_uid, 'chardata', vertlist2str(model{1}.vertlist(:)')); %NOTE: 0-based vertex indices
             case 'vox'
                 if size(model{1}.voxlist, 1) == model{1}.count && size(model{1}.voxlist, 2) == 3
                     warning('model voxel list appears to be transposed');
@@ -96,7 +111,7 @@ function tree = cifti_write_dense(map, tree, map_uid)
                 end
                 tree = attributes(tree, 'add', model_uid, 'ModelType', 'CIFTI_MODEL_TYPE_VOXELS');
                 [tree, vox_uid] = add(tree, model_uid, 'element', 'VoxelIndicesIJK');
-                tree = add(tree, vox_uid, 'chardata', matrix2str_int(model{1}.voxlist'));
+                tree = add(tree, vox_uid, 'chardata', voxlist2str(model{1}.voxlist'));
             otherwise
                 error(['unrecignized brain model type "' model{1}.type '"']);
         end
@@ -164,42 +179,20 @@ function tree = cifti_write_vol(vol, tree, map_uid)
     end
     tree = attributes(tree, 'add', tfm_uid, 'MeterExponent', num2str(exponent));
     modsform = vol.sform / (10^(exponent + 3)); % convert from mm to given meter exponent
-    tree = add(tree, tfm_uid, 'chardata', matrix2str(modsform));
+    tree = add(tree, tfm_uid, 'chardata', sform2str(modsform));
 end
 
-%num2str(..., 6) on a matrix adds a *lot* of whitespace, so make a version for integers
-function outstring = matrix2str_int(input)
-    %matlab 2016a doesn't have join(), so we can't write a one-liner
-    matchar = num2str(input);
-    expectedlength = length(matchar(:)) + size(matchar, 1);
-    outstring = char(zeros(1, expectedlength, 'int8'));
-    curpos = 1;
-    for i = 1:size(matchar, 1)
-        addstring = [char(10) matchar(i, :)]; %hack: xml looks better with a newline before the matrix
-        outstring(curpos:(curpos + length(addstring) - 1)) = addstring;
-        curpos = curpos + length(addstring);
-    end
-    if any(outstring == 0) %check for bad length computation
-        warning('internal problem in cifti xml matrix2str()');
-        outstring(outstring == 0) = []; %delete the nulls
-    end
+%sprintf is (much) faster, and allows "single space" formatting, but is dumb about columns vs rows and doesn't understand matrix dimensions
+function outstring = voxlist2str(input)
+    outstring = sprintf('%d %d %d\n', input');
 end
 
-function outstring = matrix2str(input)
-    %matlab 2016a doesn't have join(), so we can't write a one-liner
-    matchar = num2str(input, 6); %6 significant figures for float improves round-trip consistency
-    expectedlength = length(matchar(:)) + size(matchar, 1);
-    outstring = char(zeros(1, expectedlength, 'int8'));
-    curpos = 1;
-    for i = 1:size(matchar, 1)
-        addstring = [char(10) matchar(i, :)]; %hack: xml looks better with a newline before the matrix
-        outstring(curpos:(curpos + length(addstring) - 1)) = addstring;
-        curpos = curpos + length(addstring);
-    end
-    if any(outstring == 0) %check for bad length computation
-        warning('internal problem in cifti xml matrix2str()');
-        outstring(outstring == 0) = []; %delete the nulls
-    end
+function outstring = vertlist2str(input)
+    outstring = sprintf('%d ', input);
+end
+
+function outstring = sform2str(input)
+    outstring = sprintf('\n%.7f %.7f %.7f %.7f', input');
 end
 
 function tree = cifti_write_parcels(map, tree, map_uid)
@@ -233,7 +226,7 @@ function tree = cifti_write_parcels(map, tree, map_uid)
                 error('invalid voxlist content in cifti struct');
             end
             [tree, vox_uid] = add(tree, parcel_uid, 'element', 'VoxelIndicesIJK');
-            tree = add(tree, vox_uid, 'chardata', matrix2str_int(map.parcels(i).voxlist'));
+            tree = add(tree, vox_uid, 'chardata', voxlist2str(map.parcels(i).voxlist'));
         end
         for j = 1:length(map.parcels(i).surfs)
             numverts = -1;
@@ -251,7 +244,7 @@ function tree = cifti_write_parcels(map, tree, map_uid)
             end
             [tree, vert_uid] = add(tree, parcel_uid, 'element', 'Vertices');
             tree = attributes(tree, 'add', vert_uid, 'BrainStructure', friendly_to_cifti_structure(map.parcels(i).surfs(j).struct));
-            tree = add(tree, vert_uid, 'chardata', matrix2str_int(map.parcels(i).surfs(j).vertlist));
+            tree = add(tree, vert_uid, 'chardata', vertlist2str(map.parcels(i).surfs(j).vertlist));
         end
     end
 end

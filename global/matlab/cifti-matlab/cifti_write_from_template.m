@@ -30,8 +30,8 @@ function cifti_write_from_template(ciftitemplate, data, filename, varargin)
     try
         cifti_write(cifti_struct_create_from_template(ciftitemplate, data, filetype, template_varargs{:}), filename, 'stacklevel', options.stacklevel + 1, 'disableprovenance', options.disableprovenance, 'keepmetadata', options.keepmetadata);
     catch excinfo
-        if strcmp(excinfo.extension, 'cifti:extension')
-            error(['cifti file name "' filename '" does not end in a known cifti extension']);
+        if strcmp(excinfo.identifier, 'cifti:extension')
+            error(['cifti file name "' filename '" uses a cifti extension that is not supported by this function']);
         end
         rethrow(excinfo);
     end
