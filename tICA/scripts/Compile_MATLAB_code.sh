@@ -13,6 +13,7 @@ function compile_function()
 }
 
 #addpath() adds to the front, while -I adds to the back, so reverse the order
+#icasso uses feval with a default function of sim2dis (which it implements), without pragmas to help the compiler, so add it here so we don't forget if we update icasso
 
 compile_function MIGP \
     -I "$HCPCIFTIRWDIR" \
@@ -24,6 +25,7 @@ compile_function GroupSICA \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
     -I "$scriptdir/icasso122" \
+    -a "$scriptdir/icasso122/sim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 
@@ -32,6 +34,7 @@ compile_function ConcatGroupSICA \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
     -I "$scriptdir/icasso122" \
+    -a "$scriptdir/icasso122/sim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 
@@ -40,6 +43,7 @@ compile_function ComputeGroupTICA \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
     -I "$scriptdir/icasso122" \
+    -a "$scriptdir/icasso122/sim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
     -I "$HCPPIPEDIR/global/matlab/nets_spectra" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"

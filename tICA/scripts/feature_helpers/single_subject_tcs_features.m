@@ -4,11 +4,17 @@ function ss_tcs_stat = single_subject_tcs_features(ss_tcs_data)
 
 ss_tcs_stat=zeros(1, 12);
 var_all=zeros(1,8);
+% old version of arima estimate, excluded because of extra toolbox needed
+% (econometric)
+% for j_order=1:8
+%     mdl=arima(j_order,0,0);
+%     estmdl=estimate(mdl,double(ss_tcs_data)','Display','off');
+%     residuals=infer(estmdl,double(ss_tcs_data)');
+%     var_all(j_order)=var(residuals);
+% end
 for j_order=1:8
-    mdl=arima(j_order,0,0);
-    estmdl=estimate(mdl,double(ss_tcs_data)','Display','off');
-    residuals=infer(estmdl,double(ss_tcs_data)');
-    var_all(j_order)=var(residuals);
+    sys=ar(double(ss_tcs_data'),j_order);
+    var_all(j_order)=sys.NoiseVariance;
 end
 ss_tcs_stat(1,1:2)=polyfit(1:8,var_all,1);% relation between order of AR and goodness of fit
 tmp=aryule(ss_tcs_data,1);
