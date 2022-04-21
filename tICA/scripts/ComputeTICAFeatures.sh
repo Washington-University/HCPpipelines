@@ -131,7 +131,7 @@ done
 this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/feature_helpers"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName','$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$ConfigFilePath" "$HelpFuncPath" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile" "$PerfusionFile" "$ArrivalAtlasFile")
+matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName" "$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$ConfigFilePath" "$HelpFuncPath" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile" "$PerfusionFile" "$ArrivalAtlasFile")
 
 case "$MatlabMode" in
     (0)

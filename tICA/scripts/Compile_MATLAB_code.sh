@@ -9,7 +9,7 @@ function compile_function()
     shift 1
     local outdir="$scriptdir"/Compiled_"$funcName"
     mkdir -p "$outdir"
-    "$MATLAB_HOME"/bin/mcc -m -v "$funcName".m "$@" -d "$outdir"
+    "$MATLAB_HOME"/bin/mcc -m -R -nodisplay -v "$funcName".m "$@" -d "$outdir"
 }
 
 #addpath() adds to the front, while -I adds to the back, so reverse the order

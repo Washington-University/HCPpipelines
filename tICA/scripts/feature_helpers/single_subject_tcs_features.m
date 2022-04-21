@@ -12,9 +12,14 @@ var_all=zeros(1,8);
 %     residuals=infer(estmdl,double(ss_tcs_data)');
 %     var_all(j_order)=var(residuals);
 % end
+% for j_order=1:8
+%     sys=ar(double(ss_tcs_data'),j_order);
+%     var_all(j_order)=sys.NoiseVariance;
+% end
+var_all=zeros(1,8);
 for j_order=1:8
-    sys=ar(double(ss_tcs_data'),j_order);
-    var_all(j_order)=sys.NoiseVariance;
+    [~,e,~]=aryule(double(ss_tcs_data'),j_order);
+    var_all(j_order)=e;
 end
 ss_tcs_stat(1,1:2)=polyfit(1:8,var_all,1);% relation between order of AR and goodness of fit
 tmp=aryule(ss_tcs_data,1);
