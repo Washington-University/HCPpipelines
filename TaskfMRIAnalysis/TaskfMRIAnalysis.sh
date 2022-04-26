@@ -66,7 +66,7 @@ function usage()
 {
     #header text
     echo "
-$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) analyses, and Level2 (single subject-level) analysis as specified.
+$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) and Level2 (single subject-level, across scans) analyses as specified.
 
 Usage: $log_ToolName arguments...
 [ ] = optional; < > = user supplied value
@@ -85,11 +85,16 @@ Usage: $log_ToolName arguments...
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'Path' '/path/to/study/folder' "directory containing imaging data for all subjects"
 opts_AddMandatory '--subject' 'Subject' 'SubjectID' ""
-opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of task fMRI scan names, which are the prefixes of the time series filename for the TaskName task. Multiple task fMRI scan names should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
-opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of design names, which are the prefixes of the fsf filenames for each scan run. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design names by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
-opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
-opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
-opts_AddOptional '--summaryname' 'SummaryName' 'tfMRI_TaskName/DesignName_TaskName' "Naming convention for single-subject summary directory. Will not create summary directory for Level1 analysis if this flag is missing or set to NONE. Naming for Level1 summary directories should match naming of Level2 summary directories. Default when running Level2 analysis is derived from --lvl2task and --lvl2fsf options \"tfMRI_TaskName/DesignName_TaskName\"" 'NONE'
+opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of fMRI scan names of a given task (as specified in 'fMRIVolume'), which represent the prefixes of the filenames for that task (see also --procstring). Multiple scans (of the same task type) should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
+
+#MPH (3/18/2022: Should perhaps redesign things so that user provides the name of the Level1 and Level2 fsf files directly, rather than a prefix with a hard-coded tail.
+opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of associated prefixes of fsf templates ('design files') for each scan. Should contain same number of entries as number of scans in --lvl1tasks option. (N-th DesignName will be used for N-th ScanName.) Separate multiple DesignNames by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks. NOTE: TaskAnalysis pipeline is currently (hard) coded with the assumption that the fsf template files are named <DesignName>_hp200_s4_level1.fsf"
+opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'Level2DirName' "Name of the directory in which all Level2 outputs will be written (i.e., 'Level2' combines multiple scans of same task within subject). Default is 'NONE', which means that no Level2 analysis will conducted." 'NONE'
+opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'Level2DesignName' "Prefix of fsf template for the Level2 analysis. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task. NOTE: TaskAnalysis pipeline is currently (hard) coded with the assumption that the Level2 fsf template file is name <Level2DesignName>_hp200_s4_level2.fsf"
+
+opts_AddOptional '--summarydir' 'SummaryDir' 'SummaryDir' "Name of the single-subject summary directory. Provides a mechanism to generate identical file and directory structure for both 'Level1' and 'Level2' analyses, so as to facilitate group level analyses across subjects that had either one or multiple runs collected for given task. Will not create summary directory for Level1 analysis if this flag is missing or set to NONE. Naming for Level1 summary directories should match naming of Level2 summary directories. When running a Level2 analysis, default is to use --lvl2task" 'NONE'
+opts_AddOptional '--summaryprefix' 'SummaryPrefix' 'SummaryPrefix' "Prefix for the files inside SummaryDir. Should match --lvl2fsf for those subjects that have a 'Level2' analysis" 'NONE'
+
 opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in <SubjectID>/MNINonLinear/Results/<ScanName>. Default='NONE'" 'NONE'
 opts_AddOptional '--origsmoothingFWHM' 'OriginalSmoothingFWHM' 'number' "Value (in mm FWHM) of smoothing applied during surface registration in fMRISurface pipeline. Default=2, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
 opts_AddOptional '--finalsmoothingFWHM' 'FinalSmoothingFWHM' 'number' "Value (in mm FWHM) of total desired smoothing, reached by calculating the additional smoothing required and applying that additional amount to data previously smoothed in fMRISurface. Default=2, which is no additional smoothing above HCP minimal preprocessing pipelines outputs." '2'
@@ -274,7 +279,7 @@ then
 fi
 
 
-if [ "$LevelTwofMRIName" != "NONE" ] || [ "$SummaryName" != "NONE" ];
+if [ "$LevelTwofMRIName" != "NONE" ] || [ "$SummaryDir" != "NONE" ];
 then
 	log_Msg "CREATE SUMMARY DIRECTORY: Creating subject-level summary directory from requested analyses."
 	${HCPPIPEDIR_tfMRIAnalysis}/makeSubjectTaskSummary.sh \
@@ -284,7 +289,8 @@ then
 		--lvl1fsfs=$LevelOnefsfNames \
 		--lvl2task=$LevelTwofMRIName \
 		--lvl2fsf=$LevelTwofsfName \
-		--summaryname=$SummaryName \
+		--summarydir=$SummaryDir \
+        --summaryprefix=$SummaryPrefix \
 		--confound=$Confound \
 		--origsmoothingFWHM=$OriginalSmoothingFWHM \
 		--finalsmoothingFWHM=$FinalSmoothingFWHM \
