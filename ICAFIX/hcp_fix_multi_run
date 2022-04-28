@@ -744,22 +744,13 @@ if [ "X${TrainingData}" != X ]; then
 	
 else
 	# User has not specified a training data file
-	#TSC: so, let's look for it and give a useful error, rather than pretending they didn't want to do what they said
-	#TSC: if you WANT to use, say, hp150 with hp2000 training, it should be explicitly requested by the user
-	#TSC: exception: we will recommend polynomial detrending for performance, and hp 2000 is already trained, and largely indistinguishable
 	log_Msg "training data file not specified"
-	training_hp="${hp}"
-	if [[ ! -f "${FSL_FIXDIR}/training_files/HCP_hp${hp}.RData" ]]; then
-	    if [[ "${pdFlag}" == "TRUE" && "${hp}" != "pd0" ]]; then  # "hp=pd0" would be a demeaning only, so doesn't qualify here
-	        #hack: hp 2000 is close enough to a polynomial detrend, but the latter is far faster
-	        #we know the hp 2000 training data exists, so use it if we don't see an explicit hppd# set
-	        training_hp=2000
-	    else
-    	    log_Err_Abort "no standard training data found for specified high pass (${hp}), please specify training data manually or use a standard high pass setting"
-	    fi
+	TrainingData="${FSL_FIXDIR}"/training_files/HCP_Style_Single_Multirun_Dedrift.RData
+	if [[ ! -f "$TrainingData" ]]; then
+		log_Err_Abort "default training file '$TrainingData' not found, please update your fix installation"
 	fi
-	TrainingData=${FSL_FIXDIR}/training_files/HCP_hp${training_hp}.RData
 fi
+
 log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command

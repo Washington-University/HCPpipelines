@@ -155,7 +155,8 @@ main() {
 	domot=FALSE
 	
 	# set training data file
-	TrainingData=HCP_hp2000.RData
+	SRTrainingData=HCP_hp2000.RData
+	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
@@ -187,7 +188,7 @@ main() {
 
 				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
@@ -222,7 +223,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${MRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
