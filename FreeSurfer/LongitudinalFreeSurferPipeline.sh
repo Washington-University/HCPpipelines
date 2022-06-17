@@ -158,22 +158,21 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   [--seed=<recon-all seed value>]
 
-  [--extra-reconall-arg=token] (repeatable)
+  [--extra-reconall-arg-base=token] (repeatable)
       Generic single token (no whitespace) argument to pass to recon-all.
-      Provides a mechanism to:
-         (i) customize the recon-all command
-         (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)
-      If you want to avoid running all the stages inherent to the '-all' flag in recon-all,
-         you also need to include the --existing-subject flag.
+      Provides a mechanism to customize the recon-all command for base template preparation.
       The token itself may include dashes and equal signs (although Freesurfer doesn't currently use
          equal signs in its argument specification).
-         e.g., [--extra-reconall-arg=-3T] is the correct syntax for adding the stand-alone "-3T" flag to recon-all.
-               But, [--extra-reconall-arg="-norm3diters 3"] is NOT acceptable.
+         e.g., [--extra-reconall-arg-base=-3T] is the correct syntax for adding the stand-alone "-3T" flag to recon-all.
+               But, [--extra-reconall-arg-base="-norm3diters 3"] is NOT acceptable.
       For recon-all flags that themselves require an argument, you can handle that by specifying
-         --extra-reconall-arg multiple times (in the proper sequential fashion).
-         e.g., [--extra-reconall-arg=-norm3diters --extra-reconall-arg=3]
+         --extra-reconall-arg-base multiple times (in the proper sequential fashion).
+         e.g., [--extra-reconall-arg-base=-norm3diters --extra-reconall-arg=3]
          will be translated to "-norm3diters 3" when passed to recon-all
 
+  [--extra-reconall-arg-long=token] (repeatable)
+      Generic single token (no whitespace) argument to pass to recon-all.
+      Similar as above, except that it provides a mechanism to customize the recon-all command for the actual longitudinal processing.
 
 PARAMETERs can also be specified positionally as:
 
@@ -197,7 +196,8 @@ get_options()
   unset p_sessions
   unset p_template
   unset p_seed
-  unset p_extra_reconall_args
+  unset p_extra_reconall_args_base
+  unset p_extra_reconall_args_long
 
   # parse arguments
   local num_args=${#arguments[@]}
@@ -237,9 +237,14 @@ get_options()
         p_seed=${argument#*=}
         index=$(( index + 1 ))
         ;;
-      --extra-reconall-arg=*)
-        extra_reconall_arg=${argument#*=}
-        p_extra_reconall_args+="${extra_reconall_arg} "
+      --extra-reconall-arg-base=*)
+        extra_reconall_arg_base=${argument#*=}
+        p_extra_reconall_args_base+="${extra_reconall_arg_base} "
+        index=$(( index + 1 ))
+        ;;
+      --extra-reconall-arg-long=*)
+        extra_reconall_arg_long=${argument#*=}
+        p_extra_reconall_args_long+="${extra_reconall_arg_long} "
         index=$(( index + 1 ))
         ;;
       *)
@@ -288,8 +293,11 @@ get_options()
   if [ ! -z "${p_seed}" ]; then
     log_Msg "Seed: ${p_seed}"
   fi
-  if [ ! -z "${p_extra_reconall_args}" ]; then
-    log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
+  if [ ! -z "${p_extra_reconall_args_base}" ]; then
+    log_Msg "Extra recon-all base arguments: ${p_extra_reconall_args_base}"
+  fi
+  if [ ! -z "${p_extra_reconall_args_long}" ]; then
+    log_Msg "Extra recon-all long arguments: ${p_extra_reconall_args_long}"
   fi
 
   if [ ${error_count} -gt 0 ]; then
@@ -304,7 +312,8 @@ main()
   local Sessions
   local Template
   local recon_all_seed
-  local extra_reconall_args
+  local extra_reconall_args_base
+  local extra_reconall_args_long
 
   # ----------------------------------------------------------------------
   log_Msg "Starting main functionality"
@@ -322,8 +331,11 @@ main()
   if [ ! -z "${p_seed}" ]; then
     recon_all_seed="${p_seed}"
   fi
-  if [ ! -z "${p_extra_reconall_args}" ]; then
-    extra_reconall_args="${p_extra_reconall_args}"
+  if [ ! -z "${p_extra_reconall_args_base}" ]; then
+    extra_reconall_args_base="${p_extra_reconall_args_base}"
+  fi
+  if [ ! -z "${p_extra_reconall_args_long}" ]; then
+    extra_reconall_args_long="${p_extra_reconall_args_long}"
   fi
 
   # ----------------------------------------------------------------------
@@ -334,17 +346,18 @@ main()
   log_Msg "Sessions: ${Sessions}"
   log_Msg "Template: ${Template}"
   log_Msg "recon_all_seed: ${recon_all_seed}"
-  log_Msg "extra_reconall_args: ${extra_reconall_args}"
+  log_Msg "extra_reconall_args_base: ${extra_reconall_args_base}"
+  log_Msg "extra_reconall_args_long: ${extra_reconall_args_long}"
 
   # ----------------------------------------------------------------------
   log_Msg "Preparing the folder structure"
   # ----------------------------------------------------------------------
   Sessions=`echo ${Sessions} | sed 's/@/ /g'`
   log_Msg "After delimiter substitution, Sessions: ${Sessions}"
-  mkdir -p "${SubjectDIR}/${SubjectID}_Base_${Template}/T1w"
+  mkdir -p "${SubjectDIR}/${SubjectID}.Base.${Template}/T1w"
   for Session in ${Sessions} ; do
     Source="${SubjectDIR}/${Session}/T1w/${Session}"
-    Target="${SubjectDIR}/${SubjectID}_Base_${Template}/T1w/${Session}"
+    Target="${SubjectDIR}/${SubjectID}.Base.${Template}/T1w/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
@@ -352,13 +365,13 @@ main()
   # ----------------------------------------------------------------------
   log_Msg "Creating the base template"
   # ----------------------------------------------------------------------
-  LongDIR="${SubjectDIR}/${SubjectID}_Base_${Template}/T1w"
+  LongDIR="${SubjectDIR}/${SubjectID}.Base.${Template}/T1w"
 
   # backup base dir if it exists
   if [ -d "${LongDIR}/Base" ]; then
    TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-    log_Msg "Base dir: ${LongDIR}/Base already exists, backing up to ${LongDIR}/Base_${TimeStamp}"
-    mv ${LongDIR}/Base ${LongDIR}/Base_${TimeStamp}
+    log_Msg "Base dir: ${LongDIR}/Base already exists, backing up to ${LongDIR}/Base.${TimeStamp}"
+    mv ${LongDIR}/Base ${LongDIR}/Base.${TimeStamp}
   fi
 
   recon_all_cmd="recon-all.v6.hires"
@@ -373,8 +386,8 @@ main()
     recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
   fi
 
-  if [ ! -z "${extra_reconall_args}" ]; then
-    recon_all_cmd+=" ${extra_reconall_args}"
+  if [ ! -z "${extra_reconall_args_base}" ]; then
+    recon_all_cmd+=" ${extra_reconall_args_base}"
   fi
 
   log_Msg "...recon_all_cmd: ${recon_all_cmd}"
@@ -392,6 +405,9 @@ main()
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${LongDIR}"
     recon_all_cmd+=" -long ${Session} Base -all"
+    if [ ! -z "${extra_reconall_args_long}" ]; then
+      recon_all_cmd+=" ${extra_reconall_args_long}"
+    fi
     log_Msg "...recon_all_cmd: ${recon_all_cmd}"
     ${recon_all_cmd}
     return_code=$?
@@ -405,7 +421,7 @@ main()
   # ----------------------------------------------------------------------
 
   for Session in ${Sessions} ; do
-    mv "${LongDIR}/${Session}.long.base" "${LongDIR}/${Session}_Long_${Template}"
+    mv "${LongDIR}/${Session}.long.Base" "${LongDIR}/${Session}.Long.${Template}"
   done
 
   # ----------------------------------------------------------------------
