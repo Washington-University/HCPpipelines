@@ -417,14 +417,6 @@ main()
   done
 
   # ----------------------------------------------------------------------
-  log_Msg "Preparing the final folder structure"
-  # ----------------------------------------------------------------------
-
-  for Session in ${Sessions} ; do
-    mv "${LongDIR}/${Session}.long.Base" "${LongDIR}/${Session}.Long.${Template}"
-  done
-
-  # ----------------------------------------------------------------------
   log_Msg "Completing main functionality"
   # ----------------------------------------------------------------------
 }
