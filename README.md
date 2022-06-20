@@ -13,7 +13,7 @@ For further information, please see:
 * Other documentation in the project [Wiki][wiki]
 
 Discussion of HCP Pipeline usage and improvements can be posted to the 
-hcp-users discussion list. Sign up for the hcp-users [GoogleGroup] 
+hcp-users discussion list. Sign up for the hcp-users [GoogleGroup] [GoogleGroup]
 and click Sign In. For instructions on joining without a Google account: [hcp-users-join-wiki]
 
 
