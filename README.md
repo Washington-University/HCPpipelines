@@ -13,7 +13,7 @@ For further information, please see:
 * Other documentation in the project [Wiki][wiki]
 
 Discussion of HCP Pipeline usage and improvements can be posted to the 
-hcp-users discussion list. Sign up for the hcp-users [GoogleGroup] [GoogleGroup]
+hcp-users discussion list. Sign up for the hcp-users [GoogleGroup]
 and click Sign In. For instructions on joining without a Google account: [hcp-users-join-wiki]
 
 
@@ -24,5 +24,5 @@ and click Sign In. For instructions on joining without a Google account: [hcp-us
 [release-install-use]: https://github.com/Washington-University/HCPpipelines/wiki/Installation-and-Usage-Instructions
 [FAQ]: https://github.com/Washington-University/Pipelines/wiki/FAQ
 [wiki]: https://github.com/Washington-University/Pipelines/wiki
-[GoogleGroup]: [https://groups.google.com/u/2/a/humanconnectome.org/g/hcp-users]
+[GoogleGroup]: https://groups.google.com/u/2/a/humanconnectome.org/g/hcp-users
 [hcp-users-join-wiki]: https://wiki.humanconnectome.org/pages/viewpage.action?pageId=140509193
