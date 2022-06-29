@@ -354,10 +354,10 @@ main()
   # ----------------------------------------------------------------------
   Sessions=`echo ${Sessions} | sed 's/@/ /g'`
   log_Msg "After delimiter substitution, Sessions: ${Sessions}"
-  mkdir -p "${SubjectDIR}/${SubjectID}.Base.${Template}/T1w"
+  mkdir -p "${SubjectDIR}/${SubjectID}.base.${Template}/T1w"
   for Session in ${Sessions} ; do
     Source="${SubjectDIR}/${Session}/T1w/${Session}"
-    Target="${SubjectDIR}/${SubjectID}.Base.${Template}/T1w/${Session}"
+    Target="${SubjectDIR}/${SubjectID}.base.${Template}/T1w/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
@@ -365,18 +365,18 @@ main()
   # ----------------------------------------------------------------------
   log_Msg "Creating the base template"
   # ----------------------------------------------------------------------
-  LongDIR="${SubjectDIR}/${SubjectID}.Base.${Template}/T1w"
+  LongDIR="${SubjectDIR}/${SubjectID}.base.${Template}/T1w"
 
   # backup base dir if it exists
-  if [ -d "${LongDIR}/Base" ]; then
+  if [ -d "${LongDIR}/base" ]; then
    TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-    log_Msg "Base dir: ${LongDIR}/Base already exists, backing up to ${LongDIR}/Base.${TimeStamp}"
-    mv ${LongDIR}/Base ${LongDIR}/Base.${TimeStamp}
+    log_Msg "Base dir: ${LongDIR}/base already exists, backing up to ${LongDIR}/base.${TimeStamp}"
+    mv ${LongDIR}/base ${LongDIR}/base.${TimeStamp}
   fi
 
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
-  recon_all_cmd+=" -base Base"
+  recon_all_cmd+=" -base base"
   for Session in ${Sessions} ; do
     recon_all_cmd+=" -tp ${Session}"
   done
@@ -404,7 +404,7 @@ main()
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${LongDIR}"
-    recon_all_cmd+=" -long ${Session} Base -all"
+    recon_all_cmd+=" -long ${Session} base -all"
     if [ ! -z "${extra_reconall_args_long}" ]; then
       recon_all_cmd+=" ${extra_reconall_args_long}"
     fi
@@ -414,6 +414,9 @@ main()
     if [ "${return_code}" != "0" ]; then
       log_Err_Abort "recon-all command failed with return_code: ${return_code}"
     fi
+
+    log_Msg "Organizing the folder structure for: ${Session}"
+    ln -sf "${SubjectDIR}/${Session}/T1w/${Session}.long.${Template}" "${LongDIR}/${Session}.long.${Template}"
   done
 
   # ----------------------------------------------------------------------
