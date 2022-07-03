@@ -413,10 +413,6 @@ main()
     return_code=$?
     if [ "${return_code}" != "0" ]; then
       log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-    fi
-
-    log_Msg "Organizing the folder structure for: ${Session}"
-    ln -sf "${SubjectDIR}/${Session}/T1w/${Session}.long.${Template}" "${LongDIR}/${Session}.long.${Template}"
   done
 
   # ----------------------------------------------------------------------
