@@ -354,10 +354,10 @@ main()
   # ----------------------------------------------------------------------
   Sessions=`echo ${Sessions} | sed 's/@/ /g'`
   log_Msg "After delimiter substitution, Sessions: ${Sessions}"
-  mkdir -p "${SubjectDIR}/${SubjectID}.base.${Template}/T1w"
+  mkdir -p "${SubjectDIR}/${SubjectID}.${Template}/T1w"
   for Session in ${Sessions} ; do
     Source="${SubjectDIR}/${Session}/T1w/${Session}"
-    Target="${SubjectDIR}/${SubjectID}.base.${Template}/T1w/${Session}"
+    Target="${SubjectDIR}/${SubjectID}.${Template}/T1w/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
