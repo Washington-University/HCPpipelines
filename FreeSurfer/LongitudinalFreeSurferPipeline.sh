@@ -154,7 +154,7 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   --subject=<subject ID>
   --sessions=<@ delimited list of session ids>
-  --template=<template ID>
+  --template=<name of the created base template>
 
   [--seed=<recon-all seed value>]
 
@@ -363,20 +363,20 @@ main()
   done
 
   # ----------------------------------------------------------------------
-  log_Msg "Creating the base template"
+  log_Msg "Creating the template"
   # ----------------------------------------------------------------------
-  LongDIR="${SubjectDIR}/${SubjectID}.base.${Template}/T1w"
+  LongDIR="${SubjectDIR}/${SubjectID}.${Template}/T1w"
 
-  # backup base dir if it exists
-  if [ -d "${LongDIR}/base" ]; then
-   TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-    log_Msg "Base dir: ${LongDIR}/base already exists, backing up to ${LongDIR}/base.${TimeStamp}"
-    mv ${LongDIR}/base ${LongDIR}/base.${TimeStamp}
+  # backup template dir if it exists
+  if [ -d "${LongDIR}/${Template}" ]; then
+    TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
+    log_Msg "Template dir: ${LongDIR}/${Template} already exists, backing up to ${LongDIR}/${Template}.${TimeStamp}"
+    mv ${LongDIR}/${Template} ${LongDIR}/${Template}.${TimeStamp}
   fi
 
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
-  recon_all_cmd+=" -base base"
+  recon_all_cmd+=" -base ${Template}"
   for Session in ${Sessions} ; do
     recon_all_cmd+=" -tp ${Session}"
   done
@@ -404,7 +404,7 @@ main()
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${LongDIR}"
-    recon_all_cmd+=" -long ${Session} base -all"
+    recon_all_cmd+=" -long ${Session} ${Template} -all"
     if [ ! -z "${extra_reconall_args_long}" ]; then
       recon_all_cmd+=" ${extra_reconall_args_long}"
     fi
@@ -413,6 +413,7 @@ main()
     return_code=$?
     if [ "${return_code}" != "0" ]; then
       log_Err_Abort "recon-all command failed with return_code: ${return_code}"
+    fi
   done
 
   # ----------------------------------------------------------------------
