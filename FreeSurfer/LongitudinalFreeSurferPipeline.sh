@@ -354,23 +354,23 @@ main()
   # ----------------------------------------------------------------------
   Sessions=`echo ${Sessions} | sed 's/@/ /g'`
   log_Msg "After delimiter substitution, Sessions: ${Sessions}"
-  mkdir -p "${SubjectDIR}/${SubjectID}.${Template}/T1w"
+  LongDIR="${SubjectDIR}/${SubjectID}.long.${Template}/T1w"
+  mkdir -p "${LongDIR}"
   for Session in ${Sessions} ; do
     Source="${SubjectDIR}/${Session}/T1w/${Session}"
-    Target="${SubjectDIR}/${SubjectID}.${Template}/T1w/${Session}"
+    Target="${LongDIR}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
 
   # ----------------------------------------------------------------------
-  log_Msg "Creating the template"
+  log_Msg "Creating the base template: ${Template}"
   # ----------------------------------------------------------------------
-  LongDIR="${SubjectDIR}/${SubjectID}.${Template}/T1w"
 
   # backup template dir if it exists
   if [ -d "${LongDIR}/${Template}" ]; then
     TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-    log_Msg "Template dir: ${LongDIR}/${Template} already exists, backing up to ${LongDIR}/${Template}.${TimeStamp}"
+    log_Msg "Base template dir: ${LongDIR}/${Template} already exists, backing up to ${LongDIR}/${Template}.${TimeStamp}"
     mv ${LongDIR}/${Template} ${LongDIR}/${Template}.${TimeStamp}
   fi
 
@@ -414,6 +414,12 @@ main()
     if [ "${return_code}" != "0" ]; then
       log_Err_Abort "recon-all command failed with return_code: ${return_code}"
     fi
+
+    log_Msg "Organizing the folder structure for: ${Session}"
+    # create the symlink
+    ln -sf "${LongDIR}/${Session}.long.${Template}" "${SubjectDIR}/${Session}/T1w/${Session}.long.${Template}"
+    # remove the symlink in the subject's folder
+    rm -rf "${LongDIR}/${Session}"
   done
 
   # ----------------------------------------------------------------------
