@@ -76,9 +76,10 @@ PARAMETERs are [ ] = optional; < > = user supplied value
        timeseries, only required when using --multirun-fix-names.
   [--multirun-fix-extract-names=<day1run1@day1run2%day2run1@day2run2>] @ and % delimited list of lists of
        fMRIName strings to extract, one list for each multi-run ICA+FIX group in --multirun-fix-names (use
-       NONE to skip a group), only required when using --multirun-fix-extract-concat-names.  Exists to
-       enable extraction of a subset of the runs in a multi-run ICA+FIX group into a new concatenated
-       series (which is named using --multirun-fix-extract-concat-names).
+       a NONE instead of the group's runs and a NONE in --multirun-fix-extract-concat-names to skip this
+       for a group), only required when using --multirun-fix-extract-concat-names.  Exists to enable
+       extraction of a subset of the runs in a multi-run ICA+FIX group into a new concatenated series
+       (which is then named using --multirun-fix-extract-concat-names).
   [--multirun-fix-extract-concat-names=<day1_newconcat@day2_newconcat>] @-delimited list of names for the
        concatenated extracted timeseries, one for each multi-run ICA+FIX group (i.e. name in
        --multirun-fix-concat-names; use NONE to skip a group).
@@ -295,6 +296,7 @@ get_options()
 		log_Msg "Registration Name: ${p_RegName}"
 	fi
 	
+	#code expects empty string, handle some magic NONEs here
 	if [[ "$p_DeDriftRegFiles" == NONE ]]
 	then
 		p_DeDriftRegFiles=""
@@ -326,7 +328,8 @@ get_options()
 		log_Msg "list of Myelin maps to be resampled: ${p_MyelinMaps}"
 	fi
 
-	log_Msg "list of MRfix scans: ${p_mrFIXNames}"
+	log_Msg "list of MR FIX scans: ${p_mrFIXNames}"
+	log_Msg "MR FIX concat names: ${p_mrFIXConcatNames}"
 	log_Msg "list of fix scans: ${p_fixNames}"
 	log_Msg "list of non-fix scans: ${p_dontFixNames}"
 
@@ -471,6 +474,7 @@ main()
 	local mrFIXExtractExtraRegNames="${22}"
 	local mrFIXExtractDoVol="${23}"
 
+	#code expects empty string, transform magic NONEs into empty
 	if [ "${MyelinTargetFile}" = "NONE" ]; then
 		MyelinTargetFile=""
 	fi
@@ -503,6 +507,7 @@ main()
 	log_Msg "dontFixNames: ${dontFixNames}"
 	log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 	log_Msg "HighPass: ${HighPass}"
+	log_Msg "MotionRegression: ${MotionRegression}"
 	log_Msg "MyelinTargetFile: ${MyelinTargetFile}"
 	log_Msg "InRegName: ${InRegName}"
 	log_Msg "MatlabRunMode: ${MatlabRunMode}"
@@ -520,6 +525,7 @@ main()
 	Maps=`echo "$Maps" | sed s/"@"/" "/g`
 	log_Msg "After delimiter substitution, Maps: ${Maps}"
 
+    #these elses result in empty when given the empty string, make NONE do the same
     if [[ "${MyelinMaps}" == "NONE" ]]
     then
         MyelinMaps=""
@@ -995,7 +1001,7 @@ main()
                             --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
                             --surf-reg-name="$regname")
             
-            if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE ]]
+            if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
             then
                 mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
                 
@@ -1111,3 +1117,4 @@ else
 	main "$@"
 
 fi
+
