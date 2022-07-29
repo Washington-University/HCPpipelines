@@ -476,7 +476,7 @@ main() {
 
 	# if the number of slices are odd, check that the user has a way to deal with that
 	if [ "${EnsureEvenSlices}" == "false" ] && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
-		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
 			log_Msg "Either supply a topup configuration file that doesn't use subsampling (e.g., FSL's 'b02b0_1.cnf') using the --topup-config-file=<file> flag (recommended)"
@@ -533,19 +533,17 @@ main() {
 	fi
 
 	if [ "${EnsureEvenSlices}" == "true" ]; then
-		topupdir=${outdir}/topup
-		eddydir=${outdir}/eddy
-		dimz=$(${FSLDIR}/bin/fslval ${topupdir}/Pos_b0 dim3)
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			echo "Removing one slice from data to get even number of slices"
 			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
-				${FSLDIR}/bin/fslroi ${topupdir}/${filename} ${topupdir}/${filename}_tmp 0 -1 0 -1 1 -1
-				${FSLDIR}/bin/imrm ${topupdir}/${filename}
-				${FSLDIR}/bin/immv ${topupdir}/${filename}_tmp ${topupdir}/${filename}
+				${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
+				${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
+				${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
 			done
-			${FSLDIR}/bin/fslroi ${eddydir}/Pos_Neg ${eddydir}/Pos_Neg_tmp 0 -1 0 -1 1 -1
-			${FSLDIR}/bin/imrm ${eddydir}/Pos_Neg
-			${FSLDIR}/bin/immv ${eddydir}/Pos_Neg_tmp ${eddydir}/Pos_Neg
+			${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
+			${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
+			${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
 		else
 			echo "Skipping slice removal, because data already has an even number of slices"
 		fi
