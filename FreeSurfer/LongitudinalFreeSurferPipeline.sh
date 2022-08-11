@@ -418,6 +418,12 @@ main()
     log_Msg "Organizing the folder structure for: ${Session}"
     # create the symlink
     ln -sf "${LongDIR}/${Session}.long.${Template}" "${SubjectDIR}/${Session}/T1w/${Session}.long.${Template}"
+  done
+
+  # ----------------------------------------------------------------------
+  log_Msg "Cleaning up the folder structure"
+  # ----------------------------------------------------------------------
+  for Session in ${Sessions} ; do
     # remove the symlink in the subject's folder
     rm -rf "${LongDIR}/${Session}"
   done
