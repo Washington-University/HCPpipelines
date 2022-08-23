@@ -10,7 +10,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
@@ -34,9 +34,12 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddMandatory  '--noise-list' 'NoiseList' 'file' "the list of temporal ICA components to remove"
 opts_AddMandatory  '--timeseries' 'Timeseries' 'file' "the single subject temporal ICA component timecourses"
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
+opts_AddOptional '--subject-concat-timeseries' 'InputConcat' 'fmri_concat' "the concatenated timeseries, if MR FIX was used, requires --fix-high-pass"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
+#this is only needed to build the different proc string of the _vn and _mean files, and therefore only when using --subject-concat-timeseries
+opts_AddOptional '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX, required when using --subject-concat-timeseries' '--melodic-high-pass'
 #outputs
 opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like _hp2000_clean_tclean"
 #opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
@@ -57,6 +60,11 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+if [[ "$HighPass" == "" && "$InputConcat" != "" ]]
+then
+    log_Err_Abort "--fix-high-pass is required when using MR FIX data"
+fi
 
 #sanity check boolean strings and convert to 1 and 0
 DoFixBias=$(opts_StringToBool "$DoFixBiasString")
@@ -106,7 +114,13 @@ then
     tempfiles_add "$tempname.volinput.txt" "$tempname.volinputvn.txt"
 fi
 volmergeargs=()
-IFS='@' read -a InputArray <<< "$InputList"
+
+if [[ "$InputConcat" == "" ]]
+then
+    IFS='@' read -a InputArray <<< "$InputList"
+else
+    InputArray=("$InputConcat")
+fi
 #use newline-delimited text files for matlab
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
 for fmri in "${InputArray[@]}"
@@ -120,32 +134,42 @@ do
     then
         echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_real_bias.dscalar.nii" >> "$tempname.goodbias.txt"
     fi
+
     if ((DoVol))
     then
         echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" >> "$tempname.volinput.txt"
         echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
         echo "$MNIFolder/Results/$fmri/${fmri}${OutString}.nii.gz" >> "$tempname.voloutputnames.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${OutString}_vn.nii.gz" >> "$tempname.volvnoutnames.txt"
+
         if ((DoFixBias))
         then
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
         fi
-        echo "$MNIFolder/Results/$fmri/${fmri}${OutString}_vn.nii.gz" >> "$tempname.volvnoutnames.txt"
         
         tempfiles_add "$tempname.$fmri.min.nii.gz" "$tempname.$fmri.max.nii.gz" "$tempname.$fmri.goodvox.nii.gz"
         wb_command -volume-reduce "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" MIN "$tempname.$fmri.min.nii.gz"
         wb_command -volume-reduce "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" MAX "$tempname.$fmri.max.nii.gz"
-        wb_command -volume-math 'min != max' "$tempname.$fmri.goodvox.nii.gz" \
+        #"nan != nan" evaluates to true, so use < instead just in case
+        wb_command -volume-math 'min < max' "$tempname.$fmri.goodvox.nii.gz" \
             -var min "$tempname.$fmri.min.nii.gz" \
             -var max "$tempname.$fmri.max.nii.gz"
         volmergeargs+=(-volume "$tempname.$fmri.goodvox.nii.gz")
     fi
 done
+#try to catch copy paste errors that use a loop-specific variable
+unset fmri
 if ((DoVol))
 then
     VolCiftiTemplate="$tempname.dscalar.nii"
     tempfiles_add "$VolCiftiTemplate" "$tempname.volciftitemplate.label.nii.gz" "$tempname.volciftilabel.txt" "$tempname.goodvox_all.nii.gz" "$tempname.goodvox_min.nii.gz"
-    wb_command -volume-merge "$tempname.goodvox_all.nii.gz" "${volmergeargs[@]}"
-    wb_command -volume-reduce "$tempname.goodvox_all.nii.gz" MIN "$tempname.goodvox_min.nii.gz"
+    if ((${#InputArray[@]} > 1))
+    then
+        wb_command -volume-merge "$tempname.goodvox_all.nii.gz" "${volmergeargs[@]}"
+        wb_command -volume-reduce "$tempname.goodvox_all.nii.gz" MIN "$tempname.goodvox_min.nii.gz"
+    else
+        cp "$tempname.${InputArray[0]}.goodvox.nii.gz" "$tempname.goodvox_min.nii.gz"
+    fi
     
     #make volume cifti template file
     echo -e "OTHER\n1 0 0 0 0" > "$tempname.volciftilabel.txt"
@@ -153,9 +177,9 @@ then
     wb_command -cifti-create-dense-scalar "$VolCiftiTemplate" -volume "$tempname.goodvox_min.nii.gz" "$tempname.volciftitemplate.label.nii.gz"
 fi
 
-#only used if DoFixBias
-OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
-OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
+#only used if DoFixBias - old bias is the same across all runs?
+OldBias="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}_bias.dscalar.nii"
+OldVolBias="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_bias.nii.gz"
 
 #shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
@@ -212,6 +236,136 @@ then
     do
         fslcpgeom "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" "$MNIFolder/Results/$fmri/${fmri}${OutString}.nii.gz"        
         fslcpgeom "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" "$MNIFolder/Results/$fmri/${fmri}${OutString}_vn.nii.gz"
+    done
+fi
+
+fMRIProcSTRING="_Atlas$RegString$ProcString"
+MRFixConcatName="$InputConcat"
+IFS='@' read -a SplitArray <<< "$InputList"
+
+if [[ "$InputConcat" != "" ]]
+then
+    curStart=1
+    #write out fixed versions of _mean, like the matlab now writes out out fixed _vn files
+    #the correct _vn, _mean files don't have "_clean" like fMRIProcString does
+    for fMRIName in "${SplitArray[@]}"
+    do
+        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+        then
+            curLength=$(wb_command -file-information -only-number-of-maps "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii")
+            tempfiles_create tICAPipeline-mrsplit-XXXXXX.dtseries.nii tempfile
+            wb_command -cifti-merge "$tempfile" \
+                -cifti "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}.dtseries.nii" \
+                    -column "$curStart" -up-to $((curStart + curLength - 1))
+            useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii"
+            if ((DoFixBias))
+            then
+                #generate and use new-BC corrected mean
+                #TODO: naming conventions
+                useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
+                useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_vn.dscalar.nii"
+                wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
+                    -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
+                    -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
+                    -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
+                wb_command -cifti-math 'origvn * oldbias / newbias' "$useOrig" \
+                    -var origvn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii" \
+                    -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
+                    -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
+            fi
+            #use the new _vn written by the matlab part
+            wb_command -cifti-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
+                -var split "$tempfile" \
+                -var mr_vn "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}_vn.dscalar.nii" -select 1 1 -repeat \
+                -var orig_vn "$useOrig" -select 1 1 -repeat \
+                -var mean "$useMean" -select 1 1 -repeat
+                       
+            #don't leave these large temporary timeseries around longer than needed
+            rm -f "$tempfile"
+            
+            if ((DoVol))
+            then
+                tempfiles_create tICAPipeline-mrsplit-XXXXXX.nii.gz tempfilevol
+                wb_command -volume-merge "$tempfilevol" \
+                    -volume "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}.nii.gz" -subvolume "$curStart" -up-to $((curStart + curLength - 1))
+                useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz"
+                if ((DoFixBias))
+                then
+                    #TODO: naming conventions
+                    useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
+                    useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_vn.nii.gz"
+                    #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
+                    wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
+                        -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
+                        -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
+                        -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
+                        -fixnan 0
+                    wb_command -volume-math 'origvn * oldbias / newbias' "$useOrigVol" \
+                        -var origvn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz" \
+                        -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
+                        -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
+                        -fixnan 0
+                fi
+                wb_command -volume-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
+                    -var split "$tempfilevol" \
+                    -var mr_vn $MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}_vn.nii.gz -subvolume 1 -repeat \
+                    -var orig_vn "$useOrigVol" -subvolume 1 -repeat \
+                    -var mean "$useMeanVol" -subvolume 1 -repeat \
+                    -fixnan 0
+                
+                rm -f "$tempfilevol"
+            fi
+            
+            curStart=$((curStart + curLength))
+        fi
+    done
+else
+    for fMRIName in "${SplitArray[@]}"
+    do
+        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+        then
+            wb_command -cifti-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}.dtseries.nii" MEAN "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            if ((DoFixBias))
+            then
+                #generate and use new-BC corrected mean
+                #TODO: naming conventions
+                useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
+                wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
+                    -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
+                    -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
+                    -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
+            fi
+            #use the new _vn written by the matlab part
+            wb_command -cifti-math 'fmri + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
+                -var fmri "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
+                -var mean "$useMean" -select 1 1 -repeat 
+                                    
+            if ((DoVol))
+            then
+                wb_command -volume-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}.nii.gz" MEAN "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                if ((DoFixBias))
+                then
+                    #TODO: naming conventions
+                    useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
+                    #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
+                    wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
+                        -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
+                        -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
+                        -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
+                        -fixnan 0
+                fi
+                wb_command -volume-math 'fmri + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
+                    -var fmri "$MNIFolder/Results/$fMRIName/${fMRIName}${OutString}.nii.gz" \
+                    -var mean "$useMeanVol" -subvolume 1 -repeat \
+                    -fixnan 0
+                
+            fi
+            
+        fi
     done
 fi
 

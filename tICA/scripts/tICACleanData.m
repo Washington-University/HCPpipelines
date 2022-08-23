@@ -92,6 +92,8 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
     
     runStarts = ones(1, size(inputArray, 1) + 1); %extra element on the end to make separating code simpler
     
+    SaveRunVN = []; %since we save these, we don't need to calculate the mean separately on the fly
+    SaveRunVolVN = [];
     %provide complete filenames in input lists
     for i = 1:size(inputArray, 1)
         tempcii = ciftiopen([inputArray{i}], wbcommand);
@@ -99,7 +101,7 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         tempvncii = ciftiopen([inputVNArray{i}], wbcommand);
         % can't use good BC to do the mean of VN properly, because it may not exist
         tempvncii.cdata = max(tempvncii.cdata, 0.001); 
-        %VN file is really just variance of BC data - to restore to close to original variance, turn the variance back into non-bc space and take the mean
+        %VN file is really just stdev of BC data - to restore to close to original stdev, turn the stdev back into non-bc space and take the mean
         tempnorm = demean(tempcii.cdata, 2) ./ repmat(tempvncii.cdata, 1, size(tempcii.cdata, 2));
         tempcii.cdata = [];
         % for output, make the vn data reference new BC space
@@ -110,10 +112,10 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         if i == 1
             outTemplate = tempcii;
             inputConcat = tempnorm;
-            vnsum = tempvncii.cdata;
+            SaveRunVN = tempvncii.cdata;
         else
             inputConcat = [inputConcat tempnorm]; %#ok<AGROW>
-            vnsum = vnsum + tempvncii.cdata; % should this use weighted and/or geometric mean?  are there zeros?
+            SaveRunVN = [SaveRunVN tempvncii.cdata]; %#ok<AGROW>
         end
         clear tempcii tempnorm tempvncii tempBCcifti;
         if doVol
@@ -131,34 +133,32 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
             end
             if i == 1
                 volInputConcat = tempvolnorm;
-                vnvolsum = tempvolvncii.cdata;
+                SaveRunVolVN = tempvolvncii.cdata;
             else
                 volInputConcat = [volInputConcat tempvolnorm]; %#ok<AGROW>
-                vnvolsum = vnvolsum + tempvolvncii.cdata;
+                SaveRunVolVN = [SaveRunVolVN tempvolvncii.cdata]; %#ok<AGROW>
             end
             clear tempvolnorm tempvolvncii tempvolBCcifti;
         end
     end
     
-    vnmean = vnsum / size(inputArray, 1);
-    clear vnsum;
+    vnmean = mean(SaveRunVN, 2); %should this use weighted and/or geometric mean?  are there zeros?
     if doVol
-        vnvolmean = vnvolsum / size(inputArray, 1);
-        clear vnvolsum;
+        vnvolmean = mean(SaveRunVolVN, 2);
     end
         
-    inputConcat = inputConcat.* repmat(vnmean, 1, size(inputConcat, 2)); %Do correction in BC space because this is temporal regression
+    inputConcat = inputConcat .* repmat(vnmean, 1, size(inputConcat, 2)); %Do correction in BC space because this is temporal regression
     tICAtcs = ciftiopen(Timeseries, wbcommand);
     tICAtcs.cdata = normalise(tICAtcs.cdata')';
     Noise = load(NoiseList);
     betaICA = ((pinv(tICAtcs.cdata') * demean(inputConcat')));
-    cleanedData = inputConcat - (tICAtcs.cdata(Noise, :)' * betaICA(Noise, :))'; 
+    cleanedData = inputConcat - (tICAtcs.cdata(Noise, :)' * betaICA(Noise, :))';
     %%split out by input runs
     for i = 1:size(inputArray, 1)
         outTemplate.cdata = cleanedData(:, runStarts(i):(runStarts(i + 1) - 1)); %see above, extra element on end of runStarts
         ciftisavereset(outTemplate, outputNamesArray{i}, wbcommand); %reset because concatenated runs may be different lengths
-        %%save out individual legacy(???) bias corrected VN files
-        outTemplate.cdata = vnmean;
+        %save out good-BC vn for each input
+        outTemplate.cdata = SaveRunVN(:, i);
         ciftisavereset(outTemplate, outputVNNamesArray{i}, wbcommand);
     end
     
@@ -172,9 +172,9 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
             %%convert back to NIFTI
             outVolTemplate.cdata = cleanedVolData(:, runStarts(i):(runStarts(i + 1) - 1));
             save_volcifti_as_nifti(outVolTemplate, OutputVolNamesArray{i}, wbcommand);
-            my_system(['fslcpgeom "' inputArray{i} '" "' OutputVolNamesArray{i} '" -d']);
-            %%save out individual legacy(???) bias corrected VN files
-            outVolTemplate.cdata = vnvolmean;
+            my_system(['fslcpgeom "' inputArray{i} '" "' OutputVolNamesArray{i} '" -d']); %set timestep
+            %save out good-BC vn for each input
+            outVolTemplate.cdata = SaveRunVolVN(:, i);
             save_volcifti_as_nifti(outVolTemplate, OutputVolVNNamesArray{i}, wbcommand);
         end
     end
