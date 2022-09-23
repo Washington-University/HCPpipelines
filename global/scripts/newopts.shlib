@@ -316,11 +316,20 @@ function opts_ParseArguments()
             opts_argument="$2"
             shift 2
         fi
-        if ((opts_script_supports_config)) && [[ "$opts_switch" == "--config" && "$opts_argument" != "" ]]
+        if ((opts_script_supports_config)) && [[ "$opts_switch" == "--config" ]]
         then
             if ((opts_configspecified))
             then
                 log_Err_Abort "parameter specified multiple times: '$opts_switch'"
+            fi
+            if [[ "$opts_argument" == "" ]]
+            then
+                #treat empty string as "no config", to make launch scripts simpler
+                continue
+            fi
+            if [[ ! -f "$opts_argument" ]]
+            then
+                log_Err_Abort "config file '$opts_argument' not found"
             fi
             opts_configspecified=1
             while IFS='' read -r opts_confline || [[ -n "$opts_confline" ]]
