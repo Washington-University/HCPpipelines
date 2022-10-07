@@ -149,12 +149,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
 
   one from the following group is required
 
-   --subject-dir=<path to subject directory>
-   --subjectDIR=<path to subject directory>
+   --study_folder=<path to subject's data folder>
+   --path=<path to subject's data folder>
 
   --subject=<subject ID>
   --sessions=<@ delimited list of session ids>
-  --template=<name of the created base template>
+  --template-id=<ID of the created base template>
 
   [--seed=<recon-all seed value>]
 
@@ -173,15 +173,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--extra-reconall-arg-long=token] (repeatable)
       Generic single token (no whitespace) argument to pass to recon-all.
       Similar as above, except that it provides a mechanism to customize the recon-all command for the actual longitudinal processing.
-
-PARAMETERs can also be specified positionally as:
-
-  ${g_script_name} <path to subject directory> <subject ID> <path to T1w image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
-
-  Note that the positional approach to specifying parameters does NOT support the 
-      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --processing-mode options.
-  The positional approach should be considered deprecated, and may be removed in a future version.
-
 EOF
 }
 
@@ -191,10 +182,10 @@ get_options()
   # Note that the ($@) construction parses the arguments into an array of values using spaces as the delimiter
 
   # initialize global output variables
-  unset p_subject_dir
+  unset p_study_folder
   unset p_subject
   unset p_sessions
-  unset p_template
+  unset p_template_id
   unset p_seed
   unset p_extra_reconall_args_base
   unset p_extra_reconall_args_long
@@ -213,20 +204,20 @@ get_options()
         show_usage
         exit 0
         ;;
-      --subject-dir=*)
-        p_subject_dir=${argument#*=}
+      --path=*)
+        p_study_folder=${argument#*=}
         index=$(( index + 1 ))
         ;;
-      --subjectDIR=*)
-        p_subject_dir=${argument#*=}
+      --study-folder=*)
+        p_study_folder=${argument#*=}
         index=$(( index + 1 ))
         ;;
       --subject=*)
         p_subject=${argument#*=}
         index=$(( index + 1 ))
         ;;
-      --template=*)
-        p_template=${argument#*=}
+      --template-id=*)
+        p_template_id=${argument#*=}
         index=$(( index + 1 ))
         ;;
       --sessions=*)
@@ -261,11 +252,11 @@ get_options()
   #  check required parameters
   # ------------------------------------------------------------------------------
 
-  if [ -z "${p_subject_dir}" ]; then
-    log_Err "Subject Directory (--subject-dir= or --subjectDIR= or --path= or --study-folder=) required"
+  if [ -z "${p_study_folder}" ]; then
+    log_Err "Study Folder (--path= or --study-folder=) required"
     error_count=$(( error_count + 1 ))
   else
-    log_Msg "Subject Directory: ${p_subject_dir}"
+    log_Msg "Study Folder: ${p_study_folder}"
   fi
 
   if [ -z "${p_subject}" ]; then
@@ -282,11 +273,11 @@ get_options()
     log_Msg "Sessions: ${p_sessions}"
   fi
 
-  if [ -z "${p_template}" ]; then
-    log_Err "Template (--template=) required"
+  if [ -z "${p_template_id}" ]; then
+    log_Err "Template ID (--template-id=) required"
     error_count=$(( error_count + 1 ))
   else
-    log_Msg "Template: ${p_template}"
+    log_Msg "Template ID: ${p_template_id}"
   fi
 
   # show optional parameters if specified
@@ -307,10 +298,10 @@ get_options()
 
 main()
 {
-  local SubjectDIR
+  local StudyFolder
   local SubjectID
   local Sessions
-  local Template
+  local TemplateID
   local recon_all_seed
   local extra_reconall_args_base
   local extra_reconall_args_long
@@ -322,11 +313,10 @@ main()
   # ----------------------------------------------------------------------
   log_Msg "Retrieve parameters"
   # ----------------------------------------------------------------------
-
-  SubjectDIR="${p_subject_dir}"
+  StudyFolder="${p_study_folder}"
   SubjectID="${p_subject}"
   Sessions="${p_sessions}"
-  Template="${p_template}"
+  TemplateID="${p_template_id}"
 
   if [ ! -z "${p_seed}" ]; then
     recon_all_seed="${p_seed}"
@@ -341,10 +331,10 @@ main()
   # ----------------------------------------------------------------------
   # Log values retrieved from positional parameters
   # ----------------------------------------------------------------------
-  log_Msg "SubjectDIR: ${SubjectDIR}"
+  log_Msg "StudyFolder: ${StudyFolder}"
   log_Msg "SubjectID: ${SubjectID}"
   log_Msg "Sessions: ${Sessions}"
-  log_Msg "Template: ${Template}"
+  log_Msg "TemplateID: ${TemplateID}"
   log_Msg "recon_all_seed: ${recon_all_seed}"
   log_Msg "extra_reconall_args_base: ${extra_reconall_args_base}"
   log_Msg "extra_reconall_args_long: ${extra_reconall_args_long}"
@@ -354,29 +344,28 @@ main()
   # ----------------------------------------------------------------------
   Sessions=`echo ${Sessions} | sed 's/@/ /g'`
   log_Msg "After delimiter substitution, Sessions: ${Sessions}"
-  LongDIR="${SubjectDIR}/${SubjectID}.long.${Template}/T1w"
+  LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
   mkdir -p "${LongDIR}"
   for Session in ${Sessions} ; do
-    Source="${SubjectDIR}/${Session}/T1w/${Session}"
+    Source="${StudyFolder}/${Session}/T1w/${Session}"
     Target="${LongDIR}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
 
   # ----------------------------------------------------------------------
-  log_Msg "Creating the base template: ${Template}"
+  log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
-
   # backup template dir if it exists
-  if [ -d "${LongDIR}/${Template}" ]; then
+  if [ -d "${LongDIR}/${TemplateID}" ]; then
     TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-    log_Msg "Base template dir: ${LongDIR}/${Template} already exists, backing up to ${LongDIR}/${Template}.${TimeStamp}"
-    mv ${LongDIR}/${Template} ${LongDIR}/${Template}.${TimeStamp}
+    log_Msg "Base template dir: ${LongDIR}/${TemplateID} already exists, backing up to ${LongDIR}/${TemplateID}.${TimeStamp}"
+    mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
   fi
 
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
-  recon_all_cmd+=" -base ${Template}"
+  recon_all_cmd+=" -base ${TemplateID}"
   for Session in ${Sessions} ; do
     recon_all_cmd+=" -tp ${Session}"
   done
@@ -404,7 +393,7 @@ main()
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${LongDIR}"
-    recon_all_cmd+=" -long ${Session} ${Template} -all"
+    recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
     if [ ! -z "${extra_reconall_args_long}" ]; then
       recon_all_cmd+=" ${extra_reconall_args_long}"
     fi
@@ -417,7 +406,7 @@ main()
 
     log_Msg "Organizing the folder structure for: ${Session}"
     # create the symlink
-    ln -sf "${LongDIR}/${Session}.long.${Template}" "${SubjectDIR}/${Session}/T1w/${Session}.long.${Template}"
+    ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${StudyFolder}/${Session}/T1w/${Session}.long.${TemplateID}"
   done
 
   # ----------------------------------------------------------------------
@@ -434,7 +423,6 @@ main()
 }
 
 # Global processing - everything above here should be in a function
-
 g_script_name=$(basename "${0}")
 
 # Allow script to return a Usage statement, before any other output or checking
@@ -446,7 +434,6 @@ fi
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
-
 if [ -z "${HCPPIPEDIR}" ]; then
   echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
   exit 1
@@ -468,7 +455,6 @@ ${HCPPIPEDIR}/show_version
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
-
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FREESURFER_HOME
 
@@ -491,18 +477,14 @@ if [[ ${1} == --* ]]; then
   log_Msg "Using named parameters"
 
   # Get command line options
-  # Sets the following parameter variables:
-  #   p_subject_dir, p_subject, p_t1w_image, p_t2w_image, p_seed (optional)
   get_options "$@"
 
   # Invoke main functionality using positional parameters
   #     ${1}               ${2}           ${3}             ${4}             ${5}             ${6}
-  main "${p_subject_dir}" "${p_subject}" "${p_t1w_image}" "${p_t1w_brain}" "${p_t2w_image}" "${p_seed}"
-
+  main "${p_study_folder}" "${p_subject}" "${p_t1w_image}" "${p_t1w_brain}" "${p_t2w_image}" "${p_seed}"
 else
-  # Positional parameters are used
-  log_Msg "Using positional parameters"
-  main $@
+  # Positional parameters are used but not supported
+  log_Msg "Positional parameters are not supported!"
 fi
 
 log_Msg "Completed!"
