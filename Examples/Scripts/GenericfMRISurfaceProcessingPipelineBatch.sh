@@ -75,30 +75,30 @@ PRINTCOM=""
 
 ######################################### DO WORK ##########################################
 
-Tasklist=""
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-Tasklist="${Tasklist} tfMRI_EMOTION_RL"
-Tasklist="${Tasklist} tfMRI_EMOTION_LR"
-Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
-Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
-Tasklist="${Tasklist} tfMRI_MOTOR_RL"
-Tasklist="${Tasklist} tfMRI_MOTOR_LR"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
-Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
-Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
-Tasklist="${Tasklist} tfMRI_WM_RL"
-Tasklist="${Tasklist} tfMRI_WM_LR"
+TaskList=""
+TaskList="${TaskList} rfMRI_REST1_RL"
+TaskList="${TaskList} rfMRI_REST1_LR"
+TaskList="${TaskList} rfMRI_REST2_RL"
+TaskList="${TaskList} rfMRI_REST2_LR"
+TaskList="${TaskList} tfMRI_EMOTION_RL"
+TaskList="${TaskList} tfMRI_EMOTION_LR"
+TaskList="${TaskList} tfMRI_GAMBLING_RL"
+TaskList="${TaskList} tfMRI_GAMBLING_LR"
+TaskList="${TaskList} tfMRI_LANGUAGE_RL"
+TaskList="${TaskList} tfMRI_LANGUAGE_LR"
+TaskList="${TaskList} tfMRI_MOTOR_RL"
+TaskList="${TaskList} tfMRI_MOTOR_LR"
+TaskList="${TaskList} tfMRI_RELATIONAL_RL"
+TaskList="${TaskList} tfMRI_RELATIONAL_LR"
+TaskList="${TaskList} tfMRI_SOCIAL_RL"
+TaskList="${TaskList} tfMRI_SOCIAL_LR"
+TaskList="${TaskList} tfMRI_WM_RL"
+TaskList="${TaskList} tfMRI_WM_LR"
 
 for Subject in $Subjlist ; do
   echo $Subject
 
-  for fMRIName in $Tasklist ; do
+  for fMRIName in $TaskList ; do
     echo "  ${fMRIName}"
     LowResMesh="32" #Needs to match what is in PostFreeSurfer, 32 is on average 2mm spacing between the vertices on the midthickness
     FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
