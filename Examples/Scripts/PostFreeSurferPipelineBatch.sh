@@ -113,17 +113,17 @@ for Subject in $Subjlist ; do
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   
-   echo "set -- --study-folder="$StudyFolder" \
-      --subject="$Subject" \
-      --surfatlasdir="$SurfaceAtlasDIR" \
-      --grayordinatesdir="$GrayordinatesSpaceDIR" \
-      --grayordinatesres="$GrayordinatesResolutions" \
-      --hiresmesh="$HighResMesh" \
-      --lowresmesh="$LowResMeshes" \
-      --subcortgraylabels="$SubcorticalGrayLabels" \
-      --freesurferlabels="$FreeSurferLabels" \
-      --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName"
+   echo "set -- --study-folder=$StudyFolder \
+      --subject=$Subject \
+      --surfatlasdir=$SurfaceAtlasDIR \
+      --grayordinatesdir=$GrayordinatesSpaceDIR \
+      --grayordinatesres=$GrayordinatesResolutions \
+      --hiresmesh=$HighResMesh \
+      --lowresmesh=$LowResMeshes \
+      --subcortgraylabels=$SubcorticalGrayLabels \
+      --freesurferlabels=$FreeSurferLabels \
+      --refmyelinmaps=$ReferenceMyelinMaps \
+      --regname=$RegName"
       
    echo ". ${EnvironmentScript}"
 done
