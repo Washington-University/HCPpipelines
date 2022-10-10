@@ -134,10 +134,10 @@ for Subject in "${Subjlist[@]}" ; do
     echo "    ${Subject}"
 
     if [ -n "${command_line_specified_run_local}" ] ; then
-        echo "About to run ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh"
+        echo "About to run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
         queuing_command=()
     else
-        echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh"
+        echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
         queuing_command=("$FSLDIR"/bin/fsl_sub "${QUEUE[@]}")
     fi
 
