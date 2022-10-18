@@ -280,13 +280,7 @@ get_options()
 		log_Msg "Input Registration Name: ${p_InputRegName}"
 	fi
 
-	if [ -z "${p_MyelinTargetFile}" ]; then
-	    p_MyelinTargetFile="${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-		#log_Err "Myelin Target File (--myelin-target-file=) required"
-		#error_count=$(( error_count + 1 ))
-	else
-		log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
-	fi
+	log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
 
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
@@ -353,7 +347,7 @@ main()
 	
 	local MatlabRunMode
 	if [ -z "${12}" ]; then
-		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
+		MatlabRunMode="${G_DEFAULT_MATLAB_RUN_MODE}"
 	else
 		MatlabRunMode="${12}"
 	fi
@@ -364,7 +358,7 @@ main()
 	
 	local MyelinTargetFile
 	if [ -z "${16}" ]; then
-		MyelinTargetFile=${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii
+		MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
 	else
 		MyelinTargetFile="${16}"
 	fi
@@ -717,7 +711,7 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality using positional parameters
-	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}                  ${13}                ${14}             ${15}                  ${16}
+	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}               ${12}                ${13}             ${14}                  ${15}                  ${16}
 	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}" "${p_mrfixNames}" "${p_mrfixConcatName}" "${p_mrfixNamesToUse}" "${p_MyelinTargetFile}"
 
 else
