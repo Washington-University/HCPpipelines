@@ -364,7 +364,7 @@ main()
 	
 	local MyelinTargetFile
 	if [ -z "${16}" ]; then
-		MyelinTargetFile=${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii
+		MyelinTargetFile=${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii
 	else
 		MyelinTargetFile="${16}"
 	fi
