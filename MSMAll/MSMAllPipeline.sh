@@ -281,13 +281,12 @@ get_options()
 	fi
 
 	if [ -z "${p_MyelinTargetFile}" ]; then
-	  p_MyelinTargetFile="${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+	    p_MyelinTargetFile="${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
 		#log_Err "Myelin Target File (--myelin-target-file=) required"
 		#error_count=$(( error_count + 1 ))
 	else
 		log_Msg "Myelin Target File: ${p_MyelinTargetFile}"
 	fi
-
 
 	if [ -z "${p_MatlabRunMode}" ]; then
 		log_Err "MATLAB run mode value (--matlab-run-mode=) required"
@@ -352,25 +351,24 @@ main()
 	local LowResMesh="${10}"
 	local InputRegName="${11}"
 	
-	local MyelinTargetFile
-	if [ -z "${12}" ]; then
-		MyelinTargetFile=${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii
-	else
-		MyelinTargetFile="${12}"
-	fi
-
 	local MatlabRunMode
-	if [ -z "${13}" ]; then
+	if [ -z "${12}" ]; then
 		MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
 	else
-		MatlabRunMode="${13}"
+		MatlabRunMode="${12}"
 	fi
 
+	local mrfixNames="${13}"
+	local mrfixConcatName="${14}"
+	local mrfixNamesToUse="${15}"
 	
-	local mrfixNames="${14}"
-	local mrfixConcatName="${15}"
-	local mrfixNamesToUse="${16}"
-	
+	local MyelinTargetFile
+	if [ -z "${16}" ]; then
+		MyelinTargetFile=${p_MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii
+	else
+		MyelinTargetFile="${16}"
+	fi
+
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -720,7 +718,7 @@ if [[ ${1} == --* ]]; then
 
 	# Invoke main functionality using positional parameters
 	#     ${1}               ${2}           ${3}             ${4}                  ${5}            ${6}                  ${7}                   ${8}                 ${9}               ${10}             ${11}                  ${13}                ${14}             ${15}                  ${16}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MyelinTargetFile}" "${p_MatlabRunMode}" "${p_mrfixNames}" "${p_mrfixConcatName}" "${p_mrfixNamesToUse}"
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_OutputfMRIName}" "${p_HighPass}" "${p_fMRIProcSTRING}" "${p_MSMAllTemplates}" "${p_OutputRegName}" "${p_HighResMesh}" "${p_LowResMesh}" "${p_InputRegName}" "${p_MatlabRunMode}" "${p_mrfixNames}" "${p_mrfixConcatName}" "${p_mrfixNamesToUse}" "${p_MyelinTargetFile}"
 
 else
 	# Positional parameters are used
