@@ -26,8 +26,8 @@ opts_SetScriptDescription "does stuff"
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise it will be defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-opts_AddOptional '--bar' 'mybar' 'your bar' "an optional value, without an argument after the desription it defaults to empty string, and this description is really long, but the opts_ShowArguments function (called in the usage function above) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise i will set it to defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddOptional '--bar' 'mybar' 'your bar' "an optional parameter, when there is no argument after the desription it defaults to empty string, and this description is really long, but opts_ShowArguments (called by the usage functionality associated with opts_SetScriptDescription, or usable in a legacy usage() function) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
