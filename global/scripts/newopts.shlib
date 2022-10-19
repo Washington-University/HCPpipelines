@@ -460,6 +460,7 @@ function opts_ParseArguments()
 opts_script_description=""
 opts_param_switches=()
 opts_compat_aliases=()
+opts_config_names=()
 opts_config_aliases=()
 opts_script_supports_config=0
 opts_script_has_config_mandatory=0
