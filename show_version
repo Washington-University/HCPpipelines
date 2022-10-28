@@ -117,7 +117,7 @@ then
                 topfiles+=("$file")
             fi
         done
-        git diff-index --quiet HEAD -- "${topfiles[@]}")
+        git diff --quiet HEAD -- "${topfiles[@]}")
     then
         modified=YES
         verstring="$verstring"-MOD
