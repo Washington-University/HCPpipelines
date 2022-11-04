@@ -79,10 +79,10 @@ PRINTCOM=""
 
 # List of fMRI runs
 # If running on output from multi-run FIX, use ConcatName as value for fMRINames
-fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
+fMRINames="rfMRI_REST"
 
-HighPass="2000"
-ReUseHighPass="NO" #Use YES if running on output from multi-run FIX, otherwise use NO
+HighPass="0"
+ReUseHighPass="YES" #Use YES if running on output from multi-run FIX, otherwise use NO
 
 DualScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_DualScreenTemplate.scene
 SingleScene=${HCPPIPEDIR}/ICAFIX/PostFixScenes/ICA_Classification_SingleScreenTemplate.scene
