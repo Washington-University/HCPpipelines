@@ -1,27 +1,59 @@
 #!/bin/bash
+set -eu
 
+#Usage:
+#Run it with no arguments to get extended version information
+#Run it with --short to get just the version string
+#
 #This script exists for the following reasons:
 #1) We can ask a user to run it so we can get a good idea what version of the pipelines they have, including indicating whether it is dev, rc, or release
 #2) Pipelines can run it with --short to get a simple version string with the same indicators
 #3) To allow containers built with a release candidate to behave more like a final release, to avoid rebuilding again after processing, script logic can hide the "RC" status
 #4) Running a script can gather more information (and do sanity checking) compared to a simple text file
 #
-#Design:
-#Users may download the repo as a zip, or via git clone, so the main behavior needs to be implemented based on files in the source tree
-#To reduce the chance for typos, the formulaic -rc and Post- pre/suffixes (and other automatic things) are added by the script, so the version file contains only the main version string, like "v4.3.0".
-#To reduce the chance of accidental merge/cherry-pick/forgot-to-delete causing a commit to improperly claim rc or release status, everything that controls rc or release status display is checked to contain the exact same string as the main version text, otherwise an error is thrown
-#If the pipelines directory looks like a git repo, additionally report the commit hash and check for files modified by the user since the checked out commit (except for files in Examples, since some instructions have said to edit files there in-place), and add them to the version string if appropriate.
-#
-#Usage:
-#Run it with no arguments to get extended version information
-#Run it with --short to get just the version string
-#
 #Devops:
-#When starting an rc-dev branch, edit global/scripts/versioning/base.txt to the version that will be the release, and copy it to candidate.txt
-#When the release is final, move candidate.txt to release.txt and commit/tag, and on the dev branch, change base.txt to the newly released version (to update the "Post-" version)
-#To get an rc to use a release version string format, set HCPPIPE_HIDE_RC to the same as the contents of base.txt
-
-set -eu
+#1. Make a new release branch, like "release-5.6.0"
+#2. Edit global/scripts/versioning/base.txt to the new version number, like "v5.6.0", and then copy it to global/scripts/versioning/candidate.txt
+#3. Recompile the matlab code unless you are sure this isn't needed (as of oct 2022, use R2017b, ensure your startup.m doesn't do anything when isdeployed() returns true)
+#4. Commit, make an RC tag, like "v5.6.0-rc.1", push the branch and the tag
+#5. To get an RC version to pretend it is the actual release, set and export HCPPIPE_HIDE_RC to be the same as the contents of base.txt (like "v5.6.0")
+#6. Build container, run processing
+#7. If there is a serious error before the results are released (for instance, if it will require restarting the current processing step on all subjects), increment the rc number without changing the release version (like "v5.6.0-rc.2"), and either:
+#    a) cherry pick fixes onto the release branch, recompile matlab if needed, and go to step 4
+#    b) restart the release branch from a new commit in master and go to step 2
+#When processing outputs are released or release-ready, OR an RC is made for a later version (like "v5.6.1-rc.1"):
+#8. Move global/scripts/versioning/candidate.txt to global/scripts/versioning/release.txt, commit, add release tag (like "v5.6.0"), push branch and tag
+#9. Checkout master, edit global/scripts/versioning/base.txt to the RELEASED version (not the current RC), commit and push
+#
+#Design choice details follow:
+#
+#Facts:
+#1. There can be serious problems with a pipeline that are not discovered until what we thought would be the final processing run
+#2. There can be matlab code changes in the dev branch that have not been recompiled yet
+#3. Users may download a pipelines release as a zip, rather than cloning the repo
+#
+#Requirements:
+#1. We want to use QuNex to do internal processing
+#2. QuNex wants to build releases only from tagged commits
+#3. We don't want to make a full release tag without doing some internal processing as a test
+#4. We want QuNex processing logs to say they used the release version so that we don't have to rerun if the internal processing successfully produced releasable data
+#5. We want non-release commits to show a different version string than release commits, but still give some indication of how old the version someone used is
+#6. We don't want commits on the dev branch earlier (in time) than release "v5.6.0" to say "Post-v5.6.0"
+#7. We want to be able to show the version even when git isn't installed, or the pipelines were downloaded as a zip.
+#8. We don't want all our scripters to need to learn git branching, rebasing, etc
+#
+#Design Concept:
+#1. Make a "release candidate" tag to build QuNex from, so that we can increment that instead of the release bugfix version
+#2. Allow QuNex to make a release candidate pretend to be the final release when showing the short version info
+#3. Make a release tag after we are done verifying processing results
+#
+#Implementation:
+#1. PRs rebase onto master, development commits directly to master when it is too small for a PR
+#2. Releases are made on branches
+#3. Version display is done by a central script (show_version)
+#4. The "base version" is pulled from a text file, which never contains things like "Post-" or "-rc"
+#5. Additional checks are done by the script to decide whether a "release candidate" or "development branch" modification should be made to the base version before display
+#6. In order to catch accidental laziness, every "candidate", "release", or "pretend candidate is release" setting must contain the current base version, such that leaving it set from a previous version gives an error message
 
 scriptdir=$(cd "$(dirname -- "$0")" && pwd)
 
@@ -106,7 +138,6 @@ then
     #if we have the git repo and git, we can check if the user has edited anything important
     modified=no
     #ignore modification of things in Examples, they are not used by the scripts, and some of our instructions have said to edit things there
-    #if ! (cd "$HCPPIPEDIR"; git diff-index --quiet HEAD -- '*' ':!/Examples/')
     #problem: centos 7 git doesn't have exclude pathspec magic, so use bash to give git everything except that folder - the complication is to be safe against whitespace in file or folder names
     if ! (cd "$HCPPIPEDIR"
         topfiles=()
