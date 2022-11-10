@@ -12,9 +12,13 @@ spatial ICA, to yield better separation of 'signal' and 'noise' components.
 A typical workflow would be:
 * Run single or multi-run FIX (see Examples/Scripts/IcaFixProcessingBatch.sh)
 * Run PostFix to generate Workbench scenes for reviewing the FIX classification (see
-  Examples/Scripts/PostFixBatch.sh)
-* Review those scenes to QC the quality of the FIX classification. If you are
-  satisfied with the quality, proceed to use the cleaned data.
+  Examples/Scripts/PostFixBatch.sh) in {StudyFolder}/{Subject}/MNINonLinear/Results/{ConcatName}
+* Review those scenes in wb_view to QC the quality of the FIX classification:
+
+  `wb_view {Subject}_{ConcatName}_{hp#}_ICA_Classification_singlescreen.scene` 
+
+   For examples/discussion of signal vs. noise components see the ICA + FIX section of this [HCP Course Practical](https://wustl.app.box.com/v/hcp-2019-practical-05). If you are
+  satisfied with the quality of the classification, proceed to use the cleaned data.
 * If you feel reclassification of certain components is necessary, enter the
   appropriate component numbers that you feel were mis-classified into the
   ReclassifyAsSignal.txt or ReclassifyAsNoise.txt files (as appropriate). THEN:
