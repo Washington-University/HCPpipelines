@@ -363,6 +363,11 @@ UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
 # running the commands (the default is to actually run the commands)
 RUN=`opts_GetOpt1 "--printcom" $@`
 
+if [[ "$RUN" != "" ]]
+then
+    log_Err_Abort "--printcom is not consistently implemented, do not rely on it"
+fi
+
 # Defaults
 UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
 CustomBrain=`opts_DefaultOpt $CustomBrain "NONE"`

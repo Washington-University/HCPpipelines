@@ -85,9 +85,9 @@
 get_batch_options() {
 	local arguments=("$@")
 
-	unset command_line_specified_study_folder
-	unset command_line_specified_subj
-	unset command_line_specified_run_local
+	command_line_specified_study_folder=""
+	command_line_specified_subj=""
+	command_line_specified_run_local="FALSE"
 
 	local index=0
 	local numArgs=${#arguments[@]}
@@ -127,7 +127,7 @@ main()
 
 	# Set variable values that locate and specify data to process
 	StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of Subject folders (named by subjectID)
-	Subjlist="100307"                                    # Space delimited list of subject IDs
+	Subjlist="100307 100610"                             # Space delimited list of subject IDs
 
 	# Set variable value that sets up environment
 	EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" # Pipeline environment script
@@ -150,20 +150,11 @@ main()
 	# Set up pipeline environment variables and software
 	source ${EnvironmentScript}
 
-	# Define processing queue to be used if submitted to job scheduler
-	# if [ X$SGE_ROOT != X ] ; then
-	#    QUEUE="-q long.q"
-	#    QUEUE="-q veryshort.q"
-	QUEUE="-q hcp_priority.q"
-	# fi
-
-	# If PRINTCOM is not a null or empty string variable, then
-	# this script and other scripts that it calls will simply
-	# print out the primary commands it otherwise would run.
-	# This printing will be done using the command specified
-	# in the PRINTCOM variable
-	PRINTCOM=""
-	# PRINTCOM="echo"
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline release,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local
+	QUEUE=""
+	#QUEUE="hcp_priority.q"
 
 	#
 	# Inputs:
@@ -442,19 +433,20 @@ main()
 		# Set to NONE to skip gradient distortion correction
 		GradientDistortionCoeffs="NONE"
 
-		# Establish queuing command based on command line option
-		if [ -n "${command_line_specified_run_local}" ] ; then
-			echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-			queuing_command=""
+		# Establish queuing command based on command line option or empty queue name
+		if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+			echo "About to locally run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+			#NOTE: fsl_sub without -q runs locally and captures output in files
+			queuing_command=("${FSLDIR}/bin/fsl_sub")
 		else
-			echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-			queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+			echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 		fi
 
 		# Run (or submit to be run) the PreFreeSurferPipeline.sh script
 		# with all the specified parameter values
 
-		${queuing_command} ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
+		"${queuing_command[@]}" "$HCPPIPEDIR"/PreFreeSurfer/PreFreeSurferPipeline.sh \
 			--path="$StudyFolder" \
 			--subject="$Subject" \
 			--t1="$T1wInputImages" \
@@ -482,8 +474,7 @@ main()
 			--unwarpdir="$UnwarpDir" \
 			--gdcoeffs="$GradientDistortionCoeffs" \
 			--avgrdcmethod="$AvgrdcSTRING" \
-			--topupconfig="$TopupConfig" \
-			--printcom=$PRINTCOM
+			--topupconfig="$TopupConfig"
 
 	done
 }
