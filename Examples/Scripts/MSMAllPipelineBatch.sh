@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/HCP_PhaseFinalTestingMSMAll" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -76,25 +76,26 @@ PRINTCOM=""
 ######################################### DO WORK ##########################################
 
 # fMRINames is for single-run FIX data, set MR FIX settings to empty
-fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
-mrfixNames=""
-mrfixConcatName=""
-mrfixNamesToUse=""
-OutfMRIName="rfMRI_REST"
+# fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
+# mrfixNames=""
+# mrfixConcatName=""
+# mrfixNamesToUse=""
+# OutfMRIName="rfMRI_REST"
 
 # For MR FIX, set fMRINames to empty
-#fMRINames=""
-# the original MR FIX parameter for what to concatenate
-#mrfixNames="rfMRI_REST1_RL@rfMRI_REST1_LR@tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR@rfMRI_REST2_LR@rfMRI_REST2_RL@tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
-# the original MR FIX concatenated name
-#mrfixConcatName="fMRI_CONCAT"
-# @-separate list of runs to use
-#mrfixNamesToUse="rfMRI_REST1_RL@rfMRI_REST1_LR@rfMRI_REST2_LR@rfMRI_REST2_RL"
-#OutfMRIName="rfMRI_REST_CONCAT"
+fMRINames=""
+# the original MR FIX parameter for what to concatenate. List all single runs from one concatenated group separated with @.
+mrfixNames="rfMRI_REST1_RL@rfMRI_REST1_LR@tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR@rfMRI_REST2_LR@rfMRI_REST2_RL@tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
+# the original MR FIX concatenated name (only one group)
+mrfixConcatName="fMRI_CONCAT"
+# @-separate list of runs to use for this new MSMAll run of MR FIX
+mrfixNamesToUse="rfMRI_REST1_RL@rfMRI_REST1_LR@rfMRI_REST2_LR@rfMRI_REST2_RL"
+# FIX output concat name for this new MSMAll run of MR FIX
+OutfMRIName="rfMRI_REST_CONCAT"
 
 
-HighPass="2000"
-fMRIProcSTRING="_Atlas_hp2000_clean"
+HighPass="0"
+fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 RegName="MSMAll_InitalReg"
 HighResMesh="164"
