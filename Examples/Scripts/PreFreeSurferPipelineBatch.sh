@@ -148,9 +148,9 @@ main()
 	echo "Run locally: ${command_line_specified_run_local}"
 
 	# Set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
-	#NOTE: syntax for QUEUE has changed compared to earlier pipeline release,
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
 	#default to no queue, implying run local
 	QUEUE=""
@@ -210,25 +210,25 @@ main()
 
 		# Detect Number of T1w Images and build list of full paths to
 		# T1w images
-		numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep 'T1w_MPR.$' | wc -l`
-		echo "Found ${numT1ws} T1w Images for subject ${Subject}"
 		T1wInputImages=""
-		i=1
-		while [ $i -le $numT1ws ] ; do
-			T1wInputImages=`echo "${T1wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR${i}/${Subject}_3T_T1w_MPR${i}.nii.gz@"`
-			i=$(($i+1))
+		numT1ws=0
+		for folder in "${StudyFolder}/${Subject}/unprocessed/3T"/T1w_MPR?; do
+			folderbase=$(basename "$folder")
+			T1wInputImages+="$folder/${Subject}_3T_$folderbase.nii.gz@"
+			numT1ws=$((numT1ws + 1))
 		done
+		echo "Found ${numT1ws} T1w Images for subject ${Subject}"
 
 		# Detect Number of T2w Images and build list of full paths to
 		# T2w images
-		numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep 'T2w_SPC.$' | wc -l`
-		echo "Found ${numT2ws} T2w Images for subject ${Subject}"
 		T2wInputImages=""
-		i=1
-		while [ $i -le $numT2ws ] ; do
-			T2wInputImages=`echo "${T2wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC${i}/${Subject}_3T_T2w_SPC${i}.nii.gz@"`
-			i=$(($i+1))
+		numT2ws=0
+		for folder in "${StudyFolder}/${Subject}/unprocessed/3T"/T2w_SPC?; do
+			folderbase=$(basename "$folder")
+			T2wInputImages+="$folder/${Subject}_3T_$folderbase.nii.gz@"
+			numT1ws=$((numT2ws + 1))
 		done
+		echo "Found ${numT2ws} T2w Images for subject ${Subject}"
 
 		# Readout Distortion Correction:
 		#
@@ -437,10 +437,10 @@ main()
 		if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
 			echo "About to locally run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
 			#NOTE: fsl_sub without -q runs locally and captures output in files
-			queuing_command=("${FSLDIR}/bin/fsl_sub")
+			queuing_command=("$FSLDIR/bin/fsl_sub")
 		else
 			echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
+			queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
 		fi
 
 		# Run (or submit to be run) the PreFreeSurferPipeline.sh script

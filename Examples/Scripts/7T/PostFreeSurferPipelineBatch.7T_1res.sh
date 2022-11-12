@@ -3,9 +3,9 @@
 get_batch_options() {
     local arguments=("$@")
 
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj
-    unset command_line_specified_run_local
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -56,20 +56,16 @@ fi
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 #Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q long.q"
-    QUEUE="-q hcp_priority.q"
-#fi
-
-PRINTCOM=""
-#PRINTCOM="echo"
-#QUEUE="-q veryshort.q"
-
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 ########################################## INPUTS ########################################## 
 
@@ -93,15 +89,15 @@ for Subject in $Subjlist ; do
   # RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
   RegName="FS" 
 
-  if [ -n "${command_line_specified_run_local}" ] ; then
-      echo "About to run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
-      queuing_command=""
+  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
+      queuing_command=("${FSLDIR}/bin/fsl_sub")
   else
       echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
-      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+      queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
   fi
 
-  ${queuing_command} ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh \
+  "${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline_1res.sh \
       --path="$StudyFolder" \
       --subject="$Subject" \
       --surfatlasdir="$SurfaceAtlasDIR" \
@@ -112,24 +108,22 @@ for Subject in $Subjlist ; do
       --subcortgraylabels="$SubcorticalGrayLabels" \
       --freesurferlabels="$FreeSurferLabels" \
       --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName" \
-      --printcom=$PRINTCOM
+      --regname="$RegName"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   
-   echo "set -- --path="$StudyFolder" \
-      --subject="$Subject" \
-      --surfatlasdir="$SurfaceAtlasDIR" \
-      --grayordinatesdir="$GrayordinatesSpaceDIR" \
-      --grayordinatesres="$GrayordinatesResolutions" \
-      --hiresmesh="$HighResMesh" \
-      --lowresmesh="$LowResMeshes" \
-      --subcortgraylabels="$SubcorticalGrayLabels" \
-      --freesurferlabels="$FreeSurferLabels" \
-      --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName" \
-      --printcom=$PRINTCOM"
+   echo "set -- --path='$StudyFolder' \
+      --subject='$Subject' \
+      --surfatlasdir='$SurfaceAtlasDIR' \
+      --grayordinatesdir='$GrayordinatesSpaceDIR' \
+      --grayordinatesres='$GrayordinatesResolutions' \
+      --hiresmesh='$HighResMesh' \
+      --lowresmesh='$LowResMeshes' \
+      --subcortgraylabels='$SubcorticalGrayLabels' \
+      --freesurferlabels='$FreeSurferLabels' \
+      --refmyelinmaps='$ReferenceMyelinMaps' \
+      --regname='$RegName'"
       
-   echo ". ${EnvironmentScript}"
+   echo ". '${EnvironmentScript}'"
 done
 

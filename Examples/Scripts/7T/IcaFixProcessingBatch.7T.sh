@@ -120,7 +120,7 @@ main() {
 	get_options "$@"
 
 	# set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
 	export FSL_FIXDIR=${FixDir}
 	FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
@@ -129,32 +129,33 @@ main() {
 	# validate environment variables
 	# validate_environment_vars $@
 
-	# establish queue for job submission
-	QUEUE="-q hcp_priority.q"
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local
+	QUEUE=""
+	#QUEUE="hcp_priority.q"
 
 	# establish list of conditions on which to run ICA+FIX
-	CondList=""
-	CondList="${CondList} rfMRI_REST1_7T"
-	CondList="${CondList} rfMRI_REST2_7T"
-	CondList="${CondList} rfMRI_REST3_7T"
-	CondList="${CondList} rfMRI_REST4_7T"
+	CondList=()
+	CondList+=(rfMRI_REST1_7T)
+	CondList+=(rfMRI_REST2_7T)
+	CondList+=(rfMRI_REST3_7T)
+	CondList+=(rfMRI_REST4_7T)
 
 	# establish list of directions on which to run ICA+FIX
-	DirectionList=""
-	DirectionList="${DirectionList} PA"
-	DirectionList="${DirectionList} AP"
-	DirectionList="${DirectionList} PA"
-	DirectionList="${DirectionList} AP"
+	DirectionList=()
+	DirectionList+=(PA)
+	DirectionList+=(AP)
 
 	for Subject in ${Subjlist}
 	do
 		echo ${Subject}
 
-		for Condition in ${CondList}
+		for Condition in "${CondList[@]}"
 		do
 			echo "  ${Condition}"
 
-			for Direction in ${DirectionList}
+			for Direction in "${DirectionList[@]}"
 			do
 				echo "    ${Direction}"
 				
@@ -163,17 +164,17 @@ main() {
 
 				bandpass=2000
 				
-				if [ "${RunLocal}" == "TRUE" ]
+				if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]
 				then
-					echo "About to run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
-					queuing_command=""
+					echo "About to locally run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+					queuing_command=("${FSLDIR}/bin/fsl_sub")
 				else
 					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
-					queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+					queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 				fi
 
 				
-				${queuing_command} ${FixScript} ${InputFile} ${bandpass} ${TrainingData}
+				"${queuing_command[@]}" "$FixScript" "$InputFile" "$bandpass" "$TrainingData"
 			done
 
 		done

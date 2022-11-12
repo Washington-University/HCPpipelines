@@ -2,7 +2,7 @@
 
 # Global default values
 DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
-DEFAULT_SUBJECT_LIST="100307"
+DEFAULT_SUBJECT_LIST="100307 100610"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
 #DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript
@@ -124,7 +124,7 @@ main() {
 	get_options "$@"
 
 	# set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
 	# MPH: If DEFAULT_FIXDIR is set, or --FixDir argument was used, then use that to
 	# override the setting of FSL_FIXDIR in EnvironmentScript
@@ -164,12 +164,15 @@ main() {
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
 	
-	# establish queue for job submission
-	QUEUE="-q hcp_priority.q"
-	if [ "${RunLocal}" == "TRUE" ]; then
-		queuing_command=()
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local
+	QUEUE=""
+	#QUEUE="hcp_priority.q"
+	if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]; then
+		queuing_command=("$FSLDIR/bin/fsl_sub")
 	else
-		queuing_command=("${FSLDIR}/bin/fsl_sub" "${QUEUE}")
+		queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
 	fi
 
 	for Subject in ${Subjlist}; do
@@ -236,5 +239,5 @@ main() {
 #
 # Invoke the main function to get things started
 #
-main $@
+main "$@"
 
