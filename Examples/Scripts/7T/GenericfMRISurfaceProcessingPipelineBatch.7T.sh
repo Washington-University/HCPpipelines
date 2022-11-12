@@ -85,44 +85,43 @@ get_batch_options "$@"
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 # Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#QUEUE="-q long.q"
-QUEUE="-q hcp_priority.q"
-
-# Change to PRINTCOM="echo" to just echo commands instead of actually executing them
-#PRINTCOM="echo"#
-PRINTCOM=""
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 ######################################### DO WORK ##########################################
 
 SCRIPT_NAME=`basename ${0}`
 echo $SCRIPT_NAME
 
-Tasklist=""
-Tasklist="${Tasklist} rfMRI_REST1_PA"
-Tasklist="${Tasklist} rfMRI_REST2_AP"
-Tasklist="${Tasklist} rfMRI_REST3_PA"
-Tasklist="${Tasklist} rfMRI_REST4_AP"
-Tasklist="${Tasklist} tfMRI_MOVIE1_AP"
-Tasklist="${Tasklist} tfMRI_MOVIE2_PA"
-Tasklist="${Tasklist} tfMRI_MOVIE3_PA"
-Tasklist="${Tasklist} tfMRI_MOVIE4_AP"
-Tasklist="${Tasklist} tfMRI_RET1_AP"
-Tasklist="${Tasklist} tfMRI_RET2_PA"
-Tasklist="${Tasklist} tfMRI_RET3_AP"
-Tasklist="${Tasklist} tfMRI_RET4_PA"
-Tasklist="${Tasklist} tfMRI_RET5_AP"
-Tasklist="${Tasklist} tfMRI_RET6_PA"
+Tasklist=()
+Tasklist+=(rfMRI_REST1_PA)
+Tasklist+=(rfMRI_REST2_AP)
+Tasklist+=(rfMRI_REST3_PA)
+Tasklist+=(rfMRI_REST4_AP)
+Tasklist+=(tfMRI_MOVIE1_AP)
+Tasklist+=(tfMRI_MOVIE2_PA)
+Tasklist+=(tfMRI_MOVIE3_PA)
+Tasklist+=(tfMRI_MOVIE4_AP)
+Tasklist+=(tfMRI_RET1_AP)
+Tasklist+=(tfMRI_RET2_PA)
+Tasklist+=(tfMRI_RET3_AP)
+Tasklist+=(tfMRI_RET4_PA)
+Tasklist+=(tfMRI_RET5_AP)
+Tasklist+=(tfMRI_RET6_PA)
 
 for Subject in $Subjlist
 do
 	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 	
-	for fMRIName in $Tasklist
+	for fMRIName in "${Tasklist[@]}"
 	do
 		echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
 		
@@ -133,23 +132,23 @@ do
 		# RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
 		RegName="FS"
 		
-		if [ "${RunLocal}" == "TRUE" ] ; then
-			echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-			queuing_command=""
+		if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]] ; then
+			echo "${SCRIPT_NAME}: About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+			queuing_command=("${FSLDIR}/bin/fsl_sub")
 		else
-			echo "${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-			queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+			echo "${SCRIPT_NAME}: About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 		fi
 		
-		${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
-			--path="${StudyFolder}" \
-			--subject=${Subject} \
-			--fmriname=${fMRIName} \
-			--lowresmesh=${LowResMesh} \
-			--fmrires=${FinalfMRIResolution} \
-			--smoothingFWHM=${SmoothingFWHM} \
-			--grayordinatesres=${GrayordinatesResolution} \
-			--regname=${RegName}
+		"${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
+			--path="$StudyFolder" \
+			--subject="$Subject" \
+			--fmriname="$fMRIName" \
+			--lowresmesh="$LowResMesh" \
+			--fmrires="$FinalfMRIResolution" \
+			--smoothingFWHM="$SmoothingFWHM" \
+			--grayordinatesres="$GrayordinatesResolution" \
+			--regname="$RegName"
 		
 	done
 	

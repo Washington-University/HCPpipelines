@@ -616,8 +616,8 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
 opts_ShowVersionIfRequested "$@"
 

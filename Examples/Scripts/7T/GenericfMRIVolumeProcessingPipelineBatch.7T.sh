@@ -85,17 +85,16 @@ get_batch_options "$@"
 #  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, CARET7DIR, PATH for gradient_unwarp.py
 
 # Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#QUEUE="-q long.q"
-QUEUE="-q hcp_priority.q"
-
-# Change to PRINTCOM="echo" to just echo commands instead of actually executing them
-#PRINTCOM="echo"
-PRINTCOM=""
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 # To get accurate EPI distortion correction with TOPUP, the phase encoding direction
 # encoded as part of the ${TaskList} name must accurately reflect the PE direction of
@@ -112,28 +111,28 @@ PRINTCOM=""
 SCRIPT_NAME=`basename ${0}`
 echo $SCRIPT_NAME
 
-TaskList=""
-TaskList+=" rfMRI_REST1_PA"  #Include space as first character
-TaskList+=" rfMRI_REST2_AP"
-TaskList+=" rfMRI_REST3_PA"
-TaskList+=" rfMRI_REST4_AP"
-TaskList+=" tfMRI_MOVIE1_AP"
-TaskList+=" tfMRI_MOVIE2_PA"
-TaskList+=" tfMRI_MOVIE3_PA"
-TaskList+=" tfMRI_MOVIE4_AP"
-TaskList+=" tfMRI_RETBAR1_AP"
-TaskList+=" tfMRI_RETBAR2_PA"
-TaskList+=" tfMRI_RETCCW_AP"
-TaskList+=" tfMRI_RETCON_PA"
-TaskList+=" tfMRI_RETCW_PA"
-TaskList+=" tfMRI_RETEXP_AP"
+TaskList=()
+TaskList+=(rfMRI_REST1_PA)
+TaskList+=(rfMRI_REST2_AP)
+TaskList+=(rfMRI_REST3_PA)
+TaskList+=(rfMRI_REST4_AP)
+TaskList+=(tfMRI_MOVIE1_AP)
+TaskList+=(tfMRI_MOVIE2_PA)
+TaskList+=(tfMRI_MOVIE3_PA)
+TaskList+=(tfMRI_MOVIE4_AP)
+TaskList+=(tfMRI_RETBAR1_AP)
+TaskList+=(tfMRI_RETBAR2_PA)
+TaskList+=(tfMRI_RETCCW_AP)
+TaskList+=(tfMRI_RETCON_PA)
+TaskList+=(tfMRI_RETCW_PA)
+TaskList+=(tfMRI_RETEXP_AP)
 
 for Subject in $Subjlist
 do
 	
 	echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 	
-	for fMRIName in ${TaskList}
+	for fMRIName in "${TaskList[@]}"
 	do
 		echo "  ${SCRIPT_NAME}: Processing Scan: ${fMRIName}"
 
@@ -229,37 +228,36 @@ do
 		output_fMRIName="${TaskName}_7T_${PhaseEncodingDir}"
 		echo "  ${SCRIPT_NAME}: output_fMRIName: ${output_fMRIName}"
 		
-		if [ "${RunLocal}" == "TRUE" ]
+		if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]
 		then
 			echo "  ${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
-			queuing_command=""
+			queuing_command=("${FSLDIR}/bin/fsl_sub")
 		else
 			echo "  ${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
-			queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 		fi
 		
-		${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
-			--path=${StudyFolder} \
-			--subject=${Subject} \
-			--fmriname=${output_fMRIName} \
-			--fmritcs=${fMRITimeSeries} \
-			--fmriscout=${fMRISBRef} \
-			--SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-			--SEPhasePos=${SpinEchoPhaseEncodePositive} \
-			--fmapmag=${MagnitudeInputName} \
-			--fmapphase=${PhaseInputName} \
-			--fmapgeneralelectric=${GEB0InputName} \
-			--echospacing=${EchoSpacing} \
-			--echodiff=${DeltaTE} \
-			--unwarpdir=${UnwarpDir} \
-			--fmrires=${FinalFMRIResolution} \
-			--dcmethod=${DistortionCorrection} \
-			--gdcoeffs=${GradientDistortionCoeffs} \
-			--topupconfig=${TopUpConfig} \
-			--dof=${dof_epi2t1} \
-			--printcom=${PRINTCOM} \
+		"${queuing_command[@]}" "$HCPPIPEDIR"/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
+			--path="$StudyFolder" \
+			--subject="$Subject" \
+			--fmriname="$output_fMRIName" \
+			--fmritcs="$fMRITimeSeries" \
+			--fmriscout="$fMRISBRef" \
+			--SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
+			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
+			--fmapmag="$MagnitudeInputName" \
+			--fmapphase="$PhaseInputName" \
+			--fmapgeneralelectric="$GEB0InputName" \
+			--echospacing="$EchoSpacing" \
+			--echodiff="$DeltaTE" \
+			--unwarpdir="$UnwarpDir" \
+			--fmrires="$FinalFMRIResolution" \
+			--dcmethod="$DistortionCorrection" \
+			--gdcoeffs="$GradientDistortionCoeffs" \
+			--topupconfig="$TopUpConfig" \
+			--dof="$dof_epi2t1" \
 			--biascorrection=$BiasCorrection \
-			--mctype=${MCType}
+			--mctype="$MCType"
 	done
 	
 done

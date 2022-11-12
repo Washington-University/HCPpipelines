@@ -86,17 +86,20 @@ get_batch_options "$@"
 #  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, CARET7DIR, PATH for gradient_unwarp.py
 
 #Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#QUEUE="-q verylong.q"
-QUEUE="-q hcp_priority.q"
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 # Change to PRINTCOM="echo" to just echo commands instead of actually executing them
-#PRINTCOM="echo"
 PRINTCOM=""
+#PRINTCOM="echo"
 
 SCRIPT_NAME=`basename ${0}`
 echo $SCRIPT_NAME
@@ -196,23 +199,23 @@ for Subject in $Subjlist ; do
 	# Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
 	Gdcoeffs="NONE"
 
-	if [ "${RunLocal}" == "TRUE" ] ; then
-		echo "${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
-		queuing_command=""
+	if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]] ; then
+		echo "${SCRIPT_NAME}: About to locally run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+		queuing_command=("${FSLDIR}/bin/fsl_sub")
 	else
-		echo "${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
-		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+		echo "${SCRIPT_NAME}: About to use fsl_sub to queue ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+		queuing_command=("${FSLDIR}/bin/fsl_sub" -q  "$QUEUE")
 	fi
 
-	${PRINTCOM} ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
+	"${queuing_command[@]}" "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline.sh \
 		--posData="${PosData}" \
 		--negData="${NegData}" \
 		--path="${StudyFolder}" \
 		--subject="${SubjectID}" \
 		--echospacing="${EchoSpacing}" \
-		--PEdir=${PEdir} \
+		--PEdir="${PEdir}" \
 		--gdcoeffs="${Gdcoeffs}" \
 		--b0maxbval=100 \
-		--printcom=$PRINTCOM
+		--printcom="$PRINTCOM"
 
 done

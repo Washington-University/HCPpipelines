@@ -3,9 +3,9 @@
 get_batch_options() {
     local arguments=("$@")
 
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj
-    unset command_line_specified_run_local
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -49,9 +49,6 @@ source "$EnvironmentScript"
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
 
 # NOTE: this script will error on subjects that are missing some fMRI runs that are specified in the MR FIX arguments
-
-PRINTCOM=()
-#PRINTCOM=(echo)
 
 ########################################## INPUTS ########################################## 
 
@@ -117,11 +114,11 @@ fi
 # Log the originating call
 echo "$0" "$@"
 
-QUEUE=()
-#TODO: add better detection of whether -q is needed?
-#if [ X$SGE_ROOT != X ] ; then
-    QUEUE=(-q long.q)
-#fi
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 Maps=$(IFS=@; echo "${Maps[*]}")
 MyelinMaps=$(IFS=@; echo "${MyelinMaps[*]}")
@@ -133,15 +130,15 @@ dontFixNames=$(IFS=@; echo "${dontFixNames[*]}")
 for Subject in "${Subjlist[@]}" ; do
     echo "    ${Subject}"
 
-    if [ -n "${command_line_specified_run_local}" ] ; then
-        echo "About to run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
-        queuing_command=()
+    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
+        queuing_command=("$FSLDIR"/bin/fsl_sub)
     else
-        echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
-        queuing_command=("$FSLDIR"/bin/fsl_sub "${QUEUE[@]}")
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
+        queuing_command=("$FSLDIR"/bin/fsl_sub -q "$QUEUE")
     fi
 
-    "${PRINTCOM[@]}" "${queuing_command[@]}" "$HCPPIPEDIR"/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
+    "${queuing_command[@]}" "$HCPPIPEDIR"/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
         --path="$StudyFolder" \
         --subject="$Subject" \
         --high-res-mesh="$HighResMesh" \

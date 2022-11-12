@@ -58,16 +58,16 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"                 # Command line option functions
 
-opts_ShowVersionIfRequested $@
+opts_ShowVersionIfRequested "$@"
 
-if opts_CheckForHelpRequest $@; then
+if opts_CheckForHelpRequest "$@"; then
 	show_usage
 	exit 0
 fi
 
-${HCPPIPEDIR}/show_version
+"$HCPPIPEDIR"/show_version
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -102,8 +102,6 @@ QCMode=`opts_GetOpt1 "--fmri-qc" $@`
 QCMode=`opts_DefaultOpt $QCMode YES`
 QCMode="$(echo ${QCMode} | tr '[:upper:]' '[:lower:]')"  # Convert to all lowercase
 
-RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
-
 doProcessing=1
 doQC=1
 
@@ -130,7 +128,6 @@ case "$QCMode" in
         log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
         ;;
 esac
-log_Msg "RUN: ${RUN}"
 
 if [ "${RegName}" = "FS" ] ; then
     log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
