@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #!/bin/bash 
 
 get_batch_options() {
