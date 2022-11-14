@@ -124,7 +124,7 @@ main() {
 	QUEUE="-q long.q"
 
 	# regression mode
-  RegName="NONE"
+	RegName="NONE"
 
 	# low res mesh
 	LowResMesh=32
@@ -138,8 +138,8 @@ main() {
 	# motion regression or not
 	MotionReg=FALSE
 
-  # clean up intermediates
-  DeleteIntermediates=FALSE
+	# clean up intermediates
+	DeleteIntermediates=FALSE
 
 	if [ "${RunLocal}" == "TRUE" ]; then
 		queuing_command=""
@@ -152,34 +152,34 @@ main() {
 			# Single Run
 			for fMRIName in ${fMRINames}; do
 
-					${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh \
-						--path=${StudyFolder} \
-						--subject=${Subject} \
-						--fmri-name=${fMRIName} \
-						--high-pass=${highpass} \
-						--reg-name=${RegName} \
-						--low-res-mesh=${LowResMesh} \
-						--matlab-run-mode=${MatlabMode} \
-						--motion-regression=${MotionReg} \
-            --delete-intermediates=${DeleteIntermediates}
-            echo "${Subject} ${fMRIName}"
-            
+				${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh \
+					--path=${StudyFolder} \
+					--subject=${Subject} \
+					--fmri-name=${fMRIName} \
+					--high-pass=${highpass} \
+					--reg-name=${RegName} \
+					--low-res-mesh=${LowResMesh} \
+					--matlab-run-mode=${MatlabMode} \
+					--motion-regression=${MotionReg} \
+					--delete-intermediates=${DeleteIntermediates}
+				echo "${Subject} ${fMRIName}"
+			
 			done
 		else # Multi-Run
-		  i=1
-  		for ConcatName in ${ConcatNames} ; do 
+			i=1
+			for ConcatName in ${ConcatNames} ; do 
   		
-					${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh \
-						--path=${StudyFolder} \
-						--subject=${Subject} \
-						--fmri-names=${fMRINames} \
-						--high-pass=${highpass} \
-						--reg-name=${RegName} \
-						--concat-fmri-name=${ConcatName} \
-						--low-res-mesh=${LowResMesh} \
-						--matlab-run-mode=${MatlabMode} \
-						--motion-regression=${MotionReg}
-						echo "${Subject} ${ConcatName}"
+				${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+					--path=${StudyFolder} \
+					--subject=${Subject} \
+					--fmri-names=${fMRINames} \
+					--high-pass=${highpass} \
+					--reg-name=${RegName} \
+					--concat-fmri-name=${ConcatName} \
+					--low-res-mesh=${LowResMesh} \
+					--matlab-run-mode=${MatlabMode} \
+					--motion-regression=${MotionReg}
+					echo "${Subject} ${ConcatName}"
 						
 			done
 		fi
