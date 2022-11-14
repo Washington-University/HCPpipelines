@@ -139,23 +139,23 @@ main() {
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
+	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
 	#ConcatNames=""
-	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
-	#bandpass=2000 
 	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
 	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
 	# bandpass=pd2 is a quadratic detrend
-	bandpass=0 #comment out for single run FIX and use above line for bandpass=2000
+	bandpass=0
+	#bandpass=2000 #for single run FIX, bandpass=2000 was used in HCP preprocessing
 
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
 	
 	# set training data file
-	#SRTrainingData=HCP_hp2000.RData
+	SRTrainingData=HCP_hp2000.RData
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
