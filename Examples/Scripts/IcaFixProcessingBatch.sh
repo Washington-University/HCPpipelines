@@ -154,10 +154,12 @@ main() {
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
 	
-	# set training data file
-	SRTrainingData=HCP_hp2000.RData
+	# set the training data used in multi-run fix mode
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
+	# set the training data used in single-run fix mode
+	SRTrainingData=HCP_hp2000.RData
+	
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
 	
