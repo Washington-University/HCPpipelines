@@ -140,7 +140,7 @@ main() {
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
-	ConcatNames=""
+	#ConcatNames=""
 	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
@@ -155,7 +155,7 @@ main() {
 	domot=FALSE
 	
 	# set training data file
-	SRTrainingData=HCP_hp2000.RData
+	#SRTrainingData=HCP_hp2000.RData
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
