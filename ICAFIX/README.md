@@ -18,7 +18,7 @@ A typical workflow would be:
   `wb_view {Subject}_{ConcatName}_{hp#}_ICA_Classification_singlescreen.scene` 
 
    For examples/discussion of signal vs. noise components see the ICA + FIX section of this [HCP Course Practical](https://wustl.app.box.com/v/hcp-2019-practical-05). If you are
-  satisfied with the quality of the classification, proceed to use the cleaned data.
+  satisfied with the quality of the classification, proceed to use the cleaned data, e.g. {ConcatName}_Atlas_{hp#}_clean.dtseries.nii
 * If you feel reclassification of certain components is necessary, enter the
   appropriate component numbers that you feel were mis-classified into the
   ReclassifyAsSignal.txt or ReclassifyAsNoise.txt files (as appropriate). THEN:
