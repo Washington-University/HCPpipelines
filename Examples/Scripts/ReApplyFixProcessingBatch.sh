@@ -107,7 +107,7 @@ main() {
 	get_options "$@"
 
 	# set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
 	# set list of fMRI on which to run ReApplyFixPipeline, separate MR FIX groups with %, use spaces (or @ like dedrift...) to otherwise separate runs
 	# ReApplyFixPipeline
@@ -120,8 +120,10 @@ main() {
 	# set highpass
 	highpass=0
 	
-	# establish queue for job submission
-	QUEUE="-q long.q"
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local	QUEUE=""
+	#QUEUE="long.q"
 
 	# regression mode
 	RegName="NONE"
@@ -130,9 +132,9 @@ main() {
 	LowResMesh=32
 
 	# matlab mode
-        # 0 = Use compiled MATLAB
-        # 1 = Use interpreted MATLAB
-        # 2 = Use interpreted Octave
+	# 0 = Use compiled MATLAB
+	# 1 = Use interpreted MATLAB
+	# 2 = Use interpreted Octave
 	MatlabMode=1
 
 	# motion regression or not
@@ -141,10 +143,10 @@ main() {
 	# clean up intermediates
 	DeleteIntermediates=FALSE
 
-	if [ "${RunLocal}" == "TRUE" ]; then
-		queuing_command=""
+	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]]; then
+		queuing_command=("${FSLDIR}/bin/fsl_sub")
 	else
-		queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+		queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 	fi
 
 	for Subject in ${Subjlist}; do
@@ -152,16 +154,16 @@ main() {
 			# Single Run
 			for fMRIName in ${fMRINames}; do
 
-				${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh \
-					--path=${StudyFolder} \
-					--subject=${Subject} \
-					--fmri-name=${fMRIName} \
-					--high-pass=${highpass} \
-					--reg-name=${RegName} \
-					--low-res-mesh=${LowResMesh} \
-					--matlab-run-mode=${MatlabMode} \
-					--motion-regression=${MotionReg} \
-					--delete-intermediates=${DeleteIntermediates}
+				"${queuing_command[@]}" "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
+					--path="$StudyFolder" \
+					--subject="$Subject" \
+					--fmri-name="$fMRIName" \
+					--high-pass="$highpass" \
+					--reg-name="$RegName" \
+					--low-res-mesh="$LowResMesh" \
+					--matlab-run-mode="$MatlabMode" \
+					--motion-regression="$MotionReg" \
+					--delete-intermediates="$DeleteIntermediates"
 				echo "${Subject} ${fMRIName}"
 			
 			done
@@ -169,16 +171,16 @@ main() {
 			i=1
 			for ConcatName in ${ConcatNames} ; do 
   		
-				${queuing_command} ${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh \
-					--path=${StudyFolder} \
-					--subject=${Subject} \
-					--fmri-names=${fMRINames} \
-					--high-pass=${highpass} \
-					--reg-name=${RegName} \
-					--concat-fmri-name=${ConcatName} \
-					--low-res-mesh=${LowResMesh} \
-					--matlab-run-mode=${MatlabMode} \
-					--motion-regression=${MotionReg}
+				"${queuing_command[@]}" "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+					--path="$StudyFolder" \
+					--subject="$Subject" \
+					--fmri-names="$fMRINames" \
+					--high-pass="$highpass" \
+					--reg-name="$RegName" \
+					--concat-fmri-name="$ConcatName" \
+					--low-res-mesh="$LowResMesh" \
+					--matlab-run-mode="$MatlabMode" \
+					--motion-regression="$MotionReg"
 					echo "${Subject} ${ConcatName}"
 						
 			done
@@ -190,5 +192,5 @@ main() {
 #
 # Invoke the main function to get things started
 #
-main $@
+main "$@"
 
