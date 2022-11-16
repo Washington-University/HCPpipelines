@@ -122,7 +122,8 @@ main() {
 	
 	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
-	#default to no queue, implying run local	QUEUE=""
+	#default to no queue, implying run local
+	QUEUE=""
 	#QUEUE="long.q"
 
 	# regression mode
