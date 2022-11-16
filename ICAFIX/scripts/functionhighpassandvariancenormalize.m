@@ -23,7 +23,8 @@ function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 % FMRI: The base string of the fmri time series (no extensions)
 % WBC: wb_command (full path)
 % [REGSTRING]: Additional registration-related string to add to output file names. OPTIONAL.
-  
+% [WISHARTOVERRIDE]: Change the number of volume wisharts in hp>0 mode. OPTIONAL.
+
 % Note: HP='pd0' would be interpreted as a true 0th order detrend, which is 
 % the same as demeaning. Mathematically, this is the same as the HP<0 condition,
 % but the output files will be named differently (i.e., include '_hppd0'), and additional
@@ -44,6 +45,7 @@ regstring = '';
 pdflag = false;  % Polynomial detrend
 pdstring = 'pd';  % Expected string at start of HP variable to request a "polynomial detrend"
 hpstring = '';
+volhpwishart = 2;
 
 %% Parse varargin
 if length(varargin) >= 1 && ~isempty(varargin{1})
@@ -53,6 +55,14 @@ if length(varargin) >= 1 && ~isempty(varargin{1})
 	error('%s: REGSTRING should be a string', mfilename);
   end
 end
+
+if length(varargin) >= 2
+  if isdeployed()
+    volhpwishart = str2double(varargin{2});
+  else
+    volhpwishart = varargin{2};
+  end
+end   
 
 % Check whether polynomial detrend is being requested for the high-pass filtering.
 if ischar(hp)
@@ -191,7 +201,7 @@ end
 %% Compute VN map
 if hp>=0
     if dovol > 0
-        Outcts=icaDim(cts,0,1,-1,2); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform 
+        Outcts=icaDim(cts,0,1,-1,volhpwishart); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform 
     end
     
     OutBO=icaDim(BO.cdata,0,1,-1,3); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, CIFTI fits three distributions to deal with volume to CIFTI mapping
