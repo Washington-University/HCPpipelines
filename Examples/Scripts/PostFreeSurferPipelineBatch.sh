@@ -88,7 +88,7 @@ for Subject in $Subjlist ; do
   ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
   RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
   
-  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ] ; then
+  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
       echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
       #NOTE: fsl_sub without -q runs locally and captures output in files
       queuing_command=("$FSLDIR/bin/fsl_sub")
