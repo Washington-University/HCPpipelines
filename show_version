@@ -101,7 +101,7 @@ fi
 
 commit=''
 #plot twist: mac's which has -s for silent, but debian's doesn't
-if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null
+if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null && (cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git status &> /dev/null)
 then
     #if we have the git repo and git, we can check if the user has edited anything important
     modified=no
@@ -117,14 +117,16 @@ then
                 topfiles+=("$file")
             fi
         done
-        git diff --quiet HEAD -- "${topfiles[@]}")
+        #use GIT_DIR to try to avoid the owner sanity checks
+        GIT_DIR="$HCPPIPEDIR"/.git git diff --quiet HEAD -- "${topfiles[@]}")
     then
         modified=YES
         verstring="$verstring"-MOD
     fi
-    commit=$(cd "$HCPPIPEDIR"; git rev-parse HEAD)
-    shortcommit=$(cd "$HCPPIPEDIR"; git rev-parse --short HEAD)
-    if ((! release))
+    #use "|| true" to safeguard against git not liking something about the repo, in case GIT_DIR isn't enough
+    commit=$(cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git rev-parse HEAD || true)
+    shortcommit=$(cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git rev-parse --short HEAD || true)
+    if ((! release)) && [[ "$shortcommit" != "" ]]
     then
         verstring="$verstring"-"$shortcommit"
     fi

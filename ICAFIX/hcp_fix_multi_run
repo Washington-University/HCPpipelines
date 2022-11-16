@@ -33,7 +33,7 @@
 show_usage() {
     cat <<EOF
 
-hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>]
+hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>] [<FallbackThreshold>]
 
    Apply FIX cleaning to a concatenated set of input files.
 
@@ -74,6 +74,12 @@ hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression>
      Default = FALSE.
      Note, deleting intermediates is not recommended for MR FIX.
      You must specify both <TrainingFile> and <FixThreshold> in order to specify this option.
+
+  [<FallbackThreshold>] (optional)
+     If greater than zero, reruns icadim on any run with a VN mean more than this amount
+     greater than the minimum VN mean.
+     Default = 0.
+     You must specify <TrainingFile>, <FixThreshold>, and <DeleteIntermediates> in order to use this option
 
 e.g.  hcp_fix_multi_run rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz@rfMRI_REST1_RL/rfMRI_REST1_RL.nii.gz pd2 rfMRI_REST1_RL_LR/rfMRI_REST1_RL_LR FALSE
         (if launching the script from the '\${StudyFolder}/\${Subject}/MNINonLinear/Results' directory)
@@ -316,6 +322,11 @@ if (($# >= 7))
 then
     DeleteIntermediates=$(interpret_as_bool "$7")
 fi
+RewishartThresh=0
+if (($# >= 8))
+then
+    RewishartThresh="$8"
+fi
 if [ -z "${FixThresh}" ]; then
 	FixThresh=10
 fi
@@ -334,6 +345,7 @@ log_Msg "doMotionRegression: ${doMotionRegression}"
 log_Msg "TrainingData: ${TrainingData}"
 log_Msg "FixThresh: ${FixThresh}"
 log_Msg "DeleteIntermediates: ${DeleteIntermediates}"
+log_Msg "RewishartThresh: ${RewishartThresh}"
 
 DIR=`pwd`
 log_Msg "PWD: $DIR"
@@ -476,6 +488,100 @@ for fmri in $fmris ; do
 	log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 
 done  ### END LOOP (for fmri in $fmris; do)
+
+
+#note: this test a string comparison, not a math comparison
+if [[ "$RewishartThresh" != "0" ]]
+then
+    vnmeans=()
+    runnames=()
+    for fmri in $fmris
+    do
+        thismean=$("$Caret7_Command" -volume-stats "$fmri"_hp"$hp"_vn.nii.gz -reduce MEAN -roi "$fmri"_finalmask.nii.gz)
+        echo "$(basename "$fmri") vn mean: $thismean"
+        fmriarray+=("$fmri")
+        vnmeans+=("$thismean")
+        
+        #check for first time through loop
+        if ((${#vnmeans[@]} == 1))
+        then
+            minvn="$thismean"
+        else
+            minvn=$(bc -l <<<"if ($thismean > $minvn) $minvn else $thismean")
+        fi
+    done
+    for ((i = 0; i < ${#vnmeans[@]}; ++i))
+    do
+        echo "test: ${vnmeans[$i]} > $minvn + $RewishartThresh"
+        if [[ $(bc <<<"${vnmeans[$i]} > $minvn + $RewishartThresh") == "1" ]]
+        then
+            #rerun with 1 wishart
+            fmri="${fmriarray[$i]}"
+            #fmri is modified by basename and some other stuff, tr is derived from file...
+            cd `dirname $fmri`
+            log_Debug_Msg "pwd: "$(pwd)
+            fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
+            fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
+
+            #log the fact that we are rerunning this one
+            log_Msg "rerunning functionhighpassandvariancenormalize on outlier run $fmri"
+
+            #TSC: assume _mean and _demean haven't been overwritten or deleted?
+            
+            ## "1st pass" VN on the individual runs; high-pass gets done here as well
+            tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
+            log_Msg "tr: ${tr}"  
+            log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
+
+            if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
+                log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
+            fi
+            ML_PATHS="addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+
+            case ${FSL_FIX_MATLAB_MODE} in
+                0)
+                    # Use compiled Matlab
+                    if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+                        log_Err_Abort "To use MATLAB run mode: ${FSL_FIX_MATLAB_MODE}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
+                    else
+                        log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
+                    fi
+
+                    CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
+                    #FIXME: check vararg behavior on compiled with empty string, the "regstring" vararg tests isempty and otherwise disables volume
+                    matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -c ${MATLAB_COMPILER_RUNTIME} -b ${CSUBDIR} -f functionhighpassandvariancenormalize ${tr} ${hp} ${fmri} ${Caret7_Command} '' 1"
+                    log_Msg "Run compiled MATLAB with command..."
+                    log_Msg "${matlab_cmd}"
+                    ${matlab_cmd}
+                    ;;
+                
+                1 | 2)
+                    # Use interpreted MATLAB or Octave
+                    # ${hp} needs to be passed in as a string, to handle the hp=pd* case
+                    matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', 1);"
+                    log_Msg "Run interpreted MATLAB/Octave with command..."
+                    log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_cmd}"
+                    ${FSL_FIXDIR}/call_matlab.sh -r "${matlab_cmd}"   # Note: the semicolon within ${matlab_cmd} needs to be protected with quotation marks
+                    ;;
+                *)
+                    # Unsupported MATLAB run mode
+                    log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+                    ;;
+            esac
+
+            log_Msg "Dims: $(cat ${fmri}_dims.txt)"
+
+            # Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
+            fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+            fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
+            $FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
+
+            cd ${DIR}  # Return to directory where script was launched
+            
+            log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
+        fi
+    done
+fi
 
 ## ---------------------------------------------------------------------------
 ## Concatenate the individual runs and create necessary files
