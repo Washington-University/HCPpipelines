@@ -86,13 +86,14 @@ fMRINames=""
 mrfixNames="rfMRI_REST1_RL@rfMRI_REST1_LR@tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR@rfMRI_REST2_LR@rfMRI_REST2_RL@tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
 # the original MR FIX concatenated name (only one group)
 mrfixConcatName="fMRI_CONCAT"
-# @-separate list of runs to use for this new MSMAll run of MR FIX
+# @-separated list of runs to use for this new MSMAll run of MR FIX
 mrfixNamesToUse="rfMRI_REST1_RL@rfMRI_REST1_LR@rfMRI_REST2_LR@rfMRI_REST2_RL"
 # FIX output concat name for this new MSMAll run of MR FIX
 OutfMRIName="rfMRI_REST_CONCAT"
 
-
+#Use HighPass = 2000 for single-run FIX data, HighPass = 0 for MR FIX data
 HighPass="0"
+#Name to reflect high pass setting
 fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 RegName="MSMAll_InitalReg"
