@@ -169,13 +169,25 @@ main() {
 			
 			done
 		else # Multi-Run
-			i=1
-			for ConcatName in ${ConcatNames} ; do 
-  		
+			
+			#need arrays to sanity check number of concat groups
+			IFS=' @' read -a concatarray <<< "${ConcatNames}"
+			IFS=% read -a fmriarray <<< "${fMRINames}"
+        	
+			if ((${#concatarray[@]} != ${#fmriarray[@]})); then
+				echo "ERROR: number of names in ConcatNames does not match number of fMRINames groups"
+				exit 1
+			fi
+
+			for ((i = 0; i < ${#concatarray[@]}; ++i))
+			do
+				ConcatName="${concatarray[$i]}"
+				fMRINamesGroup="${fmriarray[$i]}"
+	  		
 				"${queuing_command[@]}" "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
 					--path="$StudyFolder" \
 					--subject="$Subject" \
-					--fmri-names="$fMRINames" \
+					--fmri-names="$fMRINamesGroup" \
 					--high-pass="$highpass" \
 					--reg-name="$RegName" \
 					--concat-fmri-name="$ConcatName" \
