@@ -62,6 +62,7 @@ Subjlist=(HCD0001305_V1_MR HCD0008117_V1_MR) #List of subject IDs
 #Don't edit things between here and MRFixConcatNames unless you know what you are doing
 HighResMesh="164"
 LowResMesh="32"
+#Do not use RegName from MSMAllPipelineBatch.sh
 RegName="MSMAll_InitalReg_2_d40_WRN"
 DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 ConcatRegName="MSMAll"
