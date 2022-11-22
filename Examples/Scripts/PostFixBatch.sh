@@ -74,7 +74,7 @@ QUEUE=""
 ######################################### DO WORK ##########################################
 
 # List of fMRI runs
-# If running on output from multi-run FIX, use ConcatName as value for fMRINames
+# If running on output from multi-run FIX, use ConcatName(s) as value for fMRINames (space delimited)
 fMRINames="rfMRI_REST"
 
 HighPass="0"
