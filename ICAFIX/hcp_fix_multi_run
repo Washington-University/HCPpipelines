@@ -549,10 +549,10 @@ then
 
                     CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
                     #FIXME: check vararg behavior on compiled with empty string, the "regstring" vararg tests isempty and otherwise disables volume
-                    matlab_cmd="${FSL_FIXDIR}/call_matlab.sh -c ${MATLAB_COMPILER_RUNTIME} -b ${CSUBDIR} -f functionhighpassandvariancenormalize ${tr} ${hp} ${fmri} ${Caret7_Command} '' 1"
+                    matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "${CSUBDIR}" -f functionhighpassandvariancenormalize "${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "" 1)
                     log_Msg "Run compiled MATLAB with command..."
-                    log_Msg "${matlab_cmd}"
-                    ${matlab_cmd}
+                    log_Msg "${matlab_cmd[*]}"
+                    "${matlab_cmd[@]}"
                     ;;
                 
                 1 | 2)
