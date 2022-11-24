@@ -111,7 +111,7 @@ for Subject in $Subjlist ; do
         echo "About to locally run ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh"
         queuing_command=("$FSLDIR/bin/fsl_sub")
     else
-        echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh"
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/MSMAll/MSMAllPipeline.sh"
         queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
     fi
 

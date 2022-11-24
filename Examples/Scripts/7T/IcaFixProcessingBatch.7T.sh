@@ -169,7 +169,7 @@ main() {
 					echo "About to locally run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
 					queuing_command=("${FSLDIR}/bin/fsl_sub")
 				else
-					echo "About to use fsl_sub to queue or run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+					echo "About to use fsl_sub to queue ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
 					queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 				fi
 

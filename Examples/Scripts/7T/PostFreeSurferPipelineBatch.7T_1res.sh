@@ -93,7 +93,7 @@ for Subject in $Subjlist ; do
       echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
       queuing_command=("${FSLDIR}/bin/fsl_sub")
   else
-      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
+      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline_1res.sh"
       queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
   fi
 
