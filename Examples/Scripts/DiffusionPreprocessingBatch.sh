@@ -68,7 +68,8 @@ echo "$@"
 QUEUE=""
 #QUEUE="hcp_priority.q"
 
-#this appears to be fully implemented in the diffusion pipelines
+#specify PRINTCOM="echo" to echo commands the pipeline would run, instead of running them
+#this appears to be fully implemented in the diffusion pipeline
 PRINTCOM=""
 #PRINTCOM="echo"
 
