@@ -230,10 +230,10 @@ do
 		
 		if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]
 		then
-			echo "  ${SCRIPT_NAME}: About to run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+			echo "  ${SCRIPT_NAME}: About to locally run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
 			queuing_command=("${FSLDIR}/bin/fsl_sub")
 		else
-			echo "  ${SCRIPT_NAME}: About to use fsl_sub to queue or run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+			echo "  ${SCRIPT_NAME}: About to use fsl_sub to queue ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
 			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 		fi
 		
