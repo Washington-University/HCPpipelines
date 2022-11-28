@@ -135,48 +135,36 @@ main() {
 	QUEUE=""
 	#QUEUE="hcp_priority.q"
 
-	# establish list of conditions on which to run ICA+FIX
-	CondList=()
-	CondList+=(rfMRI_REST1_7T)
-	CondList+=(rfMRI_REST2_7T)
-	CondList+=(rfMRI_REST3_7T)
-	CondList+=(rfMRI_REST4_7T)
-
-	# establish list of directions on which to run ICA+FIX
-	DirectionList=()
-	DirectionList+=(PA)
-	DirectionList+=(AP)
+	# establish list of runs on which to run ICA+FIX
+	fmriList=()
+	fmriList+=(rfMRI_REST1_7T_PA)
+	fmriList+=(rfMRI_REST2_7T_AP)
+	fmriList+=(rfMRI_REST3_7T_PA)
+	fmriList+=(rfMRI_REST4_7T_AP)
 
 	for Subject in ${Subjlist}
 	do
 		echo ${Subject}
 
-		for Condition in "${CondList[@]}"
+		for fmri in "${fmriList[@]}"
 		do
-			echo "  ${Condition}"
+			echo "  ${fmri}"
+			
+			InputDir="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmri}"
+			InputFile="${InputDir}/${fmri}.nii.gz"
 
-			for Direction in "${DirectionList[@]}"
-			do
-				echo "    ${Direction}"
-				
-				InputDir="${StudyFolder}/${Subject}/MNINonLinear/Results/${Condition}_${Direction}"
-				InputFile="${InputDir}/${Condition}_${Direction}.nii.gz"
+			bandpass=2000
+			
+			if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]
+			then
+				echo "About to locally run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+				queuing_command=("${FSLDIR}/bin/fsl_sub")
+			else
+				echo "About to use fsl_sub to queue ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
+				queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
+			fi
 
-				bandpass=2000
-				
-				if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]
-				then
-					echo "About to locally run ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
-					queuing_command=("${FSLDIR}/bin/fsl_sub")
-				else
-					echo "About to use fsl_sub to queue ${FixScript} ${InputFile} ${bandpass} ${TrainingData}"
-					queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
-				fi
-
-				
-				"${queuing_command[@]}" "$FixScript" "$InputFile" "$bandpass" "$TrainingData"
-			done
-
+			"${queuing_command[@]}" "$FixScript" "$InputFile" "$bandpass" "$TrainingData"
 		done
 
 	done
@@ -185,5 +173,5 @@ main() {
 #
 # Invoke the main function to get things started
 #
-main $@
+main "$@"
 
