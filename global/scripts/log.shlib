@@ -270,7 +270,7 @@ log_Check_Env_Var()
 {
 	local var_name="${1}"
 
-	if [ -z "${!var_name}" ]; then
+	if [ -z "${!var_name:-}" ]; then
 		log_Err_Abort "${var_name} environment variable must be set"
 	fi
 	log_Msg "${var_name}: ${!var_name}"

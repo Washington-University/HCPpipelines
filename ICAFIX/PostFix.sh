@@ -400,7 +400,7 @@ main()
 
 	# For interpreted modes, make sure that matlab/octave have access to the functions they need
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+	local ML_PATHS="addpath('$HCPCIFTIRWDIR'); addpath('${FSL_MATLAB_PATH}'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 	
 	# run MATLAB prepareICAs function
 	case ${MatlabRunMode} in

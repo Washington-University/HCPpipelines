@@ -100,7 +100,12 @@ function opts_AddMandatory()
 {
     if (($# < 4))
     then
-        log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        fi
     fi
     local switch="$1"
     local varname="$2"
@@ -115,7 +120,12 @@ function opts_AddConfigOptional()
 {
     if (($# < 5))
     then
-        log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        fi
     fi
     local switch="$1"
     local varname="$2"
@@ -139,7 +149,12 @@ function opts_AddConfigMandatory()
 {
     if (($# < 5))
     then
-        log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        fi
     fi
     local switch="$1"
     local varname="$2"
@@ -155,7 +170,12 @@ function opts_AddConfigAlias()
 {
     if (($# < 2))
     then
-        log_Err_Abort "developer error: config alias '$1' added improperly, too few arguments"
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: config alias '$1' added improperly, too few arguments"
+        fi
     fi
     if [[ "$1" == "" || "$2" == "" ]]
     then
@@ -185,6 +205,10 @@ function opts_ShowValues()
 
 function opts_conf_SetIsPath()
 {
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
     local opts_index="$(opts_conf_findkey "$1")"
     if ((opts_index == -1))
     then
@@ -195,6 +219,10 @@ function opts_conf_SetIsPath()
 
 function opts_conf_SuppressKey()
 {
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
     local opts_index="$(opts_conf_findkey "$1")"
     if ((opts_index == -1))
     then
@@ -214,7 +242,7 @@ function opts_conf_NewConfig()
     #delete the aliases for the input conf to avoid confusing the SuppressKey, etc functions above
     opts_config_aliases=()
     local opts_index=0
-    while (($# > 1))
+    while (($# > 2))
     do
         opts_config_names+=("$1")
         opts_config_writing_vars+=("$2")
@@ -222,10 +250,18 @@ function opts_conf_NewConfig()
         opts_config_suppress+=(0)
         shift 2
     done
+    if (($# > 0))
+    then
+        log_Warn "developer error: odd number of arguments to opts_conf_NewConfig"
+    fi
 }
 
 function opts_conf_WriteConfig()
 {
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
     local opts_outconf="$1"
     rm -f "$opts_outconf"
     local opts_index
@@ -521,7 +557,7 @@ function opts_add_switch()
     do
         if [[ "${!opts_index}" != --* ]]
         then
-            log_Err_Abort "developer error: parameter '$1' added improperly, legacy switch ${!opts_index} doesn't start with '--', check your quoting"
+            log_Err_Abort "developer error: parameter '${opts_param_switches["$opts_new_index"]}' added improperly, legacy switch '${!opts_index}' doesn't start with '--', check your quoting"
         fi
         opts_compat_aliases+=("${!opts_index}" "$opts_new_index")
     done
