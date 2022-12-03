@@ -39,8 +39,8 @@
 # include the real location of the @gifti folder, before a folder that contains an @gifti symlink
 # (since the -I option *appends* folders to the search path, in the order listed).
 
-# This problem is now avoided by putting a copy of the @gifti folder directly into the cifti-legacy folder, so
-# that no symlinks are involved, and @gifti will always be available if cifti-legacy is being used.
+# This problem is now avoided by putting the @gifti folder directly into global/matlab, so
+# that no symlinks are involved.
 
  
 # ------------------------------------------------------------------------------
@@ -60,11 +60,11 @@ compile_prepareICAs()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPPIPEDIR}/global/matlab \
-				  -I ${HCPPIPEDIR}/global/matlab/icaDim \
-				  -I ${HCPCIFTIRWDIR} \
-				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
-				  -d ${output_directory}
+				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
+				  -I "${HCPPIPEDIR}/global/matlab" \
+				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+				  -I "${HCPCIFTIRWDIR}" \
+				  -d "${output_directory}"
 
 	popd > /dev/null
 }
@@ -86,12 +86,12 @@ compile_functionhighpassandvariancenormalize()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
-				  -I ${HCPPIPEDIR}/global/matlab \
-				  -I ${HCPPIPEDIR}/global/matlab/icaDim \
-				  -I ${HCPCIFTIRWDIR} \
-				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
-				  -d ${output_directory}
+				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
+				  -I "${HCPPIPEDIR}/global/matlab" \
+				  -I "${HCPPIPEDIR}/global/matlab/icaDim" \
+				  -I "${HCPCIFTIRWDIR}" \
+				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+				  -d "${output_directory}"
 	
 	popd > /dev/null
 }
