@@ -62,8 +62,8 @@ compile_prepareICAs()
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
 				  -I "${HCPPIPEDIR}/global/matlab" \
-				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
 				  -I "${HCPCIFTIRWDIR}" \
+				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
 				  -d "${output_directory}"
 
 	popd > /dev/null
