@@ -166,6 +166,15 @@ main() {
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
 	
+	#defaults for icaDim
+	volWisharts=2
+	ciftiWisharts=3
+	icadimMode=default
+	#for data with far fewer timepoints than HCP, uncomment the three lines below to behave more like melodic
+	#volWisharts=1
+	#ciftiWisharts=1
+	#icadimMode=melodiclike
+	
 	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
 	#default to no queue, implying run local
@@ -184,8 +193,6 @@ main() {
 		
 		if [ -z "${ConcatNames}" ]; then
 			# single-run FIX
-			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
-			
 			fMRINamesFlat=$(echo ${fMRINames} | sed 's/[@%]/ /g')
 			
 			for fMRIName in ${fMRINamesFlat}; do
@@ -193,7 +200,7 @@ main() {
 
 				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
@@ -213,7 +220,6 @@ main() {
 				ConcatName="${concatarray[$i]}"
 				fMRINamesGroup="${fmriarray[$i]}"
 				# multi-run FIX
-				FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
 				ConcatFileName="${ResultsFolder}/${ConcatName}/${ConcatName}"
 
 				IFS=' @' read -a namesgrouparray <<< "${fMRINamesGroup}"
@@ -228,7 +234,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${MRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --vol-wisharts=$volWisharts --cifti-wisharts=$ciftiWisharts --icadim-mode=$icadimMode)
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done

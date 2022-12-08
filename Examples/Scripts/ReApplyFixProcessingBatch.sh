@@ -144,6 +144,15 @@ main() {
 	# clean up intermediates
 	DeleteIntermediates=FALSE
 
+	#defaults for icaDim
+	volWisharts=2
+	ciftiWisharts=3
+	icadimMode=default
+	#for data with far fewer timepoints than HCP, uncomment the three lines below to behave more like melodic
+	#volWisharts=1
+	#ciftiWisharts=1
+	#icadimMode=melodiclike
+
 	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]]; then
 		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 	else
@@ -165,6 +174,7 @@ main() {
 					--matlab-run-mode="$MatlabMode" \
 					--motion-regression="$MotionReg" \
 					--delete-intermediates="$DeleteIntermediates"
+				
 				echo "${Subject} ${fMRIName}"
 			
 			done
@@ -193,9 +203,13 @@ main() {
 					--concat-fmri-name="$ConcatName" \
 					--low-res-mesh="$LowResMesh" \
 					--matlab-run-mode="$MatlabMode" \
-					--motion-regression="$MotionReg"
-					echo "${Subject} ${ConcatName}"
-						
+					--motion-regression="$MotionReg" \
+					--vol-wisharts="$volWisharts" \
+					--cifti-wisharts="$ciftiWisharts" \
+					--icadim-mode="$icadimMode"
+				
+				echo "${Subject} ${ConcatName}"
+				
 			done
 		fi
 
