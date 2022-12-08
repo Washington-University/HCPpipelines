@@ -73,6 +73,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
      If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files
      that are prerequisites to FIX cleaning.
      (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts).
+   [--vol-wisharts=<integer>] - Number of wisharts to fit to volume data in
+     icaDim, default ${G_DEFAULT_VOLWISHARTS}
+   [--cifti-wisharts=<integer>] - Number of wisharts to fit to cifti data in
+     icaDim, default ${G_DEFAULT_CIFTIWISHARTS}
+   [--icadim-mode=<"default" or "melodiclike">] - Choose how to run icaDim:
+     "default" - start with a VN dimensionality of 1 and rerun until convergence
+     "melodiclike" - start with a VN dimensionality of half the timepoints, do not iterate
 
 EOF
 }
@@ -83,6 +90,9 @@ G_DEFAULT_LOW_RES_MESH=32
 G_DEFAULT_MATLAB_RUN_MODE=1		# Use interpreted MATLAB
 G_DEFAULT_MOTION_REGRESSION="FALSE"
 G_DEFAULT_DELETE_INTERMEDIATES="FALSE"
+G_DEFAULT_VOLWISHARTS=2
+G_DEFAULT_CIFTIWISHARTS=3
+G_DEFAULT_ICADIMMODE="default"
 
 # ------------------------------------------------------------------------------
 #  Get the command line options for this script.
@@ -93,22 +103,19 @@ get_options()
 	local arguments=("$@")
 
 	# initialize global output variables
-	unset p_StudyFolder      # ${1}
-	unset p_Subject          # ${2}
-	unset p_fMRINames        # ${3}
-	unset p_ConcatName       # ${4}
-	unset p_HighPass         # ${5}
-	unset p_RegName          # ${6}
-	unset p_LowResMesh       # ${7}
-	unset p_MatlabRunMode    # ${8}
-	unset p_MotionRegression # ${9}
-
-	# set default values
-	p_RegName=${G_DEFAULT_REG_NAME}
-	p_LowResMesh=${G_DEFAULT_LOW_RES_MESH}
-	p_MatlabRunMode=${G_DEFAULT_MATLAB_RUN_MODE}
-	p_MotionRegression=${G_DEFAULT_MOTION_REGRESSION}
-    p_DeleteIntermediates=${G_DEFAULT_DELETE_INTERMEDIATES}
+	p_StudyFolder=""                                    # ${1}
+	p_Subject=""                                        # ${2}
+	p_fMRINames=""                                      # ${3}
+	p_ConcatName=""                                     # ${4}
+	p_HighPass=""                                       # ${5}
+	p_RegName="${G_DEFAULT_REG_NAME}"                   # ${6}
+	p_LowResMesh="${G_DEFAULT_LOW_RES_MESH}"            # ${7}
+	p_MatlabRunMode="${G_DEFAULT_MATLAB_RUN_MODE}"      # ${8}
+	p_MotionRegression="${G_DEFAULT_MOTION_REGRESSION}" # ${9}
+    p_DeleteIntermediates="${G_DEFAULT_DELETE_INTERMEDIATES}"
+    p_volWisharts="${G_DEFAULT_VOLWISHARTS}"
+    p_ciftiWisharts="${G_DEFAULT_CIFTIWISHARTS}"
+    p_icadimMode="${G_DEFAULT_ICADIMMODE}"
 	
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -165,6 +172,18 @@ get_options()
 				;;
 			--delete-intermediates=*)
 				p_DeleteIntermediates=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--vol-wisharts=*)
+				p_volWisharts=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--cifti-wisharts=*)
+				p_ciftiWisharts=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--icadim-mode=*)
+				p_icadimMode=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -272,6 +291,7 @@ get_options()
 		esac
 	fi
 
+    #these can only trip if the defaults are edited to empty string
 	if [ -z "${p_MotionRegression}" ]; then
 		log_Err "motion regression setting (--motion-regression=) required"
 		error_count=$(( error_count + 1 ))
@@ -285,6 +305,10 @@ get_options()
 	else
 		log_Msg "Delete Intermediates: ${p_DeleteIntermediates}"
 	fi
+	
+	log_Msg "volume wisharts: ${p_volWisharts}"
+	log_Msg "cifti wisharts: ${p_ciftiWisharts}"
+	log_Msg "icaDim mode: ${p_icadimMode}"
 
 	if [ ${error_count} -gt 0 ]; then
 		log_Err_Abort "For usage information, use --help"
@@ -464,7 +488,28 @@ main()
 	else
 		DeleteIntermediates=$(interpret_as_bool "${10}")
 	fi
-
+	
+	local volWisharts
+	if [ -z "${11}" ]; then
+		volWisharts="${G_DEFAULT_VOLWISHARTS}"
+	else
+		volWisharts="${11}"
+	fi
+	
+	local ciftiWisharts
+	if [ -z "${12}" ]; then
+		ciftiWisharts="${G_DEFAULT_VOLWISHARTS}"
+	else
+		ciftiWisharts="${12}"
+	fi
+	
+	local icadimMode
+	if [ -z "${13}" ]; then
+		icadimMode="${G_DEFAULT_VOLWISHARTS}"
+	else
+		icadimMode="${13}"
+	fi
+	
 	# Log values retrieved from positional parameters
 	log_Msg "StudyFolder: ${StudyFolder}"
 	log_Msg "Subject: ${Subject}"
@@ -673,7 +718,7 @@ main()
 
 				# Do NOT enclose string variables inside an additional single quote because all
 				# variables are already passed into the compiled binary as strings
-				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}")
+				local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "$volWisharts" "$ciftiWisharts" "$icadimMode")
 
 				# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 				local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -695,16 +740,16 @@ main()
 				fi
 				
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-				local matlab_cmd="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}');"
+				local matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volWisharts}, ${ciftiWisharts}, '${icadimMode}');"
 				
-				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-				log_Msg "${matlab_cmd}"
+				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with code..."
+				log_Msg "${matlab_code}"
 
 				# Use bash redirection ("here-string") to pass multiple commands into matlab
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
 				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(debug_disable_trap; source "${FSL_FIXDIR}/settings.sh"; debug_enable_trap; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
+				(debug_disable_trap; source "${FSL_FIXDIR}/settings.sh"; debug_enable_trap; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_code}")
                 ;;
 
 			*)
@@ -1124,8 +1169,8 @@ if [[ ${1} == --* ]]; then
 	get_options "$@"
 
 	# Invoke main functionality
-	#    ${1}               ${2}           ${3}             ${4}              ${5}            ${6}           ${7}              ${8}                 ${9}                    ${10}
-	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_DeleteIntermediates}"
+	#    ${1}               ${2}           ${3}             ${4}              ${5}            ${6}           ${7}              ${8}                 ${9}                    ${10}                      ${11}              ${12}                ${13}
+	main "${p_StudyFolder}" "${p_Subject}" "${p_fMRINames}" "${p_ConcatName}" "${p_HighPass}" "${p_RegName}" "${p_LowResMesh}" "${p_MatlabRunMode}" "${p_MotionRegression}" "${p_DeleteIntermediates}" "${p_volWisharts}" "${p_ciftiWisharts}" "${p_icadimMode}"
 
 else
 	# Positional parameters are used
