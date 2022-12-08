@@ -102,7 +102,7 @@ opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 
 (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts)
 Note, deleting intermediates is not recommended for MR FIX' 'FALSE'
 
-opts_AddOptional '--fallback-threshold' 'RewishartThresh' 'number' 'If greater than zero, reruns icaDim with a single wishart on any run with a VN mean more than this amount greater than the minimum VN mean, default = 0'
+opts_AddOptional '--fallback-threshold' 'RewishartThresh' 'number' 'If greater than zero, reruns icaDim with a single wishart on any run with a VN mean more than this amount greater than the minimum VN mean, default = 0' '0'
 
 opts_AddOptional '--vol-wisharts' 'volwisharts' 'integer' 'Number of wisharts to fit to volume data in icaDim, default 2' '2'
 
@@ -150,9 +150,11 @@ else
 fi
 
 # All fix settings are held in the settings.sh file - edit this file to suit your setup
-# Default settings file that comes with fix isn't "ERR" clean, so disable temporarily
+# Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
 debug_disable_trap
+set +u
 source "${FSL_FIXDIR}/settings.sh"
+set -u
 debug_enable_trap
 
 # Show HCP pipelines version
@@ -332,7 +334,7 @@ doMotionRegression=$(interpret_as_bool "$doMotionRegression")
 DeleteIntermediates=$(interpret_as_bool "$DeleteIntermediates")
 
 #--fallback-threshold's only change is using 1 for volume wisharts, so error if it is pointless?
-if ((volwisharts == 1)) && [[ $(bc <<<"RewishartThresh > 0") == 1 ]]
+if ((volwisharts == 1)) && [[ $(bc <<<"$RewishartThresh > 0") == 1 ]]
 then
     log_Err_Abort "--fallback-threshold is not allowed when --vol-wisharts=1 is used"
 fi
@@ -428,7 +430,8 @@ for fmri in "${fmris[@]}" ; do
 	${Caret7_Command} -cifti-math "TCS - MEAN" ${fmri}_Atlas_demean.dtseries.nii -var TCS ${fmri}_Atlas.dtseries.nii -var MEAN ${fmri}_Atlas_mean.dscalar.nii -select 1 1 -repeat
 	
 	## "1st pass" VN on the individual runs; high-pass gets done here as well
-	tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
+	#fslval puts a space on the end of its number, remove it...
+	tr=`$FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' '`  #No checking currently that TR is same across runs
 	log_Msg "tr: ${tr}"  
 	log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
@@ -528,7 +531,7 @@ then
             #TSC: assume _mean and _demean haven't been overwritten or deleted?
             
             ## "1st pass" VN on the individual runs; high-pass gets done here as well
-            tr=`$FSLDIR/bin/fslval $fmri pixdim4`  #No checking currently that TR is same across runs
+            tr=`$FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' '`  #No checking currently that TR is same across runs
             log_Msg "tr: ${tr}"  
             log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
@@ -695,7 +698,7 @@ case ${FSL_FIX_MATLAB_MODE} in
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-		matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}', '', '${volwisharts}', '${ciftiwisharts}', '${icadimmode}');"
+		matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 		log_Msg "Run interpreted MATLAB/Octave with code..."
 		log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_code}"
 		${FSL_FIXDIR}/call_matlab.sh -r "${matlab_code}"   # Note: the semicolons within ${matlab_code} need to be protected with quotation marks
