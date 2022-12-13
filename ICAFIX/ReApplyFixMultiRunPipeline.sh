@@ -717,7 +717,7 @@ main()
 
 					# Do NOT enclose string variables inside an additional single quote because all
 					# variables are already passed into the compiled binary as strings
-					local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "$volWisharts" "$ciftiWisharts" "$icadimMode")
+					local matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "${volWisharts}" "${ciftiWisharts}" "${icadimMode}")
 
 					# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 					local matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
