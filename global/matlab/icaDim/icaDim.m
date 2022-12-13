@@ -1,9 +1,19 @@
-function [Out] = icaDim(Origdata,DEMDT,VN,Iterate,NDist)
+function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
+%
+% ICADIM(Origdata, DEMDT, VN, Iterate, NDist)
+%
+% Estimates the number of ica components that are not due to random noise,
+%   and makes a standard deviation map of the random noise estimate
+%
+% DEMDT: 1 to detrend, 0 to only demean, -1 to do nothing
+% VN: initial variance normalization dimensionality
+% Iterate: mode/count for iterating the estimation
+% NDist: number of wisharts to fit
+%%%%%%%%%%%%%%%%%%%%
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 
-%%%%%%%%%%%%%%%%%%%%
 %Variables
-Out.VNDIM=VN; %Variance Normalization Dimensionality initially set to 1
+Out.VNDIM=VN; %initial Variance Normalization Dimensionality
 lnb = 0.5; %Lower noise bound for Golden Section Search
 stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for 2 coincidences of legacy converged results, 3 for 3 coincidences of legacy converged results, -1 for new converged results, >3 for fixed iterations)
 

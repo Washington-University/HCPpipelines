@@ -236,14 +236,14 @@ end
 %% Compute VN map
 if singlerun
     if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits 2 distributions by default to deal with MNI transform
+        Outcts = icaDim(cts, 0, VN, iters, volwishart); %Volume fits 2 distributions by default to deal with MNI transform
     end
     
-    OutBO = icaDim(BO.cdata, 0, VN, iters, ciftiwishart); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, CIFTI fits 3 distributions by default to deal with volume to CIFTI mapping
+    OutBO = icaDim(BO.cdata, 0, VN, iters, ciftiwishart); %CIFTI fits 3 distributions by default to deal with volume to CIFTI mapping
 else
     %concatenated input
     if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits 2 distributions by default to deal with MNI transform
+        Outcts = icaDim(cts, 0, VN, iters, volwishart); %Volume fits 2 distributions by default to deal with MNI transform
     end
 end
 
