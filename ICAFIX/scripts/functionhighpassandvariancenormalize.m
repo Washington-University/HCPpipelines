@@ -50,7 +50,7 @@ if length(varargin) >= 1 && ~isempty(varargin{1})
     dovol = false; %regname is only used for a new surface registration, so will never require redoing volume
     regstring = varargin{1}; %this has the underscore on the front already
     if ~ischar(regstring)
-        error('%s: REGSTRING should be a string', mfilename);
+        error('%s: REGSTRING should be a string', mfilename());
     end
 end
 
@@ -94,13 +94,13 @@ if ischar(hp)
     if strncmp(hp,pdstring,numel(pdstring))
         pdflag = true;
         polydeg = str2double(hp(numel(pdstring)+1:end));  % different purposes should use a different variable name
-        if (~isscalar(hp) || hp < 0 || hp ~= fix(hp))
-            error('%s: Invalid specification for the order of the polynomial detrending', mfilename);
+        if (~isscalar(polydeg) || polydeg < 0 || polydeg ~= fix(polydeg))
+            error('%s: Invalid specification for the order of the polynomial detrending', mfilename());
         end
     else
         hp = str2double(hp);
         if ~isscalar(hp) || isnan(hp)  % Allow for hp to be provided as a string that contains purely numeric elements
-            error('%s: Invalid specification for the high-pass filter', mfilename);
+            error('%s: Invalid specification for the high-pass filter', mfilename());
         end
     end
 end
@@ -122,7 +122,7 @@ end
 
 %special case hp=0 to do linear detrend
 if ~pdflag && hp == 0
-    warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename);
+    warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename());
     pdflag = true;
     polydeg = 1;
 end
