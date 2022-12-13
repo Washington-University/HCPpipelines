@@ -109,7 +109,7 @@ end
 %must NOT be moved below the hp == 0 check below
 if pdflag
     %explicit polynomial detrending can say whatever
-    hpstring = ['_hp' pdstring num2str(hp)];
+    hpstring = ['_hp' pdstring num2str(polydeg)];
 else
     if hp < 0
         %negatives mean skip hp, don't put it in the filename
