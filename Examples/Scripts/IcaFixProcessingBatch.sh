@@ -234,7 +234,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --vol-wisharts=$volWisharts --cifti-wisharts=$ciftiWisharts --icadim-mode=$icadimMode)
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --vol-wisharts=${volWisharts} --cifti-wisharts=${ciftiWisharts} --icadim-mode="${icadimMode}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
