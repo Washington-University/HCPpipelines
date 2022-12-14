@@ -145,7 +145,7 @@ main() {
 	DeleteIntermediates=FALSE
 
 	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]]; then
-		queuing_command=("${FSLDIR}/bin/fsl_sub")
+		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 	else
 		queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 	fi

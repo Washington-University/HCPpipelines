@@ -133,7 +133,7 @@ for Subject in "${Subjlist[@]}" ; do
 
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
         echo "About to locally run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
-        queuing_command=("$FSLDIR"/bin/fsl_sub)
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
     else
         echo "About to use fsl_sub to queue ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
         queuing_command=("$FSLDIR"/bin/fsl_sub -q "$QUEUE")

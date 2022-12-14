@@ -91,7 +91,7 @@ for Subject in $Subjlist ; do
   if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
       echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
       #NOTE: fsl_sub without -q runs locally and captures output in files
-      queuing_command=("$FSLDIR/bin/fsl_sub")
+      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
   else
       echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
       queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
