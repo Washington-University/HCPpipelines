@@ -134,7 +134,7 @@ do
 		
 		if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]] ; then
 			echo "${SCRIPT_NAME}: About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline_1res.sh"
-			queuing_command=("${FSLDIR}/bin/fsl_sub")
+			queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 		else
 			echo "${SCRIPT_NAME}: About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline_1res.sh"
 			queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
