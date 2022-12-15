@@ -14,6 +14,9 @@ function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
 %   1 means single iteration
 %   2-3 means wait for that many repeats of a dimensionality (not required to be consecutive)
 %   >3 means exactly that many iterations
+%
+% VN=0 means don't variance normalize
+%	otherwise, compute random noise stdev by excluding the previous iteration's estimated dimensionality of signal
 %%%%%%%%%%%%%%%%%%%%
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 

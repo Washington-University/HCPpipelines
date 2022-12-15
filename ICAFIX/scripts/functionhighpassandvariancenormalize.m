@@ -42,7 +42,7 @@ pdstring = 'pd';  % Expected string at start of HP variable to request a "polyno
 volwishart = 2;
 ciftiwishart = 3;
 VN = 1; %first iteration uses 1 for dimensionality
-iters = -1; %iterate until new convergence criteria
+iters = -1; %iterate until the average of the dimensionality history doesn't change much
 VNhalfdim = false; %after loading the input, set VN to half the timepoints
 
 %% Parse varargin
