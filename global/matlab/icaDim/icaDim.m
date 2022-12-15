@@ -9,13 +9,18 @@ function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
 % VN: initial variance normalization dimensionality
 % Iterate: mode/count for iterating the estimation
 % NDist: number of wisharts to fit
+%
+% Iterate=-1 means iterate until the average of the dimensionality history doesn't change much
+%   1 means single iteration
+%   2-3 means wait for that many repeats of a dimensionality (not required to be consecutive)
+%   >3 means exactly that many iterations
 %%%%%%%%%%%%%%%%%%%%
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 
 %Variables
 Out.VNDIM=VN; %initial Variance Normalization Dimensionality
 lnb = 0.5; %Lower noise bound for Golden Section Search
-stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for VNDIM=1 results, 2 for 2 coincidences of legacy converged results, 3 for 3 coincidences of legacy converged results, -1 for new converged results, >3 for fixed iterations)
+stabThresh = Iterate; %How many iterations meeting dimThresh criterion (1 for single iteration, 2 for 2 coincidences of legacy converged results, 3 for 3 coincidences of legacy converged results, -1 for new converged results, >3 for fixed iterations)
 
 if Iterate < 0
      stabThresh=0.25; %Difference in running average
