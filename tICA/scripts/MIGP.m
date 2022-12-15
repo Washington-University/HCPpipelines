@@ -58,6 +58,8 @@ function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPC
                 grot = [grot demean(dtseries.cdata, 2) ./ repmat(max(vn.cdata, 0.001), 1, size(dtseries.cdata, 2))];
                 vnsum = vnsum + vn.cdata;
                 c = c + 1;
+            else
+                warning(['fmri run "' dtseriesname '" not found']);
             end
         end
         if s == 1
