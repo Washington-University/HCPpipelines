@@ -176,10 +176,6 @@ while stabCount < stabThresh
     %Maximum of laplacian is estimate of optimal dimensionality
     [~, Out.calcDim]=max(Out.pcaDim_lambdaAdj.lap(1:DOF));
     
-    if VN~=1
-      stabCount = 2;
-    end
-    
     %Next loop will use calculated dimensionality
     c=c+1;
 
