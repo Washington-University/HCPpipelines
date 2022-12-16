@@ -6,7 +6,7 @@ function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
 %   and makes a standard deviation map of the random noise estimate
 %
 % DEMDT: 1 to detrend, 0 to only demean, -1 to do nothing
-% VN: initial variance normalization dimensionality
+% VN: mode/initial guess of # of non-random-noise components for variance normalization
 % Iterate: mode/count for iterating the estimation
 % NDist: number of wisharts to fit
 %
@@ -16,7 +16,7 @@ function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
 %   >3 means exactly that many iterations
 %
 % VN=0 means don't variance normalize
-%	otherwise, compute random noise stdev by excluding the previous iteration's estimated dimensionality of signal
+%	otherwise, normalize by random noise stdev, estimated by excluding the current estimate of non-random components from the PCA
 %%%%%%%%%%%%%%%%%%%%
 % Matthew F. Glasser, Chad Donahue, Steve Smith, Christian Beckmann
 
