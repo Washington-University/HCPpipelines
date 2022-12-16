@@ -208,7 +208,7 @@ elseif hp > 0  % "fslmaths -bptf" based filtering, assumes single run
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
     delete('Atlas.nii.gz');
 
-elseif hp < 0  % If no hp filtering, still need to at least demean the volumetric time series, assumes concatenated input
+elseif hp < 0  % If no hp filtering, still need to at least demean the volumetric time series, note the above code assumes concatenated input in this condition, so the cifti and motion parameters aren't loaded
     if dovol
 
         % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
