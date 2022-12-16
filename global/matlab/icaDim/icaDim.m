@@ -79,7 +79,7 @@ end
 %octave doesn't have "rng", but it does accept "rand('twister', 0);" for matlab compatibility
 
 % previous regressions will remove degrees of freedom (DOF), putting zeros on the end of our eigenvalues
-% but, we use the end of the eigenvalues to estimate the wishart distribution, so we need to detect and exclude them
+% but, we use the end of the eigenvalues to estimate the wishart distribution, so we need to detect and exclude those zeroes
 % due to rounding error, they won't be exactly zero, so exclude all "zeroish" components, thresholding at 10% of the stdev of all eigenvalues seems to work
 [u,EigS,v]=nets_svds(data',0); %Eigenvalues of data
 Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
