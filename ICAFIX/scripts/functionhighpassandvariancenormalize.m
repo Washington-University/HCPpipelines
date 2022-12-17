@@ -134,6 +134,7 @@ end
 
 %TSC: so, let's make a new variable that actually conveys some understanding of the logic
 %HACK: assume hp < 0 is equivalent to concatenated input
+%Note that concatenated input (hp < 0) does not save out any VN estimates [for either NIFTI (volume) or CIFTI].
 singlerun = pdflag || (hp >= 0);
 
 %% Load the motion confounds, and the CIFTI (if single run) (don't need either if MR FIX)
