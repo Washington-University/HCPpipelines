@@ -166,14 +166,10 @@ main() {
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
 	
-	#defaults for icaDim
-	volWisharts=2
-	ciftiWisharts=3
-	icadimMode=default
-	#for data with far fewer timepoints than HCP, uncomment the three lines below to behave more like melodic
-	#volWisharts=1
-	#ciftiWisharts=1
-	#icadimMode=melodiclike
+	#MR FIX config support for non-HCP settings
+	config=""
+	#uncomment the below for legacy-style data
+	#config="$HCPPIPEDIR"/ICAFIX/config/legacy.conf
 	
 	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
@@ -234,7 +230,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --vol-wisharts=${volWisharts} --cifti-wisharts=${ciftiWisharts} --icadim-mode="${icadimMode}")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done

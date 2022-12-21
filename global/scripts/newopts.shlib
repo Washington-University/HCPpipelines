@@ -22,12 +22,14 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "does stuff"
 
+#NOTE: config-enabled parameters (opts_AddConfigOptional) need an extra parameter after the variable name, to set the config entry name
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise i will set it to defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
 opts_AddOptional '--bar' 'mybar' 'your bar' "an optional parameter, when there is no argument after the desription it defaults to empty string, and this description is really long, but opts_ShowArguments (called by the usage functionality associated with opts_SetScriptDescription, or usable in a legacy usage() function) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -177,6 +179,10 @@ function opts_AddConfigAlias()
             log_Err_Abort "developer error: config alias '$1' added improperly, too few arguments"
         fi
     fi
+    if [[ "$1" == *. || "$1" == *=* || "$1" == '#'* ]]
+    then
+        log_Err_Abort "developer error: '$1' is not valid as a config identifier"
+    fi
     if [[ "$1" == "" || "$2" == "" ]]
     then
         log_Err_Abort "developer error: empty string is not valid for opts_AddConfigAlias"
@@ -291,7 +297,7 @@ function opts_ParseArguments()
     then
         log_Err_Abort "developer error: parsing must be completed before using opts_conf_NewConfig"
     fi
-    local -a opts_config_alias_lookup
+    local -a opts_config_alias_lookup=()
     local opts_config_index opts_config_index2 opts_config_found
     for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_aliases[@]}; opts_config_index2 += 2))
     do
@@ -321,7 +327,7 @@ function opts_ParseArguments()
         #note: empty format string does not actually set the variable
         printf -v "${opts_param_variable_names[$opts_index]}" '%s' "${opts_default[$opts_index]}"
     done
-    local -a opts_used_params opts_used_config
+    local -a opts_used_params opts_used_config=()
     local opts_myswitch opts_configspecified=0
     local opts_configfile=""
     for opts_myswitch in "${opts_param_switches[@]}"
@@ -368,8 +374,14 @@ function opts_ParseArguments()
                 log_Err_Abort "config file '$opts_argument' not found"
             fi
             opts_configspecified=1
-            while IFS='' read -r opts_confline || [[ -n "$opts_confline" ]]
+            #note the redirection into the "done" of this loop
+            while IFS='' read -r opts_confline
             do
+                #skip comments and blank lines, so that confs can be hand edited/annotated
+                if [[ "$opts_confline" == '' || "$opts_confline" == '#'* ]]
+                then
+                    continue
+                fi
                 local opts_config_key="${opts_confline%%=*}" opts_config_val
                 opts_conf_unpickle "${opts_confline#*=}" opts_config_val
                 case "$opts_config_key" in
@@ -517,7 +529,7 @@ function opts_add_switch()
     fi
     if [[ "$1" == "--help" || "$1" == "--config" ]]
     then
-        log_Err_Abort "developer error: parameter switch '$1' is reserved by the library, do not attempt to define it manually"
+        log_Err_Abort "developer error: parameter switch '$1' is reserved by newopts.shlib, do not attempt to define it manually"
     fi
     #only the index is local, the arrays must be global
     local opts_new_index="${#opts_param_switches[@]}"
@@ -534,6 +546,10 @@ function opts_add_switch()
     opts_config_suppress["$opts_new_index"]=0
     if [[ "$6" != "" ]]
     then
+        if [[ "$6" == *. || "$6" == *=* || "$6" == '#'* ]]
+        then
+            log_Err_Abort "developer error: '$6' is not valid as a config identifier"
+        fi
         opts_script_supports_config=1
         opts_param_config["$opts_new_index"]=1
         if ((! $3))
