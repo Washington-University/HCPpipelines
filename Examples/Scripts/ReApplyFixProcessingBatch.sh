@@ -144,14 +144,10 @@ main() {
 	# clean up intermediates
 	DeleteIntermediates=FALSE
 
-	#defaults for icaDim
-	volWisharts=2
-	ciftiWisharts=3
-	icadimMode=default
-	#for data with far fewer timepoints than HCP, uncomment the three lines below to behave more like melodic
-	#volWisharts=1
-	#ciftiWisharts=1
-	#icadimMode=melodiclike
+	#MR FIX config support for non-HCP settings
+	config=""
+	#uncomment the below for legacy-style data
+	#config="$HCPPIPEDIR"/ICAFIX/config/legacy.conf
 
 	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]]; then
 		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
@@ -204,9 +200,7 @@ main() {
 					--low-res-mesh="$LowResMesh" \
 					--matlab-run-mode="$MatlabMode" \
 					--motion-regression="$MotionReg" \
-					--vol-wisharts="$volWisharts" \
-					--cifti-wisharts="$ciftiWisharts" \
-					--icadim-mode="$icadimMode"
+					--config="$config"
 				
 				echo "${Subject} ${ConcatName}"
 				
