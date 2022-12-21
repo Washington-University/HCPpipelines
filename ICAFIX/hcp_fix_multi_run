@@ -279,21 +279,6 @@ demeanMovementRegressors() {
 	echo "${AllOut}" > ${Out}
 }
 
-function interpret_as_bool()
-{
-	case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
-	(true | yes | 1)
-		echo TRUE
-		;;
-	(false | no | none | 0)
-		echo FALSE
-		;;
-	(*)
-		log_Err_Abort "error: '$1' is not valid for this argument, please use TRUE or FALSE"
-		;;
-	esac
-}
-
 #############################################################
 
 ## ---------------------------------------------------------------------------
@@ -331,8 +316,8 @@ if [[ $(echo "${hpNum} < 0" | bc) == "1" ]]; then  #Logic of this script does no
 fi
 
 #opts_ version doesn't allow NONE as false, and outputs 1/0, not TRUE/FALSE
-doMotionRegression=$(interpret_as_bool "$doMotionRegression")
-DeleteIntermediates=$(interpret_as_bool "$DeleteIntermediates")
+doMotionRegression=$(opts_StringToBool "$doMotionRegression")
+DeleteIntermediates=$(opts_StringToBool "$DeleteIntermediates")
 
 #--fallback-threshold's only change is using 1 for volume wisharts, so error if it is pointless?
 if ((volwisharts == 1)) && [[ $(bc <<<"$RewishartThresh > 0") == 1 ]]
@@ -866,7 +851,7 @@ log_Msg "using training data file: ${TrainingData}"
 
 # set up fix command
 # use array for whitespace safety, even if the rest of the script isn't
-if [[ ${doMotionRegression} == "TRUE" ]]; then
+if ((doMotionRegression)); then
 	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 else
 	#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
@@ -922,7 +907,7 @@ rm -f ${concatfmrihp}.ica/Atlas.dtseries.nii
 
 # Optional deletion of highpass intermediates
 # (hp<0 not supported in this script currently, so no need to condition on value of hp)
-if [ "${DeleteIntermediates}" == "TRUE" ]
+if ((DeleteIntermediates))
 then
 	$FSLDIR/bin/imrm ${concatfmri} ${concatfmrihp}
 	rm -f ${concatfmri}_Atlas.dtseries.nii ${concatfmri}_Atlas_hp${hp}.dtseries.nii
