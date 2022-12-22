@@ -71,6 +71,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@"
 
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "Apply FIX cleaning to a concatenated set of input files"
@@ -113,6 +114,8 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 "default" - start with a VN dimensionality of 1 and rerun until convergence
 "melodiclike" - start with a VN dimensionality of half the timepoints, do not iterate' 'default'
 
+opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=melodiclike is allowed" 'HCPStyleData'
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -124,6 +127,18 @@ fi
 opts_ShowValues
 
 #############################################################
+
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+if [[ "$icadimmode" != 'default' ]]
+then
+	Compliance="LegacyStyleData"
+	ComplianceMsg+=" --icadim-mode=$icadimmode"
+	log_Warn "The use of 'melodiclike' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
+fi
+
+check_mode_compliance "$ProcessingMode" "$Compliance" "$ComplianceMsg"
 
 unset POSIXLY_CORRECT
 

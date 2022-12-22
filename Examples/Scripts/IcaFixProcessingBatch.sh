@@ -168,14 +168,17 @@ main() {
 	
 	#MR FIX config support for non-HCP settings
 	config=""
-	#uncomment the below for legacy-style data
+	processingmode="HCPStyleData"
+	#uncomment the below two lines for legacy-style data
 	#config="$HCPPIPEDIR"/ICAFIX/config/legacy.conf
+	#processingmode="LegacyStyleData"
 	
 	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
 	#default to no queue, implying run local
 	QUEUE=""
 	#QUEUE="hcp_priority.q"
+	
 	if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]; then
 		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 	else
@@ -230,7 +233,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done

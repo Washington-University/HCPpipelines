@@ -146,8 +146,10 @@ main() {
 
 	#MR FIX config support for non-HCP settings
 	config=""
-	#uncomment the below for legacy-style data
+	processingmode="HCPStyleData"
+	#uncomment the below two lines for legacy-style data
 	#config="$HCPPIPEDIR"/ICAFIX/config/legacy.conf
+	#processingmode="LegacyStyleData"
 
 	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]]; then
 		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
@@ -200,7 +202,8 @@ main() {
 					--low-res-mesh="$LowResMesh" \
 					--matlab-run-mode="$MatlabMode" \
 					--motion-regression="$MotionReg" \
-					--config="$config"
+					--config="$config" \
+					--processing-mode="$processingmode"
 				
 				echo "${Subject} ${ConcatName}"
 				
