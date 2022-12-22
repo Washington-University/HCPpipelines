@@ -39,6 +39,7 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib" "$@"        # Functions for getting FSL version
+source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@"
 
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "ReApplyFix Pipeline for MultiRun ICA+FIX"
@@ -73,9 +74,11 @@ opts_AddConfigOptional '--vol-wisharts' 'volWisharts' 'volwisharts' 'integer' "N
 
 opts_AddConfigOptional '--cifti-wisharts' 'ciftiWisharts' 'ciftiwisharts' 'integer' "Number of wisharts to fit to cifti data in icaDim, default 3" "3"
 
-opts_AddConfigOptional '--icadim-mode' 'icadimMode' 'icadimmode' '"default" or "melodiclike"' 'Choose how to run icaDim:
+opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "melodiclike"' 'Choose how to run icaDim:
 "default" - start with a VN dimensionality of 1 and rerun until convergence
 "melodiclike" - start with a VN dimensionality of half the timepoints, do not iterate' "default"
+
+opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=melodiclike is allowed" 'HCPStyleData'
 
 opts_ParseArguments "$@"
 
@@ -86,6 +89,18 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+Compliance="HCPStyleData"
+ComplianceMsg=""
+
+if [[ "$icadimmode" != 'default' ]]
+then
+	Compliance="LegacyStyleData"
+	ComplianceMsg+=" --icadim-mode=$icadimmode"
+	log_Warn "The use of 'melodiclike' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
+fi
+
+check_mode_compliance "$ProcessingMode" "$Compliance" "$ComplianceMsg"
 
 g_script_name=$(basename "${0}")
 
@@ -440,7 +455,7 @@ if (( regenConcatHP )); then
 
 				# Do NOT enclose string variables inside an additional single quote because all
 				# variables are already passed into the compiled binary as strings
-				matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "${volWisharts}" "${ciftiWisharts}" "${icadimMode}")
+				matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "${volWisharts}" "${ciftiWisharts}" "${icadimmode}")
 
 				# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 				matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -462,7 +477,7 @@ if (( regenConcatHP )); then
 				fi
 				
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volWisharts}, ${ciftiWisharts}, '${icadimMode}');"
+				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volWisharts}, ${ciftiWisharts}, '${icadimmode}');"
 				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with code..."
 				log_Msg "${matlab_code}"
