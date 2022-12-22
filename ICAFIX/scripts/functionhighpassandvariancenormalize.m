@@ -39,8 +39,8 @@ dovol = true;
 regstring = '';
 pdflag = false;  % Polynomial detrend
 pdstring = 'pd';  % Expected string at start of HP variable to request a "polynomial detrend"
-volwishart = 2;
-ciftiwishart = 3;
+volwishart = 2;  %Volume fits 2 distributions by default to deal with MNI transform
+ciftiwishart = 3;  %CIFTI fits 3 distributions by default to deal with volume to CIFTI mapping
 VN = 1; %first iteration uses 1 for dimensionality
 iters = -1; %iterate until the average of the dimensionality history doesn't change much
 VNhalfdim = false; %after loading the input, set VN to half the timepoints
@@ -237,14 +237,14 @@ end
 %% Compute VN map
 if singlerun
     if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart); %Volume fits 2 distributions by default to deal with MNI transform
+        Outcts = icaDim(cts, 0, VN, iters, volwishart); 
     end
     
-    OutBO = icaDim(BO.cdata, 0, VN, iters, ciftiwishart); %CIFTI fits 3 distributions by default to deal with volume to CIFTI mapping
+    OutBO = icaDim(BO.cdata, 0, VN, iters, ciftiwishart);
 else
     %concatenated input
     if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart); %Volume fits 2 distributions by default to deal with MNI transform
+        Outcts = icaDim(cts, 0, VN, iters, volwishart);
     end
 end
 
