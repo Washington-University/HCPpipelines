@@ -27,9 +27,7 @@ NOTICE: You are using a mode that enables processing of acquisitions that do not
         conform to the HCP specification as described in Glasser et al. (2013)!
         Be aware that if the HCP requirements are not met, the level of data
         quality can not be guaranteed and the Glasser et al. (2013) paper should
-        not be used in support of this workflow. A manuscript with comprehensive
-        evaluation for the LegacyStyleData processing mode is in active
-        preparation and should be appropriately cited when published.
+        not be used in support of this workflow.
 "
     fi
 
