@@ -25,7 +25,7 @@ function functionhighpassandvariancenormalize(TR, hp, fmri, WBC, varargin)
 % [REGSTRING]: Additional registration-related string to add to output file names. OPTIONAL.
 % [VOLWISHARTOVERRIDE]: Change the number of volume wisharts. OPTIONAL.
 % [CIFTIWISHARTOVERRIDE]: Change the number of surface wisharts. OPTIONAL.
-% [ICADIMMODE]: 'default' or 'melodiclike'. OPTIONAL.
+% [ICADIMMODE]: 'default' or 'fewtimepoints'. OPTIONAL.
 
 % Note: HP='pd0' would be interpreted as a true 0th order detrend, which is 
 % the same as demeaning. Mathematically, this is the same as the HP<0 condition,
@@ -74,7 +74,7 @@ if length(varargin) >= 4
     switch varargin{4}
         case {'default', ''}
             %leave things alone
-        case 'melodiclike'
+        case 'fewtimepoints'
             iters = 1;
             VNhalfdim = true;
         otherwise

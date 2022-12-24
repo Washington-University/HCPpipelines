@@ -70,15 +70,15 @@ opts_AddOptional '--motion-regression' 'MotionRegression' 'TRUE or FALSE' "defau
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' "whether to delete the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning (the concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts), default FALSE" "FALSE"
 
-opts_AddConfigOptional '--vol-wisharts' 'volWisharts' 'volwisharts' 'integer' "Number of wisharts to fit to volume data in icaDim, default 2" "2"
+opts_AddConfigOptional '--vol-wisharts' 'volwisharts' 'volwisharts' 'integer' "Number of wisharts to fit to volume data in icaDim, default 2" "2"
 
-opts_AddConfigOptional '--cifti-wisharts' 'ciftiWisharts' 'ciftiwisharts' 'integer' "Number of wisharts to fit to cifti data in icaDim, default 3" "3"
+opts_AddConfigOptional '--cifti-wisharts' 'ciftiwisharts' 'ciftiwisharts' 'integer' "Number of wisharts to fit to cifti data in icaDim, default 3" "3"
 
-opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "melodiclike"' 'Choose how to run icaDim:
+opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "fewtimepoints"' 'Choose how to run icaDim:
 "default" - start with a VN dimensionality of 1 and rerun until convergence
-"melodiclike" - start with a VN dimensionality of half the timepoints, do not iterate' "default"
+"fewtimepoints" - start with a VN dimensionality of half the timepoints, do not iterate' "default"
 
-opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=melodiclike is allowed" 'HCPStyleData'
+opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
 opts_ParseArguments "$@"
 
@@ -93,11 +93,11 @@ opts_ShowValues
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if [[ "$icadimmode" != 'default' ]]
+if [[ "$icadimmode" == 'fewtimepoints' ]]
 then
 	Compliance="LegacyStyleData"
 	ComplianceMsg+=" --icadim-mode=$icadimmode"
-	log_Warn "The use of 'melodiclike' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
+	log_Warn "The use of 'fewtimepoints' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
 fi
 
 check_mode_compliance "$ProcessingMode" "$Compliance" "$ComplianceMsg"
@@ -275,6 +275,11 @@ if [ ! -z ${LowResMesh} ] && [ ${LowResMesh} != ${G_DEFAULT_LOW_RES_MESH} ]; the
 fi
 
 log_Msg "RegString: ${RegString}"
+
+if [[ "$icadimmode" == "fewtimepoints" ]] && ((volwisharts > 1 || ciftiwisharts > 1))
+then
+	log_Warn "--icadim-mode='fewtimepoints' is being used with multiple wisharts, multiple wishart fitting is not expected to work well when the data has few timepoints"
+fi
 
 # For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 # normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
@@ -455,7 +460,7 @@ if (( regenConcatHP )); then
 
 				# Do NOT enclose string variables inside an additional single quote because all
 				# variables are already passed into the compiled binary as strings
-				matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "${volWisharts}" "${ciftiWisharts}" "${icadimmode}")
+				matlab_function_arguments=("${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "${RegString}" "${volwisharts}" "${ciftiwisharts}" "${icadimmode}")
 
 				# ${MATLAB_COMPILER_RUNTIME} contains the location of the MCR used to compile functionhighpassandvariancenormalize.m
 				matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
@@ -477,7 +482,7 @@ if (( regenConcatHP )); then
 				fi
 				
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volWisharts}, ${ciftiWisharts}, '${icadimmode}');"
+				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 				
 				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with code..."
 				log_Msg "${matlab_code}"

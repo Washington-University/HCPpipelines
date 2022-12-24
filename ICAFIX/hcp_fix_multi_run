@@ -110,11 +110,11 @@ opts_AddConfigOptional '--vol-wisharts' 'volwisharts' 'volwisharts' 'integer' 'N
 
 opts_AddConfigOptional '--cifti-wisharts' 'ciftiwisharts' 'ciftiwisharts' 'integer' 'Number of wisharts to fit to cifti data in icaDim, default 3' '3'
 
-opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "melodiclike"' 'Choose how to run icaDim:
+opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "fewtimepoints"' 'Choose how to run icaDim:
 "default" - start with a VN dimensionality of 1 and rerun until convergence
-"melodiclike" - start with a VN dimensionality of half the timepoints, do not iterate' 'default'
+"fewtimepoints" - start with a VN dimensionality of half the timepoints, do not iterate' 'default'
 
-opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=melodiclike is allowed" 'HCPStyleData'
+opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
 opts_ParseArguments "$@"
 
@@ -131,11 +131,11 @@ opts_ShowValues
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if [[ "$icadimmode" != 'default' ]]
+if [[ "$icadimmode" == 'fewtimepoints' ]]
 then
 	Compliance="LegacyStyleData"
 	ComplianceMsg+=" --icadim-mode=$icadimmode"
-	log_Warn "The use of 'melodiclike' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
+	log_Warn "The use of 'fewtimepoints' mode in icaDim skips the iterative fitting process for the wishart distributions, and is only intended as a workaround for data that does not have enough timepoints for the default icaDim mode to work properly."
 fi
 
 check_mode_compliance "$ProcessingMode" "$Compliance" "$ComplianceMsg"
@@ -347,6 +347,11 @@ fi
 #everything else was redundant (with minor differences) due to opts_ShowValues
 if [[ "${hp}" == "0" ]]; then
 	log_Msg "hp=0 corresponds to a linear detrend"
+fi
+
+if [[ "$icadimmode" == "fewtimepoints" ]] && ((volwisharts > 1 || ciftiwisharts > 1))
+then
+	log_Warn "--icadim-mode='fewtimepoints' is being used with multiple wisharts, multiple wishart fitting is not expected to work well when the data has few timepoints"
 fi
 
 DIR=`pwd`
