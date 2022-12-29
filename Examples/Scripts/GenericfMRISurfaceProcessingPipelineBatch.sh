@@ -27,12 +27,12 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+            ;;
         esac
     done
 }
@@ -94,48 +94,46 @@ TaskList+=(tfMRI_WM_RL)
 TaskList+=(tfMRI_WM_LR)
 
 for Subject in $Subjlist ; do
-  echo $Subject
+    echo $Subject
 
-  for fMRIName in "${TaskList[@]}" ; do
-    echo "  ${fMRIName}"
-    LowResMesh="32" #Needs to match what is in PostFreeSurfer, 32 is on average 2mm spacing between the vertices on the midthickness
-    FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
-    SmoothingFWHM="2" #Recommended to be roughly the grayordinates spacing, i.e 2mm on HCP data 
-    GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. 2mm gives the HCP standard grayordinates space with 91282 grayordinates.  Can be different from the FinalfMRIResolution (e.g. in the case of HCP 7T data at 1.6mm)
-    RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-    
-    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-        echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-        #NOTE: fsl_sub without -q runs locally and captures output in files
-        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-    else
-        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
-    fi
+    for fMRIName in "${TaskList[@]}" ; do
+        echo "  ${fMRIName}"
+        LowResMesh="32" #Needs to match what is in PostFreeSurfer, 32 is on average 2mm spacing between the vertices on the midthickness
+        FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
+        SmoothingFWHM="2" #Recommended to be roughly the grayordinates spacing, i.e 2mm on HCP data 
+        GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. 2mm gives the HCP standard grayordinates space with 91282 grayordinates.  Can be different from the FinalfMRIResolution (e.g. in the case of HCP 7T data at 1.6mm)
+        RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
 
-    "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
-      --path="$StudyFolder" \
-      --subject="$Subject" \
-      --fmriname="$fMRIName" \
-      --lowresmesh="$LowResMesh" \
-      --fmrires="$FinalfMRIResolution" \
-      --smoothingFWHM="$SmoothingFWHM" \
-      --grayordinatesres="$GrayordinatesResolution" \
-      --regname="$RegName"
+        if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+            echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+            queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+        else
+            echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+            queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+        fi
 
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+        "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
+            --path="$StudyFolder" \
+            --subject="$Subject" \
+            --fmriname="$fMRIName" \
+            --lowresmesh="$LowResMesh" \
+            --fmrires="$FinalfMRIResolution" \
+            --smoothingFWHM="$SmoothingFWHM" \
+            --grayordinatesres="$GrayordinatesResolution" \
+            --regname="$RegName"
 
-      echo "set -- --path=$StudyFolder \
-      --subject=$Subject \
-      --fmriname=$fMRIName \
-      --lowresmesh=$LowResMesh \
-      --fmrires=$FinalfMRIResolution \
-      --smoothingFWHM=$SmoothingFWHM \
-      --grayordinatesres=$GrayordinatesResolution \
-      --regname=$RegName"
+        # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
-      echo ". ${EnvironmentScript}"
-            
-   done
+        echo "set -- --path=$StudyFolder \
+            --subject=$Subject \
+            --fmriname=$fMRIName \
+            --lowresmesh=$LowResMesh \
+            --fmrires=$FinalfMRIResolution \
+            --smoothingFWHM=$SmoothingFWHM \
+            --grayordinatesres=$GrayordinatesResolution \
+            --regname=$RegName"
+
+        echo ". ${EnvironmentScript}"
+
+    done
 done
-

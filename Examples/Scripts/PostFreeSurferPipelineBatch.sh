@@ -27,12 +27,12 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+                ;;
         esac
     done
 }
@@ -75,55 +75,53 @@ QUEUE=""
 
 
 for Subject in $Subjlist ; do
-  echo $Subject
+    echo $Subject
 
-  #Input Variables
-  SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
-  GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/91282_Greyordinates"
-  GrayordinatesResolutions="2" #Usually 2mm, if multiple delimit with @, must already exist in templates dir
-  HighResMesh="164" #Usually 164k vertices
-  LowResMeshes="32" #Usually 32k vertices, if multiple delimit with @, must already exist in templates dir
-  SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
-  FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
-  ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
-  RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-  
-  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-      echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-      #NOTE: fsl_sub without -q runs locally and captures output in files
-      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-  else
-      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
-  fi
+    #Input Variables
+    SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
+    GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/91282_Greyordinates"
+    GrayordinatesResolutions="2" #Usually 2mm, if multiple delimit with @, must already exist in templates dir
+    HighResMesh="164" #Usually 164k vertices
+    LowResMeshes="32" #Usually 32k vertices, if multiple delimit with @, must already exist in templates dir
+    SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
+    FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
+    ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+    RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
 
-  "${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-      --study-folder="$StudyFolder" \
-      --subject="$Subject" \
-      --surfatlasdir="$SurfaceAtlasDIR" \
-      --grayordinatesdir="$GrayordinatesSpaceDIR" \
-      --grayordinatesres="$GrayordinatesResolutions" \
-      --hiresmesh="$HighResMesh" \
-      --lowresmesh="$LowResMeshes" \
-      --subcortgraylabels="$SubcorticalGrayLabels" \
-      --freesurferlabels="$FreeSurferLabels" \
-      --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName"
+    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
 
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-  
-   echo "set -- --study-folder=$StudyFolder \
-      --subject=$Subject \
-      --surfatlasdir=$SurfaceAtlasDIR \
-      --grayordinatesdir=$GrayordinatesSpaceDIR \
-      --grayordinatesres=$GrayordinatesResolutions \
-      --hiresmesh=$HighResMesh \
-      --lowresmesh=$LowResMeshes \
-      --subcortgraylabels=$SubcorticalGrayLabels \
-      --freesurferlabels=$FreeSurferLabels \
-      --refmyelinmaps=$ReferenceMyelinMaps \
-      --regname=$RegName"
-      
-   echo ". ${EnvironmentScript}"
+    "${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --surfatlasdir="$SurfaceAtlasDIR" \
+        --grayordinatesdir="$GrayordinatesSpaceDIR" \
+        --grayordinatesres="$GrayordinatesResolutions" \
+        --hiresmesh="$HighResMesh" \
+        --lowresmesh="$LowResMeshes" \
+        --subcortgraylabels="$SubcorticalGrayLabels" \
+        --freesurferlabels="$FreeSurferLabels" \
+        --refmyelinmaps="$ReferenceMyelinMaps" \
+        --regname="$RegName"
+
+    # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+    echo "set -- --study-folder=$StudyFolder \
+        --subject=$Subject \
+        --surfatlasdir=$SurfaceAtlasDIR \
+        --grayordinatesdir=$GrayordinatesSpaceDIR \
+        --grayordinatesres=$GrayordinatesResolutions \
+        --hiresmesh=$HighResMesh \
+        --lowresmesh=$LowResMeshes \
+        --subcortgraylabels=$SubcorticalGrayLabels \
+        --freesurferlabels=$FreeSurferLabels \
+        --refmyelinmaps=$ReferenceMyelinMaps \
+        --regname=$RegName"
+
+    echo ". ${EnvironmentScript}"
 done
-
