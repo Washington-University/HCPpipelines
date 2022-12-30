@@ -148,6 +148,10 @@ fi
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
 	runVolume=true;
 	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+	      runDense=false;
+	      log_Msg "MAIN: DETERMINE_ANALYSES: Requested Zero Final Smoothing, Running Unsmoothed Volume Analysis Only"
+	fi
 fi
 
 
