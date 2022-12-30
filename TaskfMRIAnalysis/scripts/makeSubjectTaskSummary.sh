@@ -196,9 +196,15 @@ fi
 
 # Determine whether to run Volume, and set strings used for filenaming
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+	ExtensionList="nii.gz "
+	ScalarExtensionList="volume.dscalar.nii "
+	Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses	
+        else
 	ExtensionList="${ExtensionList}nii.gz "
 	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
 	Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
+        fi
 fi
 
 if [[ "${SummaryName}" = "NONE" || "${SummaryName}" = "" ]]; then
