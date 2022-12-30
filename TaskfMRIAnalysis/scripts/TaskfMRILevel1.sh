@@ -421,6 +421,12 @@ fi
 
 ### Apply spatial smoothing to volume analysis
 if $runVolume ; then
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+	    log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_NIFTI: Zero Smoothing Requested, Don't Smooth"
+	    SmoothedDilatedResultFile=${FEATDir}/${LevelOnefMRIName}${ProcSTRING}${SmoothingString}_dilMrim
+            imcp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING} ${SmoothedDilatedResultFile}
+	else
+	
 	log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_NIFTI: Standard NIFTI Volume-based Processsing"
 
 	#Add edge-constrained volume smoothing
@@ -486,7 +492,8 @@ if $runVolume ; then
 	  -mas ${FEATDir}/mask_orig_inv \
 	  -add ${FEATDir}/${LevelOnefMRIName}${ProcSTRING}${SmoothingString} \
 	  ${SmoothedDilatedResultFile}
-
+	  
+        fi
 fi # end Volume spatial smoothing
 
 
