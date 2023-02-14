@@ -39,6 +39,11 @@ then
 		echo "script name is not hcp_fix_multi_run, aborting instead of converting to positional parameters" 1>&2
 		exit 1
 	fi
+	if (($# < 4))
+	then
+		echo "old positional argument syntax requires a minimum of 4 arguments" 1>&2
+		exit 1
+	fi
 	cmd=("$0" --fmri-names="$1" --high-pass="$2" --concat-fmri-name="$3" --motion-regression="$4")
 	case $# in
 		(8)
@@ -52,6 +57,9 @@ then
 			;&
 		(5)
 			cmd+=(--training-file="$5")
+			;&
+		(4)
+			#this is fine, don't abort
 			;;
 		(*)
 			echo "unexpected extra arguments, aborting" 1>&2
