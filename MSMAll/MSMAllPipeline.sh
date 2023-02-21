@@ -49,7 +49,7 @@ opts_SetScriptDescription "implements MSM-All Registration Pipeline"
 
 #mandatory
 #general inputs
-opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects" '--path'
 opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--fmri-names-list' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of single-run fmri run names separated by @s"
 opts_AddMandatory '--multirun-fix-names' 'mrfixNames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of multi-run fmri run names separated by @s"
@@ -60,32 +60,33 @@ opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that w
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'string' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 opts_AddMandatory '--input-registration-name' 'InputRegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMSulc'"
-opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg"
+opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg'"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), like '32' for 32k_fs_LR"
 #MSMAll inputs
 opts_AddOptional '--module-name' 'ModuleName' 'string' "name of script or code used to run registration, defaults to 'MSMAll.sh'" 'MSMAll.sh'
 opts_AddOptional '--iteration-modes' 'IterationModes' 'string' "Specifieds what modalities:
-                            C=RSN Connectivity
-                            A=Myelin Architecture
-                            T=RSN Topography
-                          and number is the number of elements delimited by _
-                          So CA_CAT means one iteration using RSN Connectivity and Myelin
-                          Architecture, followed by another iteration using RSN Connectivity,
-                          Myelin Architecture, and RSN Topography. Defaults to 'CA_CAT'" 'CA_CAT'
+C=RSN Connectivity
+A=Myelin Architecture
+T=RSN Topography
+and number is the number of elements delimited by _
+So CA_CAT means one iteration using RSN Connectivity and Myelin
+Architecture, followed by another iteration using RSN Connectivity,
+Myelin Architecture, and RSN Topography. Defaults to 'CA_CAT'" \
+    'CA_CAT'
 opts_AddOptional '--method' 'Method' 'string' "Possible values: DR, DRZ, DRN, WR, WRZ, WRN, defaults to 'WRN'" 'WRN'
 opts_AddOptional '--use-migp' 'UseMIGP' 'YES/NO' "whether to use MIGP (MELODIC's Incremental Group Principal Component Analysis), defaults to 'NO'" 'NO'
 opts_AddOptional '--ica-dim' 'ICAdim' 'integer' "ICA (Independent Component Analysis) dimension, defaults to '40'" '40'
 opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num_num_num...' "the low sICA dimensionalities to use for determining weighting for individual projection, defaults to '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'" '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'
 opts_AddOptional '--vn' 'VN' 'YES/NO' "whether to perform variance normalization, defaults to 'NO'" 'NO'
 opts_AddOptional '--rerun-if-exists' 'ReRunIfExists' 'YES/NO' "whether to re-run even if output already exists, defaults to 'YES'" 'YES'
-opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "the relative path where the registration configuration exists in 'MSMCONFIGDIR', defaults to 'MSMAllStrainFinalconf1to1_1to3'" "MSMAllStrainFinalconf1to1_1to3"
-opts_AddOptional '--registration-configure-override-variables' 'RegConfOverrideVars' 'string' "the registration configure variables to override instead of using the configuration file, e.g. 'REGNUMBER=1, REGPOWER=3', defaults to 'NONE'" 'NONE'
-opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative path to 'MSMAllTemplates', defaults to 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
-opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative path to 'MSMAllTemplates', defaults to 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'
-opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative path to 'MSMAllTemplates', defaults to 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
-opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative path to 'MSMAllTemplates', defaults to 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
-opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative path to 'MSMAllTemplates', defaults to 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "the relative path where the registration configuration exists in 'MSMCONFIGDIR'" ''
+opts_AddOptional '--registration-configure-override-variables' 'RegConfOverrideVars' 'string' "the registration configure variables to override instead of using the configuration file. Please use quotes, and space between parameters is not recommended. e.g. 'REGNUMBER=1,REGPOWER=3', defaults to 'NONE'" 'NONE'
+opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative path to 'MSMAllTemplates'" ''
+opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative path to 'MSMAllTemplates'" ''
+opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative path to 'MSMAllTemplates'" ''
+opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative path to 'MSMAllTemplates'" ''
+opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative path to 'MSMAllTemplates'" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -112,6 +113,37 @@ opts_ShowValues
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 log_Msg "Starting main functionality"
+# default file names
+if [[ "$RegConfPath" == "" ]]
+then
+	RegConfPath="MSMAllStrainFinalconf1to1_1to3"
+fi
+
+if [[ "$MyelinTarget" == "" ]]
+then
+	MyelinTarget="Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+fi
+
+if [[ "$RSNTemplates" == "" ]]
+then
+	RSNTemplates="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
+fi
+
+if [[ "$RSNWeights" == "" ]]
+then
+	RSNWeights="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
+fi
+
+if [[ "$TopographyROIs" == "" ]]
+then
+	TopographyROIs="Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
+fi
+
+if [[ "$TopographyTarget" == "" ]]
+then
+	TopographyTarget="Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
+fi
+
 # MSMAll config file
 RegConfPath="${MSMCONFIGDIR}/${RegConfPath}"
 log_Msg "RegConfPath: ${RegConfPath}"
@@ -138,8 +170,8 @@ before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fM
 if [[ "$fMRINames" == "" ]]
 then
 	log_Msg "Running MSM on Multi-run FIX timeseries"
-    runSplits=()
-    runIndices=()
+	runSplits=()
+	runIndices=()
 	curTimepoints=0
 	#convention: one before the first index of the run
 	runSplits[0]="$curTimepoints"
