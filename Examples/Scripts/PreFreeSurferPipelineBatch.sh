@@ -226,7 +226,7 @@ main()
 		for folder in "${StudyFolder}/${Subject}/unprocessed/3T"/T2w_SPC?; do
 			folderbase=$(basename "$folder")
 			T2wInputImages+="$folder/${Subject}_3T_$folderbase.nii.gz@"
-			numT1ws=$((numT2ws + 1))
+			numT2ws=$((numT2ws + 1))
 		done
 		echo "Found ${numT2ws} T2w Images for subject ${Subject}"
 
