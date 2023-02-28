@@ -41,6 +41,8 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
@@ -178,15 +180,11 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	# demean + vn
 	${Caret7_Command} -cifti-math "${MATH}" ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii -var TCS ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii ${VarDemean} ${VarVN} 
 	
-	# remove the mean files & dense timeseries with selected frame range to save space
-	rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}_mean.dscalar.nii
-	rm ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii
-	
 	# construct the merge string
 	MergeSTRING=`echo "${MergeSTRING} -cifti ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii"`
 	
-	# construct the remove string
-	RemoveSTRING=`echo "${RemoveSTRING} ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii"`
+	# mark temp files for mean, selected range and timeseries after the above process
+	tempfiles_add ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}_mean.dscalar.nii ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii
 done
 
 # override OutputfMRIName with frame and duration if frame range is not equal to the full range
@@ -205,8 +203,5 @@ mkdir -p "${OutputFolder}"
 
 # final output: concatenated file
 ${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING}
-
-# delete temporary demean and vn file per fMRI run, only keep the concatenated file
-rm ${RemoveSTRING}
 
 log_Msg "Completing SingleSubjectConcat"
