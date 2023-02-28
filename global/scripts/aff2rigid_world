@@ -87,7 +87,7 @@ if len(argv) < 2:
 
 # Load in the necessary info
 a=loadtxt(argv[1])
-# set specific AC and PC coordinates in FLIRT convention (x1=AC, x2=PC, x3=point above x1 in the mid-sag plane)
+# set specific AC and PC coordinates in nifti mm convention (x1=AC, x2=PC, x3=point above x1 in the mid-sag plane)
 x1=matrix([[0],[0],[0],[1]])
 x2=matrix([[0],[-29],[0],[1]])
 x3=matrix([[0],[0],[50],[1]])
