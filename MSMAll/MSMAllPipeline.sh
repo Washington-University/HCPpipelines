@@ -80,13 +80,13 @@ opts_AddOptional '--ica-dim' 'ICAdim' 'integer' "ICA (Independent Component Anal
 opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num_num_num...' "the low sICA dimensionalities to use for determining weighting for individual projection, defaults to '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'" '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'
 opts_AddOptional '--vn' 'VN' 'YES/NO' "whether to perform variance normalization, defaults to 'NO'" 'NO'
 opts_AddOptional '--rerun-if-exists' 'ReRunIfExists' 'YES/NO' "whether to re-run even if output already exists, defaults to 'YES'" 'YES'
-opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "the relative path where the registration configuration exists in 'MSMCONFIGDIR'" ''
+opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "it can be either the relative path where the registration configuration exists in 'MSMCONFIGDIR', or an absolute path" 'MSMAllStrainFinalconf1to1_1to3'
 opts_AddOptional '--registration-configure-override-variables' 'RegConfOverrideVars' 'string' "the registration configure variables to override instead of using the configuration file. Please use quotes, and space between parameters is not recommended. e.g. 'REGNUMBER=1,REGPOWER=3', defaults to 'NONE'" 'NONE'
-opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative path to 'MSMAllTemplates'" ''
-opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative path to 'MSMAllTemplates'" ''
-opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative path to 'MSMAllTemplates'" ''
-opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative path to 'MSMAllTemplates'" ''
-opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative path to 'MSMAllTemplates'" ''
+opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative path to 'MSMAllTemplates'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'
+opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative path to 'MSMAllTemplates'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
+opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -114,38 +114,11 @@ opts_ShowValues
 # ------------------------------------------------------------------------------
 log_Msg "Starting main functionality"
 # default file names
-if [[ "$RegConfPath" == "" ]]
-then
-	RegConfPath="MSMAllStrainFinalconf1to1_1to3"
-fi
-
-if [[ "$MyelinTarget" == "" ]]
-then
-	MyelinTarget="Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-fi
-
-if [[ "$RSNTemplates" == "" ]]
-then
-	RSNTemplates="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii"
-fi
-
-if [[ "$RSNWeights" == "" ]]
-then
-	RSNWeights="rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt"
-fi
-
-if [[ "$TopographyROIs" == "" ]]
-then
-	TopographyROIs="Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii"
-fi
-
-if [[ "$TopographyTarget" == "" ]]
-then
-	TopographyTarget="Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii"
-fi
-
 # MSMAll config file
-RegConfPath="${MSMCONFIGDIR}/${RegConfPath}"
+if [[ "$RegConfPath" != /* ]]
+then
+	RegConfPath="${MSMCONFIGDIR}/${RegConfPath}"
+fi
 log_Msg "RegConfPath: ${RegConfPath}"
 # MSMAll templates defaults
 MyelinTarget="${MSMAllTemplates}/${MyelinTarget}"
