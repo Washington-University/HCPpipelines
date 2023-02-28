@@ -77,9 +77,9 @@ from numpy import *
 def usage():
     print("Usage: " + argv[0] + " <input2standard mat> <output mat>")
     print(" ")
-    print("       First argument is the FLIRT transform (12 DOF) from the input image to standard")
-    print("       Second argument is the output matrix which will go from the input image to standard space (6 DOF)")
-    print("          aligning the AC, the AC-PC line and the mid-sagittal plane (in order of decreasing accuracy)")
+    print("       First argument is the NIFTI world transform (12 DOF) from the input image to standard")
+    print("       Second argument is the output world matrix which will go from the input image to standard space (6 DOF)")
+    print("          aligning the AC, the AC-PC line and the mid-sagittal plane in NIFTI mm convention (in order of decreasing accuracy)")
     sys.exit(1)
 
 if len(argv) < 2:
