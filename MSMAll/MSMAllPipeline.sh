@@ -58,7 +58,7 @@ opts_AddMandatory '--multirun-fix-names-to-use' 'mrfixNamesToUse' 'rfMRI_REST1_L
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single subject scan"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
-opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'string' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
+opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 opts_AddMandatory '--input-registration-name' 'InputRegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMSulc'"
 opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg'"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
@@ -82,11 +82,11 @@ opts_AddOptional '--vn' 'VN' 'YES/NO' "whether to perform variance normalization
 opts_AddOptional '--rerun-if-exists' 'ReRunIfExists' 'YES/NO' "whether to re-run even if output already exists, defaults to 'YES'" 'YES'
 opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "it can be either the relative path where the registration configuration exists in 'MSMCONFIGDIR', or an absolute path" 'MSMAllStrainFinalconf1to1_1to3'
 opts_AddOptional '--registration-configure-override-variables' 'RegConfOverrideVars' 'string' "the registration configure variables to override instead of using the configuration file. Please use quotes, and space between parameters is not recommended. e.g. 'REGNUMBER=1,REGPOWER=3', defaults to 'NONE'" 'NONE'
-opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
-opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative path to 'MSMAllTemplates'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'
-opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative path to 'MSMAllTemplates'" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
-opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
-opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative path to 'MSMAllTemplates'" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'
+opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
+opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
