@@ -87,6 +87,8 @@ opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn te
 opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
 opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--start-frame' 'StartFrame' 'integer' "only applied for single runs when --fmri-names-list is not empty; the starting frame to choose from each fMRI run (inclusive), defaults to '1'" '1'
+opts_AddOptional '--end-frame' 'EndFrame' 'integer' "only applied for single runs when --fmri-names-list is not empty; the ending frame to choose from each fMRI run (inclusive), defaults to '' which will be overrided by the minimum frame length across the given list of fMRI runs" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -139,6 +141,9 @@ log_Msg "output_proc_string: ${output_proc_string}"
 expected_concatenated_output_dir="${StudyFolder}/${Subject}/MNINonLinear/Results/${OutputfMRIName}"
 expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
 before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
+
+OutputfMRINameOverride=""
+expected_concatenated_output_file_override=""
 
 if [[ "$fMRINames" == "" ]]
 then
@@ -193,28 +198,7 @@ then
 	${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Subject}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
 	rm -f -- "${before_vn_output_file}"
 else
-	# Values of variables determining MIGP usage
-	# Form:    UseMIGP    @ PCAInitDim     @ PCAFinalDim    @ ReRunIfExists @ VarianceNormalization
-	# Values:  YES or NO  @ number or NONE @ number or NONE @ YES or NO     @ YES or NO
-	#
-	# Note: Spaces should not be used in the variable's value. They are used above to
-	#       help make the form and values easier to understand.
-	# Note: If UseMIGP value is NO, then we use the full timeseries
 	log_Msg "Running MSM on full timeseries"
-	#	migp_vars="NO@0@0@YES@YES"
-	#	log_Msg "migp_vars: ${migp_vars}"
-
-	Demean="YES"
-	log_Msg "Demean: ${Demean}"
-
-	VarianceNormalization="YES"
-	log_Msg "VarianceNormalization: ${VarianceNormalization}"
-
-	ComputeVarianceNormalization="NO" #This is computed in FIX now
-	log_Msg "ComputeVarianceNormalization: ${ComputeVarianceNormalization}"
-
-	RevertBiasField="NO" # Will recompute VN based on not reverting bias field
-	log_Msg "RevertBiasField: ${RevertBiasField}"
 
 	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
 		--path="${StudyFolder}" \
@@ -224,11 +208,23 @@ else
 		--output-fmri-name="${OutputfMRIName}" \
 		--fmri-proc-string="${fMRIProcSTRING}" \
 		--output-proc-string="${output_proc_string}" \
-		--demean="${Demean}" \
-		--variance-normalization="${VarianceNormalization}" \
-		--compute-variance-normalization="${ComputeVarianceNormalization}" \
-		--revert-bias-field="${RevertBiasField}" \
+		--start-frame="${StartFrame}" \
+		--end-frame="${EndFrame}" \
 		--matlab-run-mode="${MatlabRunMode}"
+		
+	# TODO: the current save and load for new OutputfMRIName might cause trouble in parallel mode
+	OutputfMRINameOverride=$(cat "/tmp/OutputfMRIName.txt")
+	rm /tmp/OutputfMRIName.txt
+	# override the expected_concatenated_output_file
+	expected_concatenated_output_file_override="${StudyFolder}/${Subject}/MNINonLinear/Results/${OutputfMRINameOverride}/${OutputfMRINameOverride}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
+fi
+
+if [[ "$OutputfMRINameOverride" != "" ]]; then
+	OutputfMRIName="$OutputfMRINameOverride"
+fi
+
+if [[ "$expected_concatenated_output_file_override" != "" ]]; then
+	expected_concatenated_output_file="$expected_concatenated_output_file_override"
 fi
 
 log_File_Must_Exist "${expected_concatenated_output_file}"
