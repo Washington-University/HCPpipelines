@@ -149,7 +149,7 @@ do
 done
 
 # convert to mins secs
-m=$(bc <<< "(${duration}%3600)/60")
+m=$(bc <<< "${duration}/60")
 s=$(bc <<< "${duration}%60")
 DurationString="${m}mins${s}secs"
 
