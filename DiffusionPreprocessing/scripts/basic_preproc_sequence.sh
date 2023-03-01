@@ -140,6 +140,7 @@ done
 echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_b0 $(${FSLDIR}/bin/imglob ${rawdir}/Pos_b0_????.*)
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Neg_b0 $(${FSLDIR}/bin/imglob ${rawdir}/Neg_b0_????.*)
+# Include nii in filename of imrm command due to bug in behavior of imrm introduced in FSL 6.0.6
 ${FSLDIR}/bin/imrm ${rawdir}/Pos_b0_????.nii*
 ${FSLDIR}/bin/imrm ${rawdir}/Neg_b0_????.nii*
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos $(echo ${rawdir}/${basePos}_[0-9]*.nii*)
