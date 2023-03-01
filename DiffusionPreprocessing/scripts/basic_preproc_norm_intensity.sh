@@ -54,7 +54,7 @@ for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*; 
 
 	echo "${scriptName}: About to fslmaths ${basename}_mean -Tmean ${basename}_mean"
 	${FSLDIR}/bin/fslmaths ${basename}_mean -Tmean ${basename}_mean #This is the mean baseline b0 intensity for the series
-	${FSLDIR}/bin/imrm ${basename}_b0_????
+	${FSLDIR}/bin/imrm ${basename}_b0_????.nii*
 	if [ ${entry_cnt} -eq 0 ]; then #Do not rescale the first series
 		rescale=$(fslmeants -i ${basename}_mean)
 	else
