@@ -102,6 +102,11 @@ log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
 AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
+OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
+log_Msg "OutputFolder: ${OutputFolder}"
+# create folder to save the concatenated file
+mkdir -p "${OutputFolder}"
+
 Caret7_Command=${CARET7DIR}/wb_command
 log_Msg "Caret7_Command: ${Caret7_Command}"
 
@@ -113,9 +118,11 @@ do
 	fMRIName="${fMRINamesArray[index]}"
 	ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
-	NumFrames=`${Caret7_Command} -file-information "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" -only-number-of-maps`
+	FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
+	log_Msg "FullDenseTCS: ${FullDenseTCS}"
+	NumFrames=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-number-of-maps`
 	runFrames[index]="$NumFrames"
-	TR=`${Caret7_Command} -file-information "${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" -only-step-interval`
+	TR=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-step-interval`
 	runTR[index]="$TR"
 	if [ $((index)) -eq 0 ]; then
 		minFrames=${runFrames[index]}
@@ -132,7 +139,7 @@ if [ $((StartFrame)) -gt "${minFrames}" ] || [ $((EndFrame)) -gt "${minFrames}" 
 	log_Err_Abort "The provided start frame ${StartFrame} and end frame ${EndFrame} is not valid, it must be between the range 1 to ${minFrames}. Please check the fMRI runs."
 fi
 log_Msg "StartFrame: ${StartFrame}, EndFrame: ${EndFrame}"
-FrameString="_Frame${StartFrame}To${EndFrame}"
+FrameString="Frame${StartFrame}To${EndFrame}"
 duration=0
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index))
 do
@@ -143,8 +150,8 @@ done
 
 # convert to mins secs
 m=$(bc <<< "(${duration}%3600)/60")
-s=$((${duration%.*}%60))
-DurationString="_${m}mins${s}secs"
+s=$(bc <<< "${duration}%60")
+DurationString="${m}mins${s}secs"
 
 cnt=0
 # loop for demean+vn+concat
@@ -153,19 +160,20 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	log_Msg "fMRIName: ${fMRIName}"
 	ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
+	
+	FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
+	# temporary files
+	FrameDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}.dtseries.nii
+	FrameMean=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}_mean.dscalar.nii
+	FrameOutput=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}${OutputProcSTRING}.dtseries.nii
 
 	# pick frames
-	if [ $((StartFrame)) -eq 1 ] && [ $((EndFrame)) -eq "${runFrames[index]}" ]; then
-		cp ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii
-		cnt=$((cnt+1))
-	else
-		${Caret7_Command} -cifti-merge ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii -cifti ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii -column ${StartFrame} -up-to ${EndFrame}
-	fi
+	${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
 
-	# mean files
-	${Caret7_Command} -cifti-reduce ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii MEAN ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}_mean.dscalar.nii
+	# mean file
+	${Caret7_Command} -cifti-reduce ${FrameDenseTCS} MEAN ${FrameMean}
 	MATHDemean=" - Mean"
-	VarDemean="-var Mean ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}_mean.dscalar.nii -select 1 1 -repeat"
+	VarDemean="-var Mean ${FrameMean} -select 1 1 -repeat"
 	
 	# vn file
 	OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
@@ -178,28 +186,19 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	log_Msg "MATH: ${MATH}"
 	
 	# demean + vn
-	${Caret7_Command} -cifti-math "${MATH}" ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii -var TCS ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii ${VarDemean} ${VarVN} 
+	${Caret7_Command} -cifti-math "${MATH}" ${FrameOutput} -var TCS ${FrameDenseTCS} ${VarDemean} ${VarVN} 
 	
 	# construct the merge string
-	MergeSTRING=`echo "${MergeSTRING} -cifti ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii"`
+	MergeSTRING=`echo "${MergeSTRING} -cifti ${FrameOutput}"`
 	
 	# mark temp files for mean, selected range and timeseries after the above process
-	tempfiles_add ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}_mean.dscalar.nii ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}.dtseries.nii ${ResultsFolder}/${fMRIName}${fMRIProcSTRING}${FrameString}${OutputProcSTRING}.dtseries.nii
+	tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
 done
 
-# override OutputfMRIName with frame and duration if frame range is not equal to the full range
-if [ $((cnt)) -lt "${#fMRINamesArray[@]}" ]; then
-	log_Msg "OutputfMRIName is now overridden! Please replace the OutputfMRIName with the new one in the following scripts"
-	log_Msg "old OutputfMRIName: ${OutputfMRIName}"
-	OutputfMRIName=${OutputfMRIName}${DurationString}${FrameString}
-fi
-log_Msg "OutputfMRIName: ${OutputfMRIName}"
-echo "$OutputfMRIName" > /tmp/OutputfMRIName.txt
-
-OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
-log_Msg "OutputFolder: ${OutputFolder}"
-# create folder to save the concatenated file
-mkdir -p "${OutputFolder}"
+# save the frame range and duration info
+log_Msg "FrameString: ${FrameString}"
+log_Msg "DurationString: ${DurationString}"
+echo "${FrameString} ${DurationString}" > ${OutputFolder}/frames_duration.txt
 
 # final output: concatenated file
 ${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING}

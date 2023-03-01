@@ -142,9 +142,6 @@ expected_concatenated_output_dir="${StudyFolder}/${Subject}/MNINonLinear/Results
 expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
 before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
 
-OutputfMRINameOverride=""
-expected_concatenated_output_file_override=""
-
 if [[ "$fMRINames" == "" ]]
 then
 	log_Msg "Running MSM on Multi-run FIX timeseries"
@@ -211,22 +208,7 @@ else
 		--start-frame="${StartFrame}" \
 		--end-frame="${EndFrame}" \
 		--matlab-run-mode="${MatlabRunMode}"
-		
-	# TODO: the current save and load for new OutputfMRIName might cause trouble in parallel mode
-	OutputfMRINameOverride=$(cat "/tmp/OutputfMRIName.txt")
-	rm /tmp/OutputfMRIName.txt
-	# override the expected_concatenated_output_file
-	expected_concatenated_output_file_override="${StudyFolder}/${Subject}/MNINonLinear/Results/${OutputfMRINameOverride}/${OutputfMRINameOverride}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
 fi
-
-if [[ "$OutputfMRINameOverride" != "" ]]; then
-	OutputfMRIName="$OutputfMRINameOverride"
-fi
-
-if [[ "$expected_concatenated_output_file_override" != "" ]]; then
-	expected_concatenated_output_file="$expected_concatenated_output_file_override"
-fi
-
 log_File_Must_Exist "${expected_concatenated_output_file}"
 
 # fMRIProcSTRING now should reflect the name expected by registrations done below
