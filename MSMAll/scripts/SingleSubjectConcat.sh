@@ -147,6 +147,7 @@ m=$(bc <<< "${duration}/60")
 s=$(bc <<< "${duration}%60")
 DurationString="${m}mins${s}secs"
 
+MergeArray=()
 cnt=0
 # loop for demean+vn+concat
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
@@ -183,7 +184,7 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	${Caret7_Command} -cifti-math "${MATH}" ${FrameOutput} -var TCS ${FrameDenseTCS} ${VarDemean} ${VarVN} 
 	
 	# construct the merge string
-	MergeSTRING=`echo "${MergeSTRING} -cifti ${FrameOutput}"`
+	MergeArray+=(-cifti "${FrameOutput}")
 	
 	# mark temp files for mean, selected range and timeseries after the above process
 	tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
@@ -195,6 +196,6 @@ log_Msg "DurationString: ${DurationString}"
 #echo "${FrameString} ${DurationString}" > ${OutputFolder}/frames_duration.txt
 
 # final output: concatenated file
-${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING}
+${Caret7_Command} -cifti-merge "${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii" "${MergeArray[@]}"
 
 log_Msg "Completing SingleSubjectConcat"
