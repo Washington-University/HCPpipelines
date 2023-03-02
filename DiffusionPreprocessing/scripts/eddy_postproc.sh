@@ -161,7 +161,10 @@ if [ ! $GdCoeffs = "NONE" ]; then
 	${FSLDIR}/bin/calc_grad_perc_dev --fullwarp=${warpedDir}/fullWarp -o ${datadir}/grad_dev
 	${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
 	${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
-	${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
+	# Delete each of the grad_dev files individualy due to bug in behavior of imrm introduced in FSL 6.0.6
+	${FSLDIR}/bin/imrm ${datadir}/grad_dev_x
+	${FSLDIR}/bin/imrm ${datadir}/grad_dev_y
+	${FSLDIR}/bin/imrm ${datadir}/grad_dev_z
 	${FSLDIR}/bin/imrm ${datadir}/trilinear
 	${FSLDIR}/bin/imrm ${warpedDir}/data_dilated_vol1
 fi
