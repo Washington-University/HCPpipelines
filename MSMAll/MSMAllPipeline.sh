@@ -206,8 +206,7 @@ else
 		--fmri-proc-string="${fMRIProcSTRING}" \
 		--output-proc-string="${output_proc_string}" \
 		--start-frame="${StartFrame}" \
-		--end-frame="${EndFrame}" \
-		--matlab-run-mode="${MatlabRunMode}"
+		--end-frame="${EndFrame}"
 fi
 log_File_Must_Exist "${expected_concatenated_output_file}"
 

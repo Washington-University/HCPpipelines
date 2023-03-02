@@ -43,8 +43,6 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
-g_matlab_default_mode=1
-
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "implements Single Subject Scan Concatenation"
 #mandatory
@@ -59,10 +57,6 @@ opts_AddMandatory '--output-proc-string' 'OutputProcSTRING' 'string' "the output
 #optional inputs
 opts_AddOptional '--start-frame' 'StartFrame' 'integer' "the starting frame to choose from each fMRI run (inclusive), defaults to '1'" '1'
 opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose from each fMRI run (inclusive), defaults to '' which will be overrided by the minimum frame length across the given list of fMRI runs" ''
-opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
-0 = compiled MATLAB
-1 = interpreted MATLAB
-2 = Octave" "$g_matlab_default_mode"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -198,7 +192,7 @@ done
 # save the frame range and duration info
 log_Msg "FrameString: ${FrameString}"
 log_Msg "DurationString: ${DurationString}"
-echo "${FrameString} ${DurationString}" > ${OutputFolder}/frames_duration.txt
+#echo "${FrameString} ${DurationString}" > ${OutputFolder}/frames_duration.txt
 
 # final output: concatenated file
 ${Caret7_Command} -cifti-merge ${OutputFolder}/${OutputfMRIName}${fMRIProcSTRING}${OutputProcSTRING}.dtseries.nii ${MergeSTRING}
