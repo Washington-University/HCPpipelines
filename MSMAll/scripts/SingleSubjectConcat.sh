@@ -1,42 +1,12 @@
 #!/bin/bash
-
-#~ND~FORMAT~MARKDOWN
-#~ND~START~
-#
-# # SingleSubjectConcat.sh
-#
-# ## Copyright Notice
-#
-# Copyright (C) 2015-2017 The Human Connectome Project
-#
-# * Washington University in St. Louis
-# * University of Minnesota
-# * Oxford University
-#
-# ## Author(s)
-#
-# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
-# * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
-#
-# ## Product
-#
-# [Human Connectome Project][HCP] (HCP) Pipelines
-#
-# ## License
-#
-# See the [LICENSE](https://github.com/Washington-Univesity/Pipelines/blob/master/LICENSE.md) file
-#
-# <!-- References -->
-# [HCP]: http://www.humanconnectome.org
-#
-#~ND~END~
+set -eu
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -51,12 +21,11 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains al
 opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--fmri-names-list' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of single-run fmri run names separated by @s"
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single subject scan"
-opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--output-proc-string' 'OutputProcSTRING' 'string' "the output file name component, e.g. '_vn'"
 #optional inputs
 opts_AddOptional '--start-frame' 'StartFrame' 'integer' "the starting frame to choose from each fMRI run (inclusive), defaults to '1'" '1'
-opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose from each fMRI run (inclusive), defaults to '' which will be overrided by the minimum frame length across the given list of fMRI runs" ''
+opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose from each fMRI run (inclusive), defaults to '' which preserves the ending frame of every fMRI run from --fmri-names-list" ''
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -124,21 +93,30 @@ do
 		(( ${runFrames[index]}<minFrames )) && minFrames=${runFrames[index]}
 	fi
 done
+
+EndFrameToUse=""
 if [[ "$EndFrame" == "" ]]; then
-	EndFrame="$minFrames"
-	log_Msg "EndFrame: ${EndFrame}"
+	# preserving the timeseries to the end
+	FrameString="Frame${StartFrame}ToTheEnd"
+else
+	# check valid frame range
+	if ((StartFrame > minFrames ||  EndFrame > minFrames || StartFrame < 1 || EndFrame < 1 || StartFrame > EndFrame)); then
+		log_Err_Abort "The provided start frame ${StartFrame} and end frame ${EndFrame} is not valid, it must be between the range 1 to ${minFrames}. Please check the fMRI runs."
+	fi
+	FrameString="Frame${StartFrame}To${EndFrame}"
 fi
-# check valid frame range
-if [ $((StartFrame)) -gt "${minFrames}" ] || [ $((EndFrame)) -gt "${minFrames}" ] || [ $((StartFrame)) -lt 1 ] || [ $((EndFrame)) -lt 1 ] || [ $((StartFrame)) -gt $((EndFrame)) ]; then
-	log_Err_Abort "The provided start frame ${StartFrame} and end frame ${EndFrame} is not valid, it must be between the range 1 to ${minFrames}. Please check the fMRI runs."
-fi
-log_Msg "StartFrame: ${StartFrame}, EndFrame: ${EndFrame}"
-FrameString="Frame${StartFrame}To${EndFrame}"
+
+log_Msg "FrameString: ${FrameString}"
+
 duration=0
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index))
 do
 	TR="${runTR[index]}"
-	Frames=$((EndFrame-StartFrame+1))
+	if [[ "$EndFrame" == "" ]]; then
+		Frames=$((runFrames[index]-StartFrame+1))
+	else
+		Frames=$((EndFrame-StartFrame+1))
+	fi
 	duration=$(bc -l <<< $duration+$TR*$Frames)
 done
 
@@ -163,21 +141,34 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	FrameOutput=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}${OutputProcSTRING}.dtseries.nii
 
 	# pick frames
-	${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
+	if [[ "$EndFrame" == "" ]]; then
+		if ((StartFrame==1)); then
+			# override the FrameDenseTCS with the full dense timeseries
+			FrameDenseTCS=${FullDenseTCS}
+			# mark temp files for mean, and timeseries after the above process
+			tempfiles_add ${FrameMean} ${FrameOutput}
+		else
+			${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${runFrames[index]}
+			# mark temp files for mean, selected range and timeseries after the above process
+			tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
+		fi
+	else
+		${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
+		# mark temp files for mean, selected range and timeseries after the above process
+		tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
+	fi
 
 	# mean file
 	${Caret7_Command} -cifti-reduce ${FrameDenseTCS} MEAN ${FrameMean}
-	MATHDemean=" - Mean"
 	VarDemean="-var Mean ${FrameMean} -select 1 1 -repeat"
 	
 	# vn file
 	OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
 	log_File_Must_Exist "$OutputVN"
-	MATHVN=" / max(VN,0.001)"
 	VarVN="-var VN ${OutputVN} -select 1 1 -repeat"
 	
   	# math expression
-	MATH="(TCS${MATHDemean})${MATHVN}"
+	MATH="(TCS- Mean) / max(VN,0.001)"
 	log_Msg "MATH: ${MATH}"
 	
 	# demean + vn
@@ -185,9 +176,6 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	
 	# construct the merge string
 	MergeArray+=(-cifti "${FrameOutput}")
-	
-	# mark temp files for mean, selected range and timeseries after the above process
-	tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
 done
 
 # save the frame range and duration info

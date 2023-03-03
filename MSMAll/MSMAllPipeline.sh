@@ -201,7 +201,6 @@ else
 		--path="${StudyFolder}" \
 		--subject="${Subject}" \
 		--fmri-names-list="${fMRINames}" \
-		--high-pass="${HighPass}" \
 		--output-fmri-name="${OutputfMRIName}" \
 		--fmri-proc-string="${fMRIProcSTRING}" \
 		--output-proc-string="${output_proc_string}" \
