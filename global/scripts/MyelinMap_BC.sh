@@ -6,7 +6,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -15,15 +15,14 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functio
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements CIFTI-based Myelin map bias corrections from one resolution to another; resolution includes native, 164k, 32k"
+opts_SetScriptDescription "implements CIFTI-based Myelin bias fields from native mesh to low resolution then back to native mesh"
 
 #mandatory
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
 opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
-opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll' or ''"
-opts_AddMandatory '--input-mesh' 'InputMesh' 'meshnum or native' "input resolution mesh node count (in thousands) or 'native', like '164' for 164k_fs_LR"
-opts_AddMandatory '--output-mesh' 'OutputMesh' 'meshnum or native' "low resolution mesh node count (in thousands) or 'native', like '32' for 32k_fs_LR"
+opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll' or 'MSMSulc' or ''"
+opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'meshnum or native' "the low resolution mesh node count (in thousands), like '164' for 164k_fs_LR, '32' for 32k_fs_LR"
 #optional inputs
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean , defaults to 'NO'" 'NO'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
@@ -50,14 +49,6 @@ opts_ShowValues
 # ------------------------------------------------------------------------------
 log_Msg "Starting main functionality"
 Caret7_Command=${CARET7DIR}/wb_command
-RegNameToUse=""
-RegNameStructString=""
-if [[ "$RegName" != "" ]]; then
-	RegNameToUse=_${RegName}
-	RegNameStructString=.${RegName}
-fi
-log_Msg "RegNameToUse: $RegNameToUse"
-
 UseIndMeanBool=$(opts_StringToBool "$UseIndMean")
 # default folders
 SubjFolder=${StudyFolder}/${Subject}
@@ -66,79 +57,84 @@ AtlasSpaceFolder=${SubjFolder}/MNINonLinear
 log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
 T1wFolder=${SubjFolder}/T1w
 log_Msg "T1wFolder: $T1wFolder"
+NativeFolder=${AtlasSpaceFolder}/Native
+log_Msg "NativeFolder: $NativeFolder"
+NativeT1wFolder=${T1wFolder}/Native
+log_Msg "NativeT1wFolder: $NativeT1wFolder"
 
-if [[ "$InputMesh" == "$OutputMesh" ]]; then
-	log_Err_Abort "the input mesh ${InputMesh} and the output mesh ${OutputMesh} shouldn't be the same resolution!"
-fi
-
-case "$InputMesh" in
-	(native)
-		InputMeshString="native"
-		InputFolder=${AtlasSpaceFolder}/Native
-		InputT1wFolder=${T1wFolder}/Native
-		InputBCMapName="MyelinMap"
-		;;
+case "$LowResMesh" in
 	(164)
-		InputMeshString=164k_fs_LR
-		InputFolder=${AtlasSpaceFolder}
-		InputT1wFolder=${AtlasSpaceFolder}
-		InputBCMapName="MyelinMap"
+		LowResMeshString=164k_fs_LR
+		LowResFolder=${AtlasSpaceFolder}
+		LowResT1wFolder=${AtlasSpaceFolder}
+		LowResBCMapName="MyelinMap"
 		;;
 	(*)
-		if [[ $InputMesh =~ ^[0-9]+$ ]]; then
-			InputMeshString=${InputMesh}k_fs_LR
-			InputFolder=${AtlasSpaceFolder}/fsaverage_LR${InputMesh}k
-			InputT1wFolder=${T1wFolder}/fsaverage_LR${InputMesh}k
-			InputBCMapName="atlas_MyelinMap"
+		if [[ $LowResMesh =~ ^[0-9]+$ ]]; then
+			LowResMeshString=${LowResMesh}k_fs_LR
+			LowResFolder=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k
+			LowResT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
+			LowResBCMapName="atlas_MyelinMap"
 		else
-        	log_Err_Abort "unrecognized --input-mesh value '$InputMesh', valid options are 'native' or numbers like '32', '164', etc."
+        	log_Err_Abort "unrecognized --low-res-mesh value '$LowResMesh', valid options are numbers like '32', '164', etc."
 		fi
         ;;
 esac
 
-case "$OutputMesh" in
-	(native)
-		OutputMeshString="native"
-		OutputFolder=${AtlasSpaceFolder}/Native
-		OutputT1wFolder=${T1wFolder}/Native
-		OutputBCMapName="MyelinMap"
+case "$RegName" in
+	("")
+		RegNameInOutputName=""
+		RegNameInT1wName=""
+		RegNameStructString=""
 		;;
-	(164)
-		OutputMeshString=164k_fs_LR
-		OutputFolder=${AtlasSpaceFolder}
-		OutputT1wFolder=${AtlasSpaceFolder}
-		OutputBCMapName="MyelinMap"
+	(MSMSulc)
+		RegNameInOutputName=_${RegName}
+		RegNameInT1wName=""
+		RegNameStructString=.${RegName}
 		;;
 	(*)
-		if [[ $OutputMesh =~ ^[0-9]+$ ]]; then
-			OutputMeshString=${OutputMesh}k_fs_LR
-			OutputFolder=${AtlasSpaceFolder}/fsaverage_LR${OutputMesh}k
-			OutputT1wFolder=${T1wFolder}/fsaverage_LR${OutputMesh}k
-			OutputBCMapName="atlas_MyelinMap"
-		else
-        	log_Err_Abort "unrecognized --input-mesh value '$OutputMesh', valid options are 'native' or numbers like '32', '164', etc."
-		fi
-		;;
+		RegNameInOutputName=_${RegName}
+		RegNameInT1wName=_${RegName}
+		RegNameStructString=.${RegName}
+        ;;
 esac
+log_Msg "RegNameInOutputName: $RegNameInOutputName"
+log_Msg "RegNameInT1wName: $RegNameInT1wName"
+log_Msg "RegNameStructString: $RegNameStructString"
 
-IndividualMap=${InputFolder}/${Subject}.MyelinMap${RegNameToUse}.${InputMeshString}.dscalar.nii
-log_File_Must_Exist "${IndividualMap}"
-ReferenceMap=${InputFolder}/${Subject}.${InputBCMapName}_BC.${InputMeshString}.dscalar.nii
+NativeMyelinMap=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
+log_File_Must_Exist "${NativeMyelinMap}"
+
+IndividualLowResMap=${LowResFolder}/${Subject}.MyelinMap${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
+${Caret7_Command} -cifti-resample ${NativeMyelinMap} \
+	COLUMN ${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii \
+	COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
+	${IndividualLowResMap} \
+	-surface-postdilate 40 \
+	-left-spheres ${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii \
+	-left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${LowResFolder}/${Subject}.L.midthickness.${LowResMeshString}.surf.gii \
+	-right-spheres ${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii \
+	-right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${LowResFolder}/${Subject}.R.midthickness.${LowResMeshString}.surf.gii
+
+log_Msg "Resampled MyelinMap in the low res mesh space using registration: ${IndividualLowResMap}"
+
+ReferenceMap=${LowResFolder}/${Subject}.${LowResBCMapName}_BC.${LowResMeshString}.dscalar.nii
 log_File_Must_Exist "${ReferenceMap}"
-ReferenceMapOld=${InputFolder}/${Subject}.${InputBCMapName}_oldBC.${InputMeshString}.dscalar.nii
+ReferenceMapOld=${LowResFolder}/${Subject}.${LowResBCMapName}_oldBC.${LowResMeshString}.dscalar.nii
 ReferenceMapToUse=${ReferenceMap}
 
+# TODO: if _oldBC exists, then _BC is from the new method; if _oldBC doesn't exists, then move forward to the if block.
 # match the reference map's mean with the individual map's mean
 if ((UseIndMeanBool)); then
 	log_Msg "match the reference map's mean with the individual map's mean"
 	log_Msg "UseIndMeanBool: $UseIndMeanBool"
 	# the new reference map
 	# TODO: Do we want to distinguish the mean-matched reference map by inserting a string in the file name?
-	ReferenceMapMeanMatch=${InputFolder}/${Subject}.${InputBCMapName}_BC.${InputMeshString}.dscalar.nii
+	ReferenceMapMeanMatch=${LowResFolder}/${Subject}.${LowResBCMapName}_BC.${LowResMeshString}.dscalar.nii
 	# calcualte means of reference and individual maps
 	# not average in vertex areas, but it is fine
 	MeanRef=$(${Caret7_Command} -cifti-stats -reduce MEAN ${ReferenceMap})
-	MeanInd=$(${Caret7_Command} -cifti-stats -reduce MEAN ${IndividualMap})
+	MeanInd=$(${Caret7_Command} -cifti-stats -reduce MEAN ${IndividualLowResMap})
 	log_Msg "MeanRef: $MeanRef"
 	log_Msg "MeanInd: $MeanInd"
 	# to save the old maps as _oldBC
@@ -151,37 +147,42 @@ if ((UseIndMeanBool)); then
 fi
 
 # generate BiasField in the input mesh space
-${Caret7_Command} -cifti-math "Individual - Reference" ${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii \
-	-var Individual ${IndividualMap} \
+LowResBiasField=${LowResFolder}/${Subject}.BiasField${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
+${Caret7_Command} -cifti-math "Individual - Reference" ${LowResBiasField} \
+	-var Individual ${IndividualLowResMap} \
 	-var Reference ${ReferenceMapToUse}
 	
-log_Msg "BiasField in the input mesh space: ${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii"
+log_Msg "BiasField in the low res mesh space: ${LowResBiasField}"
 # smooth the bias field
-${Caret7_Command} -cifti-smoothing ${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii \
+${Caret7_Command} -cifti-smoothing ${LowResBiasField} \
 	${CorrectionSigma} 0 COLUMN \
-	${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii \
-	-left-surface ${InputT1wFolder}/${Subject}.L.midthickness${RegNameToUse}.${InputMeshString}.surf.gii \
-	-right-surface ${InputT1wFolder}/${Subject}.R.midthickness${RegNameToUse}.${InputMeshString}.surf.gii
+	${LowResBiasField} \
+	-left-surface ${LowResT1wFolder}/${Subject}.L.midthickness${RegNameInT1wName}.${LowResMeshString}.surf.gii \
+	-right-surface ${LowResT1wFolder}/${Subject}.R.midthickness${RegNameInT1wName}.${LowResMeshString}.surf.gii
 
-log_Msg "Smoothed BiasField in the input mesh space: ${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii"
+log_Msg "Smoothed BiasField in the low res mesh space: ${LowResBiasField}"
 
-# resample the bias field to output mesh space
-${Caret7_Command} -cifti-resample ${InputFolder}/${Subject}.BiasField${RegNameToUse}.${InputMeshString}.dscalar.nii \
-	COLUMN ${OutputFolder}/${Subject}.MyelinMap.${OutputMeshString}.dscalar.nii \
+# resample the bias field back to native mesh space
+NativeBiasField=${NativeFolder}/${Subject}.BiasField${RegNameInOutputName}.native.dscalar.nii
+${Caret7_Command} -cifti-resample ${LowResBiasField} \
+	COLUMN ${NativeMyelinMap} \
 	COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
-	${OutputFolder}/${Subject}.BiasField${RegNameToUse}.${OutputMeshString}.dscalar.nii \
+	${NativeBiasField} \
 	-surface-postdilate 40 \
-	-left-spheres ${InputFolder}/${Subject}.L.sphere.${InputMeshString}.surf.gii ${OutputFolder}/${Subject}.L.sphere${RegNameStructString}.${OutputMeshString}.surf.gii \
-	-left-area-surfs ${InputT1wFolder}/${Subject}.L.midthickness${RegNameToUse}.${InputMeshString}.surf.gii ${OutputT1wFolder}/${Subject}.L.midthickness.${OutputMeshString}.surf.gii \
-	-right-spheres ${InputFolder}/${Subject}.R.sphere.${InputMeshString}.surf.gii ${OutputFolder}/${Subject}.R.sphere${RegNameStructString}.${OutputMeshString}.surf.gii \
-	-right-area-surfs ${InputT1wFolder}/${Subject}.R.midthickness${RegNameToUse}.${InputMeshString}.surf.gii ${OutputT1wFolder}/${Subject}.R.midthickness.${OutputMeshString}.surf.gii 
+	-left-spheres ${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii ${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii \
+	-left-area-surfs ${LowResT1wFolder}/${Subject}.L.midthickness${RegNameInT1wName}.${LowResMeshString}.surf.gii ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii \
+	-right-spheres ${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii ${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii \
+	-right-area-surfs ${LowResT1wFolder}/${Subject}.R.midthickness${RegNameInT1wName}.${LowResMeshString}.surf.gii ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii 
 
-log_Msg "Resampled BiasField in the output mesh space: ${OutputFolder}/${Subject}.BiasField${RegNameToUse}.${OutputMeshString}.dscalar.nii"
+log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
-${Caret7_Command} -cifti-math "Var - Bias" ${OutputFolder}/${Subject}.${OutputBCMapName}_BC${RegNameToUse}.${OutputMeshString}.dscalar.nii \
-	-var Var ${OutputFolder}/${Subject}.MyelinMap.${OutputMeshString}.dscalar.nii \
-	-var Bias ${OutputFolder}/${Subject}.BiasField${RegNameToUse}.${OutputMeshString}.dscalar.nii
+NativeBCMap=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
+${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMap} \
+	-var Var ${NativeMyelinMap} \
+	-var Bias ${NativeBiasField}
 
-log_Msg "BC map in the output mesh space: ${OutputFolder}/${Subject}.${OutputBCMapName}_BC${RegNameToUse}.${OutputMeshString}.dscalar.nii"
+log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMap}"
+# TODO: add gifti generation according to one argument
+# -cifti-separate-all
 log_Msg "Completing main functionality"
