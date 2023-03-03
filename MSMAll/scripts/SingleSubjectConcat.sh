@@ -139,40 +139,31 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
 	FrameDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}.dtseries.nii
 	FrameMean=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}_mean.dscalar.nii
 	FrameOutput=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}${OutputProcSTRING}.dtseries.nii
-
+	# mark temp files for mean, and timeseries after the processing
+	tempfiles_add ${FrameMean} ${FrameOutput}
 	# pick frames
 	if [[ "$EndFrame" == "" ]]; then
 		if ((StartFrame==1)); then
 			# override the FrameDenseTCS with the full dense timeseries
 			FrameDenseTCS=${FullDenseTCS}
-			# mark temp files for mean, and timeseries after the above process
-			tempfiles_add ${FrameMean} ${FrameOutput}
 		else
+			tempfiles_add ${FrameDenseTCS}
 			${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${runFrames[index]}
-			# mark temp files for mean, selected range and timeseries after the above process
-			tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
 		fi
 	else
+		tempfiles_add ${FrameDenseTCS}
 		${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
-		# mark temp files for mean, selected range and timeseries after the above process
-		tempfiles_add ${FrameMean} ${FrameDenseTCS} ${FrameOutput}
 	fi
 
 	# mean file
 	${Caret7_Command} -cifti-reduce ${FrameDenseTCS} MEAN ${FrameMean}
-	VarDemean="-var Mean ${FrameMean} -select 1 1 -repeat"
 	
 	# vn file
 	OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
 	log_File_Must_Exist "$OutputVN"
-	VarVN="-var VN ${OutputVN} -select 1 1 -repeat"
-	
-  	# math expression
-	MATH="(TCS- Mean) / max(VN,0.001)"
-	log_Msg "MATH: ${MATH}"
 	
 	# demean + vn
-	${Caret7_Command} -cifti-math "${MATH}" ${FrameOutput} -var TCS ${FrameDenseTCS} ${VarDemean} ${VarVN} 
+	${Caret7_Command} -cifti-math "(TCS - Mean) / max(VN, 0.001)" ${FrameOutput} -var TCS ${FrameDenseTCS} -var Mean ${FrameMean} -select 1 1 -repeat -var VN ${OutputVN} -select 1 1 -repeat
 	
 	# construct the merge string
 	MergeArray+=(-cifti "${FrameOutput}")
