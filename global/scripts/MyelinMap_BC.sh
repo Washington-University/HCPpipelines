@@ -11,21 +11,23 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
 
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements CIFTI-based Myelin bias fields from native mesh to low resolution then back to native mesh"
+opts_SetScriptDescription "implements CIFTI-based Myelin bias fields from native mesh to 32k resolution then back to native mesh; by default changing the group reference's mean with individual map's mean"
 
 #mandatory
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
 opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
-opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll' or 'MSMSulc' or ''"
-opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'meshnum or native' "the low resolution mesh node count (in thousands), like '164' for 164k_fs_LR, '32' for 32k_fs_LR"
+opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll' or 'MSMSulc'"
+opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 #optional inputs
-opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean , defaults to 'NO'" 'NO'
+opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean , defaults to 'YES'" 'YES'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
+opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -61,34 +63,22 @@ NativeFolder=${AtlasSpaceFolder}/Native
 log_Msg "NativeFolder: $NativeFolder"
 NativeT1wFolder=${T1wFolder}/Native
 log_Msg "NativeT1wFolder: $NativeT1wFolder"
+# MSMAll templates Myelin Target which is the group average MyelinMap_BC
+MyelinTarget="${MSMAllTemplates}/${MyelinTarget}"
+# 32k setting
+LowResMesh=32
+LowResMeshString=${LowResMesh}k_fs_LR
+LowResFolder=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k
+LowResT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
+LowResBCMapName="atlas_MyelinMap"
 
-case "$LowResMesh" in
-	(164)
-		LowResMeshString=164k_fs_LR
-		LowResFolder=${AtlasSpaceFolder}
-		LowResT1wFolder=${AtlasSpaceFolder}
-		LowResBCMapName="MyelinMap"
-		;;
-	(*)
-		if [[ $LowResMesh =~ ^[0-9]+$ ]]; then
-			LowResMeshString=${LowResMesh}k_fs_LR
-			LowResFolder=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k
-			LowResT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
-			LowResBCMapName="atlas_MyelinMap"
-		else
-        	log_Err_Abort "unrecognized --low-res-mesh value '$LowResMesh', valid options are numbers like '32', '164', etc."
-		fi
-        ;;
-esac
+# atlas group average reference map
+tempfiles_create atlas_MyelinMap_BC_XXXXXX.dscalar.nii ReferenceMap
+cp "${MyelinTarget}" "$ReferenceMap"
 
 case "$RegName" in
-	("")
-		RegNameInOutputName=""
-		RegNameInT1wName=""
-		RegNameStructString=""
-		;;
 	(MSMSulc)
-		RegNameInOutputName=_${RegName}
+		RegNameInOutputName=""
 		RegNameInT1wName=""
 		RegNameStructString=.${RegName}
 		;;
@@ -118,39 +108,26 @@ ${Caret7_Command} -cifti-resample ${NativeMyelinMap} \
 
 log_Msg "Resampled MyelinMap in the low res mesh space using registration: ${IndividualLowResMap}"
 
-ReferenceMap=${LowResFolder}/${Subject}.${LowResBCMapName}_BC.${LowResMeshString}.dscalar.nii
-log_File_Must_Exist "${ReferenceMap}"
-ReferenceMapOld=${LowResFolder}/${Subject}.${LowResBCMapName}_oldBC.${LowResMeshString}.dscalar.nii
-ReferenceMapToUse=${ReferenceMap}
-
-# TODO: if _oldBC exists, then _BC is from the new method; if _oldBC doesn't exists, then move forward to the if block.
 # match the reference map's mean with the individual map's mean
 if ((UseIndMeanBool)); then
-	log_Msg "match the reference map's mean with the individual map's mean"
+	log_Msg "match the group reference map's mean with the individual map's mean"
 	log_Msg "UseIndMeanBool: $UseIndMeanBool"
-	# the new reference map
-	# TODO: Do we want to distinguish the mean-matched reference map by inserting a string in the file name?
-	ReferenceMapMeanMatch=${LowResFolder}/${Subject}.${LowResBCMapName}_BC.${LowResMeshString}.dscalar.nii
 	# calcualte means of reference and individual maps
 	# not average in vertex areas, but it is fine
 	MeanRef=$(${Caret7_Command} -cifti-stats -reduce MEAN ${ReferenceMap})
 	MeanInd=$(${Caret7_Command} -cifti-stats -reduce MEAN ${IndividualLowResMap})
 	log_Msg "MeanRef: $MeanRef"
 	log_Msg "MeanInd: $MeanInd"
-	# to save the old maps as _oldBC
-	if [ -f "$ReferenceMap" ]; then
-		cp ${ReferenceMap} ${ReferenceMapOld}
-	fi
+	
 	# match the reference map's mean as individual map's mean
-	${Caret7_Command} -cifti-math "Reference - $MeanRef + $MeanInd" ${ReferenceMapMeanMatch} -var Reference ${ReferenceMap}
-	ReferenceMapToUse=${ReferenceMapMeanMatch}
+	${Caret7_Command} -cifti-math "Reference / $MeanRef * $MeanInd" ${ReferenceMap} -var Reference ${ReferenceMap}
 fi
 
 # generate BiasField in the input mesh space
 LowResBiasField=${LowResFolder}/${Subject}.BiasField${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
 ${Caret7_Command} -cifti-math "Individual - Reference" ${LowResBiasField} \
 	-var Individual ${IndividualLowResMap} \
-	-var Reference ${ReferenceMapToUse}
+	-var Reference ${ReferenceMap}
 	
 log_Msg "BiasField in the low res mesh space: ${LowResBiasField}"
 # smooth the bias field
@@ -178,6 +155,13 @@ log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
 NativeBCMap=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
+NativeOldBCMap=${NativeFolder}/${Subject}.MyelinMap_oldBC${RegNameInOutputName}.native.dscalar.nii
+# TODO: maybe we should move the file operation outside of this module
+if [[ ! -f "$NativeOldBCMap" ]]; then
+	mv "$NativeBCMap" "$NativeOldBCMap"
+	log_Msg "the old _BC Myelin map in the native mesh space is now saved as : ${NativeOldBCMap}"
+fi
+
 ${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMap} \
 	-var Var ${NativeMyelinMap} \
 	-var Bias ${NativeBiasField}
