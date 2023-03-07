@@ -26,6 +26,7 @@ opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration str
 opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 #optional inputs
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean , defaults to 'YES'" 'YES'
+opts_AddOptional '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), defaults to '32' for 32k_fs_LR" '32'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_ParseArguments "$@"
@@ -65,8 +66,7 @@ NativeT1wFolder=${T1wFolder}/Native
 log_Msg "NativeT1wFolder: $NativeT1wFolder"
 # MSMAll templates Myelin Target which is the group average MyelinMap_BC
 MyelinTarget="${MSMAllTemplates}/${MyelinTarget}"
-# 32k setting
-LowResMesh=32
+# low res setting
 LowResMeshString=${LowResMesh}k_fs_LR
 LowResFolder=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k
 LowResT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
