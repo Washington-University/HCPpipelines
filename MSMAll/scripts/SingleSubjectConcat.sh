@@ -87,10 +87,12 @@ do
 	runFrames[index]="$NumFrames"
 	TR=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-step-interval`
 	runTR[index]="$TR"
-	if [ $((index)) -eq 0 ]; then
+	if ((index -eq 0 )); then
 		minFrames=${runFrames[index]}
 	else
-		(( ${runFrames[index]}<minFrames )) && minFrames=${runFrames[index]}
+		if (( ${runFrames[index]}<minFrames )); then
+			minFrames=${runFrames[index]}
+		fi
 	fi
 done
 
@@ -129,7 +131,7 @@ MergeArray=()
 cnt=0
 # loop for demean+vn+concat
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
-    fMRIName="${fMRINamesArray[$index]}"
+	fMRIName="${fMRINamesArray[$index]}"
 	log_Msg "fMRIName: ${fMRIName}"
 	ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 	log_Msg "ResultsFolder: ${ResultsFolder}"
