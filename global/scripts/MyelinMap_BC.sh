@@ -16,7 +16,7 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements CIFTI-based Myelin bias fields from native mesh to 32k resolution then back to native mesh; by default changing the group reference's mean with individual map's mean"
+opts_SetScriptDescription "corrects an individual native mesh myelin map for bias fields based on a group average myelin map"
 
 #mandatory
 #general inputs
@@ -73,14 +73,15 @@ LowResT1wFolder=${T1wFolder}/fsaverage_LR${LowResMesh}k
 LowResBCMapName="atlas_MyelinMap"
 
 # atlas group average reference map
-tempfiles_create atlas_MyelinMap_BC_XXXXXX.dscalar.nii ReferenceMap
-cp "${MyelinTarget}" "$ReferenceMap"
+tempfiles_create atlas_MyelinMap_BC_XXXXXX.dscalar.nii ReferenceMapMeanMatch
+ReferenceMap=${MyelinTarget}
+ReferenceMapToUse=${ReferenceMap}
 
 case "$RegName" in
-	(MSMSulc)
+	(MSMSulc|"")
 		RegNameInOutputName=""
 		RegNameInT1wName=""
-		RegNameStructString=.${RegName}
+		RegNameStructString=.MSMSulc
 		;;
 	(*)
 		RegNameInOutputName=_${RegName}
@@ -120,14 +121,15 @@ if ((UseIndMeanBool)); then
 	log_Msg "MeanInd: $MeanInd"
 	
 	# match the reference map's mean as individual map's mean
-	${Caret7_Command} -cifti-math "Reference / $MeanRef * $MeanInd" ${ReferenceMap} -var Reference ${ReferenceMap}
+	${Caret7_Command} -cifti-math "Reference / $MeanRef * $MeanInd" ${ReferenceMapMeanMatch} -var Reference ${ReferenceMap}
+	ReferenceMapToUse=${ReferenceMapMeanMatch}
 fi
 
 # generate BiasField in the input mesh space
 LowResBiasField=${LowResFolder}/${Subject}.BiasField${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
 ${Caret7_Command} -cifti-math "Individual - Reference" ${LowResBiasField} \
 	-var Individual ${IndividualLowResMap} \
-	-var Reference ${ReferenceMap}
+	-var Reference ${ReferenceMapToUse}
 	
 log_Msg "BiasField in the low res mesh space: ${LowResBiasField}"
 # smooth the bias field
@@ -155,12 +157,6 @@ log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
 NativeBCMap=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
-NativeOldBCMap=${NativeFolder}/${Subject}.MyelinMap_oldBC${RegNameInOutputName}.native.dscalar.nii
-# TODO: maybe we should move the file operation outside of this module
-if [[ ! -f "$NativeOldBCMap" ]]; then
-	mv "$NativeBCMap" "$NativeOldBCMap"
-	log_Msg "the old _BC Myelin map in the native mesh space is now saved as : ${NativeOldBCMap}"
-fi
 
 ${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMap} \
 	-var Var ${NativeMyelinMap} \
