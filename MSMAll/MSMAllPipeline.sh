@@ -77,7 +77,7 @@ Myelin Architecture, and RSN Topography. Defaults to 'CA_CAT'" \
 opts_AddOptional '--method' 'Method' 'string' "Possible values: DR, DRZ, DRN, WR, WRZ, WRN, defaults to 'WRN'" 'WRN'
 opts_AddOptional '--use-migp' 'UseMIGP' 'YES/NO' "whether to use MIGP (MELODIC's Incremental Group Principal Component Analysis), defaults to 'NO'" 'NO'
 opts_AddOptional '--ica-dim' 'ICAdim' 'integer' "ICA (Independent Component Analysis) dimension, defaults to '40'" '40'
-opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num_num_num...' "the low sICA dimensionalities to use for determining weighting for individual projection, defaults to '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'" '7_8_9_10_11_12_13_14_15_16_17_18_19_20_21'
+opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA dimensionalities to use for determining weighting for individual projection, defaults to '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'" '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'
 opts_AddOptional '--vn' 'VN' 'YES/NO' "whether to perform variance normalization, defaults to 'NO'" 'NO'
 opts_AddOptional '--rerun-if-exists' 'ReRunIfExists' 'YES/NO' "whether to re-run even if output already exists, defaults to 'YES'" 'YES'
 opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "it can be either the relative path where the registration configuration exists in 'MSMCONFIGDIR', or an absolute path" 'MSMAllStrainFinalconf1to1_1to3'
@@ -87,6 +87,7 @@ opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn te
 opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
 opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--topography-target-file' 'TopographyTarget' 'string' "alternate topography target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topography.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the individual myelin map as the group reference map's mean, defaults to 'YES'" 'YES'
 opts_AddOptional '--start-frame' 'StartFrame' 'integer' "only applied for single runs when --fmri-names-list is not empty; the starting frame to choose from each fMRI run (inclusive), defaults to '1'" '1'
 opts_AddOptional '--end-frame' 'EndFrame' 'integer' "only applied for single runs when --fmri-names-list is not empty; the ending frame to choose from each fMRI run (inclusive), defaults to '' which will be overrided by the minimum frame length across the given list of fMRI runs" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -239,6 +240,8 @@ log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 	--rerun="${ReRunIfExists}" \
 	--reg-conf="${RegConfPath}" \
 	--reg-conf-vars="${RegConfOverrideVars}" \
+	--msm-all-templates="${MSMAllTemplates}" \
+	--use-ind-mean="${UseIndMean}" \
 	--matlab-run-mode="${MatlabRunMode}"
 	
 log_Msg "Completing main functionality"
