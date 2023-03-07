@@ -87,7 +87,7 @@ do
 	runFrames[index]="$NumFrames"
 	TR=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-step-interval`
 	runTR[index]="$TR"
-	if ((index -eq 0 )); then
+	if ((index == 0 )); then
 		minFrames=${runFrames[index]}
 	else
 		if (( ${runFrames[index]}<minFrames )); then
