@@ -87,7 +87,7 @@ DownSampleT1wFolder="${T1wFolder}/fsaverage_LR${LowResMesh}k"
 NativeT1wFolder="${T1wFolder}/Native"
 
 if [[ $(echo -n "${Method}" | grep "WR") ]] ; then
-	LowICAdims=$(echo "${RegressionParams}" | sed 's/@/ /g')
+	LowICAdims=$(echo "${RegressionParams}" | sed 's/[_@]/ /g')
 fi
 
 Iterations=$(echo "${Iterations}" | sed 's/_/ /g')
@@ -97,6 +97,9 @@ BC="NO"
 nTPsForSpectra="0" #Set to zero to not compute spectra
 VolParams="NO" #Dont' output volume RSN maps
 
+# boolean values
+ReRunBool=$(opts_StringToBool "$ReRun")
+UseMIGPBool=$(opts_StringToBool "$UseMIGP")
 # Log values of Naming Conventions and other variables
 log_Msg "Caret7_Command: ${Caret7_Command}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
@@ -115,9 +118,9 @@ log_Msg "nTPsForSpectra: ${nTPsForSpectra}"
 log_Msg "VolParams: ${VolParams}"
 
 IndArealDistortionFile=${NativeFolder}/${Subject}.ArealDistortion_${RegNameStem}_${NumIterations}_d${ICAdim}_${Method}.native.dscalar.nii
-if [[ -e ${IndArealDistortionFile} &&  ${ReRun} = "NO" ]]; then
-	log_Msg "IndArealDistortionFile exists: ${IndArealDistortionFile} and ReRun is disabled"
-	log_Msg "the main functionality of MSMAll.sh script is finished"
+if [[ -e ${IndArealDistortionFile} ]] &&  ((! ReRunBool)) ; then
+	log_Msg "--rerun is set to 'no', and the individual areal distortion file exists: ${IndArealDistortionFile}"
+	log_Msg "Skipping MSMAll.sh"
 	exit 0
 fi
 
@@ -224,7 +227,7 @@ while [ ${i} -le ${NumIterations} ] ; do
 			${Caret7_Command} -surface-sphere-project-unproject ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InPCARegString}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${OutPCARegString}${InRegName}.${LowResMesh}k_fs_LR.surf.gii
 		done
 
-		if [ ${UseMIGP} = "YES" ] ; then
+		if ((UseMIGPBool)) ; then
 			inputdtseries="${ResultsFolder}/${OutputfMRIName}${fMRIProcSTRING}_PCA${PCARegString}.dtseries.nii"
 		else
 			inputdtseries="${ResultsFolder}/${OutputfMRIName}${fMRIProcSTRING}${PCARegString}.dtseries.nii"
@@ -716,7 +719,8 @@ rm ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii
     --subject="$Subject" \
     --registration-name="$RegName" \
     --msm-all-templates="$MSMAllTemplates" \
-    --use-ind-mean="$UseIndMean"
+    --use-ind-mean="$UseIndMean" \
+    --low-res-mesh="$LowResMesh"
 
 for Mesh in ${HighResMesh} ${LowResMesh} ; do
 	if [ $Mesh = ${HighResMesh} ] ; then
@@ -734,7 +738,7 @@ for Mesh in ${HighResMesh} ${LowResMesh} ; do
 	done
 done
 
-if [ ${UseMIGP} = "YES" ] ; then
+if ((UseMIGPBool)) ; then
 	inputdtseries="${ResultsFolder}/${OutputfMRIName}${fMRIProcSTRING}_PCA${PCARegString}.dtseries.nii"
 else
 	inputdtseries="${ResultsFolder}/${OutputfMRIName}${fMRIProcSTRING}${PCARegString}.dtseries.nii"
