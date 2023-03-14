@@ -40,7 +40,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functio
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements DeDrift and Resample Pipeline"
+opts_SetScriptDescription "resamples many types of data after a surface registration"
 
 #mandatory
 #general inputs
