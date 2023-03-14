@@ -97,8 +97,8 @@ opts_ShowValues
 if [[ "${OutputRegName}" == "" ]]; then
 	OutputRegName="${RegName}"
 else
-	if [[ "${DeDriftRegFiles}" == "" ]]; then
-		log_Err "--concat-reg-name must not be used unless dedrifting (just remove --concat-reg-name=<whatever> from your command)"
+	if [[ "${DeDriftRegFiles}" == "NONE" || "${DeDriftRegFiles}" == "" ]]; then
+		log_Err_Abort "--concat-reg-name must not be used unless dedrifting (just remove --concat-reg-name=<whatever> from your command)"
 	fi
 fi
 # ------------------------------------------------------------------------------
@@ -121,12 +121,14 @@ Maps=`echo "$Maps" | sed s/"@"/" "/g`
 log_Msg "After delimiter substitution, Maps: ${Maps}"
 
 #these elses result in empty when given the empty string, make NONE do the same
-if [[ "${MyelinMaps}" != "" ]] ; then
+if [[ "${MyelinMaps}" == "NONE" ]] ; then
+	MyelinMaps=""
+else
 	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
 fi
 log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
-if [[ "${fixNames}" == "" ]] ; then
+if [[ "${fixNames}" == "NONE" ]] ; then
 	fixNames=()
 else
 	#fixNames=`echo "$fixNames" | sed s/"@"/" "/g`
@@ -134,7 +136,7 @@ else
 fi
 log_Msg "After delimiter substitution, fixNames: ${fixNames[@]}"
 
-if [[ "${dontFixNames}" == "" ]] ; then
+if [[ "${dontFixNames}" == "NONE" ]] ; then
 	dontFixNames=()
 else
 	#dontFixNames=`echo "$dontFixNames" | sed s/"@"/" "/g`
@@ -142,7 +144,7 @@ else
 fi
 log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[@]}"
 
-if [[ "${mrFIXNames}" == "" ]] ; then
+if [[ "${mrFIXNames}" == "NONE" ]] ; then
 	mrFIXNames=()
 else
 	#need a flat list of all the names in order to resample - do this before we destroy the original value of the variable
@@ -152,7 +154,7 @@ else
 fi
 log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[@]}"
 
-if [[ "$mrFIXConcatNames" == "" ]]
+if [[ "$mrFIXConcatNames" == "NONE" ]]
 then
 	mrFIXConcatNames=()
 else
@@ -165,7 +167,7 @@ then
 	log_Err_Abort "number of MR FIX concat names and run groups are different"
 fi
 
-if [[ "${mrFIXExtractNames}" == "" ]] ; then
+if [[ "${mrFIXExtractNames}" == "NONE" ]] ; then
 	mrFIXExtractNamesArr=()
 else
 	#two-level list, % and @, parse only one stage here
@@ -173,7 +175,7 @@ else
 fi
 log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[@]}"
 
-if [[ "$mrFIXExtractConcatNames" == "" ]]
+if [[ "$mrFIXExtractConcatNames" == "NONE" ]]
 then
 	mrFIXExtractConcatNamesArr=()
 else
@@ -191,7 +193,7 @@ then
 	log_Err_Abort "number of MR FIX extract groups doesn't match number of MR FIX groups (use NONE to skip a group)"
 fi
 
-if [[ "$mrFIXExtractExtraRegNames" == "" ]]
+if [[ "$mrFIXExtractExtraRegNames" == "NONE" ]]
 then
 	extractExtraRegNamesArr=()
 else
