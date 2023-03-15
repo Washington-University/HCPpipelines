@@ -177,8 +177,8 @@ def extract_overlaps(bvals1, bvecs1, bvals2, bvecs2, overlap1, overlap2, only_co
         log('Data set 1 session {0} offset: {1}'.format(session + 1, offset1))
         log('Data set 2 session {0} offset: {1}'.format(session + 1, offset2))
 
-        bv1_indices = np.arange(offset1, offset1 + overlaps, dtype=np.int)
-        bv2_indices = np.arange(offset2, offset2 + overlaps, dtype=np.int)
+        bv1_indices = np.arange(offset1, offset1 + overlaps, dtype=int)
+        bv2_indices = np.arange(offset2, offset2 + overlaps, dtype=int)
 
         session_bvals1     .append(bvals1[   bv1_indices])
         session_bvals2     .append(bvals2[   bv2_indices])
@@ -199,7 +199,7 @@ def extract_overlaps(bvals1, bvecs1, bvals2, bvecs2, overlap1, overlap2, only_co
                 (2, overlap2, bvals2, bvecs2, offset2)
             ]:
                 unique = int(overlap[session, 1] - overlaps)
-                indices = np.arange(offset, offset + unique, dtype=np.int)
+                indices = np.arange(offset, offset + unique, dtype=int)
 
                 # if there is only one phase encode direction just store same b-value/gradient orientation
                 # for both directions to allow for averaging code to work properly
