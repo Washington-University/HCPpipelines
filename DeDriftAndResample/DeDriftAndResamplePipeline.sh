@@ -261,13 +261,13 @@ for Hemisphere in L R ; do
 	rm ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.shape.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.shape.gii
 
 	${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${OutputRegName}.native.shape.gii -edge-method
-	
+
 	${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.${OutputRegName}.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -local-affine-method
 	${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 1
-    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 2
-    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii
-    ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii
-    rm "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii
+	${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 2
+	${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii
+	${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii
+	rm "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii
 done
 
 ${Caret7_Command} -cifti-create-dense-timeseries ${NativeFolder}/${Subject}.ArealDistortion_${OutputRegName}.native.dtseries.nii -left-metric ${NativeFolder}/${Subject}.L.ArealDistortion_${OutputRegName}.native.shape.gii -roi-left ${NativeFolder}/${Subject}.L.atlasroi.native.shape.gii -right-metric ${NativeFolder}/${Subject}.R.ArealDistortion_${OutputRegName}.native.shape.gii -roi-right ${NativeFolder}/${Subject}.R.atlasroi.native.shape.gii
