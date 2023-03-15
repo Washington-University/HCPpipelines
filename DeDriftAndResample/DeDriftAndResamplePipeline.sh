@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu
 #
 # # DeDriftAndResamplePipeline.sh
 #
@@ -228,8 +228,8 @@ log_Msg "ResultsFolder: ${ResultsFolder}"
 DownSampleFolderNames=""
 DownSampleT1wFolderNames=""
 for LowResMesh in ${LowResMeshes} ; do
-	DownSampleFolderNames=`echo "${DownSampleFolderNames}${AtlasFolder}/fsaverage_LR${LowResMesh}k "`
-	DownSampleT1wFolderNames=`echo "${DownSampleT1wFolderNames}${T1wFolder}/fsaverage_LR${LowResMesh}k "`
+	DownSampleFolderNames+="${DownSampleFolderNames}${AtlasFolder}/fsaverage_LR${LowResMesh}k "
+	DownSampleT1wFolderNames+="${DownSampleT1wFolderNames}${T1wFolder}/fsaverage_LR${LowResMesh}k "
 done
 log_Msg "DownSampleFolderNames: ${DownSampleFolderNames}"
 log_Msg "DownSampleT1wFolderNames: ${DownSampleT1wFolderNames}"
@@ -263,7 +263,7 @@ for Hemisphere in L R ; do
 	${Caret7_Command} -surface-distortion ${NativeFolder}/${Subject}.${Hemisphere}.sphere.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${NativeFolder}/${Subject}.${Hemisphere}.EdgeDistortion_${OutputRegName}.native.shape.gii -edge-method
 	
 	${Caret7_Command} -surface-distortion "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.native.surf.gii "${NativeFolder}"/"${Subject}"."${Hemisphere}".sphere.${OutputRegName}.native.surf.gii "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -local-affine-method
-    ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 1
+	${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 1
     ${Caret7_Command} -metric-merge "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -metric "${NativeFolder}"/"$Subject"."$Hemisphere".Strain_${OutputRegName}.native.shape.gii -column 2
     ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainJ_${OutputRegName}.native.shape.gii
     ${Caret7_Command} -metric-math "ln(var) / ln (2)" "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii -var var "${NativeFolder}"/"$Subject"."$Hemisphere".StrainR_${OutputRegName}.native.shape.gii
@@ -559,84 +559,83 @@ for fMRIName in "${fixNames[@]}" ; do
 done
 
 # reapply multirun fix
-
 for (( i = 0; i < ${#mrFIXConcatNames[@]}; ++i ))
 do
-    log_Msg "ReApply MultiRun FIX Cleanup"
-    log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
-    log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
-    #stage 2 parsing is done by reapply script
-    reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
-    log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
-    "${reapply_mr_fix_cmd[@]}"
-    
-    for regname in "$OutputRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
-    do
-        #MSMSulc special naming convention
-        if [[ "$regname" == "MSMSulc" ]]
-        then
-            regname=""
-            regstring=""
-        else
-            regstring=_"$regname"
-        fi
-        
-        extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
-                        --study-folder="$StudyFolder"
-                        --subject="$Subject"
-                        --multirun-fix-names="${mrFIXNames[$i]}"
-                        --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
-                        --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
-                        --surf-reg-name="$regname")
-        
-        if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
-        then
-            mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
-            
-            # Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
-            # (i.e., estimate for the variance normalization map is based on the full concat group, not
-            #  the subset of extracted scans)
-            
-            # The per-run differences in (unstructured) noise variance were removed before concatenation.
-            # The average of those maps (across runs) was multiplied back into the concatenated time series
-            #  (in 'hcp_fix_multi_run'), so that the entire concatenated time series has a spatial pattern of
-            #  unstructured noise consistent with the average across runs.
-            # Given this manner of constructing the concatenated time series, any subset of runs extracted from
-            #  the full concatenated set should use this same average map for later variance normalization.
-            # We use the "clean_vn" map for this purpose and thus copy it from the full concatenated set to the
-            #  extracted set of runs.
-            # As a final subtlety, note that the "clean_vn" map itself is not identical to the aforementioned average of
-            #  the individual run vn maps, but it is conceptually very similar. In particular, clean_vn is derived within
-            #  FIX itself from the concatenated time series by regressing out all structured signals and using the
-            #  residual to estimate the unstructured noise, whereas the individual run vn maps were computed using
-            #  PCA-based reconstruction of the unstructured noise in 'icaDim.m'.
-            
-            cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
-                "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
-            
-            extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
-                          --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
-        fi
-        
-        "${extract_cmd[@]}"
-    done
-    
-    if ((mrFIXExtractDoVolBool))
-    then
-        # Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
-        cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
-            "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
-        
-        extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
-                        --study-folder="$StudyFolder"
-                        --subject="$Subject"
-                        --multirun-fix-names="${mrFIXNames[$i]}"
-                        --multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
-                        --volume-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
-                        --concat-volume-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
-        
-        "${extract_cmd[@]}"
-    fi
+	log_Msg "ReApply MultiRun FIX Cleanup"
+	log_Msg "mrFIXNames: ${mrFIXNames[$i]}"
+	log_Msg "mrFIXConcatNames: ${mrFIXConcatNames[$i]}"
+	#stage 2 parsing is done by reapply script
+	reapply_mr_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixMultiRunPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-names="${mrFIXNames[$i]}" --concat-fmri-name="${mrFIXConcatNames[$i]}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
+	log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
+	"${reapply_mr_fix_cmd[@]}"
+
+	for regname in "$OutputRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
+	do
+		#MSMSulc special naming convention
+		if [[ "$regname" == "MSMSulc" ]]
+		then
+			regname=""
+			regstring=""
+		else
+			regstring=_"$regname"
+		fi
+		
+		extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+			            --study-folder="$StudyFolder"
+			            --subject="$Subject"
+			            --multirun-fix-names="${mrFIXNames[$i]}"
+			            --csv-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
+			            --concat-cifti-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
+			            --surf-reg-name="$regname")
+		
+		if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
+		then
+			mkdir -p "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}"
+			
+			# Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
+			# (i.e., estimate for the variance normalization map is based on the full concat group, not
+			#  the subset of extracted scans)
+			
+			# The per-run differences in (unstructured) noise variance were removed before concatenation.
+			# The average of those maps (across runs) was multiplied back into the concatenated time series
+			#  (in 'hcp_fix_multi_run'), so that the entire concatenated time series has a spatial pattern of
+			#  unstructured noise consistent with the average across runs.
+			# Given this manner of constructing the concatenated time series, any subset of runs extracted from
+			#  the full concatenated set should use this same average map for later variance normalization.
+			# We use the "clean_vn" map for this purpose and thus copy it from the full concatenated set to the
+			#  extracted set of runs.
+			# As a final subtlety, note that the "clean_vn" map itself is not identical to the aforementioned average of
+			#  the individual run vn maps, but it is conceptually very similar. In particular, clean_vn is derived within
+			#  FIX itself from the concatenated time series by regressing out all structured signals and using the
+			#  residual to estimate the unstructured noise, whereas the individual run vn maps were computed using
+			#  PCA-based reconstruction of the unstructured noise in 'icaDim.m'.
+			
+			cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
+			    "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
+			
+			extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+			              --cifti-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
+		fi
+		
+		"${extract_cmd[@]}"
+	done
+
+	if ((mrFIXExtractDoVolBool))
+	then
+		# Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
+		cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
+		    "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
+		
+		extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
+		                --study-folder="$StudyFolder"
+		                --subject="$Subject"
+		                --multirun-fix-names="${mrFIXNames[$i]}"
+		                --multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
+		                --volume-out="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
+		                --concat-volume-input="$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
+		
+		"${extract_cmd[@]}"
+	fi
 done
 
 log_Msg "Completing main functionality"
