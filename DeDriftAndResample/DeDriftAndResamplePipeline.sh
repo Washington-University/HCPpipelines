@@ -228,8 +228,8 @@ log_Msg "ResultsFolder: ${ResultsFolder}"
 DownSampleFolderNames=""
 DownSampleT1wFolderNames=""
 for LowResMesh in ${LowResMeshes} ; do
-	DownSampleFolderNames+="${DownSampleFolderNames}${AtlasFolder}/fsaverage_LR${LowResMesh}k "
-	DownSampleT1wFolderNames+="${DownSampleT1wFolderNames}${T1wFolder}/fsaverage_LR${LowResMesh}k "
+	DownSampleFolderNames+="${AtlasFolder}/fsaverage_LR${LowResMesh}k "
+	DownSampleT1wFolderNames+="${T1wFolder}/fsaverage_LR${LowResMesh}k "
 done
 log_Msg "DownSampleFolderNames: ${DownSampleFolderNames}"
 log_Msg "DownSampleT1wFolderNames: ${DownSampleT1wFolderNames}"
