@@ -406,7 +406,9 @@ main()
 
     log_Msg "Organizing the folder structure for: ${Session}"
     # create the symlink
-    ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${StudyFolder}/${Session}/T1w/${Session}.long.${TemplateID}"
+    TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
+    mkdir -p "${TargetDIR}"
+    ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
   done
 
   # ----------------------------------------------------------------------
