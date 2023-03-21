@@ -389,7 +389,7 @@ if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
   mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
-# log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS? 
+log_Msg "POSIXLY_CORRECT=${POSIXLY_CORRECT+${POSIXLY_CORRECT}}"
 
 # ------------------------------------------------------------------------------
 #  Do primary work
@@ -703,8 +703,8 @@ else
   log_Msg "Skipping all the steps preceding AtlasRegistration, using existing images instead."
   verbose_red_echo "---> Using existing images"
 
-fi  # --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
-
+fi
+# --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
 # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
 # i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
 # or the PostFreeSurferPipeline versions.
