@@ -51,7 +51,7 @@ opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshnum@meshnum@...' "low r
 opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll_InitalReg'"
 opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name strings corresponding to maps that are not myelin maps, e.g. 'sulc@curvature@corrThickness@thickness'"
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
-opts_AddMandatory '--highpass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
+opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--motion-regression' 'MotionRegression' 'TRUE or FALSE' 'whether FIX should do motion regression'
 opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 # optional inputs

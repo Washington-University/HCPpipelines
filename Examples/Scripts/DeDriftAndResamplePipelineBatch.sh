@@ -154,7 +154,7 @@ for Subject in "${Subjlist[@]}" ; do
         --fix-names="$fixNames" \
         --dont-fix-names="$dontFixNames" \
         --smoothing-fwhm="$SmoothingFWHM" \
-        --highpass="$HighPass" \
+        --high-pass="$HighPass" \
         --matlab-run-mode="$MatlabMode" \
         --motion-regression="$MotionRegression"
 done
