@@ -412,74 +412,77 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 	log_Msg "Resample scalar maps and apply new bias field"
 	
 	BiasFieldComputed=false
-	for Map in ${Maps} ${MyelinMaps} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
-		log_Msg "Map: ${Map}"
-		
-		if [[ " ${MyelinMapsArray[*]} " =~ " ${Map} " ]]; then
-			# only compute the bias field once when the Map is a part of the MyelinMaps
-			if [ "$BiasFieldComputed" = false ]; then
-				# ----- Begin moved statements -----
+	MyelinMapsToUse=""
+	# myelin map only loop
+	for MyelinMap in ${MyelinMaps} ; do
+		if [ "$BiasFieldComputed" = false ]; then
+			# ----- Begin moved statements -----
 
-				# Recompute Myelin Map Bias Field Based on Better Registration
-				log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
+			# Recompute Myelin Map Bias Field Based on Better Registration
+			log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
 
-				cifti_in=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
-				log_File_Must_Exist "${cifti_in}" # 1
+			cifti_in=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
+			log_File_Must_Exist "${cifti_in}" # 1
 
-				cifti_template=${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
-				log_File_Must_Exist "${cifti_template}" # 2
+			cifti_template=${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
+			log_File_Must_Exist "${cifti_template}" # 2
 
-				cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii
+			cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 
-				left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii
-				log_File_Must_Exist "${left_spheres_current_sphere}" # 3
+			left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii
+			log_File_Must_Exist "${left_spheres_current_sphere}" # 3
 
-				left_spheres_new_sphere=${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${left_spheres_new_sphere}" # 4
+			left_spheres_new_sphere=${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii
+			log_File_Must_Exist "${left_spheres_new_sphere}" # 4
 
-				left_area_surfs_current_area=${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii
-				log_File_Must_Exist "${left_area_surfs_current_area}" # 5
+			left_area_surfs_current_area=${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii
+			log_File_Must_Exist "${left_area_surfs_current_area}" # 5
 
-				left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${left_area_surfs_new_area}" # 6 - This is the one that doesn't exist
+			left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
+			log_File_Must_Exist "${left_area_surfs_new_area}" # 6 - This is the one that doesn't exist
 
-				right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii
-				log_File_Must_Exist "${right_spheres_current_sphere}"
+			right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii
+			log_File_Must_Exist "${right_spheres_current_sphere}"
 
-				right_spheres_new_sphere=${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${right_spheres_new_sphere}"
+			right_spheres_new_sphere=${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii
+			log_File_Must_Exist "${right_spheres_new_sphere}"
 
-				right_area_surfs_current_area=${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
-				log_File_Must_Exist "${right_area_surfs_current_area}"
+			right_area_surfs_current_area=${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
+			log_File_Must_Exist "${right_area_surfs_current_area}"
 
-				right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${right_area_surfs_new_area}"
+			right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
+			log_File_Must_Exist "${right_area_surfs_new_area}"
 
-				log_Debug_Msg "Point 1.1"
-				
-				# Myelin Map BC using 32k
-				"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
-					--study-folder="$StudyFolder" \
-					--subject="$Subject" \
-					--registration-name="$OutputRegName" \
-					--msm-all-templates="$MSMAllTemplates" \
-					--use-ind-mean="$UseIndMean" \
-					--low-res-mesh="$LowResMesh" \
-					--myelin-target-file="$MyelinTargetFile" \
-					--map="$Map"
-				# ----- End moved statements -----
-				# bias field is computed in the module MyelinMap_BC.sh
-				BiasFieldComputed=true
-			else
-				# bias field in native space is already generated
-				# BC the other types of given myelin maps
-				${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${Map}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${Map}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
-			fi
-			Map="${Map}_BC"
-			log_Debug_Msg "Point 1.2"
+			log_Debug_Msg "Point 1.1"
+			
+			# Myelin Map BC using 32k
+			"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
+				--study-folder="$StudyFolder" \
+				--subject="$Subject" \
+				--registration-name="$OutputRegName" \
+				--msm-all-templates="$MSMAllTemplates" \
+				--use-ind-mean="$UseIndMean" \
+				--low-res-mesh="$LowResMesh" \
+				--myelin-target-file="$MyelinTargetFile" \
+				--map="$MyelinMap"
+			# ----- End moved statements -----
+			# bias field is computed in the module MyelinMap_BC.sh
+			BiasFieldComputed=true
+		else
+			# bias field in native space is already generated
+			# BC the other types of given myelin maps
+			${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${MyelinMap}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
 		fi
-
-		log_Debug_Msg "Point 2.0"
+		MyelinMapsToUse+="${MyelinMap}_BC "
+	done
+	
+	log_Debug_Msg "Point 2.0"
+	if [ "$BiasFieldComputed" = false ]; then
+		MyelinMapsToUse=${MyelinMaps}
+	fi
+	
+	for Map in ${Maps} ${MyelinMapsToUse} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
+		log_Msg "Map: ${Map}"
 
 		if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "StrainJ" || ${Map} = "StrainR" || ${Map} = "MyelinMap_BC" || ${Map} = "SmoothedMyelinMap_BC" ]] ; then
 			NativeMap="${Map}_${OutputRegName}"
@@ -492,7 +495,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 		if [ ! ${Mesh} = ${HighResMesh} ] ; then
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
 			for MapMap in ${Maps} ${MyelinMaps} ; do
-				if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
+				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 				fi
@@ -500,7 +503,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 		else
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii   
 			for MapMap in ${Maps} ${MyelinMaps} ; do
-				if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
+				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 				fi
 			done
