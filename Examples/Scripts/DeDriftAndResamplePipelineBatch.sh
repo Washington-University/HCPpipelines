@@ -104,6 +104,8 @@ MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #MotionRegression=TRUE
 #MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
+MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
+
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
@@ -156,6 +158,7 @@ for Subject in "${Subjlist[@]}" ; do
         --smoothing-fwhm="$SmoothingFWHM" \
         --high-pass="$HighPass" \
         --matlab-run-mode="$MatlabMode" \
-        --motion-regression="$MotionRegression"
+        --motion-regression="$MotionRegression" \
+        --msm-all-templates="$MSMAllTemplates"
 done
 
