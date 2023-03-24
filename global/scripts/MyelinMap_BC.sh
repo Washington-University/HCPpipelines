@@ -157,12 +157,8 @@ ${Caret7_Command} -cifti-resample ${LowResBiasField} \
 log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
-NativeBCMapToUse=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
-NativeMyelinMapToUse=${NativeMyelinMap}
-if [[ "$MapName" != "MyelinMap" ]]; then
-	NativeBCMapToUse=${NativeFolder}/${Subject}.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii
-	NativeMyelinMapToUse=${NativeFolder}/${Subject}.${MapName}.native.dscalar.nii
-fi
+NativeBCMapToUse=${NativeFolder}/${Subject}.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii
+NativeMyelinMapToUse=${NativeFolder}/${Subject}.${MapName}.native.dscalar.nii
 log_File_Must_Exist "${NativeMyelinMapToUse}"
 
 ${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMapToUse} \
