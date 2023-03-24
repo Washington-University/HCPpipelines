@@ -467,7 +467,8 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 					--msm-all-templates="$MSMAllTemplates" \
 					--use-ind-mean="$UseIndMean" \
 					--low-res-mesh="$LowResMesh" \
-					--myelin-target-file="$MyelinTargetFile"
+					--myelin-target-file="$MyelinTargetFile" \
+					--map="$Map"
 				# ----- End moved statements -----
 				Map="${Map}_BC"
 

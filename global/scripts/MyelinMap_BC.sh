@@ -29,6 +29,7 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), defaults to '32' for 32k_fs_LR" '32'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, this option is mainly intended for non-human-adult data, defaults to '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--map' 'MapName' 'string' "map to applied the bias field correction, defaults to 'MyelinMap'" 'MyelinMap'
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -156,13 +157,19 @@ ${Caret7_Command} -cifti-resample ${LowResBiasField} \
 log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
-NativeBCMap=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
+NativeBCMapToUse=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
+NativeMyelinMapToUse=${NativeMyelinMap}
+if [[ "$MapName" != "MyelinMap" ]]; then
+	NativeBCMapToUse=${NativeFolder}/${Subject}.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii
+	NativeMyelinMapToUse=${NativeFolder}/${Subject}.${MapName}.native.dscalar.nii
+fi
+log_File_Must_Exist "${NativeMyelinMapToUse}"
 
-${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMap} \
-	-var Var ${NativeMyelinMap} \
+${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMapToUse} \
+	-var Var ${NativeMyelinMapToUse} \
 	-var Bias ${NativeBiasField}
 
-log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMap}"
+log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMapToUse}"
 # TODO: add gifti generation according to one argument
 # -cifti-separate-all
 log_Msg "Completing main functionality"
