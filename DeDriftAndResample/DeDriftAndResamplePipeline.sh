@@ -417,45 +417,11 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 	for MyelinMap in ${MyelinMaps} ; do
 		if [ "$BiasFieldComputed" = false ]; then
 			# ----- Begin moved statements -----
-
 			# Recompute Myelin Map Bias Field Based on Better Registration
 			log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
-
-			cifti_in=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
-			log_File_Must_Exist "${cifti_in}" # 1
-
-			cifti_template=${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
-			log_File_Must_Exist "${cifti_template}" # 2
-
-			cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii
-
-			left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii
-			log_File_Must_Exist "${left_spheres_current_sphere}" # 3
-
-			left_spheres_new_sphere=${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii
-			log_File_Must_Exist "${left_spheres_new_sphere}" # 4
-
-			left_area_surfs_current_area=${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii
-			log_File_Must_Exist "${left_area_surfs_current_area}" # 5
-
-			left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-			log_File_Must_Exist "${left_area_surfs_new_area}" # 6 - This is the one that doesn't exist
-
-			right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii
-			log_File_Must_Exist "${right_spheres_current_sphere}"
-
-			right_spheres_new_sphere=${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii
-			log_File_Must_Exist "${right_spheres_new_sphere}"
-
-			right_area_surfs_current_area=${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
-			log_File_Must_Exist "${right_area_surfs_current_area}"
-
-			right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-			log_File_Must_Exist "${right_area_surfs_new_area}"
-
 			log_Debug_Msg "Point 1.1"
 			
-			# Myelin Map BC using 32k
+			# Myelin Map BC using low res
 			"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
 				--study-folder="$StudyFolder" \
 				--subject="$Subject" \

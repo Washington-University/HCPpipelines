@@ -94,19 +94,38 @@ log_Msg "RegNameInOutputName: $RegNameInOutputName"
 log_Msg "RegNameInT1wName: $RegNameInT1wName"
 log_Msg "RegNameStructString: $RegNameStructString"
 
+# check file exists
 NativeMyelinMap=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
-log_File_Must_Exist "${NativeMyelinMap}"
+log_File_Must_Exist "${NativeMyelinMap}" # 1
+LowResCiftiTemplate=${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii
+log_File_Must_Exist "${LowResCiftiTemplate}" # 2 
+LeftSphereCurrentSphere=${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii
+log_File_Must_Exist "${LeftSphereCurrentSphere}" # 3
+LeftSphereNewSphere=${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${LeftSphereNewSphere}" # 4
+LeftAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii"
+log_File_Must_Exist "${LeftAreaSurfCurrentArea}" # 5
+LeftAreaSurfNewArea=${LowResFolder}/${Subject}.L.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${LeftAreaSurfNewArea}" # 6 - This is the one that doesn't exist
+RightSphereCurrentSphere=${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii
+log_File_Must_Exist "${RightSphereCurrentSphere}" # 7
+RightSphereNewSphere=${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${RightSphereNewSphere}" # 8
+RightAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii"
+log_File_Must_Exist "${RightAreaSurfCurrentArea}" # 9
+RightAreaSurfNewArea=${LowResFolder}/${Subject}.R.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${RightAreaSurfNewArea}" # 10 - This is the one that doesn't exist
 
 IndividualLowResMap=${LowResFolder}/${Subject}.MyelinMap${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
 ${Caret7_Command} -cifti-resample ${NativeMyelinMap} \
-	COLUMN ${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii \
+	COLUMN ${LowResCiftiTemplate} \
 	COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
 	${IndividualLowResMap} \
 	-surface-postdilate 40 \
-	-left-spheres ${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii \
-	-left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${LowResFolder}/${Subject}.L.midthickness.${LowResMeshString}.surf.gii \
-	-right-spheres ${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii \
-	-right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${LowResFolder}/${Subject}.R.midthickness.${LowResMeshString}.surf.gii
+	-left-spheres ${LeftSphereCurrentSphere} ${LeftSphereNewSphere} \
+	-left-area-surfs ${LeftAreaSurfCurrentArea} ${LeftAreaSurfNewArea} \
+	-right-spheres ${RightSphereCurrentSphere} ${RightSphereNewSphere} \
+	-right-area-surfs ${RightAreaSurfCurrentArea} ${RightAreaSurfNewArea}
 
 log_Msg "Resampled MyelinMap in the low res mesh space using registration: ${IndividualLowResMap}"
 
