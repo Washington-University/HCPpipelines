@@ -494,7 +494,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 
 		if [ ! ${Mesh} = ${HighResMesh} ] ; then
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
-			for MapMap in ${Maps} ${MyelinMaps} ; do
+			for MapMap in ${Maps} ${MyelinMapsToUse} ; do
 				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
@@ -502,7 +502,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 			done
 		else
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii   
-			for MapMap in ${Maps} ${MyelinMaps} ; do
+			for MapMap in ${Maps} ${MyelinMapsToUse} ; do
 				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 				fi
