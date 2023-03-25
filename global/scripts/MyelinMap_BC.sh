@@ -29,6 +29,7 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), defaults to '32' for 32k_fs_LR" '32'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, this option is mainly intended for non-human-adult data, defaults to '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
+opts_AddOptional '--map' 'MapName' 'string' "map to applied the bias field correction, defaults to 'MyelinMap'" 'MyelinMap'
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -93,19 +94,38 @@ log_Msg "RegNameInOutputName: $RegNameInOutputName"
 log_Msg "RegNameInT1wName: $RegNameInT1wName"
 log_Msg "RegNameStructString: $RegNameStructString"
 
+# check file exists
 NativeMyelinMap=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
 log_File_Must_Exist "${NativeMyelinMap}"
+LowResCiftiTemplate=${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii
+log_File_Must_Exist "${LowResCiftiTemplate}"
+LeftSphereCurrentSphere=${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii
+log_File_Must_Exist "${LeftSphereCurrentSphere}"
+LeftSphereNewSphere=${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${LeftSphereNewSphere}"
+LeftAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii"
+log_File_Must_Exist "${LeftAreaSurfCurrentArea}"
+LeftAreaSurfNewArea=${LowResFolder}/${Subject}.L.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${LeftAreaSurfNewArea}"
+RightSphereCurrentSphere=${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii
+log_File_Must_Exist "${RightSphereCurrentSphere}"
+RightSphereNewSphere=${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${RightSphereNewSphere}"
+RightAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii"
+log_File_Must_Exist "${RightAreaSurfCurrentArea}"
+RightAreaSurfNewArea=${LowResFolder}/${Subject}.R.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+log_File_Must_Exist "${RightAreaSurfNewArea}"
 
 IndividualLowResMap=${LowResFolder}/${Subject}.MyelinMap${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
 ${Caret7_Command} -cifti-resample ${NativeMyelinMap} \
-	COLUMN ${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii \
+	COLUMN ${LowResCiftiTemplate} \
 	COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
 	${IndividualLowResMap} \
 	-surface-postdilate 40 \
-	-left-spheres ${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii \
-	-left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${LowResFolder}/${Subject}.L.midthickness.${LowResMeshString}.surf.gii \
-	-right-spheres ${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii ${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii \
-	-right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${LowResFolder}/${Subject}.R.midthickness.${LowResMeshString}.surf.gii
+	-left-spheres ${LeftSphereCurrentSphere} ${LeftSphereNewSphere} \
+	-left-area-surfs ${LeftAreaSurfCurrentArea} ${LeftAreaSurfNewArea} \
+	-right-spheres ${RightSphereCurrentSphere} ${RightSphereNewSphere} \
+	-right-area-surfs ${RightAreaSurfCurrentArea} ${RightAreaSurfNewArea}
 
 log_Msg "Resampled MyelinMap in the low res mesh space using registration: ${IndividualLowResMap}"
 
@@ -156,13 +176,15 @@ ${Caret7_Command} -cifti-resample ${LowResBiasField} \
 log_Msg "Resampled BiasField in the native mesh space: ${NativeBiasField}"
 
 # generate bias corrected map in the output mesh space
-NativeBCMap=${NativeFolder}/${Subject}.MyelinMap_BC${RegNameInOutputName}.native.dscalar.nii
+NativeBCMapToUse=${NativeFolder}/${Subject}.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii
+NativeMyelinMapToUse=${NativeFolder}/${Subject}.${MapName}.native.dscalar.nii
+log_File_Must_Exist "${NativeMyelinMapToUse}"
 
-${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMap} \
-	-var Var ${NativeMyelinMap} \
+${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMapToUse} \
+	-var Var ${NativeMyelinMapToUse} \
 	-var Bias ${NativeBiasField}
 
-log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMap}"
+log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMapToUse}"
 # TODO: add gifti generation according to one argument
 # -cifti-separate-all
 log_Msg "Completing main functionality"
