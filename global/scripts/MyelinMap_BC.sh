@@ -96,25 +96,25 @@ log_Msg "RegNameStructString: $RegNameStructString"
 
 # check file exists
 NativeMyelinMap=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
-log_File_Must_Exist "${NativeMyelinMap}" # 1
+log_File_Must_Exist "${NativeMyelinMap}"
 LowResCiftiTemplate=${LowResFolder}/${Subject}.MyelinMap.${LowResMeshString}.dscalar.nii
-log_File_Must_Exist "${LowResCiftiTemplate}" # 2 
+log_File_Must_Exist "${LowResCiftiTemplate}"
 LeftSphereCurrentSphere=${NativeFolder}/${Subject}.L.sphere${RegNameStructString}.native.surf.gii
-log_File_Must_Exist "${LeftSphereCurrentSphere}" # 3
+log_File_Must_Exist "${LeftSphereCurrentSphere}"
 LeftSphereNewSphere=${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf.gii
-log_File_Must_Exist "${LeftSphereNewSphere}" # 4
+log_File_Must_Exist "${LeftSphereNewSphere}"
 LeftAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii"
-log_File_Must_Exist "${LeftAreaSurfCurrentArea}" # 5
+log_File_Must_Exist "${LeftAreaSurfCurrentArea}"
 LeftAreaSurfNewArea=${LowResFolder}/${Subject}.L.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
-log_File_Must_Exist "${LeftAreaSurfNewArea}" # 6 - This is the one that doesn't exist
+log_File_Must_Exist "${LeftAreaSurfNewArea}"
 RightSphereCurrentSphere=${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii
-log_File_Must_Exist "${RightSphereCurrentSphere}" # 7
+log_File_Must_Exist "${RightSphereCurrentSphere}"
 RightSphereNewSphere=${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.surf.gii
-log_File_Must_Exist "${RightSphereNewSphere}" # 8
+log_File_Must_Exist "${RightSphereNewSphere}"
 RightAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii"
-log_File_Must_Exist "${RightAreaSurfCurrentArea}" # 9
+log_File_Must_Exist "${RightAreaSurfCurrentArea}"
 RightAreaSurfNewArea=${LowResFolder}/${Subject}.R.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
-log_File_Must_Exist "${RightAreaSurfNewArea}" # 10 - This is the one that doesn't exist
+log_File_Must_Exist "${RightAreaSurfNewArea}"
 
 IndividualLowResMap=${LowResFolder}/${Subject}.MyelinMap${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
 ${Caret7_Command} -cifti-resample ${NativeMyelinMap} \

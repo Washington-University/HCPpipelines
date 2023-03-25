@@ -443,10 +443,6 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 	done
 	
 	log_Debug_Msg "Point 2.0"
-	if [ "$BiasFieldComputed" = false ]; then
-		MyelinMapsToUse=${MyelinMaps}
-	fi
-	
 	for Map in ${Maps} ${MyelinMapsToUse} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
 		log_Msg "Map: ${Map}"
 
@@ -474,7 +470,6 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 				fi
 			done
 		fi
-
 		log_Debug_Msg "Point 4.0"
 	done
 	log_Debug_Msg "Point 5.0"
