@@ -136,7 +136,7 @@ else
 	#fixNames=`echo "$fixNames" | sed s/"@"/" "/g`
 	IFS=@ read -a fixNames <<< "${fixNames}"
 fi
-log_Msg "After delimiter substitution, fixNames: ${fixNames[@]}"
+log_Msg "After delimiter substitution, fixNames: ${fixNames[*]+${fixNames[*]}}"
 
 if [[ "${dontFixNames}" == "NONE" ]] ; then
 	dontFixNames=()
@@ -144,7 +144,7 @@ else
 	#dontFixNames=`echo "$dontFixNames" | sed s/"@"/" "/g`
 	IFS=@ read -a dontFixNames <<< "${dontFixNames}"
 fi
-log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[@]}"
+log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[*]+${dontFixNames[*]}}"
 
 if [[ "${mrFIXNames}" == "NONE" ]] ; then
 	mrFIXNames=()
@@ -154,7 +154,7 @@ else
 	#two-level list, % and @, parse only one stage here
 	IFS=% read -a mrFIXNames <<< "${mrFIXNames}"
 fi
-log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[@]}"
+log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[*]+${mrFIXNames[*]}}"
 
 if [[ "$mrFIXConcatNames" == "NONE" ]]
 then
@@ -162,7 +162,7 @@ then
 else
 	IFS=@ read -a mrFIXConcatNames <<< "$mrFIXConcatNames"
 fi
-log_Msg "After delimiter substitution, mrFIXConcatNames: ${mrFIXConcatNames[@]}"
+log_Msg "After delimiter substitution, mrFIXConcatNames: ${mrFIXConcatNames[*]+${mrFIXConcatNames[*]}}"
 
 if (( ${#mrFIXNames[@]} != ${#mrFIXConcatNames[@]} ))
 then
@@ -175,7 +175,7 @@ else
 	#two-level list, % and @, parse only one stage here
 	IFS=% read -a mrFIXExtractNamesArr <<< "${mrFIXExtractNames}"
 fi
-log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[@]}"
+log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[*]+${mrFIXExtractNamesArr[*]}}"
 
 if [[ "$mrFIXExtractConcatNames" == "NONE" ]]
 then
@@ -183,7 +183,7 @@ then
 else
 	IFS=@ read -a mrFIXExtractConcatNamesArr <<< "$mrFIXExtractConcatNames"
 fi
-log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[@]}"
+log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[*]+${mrFIXExtractConcatNamesArr[*]}}"
 
 if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
 then
@@ -201,7 +201,7 @@ then
 else
 	IFS=@ read -a extractExtraRegNamesArr <<< "$mrFIXExtractExtraRegNames"
 fi
-log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[@]}"
+log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[*]+${extractExtraRegNamesArr[*]}}"
 
 if ((mrFIXExtractDoVolBool && ${#mrFIXExtractConcatNamesArr[@]} == 0))
 then
@@ -494,7 +494,7 @@ LowResMesh=`echo ${LowResMeshes} | cut -d " " -f 1`
 
 # Resample (and resmooth) TS from Native 
 log_Msg "Resample (and resmooth) TS from Native"
-for fMRIName in "${fixNames[@]}" "${dontFixNames[@]}" "${mrFIXNamesAll[@]}" ; do
+for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ${dontFixNames[@]+"${dontFixNames[@]}"} ${mrFIXNamesAll[@]+"${mrFIXNamesAll[@]}"} ; do
 	log_Msg "fMRIName: ${fMRIName}"
 	cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii
 	for Hemisphere in L R ; do
@@ -518,8 +518,8 @@ done
 
 # ReApply FIX Cleanup
 log_Msg "ReApply FIX Cleanup"
-log_Msg "fixNames: ${fixNames[@]}"
-for fMRIName in "${fixNames[@]}" ; do
+log_Msg "fixNames: ${fixNames[*]+${fixNames[*]}}"
+for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ; do
 	log_Msg "fMRIName: ${fMRIName}"
 	reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
@@ -537,7 +537,7 @@ do
 	log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	"${reapply_mr_fix_cmd[@]}"
 
-	for regname in "$OutputRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
+	for regname in "$OutputRegName" ${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}
 	do
 		#MSMSulc special naming convention
 		if [[ "$regname" == "MSMSulc" ]]
