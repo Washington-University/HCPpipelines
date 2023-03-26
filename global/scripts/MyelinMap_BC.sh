@@ -105,7 +105,7 @@ LeftSphereNewSphere=${LowResFolder}/${Subject}.L.sphere.${LowResMeshString}.surf
 log_File_Must_Exist "${LeftSphereNewSphere}"
 LeftAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii"
 log_File_Must_Exist "${LeftAreaSurfCurrentArea}"
-LeftAreaSurfNewArea=${LowResFolder}/${Subject}.L.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+LeftAreaSurfNewArea=${LowResT1wFolder}/${Subject}.L.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
 log_File_Must_Exist "${LeftAreaSurfNewArea}"
 RightSphereCurrentSphere=${NativeFolder}/${Subject}.R.sphere${RegNameStructString}.native.surf.gii
 log_File_Must_Exist "${RightSphereCurrentSphere}"
@@ -113,7 +113,7 @@ RightSphereNewSphere=${LowResFolder}/${Subject}.R.sphere.${LowResMeshString}.sur
 log_File_Must_Exist "${RightSphereNewSphere}"
 RightAreaSurfCurrentArea="${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii"
 log_File_Must_Exist "${RightAreaSurfCurrentArea}"
-RightAreaSurfNewArea=${LowResFolder}/${Subject}.R.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
+RightAreaSurfNewArea=${LowResT1wFolder}/${Subject}.R.midthickness${RegNameInOutputName}.${LowResMeshString}.surf.gii
 log_File_Must_Exist "${RightAreaSurfNewArea}"
 
 IndividualLowResMap=${LowResFolder}/${Subject}.MyelinMap${RegNameInOutputName}.${LowResMeshString}.dscalar.nii
