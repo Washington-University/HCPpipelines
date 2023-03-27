@@ -87,7 +87,8 @@ for Subject in $Subjlist ; do
     FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-
+	MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
+	UseIndMean="YES"
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
         echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
         queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
@@ -107,7 +108,9 @@ for Subject in $Subjlist ; do
         --subcortgraylabels="$SubcorticalGrayLabels" \
         --freesurferlabels="$FreeSurferLabels" \
         --refmyelinmaps="$ReferenceMyelinMaps" \
-        --regname="$RegName"
+        --regname="$RegName" \
+        --msm-all-templates="$MSMAllTemplates" \
+        --use-ind-mean="$UseIndMean"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -121,7 +124,9 @@ for Subject in $Subjlist ; do
         --subcortgraylabels=$SubcorticalGrayLabels \
         --freesurferlabels=$FreeSurferLabels \
         --refmyelinmaps=$ReferenceMyelinMaps \
-        --regname=$RegName"
+        --regname=$RegName \
+        --msm-all-templates="$MSMAllTemplates" \
+        --use-ind-mean="$UseIndMean""
 
     echo ". ${EnvironmentScript}"
 done
