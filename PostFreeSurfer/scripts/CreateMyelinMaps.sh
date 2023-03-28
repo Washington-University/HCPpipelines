@@ -260,16 +260,17 @@ for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 			--use-ind-mean="$UseIndMean" \
 			--low-res-mesh="$LowResMesh" \
 			--myelin-target-file="$MyelinTargetFile" \
-			--map="$MyelinMap" \
-			--gifti-output="YES"
+			--map="$MyelinMap"
 		# ----- End moved statements -----
 		# bias field is computed in the module MyelinMap_BC.sh
 		BiasFieldComputed=true
+		${Caret7_Command} -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii
 	else
 		# bias field in native space is already generated
 		# BC the other types of given myelin maps
 		${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
 	fi
+	${Caret7_Command} -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MapName}_BC.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MapName}_BC.native.func.gii
 done
 
 #Add CIFTI Maps to Spec Files
