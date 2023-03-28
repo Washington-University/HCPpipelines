@@ -226,7 +226,7 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
-    #"$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
+    "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
 
@@ -238,7 +238,7 @@ if ((doProcessing)); then
     argList+=("$AtlasSpaceT1wImage")        # ${6}
     argList+=("$T1wRestoreImage")           # ${7}  Called T1wImage in CreateRibbon.sh
     argList+=("$FreeSurferLabels")          # ${8}
-    #"$PipelineScripts"/CreateRibbon.sh "${argList[@]}"
+    "$PipelineScripts"/CreateRibbon.sh "${argList[@]}"
 
     log_Msg "Myelin Mapping"
     log_Msg "RegName: ${RegName}"
