@@ -117,6 +117,7 @@ SurfaceSmoothingFWHM="4"
 MyelinMappingSigma=`echo "$MyelinMappingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
+IFS='@' read -a LowResMeshesArray <<< "${LowResMeshes}"
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
 ${CARET7DIR}/wb_command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate true -disp-pos true -disp-neg false -disp-zero false -palette-name HSB8_clrmid -thresholding THRESHOLD_TYPE_NORMAL THRESHOLD_TEST_SHOW_OUTSIDE 0.5 2
@@ -270,8 +271,31 @@ for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 		# BC the other types of given myelin maps
 		${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
 	fi
-	${Caret7_Command} -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MapName}_BC.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MapName}_BC.native.func.gii
+	${Caret7_Command} -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
 done
+
+# create cifti and gift MyelinMap in the other low res mesh spaces
+if ((${#LowResMeshesArray[@]} > 0 )); then
+	# loop start from the 1st element in LowResMeshesArray (0-index)
+    for ((index = 1; index < ${#LowResMeshesArray[@]}; ++index))
+		LowResMesh="${LowResMeshesArray[index]}"
+		for MyelinMap in MyelinMap SmoothedMyelinMap ; do
+			${Caret7_Command} -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii \
+				COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}.${LowResMesh}k_fs_LR.dscalar.nii \
+				COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
+				${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
+				-surface-postdilate 40 \
+				-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
+				-left-area-surfs ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.L.midthickness.native.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+				-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
+				-right-area-surfs ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+			# gifti files
+			${Caret7_Command} -cifti-separate-all ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
+				-left ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
+				-right ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii
+		done
+	done
+fi
 
 #Add CIFTI Maps to Spec Files
 
