@@ -30,6 +30,7 @@ opts_AddOptional '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh no
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, this option is mainly intended for non-human-adult data, defaults to '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--map' 'MapName' 'string' "map to applied the bias field correction, defaults to 'MyelinMap'" 'MyelinMap'
+opts_AddOptional '--gifti-output' 'GiftiOutput' 'YES or NO' "whether to generate the gifti outputs of Bias field and _BC cifti files in native mesh space, defaults to 'NO'" 'NO'
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -54,6 +55,7 @@ opts_ShowValues
 log_Msg "Starting main functionality"
 Caret7_Command=${CARET7DIR}/wb_command
 UseIndMeanBool=$(opts_StringToBool "$UseIndMean")
+GiftiOutputBool=$(opts_StringToBool "$GiftiOutput")
 # default folders
 SubjFolder=${StudyFolder}/${Subject}
 log_Msg "SubjFolder: $SubjFolder"
@@ -185,6 +187,9 @@ ${Caret7_Command} -cifti-math "Var - Bias" ${NativeBCMapToUse} \
 	-var Bias ${NativeBiasField}
 
 log_Msg "_BC Myelin map in the native mesh space: ${NativeBCMapToUse}"
-# TODO: add gifti generation according to one argument
-# -cifti-separate-all
+# gifti generation in native mesh space (BiasField and _BC files)
+if ((GiftiOutputBool)); then
+	${Caret7_Command} -cifti-separate-all ${NativeBiasField} -left ${NativeFolder}/${Subject}.L.BiasField${RegNameInOutputName}.native.dscalar.nii -right ${NativeFolder}/${Subject}.R.BiasField${RegNameInOutputName}.native.dscalar.nii
+	${Caret7_Command} -cifti-separate-all ${NativeBCMapToUse} -left ${NativeFolder}/${Subject}.L.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii -right ${NativeFolder}/${Subject}.R.${MapName}_BC${RegNameInOutputName}.native.dscalar.nii
+fi
 log_Msg "Completing main functionality"
