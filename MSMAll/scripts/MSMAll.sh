@@ -318,7 +318,7 @@ while [ ${i} -le ${NumIterations} ] ; do
 			--study-folder="$StudyFolder" \
 			--subject="$Subject" \
 			--registration-name="$InRegName" \
-			--msm-all-templates="$MSMAllTemplates" \
+			--myelin-target-file="$MyelinTargetFile" \
 			--use-ind-mean="$UseIndMean" \
 			--low-res-mesh="$LowResMesh"
 		${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii
@@ -721,7 +721,7 @@ rm ${NativeFolder}/${Subject}.SphericalDistortion.native.dtseries.nii
     --study-folder="$StudyFolder" \
     --subject="$Subject" \
     --registration-name="$RegName" \
-    --msm-all-templates="$MSMAllTemplates" \
+    --myelin-target-file="$MyelinTargetFile" \
     --use-ind-mean="$UseIndMean" \
     --low-res-mesh="$LowResMesh"
 

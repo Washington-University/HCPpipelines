@@ -92,9 +92,8 @@ Jacobian="${36}"
 ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
-MSMAllTemplates="${40}"
-MyelinTargetFile="${41}"
-UseIndMean="${42}"
+MyelinTargetFile="${40}"
+UseIndMean="${41}"
 
 log_Msg "RegName: ${RegName}"
 
@@ -257,7 +256,6 @@ for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 			--study-folder="$StudyFolder" \
 			--subject="$Subject" \
 			--registration-name="MSMSulc" \
-			--msm-all-templates="$MSMAllTemplates" \
 			--use-ind-mean="$UseIndMean" \
 			--low-res-mesh="$LowResMesh" \
 			--myelin-target-file="$MyelinTargetFile" \
