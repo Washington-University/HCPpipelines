@@ -70,7 +70,7 @@ opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, defa
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
-opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean , defaults to 'YES'" 'YES'
+opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
 opts_ParseArguments "$@"
 
