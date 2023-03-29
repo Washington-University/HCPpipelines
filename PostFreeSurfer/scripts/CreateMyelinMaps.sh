@@ -116,8 +116,7 @@ SurfaceSmoothingFWHM="4"
 MyelinMappingSigma=`echo "$MyelinMappingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
 
-IFS='@' read -a LowResMeshesArray <<< "${LowResMeshes}"
-LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
+IFS=' @' read -a LowResMeshesArray <<< "${LowResMeshes}"
 
 ${CARET7DIR}/wb_command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate true -disp-pos true -disp-neg false -disp-zero false -palette-name HSB8_clrmid -thresholding THRESHOLD_TYPE_NORMAL THRESHOLD_TEST_SHOW_OUTSIDE 0.5 2
 
@@ -172,7 +171,9 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
 
-  ${CARET7DIR}/wb_command -cifti-separate-all "$ReferenceMyelinMaps" -left "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii -right "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
+  ${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
+  	-metric CORTEX_LEFT "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii \
+  	-metric CORTEX_RIGHT "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
 fi
 
 
@@ -198,7 +199,7 @@ for Hemisphere in L R ; do
   ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
 
   #Reduce memory usage by smoothing on downsampled mesh
-  LowResMesh=`echo ${LowResMeshes} | cut -d " " -f 1`
+  LowResMesh="${LowResMeshesArray[0]}"
   
   if [ "${T2wPresent}" = "YES" ] ; then
     ${CARET7DIR}/wb_command -volume-math "(ribbon > ($ribbon - 0.01)) * (ribbon < ($ribbon + 0.01))" "$T1wFolder"/temp_ribbon.nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
@@ -214,7 +215,7 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native."$Ext".gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native."$Ext".gii ${RegSphere} "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR."$Ext".gii -area-surfs "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
     ${CARET7DIR}/wb_command -metric-mask "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR."$Ext".gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR."$Ext".gii
-    for LowResMesh in ${LowResMeshes} ; do
+    for LowResMesh in "${LowResMeshesArray[@]}" ; do
       ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native."$Ext".gii ${RegSphere} "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR."$Ext".gii -area-surfs "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
       ${CARET7DIR}/wb_command -metric-mask "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR."$Ext".gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR."$Ext".gii
     done
@@ -222,7 +223,7 @@ for Hemisphere in L R ; do
 done
 
 LowResMeshList=""
-for LowResMesh in ${LowResMeshes} ; do
+for LowResMesh in "${LowResMeshesArray[@]}" ; do
   LowResMeshList+="${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR@atlasroi "
 done
 
@@ -243,7 +244,7 @@ done
 
 BiasFieldComputed=false
 #Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
-LowResMesh=`echo ${LowResMeshes} | cut -d " " -f 1`
+LowResMesh="${LowResMeshesArray[0]}"
 # myelin map only loop
 for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 	if [ "$BiasFieldComputed" = false ]; then
@@ -263,18 +264,21 @@ for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 		# ----- End moved statements -----
 		# bias field is computed in the module MyelinMap_BC.sh
 		BiasFieldComputed=true
-		${CARET7DIR}/wb_command -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii
+		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii COLUMN \
+			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii \
+			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii
 	else
 		# bias field in native space is already generated
 		# BC the other types of given myelin maps
 		${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
 	fi
-	${CARET7DIR}/wb_command -cifti-separate-all ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -left ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii -right ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
+	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
+		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii \
+		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
 done
 
 # create cifti and gift MyelinMap in the low res mesh spaces
-for ((index = 0; index < ${#LowResMeshesArray[@]}; ++index)) ; do
-	LowResMesh="${LowResMeshesArray[index]}"
+for LowResMesh in "${LowResMeshesArray[@]}" ; do
 	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii \
 			COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}.${LowResMesh}k_fs_LR.dscalar.nii \
@@ -286,9 +290,9 @@ for ((index = 0; index < ${#LowResMeshesArray[@]}; ++index)) ; do
 			-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
 			-right-area-surfs ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.R.midthickness.native.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 		# gifti files
-		${CARET7DIR}/wb_command -cifti-separate-all ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
-			-left ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
-			-right ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii
+		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii COLUMN \
+			-metric CORTEX_LEFT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
+			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii
 	done
 done
 
@@ -300,7 +304,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 fi
 
 LowResMeshListII=""
-for LowResMesh in ${LowResMeshes} ; do
+for LowResMesh in "${LowResMeshesArray[@]}" ; do
   LowResMeshListII+="${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR ${T1wFolder}/fsaverage_LR${LowResMesh}k@${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k@${LowResMesh}k_fs_LR "
 done
 
