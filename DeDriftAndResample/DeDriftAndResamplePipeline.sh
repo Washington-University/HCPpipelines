@@ -53,7 +53,7 @@ opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name string
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass' '--highpass'
 opts_AddMandatory '--motion-regression' 'MotionRegression' 'TRUE or FALSE' 'whether FIX should do motion regression'
-opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
+opts_AddMandatory '--myelin-target-file' 'MyelinTarget' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
 # optional inputs
 opts_AddOptional '--dedrift-reg-files' 'DeDriftRegFiles' 'string' "</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>] Usually the spheres in global/templates/MSMAll/, defaults to ''." ''
 opts_AddOptional '--concat-reg-name' 'OutputRegName' 'MSMAll' "String corresponding to the output name for the dedrifted registration (referred to as the concatenated registration), usually MSMAll. Requires --dedrift-reg-files, defaults to ''." ''
@@ -66,7 +66,6 @@ opts_AddOptional '--multirun-fix-extract-extra-regnames' 'mrFIXExtractExtraRegNa
 opts_AddOptional '--multirun-fix-extract-volume' 'mrFIXExtractDoVol' 'TRUE or FALSE' "whether to also extract the specified MR FIX runs from the volume data, requires --multirun-fix-extract-concat-names to work, defaults to 'FALSE'." 'FALSE'
 opts_AddOptional '--fix-names' 'fixNames' 'ICA+FIXed@fMRI@Names' "@-delimited fMRIName strings corresponding to maps that will have single-run ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Do not specify runs processed with MR FIX here. Previously known as --rfmri-names, defaults to ''." ''
 opts_AddOptional '--dont-fix-names' 'dontFixNames' 'not@ICA+FIXed@fMRI@Names' "@-delimited fMRIName strings corresponding to maps that will not have ICA+FIX reapplied to them (not recommended, MR FIX or at least single-run ICA+FIX is recommended for all fMRI data). Previously known as --tfmri-names, defaults to ''." ''
-opts_AddOptional '--myelin-target-file' 'MyelinTargetFile' 'string' "alternate myelin map target, relative to the --msm-all-templates folder." 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--input-reg-name' 'InRegName' 'string' "A string to enable multiple fMRI resolutions, e.g. '_1.6mm', defaults to ''." ''
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the individual myelin map as the group reference map's mean" 'YES'
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -426,7 +425,6 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 				--study-folder="$StudyFolder" \
 				--subject="$Subject" \
 				--registration-name="$OutputRegName" \
-				--msm-all-templates="$MSMAllTemplates" \
 				--use-ind-mean="$UseIndMean" \
 				--low-res-mesh="$LowResMesh" \
 				--myelin-target-file="$MyelinTargetFile" \
