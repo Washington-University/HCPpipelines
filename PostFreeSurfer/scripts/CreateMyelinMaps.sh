@@ -169,10 +169,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-math "(T1w / T2w) * (((ribbon > ($LeftGreyRibbonValue - 0.01)) * (ribbon < ($LeftGreyRibbonValue + 0.01))) + ((ribbon > ($RightGreyRibbonValue - 0.01)) * (ribbon < ($RightGreyRibbonValue + 0.01))))" "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
-  
-  ${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
-  -metric CORTEX_LEFT "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii \
-  -metric CORTEX_RIGHT "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
 fi
 
 
@@ -241,18 +237,18 @@ for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"
   done
 done
 
+# Create surface on HighResMesh in subject's T1w space
+${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.L.midthickness.native.surf.gii \
+	${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.sphere.MSMSulc.native.surf.gii \
+	${AtlasSpaceFolder}/${Subject}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
+	BARYCENTRIC ${StudyFolder}/${Subject}/T1w/${Subject}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
+${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.R.midthickness.native.surf.gii \
+	${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.sphere.MSMSulc.native.surf.gii \
+	${AtlasSpaceFolder}/${Subject}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
+	BARYCENTRIC ${StudyFolder}/${Subject}/T1w/${Subject}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+		
 # BC processing
 if [ "${T2wPresent}" = "YES" ] ; then	
-	# Create surface on HighResMesh in subject's T1w space
-	${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.L.midthickness.native.surf.gii \
-		${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.sphere.MSMSulc.native.surf.gii \
-		${AtlasSpaceFolder}/${Subject}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
-		BARYCENTRIC ${StudyFolder}/${Subject}/T1w/${Subject}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
-	${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Subject}/T1w/${NativeFolder}/${Subject}.R.midthickness.native.surf.gii \
-		${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.sphere.MSMSulc.native.surf.gii \
-		${AtlasSpaceFolder}/${Subject}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
-		BARYCENTRIC ${StudyFolder}/${Subject}/T1w/${Subject}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
-		
 	# determine the resolution of the reference myelin map
 	# TODO: is there a better way to directly get the information of 164k, 59k or 32k? 1) hack into the xml, 2) hack info file names, 3)???
 	NumRefSurfVertice=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
@@ -275,7 +271,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			;;
 		(*)
 			log_Err_Abort "unrecognized NumRefSurfVertice value '$NumRefSurfVertice', valid options are 163842, 59292, 32492"
-      ;;
+			;;
 	esac
 	MyelinTargetFile=${ReferenceMyelinMaps}
 	if [ "$RefResMesh" != "32" ]; then
@@ -293,7 +289,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	fi
 	BiasFieldComputed=false
 	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
-	LowResMesh="${LowResMeshesArray[0]}"
+	LowResMesh="${LowResMeshesArray[0]}"		
 	# myelin map only loop
 	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 		if [ "$BiasFieldComputed" = false ]; then
@@ -324,10 +320,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
 			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii \
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
-	done
-		
-	# create cifti and gift MyelinMap in the high res mesh space
-	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
+			
+		# create cifti and gift MyelinMap in the high res mesh space
 		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii \
 			COLUMN ${AtlasSpaceFolder}/${Subject}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
 			COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
