@@ -306,14 +306,16 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii COLUMN \
 		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii \
 		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii	
+	
+	# bias field in native space is already generated
+	# BC is already applied in module MyelinMap_BC on MyelinMap
+	# BC the other types of given myelin maps
+	${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.SmoothedMyelinMap_BC.native.dscalar.nii \
+		-var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.SmoothedMyelinMap.native.dscalar.nii \
+		-var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
+
 	# myelin map only loop
 	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
-		if [ "$MyelinMap"!="MyelinMap" ]; then
-			# bias field in native space is already generated
-			# BC is already applied in module MyelinMap_BC on MyelinMap
-			# BC the other types of given myelin maps
-			${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
-		fi
 		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
 			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii \
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
