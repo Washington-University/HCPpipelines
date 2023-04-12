@@ -287,33 +287,30 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				-right-spheres ${SphereFolder}/${Subject}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR32k/${Subject}.R.sphere.32k_fs_LR.surf.gii \
 				-right-area-surfs ${T1wSurfFolder}/${Subject}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR32k/${Subject}.R.midthickness.32k_fs_LR.surf.gii
 	fi
-	BiasFieldComputed=false
 	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
-	LowResMesh="${LowResMeshesArray[0]}"		
+	LowResMesh="${LowResMeshesArray[0]}"
+	# ----- Begin moved statements -----
+	# Recompute Myelin Map Bias Field Based on Better Registration
+	log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
+	# Myelin Map BC using low res
+	"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
+		--study-folder="$StudyFolder" \
+		--subject="$Subject" \
+		--registration-name="MSMSulc" \
+		--use-ind-mean="$UseIndMean" \
+		--low-res-mesh="$LowResMesh" \
+		--myelin-target-file="$MyelinTargetFile" \
+		--map="MyelinMap"
+	# ----- End moved statements -----
+	# bias field is computed in the module MyelinMap_BC.sh
+	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii COLUMN \
+		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii \
+		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii	
 	# myelin map only loop
 	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
-		if [ "$BiasFieldComputed" = false ]; then
-			# ----- Begin moved statements -----
-			# Recompute Myelin Map Bias Field Based on Better Registration
-			log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
-			
-			# Myelin Map BC using low res
-			"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
-				--study-folder="$StudyFolder" \
-				--subject="$Subject" \
-				--registration-name="MSMSulc" \
-				--use-ind-mean="$UseIndMean" \
-				--low-res-mesh="$LowResMesh" \
-				--myelin-target-file="$MyelinTargetFile" \
-				--map="$MyelinMap"
-			# ----- End moved statements -----
-			# bias field is computed in the module MyelinMap_BC.sh
-			BiasFieldComputed=true
-			${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii COLUMN \
-				-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.BiasField.native.func.gii \
-				-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.BiasField.native.func.gii
-		else
+		if [ "$MyelinMap"!="MyelinMap" ]; then
 			# bias field in native space is already generated
+			# BC is already applied in module MyelinMap_BC on MyelinMap
 			# BC the other types of given myelin maps
 			${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii -var Var ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.BiasField.native.dscalar.nii
 		fi
