@@ -38,8 +38,9 @@ function par_runjobs()
         echo "ERROR: requested '$numpar' jobs, expected positive integer or -1" 1>&2
         exit 1
     fi
-    #wait for all to ensure new job numbers start at 1 for bash <=4 (and to not use more cores than told to on bash >=5)
+    #wait for all, to not use more cores than told to
     wait
+    local -a jobpids=()
     local i
     for ((i = 0; i < ${#par_jobarray[@]}; ++i))
     do
@@ -57,7 +58,8 @@ function par_runjobs()
             then
                 wait -n
             else
-                wait %$((i - numpar + 1))
+                #wait by pid rather than predicting job ids
+                wait "${jobpids[$((i - numpar))]}"
             fi
         fi
         (
@@ -68,6 +70,8 @@ function par_runjobs()
             
             tempfiles_cleanup
         ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.o$$.$par_global_launch_count" | tee ./$par_global_scriptname.e$$.$par_global_launch_count 1>&2 &
+        #save all the job pids, why not
+        jobpids[$i]="$!"
         par_global_launch_count=$((par_global_launch_count + 1))
     done
     #finish all jobs before continuing the main script
