@@ -286,7 +286,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	LowResMesh="${LowResMeshesArray[0]}"
 	MyelinTargetFile=${ReferenceMyelinMaps}
 	# only resample the reference map into low res mesh when it is a HighResMesh
-	if [ "$RefResMesh" == "${HighResMesh}" ]; then
+	if [ "$RefResMesh" != "${LowResMesh}" ]; then
 		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
 		${CARET7DIR}/wb_command -cifti-resample ${ReferenceMyelinMaps} \
@@ -294,10 +294,10 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
 				${MyelinTargetFile} \
 				-surface-postdilate 40 \
-				-left-spheres ${SphereFolder}/${Subject}.L.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR32k/${Subject}.L.sphere.32k_fs_LR.surf.gii \
-				-left-area-surfs ${T1wSurfFolder}/${Subject}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR32k/${Subject}.L.midthickness.32k_fs_LR.surf.gii \
-				-right-spheres ${SphereFolder}/${Subject}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR32k/${Subject}.R.sphere.32k_fs_LR.surf.gii \
-				-right-area-surfs ${T1wSurfFolder}/${Subject}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR32k/${Subject}.R.midthickness.32k_fs_LR.surf.gii
+				-left-spheres ${SphereFolder}/${Subject}.L.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
+				-left-area-surfs ${T1wSurfFolder}/${Subject}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+				-right-spheres ${SphereFolder}/${Subject}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
+				-right-area-surfs ${T1wSurfFolder}/${Subject}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 	fi
 	# the gifti files from reference maps are generated in previous versions
 	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
