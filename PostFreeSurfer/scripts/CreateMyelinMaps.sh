@@ -250,27 +250,36 @@ ${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Subject}/T1w/${Native
 # BC processing
 if [ "${T2wPresent}" = "YES" ] ; then	
 	# determine the resolution of the reference myelin map
-	# TODO: is there a better way to directly get the information of 164k, 59k or 32k? 1) hack into the xml, 2) hack info file names, 3)???
+	IsRefValid=false
+	# append the HighResMesh into the full ResMesh array
+	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
+	AllAvailableMeshesArray+=(${HighResMesh})
 	NumRefSurfVertice=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
+	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
+	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
+		NumSurfVertice=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
+		if [ "$NumRefSurfVertice" = "$NumSurfVertice" ]; then
+			RefResMesh=${ResMesh}
+			IsRefValid=true
+			log_Msg "Find the template file with the same resolution mesh as the reference myelin map! The ResMesh is ${RefResMesh}"
+			break
+		fi
+	done
+	
+	# error when the number of vertex doesn't have a match
+	if [ "$IsRefValid" = false ]; then
+		log_Err_Abort "The mesh resolution of the input reference map ${ReferenceMyelinMaps} doesn't match with any template files in ${HCPPIPEDIR}/global/templates/standard_mesh_atlases!"
+	fi
+	
 	# resample the reference map into 32k
-	case "$NumRefSurfVertice" in
-		("163842")
-			RefResMesh="164"
+	case "$RefResMesh" in
+		("164")
 			SphereFolder=${AtlasSpaceFolder}
 			T1wSurfFolder=${StudyFolder}/${Subject}/T1w
 			;;
-		("59292")
-			RefResMesh="59"
-			SphereFolder=${AtlasSpaceFolder}/fsaverage_LR59k
-			T1wSurfFolder=${StudyFolder}/${Subject}/T1w/fsaverage_LR59k
-			;;
-		("32492")
-			RefResMesh="32"
-			SphereFolder=${AtlasSpaceFolder}/fsaverage_LR32k
-			T1wSurfFolder=${StudyFolder}/${Subject}/T1w/fsaverage_LR32k
-			;;
 		(*)
-			log_Err_Abort "unrecognized NumRefSurfVertice value '$NumRefSurfVertice', valid options are 163842, 59292, 32492"
+			SphereFolder=${AtlasSpaceFolder}/fsaverage_LR${RefResMesh}k
+			T1wSurfFolder=${StudyFolder}/${Subject}/T1w/fsaverage_LR${RefResMesh}k
 			;;
 	esac
 	MyelinTargetFile=${ReferenceMyelinMaps}
@@ -287,6 +296,11 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				-right-spheres ${SphereFolder}/${Subject}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR32k/${Subject}.R.sphere.32k_fs_LR.surf.gii \
 				-right-area-surfs ${T1wSurfFolder}/${Subject}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/fsaverage_LR32k/${Subject}.R.midthickness.32k_fs_LR.surf.gii
 	fi
+	# the gifti files from reference maps are generated in previous versions
+	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
+		-metric CORTEX_LEFT "$SphereFolder"/"$Subject".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
+		-metric CORTEX_RIGHT "$SphereFolder"/"$Subject".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
+	
 	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
 	LowResMesh="${LowResMeshesArray[0]}"
 	# ----- Begin moved statements -----
@@ -320,7 +334,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.L.${MyelinMap}_BC.native.func.gii \
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.R.${MyelinMap}_BC.native.func.gii
 			
-		# create cifti and gift MyelinMap in the high res mesh space
+		# create cifti and gifti MyelinMap in the high res mesh space
 		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${MyelinMap}_BC.native.dscalar.nii \
 			COLUMN ${AtlasSpaceFolder}/${Subject}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
 			COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
