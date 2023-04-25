@@ -285,7 +285,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
 	LowResMesh="${LowResMeshesArray[0]}"
 	MyelinTargetFile=${ReferenceMyelinMaps}
-	# only resample the reference map into low res mesh when it is a HighResMesh
+	# only resample the reference map into low res mesh if it isn't the first LowResMesh
 	if [ "$RefResMesh" != "${LowResMesh}" ]; then
 		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
