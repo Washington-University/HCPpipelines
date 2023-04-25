@@ -1,7 +1,6 @@
 function isOutlier = findScaledMADOutliers(data)
 % Determine if an array contains values that are outside of three scaled MAD
     numElems = numel(data);
-    isOutlier = false(size(data));
     if numElems < 1
         return
     end
