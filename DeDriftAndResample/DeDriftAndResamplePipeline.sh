@@ -53,7 +53,7 @@ opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name string
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass' '--highpass'
 opts_AddMandatory '--motion-regression' 'MotionRegression' 'TRUE or FALSE' 'whether FIX should do motion regression'
-opts_AddMandatory '--myelin-target-file' 'MyelinTarget' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
+opts_AddMandatory '--myelin-target-file' 'MyelinTargetFile' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
 # optional inputs
 opts_AddOptional '--dedrift-reg-files' 'DeDriftRegFiles' 'string' "</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>] Usually the spheres in global/templates/MSMAll/, defaults to ''." ''
 opts_AddOptional '--concat-reg-name' 'OutputRegName' 'MSMAll' "String corresponding to the output name for the dedrifted registration (referred to as the concatenated registration), usually MSMAll. Requires --dedrift-reg-files, defaults to ''." ''
