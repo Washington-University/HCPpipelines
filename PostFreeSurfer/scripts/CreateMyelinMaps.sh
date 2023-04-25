@@ -254,11 +254,11 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# append the HighResMesh into the full ResMesh array
 	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
 	AllAvailableMeshesArray+=(${HighResMesh})
-	NumRefSurfVertice=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
+	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
 	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
 	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
-		NumSurfVertice=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
-		if [ "$NumRefSurfVertice" = "$NumSurfVertice" ]; then
+		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
+		if [ "$NumRefSurfVertices" = "$NumSurfVertices" ]; then
 			RefResMesh=${ResMesh}
 			IsRefValid=true
 			log_Msg "Find the template file with the same resolution mesh as the reference myelin map! The ResMesh is ${RefResMesh}"
@@ -271,9 +271,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		log_Err_Abort "The mesh resolution of the input reference map ${ReferenceMyelinMaps} doesn't match with any template files in ${HCPPIPEDIR}/global/templates/standard_mesh_atlases!"
 	fi
 	
-	# resample the reference map into 32k
 	case "$RefResMesh" in
-		("164")
+		(${HighResMesh})
 			SphereFolder=${AtlasSpaceFolder}
 			T1wSurfFolder=${StudyFolder}/${Subject}/T1w
 			;;
@@ -282,9 +281,13 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			T1wSurfFolder=${StudyFolder}/${Subject}/T1w/fsaverage_LR${RefResMesh}k
 			;;
 	esac
+
+	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
+	LowResMesh="${LowResMeshesArray[0]}"
 	MyelinTargetFile=${ReferenceMyelinMaps}
-	if [ "$RefResMesh" != "32" ]; then
-		log_Msg "resample the reference map with ${NumRefSurfVertice} ~ ${RefResMesh}k vertices into 32k"
+	# only resample the reference map into low res mesh when it is a HighResMesh
+	if [ "$RefResMesh" == "${HighResMesh}" ]; then
+		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
 		${CARET7DIR}/wb_command -cifti-resample ${ReferenceMyelinMaps} \
 				COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii \
@@ -301,8 +304,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		-metric CORTEX_LEFT "$SphereFolder"/"$Subject".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
 		-metric CORTEX_RIGHT "$SphereFolder"/"$Subject".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
 	
-	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
-	LowResMesh="${LowResMeshesArray[0]}"
 	# ----- Begin moved statements -----
 	# Recompute Myelin Map Bias Field Based on Better Registration
 	log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
