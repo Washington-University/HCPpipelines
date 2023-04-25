@@ -1,6 +1,6 @@
-function isOutliers = findOutliers(data)
+function ret = findOutliers(data)
 % must be 1d array
 madOutliers=findScaledMADOutliers(data);
 perOutliers=findFivePercentageOutliers(data);
-isOutliers=and(madOutliers, perOutliers);
+ret=and(madOutliers, perOutliers);
 end

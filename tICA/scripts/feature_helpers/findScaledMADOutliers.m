@@ -1,4 +1,4 @@
-function isOutlier = findScaledMADOutliers(data)
+function ret = findScaledMADOutliers(data)
 % Determine if an array contains values that are outside of three scaled MAD
     numElems = numel(data);
     if numElems < 1
@@ -11,5 +11,5 @@ function isOutlier = findScaledMADOutliers(data)
     % from https://www.mathworks.com/help/matlab/ref/isoutlier.html#bvolffm
     scaledMAD = 1.4826 * mad;
     threshold = 3 * scaledMAD;
-    isOutlier = absDeviations > threshold;
+    ret = absDeviations > threshold;
 end
