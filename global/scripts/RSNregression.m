@@ -25,6 +25,10 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
     %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
     
+    %if isdeployed()
+        %all arguments are strings
+    %end
+    
     wbcommand = 'wb_command';
     ScaleFactor = 1;
     
@@ -200,7 +204,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
            ts.Nsubjects = size(NODEts, 1) ./ nTPsForSpectra;
            ts.ts = NODEts;
            ts.NtimepointsPerSubject = nTPsForSpectra;
-           [ts_spectra] = nets_spectra(ts);
+           [ts_spectra] = nets_spectra_sp(ts);
            dlmwrite(OutputSpectraTS, NODEts, 'delimiter', '\t');
            dlmwrite(OutputSpectraFile, ts_spectra, 'delimiter', '\t');
         end

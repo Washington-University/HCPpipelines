@@ -113,48 +113,36 @@ get_options()
 }
 
 # ------------------------------------------------------------------------------
-#  Compile MATLAB code used for ICAFIX
-# ------------------------------------------------------------------------------
-compile_ICAFIX_code()
-{
-	log_Msg "----------------------------------------"
-	log_Msg "Compiling ICAFIX-related MATLAB code"
-	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/ICAFIX/scripts/Compile_MATLAB_code.sh
-}
-
-# ------------------------------------------------------------------------------
-#  Compile MATLAB code used for MSMAll
-# ------------------------------------------------------------------------------
-compile_MSMALL_code()
-{
-	log_Msg "----------------------------------------"
-	log_Msg "Compiling MSMAll-related MATLAB code"
-	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/MSMAll/scripts/Compile_MATLAB_code.sh
-}
-
-# ------------------------------------------------------------------------------
-#  Compile MATLAB code used for RestingStateStats
-# ------------------------------------------------------------------------------
-compile_RestingStateStats_code()
-{
-	log_Msg "----------------------------------------"
-	log_Msg "Compiling RestingStateStats-related MATLAB code"
-	log_Msg "----------------------------------------"
-	${HCPPIPEDIR}/RestingStateStats/scripts/Compile_MATLAB_code.sh
-}
-
-# ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 main()
 {
 	get_options "$@"
 	
-	compile_ICAFIX_code
-	compile_MSMALL_code
-	compile_RestingStateStats_code
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling ICAFIX-related MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/ICAFIX/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling MSMAll-related MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/MSMAll/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling RestingStateStats-related MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/RestingStateStats/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling tICA-related MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/tICA/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling global script MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/global/scripts/Compile_MATLAB_code.sh
 }
 
 # ------------------------------------------------------------------------------
@@ -163,7 +151,7 @@ main()
 
 # Verify that HCPPIPEDIR environment variable is set
 if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set" 1>&2
 	exit 1
 fi
 
@@ -173,6 +161,7 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 # Verify that any other needed environment variables are set
 log_Check_Env_Var MATLAB_HOME
+log_Check_Env_Var HCPCIFTIRWDIR
 
 # Invoke the main processing
 main "$@"

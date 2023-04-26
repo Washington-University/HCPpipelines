@@ -33,26 +33,14 @@
 #~ND~END~
 
 
-# NOTE: The use of '${HCPPIPEDIR}/global/matlab/@gifti' as a symlink to '${HCPPIPEDIR}/global/matlab/gifti-1.6/@gifti'
-# works just fine to ensure that adding '${HCPPIPEDIR}/global/matlab' to the matlab path within scripts
-# is sufficient to enable GIFTI I/O functionality within INTERPRETED matlab (or Octave) mode.
-# However, for compilation, using a single "-I ${HCPPIPEDIR}/global/matlab" option is NOT sufficient to enable
-# GIFTI I/O functionality within compiled matlab executables -- perhaps because the matlab compiler
-# doesn't follow or recognize the @gifti symlink?
-# Thence the need for explicitly also including "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" as an option
-# in the compiler commands below.
+# NOTE: while the matlab interpreter is happy to follow symlinks found on the matlab path, the matlab compiler
+# not only does not follow them, it also remembers that they exist and refuses to allow anything with the same
+# name found in a later -I option to be used.  @gifti used to be a symlink, requiring the compilation to
+# include the real location of the @gifti folder, before a folder that contains an @gifti symlink
+# (since the -I option *appends* folders to the search path, in the order listed).
 
-# FURTHER, the "-I" option *appends* folders to the search path, and
-# "-I ${HCPPIPEDIR}/global/matlab/gifti-1.6" must come BEFORE
-# "-I ${HCPPIPEDIR}/global/matlab", OTHERWISE, the presence of the @gifti symlink actually
-# *prevents* the GIFTI I/O functionality from being included.
-
-# Simply deleting the @gifti symlink from ${HCPPIPEDIR}/global/matlab is NOT an option,
-# because the pipeline scripts have come to rely on that convenience for interpreted matlab mode.
-# We COULD delete the @gifti symlink and simultaneously move the actual '@gifti' folder
-# into '${HCPPIPEDIR}/global/matlab', in which case interpreted matlab mode would continue to work,
-# and we could then consolidate the two different "-I" options into one.
-# But, sticking with the symlink for now, since it was already in place.
+# This problem is now avoided by putting the @gifti folder directly into global/matlab, so
+# that no symlinks are involved.
 
  
 # ------------------------------------------------------------------------------
@@ -72,10 +60,11 @@ compile_prepareICAs()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -I ${HCPPIPEDIR}/global/matlab \
-				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
-				  -d ${output_directory}
+				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
+				  -I "${HCPPIPEDIR}/global/matlab" \
+				  -I "${HCPCIFTIRWDIR}" \
+				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+				  -d "${output_directory}"
 
 	popd > /dev/null
 }
@@ -97,11 +86,12 @@ compile_functionhighpassandvariancenormalize()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I ${HCPPIPEDIR}/ICAFIX/scripts \
-				  -I ${HCPPIPEDIR}/global/matlab/gifti-1.6 \
-				  -I ${HCPPIPEDIR}/global/matlab \
-				  -I ${HCPPIPEDIR}/global/fsl/etc/matlab \
-				  -d ${output_directory}
+				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
+				  -I "${HCPPIPEDIR}/global/matlab" \
+				  -I "${HCPPIPEDIR}/global/matlab/icaDim" \
+				  -I "${HCPCIFTIRWDIR}" \
+				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+				  -d "${output_directory}"
 	
 	popd > /dev/null
 }
@@ -129,10 +119,11 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-# Verify that other needed environment variables are set
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var MATLAB_HOME
+log_Check_Env_Var HCPCIFTIRWDIR
 
 # Invoke the main processing
 main "$@"

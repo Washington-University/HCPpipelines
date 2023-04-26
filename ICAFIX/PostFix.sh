@@ -208,15 +208,6 @@ get_options()
 				;;
 			1 | 2)
 				log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
-				# ${MATLAB_GIFTI_LIB} should contain the cifti{open,save,savereset}.m functions AND
-				# the definition of the gifti class (i.e., the '@gifti' directory (or a symlink to it)
-				# from the GIfTI library (https://www.artefact.tk/software/matlab/gifti)
-				# If not defined in the environment, we'll use what is provided within the HCPpipelines
-				if [ -z "${MATLAB_GIFTI_LIB}" ]; then
-					MATLAB_GIFTI_LIB=${HCPPIPEDIR}/global/matlab
-					#log_Err_Abort "To use MATLAB run mode: ${p_MatlabRunMode}, the MATLAB_GIFTI_LIB environment variable must be set"
-				fi
-				log_Msg "MATLAB_GIFTI_LIB: ${MATLAB_GIFTI_LIB}"
 				;;
 			*)
 				log_Err_Abort "MATLAB Run Mode value must be 0, 1 or 2"
@@ -237,7 +228,7 @@ get_options()
 show_tool_versions() {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
-	cat ${HCPPIPEDIR}/version.txt
+	"${HCPPIPEDIR}"/show_version --short
 
 	# Show wb_command version
 	log_Msg "Showing wb_command version"
@@ -409,7 +400,7 @@ main()
 
 	# For interpreted modes, make sure that matlab/octave have access to the functions they need
 	export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('${MATLAB_GIFTI_LIB}'); addpath('${this_script_dir}/scripts');"
+	local ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 	
 	# run MATLAB prepareICAs function
 	case ${MatlabRunMode} in
@@ -505,12 +496,16 @@ main()
 	log_Msg "Making dual screen scene"
 	local sceneFileDual=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_dualscreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneDualScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileDual}
+	cat "${TemplateSceneDualScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| "${sceneFileDual}"
+	#TSC: run it through workbench to simplify excessive ".."s in paths
+	"$CARET7DIR"/wb_command -scene-file-relocate "$sceneFileDual" "$sceneFileDual"
 
 	log_Msg "Making single screen scene"
 	local sceneFileSingle=${ResultsFolder}/${Subject}_${fMRIName}${hpStr}_ICA_Classification_singlescreen.scene
 	# MPH: Overwrite file, if it already exists
-	cat ${TemplateSceneSingleScreen} | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| ${sceneFileSingle}
+	cat "${TemplateSceneSingleScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRIName/${fMRIName}/g | sed s@StudyFolder@"../../../.."@g | sed s@_hpHighPass@${hpStr}@g >| "${sceneFileSingle}"
+	#TSC: run it through workbench to simplify excessive ".."s in paths
+	"$CARET7DIR"/wb_command -scene-file-relocate "$sceneFileSingle" "$sceneFileSingle"
 
 	# For legacy compatibility, we symlink the ReclassifyAs*.txt files into ResultsFolder.
 	# If ReclassifyAs*.txt files already exist in ResultsFolder, then those

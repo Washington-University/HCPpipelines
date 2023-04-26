@@ -1,18 +1,31 @@
 #!/bin/echo This script should be sourced before calling a pipeline script, and should not be run directly:
 
+#Don't edit this line
 SAVEHCPPIPE="${HCPPIPEDIR:-}"
 
-## Environment variable for location of HCP Pipeline for the HCP Pipeline
+## Edit this line: environment variable for location of HCP Pipeline repository
 ## If you leave it blank, and $HCPPIPEDIR already exists in the environment,
 ## that will be used instead (via the SAVEHCPPIPE variable, defined above)
 export HCPPIPEDIR=
 
-## Set up other environment variables
+# Don't edit this section, it allows sourcing SetUp... without editing it if you set things in advance
+if [[ -z "$HCPPIPEDIR" ]]
+then
+    if [[ -z "$SAVEHCPPIPE" ]]
+    then
+        export HCPPIPEDIR="$HOME/HCPpipelines"
+    else
+        export HCPPIPEDIR="$SAVEHCPPIPE"
+    fi
+fi
+
+## Edit this section: set up other environment variables
 export MSMBINDIR="${HOME}/pipeline_tools/MSM"
 export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
 export FSL_FIXDIR=/usr/local/fix
-# if a suitable version of wb_command is on your $PATH, CARET7DIR can be blank
+# If a suitable version of wb_command is on your $PATH, CARET7DIR can be blank
 export CARET7DIR=
+export HCPCIFTIRWDIR="$HCPPIPEDIR"/global/matlab/cifti-matlab
 
 ## Set up FSL (if not already done so in the running environment)
 ## Uncomment the following 2 lines (remove the leading #) and correct the FSLDIR setting for your setup
@@ -26,17 +39,6 @@ export FSL_DIR="${FSLDIR}"
 ## Uncomment the following 2 lines (remove the leading #) and correct the FREESURFER_HOME setting for your setup
 #export FREESURFER_HOME=/usr/local/bin/freesurfer
 #source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
-
-# Trick to allow certain setups to source an unmodified SetUp... and get some functionality
-if [[ -z "$HCPPIPEDIR" ]]
-then
-    if [[ -z "$SAVEHCPPIPE" ]]
-    then
-        export HCPPIPEDIR="$HOME/HCPpipelines"
-    else
-        export HCPPIPEDIR="$SAVEHCPPIPE"
-    fi
-fi
 
 # If you want to use MSM Configuration files other than those already provided, can change the following
 export MSMCONFIGDIR="${HCPPIPEDIR}/MSMConfig"

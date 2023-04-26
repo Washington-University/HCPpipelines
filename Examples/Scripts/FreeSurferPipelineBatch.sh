@@ -3,9 +3,9 @@
 get_batch_options() {
     local arguments=("$@")
 
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj
-    unset command_line_specified_run_local
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -40,7 +40,7 @@ get_batch_options() {
 get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307" #Space delimited list of subject IDs
+Subjlist="100307 100610" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
@@ -59,18 +59,16 @@ fi
 # ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline-v5.3.0-HCP.sh
 
 #Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q long.q"
-    QUEUE="-q hcp_priority.q"
-#fi
-
-#QUEUE="-q veryshort.q"
-
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 ########################################## INPUTS ########################################## 
 
@@ -88,15 +86,15 @@ for Subject in $Subjlist ; do
   T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
-  if [ -n "${command_line_specified_run_local}" ] ; then
-      echo "About to run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
-      queuing_command=""
+  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
+      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
   else
-      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
-      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"
+      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
   fi
 
-  ${queuing_command} ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh \
+  "${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/FreeSurferPipeline.sh \
       --subject="$Subject" \
       --subjectDIR="$SubjectDIR" \
       --t1="$T1wImage" \

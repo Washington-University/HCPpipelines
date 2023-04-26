@@ -1,0 +1,53 @@
+Copyright (c) The University of Oxford
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+        in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+This part of FSL was released as BSD (and/or public domain?) via email April 1, 2021:
+
+Tim Coalson:
+
+I have belatedly realized a similar situation to nets_spectra* exists in read_avw/save_avw, which we have been using in the pipelines for a while (but don't currently provide any indication of license terms).  What kind of licensing terms do you intend the contents of fsl/etc/matlab to have?
+
+...
+
+=====================
+
+Steve Smith:
+
+Hi - from my POV you could use read_avw stuff license free / BSD.  MatthewW/MJ - any objections to that?
+Though tbh I don't recall where that code originated from.
+xx
+
+=====================
+
+Matthew Webster:
+
+Hi All,
+  I believe ( although I am not a lawyer! ) that _technically_ everything in the FSL download falls under the FSL license unless specifically over-ridden ( e.g. FSLview, altases, code in extras ). Explicit permission from Steve would certainly count as an override, so all should be fine.
+
+Cheers!
+Matthew
+
+===================
+
+Mark Jenkinson:
+
+Hi,
+
+I don’t have any objections.
+And I wrote most of the code - certainly the original version.
+
+:)
+MJ
+

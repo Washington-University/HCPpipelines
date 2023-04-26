@@ -92,6 +92,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                             data_AP1@data_AP2@...data_APn
   --echospacing=<echo-spacing>
                           Effective Echo Spacing in msecs
+  --topup-config-file=<filename>
+                          File containing the FSL topup configuration.
   [--dwiname=<DWIname>]   name to give DWI output directories.
                           Defaults to Diffusion
   [--b0maxbval=<b0-max-bval>]
@@ -103,6 +105,12 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           using equally spaced b0's throughout the scan. The best b0
                           is identified as the least distorted (i.e., most similar to
                           the average b0 after registration).
+  [--ensure-even-slices]
+                          If set will ensure the input images to FSL's topup and eddy
+                          have an even number of slices by removing one slice if necessary.
+                          This behaviour used to be the default, but is now optional,
+                          because discarding a slice is incompatible with using slice-to-volume correction
+                          in FSL's eddy.
   [--printcom=<print-command>]
                           Use the specified <print-command> to echo or otherwise
                           output the commands that would be executed instead of
@@ -138,8 +146,12 @@ EOF
 #                         encoding direction
 #  ${echospacing}         Echo spacing in msecs
 #  ${DWIName}             Name to give DWI output directories
+#  ${TopupConfig}         Filename with topup configuration
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
+#  ${SelectBestB0}        If "true" will select the least distorted B0 for topup
+#  ${EnsureEvenSlices}    If "true" will ensure input images to topup/eddy have
+#                         even number of slices
 #  ${runcmd}              Set to a user specified command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
@@ -149,6 +161,10 @@ EOF
 # --------------------------------------------------------------------------------
 #  Support Functions
 # --------------------------------------------------------------------------------
+
+isodd() {
+	echo "$(($1 % 2))"
+}
 
 get_options() {
 	local arguments=($@)
@@ -161,10 +177,12 @@ get_options() {
 	unset NegInputImages
 	unset echospacing
 	unset SelectBestB0
+	unset TopupConfig
 	DWIName="Diffusion"
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
 	runcmd=""
 	SelectBestB0="false"
+	EnsureEvenSlices="false"
 
 	# parse arguments
 	local index=0
@@ -215,12 +233,20 @@ get_options() {
 			b0maxbval=${argument#*=}
 			index=$((index + 1))
 			;;
+		--topup-config-file=*)
+			TopupConfig=${argument#*=}
+			index=$((index + 1))
+			;;
 		--printcom=*)
 			runcmd=${argument#*=}
 			index=$((index + 1))
 			;;
 		--select-best-b0)
 			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		--ensure-even-slices)
+			EnsureEvenSlices="true"
 			index=$((index + 1))
 			;;
 		*)
@@ -264,6 +290,10 @@ get_options() {
 
 	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
+	fi
+
+	if [ -z ${TopupConfig} ]; then
+		error_msgs+="\nERROR: <TopupConfig> not specified"
 	fi
 
 	if [ ! -z "${error_msgs}" ]; then
@@ -444,6 +474,18 @@ main() {
 		exit 1
 	fi
 
+	# if the number of slices are odd, check that the user has a way to deal with that
+	if [ "${EnsureEvenSlices}" == "false" ] && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+		if [ $(isodd $dimz) -eq 1 ]; then
+			log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
+			log_Msg "Either supply a topup configuration file that doesn't use subsampling (e.g., FSL's 'b02b0_1.cnf') using the --topup-config-file=<file> flag (recommended)"
+			log_Msg "or instruct the HCP pipelines to remove a slice using the --ensure-even-slices flag (legacy option)."
+			log_Msg "Note that the legacy option is incompatible with slice-to-volume correction in FSL's eddy"
+			exit 1
+		fi
+	fi
+
 	# Create two files for each phase encoding direction, that for each series contain the number of
 	# corresponding volumes and the number of actual volumes. The file e.g. Pos_SeriesCorrespVolNum.txt
 	# will contain as many rows as non-EMPTY series. The entry M in row J indicates that volumes 0-M
@@ -490,8 +532,25 @@ main() {
 		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 	fi
 
+	if [ "${EnsureEvenSlices}" == "true" ]; then
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+		if [ $(isodd $dimz) -eq 1 ]; then
+			echo "Removing one slice from data to get even number of slices"
+			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
+				${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
+				${runcmd} ${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
+				${runcmd} ${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
+			done
+			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
+			${runcmd} ${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
+			${runcmd} ${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
+		else
+			echo "Skipping slice removal, because data already has an even number of slices"
+		fi
+	fi
+
 	log_Msg "Running Topup"
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
 
 	log_Msg "Completed!"
 	exit 0
@@ -521,8 +580,8 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
 opts_ShowVersionIfRequested "$@"
 

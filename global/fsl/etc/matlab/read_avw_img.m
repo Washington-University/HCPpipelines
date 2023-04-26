@@ -13,15 +13,15 @@ fnimg=strcat(filename,'.img');
 [dims,scales,bpp,endian,datatype] = read_avw_hdr(filename);
 fp=fopen(fnimg,'r',endian);
 if (datatype==4),
-  dat=fread(fp,'short');
+  dat=fread(fp,'short=>float32');
 elseif (datatype==2),
-  dat=fread(fp,'uint8');
+  dat=fread(fp,'uint8=>float32');
 elseif (datatype==8),
-  dat=fread(fp,'int');
+  dat=fread(fp,'int=>float32');
 elseif (datatype==64),
-  dat=fread(fp,'double');
+  dat=fread(fp,'double=>double');
 elseif (datatype==16),
-   dat=fread(fp,'float32');
+   dat=fread(fp,'float32=>float32');
 end
 fclose(fp);
 

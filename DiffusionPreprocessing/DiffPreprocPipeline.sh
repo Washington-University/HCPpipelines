@@ -134,17 +134,22 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--b0maxbval=<b0-max-bval>]
                           Volumes with a bvalue smaller than this value will be
                           considered as b0s. Defaults to ${DEFAULT_B0_MAX_BVAL}
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
+  [--topup-config-file=<filename>]
+                          File containing the FSL topup configuration.
+                          Defaults to b02b0.cnf in the HCP configuration
+                          directory (as defined by ${HCPPIPEDIR_Config}).
   [--select-best-b0]
                           If set selects the best b0 for each phase encoding direction
                           to pass on to topup rather than the default behaviour of
                           using equally spaced b0's throughout the scan. The best b0
                           is identified as the least distorted (i.e., most similar to
                           the average b0 after registration).
+  [--ensure-even-slices]
+                          If set will ensure the input images to FSL's topup and eddy
+                          have an even number of slices by removing one slice if necessary.
+                          This behaviour used to be the default, but is now optional,
+                          because discarding a slice is incompatible with using slice-to-volume correction
+                          in FSL's eddy.
   [--extra-eddy-arg=<value>]
                           Generic single token (no whitespace) argument to pass
                           to the DiffPreprocPipeline_Eddy.sh script and subsequently
@@ -181,7 +186,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                           option can be used to specify which eddy_cuda binary
                           version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
                           will be used.
-
   [--combine-data-flag=<value>]
                           Specified value is passed as the CombineDataFlag value
                           for the eddy_postproc.sh script.
@@ -194,6 +198,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                               acquired
                           0 - As 1, but also include uncombined single volumes
                           Defaults to 1
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to
+                          be used for testing purposes
 
 Return Status Value:
 
@@ -233,6 +242,7 @@ EOF
 #                         structural images
 #  ${b0maxbval}           Volumes with a bvalue smaller than this value will
 #                         be considered as b0s
+#  ${TopupConfig}         Filename with topup configuration
 #  ${runcmd}              Set to a user specifed command to use if user has
 #                         requested that commands be echo'd (or printed)
 #                         instead of actually executed. Otherwise, set to
@@ -269,9 +279,11 @@ get_options() {
 	DWIName="Diffusion"
 	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
 	b0maxbval=${DEFAULT_B0_MAX_BVAL}
+	TopupConfig=${HCPPIPEDIR_Config}/b02b0.cnf
 	runcmd=""
 	extra_eddy_args=""
 	SelectBestB0="false"
+	EnsureEvenSlices="false"
 	no_gpu="false"
 	cuda_version=""
 	CombineDataFlag=1
@@ -339,6 +351,14 @@ get_options() {
 			;;
 		--select-best-b0)
 			SelectBestB0="true"
+			index=$((index + 1))
+			;;
+		--ensure-even-slices)
+			EnsureEvenSlices="true"
+			index=$((index + 1))
+			;;
+		--topup-config-file=*)
+			TopupConfig=${argument#*=}
 			index=$((index + 1))
 			;;
 		--extra-eddy-arg=*)
@@ -430,7 +450,9 @@ get_options() {
 	echo "   b0maxbval: ${b0maxbval}"
 	echo "   runcmd: ${runcmd}"
 	echo "   CombineDataFlag: ${CombineDataFlag}"
+	echo "   TopupConfig: ${TopupConfig}"
 	echo "   SelectBestB0: ${SelectBestB0}"
+	echo "   EnsureEvenSlices: ${EnsureEvenSlices}"
 	echo "   extra_eddy_args: ${extra_eddy_args}"
 	echo "   no_gpu: ${no_gpu}"
 	echo "   cuda-version: ${cuda_version}"
@@ -511,9 +533,13 @@ main() {
 	pre_eddy_cmd+=" --negData=${NegInputImages} "
 	pre_eddy_cmd+=" --echospacing=${echospacing} "
 	pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
+	pre_eddy_cmd+=" --topup-config-file=${TopupConfig} "
 	pre_eddy_cmd+=" --printcom=${runcmd} "
 	if [ "${SelectBestB0}" == "true" ]; then
 		pre_eddy_cmd+=" --select-best-b0 "
+	fi
+	if [ "${EnsureEvenSlices}" == "true" ]; then
+		pre_eddy_cmd+=" --ensure-even-slices "
 	fi
 
 	log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
@@ -590,8 +616,8 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
 opts_ShowVersionIfRequested "$@"
 

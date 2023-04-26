@@ -85,9 +85,9 @@
 get_batch_options() {
 	local arguments=("$@")
 
-	unset command_line_specified_study_folder
-	unset command_line_specified_subj
-	unset command_line_specified_run_local
+	command_line_specified_study_folder=""
+	command_line_specified_subj=""
+	command_line_specified_run_local="FALSE"
 
 	local index=0
 	local numArgs=${#arguments[@]}
@@ -127,7 +127,7 @@ main()
 
 	# Set variable values that locate and specify data to process
 	StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of Subject folders (named by subjectID)
-	Subjlist="100307"                                    # Space delimited list of subject IDs
+	Subjlist="100307 100610"                             # Space delimited list of subject IDs
 
 	# Set variable value that sets up environment
 	EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" # Pipeline environment script
@@ -148,22 +148,13 @@ main()
 	echo "Run locally: ${command_line_specified_run_local}"
 
 	# Set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
-	# Define processing queue to be used if submitted to job scheduler
-	# if [ X$SGE_ROOT != X ] ; then
-	#    QUEUE="-q long.q"
-	#    QUEUE="-q veryshort.q"
-	QUEUE="-q hcp_priority.q"
-	# fi
-
-	# If PRINTCOM is not a null or empty string variable, then
-	# this script and other scripts that it calls will simply
-	# print out the primary commands it otherwise would run.
-	# This printing will be done using the command specified
-	# in the PRINTCOM variable
-	PRINTCOM=""
-	# PRINTCOM="echo"
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local
+	QUEUE=""
+	#QUEUE="hcp_priority.q"
 
 	#
 	# Inputs:
@@ -219,25 +210,25 @@ main()
 
 		# Detect Number of T1w Images and build list of full paths to
 		# T1w images
-		numT1ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep 'T1w_MPR.$' | wc -l`
-		echo "Found ${numT1ws} T1w Images for subject ${Subject}"
 		T1wInputImages=""
-		i=1
-		while [ $i -le $numT1ws ] ; do
-			T1wInputImages=`echo "${T1wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR${i}/${Subject}_3T_T1w_MPR${i}.nii.gz@"`
-			i=$(($i+1))
+		numT1ws=0
+		for folder in "${StudyFolder}/${Subject}/unprocessed/3T"/T1w_MPR?; do
+			folderbase=$(basename "$folder")
+			T1wInputImages+="$folder/${Subject}_3T_$folderbase.nii.gz@"
+			numT1ws=$((numT1ws + 1))
 		done
+		echo "Found ${numT1ws} T1w Images for subject ${Subject}"
 
 		# Detect Number of T2w Images and build list of full paths to
 		# T2w images
-		numT2ws=`ls ${StudyFolder}/${Subject}/unprocessed/3T | grep 'T2w_SPC.$' | wc -l`
-		echo "Found ${numT2ws} T2w Images for subject ${Subject}"
 		T2wInputImages=""
-		i=1
-		while [ $i -le $numT2ws ] ; do
-			T2wInputImages=`echo "${T2wInputImages}${StudyFolder}/${Subject}/unprocessed/3T/T2w_SPC${i}/${Subject}_3T_T2w_SPC${i}.nii.gz@"`
-			i=$(($i+1))
+		numT2ws=0
+		for folder in "${StudyFolder}/${Subject}/unprocessed/3T"/T2w_SPC?; do
+			folderbase=$(basename "$folder")
+			T2wInputImages+="$folder/${Subject}_3T_$folderbase.nii.gz@"
+			numT2ws=$((numT2ws + 1))
 		done
+		echo "Found ${numT2ws} T2w Images for subject ${Subject}"
 
 		# Readout Distortion Correction:
 		#
@@ -442,19 +433,19 @@ main()
 		# Set to NONE to skip gradient distortion correction
 		GradientDistortionCoeffs="NONE"
 
-		# Establish queuing command based on command line option
-		if [ -n "${command_line_specified_run_local}" ] ; then
-			echo "About to run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-			queuing_command=""
+		# Establish queuing command based on command line option or empty queue name
+		if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+			echo "About to locally run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+			queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 		else
-			echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
-			queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+			echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+			queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
 		fi
 
 		# Run (or submit to be run) the PreFreeSurferPipeline.sh script
 		# with all the specified parameter values
 
-		${queuing_command} ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
+		"${queuing_command[@]}" "$HCPPIPEDIR"/PreFreeSurfer/PreFreeSurferPipeline.sh \
 			--path="$StudyFolder" \
 			--subject="$Subject" \
 			--t1="$T1wInputImages" \
@@ -482,8 +473,7 @@ main()
 			--unwarpdir="$UnwarpDir" \
 			--gdcoeffs="$GradientDistortionCoeffs" \
 			--avgrdcmethod="$AvgrdcSTRING" \
-			--topupconfig="$TopupConfig" \
-			--printcom=$PRINTCOM
+			--topupconfig="$TopupConfig"
 
 	done
 }

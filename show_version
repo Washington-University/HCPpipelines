@@ -1,40 +1,195 @@
 #!/bin/bash
+set -eu
 
-echo "========================================"
+#Usage:
+#Run it with no arguments to get extended version information
+#Run it with --short to get just the version string
+#
+#This script exists for the following reasons:
+#1) We can ask a user to run it so we can get a good idea what version of the pipelines they have, including indicating whether it is dev, rc, or release
+#2) Pipelines can run it with --short to get a simple version string with the same indicators
+#3) To allow containers built with a release candidate to behave more like a final release, to avoid rebuilding again after processing, script logic can hide the "RC" status
+#4) Running a script can gather more information (and do sanity checking) compared to a simple text file
+#
+#Devops:
+#1. Make a new release branch, like "release-5.6.0"
+#2. Edit global/scripts/versioning/base.txt to the new version number, like "v5.6.0", and then copy it to global/scripts/versioning/candidate.txt
+#3. Recompile the matlab code unless you are sure this isn't needed (as of oct 2022, use R2017b, ensure your startup.m doesn't do anything when isdeployed() returns true)
+#4. Commit, make an RC tag, like "v5.6.0-rc.1", push the branch and the tag
+#5. To get an RC version to pretend it is the actual release, set and export HCPPIPE_HIDE_RC to be the same as the contents of base.txt (like "v5.6.0")
+#6. Build container, run processing
+#7. If there is a serious error before the results are released (for instance, if it will require restarting the current processing step on all subjects), increment the rc number without changing the release version (like "v5.6.0-rc.2"), and either:
+#    a) cherry pick fixes onto the release branch, recompile matlab if needed, and go to step 4
+#    b) restart the release branch from a new commit in master and go to step 2
+#When processing outputs are released or release-ready, OR an RC is made for a later version (like "v5.6.1-rc.1"):
+#8. Move global/scripts/versioning/candidate.txt to global/scripts/versioning/release.txt, commit, add release tag (like "v5.6.0"), push branch and tag
+#9. Checkout master, edit global/scripts/versioning/base.txt to the RELEASED version (not the current RC), commit and push
+#
+#Design choice details follow:
+#
+#Facts:
+#1. There can be serious problems with a pipeline that are not discovered until what we thought would be the final processing run
+#2. There can be matlab code changes in the dev branch that have not been recompiled yet
+#3. Users may download a pipelines release as a zip, rather than cloning the repo
+#
+#Requirements:
+#1. We want to use QuNex to do internal processing
+#2. QuNex wants to build releases only from tagged commits
+#3. We don't want to make a full release tag without doing some internal processing as a test
+#4. We want QuNex processing logs to say they used the release version so that we don't have to rerun if the internal processing successfully produced releasable data
+#5. We want non-release commits to show a different version string than release commits, but still give some indication of how old the version someone used is
+#6. We don't want commits on the dev branch earlier (in time) than release "v5.6.0" to say "Post-v5.6.0"
+#7. We want to be able to show the version even when git isn't installed, or the pipelines were downloaded as a zip.
+#8. We don't want all our scripters to need to learn git branching, rebasing, etc
+#
+#Design Concept:
+#1. Make a "release candidate" tag to build QuNex from, so that we can increment that instead of the release bugfix version
+#2. Allow QuNex to make a release candidate pretend to be the final release when showing the short version info
+#3. Make a release tag after we are done verifying processing results
+#
+#Implementation:
+#1. PRs rebase onto master, development commits directly to master when it is too small for a PR
+#2. Releases are made on branches
+#3. Version display is done by a central script (show_version)
+#4. The "base version" is pulled from a text file, which never contains things like "Post-" or "-rc"
+#5. Additional checks are done by the script to decide whether a "release candidate" or "development branch" modification should be made to the base version before display
+#6. In order to catch accidental laziness, every "candidate", "release", or "pretend candidate is release" setting must contain the current base version, such that leaving it set from a previous version gives an error message
 
-this_tools_dir=$(dirname "${BASH_SOURCE[0]}")
+scriptdir=$(cd "$(dirname -- "$0")" && pwd)
 
-first_char=${this_tools_dir:0:1}
-if [ "${first_char}" == "." ]; then
-	this_tools_dir="${PWD}${this_tools_dir:1}"
+if [[ "${HCPPIPEDIR:-}" != "" ]]
+then
+    setpipedir=$(cd "$HCPPIPEDIR" && pwd)
+    if [[ "$scriptdir" != "$setpipedir" ]]
+    then
+        #we haven't sourced anything, don't use logging functions
+        echo "warning: HCPPIPEDIR is set to $HCPPIPEDIR, which doesn't seem to be the location of this show_version script" 1>&2
+    fi
 fi
 
-echo "  DIRECTORY: ${this_tools_dir}"
+#ignore HCPPIPEDIR from environment, report on *this* pipelines directory
+HCPPIPEDIR="$scriptdir"
 
-product_file="${this_tools_dir}/product.txt"
-version_file="${this_tools_dir}/version.txt"
-branch_file="${this_tools_dir}/branch.txt"
-deployment_file="${this_tools_dir}/deployment.txt"
+verdir="$HCPPIPEDIR"/global/scripts/versioning
 
-if [ -e "${product_file}" ] ; then
-	echo -n "    PRODUCT: "
-	cat ${product_file}
+base=$(cat "$verdir"/base.txt)
+
+candidate=0
+release=0
+
+if [[ -f "$verdir"/release.txt ]]
+then
+    relstring=$(cat "$verdir"/release.txt)
+    if [[ "$relstring" != "$base" ]]
+    then
+        echo "ERROR: release.txt exists, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    release=1
 fi
 
-if [ -e "${version_file}" ] ; then
-	echo -n "    VERSION: "
-	cat ${version_file}
+if [[ -f "$verdir"/candidate.txt ]]
+then
+    canstring=$(cat "$verdir"/candidate.txt)
+    if [[ "$canstring" != "$base" ]]
+    then
+        echo "ERROR: candidate.txt exists, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    candidate=1
 fi
 
-if [ -e "${branch_file}" ] ; then
-	echo -n "     BRANCH: "
-	cat ${branch_file}
+if ((release && candidate))
+then
+    echo "ERROR: both release.txt and candidate.txt exist" 1>&2
+    exit 1
 fi
 
-
-if [ -e "${deployment_file}" ] ; then
-	echo -n " DEPLOYMENT: "
-	cat ${deployment_file}
+if [[ "${HCPPIPE_HIDE_RC:-}" != "" ]]
+then
+    if [[ "$HCPPIPE_HIDE_RC" != "$base" ]]
+    then
+        echo "ERROR: HCPPIPE_HIDE_RC is set, but contents do not match base version" 1>&2
+        exit 1
+    fi
+    if ((candidate))
+    then
+        candidate=0
+        release=1
+    fi
 fi
 
-echo "========================================"
+if ((release))
+then
+    verstring="$base"
+else
+    if ((candidate))
+    then
+        verstring="$base"-rc
+    else
+        verstring=Post-"$base"
+    fi
+fi
+
+commit=''
+#plot twist: mac's which has -s for silent, but debian's doesn't
+if [[ -d "$HCPPIPEDIR"/.git ]] && which git &> /dev/null && (cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git status &> /dev/null)
+then
+    #if we have the git repo and git, we can check if the user has edited anything important
+    modified=no
+    #ignore modification of things in Examples, they are not used by the scripts, and some of our instructions have said to edit things there
+    #problem: centos 7 git doesn't have exclude pathspec magic, so use bash to give git everything except that folder - the complication is to be safe against whitespace in file or folder names
+    if ! (cd "$HCPPIPEDIR"
+        topfiles=()
+        for file in *
+        do
+            if [[ "$file" != "Examples" ]]
+            then
+                topfiles+=("$file")
+            fi
+        done
+        #use GIT_DIR to try to avoid the owner sanity checks
+        GIT_DIR="$HCPPIPEDIR"/.git git diff --quiet HEAD -- "${topfiles[@]}")
+    then
+        modified=YES
+        verstring="$verstring"-MOD
+    fi
+    #use "|| true" to safeguard against git not liking something about the repo, in case GIT_DIR isn't enough
+    commit=$(cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git rev-parse HEAD || true)
+    shortcommit=$(cd "$HCPPIPEDIR"; GIT_DIR="$HCPPIPEDIR"/.git git rev-parse --short HEAD || true)
+    if ((! release)) && [[ "$shortcommit" != "" ]]
+    then
+        verstring="$verstring"-"$shortcommit"
+    fi
+fi
+
+short=0
+while (($# > 0))
+do
+    case $1 in
+        (--short)
+            short=1
+            ;;
+    esac
+    shift
+done
+
+if ((short))
+then
+    echo "$verstring"
+else
+    #use old formatting, I guess?
+    echo "========================================"
+    echo "  DIRECTORY: $HCPPIPEDIR"
+    echo "    PRODUCT: HCP Pipeline Scripts"
+    echo "    VERSION: $verstring"
+    if [[ "$commit" == "" ]]
+    then
+        echo "     COMMIT: unknown"
+    else
+        echo "     COMMIT: $commit"
+        echo "   MODIFIED: $modified"
+    fi
+    echo "========================================"
+fi
+

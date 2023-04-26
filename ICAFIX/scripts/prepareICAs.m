@@ -65,7 +65,7 @@ end
 ICA_dtseries = dtseries;
 ICA_dtseries.cdata = (pinv([ones(length(ICAs),1) ICAs])*dtseries.cdata')';
 ICA_dtseries.cdata = ICA_dtseries.cdata(:,2:size(ICA_dtseries.cdata,2));
-ciftisave(ICA_dtseries,ICAdtseries,wbcommand);
+ciftisavereset(ICA_dtseries,ICAdtseries,wbcommand);
 
 NoiseICAs=load(NoiseICAs);
 

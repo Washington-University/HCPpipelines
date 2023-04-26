@@ -1,6 +1,6 @@
 # HCP Pipelines MSMAll subdirectory
 
-MSMAll is a tool for surface-based functional alignment. It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template. MSMAll should be run on sICA+FIX cleaned data (single run or multi-run). First run the MSMAll Pipeline to generate the MSMAll registration, then the DeDriftAndResample Pipeline. DeDriftAndResample is generally used merely to resample the data according to the MSMAll registration, the "dedrift" part of the name only refers to an option (--dedrift-reg-files), which most users should not use, as the option's purpose is for generating a new registration template (atlas). For the uncommon case of generating a new registration template, the MSMRemoveGroupDrift script can calculate the group drift spheres.
+MSMAll is a tool for surface-based functional alignment. It uses T1w/T2w myelin maps, resting state network maps, and resting-state-based visuotopic maps to align a subject's cortical data to a group template. MSMAll should be run on sICA+FIX cleaned data (single run or multi-run). First run the MSMAll Pipeline to generate the MSMAll registration, then the DeDriftAndResample Pipeline. For historical reasons, MSMAll has a precomputed dedrifting that should be applied after the registration, which is where the name DeDriftAndResample comes from. Users should not compute new dedrifting spheres, except in the rare case that they are generating a new registration template (for non-human primates, or other circumstances where the existing HCP MSMAll template is not suitable), in which case the MSMRemoveGroupDrift script may be helpful.
 
 # Notes on MATLAB usage
 
@@ -21,4 +21,7 @@ was 'R2017b/v93'.
 
 i.e.,
 
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
+```
+export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
+```
+

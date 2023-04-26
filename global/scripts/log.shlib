@@ -1,3 +1,5 @@
+#!/bin/echo This script should not be run directly:
+
 #use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
 if (($# > 0))
 then
@@ -145,6 +147,17 @@ log_Msg()
 	echo "${msg}"
 }
 
+#shortcut to log to stderr, and also stdout if stderr is not a tty
+log_Msg_toErr()
+{
+	log_Msg "$*" 1>&2
+	#-t checks for being a terminal - if stderr is redirected to a file, duplicate the message on stdout
+	if [[ ! -t 2 ]]
+	then
+		log_Msg "$*"
+	fi
+}
+
 #
 # Description:
 #   logs a time-stamped, tool-described error message to standard output
@@ -164,23 +177,18 @@ log_Err_Abort()
 log_Err()
 {
 	local msg="$*"
-	if [[ ! -z "$log_FullCommand" ]] && ((! log_full_command_shown))
+	if [[ "$log_FullCommand" != "" ]] && ((! log_full_command_shown))
 	then
-		log_Msg "While running '$log_FullCommand':" 1>&2
+		log_Msg_toErr "While running '$log_FullCommand':"
 		log_full_command_shown=1
 	fi
-	log_Msg "ERROR: ${msg}" 1>&2
-	#-t checks for being a terminal - if stderr is redirected to a file, duplicate the error message on stdout
-	if [[ ! -t 2 ]]
-	then
-		log_Msg "ERROR: ${msg}"
-	fi
+	log_Msg_toErr "ERROR: ${msg}"
 }
 
 log_Warn()
 {
 	local msg="$*"
-	log_Msg "WARNING: ${msg}"
+	log_Msg_toErr "WARNING: ${msg}"
 }
 
 #
@@ -268,7 +276,7 @@ log_Check_Env_Var()
 {
 	local var_name="${1}"
 
-	if [ -z "${!var_name}" ]; then
+	if [ -z "${!var_name:-}" ]; then
 		log_Err_Abort "${var_name} environment variable must be set"
 	fi
 	log_Msg "${var_name}: ${!var_name}"
