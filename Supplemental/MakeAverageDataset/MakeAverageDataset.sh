@@ -335,7 +335,7 @@ show_tool_versions()
 {
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
-	"${HCPPIPEDIR}"/show_version --short
+	cat ${HCPPIPEDIR}/version.txt
 
 	# Show wb_command version
 	log_Msg "Showing Connectome Workbench (wb_command) version"

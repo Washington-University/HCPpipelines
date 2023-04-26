@@ -1,6 +1,6 @@
-function functionhighpassandvariancenormalize(TR, hp, fmri, WBC, varargin)
+function functionhighpassandvariancenormalize(TR,hp,fmri,WBC,varargin)
 %
-% FUNCTIONHIGHPASSANDVARIANCENORMALIZE(TR, HP, FMRI, WBC, [REGSTRING], [VOLWISHARTOVERRIDE], [CIFTIWISHARTOVERRIDE], [ICADIMMODE])
+% FUNCTIONHIGHPASSANDVARIANCENORMALIZE(TR,HP,FMRI,WBC,[REGSTRING])
 % 
 % This function:
 % (1) Detrends / high-pass filters motion confounds, NIFTI (volume) and CIFTI files
@@ -23,10 +23,7 @@ function functionhighpassandvariancenormalize(TR, hp, fmri, WBC, varargin)
 % FMRI: The base string of the fmri time series (no extensions)
 % WBC: wb_command (full path)
 % [REGSTRING]: Additional registration-related string to add to output file names. OPTIONAL.
-% [VOLWISHARTOVERRIDE]: Change the number of volume wisharts. OPTIONAL.
-% [CIFTIWISHARTOVERRIDE]: Change the number of surface wisharts. OPTIONAL.
-% [ICADIMMODE]: 'default' or 'fewtimepoints'. OPTIONAL.
-
+  
 % Note: HP='pd0' would be interpreted as a true 0th order detrend, which is 
 % the same as demeaning. Mathematically, this is the same as the HP<0 condition,
 % but the output files will be named differently (i.e., include '_hppd0'), and additional
@@ -34,114 +31,73 @@ function functionhighpassandvariancenormalize(TR, hp, fmri, WBC, varargin)
 
 % Authors: M. Glasser and M. Harms
 
+CIFTIMatlabReaderWriter=getenv('FSL_FIX_CIFTIRW');
+if (~isdeployed)
+  % addpath does not work and should not be used in compiled MATLAB
+  fprintf('Adding %s to MATLAB path\n', CIFTIMatlabReaderWriter);
+  addpath(CIFTIMatlabReaderWriter);
+end
+
 %% Defaults
-dovol = true;
+dovol = 1;
 regstring = '';
 pdflag = false;  % Polynomial detrend
 pdstring = 'pd';  % Expected string at start of HP variable to request a "polynomial detrend"
-volwishart = 2;  %Volume fits 2 distributions by default to deal with MNI transform
-ciftiwishart = 3;  %CIFTI fits 3 distributions by default to deal with volume to CIFTI mapping
-VN = 1; %first iteration uses 1 for dimensionality
-iters = -1; %iterate until the average of the dimensionality history doesn't change much
-VNhalfdim = false; %after loading the input, set VN to half the timepoints
+hpstring = '';
 
 %% Parse varargin
 if length(varargin) >= 1 && ~isempty(varargin{1})
-    dovol = false; %regname is only used for a new surface registration, so will never require redoing volume
-    regstring = varargin{1}; %this has the underscore on the front already
-    if ~ischar(regstring)
-        error('%s: REGSTRING should be a string', mfilename());
-    end
-end
-
-if length(varargin) >= 2
-    if isdeployed()
-        volwishart = str2double(varargin{2});
-    else
-        volwishart = varargin{2};
-    end
-end
-
-if length(varargin) >= 3
-    if isdeployed()
-        ciftiwishart = str2double(varargin{3});
-    else
-        ciftiwishart = varargin{3};
-    end
-end
-
-if length(varargin) >= 4
-    switch varargin{4}
-        case {'default', ''}
-            %leave things alone
-        case 'fewtimepoints'
-            iters = 1;
-            VNhalfdim = true;
-        otherwise
-            error(['unknown ICADIMMODE value: ' varargin{4}]);
-    end
-end
-
-%% Allow for compiled matlab
-if isdeployed()
-    TR = str2double(TR);
+  dovol = 0; %regname is only used for a new surface registration, so will never require redoing volume
+  regstring = varargin{1}; %this has the underscore on the front already
+  if ~ischar(regstring)
+	error('%s: REGSTRING should be a string', mfilename);
+  end
 end
 
 % Check whether polynomial detrend is being requested for the high-pass filtering.
-% Coincidentally deals with compiled matlab arguments
 if ischar(hp)
-    hp = lower(hp);
-    if strncmp(hp,pdstring,numel(pdstring))
-        pdflag = true;
-        polydeg = str2double(hp(numel(pdstring)+1:end));  % different purposes should use a different variable name
-        if (~isscalar(polydeg) || polydeg < 0 || polydeg ~= fix(polydeg))
-            error('%s: Invalid specification for the order of the polynomial detrending', mfilename());
-        end
-    else
-        hp = str2double(hp);
-        if ~isscalar(hp) || isnan(hp)  % Allow for hp to be provided as a string that contains purely numeric elements
-            error('%s: Invalid specification for the high-pass filter', mfilename());
-        end
-    end
+  hp = lower(hp);
+  if strncmp(hp,pdstring,numel(pdstring))
+	pdflag = true;
+	hp = str2double(hp(numel(pdstring)+1:end));  % hp is now a numeric representing the order of the polynomial detrend
+  elseif ~isempty(str2double(hp))  % Allow for hp to be provided as a string that contains purely numeric elements
+	hp = str2double(hp);
+  else error('%s: Invalid specification for the high-pass filter', mfilename);
+  end
 end
 
-%write out the hpstring logic explicitly, rather than tracing a bunch of code paths
-%must NOT be moved below the hp == 0 check below
+%% Allow for compiled matlab (hp as a string is already handled above)
+if (isdeployed)
+  TR = str2double(TR);
+end
+
+%% Argument checking
+if hp==0 && ~pdflag
+  warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename);
+  pdflag=true;
+  hp=1;
+  % But in this case, preserve use of "_hp0" in the filename to indicate a linear detrend (for backwards compatibility in file naming)
+  hpstring = '_hp0';
+end
 if pdflag
-    %explicit polynomial detrending can say whatever
-    hpstring = ['_hp' pdstring num2str(polydeg)];
-else
-    if hp < 0
-        %negatives mean skip hp, don't put it in the filename
-        hpstring = '';
-    else
-        %hp='0' ends up here
-        hpstring = ['_hp' num2str(hp)];
-    end
+  if (~isscalar(hp) || hp < 0 || hp ~= fix(hp))
+	error('%s: Invalid specification for the order of the polynomial detrending', mfilename);
+  end
 end
 
-%special case hp=0 to do linear detrend
-if ~pdflag && hp == 0
-    warning('%s: hp=0 will be interpreted as polynomial detrending of order 1', mfilename());
-    pdflag = true;
-    polydeg = 1;
+%% Finish setting up hpstring to use in file names
+if ~pdflag
+  pdstring = '';
+end
+if isempty(hpstring) && hp>=0
+    hpstring = ['_hp' pdstring num2str(hp)];
 end
 
-% NOTE: To interpret the logic of the following "Compute, Save, Apply" sections need to know that this function expects that: 
-% (1) individual run time series will be passed in with hp requested
-% (2) concatenated (multi-run) time series will be passed in with hp<0
-%% [This is a bit of hack: would be cleaner if we disentangled the operation of this function from the specific needs of 'hcp_fix_multi_run'].
-
-%TSC: so, let's make a new variable that actually conveys some understanding of the logic
-%HACK: assume hp < 0 is equivalent to concatenated input
-%Note that concatenated input (hp < 0) does not save out any VN estimates [for either NIFTI (volume) or CIFTI].
-singlerun = pdflag || (hp >= 0);
-
-%% Load the motion confounds, and the CIFTI (if single run) (don't need either if MR FIX)
-if singlerun
+%% Load the motion confounds, and the CIFTI (if hp>=0) (don't need either if hp<0)
+if hp>=0
     confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
     confounds=confounds(:,1:6);
-    %% normalise function is in $HCPPIPEDIR/global/matlab/normalise.m
+	%% normalise function is in HCPPIPEDIR/global/matlab/normalise.m
     confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
     confounds=normalise([confounds confounds.*confounds]);
 
@@ -149,11 +105,11 @@ if singlerun
 end
 
 %% Apply hp filtering of the motion confounds, volume (if requested), and CIFTI
-if pdflag  % polynomial detrend case, assumes single run
-    if dovol
+if pdflag  % polynomial detrend case
+    if dovol > 0
         % Save and filter confounds, as a NIFTI, as expected by FIX
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
-        confounds=detrendpoly(confounds, polydeg);
+        confounds=detrendpoly(confounds,hp);
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],'f',[1 1 1 TR]);
 
         % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
@@ -168,7 +124,7 @@ if pdflag  % polynomial detrend case, assumes single run
         clear ctsfull;
 
         % Polynomial detrend
-        cts=detrendpoly(cts', polydeg)';
+        cts=detrendpoly(cts',hp)';
 
         % Write out result, restoring to original size
         ctsfull=zeros(ctsX*ctsY*ctsZ,ctsT, 'single');
@@ -179,11 +135,11 @@ if pdflag  % polynomial detrend case, assumes single run
         call_fsl(['fslcpgeom ' fmri '.nii.gz ' fmri hpstring '.nii.gz -d']);
     end
     
-    BO.cdata=detrendpoly(BO.cdata', polydeg)';
+    BO.cdata=detrendpoly(BO.cdata',hp)';
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
 
-elseif hp > 0  % "fslmaths -bptf" based filtering, assumes single run
-    if dovol
+elseif hp>0  % "fslmaths -bptf" based filtering
+    if dovol > 0
         % Save and filter confounds, as a NIFTI, as expected by FIX
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),[fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf'],'f',[1 1 1 TR]);
         call_fsl(sprintf(['fslmaths ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf -bptf %f -1 ' fmri hpstring '.ica/mc/prefiltered_func_data_mcf_conf_hp'],0.5*hp/TR));
@@ -209,8 +165,8 @@ elseif hp > 0  % "fslmaths -bptf" based filtering, assumes single run
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '.dtseries.nii'],WBC);
     delete('Atlas.nii.gz');
 
-elseif hp < 0  % If no hp filtering, still need to at least demean the volumetric time series, note the above code assumes concatenated input in this condition, so the cifti and motion parameters aren't loaded
-    if dovol
+elseif hp<0  % If no hp filtering, still need to at least demean the volumetric time series
+    if dovol > 0
 
         % Load volume time series and reduce to just the non-zero voxels (for memory efficiency)
         ctsfull=single(read_avw([fmri '.nii.gz']));
@@ -226,32 +182,29 @@ elseif hp < 0  % If no hp filtering, still need to at least demean the volumetri
 
 end
 
-if VNhalfdim
-    if dovol
-        VN = ceil(size(cts, 2) / 2);
-    else
-        VN = ceil(size(B0.cdata, 2) / 2);
-    end
-end
+
+% NOTE: To interpret the logic of the following "Compute, Save, Apply" sections need to know that this function expects that: 
+% (1) individual run time series will be passed in with hp requested
+% (2) concatenated (multi-run) time series will be passed in with hp<0
+%% [This is a bit of hack: would be cleaner if we disentangled the operation of this function from the specific needs of 'hcp_fix_multi_run'].
 
 %% Compute VN map
-if singlerun
-    if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart); 
+if hp>=0
+    if dovol > 0
+        Outcts=icaDim(cts,0,1,-1,2); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform 
     end
     
-    OutBO = icaDim(BO.cdata, 0, VN, iters, ciftiwishart);
+    OutBO=icaDim(BO.cdata,0,1,-1,3); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, CIFTI fits three distributions to deal with volume to CIFTI mapping
 else
-    %concatenated input
-    if dovol
-        Outcts = icaDim(cts, 0, VN, iters, volwishart);
+    if dovol > 0
+        Outcts=icaDim(cts,0,1,-1,2); %0=Don't detrend, 1=Initialize variance normalization at 1, -1=Converge with running dim average, Volume fits two distributions to deal with MNI transform  
     end
 end
 
 %% Save VN map
 % (Only need these for the individual runs, which, per above, are expected to be passed in with hp requested).
-if singlerun
-    if dovol
+if hp>=0
+    if dovol > 0
         fname=[fmri hpstring '_vn.nii.gz'];
         vnfull=zeros(ctsX*ctsY*ctsZ,1, 'single');
         vnfull(ctsmask)=Outcts.noise_unst_std;
@@ -271,7 +224,7 @@ end
 %% Apply VN and Save HP_VN TCS
 % Here, NIFTI VN'ed TCS gets saved regardless of whether hp>=0 (i.e., regardless of whether individual or concatenated run)
 % But CIFTI version of TCS only saved if hp>0
-if dovol
+if dovol > 0
     cts=cts./repmat(Outcts.noise_unst_std,1,ctsT);
     % Use '_vnts' (volume normalized time series) as the suffix for the volumetric VN'ed TCS
     fname=[fmri hpstring '_vnts.nii.gz'];
@@ -283,21 +236,20 @@ if dovol
     call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']); 
 end
 % For CIFTI, we can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
-if singlerun
+if hp>=0
     BO.cdata=BO.cdata./repmat(OutBO.noise_unst_std,1,size(BO.cdata,2));
     ciftisave(BO,[fmri '_Atlas' regstring hpstring '_vn.dtseries.nii'],WBC); 
 end
 
 %Echo Dims
 %TSC: add the regstring to the output filename to avoid overwriting
-if singlerun
-    if dovol
+if hp>=0
+    if dovol > 0
         dlmwrite([fmri regstring '_dims.txt'],[Outcts.calcDim OutBO.calcDim],'\t');
     else
         dlmwrite([fmri regstring '_dims.txt'],[OutBO.calcDim],'\t');
     end
 else
-    %concatenated input
     %TSC: this mode never gets called with a regstring
     dlmwrite([fmri '_dims.txt'],[Outcts.calcDim],'\t');
 end
@@ -310,45 +262,45 @@ end
 %% Polynomial detrending function
 function Y = detrendpoly(X,p);
 
-    % X: Input data (column major order)
-    % p: Order of polynomial to remove
-    % Y: Detrended output
-      
-    % Need to define a function to accomplish this, because MATLAB's own DETREND
-    % is only capable of removing a *linear* trend (i.e., "p=1" only), until r2022b(?)
+% X: Input data (column major order)
+% p: Order of polynomial to remove
+% Y: Detrended output
   
-    % Check data, must be in column order
-    [m, n] = size(X);
-    if (m == 1)
-        X = X';
-        r=n;
-    else
-        r=m;
-    end
-
-    if (~isscalar(p) || p < 0 || p ~= fix(p))
-        error('order of polynomial (p) must be a non-negative integer');
-    end
-
-    % 5/1/2019 -- Construct the "Vandermonde matrix" (V) scaled to a maximum of 1, for better numerical properties.
-    % Note that Octave's DETREND function supports arbitrary polynomial orders, but computes V by taking powers
-    % of [1:r] (rather than [1:r]/r), which is not numerically robust as p increases.
-
-    V = ([1 : r]'/r * ones (1, p + 1)) .^ (ones (r, 1) * [0 : p]);  % "Vandermonde" design matrix
-
-    % Cast design matrix to 'single' if the input is also 'single' (which CIFTI will be)
-    if strcmp(class(X),'single')
-        V = single(V);
-    end
-
-    % Use mldivide ('\') as the linear solver, as it has the nice property of generating a warning
-    % if the solution is rank deficient (in MATLAB at least; Octave doesn't appear to generate a similar warning).
-    % [In contrast, PINV does NOT generate a warning if the singular values are less than its internal tolerance].
-    % Note that even with the scaling of the Vandermonde matrix to a maximum of 1, rank deficiency starts
-    % becoming a problem at p=6 for data of class 'single' and 1200 time points.
-    % Rather than explicitly restricting the allowed order here, we'll code a restriction into the calling scripts.
-
-    Y = X - V * (V \ X);  % Remove polynomial fit
-
+% Need to define a function to accomplish this, because MATLAB's own DETREND
+% is only capable of removing a *linear* trend (i.e., "p=1" only)
+  
+  % Check data, must be in column order
+  [m, n] = size(X);
+  if (m == 1)
+	X = X';
+	r=n;
+  else
+	r=m;
+  end
+  
+  if (~isscalar(p) || p < 0 || p ~= fix(p))
+	error('order of polynomial (p) must be a non-negative integer');
+  end
+  
+  % 5/1/2019 -- Construct the "Vandermonde matrix" (V) scaled to a maximum of 1, for better numerical properties.
+  % Note that Octave's DETREND function supports arbitrary polynomial orders, but computes V by taking powers
+  % of [1:r] (rather than [1:r]/r), which is not numerically robust as p increases.
+  
+  V = ([1 : r]'/r * ones (1, p + 1)) .^ (ones (r, 1) * [0 : p]);  % "Vandermonde" design matrix
+  
+  % Cast design matrix to 'single' if the input is also 'single' (which CIFTI will be)
+  if strcmp(class(X),'single')
+	V = single(V);
+  end
+  
+  % Use mldivide ('\') as the linear solver, as it has the nice property of generating a warning
+  % if the solution is rank deficient (in MATLAB at least; Octave doesn't appear to generate a similar warning).
+  % [In contrast, PINV does NOT generate a warning if the singular values are less than its internal tolerance].
+  % Note that even with the scaling of the Vandermonde matrix to a maximum of 1, rank deficiency starts
+  % becoming a problem at p=6 for data of class 'single' and 1200 time points.
+  % Rather than explicitly restricting the allowed order here, we'll code a restriction into the calling scripts.
+  
+  Y = X - V * (V \ X);  % Remove polynomial fit
+  
 end
   

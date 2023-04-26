@@ -41,20 +41,17 @@ debug_on_error()
            endreport="\033[0m"
         fi
         
-        (
-            # --- output a detailed report if usetrap is not turned off
-            echo
-            echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
-            echo "---------------------------------------------------"
-            echo "         script: $me"
-            echo "stopped at line: $1"
-            echo "           call: $2"
-            echo "  expanded call: $(eval echo "$2")"
-            echo "       hostname: $(hostname)"
-            echo "      exit code: $3"
-            echo -e "---------------------------------------------------${endreport}"
-            echo
-        ) 1>&2
+        # --- output a detailed report if usetrap is not turned off    
+        echo                                                               
+        echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
+        echo "---------------------------------------------------"
+        echo "         script: $me"                                            
+        echo "stopped at line: $1"                                    
+        echo "           call: $2"
+        echo "  expanded call: $(eval echo "$2")"                            
+        echo "      exit code: $3"                                        
+        echo -e "---------------------------------------------------${endreport}" 
+        echo                                                               
         
         
         if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
@@ -62,16 +59,12 @@ debug_on_error()
             # --- Check if interactive shell
             if [[ "$-" == *i* ]]
             then
-                (
-                    echo
-                    echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
-                ) 1>&2
+                echo
+                echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
                 read
             else
-                (
-                    debug_red_echo "===> Aborting execution!"
-                    echo ""
-                ) 1>&2
+                debug_red_echo "===> Aborting execution!"
+                echo ""
                 exit $3
             fi
         fi

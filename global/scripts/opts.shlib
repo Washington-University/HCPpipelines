@@ -103,15 +103,19 @@ opts_CheckForImplicitHelpRequest() {
 #
 #   If the script is invoked with a version information request 
 #   option, report any available version identifying information
-#   for the HCP Pipeline Tools product (from the show_version
-#   script in the root directory) and exit.
+#   for the HCP Pipeline Tools product (from the version.txt
+#   file in the root product directory) and exit.
 # 
 opts_ShowVersionIfRequested() {
     if opts_CheckForVersionRequest $@; then
-        tool="HCP Pipeline Scripts"
+        if [ -f ${HCPPIPEDIR}/product.txt ]; then
+            tool=`cat ${HCPPIPEDIR}/product.txt`
+        else
+            tool="Tool Unknown"
+        fi
         
-        if [ -f "${HCPPIPEDIR}"/show_version ]; then
-            version=`"${HCPPIPEDIR}"/show_version --short`
+        if [ -f ${HCPPIPEDIR}/version.txt ]; then
+            version=`cat ${HCPPIPEDIR}/version.txt`
         else
             version="Version unknown"
         fi

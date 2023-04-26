@@ -129,9 +129,7 @@ ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2std.mat -concat "$WD"/roi2std.mat "$W
 
 # Get a 6 DOF approximation which does the ACPC alignment (AC, ACPC line, and hemispheric plane)
 verbose_echo " --> Geting a 6 DOF approximation"
-$CARET7DIR/wb_command -convert-affine -from-flirt "$WD"/full2std.mat "$Input".nii.gz "$Reference" -to-world "$WD"/full2std_world.mat
-${HCPPIPEDIR}/global/scripts/aff2rigid_world "$WD"/full2std_world.mat "$WD"/full2std_rigid_world.mat
-$CARET7DIR/wb_command -convert-affine -from-world "$WD"/full2std_rigid_world.mat -to-flirt "$OutputMatrix" "$Input".nii.gz "$Reference"
+${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 
 # Create a resampled image (ACPC aligned) using spline interpolation
 verbose_echo " --> Creating a resampled image"

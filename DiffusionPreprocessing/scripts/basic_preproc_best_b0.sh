@@ -39,24 +39,17 @@ baseNeg="Neg"
 # Merge b0's for both phase encoding directions
 for pe_sign in ${basePos} ${baseNeg}; do
 	merge_command=("${FSLDIR}/bin/fslmerge" -t "${rawdir}/all_${pe_sign}_b0s")
-	paste_bvals=("paste" -d' ')
-	paste_bvecs=("paste" -d' ')
 	for entry in ${rawdir}/${pe_sign}_[0-9]*.nii*; do
 		basename=$(imglob ${entry})
 		# TODO: replace with FSL built-in version of select_dwi_vols once -db flag is supported (should be in 6.0.4)
-		${HCPPIPEDIR_Global}/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0 -db ${b0maxbval} -obv ${basename}.bvec
+		${HCPPIPEDIR_Global}/select_dwi_vols ${basename} ${basename}.bval ${basename}_b0s 0 -db ${b0maxbval}
 		merge_command+=("${basename}_b0s")
-		paste_bvecs+=("${basename}_b0s.bvec")
-		paste_bvals+=("${basename}_b0s.bval")
 	done
 	echo about to "${merge_command[@]}"
 	"${merge_command[@]}"
-	"${paste_bvals[@]}" > ${rawdir}/all_${pe_sign}_b0s.bval
-	"${paste_bvecs[@]}" > ${rawdir}/all_${pe_sign}_b0s.bvec
 	for entry in ${rawdir}/${pe_sign}_[0-9]*_b0s.nii*; do
 		${FSLDIR}/bin/imrm ${entry}
 	done
-	rm ${rawdir}/${pe_sign}_[0-9]*_b0s.bv*
 done
 
 # Here we identify the b0's that are least affected by motion artefacts to pass them on to topup.
@@ -223,7 +216,7 @@ elif [ ${PEdir} -eq 2 ]; then #AP/PA phase encoding
 fi
 
 ################################################################################################
-## Merging Files
+## Merging Files and correct number of slices
 ################################################################################################
 echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos $(echo ${rawdir}/${basePos}_[0-9]*.nii*)
@@ -243,6 +236,23 @@ for idx in $(seq 1 $(${FSLDIR}/bin/fslval ${rawdir}/Neg dim4)); do
 	echo 2 >>${rawdir}/index.txt
 done
 
+dimz=$(${FSLDIR}/bin/fslval ${rawdir}/Pos dim3)
+if [ $(isodd $dimz) -eq 1 ]; then
+	echo "Remove one slice from data to get even number of slices"
+	${FSLDIR}/bin/fslroi ${rawdir}/Pos ${rawdir}/Posn 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/fslroi ${rawdir}/Neg ${rawdir}/Negn 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/fslroi ${rawdir}/best_Pos_b0 ${rawdir}/best_Pos_b0n 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/fslroi ${rawdir}/best_Neg_b0 ${rawdir}/best_Neg_b0n 0 -1 0 -1 1 -1
+	${FSLDIR}/bin/imrm ${rawdir}/Pos
+	${FSLDIR}/bin/imrm ${rawdir}/Neg
+	${FSLDIR}/bin/imrm ${rawdir}/best_Pos_b0
+	${FSLDIR}/bin/imrm ${rawdir}/best_Neg_b0
+	${FSLDIR}/bin/immv ${rawdir}/Posn ${rawdir}/Pos
+	${FSLDIR}/bin/immv ${rawdir}/Negn ${rawdir}/Neg
+	${FSLDIR}/bin/immv ${rawdir}/best_Pos_b0n ${rawdir}/best_Pos_b0
+	${FSLDIR}/bin/immv ${rawdir}/best_Neg_b0n ${rawdir}/best_Neg_b0
+fi
+
 echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0
 # include Pos_b0 as the first volume of Pos_Neg, so that eddy will use it as reference
@@ -250,8 +260,8 @@ ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/b
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg ${rawdir}/best_Pos_b0 ${rawdir}/Pos ${rawdir}/Neg
 
 # extract b-value and bvec of best b0 in Pos set
-best_pos_bval=$(cat ${rawdir}/all_Pos_b0s.bval | awk "{print \$$((${best_pos_b0_index} + 1))"})
-cat ${rawdir}/all_Pos_b0s.bvec | awk "{print \$$((${best_pos_b0_index} + 1))}" >${rawdir}/zero.bvecs
+best_pos_bval=$(cat ${rawdir}/Pos.bval | awk "{print \$$((${best_pos_b0_index} + 1))"})
+cat ${rawdir}/Pos.bvec | awk "{print \$$((${best_pos_b0_index} + 1))}" >${rawdir}/zero.bvecs
 
 # merge all b-values and bvecs
 echo $best_pos_bval $(paste -d' ' ${rawdir}/Pos.bval ${rawdir}/Neg.bval) >${rawdir}/Pos_Neg.bvals

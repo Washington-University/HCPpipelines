@@ -304,24 +304,24 @@ if [ -z "${HCPPIPEDIR}" ]; then
 	exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/opts.shlib"                 # Command line option functions
-source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
-source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"          # Functions for getting FSL version
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
-opts_ShowVersionIfRequested "$@"
+opts_ShowVersionIfRequested $@
 
-if opts_CheckForHelpRequest "$@"; then
+if opts_CheckForHelpRequest $@; then
 	show_usage
 	exit 0
 fi
 
-if opts_CheckForFlag --processing-mode-info "$@"; then
+if opts_CheckForFlag --processing-mode-info $@; then
   show_processing_mode_info
   exit 0
 fi
 
-"$HCPPIPEDIR"/show_version
+${HCPPIPEDIR}/show_version
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -565,14 +565,10 @@ log_Msg "After taking default value if necessary, UseJacobian: ${UseJacobian}"
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
 then
-    log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
+	log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
-RUN=`opts_GetOpt1 "--printcom" $@`  #not fully obeyed, easy to forget when editing, and not particularly useful, phase it out?
-if [[ "$RUN" != "" ]]
-then
-    log_Err_Abort "--printcom is not consistently implemented, do not rely on it"
-fi
+RUN=`opts_GetOpt1 "--printcom" $@`  # use ="echo" for just printing everything and not running the commands (default is to run)
 log_Msg "RUN: ${RUN}"
 
 if [[ -n $HCPPIPEDEBUG ]]
@@ -1112,7 +1108,6 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
 #Copy selected files to ResultsFolder
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
-${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm_nomask.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef_nomask.nii.gz
 ${RUN} cp ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
 ${RUN} cp ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz ${ResultsFolder}/${NameOffMRI}_fovmask.nii.gz

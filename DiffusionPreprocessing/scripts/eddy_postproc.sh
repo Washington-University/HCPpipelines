@@ -8,7 +8,7 @@ EddyJacFlag="JacobianResampling"
 workingdir=$1
 GdCoeffs=$2        #Coefficients for gradient nonlinearity distortion correction. If "NONE" this corrections is turned off
 CombineDataFlag=$3 #2 for including in the ouput all volumes uncombined (i.e. output file of eddy)
-                   #1 for including in the ouput and combine only volumes where both LR/RL or AP/PA pairs have been acquired
+                   #1 for including in the ouput and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
                    #0 As 1, but also include uncombined single volumes"
 SelectBestB0=$4 #0 only the actual diffusion data was fed into eddy
                 #1 least distorted b0 was prepended to the eddy input
@@ -41,47 +41,40 @@ qc_command+=(-v)
 #    cp ${eddydir}/Pos.bvec ${datadir}/bvecs
 #    $FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 #else
-
-# Across the combinations of CombineDataFlag and SelectBestB0, need to end up with each of the following
-# in ${datadir}: data.nii.gz, bvals, bvecs_noRot, bvecs
+if [ ${SelectBestB0} -eq 1 ]; then
+	cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals       # removes first value from bvals
+	cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot # removes first value from bvecs
+fi
 if [ ${CombineDataFlag} -eq 2 ]; then
-	
+	# remove first volume as this is the reference b0, which was added to the dataset before running eddy
 	if [ ${SelectBestB0} -eq 1 ]; then
-		# remove first volume/value as this reflects the "best b0", which was added to the dataset before running eddy
 		${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${datadir}/data 1 -1
-		cut -d' ' -f2- ${eddydir}/Pos_Neg.bvals >${datadir}/bvals
-		cut -d' ' -f2- ${eddydir}/Pos_Neg.bvecs >${datadir}/bvecs_noRot
-		cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs >${datadir}/bvecs
+		cut -d' ' -f2- ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs # removes first value from bvecs
 	else
 		${FSLDIR}/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
 		cp ${eddydir}/Pos_Neg.bvals ${datadir}/bvals
-		cp ${eddydir}/Pos_Neg.bvecs ${datadir}/bvecs_noRot
+		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
 		cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs
 	fi
-
-else # Combining across diffusion directions with opposing phase-encoding polarities
-	
+else
 	echo "JAC resampling has been used. Eddy Output is now combined."
-	# Note: ${eddydir}/{Pos,Neg}.{bval,bvec} are the *original* bvals/bvecs, even if SelectBestB0=1 (i.e., are NOT prepended with BestB0)
 	PosVols=$(wc ${eddydir}/Pos.bval | awk {'print $2'})
 	NegVols=$(wc ${eddydir}/Neg.bval | awk {'print $2'}) # Split Pos and Neg Volumes
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Pos ${SelectBestB0} ${PosVols} # ignore extra first volume if ${SelectBestB0} is 1
 	${FSLDIR}/bin/fslroi ${eddydir}/eddy_unwarped_images ${eddydir}/eddy_unwarped_Neg $((PosVols + ${SelectBestB0})) ${NegVols}
-	# Note: 'eddy_combine' is hard-coded to use data.nii.gz, bvals, and bvecs as its outputs
+	# Note: 'eddy_combine' is apparently hard-coded to use "data" as the output NIFTI file name
 	${FSLDIR}/bin/eddy_combine ${eddydir}/eddy_unwarped_Pos ${eddydir}/Pos.bval ${eddydir}/Pos.bvec ${eddydir}/Pos_SeriesVolNum.txt \
 		${eddydir}/eddy_unwarped_Neg ${eddydir}/Neg.bval ${eddydir}/Neg.bvec ${eddydir}/Neg_SeriesVolNum.txt ${datadir} ${CombineDataFlag}
 
-	# Cleanup
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Pos
 	${FSLDIR}/bin/imrm ${eddydir}/eddy_unwarped_Neg
+	if [ ${SelectBestB0} -eq 0 ]; then
+		cp ${datadir}/bvecs ${datadir}/bvecs_noRot
+	fi
 
-	# At this point, have data.nii.gz, bvals, and bvecs in ${datadir}
-	# But the bvecs are the non-rotated bvecs, so rename appropriately
-	mv ${datadir}/bvecs ${datadir}/bvecs_noRot
-	# averaged-based version of bvals get created below, but save the "non-rotated" version as well
-	mv ${datadir}/bvals ${datadir}/bvals_noRot
+	#rm ${eddydir}/Pos.bv*
+	#rm ${eddydir}/Neg.bv*
 
-	# The following is to average the *rotated* bvecs returned by 'eddy', accounting for $SelectBestB0.
 	# Divide Eddy-Rotated bvecs to Pos and Neg
 	line1=$(awk 'NR==1 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs)
 	line2=$(awk 'NR==2 {print; exit}' ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs)
@@ -114,12 +107,13 @@ else # Combining across diffusion directions with opposing phase-encoding polari
 
 	# Average Eddy-Rotated bvecs. Get for each direction the two b matrices, average those and then eigendecompose the average b-matrix to get the new bvec and bval.
 	# Also outputs an index file (1-based) with the indices of the input (Pos/Neg) volumes that have been retained in the output
-	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${CombineDataFlag} ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
+	${globalscriptsdir}/average_bvecs.py ${eddydir}/Pos.bval ${eddydir}/Pos_rotated.bvec ${eddydir}/Neg.bval ${eddydir}/Neg_rotated.bvec ${datadir}/avg_data ${eddydir}/Pos_SeriesVolNum.txt ${eddydir}/Neg_SeriesVolNum.txt
 
 	mv ${datadir}/avg_data.bval ${datadir}/bvals
 	mv ${datadir}/avg_data.bvec ${datadir}/bvecs
 	rm -f ${datadir}/avg_data.bv??
 fi
+#fi
 
 imcp ${eddydir}/eddy_unwarped_images.eddy_cnr_maps ${datadir}/cnr_maps
 
@@ -161,10 +155,7 @@ if [ ! $GdCoeffs = "NONE" ]; then
 	${FSLDIR}/bin/calc_grad_perc_dev --fullwarp=${warpedDir}/fullWarp -o ${datadir}/grad_dev
 	${FSLDIR}/bin/fslmerge -t ${datadir}/grad_dev ${datadir}/grad_dev_x ${datadir}/grad_dev_y ${datadir}/grad_dev_z
 	${FSLDIR}/bin/fslmaths ${datadir}/grad_dev -div 100 ${datadir}/grad_dev #Convert from % deviation to absolute
-	# Delete each of the grad_dev files individualy due to bug in behavior of imrm introduced in FSL 6.0.6
-	${FSLDIR}/bin/imrm ${datadir}/grad_dev_x
-	${FSLDIR}/bin/imrm ${datadir}/grad_dev_y
-	${FSLDIR}/bin/imrm ${datadir}/grad_dev_z
+	${FSLDIR}/bin/imrm ${datadir}/grad_dev_?
 	${FSLDIR}/bin/imrm ${datadir}/trilinear
 	${FSLDIR}/bin/imrm ${warpedDir}/data_dilated_vol1
 fi

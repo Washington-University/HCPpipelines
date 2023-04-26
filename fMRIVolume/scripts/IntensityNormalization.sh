@@ -223,18 +223,11 @@ echo "${fMRIMask}, ${PctBrainCoverage}, ${PctMaskCoverage}, ${NvoxT1FOVMask}, ${
 # for the main fmri timeseries and the scout images (pre-saturation images)
 ${FSLDIR}/bin/fslmaths ${InputfMRI} $biascom $jacobiancom -mas ${FinalMask} -thr 0 -ing 10000 ${OutputfMRI} -odt float
 if [ X${ScoutInput} != X ] ; then
-    # Generate both masked and unmasked versions of scout, but with consistent scaling within the mask
-    ScoutOutputNotMasked=${ScoutOutput}_nomask
-    ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom ${ScoutOutputNotMasked} -odt float
-    # Compute spatial mean within mask, and normalize to a mean of 10000 inside the mask
-    scaleFactor=$(${FSLDIR}/bin/fslstats ${ScoutOutputNotMasked} -k ${FinalMask} -l 0 -M)
-    ${FSLDIR}/bin/fslmaths ${ScoutOutputNotMasked} -mul 10000 -div $scaleFactor -thr 0 ${ScoutOutputNotMasked} -odt float
-    # Apply mask to generate masked version
-    ${FSLDIR}/bin/fslmaths ${ScoutOutputNotMasked} -mas ${FinalMask} ${ScoutOutput} -odt float
+   ${FSLDIR}/bin/fslmaths ${ScoutInput} $biascom $jacobiancom -mas ${FinalMask} -thr 0 -ing 10000 ${ScoutOutput} -odt float
 fi
 
 #Basic Cleanup
-#rm ${InputfMRI}.nii.* #Don't delete the spatially corrected but unmasked and unnormalized data by default
+#rm ${InputfMRI}.nii.* #Don't delete the unmasked spatially corrected unormalized data by default
 
 echo " "
 echo "END: IntensityNormalization"
