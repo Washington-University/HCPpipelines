@@ -317,7 +317,7 @@ tICAspectra_SS.cdata=tICAspectra.cdata*0;
 %Find strongest individual subjects for components
 [~, I]=max(TCSVARS);
 for i=1:size(TCSVARS,2)
-    %if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii']) && ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
+    if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii']) && ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
         %Subjlist{I(i)}
         SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
         tICAMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
@@ -355,14 +355,10 @@ for i=1:size(TCSVARS,2)
         temp=tICAtcs_SS;
         temp.cdata=zeros(size(rtICASingleComponentSpaceXTime,1),size(tICAtcs_SS.cdata,2),'single');
         temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(rtICASingleComponentSpaceXTime(:,:,i))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
-        if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'])
-            ciftisavereset(temp,[OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
-        end
+        ciftisavereset(temp,[OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
         temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(sum(rtICASingleComponentSpaceXTime(:,:,:),3))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
-        if ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
-            ciftisavereset(temp,[OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
-        end
-    %end
+        ciftisavereset(temp,[OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
+    end
 end
 if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
     ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
