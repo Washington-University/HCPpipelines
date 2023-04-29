@@ -321,6 +321,7 @@ while [ ${i} -le ${NumIterations} ] ; do
 			--myelin-target-file="$MyelinTargetFile" \
 			--use-ind-mean="$UseIndMean" \
 			--low-res-mesh="$LowResMesh"
+			mv ${DownSampleFolder}/${Subject}.BiasField.${LowResMesh}k_fs_LR.dscalar.nii ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii
 		${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.BiasField_${InRegName}.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.BiasField_${InRegName}.${LowResMesh}k_fs_LR.func.gii
 		${Caret7_Command} -cifti-separate-all ${DownSampleFolder}/${Subject}.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.dscalar.nii -left ${DownSampleFolder}/${Subject}.L.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii -right ${DownSampleFolder}/${Subject}.R.atlas_MyelinMap_BC.${LowResMesh}k_fs_LR.func.gii
 		
