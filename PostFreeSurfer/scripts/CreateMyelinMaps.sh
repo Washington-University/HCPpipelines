@@ -395,6 +395,8 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
   done
 done
 
+rm ${StudyFolder}/${Subject}/T1w/${Subject}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Subject}/T1w/${Subject}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+
 verbose_green_echo "---> Finished ${script_name}"
 verbose_echo " "
 
