@@ -41,27 +41,28 @@ then
 		exit 1
 	fi
 	newargs=(--fmri-names="$1" --high-pass="$2" --concat-fmri-name="$3" --motion-regression="$4")
-	case $# in
-		(8)
-			newargs+=(--fallback-threshold="$8")
-			;& #special syntax that means "fall through"
-		(7)
-			newargs+=(--delete-intermediates="$7")
-			;&
-		(6)
-			newargs+=(--fix-threshold="$6")
-			;&
-		(5)
-			newargs+=(--training-file="$5")
-			;&
-		(4)
-			#this is fine, don't abort
-			;;
-		(*)
-			echo "unexpected extra arguments, aborting" 1>&2
-			exit 1
-			;;
-	esac
+	#mac's ancient bash doesn't support case ;& fallthrough, so use ifs
+	if (($# >= 5))
+	then
+		newargs+=(--training-file="$5")
+	fi
+	if (($# >= 6))
+	then
+		newargs+=(--fix-threshold="$6")
+	fi
+	if (($# >= 7))
+	then
+		newargs+=(--delete-intermediates="$7")
+	fi
+	if (($# >= 8))
+	then
+		newargs+=(--fallback-threshold="$8")
+	fi
+	if (($# > 8))
+	then
+		echo "unexpected extra arguments, aborting" 1>&2
+		exit 1
+	fi
 	echo "legacy arguments specified: $*"
 	set -- "${newargs[@]}"
 	echo "converted to new arguments: $*"
