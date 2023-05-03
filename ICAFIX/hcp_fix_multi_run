@@ -32,7 +32,8 @@
 #############################################################
 set -eu
 
-if (($# > 0)) && [[ "$1" != --* ]]
+#newopts supports "-h", so look for a single - even though virtually everything uses --
+if (($# > 0)) && [[ "$1" != -* ]]
 then
 	#old usage: hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>] [<FallbackThreshold>]
 	if (($# < 4))
