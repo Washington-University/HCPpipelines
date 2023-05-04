@@ -969,6 +969,14 @@ if [ $fMRIReference = "NONE" ] ; then
   log_Msg "mkdir -p ${DCFolder}"
   mkdir -p ${DCFolder}
 
+  echo "--- DEBUG deltaTE: "${deltaTE}
+  echo "--- DEBUG echospacing: "${EchoSpacing}
+  echo "--- DEBUG unwarpdir: "${UnwarpDir}
+
+  log_Msg "--- DEBUG deltaTE: ${deltaTE}"
+  log_Msg "--- DEBUG echospacing: ${EchoSpacing}"
+  log_Msg "--- DEBUG unwarpdir: ${UnwarpDir}"
+
   ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
          --workingdir=${DCFolder} \
          --scoutin=${fMRIFolder}/${ScoutName}_gdc \
