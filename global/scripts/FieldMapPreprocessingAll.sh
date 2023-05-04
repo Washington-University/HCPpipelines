@@ -101,8 +101,8 @@ case $DistortionCorrection in
         # --------------------------------------
 
         MagnitudeInputName=`getopt1 "--fmapmag" $@`
-		    PhaseInputName=`getopt1 "--fmapphase" $@`
-		    DeltaTE=`getopt1 "--echodiff" $@`
+	    PhaseInputName=`getopt1 "--fmapphase" $@`
+		DeltaTE=`getopt1 "--echodiff" $@`
 
         ;;
 
@@ -123,7 +123,7 @@ case $DistortionCorrection in
         # --------------------------------------
 
         MagnitudeInputName=`getopt1 "--fmapmag" $@`
-		    PhaseInputName=`getopt1 "--fmapphase" $@`
+		PhaseInputName=`getopt1 "--fmapphase" $@`
         DeltaTE=`getopt1 "--echodiff" $@`
 
         ;;
@@ -177,7 +177,7 @@ case $DistortionCorrection in
         # -- General Electric Gradient Echo Field Maps --
         # ----------------------------------------------- 
 
-        ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
+            ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
 		    mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
 		    mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
 		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
@@ -192,25 +192,38 @@ case $DistortionCorrection in
         # --------------------------------------
 
 		    ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-        # Brain extract the magnitude image
+            # Brain extract the magnitude image
     		${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m
     		${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero
     		rm ${WD}/Magnitude_brain.nii.gz
     		mv ${WD}/Magnitude_brain_ero.nii.gz ${WD}/Magnitude_brain.nii.gz
 
-        # Create a binary brain mask
-        ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -thr 0.00000001 -bin ${WD}/Mask_brain.nii.gz
-        # Convert fieldmap to radians
-        $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 3.14159 -div 180 -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap_rad -odt float
-        # Unwrap fieldmap
-        $FSLDIR/bin/prelude -p ${WD}/FieldMap_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask_brain.nii.gz -o ${WD}/FieldMap_rad_unwrapped -v
-        # Convert to rads/sec (DeltaTE is echo time difference)
-        asym=`echo ${DeltaTE} / 1000 | bc -l`
-        $FSLDIR/bin/fslmaths ${WD}/FieldMap_rad_unwrapped -div $asym ${WD}/FieldMap_rps -odt float
-        # Call FUGUE to extrapolate from mask (fill holes, etc)
-        $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rps --mask=${WD}/Mask_brain.nii.gz --savefmap=${WD}/FieldMap.nii.gz
-        # Demean the image (avoid voxel translation)
-        $FSLDIR/bin/fslmaths ${WD}/FieldMap.nii.gz -sub `${FSLDIR}/bin/fslstats ${WD}/FieldMap.nii.gz -k ${WD}/Mask_brain.nii.gz -P 50` -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap.nii.gz -odt float
+            # Take the absolute value of the magnitude data (some images used negative values for the coding)
+            ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -abs ${WD}/Magnitude_brain.nii.gz
+            # Create a binary brain mask
+            ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain.nii.gz -thr 0.00000001 -bin ${WD}/Mask_brain.nii.gz
+            # Convert fieldmap in Hz to rad/s
+            $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 6.28318 -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap_rad_per_s -odt float
+
+            # If echodiff was passed unwrap the fieldmap
+
+            if [ ! -z $DeltaTE ] && [ $DeltaTE != "NONE" ]
+            then
+                echo "DEBUG ===> UNWRAPPING PHILIPS FIELDMAP"
+                # DeltaTE is echo time difference in ms
+                asym=`echo ${DeltaTE} / 1000 | bc -l`
+                # Convert fieldmap in rad/s back to phasediff image in rad for unwrapping
+                $FSLDIR/bin/fslmaths ${WD}/FieldMap_rad_per_s -mul $asym -mas ${WD}/Mask_brain.nii.gz ${WD}/Phasediff_rad -odt float
+                # Unwrap fieldmap
+                $FSLDIR/bin/prelude -p ${WD}/Phasediff_rad -a ${WD}/Magnitude_brain.nii.gz -m ${WD}/Mask_brain.nii.gz -o ${WD}/Phasediff_rad_unwrapped -v
+                # Convert to fiedlmap in rads/sec
+                $FSLDIR/bin/fslmaths ${WD}/Phasediff_rad_unwrapped -div $asym ${WD}/FieldMap_rad_per_s -odt float 
+            fi
+            
+            # Call FUGUE to extrapolate from mask (fill holes, etc)
+            $FSLDIR/bin/fugue --loadfmap=${WD}/FieldMap_rad_per_s --mask=${WD}/Mask_brain.nii.gz --savefmap=${WD}/FieldMap.nii.gz
+            # Demean the image (avoid voxel translation)
+            $FSLDIR/bin/fslmaths ${WD}/FieldMap.nii.gz -sub `${FSLDIR}/bin/fslstats ${WD}/FieldMap.nii.gz -k ${WD}/Mask_brain.nii.gz -P 50` -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap.nii.gz -odt float
 
         ;;
 
