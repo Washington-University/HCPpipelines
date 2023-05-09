@@ -124,7 +124,6 @@ opts_AddOptional  '--subjectDIR' 'SubjectDIR' 'subject' 'path to subject directo
 opts_AddOptional '--t1' 'T1wImage' "T1" 'path to T1w image required, unless --existing-subject is set' " " "--t1w-image"
 
 opts_AddOptional '--t1brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask required, unless --existing-subject is set' "" "--t1w-brain"
-
 	 
 opts_AddOptional '--t2' 'T2wImage' "T2" "path to T2w image required, unless --existing-subject is set" "" "--t2w"
 
@@ -166,6 +165,9 @@ conf2highres=$(opts_StringToBool "$conf2highresString")
 if [[ "$T1wImage" == "NONE" ]]; then
     T1wImage=""
 fi
+if [[ "$T1wImageBrain" == "NONE" ]]; then
+    T1wImage=""
+fi
 if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
@@ -178,8 +180,12 @@ if ((! existing_subject))
 then
 	if [[ "${T1wImage}" = "" ]]
 	then
-		log_Err_Abort "t1 not set and '--existing-subject' not used"
-	fi 
+		log_Err_Abort "--t1 not set and '--existing-subject' not used"
+	fi
+	if [[ "${T1wImageBrain}" = "" ]]
+	then
+		log_Err_Abort "--t1brain not set and '--existing-subject' not used"
+	fi
 
 	if [[ "${T2wImage}" = "" ]]
 	then
