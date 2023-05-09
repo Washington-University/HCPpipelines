@@ -54,6 +54,65 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging funct
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 
+#process legacy syntax and repeatable arguments
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_reconall_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--flair)
+                #--flair true and similar works as-is, detect it and copy it as-is, but don't trigger the argument change
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=(--flair "${origargs[i + 1]}")
+                    #don't have the loop check whether that boolean value is a recognized flag
+                    i=$((i + 1))
+                else
+                    newargs+=(--flair=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (--existing-subject)
+                #same logic
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=(--existing-subject "${origargs[i + 1]}")
+                    i=$((i + 1))
+                else
+                    newargs+=(--existing-subject=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (--no-conf2hires)
+                #this doesn't match a new argument, so we can just replace it
+                newargs+=(--conf2hires=FALSE)
+                changeargs=1
+                ;;
+            (--extra-reconall-arg=*)
+                #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
+                #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
+                extra_reconall_args_manual+=("${origargs[i]#*=}")
+                changeargs=1
+                ;;
+            (*)
+                #copy anything unrecognized
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+        echo "extra recon-all arguments: ${extra_reconall_args_manual[*]+"${extra_reconall_args_manual[*]}"}"
+    fi
+fi
+
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "Runs the FreeSurfer HCP pipline on data processed by prefresurfer"
 
@@ -69,15 +128,16 @@ opts_AddOptional '--t1brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask r
 	 
 opts_AddOptional '--t2' 'T2wImage' "T2" "path to T2w image required, unless --existing-subject is set" "" "--t2w"
 
-opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value' 
+opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
-opts_AddOptional '--flair' 'flair' 'flair' "  Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options  (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
+opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "  Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options  (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--existing-subject' 'existing_subject' 'existing_subject' " Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE"
+opts_AddOptional '--existing-subject' 'existing_subjectString' 'TRUE/FALSE' " Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE"
 
-opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable)  Generic single token (no whitespace) argument to pass to recon-all.  Provides a mechanism to:  (i) customize the recon-all command  (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)  If you want to avoid running all the stages inherent to the '-all' flag in recon-all,  you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use  equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all.  But, --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion).  e.g., --extra-reconall-arg=-norm3diters --extra-reconall-arg=3  will be translated to '-norm3diters 3' when passed to recon-all." 
+#TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
+opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable)  Generic single token argument to pass to recon-all.  Provides a mechanism to:  (i) customize the recon-all command  (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)  If you want to avoid running all the stages inherent to the '-all' flag in recon-all,  you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use  equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all.  But, --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion).  e.g., --extra-reconall-arg=-norm3diters --extra-reconall-arg=3  will be translated to '-norm3diters 3' when passed to recon-all."
 
-opts_AddOptional '--no-conf2hires' 'conf2hires' 'noConf2hires' " Indicates that the script should NOT include -conf2hires as an argument to recon-all.  By default, -conf2hires *IS* included, so that recon-all will place the surfaces on the   hires T1 (and T2).  This is an advanced option, intended for situations where:  (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.  e.g., --existing-subject --extra-reconall-arg=-show-edits --no-conf2hires" "TRUE"
+opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' " Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where:  (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.  e.g., --existing-subject --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
   
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' " Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
@@ -88,31 +148,43 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+#TSC: hack around the lack of repeatable option support, use a single string for display
+extra_reconall_args=${extra_reconall_args_manual[*]+"${extra_reconall_args_manual[*]}"}
+
 #display the parsed/default values
 opts_ShowValues
+
+#TSC: now use an array for proper argument handling
+extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manual[@]}"})
+
+#parse booleans
+flair=$(opts_StringToBool "$flairString")
+existing_subject=$(opts_StringToBool "$existing_subjectString")
+conf2highres=$(opts_StringToBool "$conf2highresString")
+
+#deal with NONE convention
+if [[ "$T1wImage" == "NONE" ]]; then
+    T1wImage=""
+fi
+if [[ "$T2wImage" == "NONE" ]]; then
+    T2wImage=""
+fi
 
 #check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-
-if ["${existing_subject}"  = "NONE" ] || [ "${existing_subject}" = "" ]
+if ((! existing_subject))
 then
-	if [ "${T1wImage}" = "NONE" ] || [ "${T1wImage}" = "" ]
+	if [[ "${T1wImage}" = "" ]]
 	then
 		log_Err_Abort "t1 not set and '--existing-subject' not used"
 	fi 
 
-	if [ "${T2wImage}" = "NONE" ] || [ "${T2wImage}" = "" ]
+	if [[ "${T2wImage}" = "" ]]
 	then
 		ComplianceMsg+=" --t2w-image= or --t2= not present or set to NONE"
 		Compliance="LegacyStyleData"
-		if [ "${flair}" = "TRUE" ]
-		then
-			recon_all_cmd+=" -FLAIR ${T2wImage}"
-		else
-			recon_all_cmd+=" -T2 ${T2wImage}"
-		fi
     fi
 fi
 
@@ -303,7 +375,7 @@ make_t2w_hires_nifti_file()
 
 	pushd "${working_dir}"
 
-	if [ "${p_flair}" = "TRUE" ]; then
+	if ((flair)); then
 		t2_or_flair="FLAIR"
 	else
 		t2_or_flair="T2"
@@ -454,11 +526,10 @@ log_Msg "T2wImage: ${T2wImage}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
 log_Msg "flair: ${flair}"
 log_Msg "existing_subject: ${existing_subject}"
-log_Msg "extra_reconall_args: ${extra_reconall_args}"
+log_Msg "extra_reconall_args: ${extra_reconall_args[*]}"
 log_Msg "conf2hires: ${conf2hires}"
 
-
-if [ "${existing_subject}" != "TRUE" ]; then
+if ((! existing_subject)); then
 
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
 	# certain files need to be reverted to their PreFreeSurfer output versions
@@ -485,18 +556,14 @@ fi
 log_Msg "Call custom recon-all: recon-all.v6.hires"
 # ----------------------------------------------------------------------
 
-recon_all_cmd="recon-all.v6.hires"
-recon_all_cmd+=" -subjid ${SubjectID}"
-recon_all_cmd+=" -sd ${SubjectDIR}"
-if [ "${existing_subject}" != "TRUE" ]; then  # input volumes only necessary first time through
-	recon_all_cmd+=" -all"
-	recon_all_cmd+=" -i ${zero_threshold_T1wImage}"
-	recon_all_cmd+=" -emregmask ${T1wImageBrain}"
-	if [ "${T2wImage}" != "NONE" ]; then
-		if [ "${flair}" = "TRUE" ]; then
-			recon_all_cmd+=" -FLAIR ${T2wImage}"
+recon_all_cmd=(recon-all.v6.hires -subjid "$SubjectID" -sd "$SubjectDIR")
+if ((! existing_subject)); then  # input volumes only necessary first time through
+	recon_all_cmd+=(-all -i "$zero_threshold_T1wImage" -emregmask "$T1wImageBrain")
+	if [ "${T2wImage}" != "" ]; then
+		if ((flair)); then
+			recon_all_cmd+=(-FLAIR "$T2wImage")
 		else
-			recon_all_cmd+=" -T2 ${T2wImage}"
+			recon_all_cmd+=(-T2 "$T2wImage")
 		fi
 	fi
 fi
@@ -504,36 +571,36 @@ fi
 # By default, refine pial surfaces using T2 (if T2w image provided).
 # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
 # this can be accomplished using --extra-reconall-arg=-noT2pial
-if [ "${T2wImage}" != "NONE" ]; then
-	if [ "${flair}" = "TRUE" ]; then
-		recon_all_cmd+=" -FLAIRpial"
+if [ "${T2wImage}" != "" ]; then
+	if ((flair)); then
+		recon_all_cmd+=(-FLAIRpial)
 	else
-		recon_all_cmd+=" -T2pial"
+		recon_all_cmd+=(-T2pial)
 	fi
 fi
 
 if [ ! -z "${recon_all_seed}" ]; then
-	recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
+	recon_all_cmd+=(-norandomness -rng-seed "$recon_all_seed")
 fi
 
 if [ ! -z "${extra_reconall_args}" ]; then
-	recon_all_cmd+=" ${extra_reconall_args}"
+	recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 fi
 
 # The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
-if [ "${conf2hires}" = "TRUE" ]; then
-	recon_all_cmd+=" -conf2hires"
+if ((conf2highres)); then
+	recon_all_cmd+=(-conf2hires)
 fi
 
-log_Msg "...recon_all_cmd: ${recon_all_cmd}"
-${recon_all_cmd}
+log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
+"${recon_all_cmd[@]}"
 return_code=$?
 if [ "${return_code}" != "0" ]; then
 	log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 fi
 
-if [ "${existing_subject}" != "TRUE" ]; then
+if ((! existing_subject)); then
 	# ----------------------------------------------------------------------
 	log_Msg "Clean up file: ${zero_threshold_T1wImage}"
 	# ----------------------------------------------------------------------
@@ -570,14 +637,14 @@ echo "0 0 1 0" >> ${eye_dat_file}
 echo "0 0 0 1" >> ${eye_dat_file}
 echo "round" >> ${eye_dat_file}
 
-if [ "${T2wImage}" != "NONE" ]; then
+if [[ "${T2wImage}" != "" ]]; then
 	# ----------------------------------------------------------------------
 	log_Msg "Making T2w to T1w registration available in FSL format"
 	# ----------------------------------------------------------------------
 
 	pushd ${mridir}
 
-	if [ "${flair}" = "TRUE" ]; then
+	if ((flair)); then
 		t2_or_flair="FLAIR"
 	else
 		t2_or_flair="T2"
@@ -676,7 +743,7 @@ log_Msg "Generating QC file"
 
 make_t1w_hires_nifti_file "${mridir}"
 
-if [ "${T2wImage}" != "NONE" ]; then
+if [[ "${T2wImage}" != "" ]]; then
 
 	make_t2w_hires_nifti_file "${mridir}"
 
