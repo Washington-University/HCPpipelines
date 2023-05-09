@@ -7,7 +7,7 @@ function outlier_stat = std_outlier(data)
     if any(isnan(data_reshape))
         error('found NaN in std_outlier');
     end
-    isoutlier_stat = myoutliers(data_reshape); %TODO: test me
+    isoutlier_stat = findOutliers(data_reshape); %TODO: test me
     if isempty(isoutlier_stat)
         %outlier_stat=1; %original
         outlier_stat=0;
@@ -18,17 +18,3 @@ function outlier_stat = std_outlier(data)
         outlier_stat=1-std_exclude_outlier/std_all;
     end
 end
-
-%isoutlier(..., 'percentiles', [5 95]) written to treat all values at once
-function ret = myoutliers(flatdata)
-    numelems = numel(flatdata);
-    ret = false(size(flatdata));
-    if numelems < 1
-        return
-    end
-    numexclude = floor((numelems + 9) / 20); %in R2021a, isoutlier excludes 0 for 10, 2 for 11...
-    [~, perm] = sort(flatdata(:));
-    ret([1:numexclude (end - numexclude + 1):end]) = true;
-    ret(perm) = ret; %un-sort the exclusion mask
-end
-
