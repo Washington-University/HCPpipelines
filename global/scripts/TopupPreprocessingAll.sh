@@ -124,10 +124,23 @@ then
 fi
 
 #sanity check the jacobian option
-if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
-then
-    log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
-fi
+#takes things like "true", "YES", and outputs "1", "NO" is "0", throws error if unrecognized
+#copied from newopts as a quick fix
+function StringToBool()
+{
+    case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+        (yes | true | 1)
+            echo 1
+            ;;
+        (no | false | 0)
+            echo 0
+            ;;
+        (*)
+            log_Err_Abort "unrecognized boolean '$1', please use yes/no, true/false, or 1/0"
+            ;;
+    esac
+}
+UseJacobian=$(StringToBool "$UseJacobian")
 
 GlobalScripts=${HCPPIPEDIR_Global}
 
@@ -179,7 +192,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
       --out=${WD}/PhaseTwo_gdc \
       --owarp=${WD}/PhaseTwo_gdc_warp
 
-  if [[ $UseJacobian == "true" ]]
+  if ((UseJacobian))
   then
     ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_gdc -mul ${WD}/PhaseOne_gdc_warp_jacobian ${WD}/PhaseOne_gdc
     ${FSLDIR}/bin/fslmaths ${WD}/PhaseTwo_gdc -mul ${WD}/PhaseTwo_gdc_warp_jacobian ${WD}/PhaseTwo_gdc
