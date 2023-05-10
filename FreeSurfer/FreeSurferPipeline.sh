@@ -589,11 +589,10 @@ if [ ! -z "${recon_all_seed}" ]; then
 	recon_all_cmd+=(-norandomness -rng-seed "$recon_all_seed")
 fi
 
-if [ ! -z "${extra_reconall_args}" ]; then
-	recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
-fi
+#add any extra args
+recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 
-# The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
+# The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
 # to have the "final say" over a couple settings within recon-all
 if ((conf2highres)); then
 	recon_all_cmd+=(-conf2hires)
