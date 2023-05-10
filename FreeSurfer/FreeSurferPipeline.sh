@@ -69,7 +69,7 @@ then
                 if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
                 then
                     newargs+=(--flair "${origargs[i + 1]}")
-                    #don't have the loop check whether that boolean value is a recognized flag
+                    #skip the boolean value, we took care of it
                     i=$((i + 1))
                 else
                     newargs+=(--flair=TRUE)
@@ -96,6 +96,17 @@ then
                 #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
                 #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
                 extra_reconall_args_manual+=("${origargs[i]#*=}")
+                changeargs=1
+                ;;
+            (--extra-reconall-arg)
+                #also support --extra-reconall-arg foo, for fewer surprises
+                if ((i + 1 >= ${#origargs[@]}))
+                then
+                    log_Err_Abort "--extra-reconall-arg requires an argument"
+                fi
+                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                #skip the next argument, we took care of it
+                i=$((i + 1))
                 changeargs=1
                 ;;
             (*)
