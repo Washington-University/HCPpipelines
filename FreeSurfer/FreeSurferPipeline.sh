@@ -543,7 +543,7 @@ log_Msg "T2wImage: ${T2wImage}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
 log_Msg "flair: ${flair}"
 log_Msg "existing_subject: ${existing_subject}"
-log_Msg "extra_reconall_args: ${extra_reconall_args[*]}"
+log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
 
 if ((! existing_subject)); then
