@@ -170,7 +170,7 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 #parse booleans
 flair=$(opts_StringToBool "$flairString")
 existing_subject=$(opts_StringToBool "$existing_subjectString")
-conf2highres=$(opts_StringToBool "$conf2highresString")
+conf2hires=$(opts_StringToBool "$conf2hiresString")
 
 #deal with NONE convention
 if [[ "$T1wImage" == "NONE" ]]; then
@@ -605,7 +605,7 @@ recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 
 # The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
 # to have the "final say" over a couple settings within recon-all
-if ((conf2highres)); then
+if ((conf2hires)); then
 	recon_all_cmd+=(-conf2hires)
 fi
 
