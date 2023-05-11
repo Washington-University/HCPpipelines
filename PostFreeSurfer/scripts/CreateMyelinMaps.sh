@@ -143,18 +143,18 @@ if [ "${T2wPresent}" = "YES" ] ; then
 fi
 
 # Do the same for the equivalents in MNINonLinear space
-convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
-applywarp --rel --interp=spline -i "$BiasField" -r "$T1wImageBrainMask" -w "$AtlasTransform" -o "$BiasFieldOutput"
+convertwarp --relout --rel --ref="$OutputMNIT1wImage" --warp1="$OutputOrigT1wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT1wToStandard"
+applywarp --rel --interp=spline -i "$BiasField" -r "$OutputMNIT1wImage" -w "$AtlasTransform" -o "$BiasFieldOutput"
 fslmaths "$BiasFieldOutput" -thr 0.1 "$BiasFieldOutput"
 
-applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT1wToStandard" -o "$OutputMNIT1wImage"
+applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$OutputMNIT1wImage" -w "$OutputOrigT1wToStandard" -o "$OutputMNIT1wImage"
 fslmaths "$OutputMNIT1wImage" -abs "$OutputMNIT1wImage" -odt float
 fslmaths "$OutputMNIT1wImage" -div "$BiasFieldOutput" "$OutputMNIT1wImageRestore"
 fslmaths "$OutputMNIT1wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT1wImageRestoreBrain"
 
 if [ "${T2wPresent}" = "YES" ] ; then
-  convertwarp --relout --rel --ref="$T1wImageBrainMask" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
-  applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT2wToStandard" -o "$OutputMNIT2wImage"
+  convertwarp --relout --rel --ref="$OutputMNIT1wImage" --warp1="$OutputOrigT2wToT1w" --warp2="$AtlasTransform" --out="$OutputOrigT2wToStandard"
+  applywarp --rel --interp=spline -i "$OrginalT2wImage" -r "$OutputMNIT1wImage" -w "$OutputOrigT2wToStandard" -o "$OutputMNIT2wImage"
   fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
   fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
   fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
