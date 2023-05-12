@@ -285,8 +285,8 @@ log_Msg "SubjectID: ${SubjectID}"
 log_Msg "Sessions: ${Sessions}"
 log_Msg "TemplateID: ${TemplateID}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
-log_Msg "extra_reconall_args_base: ${extra_reconall_args_base[*]}"
-log_Msg "extra_reconall_args_long: ${extra_reconall_args_long[*]}"
+log_Msg "extra_reconall_args_base: ${extra_reconall_args_base[*]+"${extra_reconall_args_base[*]}"}"
+log_Msg "extra_reconall_args_long: ${extra_reconall_args_long[*]+"${extra_reconall_args_long[*]}"}"
 
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
