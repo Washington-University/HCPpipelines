@@ -324,9 +324,7 @@ if [ ! -z "${recon_all_seed}" ]; then
   recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 fi
 
-if [ ! -z "${extra_reconall_args_base}" ]; then
-  recon_all_cmd+=" ${extra_reconall_args_base}"
-fi
+recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 ${recon_all_cmd}
@@ -343,9 +341,7 @@ for Session in ${Sessions} ; do
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
   recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
-  if [ ! -z "${extra_reconall_args_long}" ]; then
-    recon_all_cmd+=" ${extra_reconall_args_long}"
-  fi
+  recon_all_cmd+=(${extra_reconall_args_long[@]+"${extra_reconall_args_long[@]}"})
   log_Msg "...recon_all_cmd: ${recon_all_cmd}"
   ${recon_all_cmd}
   return_code=$?
