@@ -275,17 +275,22 @@ function subjectMaxBrainmask()
     Subject="$1"
     for fMRIName in "${fMRINamesArray[@]}"
     do
-        if [[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz" ]]
+        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
         then
-            subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz")
-        elif [[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz" ]]
-        then
-            subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz")
+            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz" ]]
+            then
+                subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz")
+            elif [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz" ]]
+            then
+                subjMergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz")
+            else
+                log_Err_Abort "Subject $1 doesn't have a brainmask for run $fMRIName, please remove the ${fMRIName}${fMRIProcSTRING}.dtseries.nii file if processing was unsuccessful"
+            fi
         fi
     done
-    if [ -z "$subjMergeArgs" ]
+    if ((${#subjMergeArgs[@]} <= 0))
     then
-        log_Err "Please check if the individual mask for each fMRI run is provided with the right name/path"
+        log_Err_Abort "No valid fMRI runs found for subject $1"
     fi
     wb_command -volume-merge "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
         "${subjMergeArgs[@]}"
