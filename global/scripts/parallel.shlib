@@ -96,7 +96,7 @@ function par_runjobs()
             fi
             
             tempfiles_cleanup
-        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.o$$.$par_global_launch_count" | tee "./$par_global_scriptname.e$$.$par_global_launch_count" 1>&2 &
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "./$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
         #save all the job pids, why not
         jobpids[$i]="$!"
         par_global_launch_count=$((par_global_launch_count + 1))
