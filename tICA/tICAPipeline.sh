@@ -215,6 +215,9 @@ then
     fi
 fi
 
+#generate a new brainmask if we don't have one for this resolution
+VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
+
 tICACleaningGroupAverageName="$GroupAverageName"
 tICACleaningFolder="${StudyFolder}/${GroupAverageName}"
 tICACleaningfMRIName="$OutputfMRIName"
@@ -232,6 +235,13 @@ then
     tICACleaningFolder="$precomputeTICAFolder"
     tICACleaningfMRIName="$precomputeTICAfMRIName"
     tICACleaningGroupAverageName="$precomputeGroupName"
+
+    #if we have a brainmask for the current fmri resolution, use it instead of making a new one, to support running CleanData in a per-subject fashion
+    if [[ -f "$tICACleaningFolder/MNINonLinear/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii" ]]
+    then
+        VolumeTemplateFile="$tICACleaningFolder/MNINonLinear/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii"
+    fi
+
     #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter, do we need to support this?
 fi
 
@@ -266,13 +276,11 @@ fi
 #we only write things here in NEW (sICA ESTIMATE) mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
 sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
 
-#generate new brainmasks for every group, because the fMRI resolution may not match
-VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
-
 #functions so that we can do certain things across subjects in parallel
 function subjectMaxBrainmask()
 {
-    Subject="$1"
+    local Subject="$1"
+    local subjMergeArgs=()
     for fMRIName in "${fMRINamesArray[@]}"
     do
         if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
@@ -364,36 +372,42 @@ do
         (indProjSICA)
             #generate volume template cifti
             #use parallel and do subjects separately first to reduce memory (some added IO)
-            mergeArgs=()
-            for Subject in "${Subjlist[@]}"
-            do
-                tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-                #this function is above the stepInd loop
-                par_addjob subjectMaxBrainmask "$Subject"
-                mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz")
-            done
-            par_runjobs "$parLimit"
+            
+            #in REUSE_TICA mode, VolumeTemplateFile may point to an existing file in the precomputed folder, don't try to write to it if so
+            #side effect: only computes the brainmask on first run in REUSE_TICA mode when resolution doesn't match
+            if [[ "$tICAmode" != "USE" || ! -f "$VolumeTemplateFile" ]]
+            then
+                mergeArgs=()
+                for Subject in "${Subjlist[@]}"
+                do
+                    tempfiles_add "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                        "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                    #this function is above the stepInd loop
+                    par_addjob subjectMaxBrainmask "$Subject"
+                    mergeArgs+=(-volume "${StudyFolder}/${Subject}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz")
+                done
+                par_runjobs "$parLimit"
 
-            tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-                
-                #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
-            wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                "${mergeArgs[@]}"
-            wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                MAX \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-            #this is a big file, don't keep it around
-            rm -f "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-            echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt"
-            wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
-                "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-            wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
-                -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
                     "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                    
+                    #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
+                wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${mergeArgs[@]}"
+                wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    MAX \
+                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                #this is a big file, don't keep it around
+                rm -f "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt"
+                wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
+                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
+                    -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                        "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+            fi
             
             for Subject in "${Subjlist[@]}"
             do
