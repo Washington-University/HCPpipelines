@@ -346,7 +346,7 @@ make_t1w_hires_nifti_file()
 	local mri_convert_cmd
 	local return_code
 
-	working_dir="${SubjectDIR}"
+	working_dir="${1}"
 
 	pushd "${working_dir}"
 
@@ -388,7 +388,7 @@ make_t2w_hires_nifti_file()
 	local return_code
 	local t2_or_flair
 
-	working_dir="${SubjectDIR}"
+	working_dir="${1}"
 
 	pushd "${working_dir}"
 
@@ -442,7 +442,7 @@ make_t1wxt2w_qc_file()
 	local fslmaths_cmd
 	local return_code
 
-	working_dir="${SubjectDIR}"
+	working_dir="${1}"
 
 	pushd "${working_dir}"
 
