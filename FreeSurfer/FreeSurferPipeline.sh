@@ -35,7 +35,6 @@
 #   If any one of them is not found on the PATH, then we change the PATH so that the
 #   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
 
-# Global processing - everything above here should be in a function
 
 #  Define Sources and pipe-dir
 # -----------------------------------------------------------------------------------
@@ -475,29 +474,6 @@ make_t1wxt2w_qc_file()
 }
 
 
-# SubjectDIR
-# SubjectID
-# T1wImage
-# T1wImageBrain
-# T2wImage
-# recon_all_seed
-# flair="FALSE"
-# existing_subject="FALSE"
-# extra_reconall_args
-# conf2hires="TRUE"
-
-# zero_threshold_T1wImage
-# return_code
-# recon_all_cmd
-# mridir
-# transformsdir
-# eye_dat_file
-
-# tkregister_cmd
-# mri_concatenate_lta_cmd
-# mri_surf2surf_cmd
-# t2_or_flair
-
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
 OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
 
@@ -515,22 +491,6 @@ T1wImageBrain="${T1wImageBrain}"  # Irrelevant if '--existing-subject' flag is s
 T2wImage="${T2wImage}"       # Irrelevant if '--existing-subject' flag is set
 recon_all_seed="${recon_all_seed}"
 
-## MPH: Hack!
-# For backwards compatibility, continue to allow positional specification of parameters for the above set of 6 parameters.
-# But any new parameters/options in the script will only be accessible via a named parameter/flag.
-# Here, we retrieve those from the global variable that was set in get_options()
-# if [ "${p_flair}" = "TRUE" ]; then
-# 	flair=${p_flair}
-# fi
-# if [ "${p_existing_subject}" = "TRUE" ]; then
-# 	existing_subject=${p_existing_subject}
-# fi
-# if [ ! -z "${p_extra_reconall_args}" ]; then
-# 	extra_reconall_args="${p_extra_reconall_args}"
-# fi
-# if [ ! -z "${p_conf2hires}" ]; then
-# 	conf2hires=${p_conf2hires}
-# fi
 
 # ----------------------------------------------------------------------
 # Log values retrieved from positional parameters
