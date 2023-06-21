@@ -75,8 +75,8 @@ show_tool_versions()
 	
 	# Show tkregister version
 	log_Msg "Showing tkregister version"
-	which tkregister
-	tkregister -version
+	which tkregister2_cmdl
+	tkregister2_cmdl -version
 
 	# Show mri_concatenate_lta version
 	log_Msg "Showing mri_concatenate_lta version"
@@ -761,7 +761,7 @@ main()
 		fi
 
 		log_Msg "...Create a registration between the original conformed space and the rawavg space"
-		tkregister_cmd="tkregister"
+		tkregister_cmd="tkregister2_cmdl"
 		tkregister_cmd+=" --mov orig.mgz"
 		tkregister_cmd+=" --targ rawavg.mgz"
 		tkregister_cmd+=" --regheader"
@@ -794,7 +794,7 @@ main()
 		fi
 
 		log_Msg "...Convert to FSL format"
-		tkregister_cmd="tkregister"
+		tkregister_cmd="tkregister2_cmdl"
 		tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
 		tkregister_cmd+=" --targ rawavg.mgz"
 		tkregister_cmd+=" --reg Q.lta"
@@ -830,7 +830,7 @@ main()
 	# Note that the convention of tkregister2 is that the resulting $reg is the registration
 	# matrix that maps from the "--targ" space into the "--mov" space. 
 	
-	tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
+	"tkregister2_cmdl" --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 	
 	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
 	mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
