@@ -847,7 +847,7 @@ fi
 if [ "$fMRIReference" != "NONE" ]; then
     # --- copy over existing scout images
     log_Msg "Copying Scout from Reference fMRI"
-    ${FSLDIR}/bin/imcp ${fMRIReferencePath}/Scout* ${fMRIFolder}
+    find ${fMRIReferencePath} -maxdepth 1 -name "Scout*" -type f -exec ${FSLDIR}/bin/imcp {} ${fMRIFolder} \;
 
     for simage in SBRef_nonlin SBRef_nonlin_norm
     do
