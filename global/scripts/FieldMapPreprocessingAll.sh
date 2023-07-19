@@ -206,10 +206,8 @@ case $DistortionCorrection in
             $FSLDIR/bin/fslmaths ${PhaseInputName} -mul 6.28318 -mas ${WD}/Mask_brain.nii.gz ${WD}/FieldMap_rad_per_s -odt float
 
             # If echodiff was passed unwrap the fieldmap
-
             if [ ! -z $DeltaTE ] && [ $DeltaTE != "NONE" ]
             then
-                echo "DEBUG ===> UNWRAPPING PHILIPS FIELDMAP"
                 # DeltaTE is echo time difference in ms
                 asym=`echo ${DeltaTE} / 1000 | bc -l`
                 # Convert fieldmap in rad/s back to phasediff image in rad for unwrapping
