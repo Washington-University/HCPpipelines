@@ -318,7 +318,7 @@ if($#MMode) then
     set DontCopy = `diff $MMreg $MMregAuto | grep -v \# | grep -v filename | wc -l`
     if($DontCopy) set OKtoCopy = 0;
   endif
-  set cmd = (bbregister --s $subject --mov $MM --lta $MMregAuto --init-coreg \
+  set cmd = (bbregister --s $subject --mov $MM --lta $MMregAuto --init-header \
     --$MMBBRcon --surf $srcsurf --proj-abs 1.5 --threads $threads)
   echo "\n#===============================" | tee -a $LF
   echo $cmd | tee -a $LF

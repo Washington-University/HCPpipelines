@@ -1,17 +1,104 @@
+#!/bin/bash 
+
+get_batch_options() {
+    local arguments=("$@")
+
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
+
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+
+        case ${argument} in
+            --StudyFolder=*)
+                command_line_specified_study_folder=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Subjlist=*)
+                command_line_specified_subj=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --runlocal)
+                command_line_specified_run_local="TRUE"
+                index=$(( index + 1 ))
+                ;;
+	    *)
+		echo ""
+		echo "ERROR: Unrecognized Option: ${argument}"
+		echo ""
+		exit 1
+		;;
+        esac
+    done
+}
+
+get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307" #Space delimited list of subject IDs
+Subjlist="100307 100610" #Space delimited list of subject IDs
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+if [ -n "${command_line_specified_study_folder}" ]; then
+    StudyFolder="${command_line_specified_study_folder}"
+fi
+
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
+fi
+
+# Requirements for this script
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
+
+#Set up pipeline environment variables and software
+source "$EnvironmentScript"
+
+# Log the originating call
+echo "$@"
+
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
+
+########################################## INPUTS ########################################## 
+
+# This script runs on the outputs from ICAFIX
+
+######################################### DO WORK ##########################################
 
 # List of fMRI runs
-# If running on output from multi-run FIX, use ConcatName as value for fMRINames
-fMRINames="rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL"
+# If running on output from multi-run FIX, use ConcatName(s) as value for fMRINames (space delimited)
+fMRINames="rfMRI_REST"
 
-HighPass="2000"
+HighPass="0"
 
-for Subject in ${Subjlist} ; do
-  for fMRIName in ${fMRINames} ; do
-    ${HCPPIPEDIR}/ICAFIX/ApplyHandReClassifications.sh ${StudyFolder} ${Subject} ${fMRIName} ${HighPass}
-#    echo "set -- ${StudyFolder} ${Subject} ${fMRIName} ${HighPass}"
-  done
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
+
+for Subject in $Subjlist ; do
+    for fMRIName in ${fMRINames} ; do
+        echo "    ${Subject}"
+
+        if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+            echo "About to locally run ${HCPPIPEDIR}/ICAFIX/ApplyHandReClassifications.sh"
+            queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+        else
+            echo "About to use fsl_sub to queue ${HCPPIPEDIR}/ICAFIX/ApplyHandReClassifications.sh"
+            queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+        fi
+
+        "${queuing_command[@]}" "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
+            --study-folder="$StudyFolder" \
+            --subject="$Subject" \
+            --fmri-name="$fMRIName" \
+            --high-pass="$HighPass" \
+            --matlab-run-mode="$MatlabMode"
+    done
 done
 

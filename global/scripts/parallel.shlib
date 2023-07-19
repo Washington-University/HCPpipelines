@@ -1,0 +1,174 @@
+#!/bin/echo This script should not be run directly:
+
+#code for bash-level parallelization
+#see code between USAGE_BEGIN and USAGE_END for an example
+true << "USAGE_END"
+USAGE_BEGIN
+
+#define a simple job
+par_addjob echo foo
+
+#a job that needs something sent to its stdin
+par_addjob_stdin cat <<<"foo"
+
+#run all defined jobs, up to 4 jobs at once
+par_runjobs 4
+
+#par_runjobs clears the list after they are complete, so you can do another set:
+par_addjob echo and
+par_addjob echo now
+par_addjob echo more
+
+#run one job per auto-detected physical core
+par_runjobs
+#or par_runjobs -1
+
+USAGE_END
+
+#we need to interact with tempfiles in case what is parallelized is a function
+if [[ "$(type -t tempfiles_par_shell_reset)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+fi
+
+function par_addjob()
+{
+    par_addjob_stdin "$@" <<<""
+}
+
+function par_runjobs()
+{
+    local numpar=-1
+    #treat empty string as default
+    if (($# >= 1)) && [[ "$1" != "" ]]
+    then
+        if ! [[ "$1" =~ ^[1-9][0-9]*$ || "$1" == "-1" ]]
+        then
+            echo "ERROR: user requested '$numpar' jobs, expected positive integer or -1" 1>&2
+            exit 1
+        fi
+        numpar="$1"
+    fi
+    if ((numpar <= 0))
+    then
+        numpar=$(par_numphys)
+    fi
+    if ((numpar <= 0))
+    then
+        echo "WARNING: detection of number of cores returned '$numpar', assuming 2 instead"
+        numpar=2
+    fi
+    #wait for all, to not use more cores than told to
+    wait
+    local -a jobpids=()
+    #track which jobs errored
+    local badjobslog="./$par_global_scriptname.errjobs$$.$par_global_launch_count.log"
+    rm -f -- "$badjobslog"
+    local i
+    for ((i = 0; i < ${#par_jobarray[@]}; ++i))
+    do
+        IFS=' ' read -a encodedargs <<<"${par_jobarray[i]}"
+        local cmdargs=()
+        local encarg
+        for encarg in "${encodedargs[@]}"
+        do
+            cmdargs+=("$(echo "$encarg" | sed -e 's/%s/ /g' -e 's/%p/%/g')")
+        done
+        if ((i >= numpar))
+        then
+            #until bash 5, wait -n hangs the script if you ctrl+c
+            if ((${BASH_VERSINFO[0]} >= 5))
+            then
+                wait -n
+            else
+                #wait by pid rather than predicting job ids
+                wait "${jobpids[$((i - numpar))]}"
+            fi
+        fi
+        (
+            tempfiles_par_shell_reset
+            
+            #WARNING: using a pipe puts the command in a different subshell, which breaks tempfiles, so all input/output redirect/pipe stuff is done on the outside of this subshell
+            if ! "${cmdargs[@]}"
+            then
+                #since the subshell is backgrounded, we have a saved copy of whatever the global launch count was when the subshell started
+                echo "error in job $par_global_launch_count, command: ${cmdargs[*]}" >> "$badjobslog"
+            fi
+            
+            tempfiles_cleanup
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "./$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
+        #save all the job pids, why not
+        jobpids[$i]="$!"
+        par_global_launch_count=$((par_global_launch_count + 1))
+    done
+    #finish all jobs before continuing the main script
+    wait
+    #reset the jobs list so another batch can be done from the same script
+    par_jobarray=()
+    par_jobinputarray=()
+    #now error check, since we are done cleaning up
+    if [[ -f "$badjobslog" ]]
+    then
+        echo "some jobs had errors, please check $badjobslog" 1>&2
+        #return failure, script can ignore the failure if it wants
+        return 1
+    fi
+}
+
+#track number of total jobs run during this script, and the script name, to generate job output capture filenames
+par_global_launch_count=1
+par_global_scriptname=$(basename -- "$0")
+
+function par_numphys()
+{
+    case "$OSTYPE" in
+        (darwin*)
+            sysctl -n hw.physicalcpu
+        ;;
+        (linux*)
+            lscpu -p | grep -v '^#' | cut -f2,4 -d, | sort -u | wc -l
+        ;;
+        (*)
+            echo "WARNING: unknown OS, unable to determine number of cpu cores, assuming 2" 1>&2
+            echo 2
+        ;;
+    esac
+}
+
+function par_numlog()
+{
+    case "$OSTYPE" in
+        (darwin*)
+            sysctl -n hw.logicalcpu
+        ;;
+        (linux*)
+            lscpu -p | grep -v '^#' | wc -l
+        ;;
+        (*)
+            echo "WARNING: unknown OS, unable to determine number of cpu cores, assuming 2" 1>&2
+            echo 2
+        ;;
+    esac
+}
+
+par_jobarray=()
+par_jobinputarray=()
+function par_addjob_stdin()
+{
+    local encodedargs=()
+    local arg
+    for arg in "$@"
+    do
+        #handle spaces within arguments, so we can use space as delimiter within an array element
+        encodedargs+=("$(echo "$arg" | sed -e 's/%/%p/g' -e 's/ /%s/g')")
+    done
+    local saveifs="$IFS"
+    IFS=' '
+    par_jobarray+=("${encodedargs[*]}")
+    IFS="$saveifs"
+    local jobinput
+    #read builtin exits nonzero at EOF, but EOF is exactly what we want it to hit
+    IFS='' read -r -d '' jobinput || true
+    par_jobinputarray+=("$jobinput")
+}
+

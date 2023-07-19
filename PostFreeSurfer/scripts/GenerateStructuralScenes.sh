@@ -228,13 +228,13 @@ if [[ -e "$acpc2MNILinear" ]]; then
     volumeOut="$OutputSceneFolder/$Subject.${nativeVol}_to_MNILinear.nii.gz"
     if [[ "$maskDilate" != "-1" ]]
     then
-        tempresample=$(tempfiles_create strucQC_resamp_XXXXXX.nii.gz)
+        tempfiles_create strucQC_resamp_XXXXXX.nii.gz tempresample
         wb_command -volume-affine-resample \
             "$volumeIn" "$acpc2MNILinear" "$volumeRef" CUBIC "$tempresample" \
             -flirt "$volumeIn" "$volumeRef"
         #noise in the background makes this file bigger than necessary, mask it out
         #use the existing MNINonLinear brain mask, close enough with large dilation
-        tempmask=$(tempfiles_create strucQC_mask_XXXXXX.nii.gz)
+        tempfiles_create strucQC_mask_XXXXXX.nii.gz tempmask
         wb_command -volume-dilate \
             "$AtlasSpaceFolder/brainmask_fs.nii.gz" \
             "$maskDilate" \

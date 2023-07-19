@@ -3,9 +3,9 @@
 get_batch_options() {
     local arguments=("$@")
 
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj
-    unset command_line_specified_run_local
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -27,12 +27,12 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+                ;;
         esac
     done
 }
@@ -40,7 +40,7 @@ get_batch_options() {
 get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307" #Space delimited list of subject IDs
+Subjlist="100307 100610" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
@@ -56,19 +56,22 @@ fi
 #  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, CARET7DIR, PATH for gradient_unwarp.py
 
 #Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
 #Assume that submission nodes have OPENMP enabled (needed for eddy - at least 8 cores suggested for HCP data)
-#if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q verylong.q"
-    QUEUE="-q hcp_priority.q"
-#fi
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
+#specify PRINTCOM="echo" to echo commands the pipeline would run, instead of running them
+#this appears to be fully implemented in the diffusion pipeline
 PRINTCOM=""
-
+#PRINTCOM="echo"
 
 ########################################## INPUTS ########################################## 
 
@@ -144,20 +147,20 @@ for Subject in $Subjlist ; do
   # Gdcoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
   Gdcoeffs="NONE"
 
-  if [ -n "${command_line_specified_run_local}" ] ; then
-      echo "About to run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
-      queuing_command=""
+  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
   else
-      echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
-      queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh"
+      queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
   fi
 
-  ${queuing_command} ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline.sh \
+  "${queuing_command[@]}" "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline.sh \
       --posData="${PosData}" --negData="${NegData}" \
       --path="${StudyFolder}" --subject="${SubjectID}" \
-      --echospacing="${EchoSpacing}" --PEdir=${PEdir} \
+      --echospacing="${EchoSpacing}" --PEdir="${PEdir}" \
       --gdcoeffs="${Gdcoeffs}" \
-      --printcom=$PRINTCOM
+      --printcom="$PRINTCOM"
 
 done
 

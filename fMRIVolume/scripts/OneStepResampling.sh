@@ -264,7 +264,7 @@ ${FSLDIR}/bin/imcp ${WD}/${BiasFieldFile}.${FinalfMRIResolution} ${fMRIFolder}/$
 
 if ((useWbResample))
 then
-    affseries="$(tempfiles_create OneStepResampleAffSeries_XXXXXX.txt)"
+    tempfiles_create OneStepResampleAffSeries_XXXXXX.txt affseries
     
     for ((k=0; k < $NumFrames; k++))
     do
@@ -292,7 +292,7 @@ then
     
     #resample all-ones volume series with enclosing voxel to determine FOV coverage
     #yes, this is the entire length of the timeseries on purpose
-    fovcheck="$(tempfiles_create OneStepResampleFovCheck_XXXXXX.nii.gz)"
+    tempfiles_create OneStepResampleFovCheck_XXXXXX.nii.gz fovcheck
     wb_command -volume-math '1' "$fovcheck" -var x "$InputfMRI"
     #fsl's "nn" interpolation is just as pessimistic about the FoV as non-extrapolating interpolation
     #so, in wb_command, use trilinear here instead of enclosing voxel to get the same FoV behavior as CUBIC

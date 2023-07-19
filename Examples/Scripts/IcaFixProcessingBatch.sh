@@ -2,7 +2,7 @@
 
 # Global default values
 DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
-DEFAULT_SUBJECT_LIST="100307"
+DEFAULT_SUBJECT_LIST="100307 100610"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
 #DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript
@@ -124,7 +124,7 @@ main() {
 	get_options "$@"
 
 	# set up pipeline environment variables and software
-	source ${EnvironmentScript}
+	source "$EnvironmentScript"
 
 	# MPH: If DEFAULT_FIXDIR is set, or --FixDir argument was used, then use that to
 	# override the setting of FSL_FIXDIR in EnvironmentScript
@@ -139,36 +139,50 @@ main() {
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
-	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
-	ConcatNames=""
 	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
+	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
+	#ConcatNames=""
 
 	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
-	bandpass=2000 
 	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
 	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
 	# bandpass=pd2 is a quadratic detrend
-	bandpass=0 #comment out for single run FIX and use above line for bandpass=2000
+	bandpass=0
+	#bandpass=2000 #for single run FIX, bandpass=2000 was used in HCP preprocessing
 
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
 	
-	# set training data file
-	TrainingData=HCP_hp2000.RData
+	# set the training data used in multi-run fix mode
+	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
+	# set the training data used in single-run fix mode
+	SRTrainingData=HCP_hp2000.RData
+	
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
 	FixThreshold=10
 	
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
 	
-	# establish queue for job submission
-	QUEUE="-q hcp_priority.q"
-	if [ "${RunLocal}" == "TRUE" ]; then
-		queuing_command=()
+	#MR FIX config support for non-HCP settings
+	config=""
+	processingmode="HCPStyleData"
+	#uncomment the below two lines for legacy-style data
+	#config="$HCPPIPEDIR"/ICAFIX/config/legacy.conf
+	#processingmode="LegacyStyleData"
+	
+	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+	#DO NOT include "-q " at the beginning
+	#default to no queue, implying run local
+	QUEUE=""
+	#QUEUE="hcp_priority.q"
+	
+	if [[ "$RunLocal" == "TRUE" || "$QUEUE" == "" ]]; then
+		queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 	else
-		queuing_command=("${FSLDIR}/bin/fsl_sub" "${QUEUE}")
+		queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
 	fi
 
 	for Subject in ${Subjlist}; do
@@ -178,8 +192,6 @@ main() {
 		
 		if [ -z "${ConcatNames}" ]; then
 			# single-run FIX
-			FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix
-			
 			fMRINamesFlat=$(echo ${fMRINames} | sed 's/[@%]/ /g')
 			
 			for fMRIName in ${fMRINamesFlat}; do
@@ -187,7 +199,7 @@ main() {
 
 				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
@@ -207,7 +219,6 @@ main() {
 				ConcatName="${concatarray[$i]}"
 				fMRINamesGroup="${fmriarray[$i]}"
 				# multi-run FIX
-				FixScript=${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run
 				ConcatFileName="${ResultsFolder}/${ConcatName}/${ConcatName}"
 
 				IFS=' @' read -a namesgrouparray <<< "${fMRINamesGroup}"
@@ -222,7 +233,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${FixScript}" "${InputFile}" ${bandpass} "${ConcatFileName}" ${domot} "${TrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
@@ -235,5 +246,5 @@ main() {
 #
 # Invoke the main function to get things started
 #
-main $@
+main "$@"
 

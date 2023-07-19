@@ -89,7 +89,7 @@ opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List 
 opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of design names, which are the prefixes of the fsf filenames for each scan run. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design names by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
 opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
 opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
-opts_AddOptional '--summaryname' 'SummaryName' 'tfMRI_TaskName/DesignName_TaskName' "Naming convention for single-subject summary directory. Mandatory when running Level1 analysis only, and should match naming of Level2 summary directories. Default when running Level2 analysis is derived from --lvl2task and --lvl2fsf options \"tfMRI_TaskName/DesignName_TaskName\"" 'NONE'
+opts_AddOptional '--summaryname' 'SummaryName' 'tfMRI_TaskName/DesignName_TaskName' "Naming convention for single-subject summary directory. Will not create summary directory for Level1 analysis if this flag is missing or set to NONE. Naming for Level1 summary directories should match naming of Level2 summary directories. Default when running Level2 analysis is derived from --lvl2task and --lvl2fsf options \"tfMRI_TaskName/DesignName_TaskName\"" 'NONE'
 opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in <SubjectID>/MNINonLinear/Results/<ScanName>. Default='NONE'" 'NONE'
 opts_AddOptional '--origsmoothingFWHM' 'OriginalSmoothingFWHM' 'number' "Value (in mm FWHM) of smoothing applied during surface registration in fMRISurface pipeline. Default=2, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
 opts_AddOptional '--finalsmoothingFWHM' 'FinalSmoothingFWHM' 'number' "Value (in mm FWHM) of total desired smoothing, reached by calculating the additional smoothing required and applying that additional amount to data previously smoothed in fMRISurface. Default=2, which is no additional smoothing above HCP minimal preprocessing pipelines outputs." '2'
@@ -273,27 +273,31 @@ then
 	  $TemporalSmoothing
 fi
 
-log_Msg "CREATE SUMMARY DIRECTORY: Creating subject-level summary directory from requested analyses."
-${HCPPIPEDIR_tfMRIAnalysis}/makeSubjectTaskSummary.sh \
-	--study-folder=$Path \
-	--subject=$Subject \
-	--lvl1tasks=$LevelOnefMRINames \
-	--lvl1fsfs=$LevelOnefsfNames \
-	--lvl2task=$LevelTwofMRIName \
-	--lvl2fsf=$LevelTwofsfName \
-	--summaryname=$SummaryName \
-	--confound=$Confound \
-	--origsmoothingFWHM=$OriginalSmoothingFWHM \
-	--finalsmoothingFWHM=$FinalSmoothingFWHM \
-	--highpassfilter=$TemporalFilter \
-	--lowpassfilter=$TemporalSmoothing \
-	--procstring=$ProcSTRING \
-	--lowresmesh=$LowResMesh \
-	--grayordinatesres=$GrayordinatesResolution \
-	--regname=$RegName \
-	--vba=$VolumeBasedProcessing \
-	--parcellation=$Parcellation \
-	--parcellationfile=$ParcellationFile
+
+if [ "$LevelTwofMRIName" != "NONE" ] || [ "$SummaryName" != "NONE" ];
+then
+	log_Msg "CREATE SUMMARY DIRECTORY: Creating subject-level summary directory from requested analyses."
+	${HCPPIPEDIR_tfMRIAnalysis}/makeSubjectTaskSummary.sh \
+		--study-folder=$Path \
+		--subject=$Subject \
+		--lvl1tasks=$LevelOnefMRINames \
+		--lvl1fsfs=$LevelOnefsfNames \
+		--lvl2task=$LevelTwofMRIName \
+		--lvl2fsf=$LevelTwofsfName \
+		--summaryname=$SummaryName \
+		--confound=$Confound \
+		--origsmoothingFWHM=$OriginalSmoothingFWHM \
+		--finalsmoothingFWHM=$FinalSmoothingFWHM \
+		--highpassfilter=$TemporalFilter \
+		--lowpassfilter=$TemporalSmoothing \
+		--procstring=$ProcSTRING \
+		--lowresmesh=$LowResMesh \
+		--grayordinatesres=$GrayordinatesResolution \
+		--regname=$RegName \
+		--vba=$VolumeBasedProcessing \
+		--parcellation=$Parcellation \
+		--parcellationfile=$ParcellationFile
+fi
 
 log_Msg "Completed!"
 

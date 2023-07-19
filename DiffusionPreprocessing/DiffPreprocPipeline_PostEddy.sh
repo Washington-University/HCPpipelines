@@ -88,11 +88,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
   [--dof=<Degrees of Freedom>]
                           Degrees of Freedom for registration to structural
                           images. Defaults to ${DEFAULT_DEGREES_OF_FREEDOM}
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
   [--select_best_b0]
                           Whether the --select-best-b0 flag was used in
                           DiffPreprocPipeline_PreEddy.
@@ -108,6 +103,11 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
                               acquired
                           0 - As 1, but also include uncombined single volumes
                           Defaults to 1
+  [--printcom=<print-command>]
+                          Use the specified <print-command> to echo or otherwise
+                          output the commands that would be executed instead of
+                          actually running them. --printcom=echo is intended to
+                          be used for testing purposes
 
 Return Status Value:
 
@@ -356,14 +356,14 @@ main() {
 	# Log files are any 'eddy' output that doesn't have a .nii extension
 	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 
-	mkdir -p ${to_location}
+	${runcmd} mkdir -p ${to_location}
 	for filename in ${from_files}; do
-		cp -p ${filename} ${to_location}
+		${runcmd} cp -p ${filename} ${to_location}
 	done
 
-	mkdir -p ${outdirT1w}/QC
-	cp -p ${outdir}/QC/* ${outdirT1w}/QC
-	immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+	${runcmd} mkdir -p ${outdirT1w}/QC
+	${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
+	${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 
 	log_Msg "Completed!"
 	exit 0
@@ -393,8 +393,8 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
+source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
 opts_ShowVersionIfRequested "$@"
 

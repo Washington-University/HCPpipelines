@@ -3,12 +3,12 @@
 get_batch_options() {
     local arguments=("$@")
 
-    unset command_line_specified_study_folder
-    unset command_line_specified_subj_list
-    unset command_line_specified_group_average_name
-    unset command_line_specified_reg_name
-    unset command_line_specified_symlink_study_folder
-    unset command_line_specified_run_local
+    command_line_specified_study_folder=""
+    command_line_specified_subj_list=""
+    command_line_specified_group_average_name=""
+    command_line_specified_reg_name=""
+    command_line_specified_symlink_study_folder=""
+    command_line_specified_run_local="FALSE"
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -41,12 +41,12 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	          *)
-		            echo ""
-		            echo "ERROR: Unrecognized Option: ${argument}"
-		            echo ""
-		            exit 1
-		            ;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+                ;;
         esac
     done
 }
@@ -117,15 +117,16 @@ fi
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 #Set up pipeline environment variables and software
-source ${EnvironmentScript}
+source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#if [ X$SGE_ROOT != X ] ; then
-#    QUEUE="-q long.q"
-    QUEUE="-q hcp_priority.q"
-#fi
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 if [[ -n $HCPPIPEDEBUG ]]
 then
@@ -158,35 +159,35 @@ GradientMaps=`echo ${GradientMaps} | sed 's/ /@/g'`
 STDMaps=`echo ${STDMaps} | sed 's/ /@/g'`
 MultiMaps=`echo ${MultiMaps} | sed 's/ /@/g'`
 
-if [ -n "${command_line_specified_run_local}" ] ; then
-    echo "About to run ${HCPPIPEDIR}/Supplemental/MakeAverageDataset/MakeAverageDataset.sh"
-    queuing_command=""
+if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+    echo "About to locally run ${HCPPIPEDIR}/Supplemental/MakeAverageDataset/MakeAverageDataset.sh"
+    queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
 else
-    echo "About to use fsl_sub to queue or run ${HCPPIPEDIR}/Supplemental/MakeAverageDataset/MakeAverageDataset.sh"
-    queuing_command="${FSLDIR}/bin/fsl_sub ${QUEUE}"
+    echo "About to use fsl_sub to queue ${HCPPIPEDIR}/Supplemental/MakeAverageDataset/MakeAverageDataset.sh"
+    queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
 fi
 
 # Optional arguments in MakeAverageDataset.sh:
 # --no-merged-t1t2-vols: Skip creation of merged T1/T2 volumes.  Will still generate T1/T2 average.
 # --no-label-vols: Skip creation of both merged and average wmparc and ribbon volumes.
 # These can be helpful if you have a lot of subjects and are memory constrained.
-${queuing_command} ${HCPPIPEDIR}/Supplemental/MakeAverageDataset/MakeAverageDataset.sh \
-    --subject-list=$Subjlist \
-    --study-folder=$StudyFolder \
-    --group-average-name=$GroupAverageName \
-    --surface-atlas-dir=$SurfaceAtlasDIR \
-    --grayordinates-space-dir=$GrayordinatesSpaceDIR \
-    --high-res-mesh=$HighResMesh \
-    --low-res-meshes=$LowResMesh \
-    --freesurfer-labels=$FreeSurferLabels \
-    --sigma=$Sigma \
-    --reg-name=$RegName \
-    --videen-maps=$VideenMaps \
-    --greyscale-maps=$GreyScaleMaps \
-    --distortion-maps=$DistortionMaps \
-    --gradient-maps=$GradientMaps \
-    --std-maps=$STDMaps \
-    --multi-maps=$MultiMaps
+"${queuing_command[@]}" "$HCPPIPEDIR"/Supplemental/MakeAverageDataset/MakeAverageDataset.sh \
+    --subject-list="$Subjlist" \
+    --study-folder="$StudyFolder" \
+    --group-average-name="$GroupAverageName" \
+    --surface-atlas-dir="$SurfaceAtlasDIR" \
+    --grayordinates-space-dir="$GrayordinatesSpaceDIR" \
+    --high-res-mesh="$HighResMesh" \
+    --low-res-meshes="$LowResMesh" \
+    --freesurfer-labels="$FreeSurferLabels" \
+    --sigma="$Sigma" \
+    --reg-name="$RegName" \
+    --videen-maps="$VideenMaps" \
+    --greyscale-maps="$GreyScaleMaps" \
+    --distortion-maps="$DistortionMaps" \
+    --gradient-maps="$GradientMaps" \
+    --std-maps="$STDMaps" \
+    --multi-maps="$MultiMaps"
 
 # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 

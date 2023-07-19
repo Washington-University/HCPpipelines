@@ -1,0 +1,138 @@
+#!/usr/bin/env fslpython
+
+#   Script for getting a 6 DOF approx to a 12 DOF standard transformation
+#
+#   Mark Jenkinson
+#   FMRIB Image Analysis Group
+#
+#   Copyright (C) 2012 University of Oxford
+#
+#   Part of FSL - FMRIB's Software Library
+#   http://www.fmrib.ox.ac.uk/fsl
+#   fsl@fmrib.ox.ac.uk
+#
+#   Developed at FMRIB (Oxford Centre for Functional Magnetic Resonance
+#   Imaging of the Brain), Department of Clinical Neurology, Oxford
+#   University, Oxford, UK
+#
+#
+#   LICENCE
+#
+#   FMRIB Software Library, Release 6.0 (c) 2018, The University of
+#   Oxford (the "Software")
+#
+#   The Software remains the property of the Oxford University Innovation
+#   ("the University").
+#
+#   The Software is distributed "AS IS" under this Licence solely for
+#   non-commercial use in the hope that it will be useful, but in order
+#   that the University as a charitable foundation protects its assets for
+#   the benefit of its educational and research purposes, the University
+#   makes clear that no condition is made or to be implied, nor is any
+#   warranty given or to be implied, as to the accuracy of the Software,
+#   or that it will be suitable for any particular purpose or for use
+#   under any specific conditions. Furthermore, the University disclaims
+#   all responsibility for the use which is made of the Software. It
+#   further disclaims any liability for the outcomes arising from using
+#   the Software.
+#
+#   The Licensee agrees to indemnify the University and hold the
+#   University harmless from and against any and all claims, damages and
+#   liabilities asserted by third parties (including claims for
+#   negligence) which arise directly or indirectly from the use of the
+#   Software or the sale of any products based on the Software.
+#
+#   No part of the Software may be reproduced, modified, transmitted or
+#   transferred in any form or by any means, electronic or mechanical,
+#   without the express permission of the University. The permission of
+#   the University is not required if the said reproduction, modification,
+#   transmission or transference is done without financial return, the
+#   conditions of this Licence are imposed upon the receiver of the
+#   product, and all original and amended source code is included in any
+#   transmitted product. You may be held legally responsible for any
+#   copyright infringement that is caused or encouraged by your failure to
+#   abide by these terms and conditions.
+#
+#   You are not permitted under this Licence to use this Software
+#   commercially. Use for which any financial return is received shall be
+#   defined as commercial use, and includes (1) integration of all or part
+#   of the source code or the Software into a product for sale or license
+#   by or on behalf of Licensee to third parties or (2) use of the
+#   Software or any derivative of it for research with the final aim of
+#   developing software products for sale or license to a third party or
+#   (3) use of the Software or any derivative of it for research with the
+#   final aim of developing non-software products for sale or license to a
+#   third party, or (4) use of the Software to provide any service to an
+#   external organisation for which payment is received. If you are
+#   interested in using the Software commercially, please contact Oxford
+#   University Innovation ("OUI"), the technology transfer company of the
+#   University, to negotiate a licence. Contact details are:
+#   fsl@innovation.ox.ac.uk quoting Reference Project 9564, FSL.
+
+from __future__ import print_function
+import sys
+from sys import argv
+from numpy import *
+
+def usage():
+    print("Usage: " + argv[0] + " <input2standard mat> <output mat>")
+    print(" ")
+    print("       First argument is the NIFTI world transform (12 DOF) from the input image to standard")
+    print("       Second argument is the output world matrix which will go from the input image to standard space (6 DOF)")
+    print("          aligning the AC, the AC-PC line and the mid-sagittal plane in NIFTI mm convention (in order of decreasing accuracy)")
+    sys.exit(1)
+
+if len(argv) < 2:
+    usage()
+
+# Load in the necessary info
+a=loadtxt(argv[1])
+# set specific AC and PC coordinates in nifti mm convention (x1=AC, x2=PC, x3=point above x1 in the mid-sag plane)
+x1=matrix([[0],[0],[0],[1]])
+x2=matrix([[0],[-29],[0],[1]])
+x3=matrix([[0],[0],[50],[1]])
+
+ainv=linalg.inv(a)
+
+# vectors v are in MNI space, vectors w are in native space
+v21=(x2-x1)
+v31=(x3-x1)
+# normalise and force orthogonality
+v21=v21/linalg.norm(v21)
+v31=v31-multiply(v31.T * v21,v21)
+v31=v31/linalg.norm(v31)
+tmp=cross(v21[0:3,0].T,v31[0:3,0].T).T
+v41=mat(zeros((4,1)))
+v41[0:3,0]=tmp
+# Map vectors to native space
+w21=ainv*(v21)
+w31=ainv*(v31)
+# normalise and force orthogonality
+w21=w21/linalg.norm(w21)
+w31=w31-multiply(w31.T * w21,w21)
+w31=w31/linalg.norm(w31)
+tmp=cross(w21[0:3,0].T,w31[0:3,0].T).T
+w41=mat(zeros((4,1)))
+w41[0:3,0]=tmp
+
+# setup matrix: native to MNI space
+r1=matrix(eye(4))
+r1[0:4,0]=w21
+r1[0:4,1]=w31
+r1[0:4,2]=w41
+r2=matrix(eye(4))
+r2[0,0:4]=v21.T
+r2[1,0:4]=v31.T
+r2[2,0:4]=v41.T
+r=r2.T*r1.T
+
+# Fix the translation (keep AC=x1 in the same place)
+ACmni=x1
+ACnat=ainv*x1
+trans=ACmni-r*ACnat
+r[0:3,3]=trans[0:3]
+
+# Save out the result
+savetxt(argv[2],r,fmt='%14.10f')
+
+

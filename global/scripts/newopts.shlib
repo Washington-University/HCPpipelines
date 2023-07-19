@@ -1,9 +1,10 @@
 #!/bin/echo This script should not be run directly:
 
-#new named parameter parsing code: you write one line per argument, write just the tool's description into a "usage" function, and it does everything else except process the data (parameter descriptions in usage, parsing, logging parsed inputs, showing help info with --help or no arguments)
-#use the lines between EXAMPLE_START and EXAMPLE_END as a template when making a new script
+#new named parameter parsing code: you write one line per argument, use a function to set the description for the help text, and it does everything else except process the data (parameter descriptions in usage, parsing, logging parsed inputs, showing help info with --help or no arguments)
+#use the template between EXAMPLE_START and EXAMPLE_END when making a new script
 true <<"EXAMPLE_END"
 EXAMPLE_START
+========================================================
 #!/bin/bash
 set -eu
 
@@ -18,29 +19,17 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: does stuff
+#description to use in usage - syntax of parameters is now explained automatically
+opts_SetScriptDescription "does stuff"
 
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
-
+#NOTE: config-enabled parameters (opts_AddConfigOptional) need an extra parameter after the variable name, to set the config entry name
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise it will be defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
-opts_AddOptional '--bar' 'mybar' 'your bar' "an optional value, without an argument after the desription it defaults to empty string, and this description is really long, but the opts_ShowArguments function (called in the usage function above) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
+opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise i will set it to defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
+opts_AddOptional '--bar' 'mybar' 'your bar' "an optional parameter, when there is no argument after the desription it defaults to empty string, and this description is really long, but opts_ShowArguments (called by the usage functionality associated with opts_SetScriptDescription, or usable in a legacy usage() function) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -53,6 +42,7 @@ opts_ShowValues
 
 #processing code goes here
 
+========================================================
 EXAMPLE_END
 
 #we want a "log error and abort" function, so use the shlib for that
@@ -60,6 +50,8 @@ if [[ "$(type -t log_Err_Abort)" != "function" ]]
 then
     source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
 fi
+
+#functions intended for use by scripts
 
 #takes things like "true", "YES", and outputs "1", "NO" is "0", throws error if unrecognized
 function opts_StringToBool()
@@ -77,72 +69,256 @@ function opts_StringToBool()
     esac
 }
 
+function opts_SetScriptDescription()
+{
+    opts_script_description="$*"
+}
+
 #switch, variable to set, name for inside of <> in help text, description, [default value], [compatibility flag, ...]
 function opts_AddOptional()
 {
+    if (($# < 4))
+    then
+        log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+    fi
     local switch="$1"
     local varname="$2"
     local vardescrip="$3"
     local descrip="$4"
     shift 4
-    opts_add_switch "$switch" "$varname" 1 "$vardescrip" "$descrip" "$@"
+    #explicitly check for a default to reduce confusion
+    if (($# >= 1))
+    then
+        local default_val="$1"
+        shift 1
+    else
+        local default_val=""
+    fi
+    opts_add_switch "$switch" "$varname" 1 "$vardescrip" "$descrip" '' "$default_val" "$@"
 }
 
 #switch, variable to set, name for inside of <> in help text, description, [compatibility flag, ...]
 function opts_AddMandatory()
 {
+    if (($# < 4))
+    then
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        fi
+    fi
     local switch="$1"
     local varname="$2"
     local vardescrip="$3"
     local descrip="$4"
     shift 4
-    opts_add_switch "$switch" "$varname" 0 "$vardescrip" "$descrip" '' "$@"
+    opts_add_switch "$switch" "$varname" 0 "$vardescrip" "$descrip" '' '' "$@"
 }
 
-opts_param_switches=()
-opts_compat_aliases=()
-function opts_add_switch()
+#switch, variable to set, config identifier, name for inside of <> in help text, description, [default value], [compatibility flag, ...]
+function opts_AddConfigOptional()
 {
     if (($# < 5))
     then
-        log_Err_Abort "parameter '$1' added improperly, too few arguments"
-    fi
-    if [[ "$1" != --* ]]
-    then
-        log_Err_Abort "parameter switches must start with --, attempted to create switch '$1'"
-    fi
-    #only the index is local, the arrays must be global
-    local new_index="${#opts_param_switches[@]}"
-    opts_param_switches["$new_index"]="$1"
-    opts_param_variable_names["$new_index"]="$2"
-    opts_param_optional["$new_index"]="$3"
-    opts_param_vardescrip["$new_index"]="$4"
-    opts_param_descrip["$new_index"]="$5"
-    #yes, it takes and sets a default value for mandatory parameters - doesn't matter because it checks that all mandatory are provided, and the code is simpler this way
-    if (($# >= 6))
-    then
-        opts_default["$new_index"]="$6"
-    else
-        opts_default["$new_index"]=""
-    fi
-    for ((index = 7; index <= $#; ++index))
-    do
-        if [[ "${!index}" != --* ]]
+        if (($# < 1))
         then
-            log_Err_Abort "parameter '$1' added improperly, legacy switch ${!index} doesn't start with '--', check your quoting"
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
         fi
-        opts_compat_aliases+=("${!index}" "$new_index")
+    fi
+    local switch="$1"
+    local varname="$2"
+    local configkey="$3"
+    local vardescrip="$4"
+    local descrip="$5"
+    shift 5
+    #explicitly check for a default to reduce confusion
+    if (($# >= 1))
+    then
+        local default_val="$1"
+        shift 1
+    else
+        local default_val=""
+    fi
+    opts_add_switch "$switch" "$varname" 1 "$vardescrip" "$descrip" "$configkey" "$default_val" "$@"
+}
+
+#switch, variable to set, config identifier, name for inside of <> in help text, description, [compatibility flag, ...]
+function opts_AddConfigMandatory()
+{
+    if (($# < 5))
+    then
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: parameter '$1' added improperly, too few arguments"
+        fi
+    fi
+    local switch="$1"
+    local varname="$2"
+    local configkey="$3"
+    local vardescrip="$4"
+    local descrip="$5"
+    shift 5
+    opts_add_switch "$switch" "$varname" 0 "$vardescrip" "$descrip" "$configkey" '' "$@"
+}
+
+#additional config identifier, main config identifier
+function opts_AddConfigAlias()
+{
+    if (($# < 2))
+    then
+        if (($# < 1))
+        then
+            log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+        else
+            log_Err_Abort "developer error: config alias '$1' added improperly, too few arguments"
+        fi
+    fi
+    if [[ "$1" == *. || "$1" == *=* || "$1" == '#'* ]]
+    then
+        log_Err_Abort "developer error: '$1' is not valid as a config identifier"
+    fi
+    if [[ "$1" == "" || "$2" == "" ]]
+    then
+        log_Err_Abort "developer error: empty string is not valid for opts_AddConfigAlias"
+    fi
+    opts_config_aliases+=("$1" "$2")
+    #the existence of the main key is sanity checked for all aliases in opts_ParseArguments
+}
+
+#after parsing, call this to log all values
+function opts_ShowValues()
+{
+    local opts_index
+    for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+    do
+        local opts_varname="${opts_param_variable_names[$opts_index]}"
+        log_Msg "$opts_varname: ${!opts_varname}"
     done
 }
 
+#config writing:
+#marking function for path-type config keys
+#ability to clear and restart, writing a completely detached config
+#ability to mark config inputs as not to be written to a new config
+#option to leave unspecified options out of the config?  problem: tracking of option/parameter presence is in locals in ParseArguments
+#user can override config anyway
+
+function opts_conf_SetIsPath()
+{
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
+    local opts_index="$(opts_conf_findkey "$1")"
+    if ((opts_index == -1))
+    then
+        log_Err_Abort "developer error: unknown config key '$1' in opts_conf_set_ispath"
+    fi
+    opts_config_is_path[$opts_index]=1
+}
+
+function opts_conf_SuppressKey()
+{
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
+    local opts_index="$(opts_conf_findkey "$1")"
+    if ((opts_index == -1))
+    then
+        log_Err_Abort "developer error: unknown config key '$1' in opts_conf_suppress_key"
+    fi
+    opts_config_suppress[$opts_index]=1
+}
+
+#clears current config keys and takes new key/variable pairs for a new config
+function opts_conf_NewConfig()
+{
+    opts_config_was_reset=1
+    opts_config_names=()
+    opts_config_writing_vars=()
+    opts_config_is_path=()
+    opts_config_suppress=()
+    #delete the aliases for the input conf to avoid confusing the SuppressKey, etc functions above
+    opts_config_aliases=()
+    local opts_index=0
+    while (($# > 2))
+    do
+        opts_config_names+=("$1")
+        opts_config_writing_vars+=("$2")
+        opts_config_is_path+=(0)
+        opts_config_suppress+=(0)
+        shift 2
+    done
+    if (($# > 0))
+    then
+        log_Warn "developer error: odd number of arguments to opts_conf_NewConfig"
+    fi
+}
+
+function opts_conf_WriteConfig()
+{
+    if (($# < 1))
+    then
+        log_Err_Abort "developer error: ${FUNCNAME[0]} called without arguments"
+    fi
+    local opts_outconf="$1"
+    rm -f "$opts_outconf"
+    local opts_index
+    for ((opts_index = 0; opts_index < ${#opts_config_names[@]}; ++opts_index))
+    do
+        if ((opts_config_suppress[opts_index])) || [[ "${opts_config_names[$opts_index]}" == "" ]]
+        then
+            continue
+        fi
+        local opts_outkey="${opts_config_names[$opts_index]}"
+        local opts_outvarname="${opts_config_writing_vars[$opts_index]}"
+        local opts_outval="${!opts_outvarname}"
+        if ((opts_config_is_path[opts_index]))
+        then
+            opts_outval="$(opts_conf_makerelative "$(dirname "$opts_outconf")" "$opts_outval")"
+            #add . to the key before writing to mark the path behavior
+            opts_outkey="$opts_outkey".
+        fi
+        echo "$opts_outkey"="$(opts_conf_pickle "$opts_outval")" >> "$opts_outconf"
+    done
+}
+
+#parse the arguments
 function opts_ParseArguments()
 {
-    if (($# == 0))
+    if ((opts_config_was_reset))
     then
-        #"usage" must be defined by the actual tool script
-        usage
-        exit 2
+        log_Err_Abort "developer error: parsing must be completed before using opts_conf_NewConfig"
     fi
+    local -a opts_config_alias_lookup=()
+    local opts_config_index opts_config_index2 opts_config_found
+    for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_aliases[@]}; opts_config_index2 += 2))
+    do
+        opts_config_found=0
+        for ((opts_config_index = 0; opts_config_index < ${#opts_config_names[@]}; ++opts_config_index))
+        do
+            if [[ "${opts_config_aliases[$opts_config_index2 + 1]}" == "${opts_config_names[$opts_config_index]}" ]]
+            then
+                opts_config_found=1
+                opts_config_alias_lookup+=("${opts_config_aliases[$opts_config_index2]}" "$opts_config_index")
+                break
+            fi
+        done
+        if ((! opts_config_found))
+        then
+            log_Err_Abort "developer error: config alias '${opts_config_aliases[$config_index2]}' refers to unknown config key '${opts_config_aliases[$config_index2 + 1]}'"
+        fi
+    done
+    #save a copy of arguments for later, since we use shift
+    local -a opts_OrigArguments=("$@")
+    
     #initialize all output variables to their defaults, so optional ones don't error with 'set -eu')
     #print -v sets global variables without having declare -g
     #use opts_ even for local variables in this function to reduce chance of collision with the output variable names
@@ -151,22 +327,118 @@ function opts_ParseArguments()
         #note: empty format string does not actually set the variable
         printf -v "${opts_param_variable_names[$opts_index]}" '%s' "${opts_default[$opts_index]}"
     done
-    local -a opts_used_params
-    local opts_myswitch
+    local -a opts_used_params opts_used_config=()
+    local opts_myswitch opts_configspecified=0
+    local opts_configfile=""
     for opts_myswitch in "${opts_param_switches[@]}"
     do
         opts_used_params+=(0)
+        opts_used_config+=(0)
     done
     while (($# > 0))
     do
-        local opts_switch="${1%%=*}"
-        local opts_argument="${1#*=}"
-        shift
         #the convention of "--help" or "-h"
-        if [[ "$opts_switch" == "--help" || "$opts_switch" == "-h" ]]
+        if [[ "$1" == "--help" || "$1" == "-h" ]]
         then
-            usage
+            opts_internal_dousage
             exit 0
+        fi
+        local opts_switch opts_argument
+        if [[ "$1" == *=* ]]
+        then
+            opts_switch="${1%%=*}"
+            opts_argument="${1#*=}"
+            shift
+        else
+            if (($# < 2))
+            then
+                log_Err_Abort "missing value for parameter '$1'"
+            fi
+            opts_switch="$1"
+            opts_argument="$2"
+            shift 2
+        fi
+        if ((opts_script_supports_config)) && [[ "$opts_switch" == "--config" ]]
+        then
+            if ((opts_configspecified))
+            then
+                log_Err_Abort "parameter specified multiple times: '$opts_switch'"
+            fi
+            if [[ "$opts_argument" == "" ]]
+            then
+                #treat empty string as "no config", to make launch scripts simpler
+                continue
+            fi
+            if [[ ! -f "$opts_argument" ]]
+            then
+                log_Err_Abort "config file '$opts_argument' not found"
+            fi
+            opts_configspecified=1
+            #note the redirection into the "done" of this loop
+            while IFS='' read -r opts_confline
+            do
+                #skip comments and blank lines, so that confs can be hand edited/annotated
+                if [[ "$opts_confline" == '' || "$opts_confline" == '#'* ]]
+                then
+                    continue
+                fi
+                local opts_config_key="${opts_confline%%=*}" opts_config_val
+                opts_conf_unpickle "${opts_confline#*=}" opts_config_val
+                case "$opts_config_key" in
+                    (*.)
+                        #treat .= as a path, and if it is relative, resolve it from the folder containing the conf file
+                        opts_config_key="${opts_config_key%.}"
+                        if [[ "$opts_config_val" != /* ]]
+                        then
+                            local opts_confdir="$(cd "$(dirname "$opts_argument")"; pwd)"
+                            if [[ "$opts_confdir" != */ ]]
+                            then
+                                opts_confdir="$opts_confdir/"
+                            fi
+                            opts_config_val="$opts_confdir$opts_config_val"
+                        fi
+                        ;;
+                    (*)
+                        ;;
+                esac
+                opts_config_found=0
+                for ((opts_config_index = 0; opts_config_index < ${#opts_config_names[@]}; ++opts_config_index))
+                do
+                    if [[ "$opts_config_key" == "${opts_config_names[$opts_config_index]}" ]]
+                    then
+                        opts_config_found=1
+                        break
+                    fi
+                done
+                if ((! opts_config_found))
+                then
+                    #check aliases
+                    for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_alias_lookup[@]}; opts_config_index += 2))
+                    do
+                        if [[ "$opts_config_key" == "${opts_config_alias_lookup[$opts_config_index2]}" ]]
+                        then
+                            opts_config_index="${opts_config_alias_lookup[$opts_config_index2 + 1]}"
+                            opts_config_found=1
+                            break
+                        fi
+                    done
+                fi
+                if ((! opts_config_found))
+                then
+                    log_Warn "ignoring unknown config key '$opts_config_key' in config file"
+                else
+                    if ((opts_used_config[opts_config_index]))
+                    then
+                        log_Err_Abort "redundant config key '$opts_config_key' in config file"
+                    fi
+                    opts_used_config["$opts_config_index"]=1
+                    if ((! opts_used_params[opts_config_index]))
+                    then
+                        printf -v "${opts_param_variable_names[$opts_config_index]}" '%s' "$opts_config_val"
+                    fi
+                fi
+            done < "$opts_argument"
+            continue
         fi
         local opts_found=0
         local opts_index
@@ -203,45 +475,244 @@ function opts_ParseArguments()
             printf -v "${opts_param_variable_names[$opts_index]}" '%s' "$opts_argument"
         else
             log_Err "unrecognized option: '$opts_switch'"
-            usage
+            opts_internal_dousage
             exit 2
         fi
     done
     local opts_missing_list=()
     for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
     do
-        if ((opts_param_optional[opts_index] == 0 && opts_used_params[opts_index] == 0))
+        if ((opts_param_optional[opts_index] == 0 && opts_used_params[opts_index] == 0 && opts_used_config[opts_index] == 0))
         then
             opts_missing_list+=("${opts_param_switches[$opts_index]}")
         fi
     done
     if ((${#opts_missing_list[@]} > 0))
     then
+        #only test for "no options" to trigger usage after we know there are mandatory options, so that a script without mandatory options can be run properly
+        if ((${#opts_OrigArguments[@]} == 0))
+        then
+            opts_internal_dousage
+            exit 2
+        fi
         log_Err_Abort "missing the following mandatory parameter(s): ${opts_missing_list[*]}"
     fi
+    #now we know the script can continue, print the arguments
+    #functions apparently leave $0 at its original value, but let's only use what we were given
+    #may be an empty array, so we need to be careful
+    log_Msg "arguments: ${opts_OrigArguments[*]+"${opts_OrigArguments[*]}"}"
 }
 
-#after parsing, call this to log all values
-function opts_ShowValues()
+#implementation details
+
+opts_script_description=""
+opts_param_switches=()
+opts_compat_aliases=()
+opts_config_names=()
+opts_config_aliases=()
+opts_script_supports_config=0
+opts_script_has_config_mandatory=0
+opts_config_was_reset=0
+function opts_add_switch()
 {
+    if ((opts_config_was_reset))
+    then
+        log_Err_Abort "developer error: argument definition and parsing must be completed before using opts_conf_NewConfig"
+    fi
+    if (($# < 5))
+    then
+        log_Err_Abort "parameter '$1' added improperly, too few arguments"
+    fi
+    if [[ "$1" != --* ]]
+    then
+        log_Err_Abort "developer error: parameter switches must start with --, attempted to create switch '$1'"
+    fi
+    if [[ "$1" == "--help" || "$1" == "--config" ]]
+    then
+        log_Err_Abort "developer error: parameter switch '$1' is reserved by newopts.shlib, do not attempt to define it manually"
+    fi
+    #only the index is local, the arrays must be global
+    local opts_new_index="${#opts_param_switches[@]}"
+    opts_param_switches["$opts_new_index"]="$1"
+    opts_param_variable_names["$opts_new_index"]="$2"
+    opts_param_optional["$opts_new_index"]="$3"
+    opts_param_vardescrip["$opts_new_index"]="$4"
+    opts_param_descrip["$opts_new_index"]="$5"
+    #config stuff
+    opts_config_names["$opts_new_index"]="$6"
+    #keep a copy of the variable name so we can support writing either an equivalent config, or an entirely unrelated config later
+    opts_config_writing_vars["$opts_new_index"]="$2"
+    opts_config_is_path["$opts_new_index"]=0
+    opts_config_suppress["$opts_new_index"]=0
+    if [[ "$6" != "" ]]
+    then
+        if [[ "$6" == *. || "$6" == *=* || "$6" == '#'* ]]
+        then
+            log_Err_Abort "developer error: '$6' is not valid as a config identifier"
+        fi
+        opts_script_supports_config=1
+        opts_param_config["$opts_new_index"]=1
+        if ((! $3))
+        then
+            opts_script_has_config_mandatory=1
+        fi
+    else
+        opts_param_config["$opts_new_index"]=0
+    fi
+    shift 6
+    #yes, it takes and sets a default value for mandatory parameters - doesn't matter because it checks that all mandatory are provided, and the code is simpler this way
+    if (($# >= 1))
+    then
+        opts_default["$opts_new_index"]="$1"
+        shift 1
+    else
+        opts_default["$opts_new_index"]=""
+    fi
     local opts_index
-    for ((opts_index = 0; opts_index < ${#opts_param_switches[@]}; ++opts_index))
+    for ((opts_index = 1; opts_index <= $#; ++opts_index))
     do
-        local opts_varname="${opts_param_variable_names[$opts_index]}"
-        log_Msg "$opts_varname: ${!opts_varname}"
+        if [[ "${!opts_index}" != --* ]]
+        then
+            log_Err_Abort "developer error: parameter '${opts_param_switches["$opts_new_index"]}' added improperly, legacy switch '${!opts_index}' doesn't start with '--', check your quoting"
+        fi
+        opts_compat_aliases+=("${!opts_index}" "$opts_new_index")
     done
 }
 
+#pickle replaces newlines, so it can be used in $() without worry
+function opts_conf_pickle()
+{
+    echo -n "$1" | sed -e 's/%/%p/g' -e 's/@/%a/g' | tr $'\n' @
+}
+
+#unpickle works around the "strip all trailing newlines" of $() by adding a . and removing it
+#requires using a global variable to pass the result, passed by name as the second argument
+function opts_conf_unpickle()
+{
+    local tempstr=$(echo -n "$1" | tr @ $'\n' | sed -e 's/%a/@/g' -e 's/%p/%/g'; echo .)
+    printf -v "$2" '%s' "${tempstr%.}"
+}
+
+#helper to make some other functions more readable
+function opts_conf_findkey()
+{
+    local searchkey="$1"
+    local opts_config_index opts_config_index2 opts_config_found=0
+    #check aliases first for shorter code
+    for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_aliases[@]}; opts_config_index2 += 2))
+    do
+        if [[ "${opts_config_aliases[$opts_config_index2]}" == "$searchkey" ]]
+        then
+            searchkey="${opts_config_aliases[$opts_config_index2 + 1]}"
+            break
+        fi
+    done
+    for ((opts_config_index = 0; opts_config_index < ${#opts_config_names[@]}; ++opts_config_index))
+    do
+        if [[ "${opts_config_names[$opts_config_index]}" == "$searchkey" ]]
+        then
+            echo "$opts_config_index"
+            return
+        fi
+    done
+    echo "-1"
+}
+
+#arguments: startdir, target
+function opts_conf_makerelative()
+{
+    #inputs can be relative to current directory, so find the absolute version
+    #pwd probably shouldn't spit out a //, but just in case
+    local opts_startdir="$(cd "$1"; pwd | sed 's|//*|/|g')"
+    local opts_target="$2"
+    #trick to have "same directory" represented as ".", at the expense of putting an unneccesary "." on all other directory cases
+    local dirmode=0 opts_targetdir
+    if [[ -d "$opts_target" ]]
+    then
+        dirmode=1
+        opts_targetdir="$(cd "$opts_target"; pwd | sed 's|//*|/|g')"
+    else
+        opts_targetdir="$(cd "$(dirname "$opts_target")"; pwd | sed 's|//*|/|g')"
+    fi
+    if [[ "$opts_startdir" != /* ]]
+    then
+        log_Err_Abort "failed to generate absolute path to '$1'"
+    fi
+    if [[ "$opts_targetdir" != /* ]]
+    then
+        log_Err_Abort "failed to generate absolute path to '$2'"
+    fi
+    #add trailing slash if needed so that the root directory works out properly
+    if [[ "$opts_startdir" != */ ]]
+    then
+        opts_startdir="$opts_startdir/"
+    fi
+    if [[ "$opts_targetdir" != */ ]]
+    then
+        opts_targetdir="$opts_targetdir/"
+    fi
+    #read doesn't unset local status, so it is fine
+    #but, its exit status is silly for this use
+    local -a opts_startparts opts_targparts
+    IFS='/' read -r -a opts_startparts -d '' <<<"${opts_startdir#/}" || true
+    IFS='/' read -r -a opts_targparts -d '' <<<"${opts_targetdir#/}" || true
+    #FIXME: remove last element from arrays, contains the newline added by...<<<""?
+    unset "opts_startparts[$((${#opts_startparts[@]} - 1))]"
+    unset "opts_targparts[$((${#opts_targparts[@]} - 1))]"
+    local opts_matches
+    for ((opts_matches = 0; opts_matches < ${#opts_startparts[@]}; ++opts_matches))
+    do
+        if ((opts_matches >= ${#opts_targparts[@]})) || [[ "${opts_startparts[$opts_matches]}" != "${opts_targparts[$opts_matches]}" ]]
+        then
+            break
+        fi
+    done
+    local opts_index outpath=""
+    for ((opts_index = opts_matches; opts_index < ${#opts_startparts[@]}; ++opts_index))
+    do
+        outpath+="../"
+    done
+    for ((opts_index = opts_matches; opts_index < ${#opts_targparts[@]}; ++opts_index))
+    do
+        outpath+="${opts_targparts[$opts_index]}/"
+    done
+    if ((dirmode))
+    then
+        #empty string would technically work with the config logic, but '.' is more obvious and also works, though it will be present in the reconstructed absolute path
+        if [[ "$outpath" == "" ]]
+        then
+            echo './'
+        else
+            echo "$outpath"
+        fi
+    else
+        echo "$outpath""$(basename "$opts_target")"
+    fi
+}
+
+#display, formatting, usage, etc functions
+
+#display list of parameters with explanations
 function opts_ShowArguments()
 {
     opts_print_help_line '[--help or -h] - show this usage information and exit'
+    if ((opts_script_supports_config))
+    then
+        opts_print_help_line '[--config=<file>] - load parameter values from a file'
+    fi
     local index
     for ((index = 0; index < ${#opts_param_switches[@]}; ++index))
     do
         local string="${opts_param_switches[$index]}=<${opts_param_vardescrip[$index]}>"
-        if ((opts_param_optional[index] == 1))
+        if ((opts_param_optional[index]))
         then
             string="[$string]"
+        else
+            if ((opts_param_config[index]))
+            then
+                #yes, literal {}
+                string="{$string}"
+            fi
         fi
         if [[ "${opts_param_descrip[$index]}" != "" ]]
         then
@@ -289,7 +760,7 @@ function opts_print_help_line()
             local string=""
             if ((firstline == 1))
             then
-                if [[ "${linemod}" == [* ]]
+                if [[ "${linemod}" == [* || "${linemod}" == {* ]]
                 then
                     string="  "
                 else
@@ -323,5 +794,40 @@ function opts_print_help_line()
             firstline=0
         done
     done
+}
+
+function opts_internal_dousage()
+{
+    if [[ "$opts_script_description" == "" ]]
+    then
+        #older usage style, relies on parent script to describe parameter syntax
+        #"usage" must be defined by the actual tool script
+        usage
+    else
+        local opts_headertext="
+$log_ToolName: $opts_script_description
+
+Usage: $log_ToolName PARAMETER ...
+
+A parameter enclosed in [ ] is optional.
+"
+
+        if ((opts_script_has_config_mandatory))
+        then
+            opts_headertext+="A parameter enclosed in { } is required, but can be provided by a config file.
+"
+        fi
+        
+        opts_headertext+="All other parameters must be specified.
+Anything enclosed in < > is a placeholder for a user supplied value.
+"
+        
+        echo "$opts_headertext"
+        
+        #automatic argument descriptions
+        opts_ShowArguments
+    fi
+    
+    #do not use exit, the parsing code takes care of it
 }
 

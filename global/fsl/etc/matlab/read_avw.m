@@ -6,8 +6,8 @@ function [img,dims,scales,bpp,endian] = read_avw(fname)
 %  fname is the filename (must be inside single quotes)
 %  Note: automatically detects - unsigned char, short, long, float
 %         double and complex formats
-%  Extracts the 4 dimensions (dims), 
-%  4 scales (scales) and bits per pixel (bpp) for voxels 
+%  Extracts the 4 dimensions (dims),
+%  4 scales (scales) and bits per pixel (bpp) for voxels
 %  contained in the Analyze or nifti header file (fname)
 %  Also returns endian = 'l' for little-endian or 'b' for big-endian
 %
@@ -24,6 +24,8 @@ command = sprintf('FSLOUTPUTTYPE=NIFTI_PAIR; export FSLOUTPUTTYPE; $FSLDIR/bin/f
 [status,output]=call_fsl(command);
 
 if (status),
+  delete([tmpname,'.hdr']);
+  delete([tmpname,'.img']);
   error(output)
 end
   [dims,scales,bpp,endian,datatype]= read_avw_hdr(tmpname);
@@ -33,7 +35,7 @@ end
   else
     img=read_avw_img(tmpname);
   end
-  
+
 % cross platform compatible deleting of files
 delete([tmpname,'.hdr']);
 delete([tmpname,'.img']);

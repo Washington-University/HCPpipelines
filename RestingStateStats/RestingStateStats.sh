@@ -966,7 +966,7 @@ main()
 
 			mPath="${HCPPIPEDIR}/RestingStateStats/scripts"
 			mGlobalPath="${HCPPIPEDIR}/global/matlab"
-			mFslPath="${FSLDIR}/etc/matlab"
+			mFslPath="${HCPPIPEDIR}/global/fsl/etc/matlab"
 
 			matlabCode="addpath '$mFslPath'; addpath '$HCPCIFTIRWDIR'; addpath '$mGlobalPath'; addpath '$mPath'; RestingStateStats('${motionparameters}',${g_high_pass},${TR},'${ICAs}','${noise}','${CARET7DIR}/wb_command','${dtseries}','${bias}','${RssPrefix}','${g_dlabel_file}','${g_bc_mode}','${g_out_string}','${WM}','${CSF}');"
 

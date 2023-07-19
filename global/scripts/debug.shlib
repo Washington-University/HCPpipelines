@@ -28,7 +28,7 @@ debug_on_error()
         local me=`basename "$0"`
         local startreport=""
         local endreport=""
-        local command=$(eval debug_first "$2")
+        local command=$(eval echo $(debug_first $2))
 
         # --- output a regular HCP error log
 
@@ -41,17 +41,26 @@ debug_on_error()
            endreport="\033[0m"
         fi
         
-        # --- output a detailed report if usetrap is not turned off    
-        echo                                                               
-        echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
-        echo "---------------------------------------------------"
-        echo "         script: $me"                                            
-        echo "stopped at line: $1"                                    
-        echo "           call: $2"
-        echo "  expanded call: $(eval echo "$2")"                            
-        echo "      exit code: $3"                                        
-        echo -e "---------------------------------------------------${endreport}" 
-        echo                                                               
+        (
+            # --- output a detailed report if usetrap is not turned off
+            echo
+            echo -e "${startreport}===> ERROR: Command returned with nonzero exit code"
+            echo "---------------------------------------------------"
+            echo "         script: $me"
+            echo "stopped at line: $1"
+            echo "           call: $2"
+            #blacklist subshell syntax (`foo` and $(foo), but $((foo)) is fine) and redirection, which can make eval run a command, write to a file, hang, etc
+            #eval is documented as treating the arguments as a "single command", which limits the type of trouble it can get into (newline, semicolon, pipe, and boolean operators don't seem to be an issue)
+            #while it is tempting to whitelist /dev/null redirection, it breaks the eval anyway, and would be challenging to fix properly
+            if ! [[ "$2" =~ (\`|\$\([^\(]|>|<) ]]
+            then
+                echo "  expanded call: $(eval echo "$2")"
+            fi
+            echo "       hostname: $(hostname)"
+            echo "      exit code: $3"
+            echo -e "---------------------------------------------------${endreport}"
+            echo
+        ) 1>&2
         
         
         if [ ! $HCP_DEBUG_EXIT_ON_ERROR == 'OFF' ]; then
@@ -59,12 +68,16 @@ debug_on_error()
             # --- Check if interactive shell
             if [[ "$-" == *i* ]]
             then
-                echo
-                echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
+                (
+                    echo
+                    echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
+                ) 1>&2
                 read
             else
-                debug_red_echo "===> Aborting execution!"
-                echo ""
+                (
+                    debug_red_echo "===> Aborting execution!"
+                    echo ""
+                ) 1>&2
                 exit $3
             fi
         fi

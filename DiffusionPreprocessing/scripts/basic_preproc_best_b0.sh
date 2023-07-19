@@ -223,7 +223,7 @@ elif [ ${PEdir} -eq 2 ]; then #AP/PA phase encoding
 fi
 
 ################################################################################################
-## Merging Files and correct number of slices
+## Merging Files
 ################################################################################################
 echo "Merging Pos and Neg images"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos $(echo ${rawdir}/${basePos}_[0-9]*.nii*)
@@ -242,23 +242,6 @@ done
 for idx in $(seq 1 $(${FSLDIR}/bin/fslval ${rawdir}/Neg dim4)); do
 	echo 2 >>${rawdir}/index.txt
 done
-
-dimz=$(${FSLDIR}/bin/fslval ${rawdir}/Pos dim3)
-if [ $(isodd $dimz) -eq 1 ]; then
-	echo "Remove one slice from data to get even number of slices"
-	${FSLDIR}/bin/fslroi ${rawdir}/Pos ${rawdir}/Posn 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/Neg ${rawdir}/Negn 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/best_Pos_b0 ${rawdir}/best_Pos_b0n 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/fslroi ${rawdir}/best_Neg_b0 ${rawdir}/best_Neg_b0n 0 -1 0 -1 1 -1
-	${FSLDIR}/bin/imrm ${rawdir}/Pos
-	${FSLDIR}/bin/imrm ${rawdir}/Neg
-	${FSLDIR}/bin/imrm ${rawdir}/best_Pos_b0
-	${FSLDIR}/bin/imrm ${rawdir}/best_Neg_b0
-	${FSLDIR}/bin/immv ${rawdir}/Posn ${rawdir}/Pos
-	${FSLDIR}/bin/immv ${rawdir}/Negn ${rawdir}/Neg
-	${FSLDIR}/bin/immv ${rawdir}/best_Pos_b0n ${rawdir}/best_Pos_b0
-	${FSLDIR}/bin/immv ${rawdir}/best_Neg_b0n ${rawdir}/best_Neg_b0
-fi
 
 echo "Perform final merge"
 ${FSLDIR}/bin/fslmerge -t ${rawdir}/Pos_Neg_b0 ${rawdir}/best_Pos_b0 ${rawdir}/best_Neg_b0

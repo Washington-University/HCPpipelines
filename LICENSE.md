@@ -17,7 +17,7 @@ is permitted provided that the following conditions are met:
   and/or other materials provided with the distribution.
 
 * The names of Washington University in St. Louis, the University of Minnesota,
-  Oxford University, the Human Connectome Project, or any contributors
+  Oxford University, the Human Connectome Project (or HCP), or any contributors
   to this software may *not* be used to endorse or promote products derived
   from this software without specific prior written permission.
 
@@ -40,13 +40,17 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Other licenses
 
-`global/matlab/cifti-legacy/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/cifti-legacy/@gifti/gifti-1.6/LICENCE`
+`global/matlab/@gifti` is copyright Guillaume Flandin, released under GPL v2+, see `global/matlab/@gifti/gifti-1.6/LICENCE`
 
-`global/matlab/cifti-matlab/@xmltree` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltree/LICENSE`
+`global/matlab/cifti-matlab/@xmltreemod` is copyright Guillaume Flandin, released under LGPL v3+, see `global/matlab/cifti-matlab/@xmltreemod/LICENSE`
 
 `global/matlab/cifti-matlab/private/read_nifti2_hdr.m` is adapted from a file from ft_cifti, and is additionally copyright Robert Oostenveld, released under either BSD 2-clause or GPL v3+, see `global/matlab/cifti-matlab/LICENSE`
 
 `global/fsl/etc/matlab` is copyright The University of Oxford, released under BSD 2-clause, see `global/fsl/etc/matlab/LICENSE`
+
+`tICA/scripts/FastICA_25` is copyright Aalto University, released under GPL v2, see `tICA/scripts/FastICA_25/LICENSE`
+
+`tICA/scripts/icasso122` is copyright Juha Vesanto, Johan Himberg and the SOM toolbox programming team, released under GPL v2+, see `tICA/scripts/icasso122/README_license.txt`
 
 Compiled matlab binaries are released under some combination of these licenses, with some or all of the above copyright holders, as some of these matlab source files are compiled into them.
 
