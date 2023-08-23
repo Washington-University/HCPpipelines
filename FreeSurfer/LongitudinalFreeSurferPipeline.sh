@@ -194,7 +194,8 @@ get_options()
   local num_args=${#arguments[@]}
   local argument
   local index=0
-  local extra_reconall_arg
+  local extra_reconall_arg_base
+  local extra_reconall_arg_long
 
   while [ "${index}" -lt "${num_args}" ]; do
     argument=${arguments[index]}
