@@ -40,8 +40,8 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 
 #process legacy syntax and repeatable arguments
@@ -133,14 +133,14 @@ fi
 
 #TSC: hack around the lack of repeatable option support, use a single string for display
 extra_reconall_args_base=${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"}
-extra_reconall_args_long=${extra_reconall_args_base_long[*]+"${extra_reconall_args_base_long[*]}"}
+extra_reconall_args_long=${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"}
 
 #display the parsed/default values
 opts_ShowValues
 
 #TSC: now use an array for proper argument handling
-extra_reconall_args_base=(${extra_reconall_args_base_manual[@]+"${extra_reconall_args_base_manual[@]}"})
-extra_reconall_args_long=(${extra_reconall_args_base_long[@]+"${extra_reconall_args_base_long[@]}"})
+extra_reconall_args_base=(${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"})
+extra_reconall_args_long=(${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"})
 
 ${HCPPIPEDIR}/show_version
 
