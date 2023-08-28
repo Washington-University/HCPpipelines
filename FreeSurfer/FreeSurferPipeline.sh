@@ -75,8 +75,8 @@ show_tool_versions()
 	
 	# Show tkregister version
 	log_Msg "Showing tkregister version"
-	which tkregister
-	tkregister -version
+	which tkregister2
+	tkregister2 -version
 
 	# Show mri_concatenate_lta version
 	log_Msg "Showing mri_concatenate_lta version"
