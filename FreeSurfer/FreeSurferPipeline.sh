@@ -73,8 +73,8 @@ show_tool_versions()
 	log_Msg ${which_recon_all}
 	recon-all.v6.hires -version
 	
-	# Show tkregister version
-	log_Msg "Showing tkregister version"
+	# Show tkregister2 version
+	log_Msg "Showing tkregister2 version"
 	which tkregister2
 	tkregister2 -version
 
@@ -581,7 +581,7 @@ main()
 	local transformsdir
 	local eye_dat_file
 
-	local tkregister_cmd
+	local tkregister2_cmd
 	local mri_concatenate_lta_cmd
 	local mri_surf2surf_cmd
 	local t2_or_flair
@@ -761,22 +761,22 @@ main()
 		fi
 
 		log_Msg "...Create a registration between the original conformed space and the rawavg space"
-		tkregister_cmd="tkregister"
-		tkregister_cmd+=" --mov orig.mgz"
-		tkregister_cmd+=" --targ rawavg.mgz"
-		tkregister_cmd+=" --regheader"
-		tkregister_cmd+=" --noedit"
-		tkregister_cmd+=" --reg deleteme.dat"
-		tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
-		tkregister_cmd+=" --s ${SubjectID}"
+		tkregister2_cmd="tkregister2"
+		tkregister2_cmd+=" --mov orig.mgz"
+		tkregister2_cmd+=" --targ rawavg.mgz"
+		tkregister2_cmd+=" --regheader"
+		tkregister2_cmd+=" --noedit"
+		tkregister2_cmd+=" --reg deleteme.dat"
+		tkregister2_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
+		tkregister2_cmd+=" --s ${SubjectID}"
 
 		log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
-		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+		log_Msg "......tkregister2_cmd: ${tkregister2_cmd}"
 
-		${tkregister_cmd}
+		${tkregister2_cmd}
 		return_code=$?
 		if [ "${return_code}" != "0" ]; then
-			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+			log_Err_Abort "tkregister2 command failed with return_code: ${return_code}"
 		fi
 
 		log_Msg "...Concatenate the ${t2_or_flair}raw->orig and orig->rawavg transforms"
@@ -794,20 +794,20 @@ main()
 		fi
 
 		log_Msg "...Convert to FSL format"
-		tkregister_cmd="tkregister"
-		tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
-		tkregister_cmd+=" --targ rawavg.mgz"
-		tkregister_cmd+=" --reg Q.lta"
-		tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
-		tkregister_cmd+=" --noedit"
+		tkregister2_cmd="tkregister2"
+		tkregister2_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
+		tkregister2_cmd+=" --targ rawavg.mgz"
+		tkregister2_cmd+=" --reg Q.lta"
+		tkregister2_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
+		tkregister2_cmd+=" --noedit"
 
 		log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
-		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+		log_Msg "......tkregister2_cmd: ${tkregister2_cmd}"
 
-		${tkregister_cmd}
+		${tkregister2_cmd}
 		return_code=$?
 		if [ "${return_code}" != "0" ]; then
-			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+			log_Err_Abort "tkregister2 command failed with return_code: ${return_code}"
 		fi
 
 		log_Msg "...Clean up"
