@@ -29,8 +29,7 @@
 #~ND~END~
 
 # Configure custom tools
-# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
-#   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
+# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this scriptes script)
 #   are found on the PATH. If all such custom scripts are found, then we do nothing here.
 #   If any one of them is not found on the PATH, then we change the PATH so that the
 #   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
@@ -40,14 +39,14 @@ configure_custom_tools()
 	local which_conf2hires
 	local which_longmc
 
-	which_recon_all=$(which recon-all.v6.hires)
+	which_recon_all=$(which recon-all)
 	which_conf2hires=$(which conf2hires)
 	which_longmc=$(which longmc)
 
 	if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
 		export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
 		log_Warn "We were not able to locate one of the following required tools:"
-		log_Warn "recon-all.v6.hires, conf2hires, or longmc"
+		log_Warn "recon-all, conf2hires, or longmc"
 		log_Warn ""
 		log_Warn "To be able to run this script using the standard versions of these tools,"
 		log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
@@ -68,10 +67,10 @@ show_tool_versions()
 	${HCPPIPEDIR}/show_version
 
 	# Show recon-all version
-	log_Msg "Showing recon-all.v6.hires version"
-	local which_recon_all=$(which recon-all.v6.hires)
+	log_Msg "Showing recon-all version"
+	local which_recon_all=$(which recon-all)
 	log_Msg ${which_recon_all}
-	recon-all.v6.hires -version
+	recon-all -version
 	
 	# Show tkregister2 version
 	log_Msg "Showing tkregister2 version"
@@ -659,10 +658,10 @@ main()
 	fi
 
 	# ----------------------------------------------------------------------
-	log_Msg "Call custom recon-all: recon-all.v6.hires"
+	log_Msg "Call recon-all:"
 	# ----------------------------------------------------------------------
 
-	recon_all_cmd="recon-all.v6.hires"
+	recon_all_cmd="recon-all"
 	recon_all_cmd+=" -subjid ${SubjectID}"
 	recon_all_cmd+=" -sd ${SubjectDIR}"
 	if [ "${existing_subject}" != "TRUE" ]; then  # input volumes only necessary first time through
