@@ -28,37 +28,6 @@
 #
 #~ND~END~
 
-# Configure custom tools
-# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this scriptes script)
-#   are found on the PATH. If all such custom scripts are found, then we do nothing here.
-#   If any one of them is not found on the PATH, then we change the PATH so that the
-#   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
-configure_custom_tools()
-{
-	local which_recon_all
-	local which_conf2hires
-	local which_longmc
-
-	which_recon_all=$(which recon-all)
-	which_conf2hires=$(which conf2hires)
-	which_longmc=$(which longmc)
-
-	if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
-		export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
-		log_Warn "We were not able to locate one of the following required tools:"
-		log_Warn "recon-all, conf2hires, or longmc"
-		log_Warn ""
-		log_Warn "To be able to run this script using the standard versions of these tools,"
-		log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
-		log_Warn ""
-		log_Warn "If you intended to use some other version of these tools, please configure"
-		log_Warn "your PATH before invoking this script, such that the tools you intended to"
-		log_Warn "use can be found on the PATH."
-		log_Warn ""
-		log_Warn "PATH set to: ${PATH}"
-	fi	
-}
-
 # Show tool versions
 show_tool_versions()
 {
@@ -200,15 +169,6 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
          e.g., [--extra-reconall-arg=-norm3diters --extra-reconall-arg=3]
          will be translated to "-norm3diters 3" when passed to recon-all
 
-  [--no-conf2hires]
-      Indicates that the script should NOT include -conf2hires as an argument to recon-all.
-         By default, -conf2hires *IS* included, so that recon-all will place the surfaces on the 
-         hires T1 (and T2).
-         This is an advanced option, intended for situations where:
-            (i) the original T1w and T2w images are NOT "hires" (i.e., they are 1 mm isotropic or worse), or
-            (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.
-                 e.g., [--existing-subject --extra-reconall-arg=-show-edits --no-conf2hires]
-
   [--processing-mode=(HCPStyleData|LegacyStyleData)]
       Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
       "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
@@ -222,7 +182,7 @@ PARAMETERs can also be specified positionally as:
   ${g_script_name} <path to subject directory> <subject ID> <path to T1w image> <path to T1w brain mask> <path to T2w image> [<recon-all seed value>]
 
   Note that the positional approach to specifying parameters does NOT support the 
-      --existing-subject, --extra-reconall-arg, --no-conf2hires, and --processing-mode options.
+      --existing-subject, --extra-reconall-arg, and --processing-mode options.
   The positional approach should be considered deprecated, and may be removed in a future version.
 
 EOF
@@ -243,7 +203,6 @@ get_options()
 	unset p_flair
 	unset p_existing_subject
 	unset p_extra_reconall_args
-	p_conf2hires="TRUE"  # Default is to include -conf2hires flag; do NOT make this variable 'local'
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -314,10 +273,6 @@ get_options()
 				;;
 			--processing-mode=*)
 				p_processing_mode=${argument#*=}
-				index=$(( index + 1 ))
-				;;
-			--no-conf2hires)
-				p_conf2hires="FALSE"
 				index=$(( index + 1 ))
 				;;
 			*)
@@ -406,9 +361,6 @@ get_options()
 	fi
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		log_Msg "Extra recon-all arguments: ${p_extra_reconall_args}"
-	fi
-	if [ ! -z "${p_conf2hires}" ]; then
-		log_Msg "Include -conf2hires flag in recon-all: ${p_conf2hires}"
 	fi
 	if [ ! -z "${p_processing_mode}" ] ; then
   		log_Msg "ProcessingMode: ${p_processing_mode}"
@@ -571,7 +523,6 @@ main()
 	local flair="FALSE"
 	local existing_subject="FALSE"
 	local extra_reconall_args
-	local conf2hires="TRUE"
 
 	local zero_threshold_T1wImage
 	local return_code
@@ -615,9 +566,6 @@ main()
 	if [ ! -z "${p_extra_reconall_args}" ]; then
 		extra_reconall_args="${p_extra_reconall_args}"
 	fi
-	if [ ! -z "${p_conf2hires}" ]; then
-		conf2hires=${p_conf2hires}
-	fi
 
 	# ----------------------------------------------------------------------
 	# Log values retrieved from positional parameters
@@ -631,8 +579,6 @@ main()
 	log_Msg "flair: ${flair}"
 	log_Msg "existing_subject: ${existing_subject}"
 	log_Msg "extra_reconall_args: ${extra_reconall_args}"
-	log_Msg "conf2hires: ${conf2hires}"
-
 
 	if [ "${existing_subject}" != "TRUE" ]; then
 
@@ -696,12 +642,6 @@ main()
 		recon_all_cmd+=" ${extra_reconall_args}"
 	fi
 
-	# The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
-	# to have the "final say" over a couple settings within recon-all
-	if [ "${conf2hires}" = "TRUE" ]; then
-		recon_all_cmd+=" -conf2hires"
-	fi
-	
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	${recon_all_cmd}
 	return_code=$?
@@ -906,9 +846,6 @@ log_Check_Env_Var FREESURFER_HOME
 # Platform info
 log_Msg "Platform Information Follows: "
 uname -a
-
-# Configure the use of FreeSurfer v6 custom tools
-configure_custom_tools
 
 # Show tool versions
 show_tool_versions
