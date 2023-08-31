@@ -440,7 +440,7 @@ make_t2w_hires_nifti_file()
 	# Then we need to move (resample) it to
 	# the target volume and convert it to NIFTI format.
 
-	t2w_input_file="rawavg.${t2_or_flair}.prenorm.mgz"
+	t2w_input_file="orig/${t2_or_flair}raw.mgz"
 	target_volume="rawavg.mgz"
 	t2w_output_file="T2w_hires.nii.gz"
 
