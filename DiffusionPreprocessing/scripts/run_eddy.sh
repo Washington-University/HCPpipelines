@@ -299,6 +299,10 @@ get_options() {
 #
 determine_eddy_tools_for_supported_six_series() {
 	g_stdEddy="${FSLDIR}/bin/eddy_openmp"
+	#newer fsl renamed the cpu version
+	if [[ ! -f "$g_stdEddy" ]]; then
+	    g_stdEddy="${FSLDIR}/bin/eddy_cpu"
+	fi
 
 	if [ "${useGpuVersion}" = "True" ]; then
 		if [ ! -z "${g_cuda_version}" ]; then

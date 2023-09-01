@@ -55,7 +55,9 @@ function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPC
                     vnsum = vn.cdata * 0;
                 end
                 dtseries = ciftiopen(dtseriesname, wbcommand);
-                grot = [grot demean(dtseries.cdata, 2) ./ repmat(max(vn.cdata, 0.001), 1, size(dtseries.cdata, 2))];
+                %FIXME: tICA cleanup appears to regress out dilated locations (from FoV issues), for now repurpose this divide-by-zero prevention to act like a stdev threshold
+                %presumably the input data will always be scaled to grand mean 10,000
+                grot = [grot demean(dtseries.cdata, 2) ./ repmat(max(vn.cdata, 10), 1, size(dtseries.cdata, 2))];
                 vnsum = vnsum + vn.cdata;
                 c = c + 1;
             else

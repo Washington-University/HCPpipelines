@@ -17,6 +17,7 @@
 #   Changes by Tim Coalson
 #
 #   1) use melodic from $PATH by default, to make it easier to replace the default version FSL ships with
+#   2) use newopts, but support old positional parameters
 #
 #   Changes by Takuya Hayashi
 #
@@ -31,42 +32,41 @@
 #############################################################
 set -eu
 
-if (($# > 0)) && [[ "$1" != --* ]]
+#newopts supports "-h", so look for a single - even though virtually everything uses --
+if (($# > 0)) && [[ "$1" != -* ]]
 then
 	#old usage: hcp_fix_multi_run <4D_FMRI_data> <highpass> <concat_name> <do_motion_regression> [<TrainingFile>] [<FixThreshold>] [<DeleteIntermediates>] [<FallbackThreshold>]
-	if [[ $(basename "$0") != hcp_fix_multi_run ]]
-	then
-		echo "script name is not hcp_fix_multi_run, aborting instead of converting to positional parameters" 1>&2
-		exit 1
-	fi
 	if (($# < 4))
 	then
 		echo "old positional argument syntax requires a minimum of 4 arguments" 1>&2
 		exit 1
 	fi
-	cmd=("$0" --fmri-names="$1" --high-pass="$2" --concat-fmri-name="$3" --motion-regression="$4")
-	case $# in
-		(8)
-			cmd+=(--fallback-threshold="$8")
-			;& #special syntax that means "fall through"
-		(7)
-			cmd+=(--delete-intermediates="$7")
-			;&
-		(6)
-			cmd+=(--fix-threshold="$6")
-			;&
-		(5)
-			cmd+=(--training-file="$5")
-			;&
-		(4)
-			#this is fine, don't abort
-			;;
-		(*)
-			echo "unexpected extra arguments, aborting" 1>&2
-			exit 1
-			;;
-	esac
-	exec "${cmd[@]}"
+	newargs=(--fmri-names="$1" --high-pass="$2" --concat-fmri-name="$3" --motion-regression="$4")
+	#mac's ancient bash doesn't support case ;& fallthrough, so use ifs
+	if (($# >= 5))
+	then
+		newargs+=(--training-file="$5")
+	fi
+	if (($# >= 6))
+	then
+		newargs+=(--fix-threshold="$6")
+	fi
+	if (($# >= 7))
+	then
+		newargs+=(--delete-intermediates="$7")
+	fi
+	if (($# >= 8))
+	then
+		newargs+=(--fallback-threshold="$8")
+	fi
+	if (($# > 8))
+	then
+		echo "unexpected extra arguments, aborting" 1>&2
+		exit 1
+	fi
+	echo "legacy arguments specified: $*"
+	set -- "${newargs[@]}"
+	echo "converted to new arguments: $*"
 fi
 
 pipedirguessed=0

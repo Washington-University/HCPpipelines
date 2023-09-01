@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+StudyFolder="/media/myelin/Yash/refactoredHCPI-Code/outputFolder_testing" #Location of Subject folders (named by subjectID)
+Subjlist="100307" #Space delimited list of subject IDs
+EnvironmentScript="/media/myelin/Yash/refactoredHCPI-Code/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -96,18 +96,18 @@ for Subject in $Subjlist ; do
 
   "${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/FreeSurferPipeline.sh \
       --subject="$Subject" \
-      --subjectDIR="$SubjectDIR" \
-      --t1="$T1wImage" \
-      --t1brain="$T1wImageBrain" \
-      --t2="$T2wImage"
+      --subject-dir="$SubjectDIR" \
+      --t1w-image="$T1wImage" \
+      --t1w-brain="$T1wImageBrain" \
+      --t2w-image="$T2wImage"
       
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
   echo "set -- --subject=$Subject \
-      --subjectDIR=$SubjectDIR \
-      --t1=$T1wImage \
-      --t1brain=$T1wImageBrain \
-      --t2=$T2wImage"
+      --subject-dir=$SubjectDIR \
+      --t1w-image=$T1wImage \
+      --t1w-brain=$T1wImageBrain \
+      --t2w-image=$T2wImage"
 
   echo ". ${EnvironmentScript}"
 

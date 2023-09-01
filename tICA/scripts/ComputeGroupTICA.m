@@ -140,26 +140,31 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         tICAVolMaps = sICAVolMaps;
         tICAVolMaps.cdata = sICAVolMaps.cdata * (tICAmix ./ repmat(mean(sICAtcsvars), size(A, 1), size(A, 2))); %voxels X spatial ica * spatial ica X temporal ica (undo overall effect of variance normalization on mixing matrix)
 
-        %pos = max(tICAMaps.cdata) > abs(min(tICAMaps.cdata));
-        neg = max(tICAMaps.cdata) < abs(min(tICAMaps.cdata));
-        %pos = ~neg;
-        %all = single(pos) - neg; %TSC: don't name a variable 'all', it is a special value to 'clear'
+        if ~strcmp(tICAmode,'USE')
+            %pos = max(tICAMaps.cdata) > abs(min(tICAMaps.cdata));
+            neg = max(tICAMaps.cdata) < abs(min(tICAMaps.cdata));
+            %pos = ~neg;
+            %all = single(pos) - neg; %TSC: don't name a variable 'all', it is a special value to 'clear'
 
-        negList = find(neg);
-        tICAmix(:, negList) = -tICAmix(:, negList);
-        %tICAunmix(negList, :) = -tICAunmix(negList, :);
-        tICAtcs.cdata(:, negList) = -tICAtcs.cdata(:, negList);
-        tICAMaps.cdata(:, negList) = -tICAMaps.cdata(:, negList);
-        tICAVolMaps.cdata(:, negList) = -tICAVolMaps.cdata(:, negList);
+            negList = find(neg);
+            tICAmix(:, negList) = -tICAmix(:, negList);
+            %tICAunmix(negList, :) = -tICAunmix(negList, :);
+            tICAtcs.cdata(:, negList) = -tICAtcs.cdata(:, negList);
+            tICAMaps.cdata(:, negList) = -tICAMaps.cdata(:, negList);
+            tICAVolMaps.cdata(:, negList) = -tICAVolMaps.cdata(:, negList);
         
-        %tICAmix = tICAmix .* repmat(sign(all), size(tICAmix, 1), 1);
-        %%tICAunmix = (tICAunmix' .* repmat(sign(all), size(tICAmix, 1), 1))';
-        %tICAtcs.cdata = tICAtcs.cdata .* repmat(sign(all), size(tICAtcs.cdata, 1), 1);
-        %tICAMaps.cdata = tICAMaps.cdata .* repmat(sign(all), size(tICAMaps.cdata, 1), 1);
-        %tICAVolMaps.cdata = tICAVolMaps.cdata .* repmat(sign(all), size(tICAVolMaps.cdata, 1), 1);
+            %tICAmix = tICAmix .* repmat(sign(all), size(tICAmix, 1), 1);
+            %%tICAunmix = (tICAunmix' .* repmat(sign(all), size(tICAmix, 1), 1))';
+            %tICAtcs.cdata = tICAtcs.cdata .* repmat(sign(all), size(tICAtcs.cdata, 1), 1);
+            %tICAMaps.cdata = tICAMaps.cdata .* repmat(sign(all), size(tICAMaps.cdata, 1), 1);
+            %tICAVolMaps.cdata = tICAVolMaps.cdata .* repmat(sign(all), size(tICAVolMaps.cdata, 1), 1);
 
-        [TSTDs TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
-
+           [TSTDs TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
+        else
+            TSTDs = std(tICAtcs.cdata, [], 1); %unnormalized tICA temporal standard deviations
+            TIs = [1:1:length(TSTDs)];
+        end
+        
         Is = TIs;
 
         tICAPercentVariances = (((TSTDs .^ 2) / sum(TSTDs .^ 2)) * 100)';
