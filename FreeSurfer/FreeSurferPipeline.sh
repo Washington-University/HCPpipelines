@@ -78,6 +78,11 @@ then
                     changeargs=1
                 fi
                 ;;
+            (--no-conf2hires)
+                #this doesn't match a new argument, so we can just replace it
+                newargs+=(--conf2hires=FALSE)
+                changeargs=1
+                ;;
             (--extra-reconall-arg=*)
                 #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
                 #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
@@ -133,6 +138,8 @@ opts_AddOptional '--existing-subject' 'existing_subjectString' 'TRUE/FALSE' "Ind
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
 opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to: (i) customize the recon-all command (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all.  But, --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion).  e.g., --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
 
+opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces.  e.g., --existing-subject --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
+
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
 opts_ParseArguments "$@"
@@ -154,6 +161,7 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 #parse booleans
 flair=$(opts_StringToBool "$flairString")
 existing_subject=$(opts_StringToBool "$existing_subjectString")
+conf2hires=$(opts_StringToBool "$conf2hiresString")
 
 #deal with NONE convention
 if [[ "$T1wImage" == "NONE" ]]; then
@@ -459,6 +467,7 @@ log_Msg "recon_all_seed: ${recon_all_seed}"
 log_Msg "flair: ${flair}"
 log_Msg "existing_subject: ${existing_subject}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
+log_Msg "conf2hires: ${conf2hires}"
 
 if ((! existing_subject)); then
 
@@ -516,6 +525,12 @@ fi
 
 #add any extra args
 recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
+
+# The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
+# to have the "final say" over a couple settings within recon-all
+if ((conf2hires)); then
+    recon_all_cmd+=(-conf2hires)
+fi
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
 "${recon_all_cmd[@]}"
