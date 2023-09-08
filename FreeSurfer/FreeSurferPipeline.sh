@@ -229,8 +229,8 @@ show_tool_versions()
     
     # Show tkregister version
     log_Msg "Showing tkregister version"
-    which tkregister
-    tkregister -version
+    which tkregister2
+    tkregister2 -version
 
     # Show mri_concatenate_lta version
     log_Msg "Showing mri_concatenate_lta version"
@@ -268,25 +268,6 @@ validate_freesurfer_version()
     freesurfer_version=${freesurfer_version#v} # strip leading "v"
 
     log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
-
-    # break FreeSurfer version into components
-    # primary, secondary, and tertiary
-    # version X.Y.Z ==> X primary, Y secondary, Z tertiary
-    freesurfer_version_array=(${freesurfer_version//./ })
-
-    freesurfer_primary_version="${freesurfer_version_array[0]}"
-    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
-
-    freesurfer_secondary_version="${freesurfer_version_array[1]}"
-    freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
-
-    freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-    freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
-
-    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-        # e.g. 4.y.z, 5.y.z
-        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
-    fi
 }
 
 # Show tool versions
@@ -590,7 +571,7 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Create a registration between the original conformed space and the rawavg space"
-    tkregister_cmd="tkregister"
+    tkregister_cmd="tkregister2"
     tkregister_cmd+=" --mov orig.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --regheader"
@@ -623,7 +604,7 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Convert to FSL format"
-    tkregister_cmd="tkregister"
+    tkregister_cmd="tkregister2"
     tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --reg Q.lta"
