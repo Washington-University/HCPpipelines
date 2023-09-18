@@ -1,8 +1,9 @@
 #!/bin/bash 
+set -e
 
 # Requirements for this script
-#  installed versions of: FSL, Connectome Workbench (wb_command)
-#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
+#  installed versions of: FSL5.0.1+  caret5 (version??)
+#  environment: FSLDIR  CARET5DIR
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
@@ -85,6 +86,11 @@ defaultopt() {
 
 ################################################## OPTION PARSING #####################################################
 
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
+# check for correct options
+if [ $# -lt 8 ] ; then Usage; exit 1; fi
+
 # parse arguments
 WD=`getopt1 "--workingdir" $@`  # "$1"
 T1wImage=`getopt1 "--T1im" $@`  # "$2"
@@ -102,6 +108,7 @@ WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
 
+
 log_Msg "START: BiasFieldCorrection"
 
 verbose_echo "  "
@@ -116,7 +123,7 @@ echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
-
+if [ "${BiasFieldSmoothingSigma}" != "NONE" ] ; then
 # Form sqrt(T1w*T2w), mask this and normalise by the mean
 verbose_echo " --> Forming sqrt(T1w*T2w), masking this and normalising by the mean"
 ${FSLDIR}/bin/fslmaths $T1wImage -mul $T2wImage -abs -sqrt $WD/T1wmulT2w.nii.gz -odt float
@@ -149,6 +156,12 @@ verbose_echo " --> Extrapolating normalised sqrt image from mask region out to w
 ${FSLDIR}/bin/fslmaths $WD/T1wmulT2w_brain_norm.nii.gz -mas $WD/T1wmulT2w_brain_norm_modulate_mask.nii.gz -dilall $WD/bias_raw.nii.gz -odt float
 ${FSLDIR}/bin/fslmaths $WD/bias_raw.nii.gz -s $BiasFieldSmoothingSigma $OutputBiasField
 
+else
+
+${FSLDIR}/bin/fslmaths $T1wImage -mul 0 -add 1 $OutputBiasField # Takuya Hayashi inserted in Nov 2015
+
+fi
+
 # Use bias field output to create corrected images
 verbose_echo " --> Using bias field output to create corrected images"
 ${FSLDIR}/bin/fslmaths $T1wImage -div $OutputBiasField -mas $T1wImageBrain $OutputT1wRestoredBrainImage -odt float
@@ -158,7 +171,8 @@ ${FSLDIR}/bin/fslmaths $T2wImage -div $OutputBiasField $OutputT2wRestoredImage -
 
 verbose_green_echo "---> Finished Bias Field Correction"
 
-log_Msg "END: BiasFieldCorrection"
+log_Msg " END: BiasFieldCorrection"
+
 echo " END: `date`" >> $WD/log.txt
 
 ########################################## QA STUFF ########################################## 
@@ -172,5 +186,5 @@ echo "fslview $WD/T1wmulT2w.nii.gz $WD/T1wmulT2w_brain_norm.nii.gz $WD/T1wmulT2w
 echo "# Optional debugging (smoothed version, extrapolated version)" >> $WD/qa.txt
 echo "fslview $WD/T1wmulT2w_brain_norm_s${BiasFieldSmoothingSigma}.nii.gz $WD/bias_raw" >> $WD/qa.txt
 
-##############################################################################################
 
+##############################################################################################
