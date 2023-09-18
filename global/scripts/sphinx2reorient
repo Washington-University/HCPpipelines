@@ -1,0 +1,150 @@
+#! /bin/bash
+
+# Copyright (c) 2023
+# All rights reserved.
+
+# Takuya Hayashi, RIKEN BCIL
+# Toshihiko Aso, RIKEN BCIL
+# Matthew F. Glasser, WUSTL
+# Tim Coalson, WUSTL
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../../"
+fi
+
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+
+# Usage
+opts_SetScriptDescription "CORRECT ORIENTATION OF SPHINX-POSITIONED DATA
+Currently available scanner does not allow users to set 'Patient position' to 'head-first-sphinx', so that most users may set it to either of HFS (head-first- supine) or HFP (head-first-prone) by their scanner and others to FFS (foot-first-supine) or FFP (foot-first-prone). Any of these settings causes incorrect information of (head) orientation in the NIFTI volume, thus requires correction for further analysis. This correction is also important since a recent registration tool uses this orientation information of the input NIFTI volume. Note that this script does not resample the data but changes the sform of the header (and the order of voxels if used --reorient2std=TRUE). Options --ref and --init may be useful when you want to 'fake' the output volume as if it was scanned on the different day/session. The --ref option takes the reference volume, which is usually set to the same modality of the input volume, but scanned on the different day/session. Then rigid body registration is done using flirt and transformation matrix is saved and applied to the sform of the output volume. Alternatively, the --init option takes an affine matrix previously calculated, which is applied to the sform of the output volume.
+
+Expected protocols and example usage are:
+
+#1. Structural MRI scan in head-first-supine position in Day1 (T1wDay1) and function MRI scans in head-first-sphinx posiiton in Day2 (fMRIDay2) and additional fast T1w scans for registration purpose (T1wDay2).
+#2. Structural MRI scan in head-first-sphinx position in Day1 (T1wDay1) and function MRI scans in head-first-sphinx posiiton in Day2 (fMRIDay2) and additional fast T1w scans for registration purpose (T1wDay2).
+
+For #1, the structural MRI scan in Day1 can be preprocessed as usual. The function MRI data must be corrected for incorrect information of the head orientation and initialized for head's position to the structural MRI data in Day1.
+
+$ sphinx2reorient --in=T1wDay2  --ref=T1wDay1 --out=T1wDay2_fakesupine
+$ sphinx2reorient --in=fMRIDay2 --out=fMRIDay2_fakesupine --init=T1wDay2_fakesupine_reg.world.mat
+
+For #2, the structural MRI scan in Day1 must be corrected for head orientation, then the functional MRI in Day2 are treated as in #1.
+
+$ sphinx2reorient --in=T1wDay1  --out=T1wDay1_fakesupine 
+$ sphinx2reorient --in=T1wDay2  --ref=T1wDay1_fakesupine  --out=T1wDay2_fakesupine
+$ sphinx2reorient --in=fMRIDay2 --out=fMRIDay2_fakesupine --init=T1wDay2_fakesupine_reg.world.mat
+"
+
+opts_AddMandatory '--in'               'volin'           'volume'                 "input volume to correct orientation"
+opts_AddMandatory '--position'         'PatientPosition' 'HFS, HFP, FFS or FFP'   "Patient position set in the scanner. It is usually described in the tag (0018,5100) in the standard DICOM."
+opts_AddMandatory '--out'              'outroot'         'outroot'                "output root name. Outputs are <outroot>.nii.gz, <outroot>_reorient.world.mat (in world format) and <outroot>_reorient.mat (FSL flirt format)." 
+opts_AddOptional  '--reorient2std'     'reorient2std'    'TRUE (default) or NONE' "reorient to standard RPI ('radiological') space." 'TRUE'
+opts_AddOptional  '--ref'              'ref'             'volume'                 "run a rigid registration to reference volume, save transformation matrix as <outroot>_reg.world.mat and apply it to sform. " 'NONE'
+opts_AddOptional  '--init'             'affine'          'matrix'                 "apply transformation matrix (in world format) to sform" 'NONE'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+# Display the parsed/default values
+opts_ShowValues
+
+# Run
+in=$(imglob -extension $volin)
+outroot=$(remove_ext $outroot)
+
+if [[ ! -e $in ]] ; then
+	log_Err_Abort "cannot find $volin"
+fi
+if [ $ref != NONE ] ; then
+	if [ $(imtest $ref) != 1  ] ; then
+                log_Err_Abort "cannnot find volume: $ref"
+	else
+		ref=$(remove_ext $ref)
+		omat=${outroot}_reg.world.mat
+	fi
+fi
+if [ $affine != NONE ] ; then
+	if [ ! -e $affine ] ; then
+		log_Err_Abort "cannnot find affine"
+	fi
+fi
+
+function readsform () {
+wb_command -file-information $1 | grep -3 sform | tail -4 | awk '{print $(NF-3),$(NF-2),$(NF-1),$NF}'
+}
+
+tmp=${outroot}_$$
+
+if [ $PatientPosition = HFP ] ; then
+	# the following matrix can be inferred by Nudge, makerot usung an input of structure data and a reference of template
+	# rotation x=90
+	echo " 1  0  0  0" >  ${outroot}_reorient.world.mat
+	echo " 0  0  1  0" >> ${outroot}_reorient.world.mat
+	echo " 0 -1  0  0" >> ${outroot}_reorient.world.mat
+	echo " 0  0  0  1" >> ${outroot}_reorient.world.mat
+elif [ $PatientPosition = HFS ] ; then
+	# rotation x=-90, z=180
+	echo "-1  0  0  0" >  ${outroot}_reorient.world.mat
+	echo " 0  0  1  0" >> ${outroot}_reorient.world.mat
+	echo " 0  1  0  0" >> ${outroot}_reorient.world.mat
+	echo " 0  0  0  1" >> ${outroot}_reorient.world.mat
+elif [ $PatientPosition = FFS ] ; then
+	# rotation x=-90
+	echo " 1  0  0  0" >  ${outroot}_reorient.world.mat
+	echo " 0  0 -1  0" >> ${outroot}_reorient.world.mat
+	echo " 0  1  0  0" >> ${outroot}_reorient.world.mat
+	echo " 0  0  0  1" >> ${outroot}_reorient.world.mat
+elif [ $PatientPosition = FFP ] ; then
+	# rotation x=90, z=180
+	echo "-1  0  0  0" >  ${outroot}_reorient.world.mat
+	echo " 0  0 -1  0" >> ${outroot}_reorient.world.mat
+	echo " 0 -1  0  0" >> ${outroot}_reorient.world.mat
+	echo " 0  0  0  1" >> ${outroot}_reorient.world.mat
+else
+	log_Err_Abort "unknown Patient position: $PatientPosition"
+fi
+
+# Correct orientation
+readsform ${in} > ${tmp}_sform.mat
+convert_xfm -omat ${tmp}_newsform.mat -concat ${outroot}_reorient.world.mat ${tmp}_sform.mat
+wb_command -volume-set-space ${in} ${tmp}.nii.gz -sform $(cat ${tmp}_newsform.mat | head -3)
+
+# Reorient to standard RPI space
+if [ $reorient2std = TRUE ] ; then
+	wb_command -volume-reorient ${tmp}.nii.gz RPI ${tmp}.nii.gz
+fi
+
+# Run rigid-body registration to reference volume if requested
+if [ $ref != NONE ] ; then
+	flirt -in ${tmp}.nii.gz -ref $ref -dof 6 -omat ${tmp}_rigid.mat
+	wb_command -convert-affine -from-flirt ${tmp}_rigid.mat ${tmp}.nii.gz ${ref}.nii.gz -to-world ${omat}
+       affine=${omat}
+	rm ${tmp}_rigid.mat
+fi
+
+# Apply transformation to sform if requested
+if [ $affine != NONE ] ; then
+	readsform ${tmp}.nii.gz > ${tmp}_sform.mat
+	convert_xfm -omat ${tmp}_newsform.mat -concat ${affine} ${tmp}_sform.mat
+	wb_command -volume-set-space ${tmp}.nii.gz ${tmp}.nii.gz -sform $(cat ${tmp}_newsform.mat | head -3)
+	convert_xfm -omat ${tmp}_world.mat -concat ${affine} ${outroot}_reorient.world.mat
+	mv ${tmp}_world.mat ${outroot}_reorient.world.mat
+fi
+
+wb_command -convert-affine -from-world ${outroot}_reorient.world.mat -to-flirt ${outroot}_reorient.mat ${in} ${tmp}.nii.gz
+
+immv ${tmp}.nii.gz ${outroot}.nii.gz
+rm ${tmp}_sform.mat ${tmp}_newsform.mat
+
+exit 0
