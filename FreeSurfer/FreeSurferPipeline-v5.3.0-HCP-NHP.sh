@@ -456,7 +456,7 @@ function runFSwhite () {
 
 	# Highres and white stuffs and fine-tune T2w to T1w registration
 	log_Msg "High resolution white matter and fine tune T2w to T1w registration"
-	"$PipelineScripts"/FreeSurferHiresWhite_RIKEN.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$ScaleFactor"
+	"$PipelineScripts"/FreeSurferHiresWhiteNHP.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$ScaleFactor"
 
 }
 
@@ -494,7 +494,7 @@ function runFSpial () {
 	fi
 
 	log_Msg "High resolution pial surface"
-	"$PipelineScripts"/FreeSurferHiresPial_RIKEN.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$T2wType" "$MaxThickness" "$VariableSigma" "$GreySigma" "$BiasFieldFastSmoothingSigma"
+	"$PipelineScripts"/FreeSurferHiresPialNHP.sh "$SubjectID" "$SubjectDIR" "$T1wImage" "$T2wImage" "$T2wType" "$MaxThickness" "$VariableSigma" "$GreySigma" "$BiasFieldFastSmoothingSigma"
 
 	if [[ $SPECIES =~ Human ]] ; then
 		${ReconAll} -subjid $SubjectID -sd $SubjectDIR -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -cortribbon \
@@ -530,3 +530,4 @@ fi
 }
 
 main;
+
