@@ -8,64 +8,50 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+# script_name=$(basename "${0}")
 
-Usage() {
-	cat <<EOF
 
-${script_name}: Tool for bias field correction based on T1w image only
+set -eu
 
-Usage: ${script_name}
-  --workingdir=<working directory> 
-  --T1im=<input T1 image> 
-  [--oT1im=<output T1 image>] 
-  [--oT1brain=<output T1 brain>] 
-  [--bfsigma=<input T1 image>]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+opts_SetScriptDescription "Tool for bias field correction based on T1w image only"
 
-log_Check_Env_Var HCPPIPEDIR
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working directory'
+
+opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
+
+opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
+
+opts_AddMandatory '--obias' 'oBias' 'image' "output bias field image"
+
+#optional args 
+opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
+
+opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
+
+opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 20)" "20"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
 log_Check_Env_Var FSLDIR
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-      	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-      	    echo $fn | sed "s/^${sopt}=//"
-      	    return 0
-      	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -78,19 +64,7 @@ defaultopt() {
 # T1_fast_bias_idxmask.nii.gz       T1_initfast2_brain.nii.gz         log.txt
 # T1_fast_bias_init.nii.gz          T1_initfast2_brain_mask.nii.gz
 
-################################################## OPTION PARSING #####################################################
 
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  
-T1wImage=`getopt1 "--T1im" $@`  
-T1wBrain=`getopt1 "--T1brain" $@`  
-oBias=`getopt1 "--obias" $@`  
-oT1wImage=`getopt1 "--oT1im" $@`  
-oT1wBrain=`getopt1 "--oT1brain" $@`  
-BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`
-
-# A default value of 20 for bias smoothing sigma is the recommended default by FSL 
-BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 20` 
 WDir="$WD.anat"
 
 log_Msg " START: T1wBiasFieldCorrection"

@@ -8,125 +8,79 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+# script_name=$(basename "${0}")
 
-Usage() {
-	cat <<EOF
+set -eu
 
-${script_name}: Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)
-
-Usage: ${script_name}
-  [--workingdir=<working dir>]
-  --t1=<t1w image>
-  --t1rest=<bias corrected t1w image>
-  --t1restbrain=<bias corrected, brain extracted t1w image>
-  --t2=<t2w image>
-  --t2rest=<bias corrected t2w image>
-  --t2restbrain=<bias corrected, brain extracted t2w image>
-  --ref=<reference image>
-  --refbrain=<reference brain image>
-  --refmask=<reference brain mask>
-  [--ref2mm=<reference 2mm image>]
-  [--ref2mmmask=<reference 2mm brain mask>]
-  --owarp=<output warp>
-  --oinvwarp=<output inverse warp>
-  --ot1=<output t1w to MNI>
-  --ot1rest=<output bias corrected t1w to MNI>
-  --ot1restbrain=<output bias corrected, brain extracted t1w to MNI>
-  --ot2=<output t2w to MNI>
-  --ot2rest=<output bias corrected t2w to MNI>
-  --ot2restbrain=<output bias corrected, brain extracted t2w to MNI>
-  [--fnirtconfig=<FNIRT configuration file>]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+opts_SetScriptDescription "Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)"
 
-log_Check_Env_Var HCPPIPEDIR
+opts_AddMandatory '--t1' 'T1wImage' 'image' 't1w image'
+
+opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
+
+opts_AddMandatory '--t1restbrain' 'T1wRestoreBrain' 'image' 'bias corrected brain extracted t1w image'
+
+opts_AddMandatory '--t2' 'T2wImage' 't2w image' 'image'
+
+opts_AddMandatory '--t2rest' 'T2wRestore' 'image' 'bias corrected t2w image'
+
+opts_AddMandatory '--t2restbrain' 'T2wRestoreBrain' 'image' 'bias corrected, brain extracted t2w image'
+
+opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
+
+opts_AddMandatory '--refbrain' 'ReferenceBrain' 'image' 'reference brain image'
+
+opts_AddMandatory '--refmask' 'ReferenceMask' 'mask' 'reference brain mask'
+
+opts_AddMandatory '--owarp' 'OutputTransform' 'number' 'output warp'
+
+opts_AddMandatory '--oinvwarp' 'OutputInvTransform' 'inverse' 'output inverse warp'
+
+opts_AddMandatory '--ot1' 'OutputT1wImage' 'image' 'output t1w to MNI'
+
+opts_AddMandatory '--ot1rest' 'OutputT1wImageRestore' 'image' 'output bias corrected t1w to MNI'
+
+opts_AddMandatory '--ot1restbrain' 'OutputT1wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t1w to MNI'
+
+opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' 'output t2w to MNI'
+
+opts_AddMandatory '--ot2rest' 'OutputT2wImageRestore' 'image' 'output bias corrected t2w to MNI'
+
+opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t2w to MNI'
+
+##optional args
+opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
+
+opts_AddOptional '--ref2mm' 'Reference2mm' 'image' 'reference 2mm image' "${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz"
+
+opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'mask' 'reference 2mm brain mask' "${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz"
+
+opts_AddOptional '--fnirtconfig' 'FNIRTConfig' 'file' 'FNIRT configuration file' "${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
+
 log_Check_Env_Var FSLDIR
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-  if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-      echo $fn | sed "s/^${sopt}=//"
-      return 0
-  fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
-
-################################################### OUTPUT FILES #####################################################
-
-# Outputs (in $WD):  xfms/acpc2MNILinear.mat
-#                    xfms/${T1wRestoreBrainBasename}_to_MNILinear
-#                    xfms/IntensityModulatedT1.nii.gz  xfms/NonlinearRegJacobians.nii.gz
-#                    xfms/IntensityModulatedT1.nii.gz  xfms/2mmReg.nii.gz
-#                    xfms/NonlinearReg.txt  xfms/NonlinearIntensities.nii.gz
-#                    xfms/NonlinearReg.nii.gz
-# Outputs (not in $WD): ${OutputTransform} ${OutputInvTransform}
-#                       ${OutputT1wImage} ${OutputT1wImageRestore}
-#                       ${OutputT1wImageRestoreBrain}
-#                       ${OutputT2wImage}  ${OutputT2wImageRestore}
-#                       ${OutputT2wImageRestoreBrain}
-
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-T1wImage=`getopt1 "--t1" $@`  # "$2"
-T1wRestore=`getopt1 "--t1rest" $@`  # "$3"
-T1wRestoreBrain=`getopt1 "--t1restbrain" $@`  # "$4"
-T2wImage=`getopt1 "--t2" $@`  # "$5"
-T2wRestore=`getopt1 "--t2rest" $@`  # "$6"
-T2wRestoreBrain=`getopt1 "--t2restbrain" $@`  # "$7"
-Reference=`getopt1 "--ref" $@`  # "$8"
-ReferenceBrain=`getopt1 "--refbrain" $@`  # "$9"
-ReferenceMask=`getopt1 "--refmask" $@`  # "${10}"
-Reference2mm=`getopt1 "--ref2mm" $@`  # "${11}"
-Reference2mmMask=`getopt1 "--ref2mmmask" $@`  # "${12}"
-OutputTransform=`getopt1 "--owarp" $@`  # "${13}"
-OutputInvTransform=`getopt1 "--oinvwarp" $@`  # "${14}"
-OutputT1wImage=`getopt1 "--ot1" $@`  # "${15}"
-OutputT1wImageRestore=`getopt1 "--ot1rest" $@`  # "${16}"
-OutputT1wImageRestoreBrain=`getopt1 "--ot1restbrain" $@`  # "${17}"
-OutputT2wImage=`getopt1 "--ot2" $@`  # "${18}"
-OutputT2wImageRestore=`getopt1 "--ot2rest" $@`  # "${19}"
-OutputT2wImageRestoreBrain=`getopt1 "--ot2restbrain" $@`  # "${20}"
-FNIRTConfig=`getopt1 "--fnirtconfig" $@`  # "${21}"
-
-# default parameters
-WD=`defaultopt $WD .`
-Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
-Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`
-FNIRTConfig=`defaultopt $FNIRTConfig ${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf`
 
 T1wRestoreBasename=`remove_ext $T1wRestore`;
 T1wRestoreBasename=`basename $T1wRestoreBasename`;

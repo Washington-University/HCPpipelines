@@ -8,69 +8,56 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+# script_name=$(basename "${0}")
 
-Usage() {
-	cat <<EOF
 
-${script_name}: Tool for performing brain extraction using non-linear (FNIRT) results
+set -eu
 
-Usage: ${script_name}
-  [--workingdir=<working dir>]
-  --in=<input image>
-  [--ref=<reference highres image>]
-  [--refmask=<reference brain mask>]
-  [--ref2mm=<reference image 2mm>]
-  [--ref2mmmask=<reference brain mask 2mm>]
-  --outbrain=<output brain extracted image>
-  --outbrainmask=<output brain mask>
-  [--fnirtconfig=<fnirt config file>]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+opts_SetScriptDescription "Tool for performing brain extraction using non-linear (FNIRT) results"
 
-log_Check_Env_Var HCPPIPEDIR
+opts_AddMandatory '--in' 'Input' 'image' "input image"
+
+opts_AddMandatory '--outbrain' 'OutputBrainExtractedImage' 'images' "output brain extracted image"
+
+opts_AddMandatory '--outbrainmask' 'OutputBrainMask' 'mask' "output brain mask"
+
+#optional args 
+
+opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "."
+
+opts_AddOptional '--ref' 'Reference' 'image' 'reference image' "${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz"
+
+opts_AddOptional '--refmask' 'ReferenceMask' 'mask' 'reference brain mask' "${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain_mask.nii.gz"
+
+opts_AddOptional '--ref2mm' 'Reference2mm' 'image' 'reference 2mm image' "${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz"
+
+opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'mask' 'reference 2mm brain mask' "${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz"
+
+opts_AddOptional '--fnirtconfig' 'FNIRTConfig' 'file' 'FNIRT configuration file' "$FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var HCPPIPEDIR_Templates
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -83,25 +70,6 @@ defaultopt() {
 #    "$OutputBrainMask" "$OutputBrainExtractedImage"
 
 ################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-Input=`getopt1 "--in" $@`  # "$2"
-Reference=`getopt1 "--ref" $@` # "$3"
-ReferenceMask=`getopt1 "--refmask" $@` # "$4"
-Reference2mm=`getopt1 "--ref2mm" $@` # "$5"
-Reference2mmMask=`getopt1 "--ref2mmmask" $@` # "$6"
-OutputBrainExtractedImage=`getopt1 "--outbrain" $@` # "$7"
-OutputBrainMask=`getopt1 "--outbrainmask" $@` # "$8"
-FNIRTConfig=`getopt1 "--fnirtconfig" $@` # "$9"
-
-# default parameters
-WD=`defaultopt $WD .`
-Reference=`defaultopt $Reference ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz`
-ReferenceMask=`defaultopt $ReferenceMask ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain_mask.nii.gz`  # dilate to be conservative with final brain mask
-Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
-Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`  # dilate to be conservative with final brain mask
-FNIRTConfig=`defaultopt $FNIRTConfig $FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf`
 
 BaseName=`${FSLDIR}/bin/remove_ext $Input`;
 BaseName=`basename $BaseName`;
