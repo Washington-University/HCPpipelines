@@ -8,99 +8,61 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+# script_name=$(basename "${0}")
 
-Usage() {
-	cat <<EOF
 
-${script_name}: Tool for bias field correction based on square root of T1w * T2w
+set -eu
 
-Usage: ${script_name}
-  --workingdir=<working directory>
-  --T1im=<input T1 image>
-  --T1brain=<input T1 brain>
-  --T2im=<input T2 image>
-  --obias=<output bias field image>
-  --oT1im=<output corrected T1 image>
-  --oT1brain=<output corrected T1 brain>
-  --oT2im=<output corrected T2 image>
-  --oT2brain=<output corrected T2 brain>
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+opts_SetScriptDescription "Tool for bias field correction based on square root of T1w * T2w"
 
-log_Check_Env_Var HCPPIPEDIR
+opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
+
+opts_AddMandatory '--T1brain' 'T1wImageBrain' 'image' "input T1 brain"
+
+opts_AddMandatory '--T2im' 'T2wImage' 'image' "input T2 image"
+
+opts_AddMandatory '--obias' 'OutputBiasField' 'image' "output bias field image"
+
+opts_AddMandatory '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
+
+opts_AddMandatory '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
+
+opts_AddMandatory '--oT2im' 'OutputT2wRestoredImage' 'image' "output corrected T2 image"
+
+opts_AddMandatory '--oT2brain' 'OutputT2wRestoredBrainImage' 'image' "output corrected T2 brain"
+
+#optional args
+opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
+
+opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 5)" "5"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
+
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
-
-################################################### OUTPUT FILES #####################################################
-
-# Output images (in $WD): 
-#      T1wmulT2w  T1wmulT2w_brain  T1wmulT2w_brain_norm  
-#      SmoothNorm_sX  T1wmulT2w_brain_norm_sX  
-#      T1wmulT2w_brain_norm_modulate  T1wmulT2w_brain_norm_modulate_mask  bias_raw   
-# Output images (not in $WD): 
-#      $OutputBiasField 
-#      $OutputT1wRestoredBrainImage $OutputT1wRestoredImage 
-#      $OutputT2wRestoredBrainImage $OutputT2wRestoredImage
-
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-T1wImage=`getopt1 "--T1im" $@`  # "$2"
-T1wImageBrain=`getopt1 "--T1brain" $@`  # "$3"
-T2wImage=`getopt1 "--T2im" $@`  # "$4"
-OutputBiasField=`getopt1 "--obias" $@`  # "$5"
-OutputT1wRestoredImage=`getopt1 "--oT1im" $@`  # "$6"
-OutputT1wRestoredBrainImage=`getopt1 "--oT1brain" $@`  # "$7"
-OutputT2wRestoredImage=`getopt1 "--oT2im" $@`  # "$8"
-OutputT2wRestoredBrainImage=`getopt1 "--oT2brain" $@`  # "$9"
-BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`  # "$9"
-
-# default parameters
-WD=`defaultopt $WD .`
 Factor="0.5" #Leave this at 0.5 for now it is the number of standard deviations below the mean to threshold the non-brain tissues at
-BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 5` #Leave this at 5mm for now
 
 log_Msg "START: BiasFieldCorrection"
 

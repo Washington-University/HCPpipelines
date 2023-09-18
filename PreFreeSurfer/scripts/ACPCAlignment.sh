@@ -8,65 +8,47 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
 
-Usage() {
-	cat <<EOF
+set -eu
 
-${script_name}: Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space
-
-Usage: ${script_name}
-  --workingdir=<working dir> 
-  --in=<input image> 
-  --ref=<reference image> 
-  --out=<output image> 
-  --omat=<output matrix> 
-  [--brainsize=<brainsize>]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
 
-log_Check_Env_Var HCPPIPEDIR
+opts_SetScriptDescription "Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
+
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working directory'
+
+opts_AddMandatory '--in' 'Input' 'image' 'inputvimage'
+
+opts_AddMandatory '--out' 'Output' 'image' 'output_image'
+
+opts_AddMandatory '--omat' 'OutputMatrix' 'matrix' 'output matrix'
+
+#optional args
+opts_AddOptional '--ref' 'Reference' 'image' 'reference image' "${FSLDIR}/data/standard/MNI152_T1_1mm"
+
+opts_AddOptional '--brainsize' 'BrainSizeOpt' 'value' 'brainsize'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
 log_Check_Env_Var FSLDIR
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -77,20 +59,11 @@ defaultopt() {
 #     "$OutputMatrix"  (a 6 DOF mapping from the original image to the ACPC aligned version)
 #     "$Output"  (the ACPC aligned image)
 
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-Input=`getopt1 "--in" $@`  # "$2"
-Reference=`getopt1 "--ref" $@`  # "$3"
-Output=`getopt1 "--out" $@`  # "$4"
-OutputMatrix=`getopt1 "--omat" $@`  # "$5"
-BrainSizeOpt=`getopt1 "--brainsize" $@`  # "$6"
-
-# default parameters
-Reference=`defaultopt ${Reference} ${FSLDIR}/data/standard/MNI152_T1_1mm`
 Output=`$FSLDIR/bin/remove_ext $Output`
-WD=`defaultopt $WD ${Output}.wdir`
+if [[ "$WD" == "" ]]
+then
+    WD="${Output}.wdir"
+fi
 
 # make optional arguments truly optional  (as -b without a following argument would crash robustfov)
 if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
@@ -129,9 +102,7 @@ ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2std.mat -concat "$WD"/roi2std.mat "$W
 
 # Get a 6 DOF approximation which does the ACPC alignment (AC, ACPC line, and hemispheric plane)
 verbose_echo " --> Geting a 6 DOF approximation"
-$CARET7DIR/wb_command -convert-affine -from-flirt "$WD"/full2std.mat "$Input".nii.gz "$Reference" -to-world "$WD"/full2std_world.mat
-${HCPPIPEDIR}/global/scripts/aff2rigid_world "$WD"/full2std_world.mat "$WD"/full2std_rigid_world.mat
-$CARET7DIR/wb_command -convert-affine -from-world "$WD"/full2std_rigid_world.mat -to-flirt "$OutputMatrix" "$Input".nii.gz "$Reference"
+${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 
 # Create a resampled image (ACPC aligned) using spline interpolation
 verbose_echo " --> Creating a resampled image"
