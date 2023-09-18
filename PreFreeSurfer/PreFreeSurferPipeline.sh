@@ -560,11 +560,11 @@ for TXw in ${Modalities} ; do
 		--out=${TXwFolder}/${TXwImage}${i}_gdc \
 		--owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
 	    OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
-	    if [ ! -z $SPHINX ] ; then
+	    if [ "$TruePatientOrientation" = "HFSx" ] ; then
 	        log_Msg "Reorient sphinx-positioned data with a scanner orientation of $SPHINX"
-		 ${GlobalScripts}/sphinx2reorient --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --position=$SPHINX
+		 ${GlobalScripts}/sphinx2reorient --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --position="$ScannerPatientOrientation"
 		 convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-	    fi 
+	    fi
 
 	    if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # # TH 2016 for ACPC initialization
               if [[ $(imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
@@ -585,12 +585,12 @@ for TXw in ${Modalities} ; do
                imrm ${TXwFolder}/${TXwImage}${i}_gdc
             fi
            log_Msg "reorient data to std" 
-	    if [ ! -z $SPHINX ] ; then
+	    if [ $TruePatientOrientation ] ; then
 	        log_Msg "Reorient sphinx-positioned data with a scanner orientation of $SPHINX"
-		 ${GlobalScripts}/sphinx2reorient --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --position=$SPHINX
+		 ${GlobalScripts}/sphinx2reorient --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --position="$ScannerPatientOrientation"
            else
               ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-	    fi 
+	   fi 
      	    OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
 
 	    if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
@@ -598,8 +598,8 @@ for TXw in ${Modalities} ; do
              if [[ $(imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
                 imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
              fi
-             if [ ! -z $SPHINX ] ; then 
-               ${RUN} ${GlobalScripts}/sphinx2orient --in-vol=${Image}_brain --out-root=${TXwFolder}/${TXwImage}${i}_gdc_brain --position=$SPHINX
+             if [ "$TruePatientOrientation" = "HFSx" ] ; then 
+               ${RUN} ${GlobalScripts}/sphinx2orient --in-vol=${Image}_brain --out-root=${TXwFolder}/${TXwImage}${i}_gdc_brain --position="$ScannerPatientOrientation"
              else
  	        ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
              fi
@@ -703,7 +703,7 @@ for TXw in ${Modalities} ; do
       BrainExtraction=FSL  
     fi
     mkdir -p ${TXwFolder}/ACPCAlignment  # TH modified Oct 2016 - Feb 2023
-    ${RUN} ${PipelineScripts}/ACPCAlignment_RIKEN.sh \
+    ${RUN} ${PipelineScripts}/ACPCAlignment.sh \
 	--workingdir=${TXwFolder}/ACPCAlignment \
 	--in=${TXwFolder}/${TXwImage} \
 	--ref=${TXwTemplate} \
@@ -756,7 +756,7 @@ for TXw in ${Modalities} ; do
     if [ -e ${TXwFolder}/BrainExtraction_ANTSbased ] ; then 
        rm -rf ${TXwFolder}/BrainExtraction_ANTSbased
     fi
-    ${RUN} ${PipelineScripts}/BrainExtraction_ANTSbased_RIKEN.sh \
+    ${RUN} ${PipelineScripts}/BrainExtraction_ANTSbased.sh \
 	--workingdir=${TXwFolder}/BrainExtraction_ANTSbased \
 	--in=${TXwFolder}/${TXwImage}_acpc \
 	--ref=${TXwTemplate2mm} \
@@ -767,7 +767,7 @@ for TXw in ${Modalities} ; do
   else
     log_Msg "Brain extract with FNIRT" 
     mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
-    ${RUN} ${PipelineScripts}/BrainExtraction_FNIRTbased_RIKEN.sh \
+    ${RUN} ${PipelineScripts}/BrainExtraction_FNIRTbased.sh \
 	--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
 	--in=${TXwFolder}/${TXwImage}_acpc \
 	--ref=${TXwTemplate} \
@@ -805,7 +805,7 @@ if [[ ${AvgrdcSTRING} = "FIELDMAP" || ${AvgrdcSTRING} = "TOPUP" ]] ; then
    wdir=${T1wFolder}/T2wToT1wDistortionCorrectAndReg
   fi
   mkdir -p ${wdir}
-  ${RUN} ${PipelineScripts}/T2wToT1wDistortionCorrectAndReg_RIKEN.sh \
+  ${RUN} ${PipelineScripts}/T2wToT1wDistortionCorrectAndReg.sh \
       --workingdir=${wdir} \
       --t1=${T1wFolder}/${T1wImage}_acpc \
       --t1brain=${T1wFolder}/${T1wImage}_acpc_brain \
@@ -844,7 +844,7 @@ else
   fi
 
   mkdir -p ${wdir}
-  ${RUN} ${PipelineScripts}/T2wToT1wReg_RIKEN.sh \
+  ${RUN} ${PipelineScripts}/T2wToT1wReg.sh \
       ${wdir} \
       ${T1wFolder}/${T1wImage}_acpc \
       ${T1wFolder}/${T1wImage}_acpc_brain \
@@ -867,7 +867,7 @@ fi
 if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
    mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w 
-   ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w_RIKEN.sh \
+   ${RUN} ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
     --workingdir=${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w \
     --T1im=${T1wFolder}/${T1wImage}_acpc_dc \
     --T1brain=${T1wFolder}/${T1wImage}_acpc_dc_brain \
@@ -902,7 +902,7 @@ AtlasRegistration () {
 #### Atlas Registration to MNI152: FLIRT + FNIRT  #Also applies registration to T1w and T2w images ####
 #Consider combining all transforms and recreating files with single resampling steps
  
-${RUN} ${PipelineScripts}/AtlasRegistrationToMNI152_FLIRTandFNIRT_RIKEN.sh \
+${RUN} ${PipelineScripts}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
     --workingdir=${AtlasSpaceFolder} \
     --t1=${T1wFolder}/${T1wImage}_acpc_dc \
     --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
