@@ -53,17 +53,6 @@ log_Check_Env_Var FSLDIR
 crop=$(opts_StringToBool "$crop")
 cleanup=$(opts_StringToBool "$cleanup")
 
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# get_arg2() {
-#     if [ X$2 = X ] ; then
-# 	echo "Option $1 requires an argument" 1>&2
-# 	exit 1
-#     fi
-#     echo $2
-# }
-
 #########################################################################################################
 
 IFS='@' read -a imagelist <<<"$imagesStr"
