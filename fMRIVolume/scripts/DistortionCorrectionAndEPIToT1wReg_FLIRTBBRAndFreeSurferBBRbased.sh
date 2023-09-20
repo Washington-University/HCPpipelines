@@ -19,160 +19,217 @@ NONE_METHOD_OPT="NONE"
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
-
-show_usage() {
-	cat <<EOF
-
-${script_name}: Script to register EPI to T1w, with distortion correction
-
-Usage: ${script_name} [options]
-
-  [--help] : show usage information and exit
-  [--workingdir=<working dir>]
-  --scoutin=<input scout image (pre-sat EPI)>
-  --t1=<input T1-weighted image>
-  --t1restore=<input bias-corrected T1-weighted image>
-  --t1brain=<input bias-corrected, brain-extracted T1-weighted image>
-  --biasfield=<input T1w bias field estimate image, in fMRI space>
-  --freesurferfolder=<directory of FreeSurfer folder>
-  --freesurfersubjectid=<FreeSurfer Subject ID>
-  --owarp=<output filename for warp of EPI to T1w>
-  --ojacobian=<output filename for Jacobian image (in T1w space)>
-  --oregim=<output registered image (EPI to T1w)>
-  --usejacobian=<"TRUE" or "FALSE">
-
-  --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>
-      Set to "NONE" to skip gradient non-linearity distortion correction (GDC).
-
-  --biascorrection=<method to use for receive coil bias field correction>
-
-        "SEBASED"
-             use bias field derived from spin echo images, must also use --method="${SPIN_ECHO_METHOD_OPT}"
-
-             Note: --fmriname=<name of fmri run> required for "SEBASED" bias correction method
+# script_name=$(basename "${0}")
 
 
-        "LEGACY"
-             use the bias field derived from T1w and T2w images, same as was used in
-             pipeline version 3.14.1 or older. No longer recommended.
+set -eu
 
-        "NONE"
-             don't do bias correction
-
-  --method=<method to use for susceptibility distortion correction (SDC)>
-
-        "${FIELDMAP_METHOD_OPT}"
-            equivalent to "${SIEMENS_METHOD_OPT}" (see below)
-
-        "${SIEMENS_METHOD_OPT}"
-             use Siemens specific Gradient Echo Field Maps for SDC
-
-        "${SPIN_ECHO_METHOD_OPT}"
-             use a pair of Spin Echo EPI images ("Spin Echo Field Maps") acquired with
-             opposing polarity for SDC
-
-        "${GENERAL_ELECTRIC_METHOD_OPT}"
-             use General Electric specific Gradient Echo Field Maps for SDC
-
-        "${PHILIPS_METHOD_OPT}"
-             use Philips specific Gradient Echo Field Maps for SDC
-
-        "${NONE_METHOD_OPT}"
-             do not use any SDC
-
-  Options required for all --method options except for "${NONE_METHOD_OPT}":
-
-    [--echospacing=<*effective* echo spacing of fMRI input, in seconds>]
-    [--unwarpdir=<PE direction for unwarping according to the *voxel* axes: 
-       {x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]
-          Polarity matters!  If your distortions are twice as bad as in the original images, 
-          try using the opposite polarity for --unwarpdir.
-
-  Options required if using --method="${SPIN_ECHO_METHOD_OPT}":
-
-    [--SEPhaseNeg=<"negative" polarity SE-EPI image>]
-    [--SEPhasePos=<"positive" polarity SE-EPI image>]
-    [--topupconfig=<topup config file>]
-    [--subjectfolder=<subject processing folder>]
-
-  Options required if using --method="${SIEMENS_METHOD_OPT}":
-
-    [--fmapmag=<input Siemens field map magnitude image>]
-    [--fmapphase=input Siemens field map phase image>]
-    [--echodiff=<difference of echo times for fieldmap, in milliseconds>]
-
-  Options required if using --method="${GENERAL_ELECTRIC_METHOD_OPT}":
-
-    [--fmapgeneralelectric=<input General Electric field map image>]
-
-  Options required if using --method="${PHILIPS_METHOD_OPT}":
-
-    [--fmapmag=<input Philips field map magnitude image>]
-    [--fmapphase=input Philips field map phase image>]
-
-  OTHER OPTIONS:
-
-  [--dof=<degrees of freedom for EPI to T1 registration: 6 (default), 9, or 12>]
-  [--qaimage=<output name for QA image>]
-  [--preregistertool=<"epi_reg" (default) or "flirt">]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-opts_ShowVersionIfRequested $@
+opts_SetScriptDescription "Script to register EPI to T1w, with distortion correction"
 
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
+opts_AddMandatory '--scoutin' 'ScoutInputName' 'image' "input scout image (pre-sat EPI)"
+
+opts_AddMandatory '--t1' 'T1wImage' 'image' "input T1-weighted image"
+
+opts_AddMandatory '--t1restore' 'T1wRestoreImage' 'image' "input bias-corrected T1-weighted image"
+
+opts_AddMandatory '--t1brain' 'T1wBrainImage' 'image' "input bias-corrected, brain-extracted T1-weighted image"
+
+opts_AddMandatory '--biasfield' 'BiasField' 'image' "input T1w bias field estimate image or in fMRI space"
+
+opts_AddMandatory '--freesurferfolder' 'FreeSurferSubjectFolder' 'path' "directory of FreeSurfer folder"
+
+opts_AddMandatory '--freesurfersubjectid' 'FreeSurferSubjectID' 'id' "FreeSurfer Subject ID"
+
+opts_AddMandatory '--owarp' 'OutputTransform' 'name' "output filename for warp of EPI to T1w"
+
+opts_AddMandatory '--ojacobian' 'JacobianOut' 'name' "output filename for Jacobian image (in T1w space)"
+
+opts_AddMandatory '--oregim' 'RegOutput' 'name' "output registered image (EPI to T1w)"
+
+opts_AddMandatory '--usejacobian' 'UseJacobian' 'true or false' "apply jacobian correction to distortion-corrected SBRef and other files"
+
+opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'coefficients (Siemens Format)' "Gradient non-linearity distortion coefficients (Siemens format), set to "NONE" to skip gradient non-linearity distortion correction (GDC)."
+
+opts_AddMandatory '--biascorrection' 'BiasCorrection' 'SEBASED OR LEGACY OR NONE' "Method to use for receive coil bias field correction: 
+        'SEBASED'
+             use bias field derived from spin echo images, must also use --method='${SPIN_ECHO_METHOD_OPT}'
+             Note: --fmriname=<name of fmri run> required for 'SEBASED' bias correction method
+
+        'LEGACY'
+             use the bias field derived from T1w and T2w images, same as was used in
+             pipeline version 3.14.1 or older. No longer recommended.
+
+        'NONE'
+             don't do bias correction"
+
+opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)
+        '${FIELDMAP_METHOD_OPT}'
+            equivalent to '${SIEMENS_METHOD_OPT}' (see below)
+
+        '${SIEMENS_METHOD_OPT}'
+             use Siemens specific Gradient Echo Field Maps for SDC
+
+        '${SPIN_ECHO_METHOD_OPT}'
+             use a pair of Spin Echo EPI images ('Spin Echo Field Maps') acquired with
+             opposing polarity for SDC
+
+        '${GENERAL_ELECTRIC_METHOD_OPT}'
+             use General Electric specific Gradient Echo Field Maps for SDC
+
+        '${PHILIPS_METHOD_OPT}'
+             use Philips specific Gradient Echo Field Maps for SDC
+
+        '${NONE_METHOD_OPT}'
+             do not use any SDC"
+
+
+#Optional Args 
+opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
+
+opts_AddOptional '--echospacing' 'EchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
+
+opts_AddOptional '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]' "PE direction for unwarping according to the *voxel* axes. Polarity matters! If your distortions are twice as bad as in the original images, try using the opposite polarity for --unwarpdir."
+
+opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' 'number' "'negative' polarity SE-EPI image"
+
+opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'number' "'positive' polarity SE-EPI image"
+
+opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file" "${HCPPIPEDIR_Config}/b02b0.cnf"
+
+opts_AddOptional '--subjectfolder' 'SubjectFolder' 'path' "subject processing folder"
+
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "input Siemens field map magnitude image"
+
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input Siemens field map phase image"
+
+opts_AddOptional '--echodiff' 'deltaTE' 'number (milliseconds)' "difference of echo times for fieldmap, in milliseconds"
+
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input General Electric field map image"
+
+opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "degrees of freedom for EPI to T1 registration" '6'
+
+opts_AddOptional '--qaimage' 'QAImage' 'name' "output name for QA image" "T1wMulEPI"
+
+opts_AddOptional '--preregistertool' 'PreregisterTool' "'epi_reg' OR 'flirt'" "'epi_reg' (default) OR 'flirt'" "epi_reg"
+
+opts_AddOptional '--fmriname' 'NameOffMRI' 'name' "name of fmri run"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+#display the parsed/default values
+opts_ShowValues
 
-log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
 log_Check_Env_Var HCPPIPEDIR_Global
+
+UseJacobian=$(opts_StringToBool "$UseJacobian")
+
+# show_usage() {
+# 	cat <<EOF
+
+# ${script_name}: Script to register EPI to T1w, with distortion correction
+
+# Usage: ${script_name} [options]
+
+
+#   Options required for all --method options except for "${NONE_METHOD_OPT}":
+
+    
+#   Options required if using --method="${SPIN_ECHO_METHOD_OPT}":
+
+    
+    
+
+#   Options required if using --method="${SIEMENS_METHOD_OPT}":
+
+    
+    
+    
+
+#   Options required if using --method="${GENERAL_ELECTRIC_METHOD_OPT}":
+
+    
+
+#   Options required if using --method="${PHILIPS_METHOD_OPT}":
+
+
+#   OTHER OPTIONS:
+
+#   [--dof=<degrees of freedom for EPI to T1 registration: 6 (default), 9, or 12>]
+#   [--qaimage=<output name for QA image>]
+#   [--preregistertool=<"epi_reg" (default) or "flirt">]
+
+# EOF
+# }
+
+# # Allow script to return a Usage statement, before any other output or checking
+# if [ "$#" = "0" ]; then
+#     show_usage
+#     exit 1
+# fi
+
+# # ------------------------------------------------------------------------------
+# #  Check that HCPPIPEDIR is defined and Load Function Libraries
+# # ------------------------------------------------------------------------------
+
+# if [ -z "${HCPPIPEDIR}" ]; then
+#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+#   exit 1
+# fi
+
+
+# opts_ShowVersionIfRequested $@
+
+# if opts_CheckForHelpRequest $@; then
+# 	show_usage
+# 	exit 0
+# fi
+
+# # ------------------------------------------------------------------------------
+# #  Verify required environment variables are set and log value
+# # ------------------------------------------------------------------------------
+
+# log_Check_Env_Var HCPPIPEDIR
+# log_Check_Env_Var FSLDIR
+# log_Check_Env_Var FREESURFER_HOME
+# log_Check_Env_Var HCPPIPEDIR_Global
 
 HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-        if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-            echo $fn | sed "s/^${sopt}=//"
-            return 0
-        fi
-    done
-}
+# # function for parsing options
+# getopt1() {
+#     sopt="$1"
+#     shift 1
+#     for fn in $@ ; do
+#         if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+#             echo $fn | sed "s/^${sopt}=//"
+#             return 0
+#         fi
+#     done
+# }
 
-defaultopt() {
-    echo $1
-}
+# defaultopt() {
+#     echo $1
+# }
 
 
 ################################################### OUTPUT FILES #####################################################
@@ -204,41 +261,41 @@ defaultopt() {
 
 ################################################## OPTION PARSING #####################################################
 
-# parse arguments
-WD=`getopt1 "--workingdir" $@`
-ScoutInputName=`getopt1 "--scoutin" $@`
-T1wImage=`getopt1 "--t1" $@`
-T1wRestoreImage=`getopt1 "--t1restore" $@`
-T1wBrainImage=`getopt1 "--t1brain" $@`
-SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`
-SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`
-EchoSpacing=`getopt1 "--echospacing" $@`
-MagnitudeInputName=`getopt1 "--fmapmag" $@`
-PhaseInputName=`getopt1 "--fmapphase" $@`
-GEB0InputName=`getopt1 "--fmapgeneralelectric" $@`
-deltaTE=`getopt1 "--echodiff" $@`
-UnwarpDir=`getopt1 "--unwarpdir" $@`
-OutputTransform=`getopt1 "--owarp" $@`
-BiasField=`getopt1 "--biasfield" $@`
-RegOutput=`getopt1 "--oregim" $@`
-FreeSurferSubjectFolder=`getopt1 "--freesurferfolder" $@`
-FreeSurferSubjectID=`getopt1 "--freesurfersubjectid" $@`
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
-QAImage=`getopt1 "--qaimage" $@`
-DistortionCorrection=`getopt1 "--method" $@`
-TopupConfig=`getopt1 "--topupconfig" $@`
-JacobianOut=`getopt1 "--ojacobian" $@`
-dof=`getopt1 "--dof" $@`
-NameOffMRI=`getopt1 "--fmriname" $@`
-SubjectFolder=`getopt1 "--subjectfolder" $@`
-BiasCorrection=`getopt1 "--biascorrection" $@`
-UseJacobian=`getopt1 "--usejacobian" $@`
-PreregisterTool=`getopt1 "--preregistertool" $@`
+# # parse arguments
+# WD=`getopt1 "--workingdir" $@`
+# ScoutInputName=`getopt1 "--scoutin" $@`
+# T1wImage=`getopt1 "--t1" $@`
+# T1wRestoreImage=`getopt1 "--t1restore" $@`
+# T1wBrainImage=`getopt1 "--t1brain" $@`
+# SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`
+# SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`
+# EchoSpacing=`getopt1 "--echospacing" $@`
+# MagnitudeInputName=`getopt1 "--fmapmag" $@`
+# PhaseInputName=`getopt1 "--fmapphase" $@`
+# GEB0InputName=`getopt1 "--fmapgeneralelectric" $@`
+# deltaTE=`getopt1 "--echodiff" $@`
+# UnwarpDir=`getopt1 "--unwarpdir" $@`
+# OutputTransform=`getopt1 "--owarp" $@`
+# BiasField=`getopt1 "--biasfield" $@`
+# RegOutput=`getopt1 "--oregim" $@`
+# FreeSurferSubjectFolder=`getopt1 "--freesurferfolder" $@`
+# FreeSurferSubjectID=`getopt1 "--freesurfersubjectid" $@`
+# GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
+# QAImage=`getopt1 "--qaimage" $@`
+# DistortionCorrection=`getopt1 "--method" $@`
+# TopupConfig=`getopt1 "--topupconfig" $@`
+# JacobianOut=`getopt1 "--ojacobian" $@`
+# dof=`getopt1 "--dof" $@`
+# NameOffMRI=`getopt1 "--fmriname" $@`
+# SubjectFolder=`getopt1 "--subjectfolder" $@`
+# BiasCorrection=`getopt1 "--biascorrection" $@`
+# UseJacobian=`getopt1 "--usejacobian" $@`
+# PreregisterTool=`getopt1 "--preregistertool" $@`
 
-if [[ -n $HCPPIPEDEBUG ]]
-then
-    set -x
-fi
+# if [[ -n $HCPPIPEDEBUG ]]
+# then
+#     set -x
+# fi
 
 #error check bias correction opt
 case "$BiasCorrection" in
@@ -273,22 +330,14 @@ esac
 
 ScoutInputFile=`basename $ScoutInputName`
 T1wBrainImageFile=`basename $T1wBrainImage`
-
-# default parameters
 RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
-WD=`defaultopt $WD ${RegOutput}.wdir`
-dof=`defaultopt $dof 6`
 GlobalScripts=${HCPPIPEDIR_Global}
-TopupConfig=`defaultopt $TopupConfig ${HCPPIPEDIR_Config}/b02b0.cnf`
-QAImage=`defaultopt $QAImage T1wMulEPI`
-PreregisterTool=${PreregisterTool:-epi_reg}
 
-# Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
-UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
-#sanity check the jacobian option
-if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
+###### IM CONFUSED WHICH ONES ARE DEFAULT PARAMETERS HERE??
+# default parameters
+if [[ $WD == "" ]]
 then
-    log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
+    WD="${RegOutput}.wdir"
 fi
 
 log_Msg "START"
@@ -480,7 +529,7 @@ case $DistortionCorrection in
 
         # apply Jacobian correction to scout image (optional)
         # gdc jacobian is already applied in main script, where the gdc call for the scout is
-        if [[ $UseJacobian == "true" ]]
+        if ((UseJacobian))
         then
             log_Msg "apply Jacobian correction to scout image"
             ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}${ScoutExtension} -mul ${WD}/Jacobian.nii.gz ${WD}/${ScoutInputFile}${ScoutExtension}
@@ -520,7 +569,7 @@ case $DistortionCorrection in
         for File in ${Files}
         do
             #NOTE: this relies on TopupPreprocessingAll generating _jac versions of the files
-            if [[ $UseJacobian == "true" ]]
+            if ((UseJacobian))
             then
                 ${FSLDIR}/bin/applywarp --interp=spline -i "${WD}/FieldMap/${File}_jac" -r ${ReferenceImage} --premat=${WD}/fMRI2str.mat -o ${WD}/${File}
             else
@@ -589,7 +638,7 @@ case $DistortionCorrection in
 esac
 
 # apply Jacobian correction and bias correction options to scout image
-if [[ $UseJacobian == "true" ]] ; then
+if ((UseJacobian)) ; then
     log_Msg "apply Jacobian correction to scout image"
     if [[ "$UseBiasField" != "" ]]
     then
@@ -703,7 +752,7 @@ then
     Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
     for File in ${Files}
     do
-        if [[ $UseJacobian == "true" ]]
+        if ((UseJacobian))
         then
             ${FSLDIR}/bin/applywarp --interp=spline -i "${WD}/FieldMap/${File}_jac" -r ${ReferenceImage} --premat=${WD}/fMRI2str.mat -o ${WD}/${File}
         else
@@ -769,7 +818,7 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage
 # resample fieldmap jacobian with new registration
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/fMRI2str.mat -o ${WD}/Jacobian2T1w.nii.gz
 
-if [[ $UseJacobian == "true" ]]
+if ((UseJacobian))
 then
     log_Msg "applying Jacobian modulation"
     if [[ "$UseBiasField" != "" ]]
