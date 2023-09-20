@@ -38,9 +38,6 @@ opts_AddOptional '--working-dir' 'wdir' 'dir' "temporary working directory"
 
 opts_AddOptional '--cleanup' 'cleanup' 'yes OR no' "whether to delete the working directory (if set via --working-dir), default yes" "yes"
 
-#TSC: verbose is redundant given opts_ShowValues, remove it
-#opts_AddOptional '--verbose' 'verbose' 'yes OR no' "verbose output" "no"
-
 opts_ParseArguments "$@"
 
 #display the parsed/default values
@@ -56,50 +53,6 @@ log_Check_Env_Var FSLDIR
 crop=$(opts_StringToBool "$crop")
 cleanup=$(opts_StringToBool "$cleanup")
 
-# Usage() {
-# 	cat <<EOF
-
-# Usage: ${script_name} [options] <image1> ... <imageN>
-
-# Compulsory arguments
-#   -o <name>        : output basename
-# Optional arguments
-#   -s <image>       : standard image (e.g. MNI152_T1_2mm)
-#   -m <image>       : standard brain mask (e.g. MNI152_T1_2mm_brain_mask_dil)
-#   -n               : do not crop images
-#   -w <dir>         : local, temporary working directory (to be cleaned up - i.e. deleted)
-#   --noclean        : do not run the cleanup
-#   -v               : verbose output
-#   -h               : display this help message
-
-# e.g.:  ${script_name} -n -o output_name im1 im2
-
-# Note that N>=2 (i.e., there must be at least two images in the list)
-
-# EOF
-# # }
-
-# # Allow script to return a Usage statement, before any other output or checking
-# if [ "$#" = "0" ]; then
-#     Usage
-#     exit 1
-# fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-#   exit 1
-# fi
-
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-
 
 ################################################ SUPPORT FUNCTIONS ##################################################
 
@@ -112,57 +65,6 @@ cleanup=$(opts_StringToBool "$cleanup")
 # }
 
 #########################################################################################################
-
-# # deal with options
-# crop=yes
-# verbose=no
-# wdir=
-# cleanup=yes
-# StandardImage=$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz
-# StandardMask=$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz
-
-# while [ $# -ge 1 ] ; do
-#     iarg=$1
-#     case "$iarg"
-# 	in
-# 	-n)
-# 	    crop=no; 
-# 	    shift;;
-# 	-o)
-# 	    output=`get_arg2 $1 $2`;
-# 	    shift 2;;
-# 	-s)
-# 	    StandardImage=`get_arg2 $1 $2`;
-# 	    shift 2;;
-# 	-m)
-# 	    StandardMask=`get_arg2 $1 $2`;
-# 	    shift 2;;
-# 	-w)
-# 	    wdir=`get_arg2 $1 $2`;
-# 	    cleanup=no;
-# 	    shift 2;;
-# 	-b)
-# 	    BrainSizeOpt=`get_arg2 $1 $2`;
-# 	    BrainSizeOpt="-b $BrainSizeOpt"; ##### THERE IS NO BRAINSIZE OPTION????????????????????/
-# 	    shift 2;;
-# 	-v)
-# 	    verbose=yes; 
-# 	    shift;;
-# 	-h)
-# 	    Usage;
-# 	    exit 0;;
-# 	--noclean)
-# 	    cleanup=no;
-# 	    shift;;
-# 	*)
-# 	    if [ `echo $1 | sed 's/^\(.\).*/\1/'` = "-" ] ; then 
-# 		echo "Unrecognised option $1" 1>&2
-# 		exit 1
-# 	    fi
-# 	    imagelist="$imagelist $1"
-# 	    shift;;
-#     esac
-# done
 
 IFS='@' read -a imagelist <<<"$imagesStr"
 

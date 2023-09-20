@@ -142,34 +142,6 @@ log_Check_Env_Var HCPPIPEDIR_Global
 
 ################################################## OPTION PARSING #####################################################
 
-# # parse arguments
-# WD=`getopt1 "--workingdir" $@`  
-# T1wImage=`getopt1 "--t1" $@`  
-# T1wImageBrain=`getopt1 "--t1brain" $@`  
-# T2wImage=`getopt1 "--t2" $@` 
-# T2wImageBrain=`getopt1 "--t2brain" $@`  
-# MagnitudeInputName=`getopt1 "--fmapmag" $@`  
-# PhaseInputName=`getopt1 "--fmapphase" $@`  
-# GEB0InputName=`getopt1 "--fmapgeneralelectric" $@` 
-# TE=`getopt1 "--echodiff" $@`  
-# SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  
-# SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  
-# SEEchoSpacing=`getopt1 "--seechospacing" $@` 
-# SEUnwarpDir=`getopt1 "--seunwarpdir" $@`  
-# T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  
-# T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  
-# UnwarpDir=`getopt1 "--unwarpdir" $@`  
-# OutputT1wImage=`getopt1 "--ot1" $@`  
-# OutputT1wImageBrain=`getopt1 "--ot1brain" $@`  
-# OutputT1wTransform=`getopt1 "--ot1warp" $@`  
-# OutputT2wImage=`getopt1 "--ot2" $@`  
-# OutputT2wTransform=`getopt1 "--ot2warp" $@`  
-# DistortionCorrection=`getopt1 "--method" $@`  
-# TopupConfig=`getopt1 "--topupconfig" $@`  
-# GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  
-# UseJacobian=`getopt1 "--usejacobian" $@`
-
-
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
 T2wImage=`${FSLDIR}/bin/remove_ext $T2wImage`
