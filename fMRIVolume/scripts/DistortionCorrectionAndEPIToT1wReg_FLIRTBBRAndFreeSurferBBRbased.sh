@@ -141,95 +141,7 @@ log_Check_Env_Var HCPPIPEDIR_Global
 
 UseJacobian=$(opts_StringToBool "$UseJacobian")
 
-# show_usage() {
-# 	cat <<EOF
-
-# ${script_name}: Script to register EPI to T1w, with distortion correction
-
-# Usage: ${script_name} [options]
-
-
-#   Options required for all --method options except for "${NONE_METHOD_OPT}":
-
-    
-#   Options required if using --method="${SPIN_ECHO_METHOD_OPT}":
-
-    
-    
-
-#   Options required if using --method="${SIEMENS_METHOD_OPT}":
-
-    
-    
-    
-
-#   Options required if using --method="${GENERAL_ELECTRIC_METHOD_OPT}":
-
-    
-
-#   Options required if using --method="${PHILIPS_METHOD_OPT}":
-
-
-#   OTHER OPTIONS:
-
-#   [--dof=<degrees of freedom for EPI to T1 registration: 6 (default), 9, or 12>]
-#   [--qaimage=<output name for QA image>]
-#   [--preregistertool=<"epi_reg" (default) or "flirt">]
-
-# EOF
-# }
-
-# # Allow script to return a Usage statement, before any other output or checking
-# if [ "$#" = "0" ]; then
-#     show_usage
-#     exit 1
-# fi
-
-# # ------------------------------------------------------------------------------
-# #  Check that HCPPIPEDIR is defined and Load Function Libraries
-# # ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-#   exit 1
-# fi
-
-
-# opts_ShowVersionIfRequested $@
-
-# if opts_CheckForHelpRequest $@; then
-# 	show_usage
-# 	exit 0
-# fi
-
-# # ------------------------------------------------------------------------------
-# #  Verify required environment variables are set and log value
-# # ------------------------------------------------------------------------------
-
-# log_Check_Env_Var HCPPIPEDIR
-# log_Check_Env_Var FSLDIR
-# log_Check_Env_Var FREESURFER_HOME
-# log_Check_Env_Var HCPPIPEDIR_Global
-
 HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# # function for parsing options
-# getopt1() {
-#     sopt="$1"
-#     shift 1
-#     for fn in $@ ; do
-#         if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-#             echo $fn | sed "s/^${sopt}=//"
-#             return 0
-#         fi
-#     done
-# }
-
-# defaultopt() {
-#     echo $1
-# }
 
 
 ################################################### OUTPUT FILES #####################################################
@@ -258,44 +170,6 @@ HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 # Outputs (not in $WD):
 #
 #       ${RegOutput}  ${OutputTransform}  ${JacobianOut}  ${QAImage}
-
-################################################## OPTION PARSING #####################################################
-
-# # parse arguments
-# WD=`getopt1 "--workingdir" $@`
-# ScoutInputName=`getopt1 "--scoutin" $@`
-# T1wImage=`getopt1 "--t1" $@`
-# T1wRestoreImage=`getopt1 "--t1restore" $@`
-# T1wBrainImage=`getopt1 "--t1brain" $@`
-# SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`
-# SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`
-# EchoSpacing=`getopt1 "--echospacing" $@`
-# MagnitudeInputName=`getopt1 "--fmapmag" $@`
-# PhaseInputName=`getopt1 "--fmapphase" $@`
-# GEB0InputName=`getopt1 "--fmapgeneralelectric" $@`
-# deltaTE=`getopt1 "--echodiff" $@`
-# UnwarpDir=`getopt1 "--unwarpdir" $@`
-# OutputTransform=`getopt1 "--owarp" $@`
-# BiasField=`getopt1 "--biasfield" $@`
-# RegOutput=`getopt1 "--oregim" $@`
-# FreeSurferSubjectFolder=`getopt1 "--freesurferfolder" $@`
-# FreeSurferSubjectID=`getopt1 "--freesurfersubjectid" $@`
-# GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`
-# QAImage=`getopt1 "--qaimage" $@`
-# DistortionCorrection=`getopt1 "--method" $@`
-# TopupConfig=`getopt1 "--topupconfig" $@`
-# JacobianOut=`getopt1 "--ojacobian" $@`
-# dof=`getopt1 "--dof" $@`
-# NameOffMRI=`getopt1 "--fmriname" $@`
-# SubjectFolder=`getopt1 "--subjectfolder" $@`
-# BiasCorrection=`getopt1 "--biascorrection" $@`
-# UseJacobian=`getopt1 "--usejacobian" $@`
-# PreregisterTool=`getopt1 "--preregistertool" $@`
-
-# if [[ -n $HCPPIPEDEBUG ]]
-# then
-#     set -x
-# fi
 
 #error check bias correction opt
 case "$BiasCorrection" in
@@ -333,8 +207,6 @@ T1wBrainImageFile=`basename $T1wBrainImage`
 RegOutput=`$FSLDIR/bin/remove_ext $RegOutput`
 GlobalScripts=${HCPPIPEDIR_Global}
 
-###### IM CONFUSED WHICH ONES ARE DEFAULT PARAMETERS HERE??
-# default parameters
 if [[ $WD == "" ]]
 then
     WD="${RegOutput}.wdir"

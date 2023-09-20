@@ -83,85 +83,10 @@ opts_ShowValues
 log_Check_Env_Var FSLDIR
 
 
-# show_usage() {
-# 	cat <<EOF
-
-# ${script_name}
-
-# Usage: ${script_name} [options]
-
-       
-
-# EOF
-# }
-
-# # Allow script to return a Usage statement, before any other output or checking
-# if [ "$#" = "0" ]; then
-#     show_usage
-#     exit 1
-# fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-#   exit 1
-# fi
-
-# # source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-# # source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-
-# opts_ShowVersionIfRequested $@
-
-# if opts_CheckForHelpRequest $@; then
-# 	show_usage
-# 	exit 0
-# fi
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-# log_Check_Env_Var HCPPIPEDIR
-# log_Check_Env_Var FSLDIR
-
-# ################################################ SUPPORT FUNCTIONS ##################################################
-
-# # function for parsing options
-# getopt1() {
-#     sopt="$1"
-#     shift 1
-#     for fn in $@ ; do
-#   if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-#       echo $fn | sed "s/^${sopt}=//"
-#       return 0
-#   fi
-#     done
-# }
-
-# defaultopt() {
-#     echo $1
-# }
-
 ################################################### OUTPUT FILES #####################################################
 
 # ${OutputfMRI}  (compulsory)
 # ${ScoutOutput}  (optional)
-
-################################################## OPTION PARSING #####################################################
-
-# # parse arguments
-# InputfMRI=`getopt1 "--infmri" $@`  # "$1"
-# BiasField=`getopt1 "--biasfield" $@`  # "$2"
-# Jacobian=`getopt1 "--jacobian" $@`  # "$3"
-# BrainMask=`getopt1 "--brainmask" $@`  # "$4"
-# OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
-# ScoutInput=`getopt1 "--inscout" $@`  # "$6"
-# ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
-# UseJacobian=`getopt1 "--usejacobian" $@`  # 
-# fMRIMask=`getopt1 "--fmrimask" $@`
 
 verbose_red_echo "---> Intensity normalization"
 
@@ -180,8 +105,6 @@ verbose_echo " "
 
 # # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
-# WD=`defaultopt $WD ${OutputfMRI}.wdir`
-# fMRIMask=`defaultopt $fMRIMask "T1_fMRI_FOV"`
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
