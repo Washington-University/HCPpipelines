@@ -22,82 +22,128 @@
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+# script_name=$(basename "${0}")
 
-show_usage() {
-	cat <<EOF
 
-${script_name}
 
-Usage: ${script_name} [options]
+set -eu
 
-  --infmri=<input fmri data>
-  --biasfield=<bias field, already registered to fmri data>
-  --jacobian=<jacobian image, already registered to fmri data>
-  --brainmask=<brain mask in fmri space>
-  --ofmri=<output basename for fmri data>
-  --usejacobian=<apply jacobian modulation: true/false>
-  [--inscout=<input name for scout image (pre-sat EPI)>]
-  [--oscout=<output name for normalized scout image>]
-  [--workingdir=<working dir>]
-  [--fmrimask=<type of mask to use for generating final fMRI output volume:
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source ${HCPPIPEDIR}/global/scripts/tempfiles.shlib
+
+
+opts_SetScriptDescription "Script to perform Intensity Normalization" 
+
+opts_AddMandatory '--infmri' 'InputfMRI' 'data' "input fmri data"
+
+opts_AddMandatory '--biasfield' 'BiasField' 'image' "bias field or already registered to fmri data"
+
+opts_AddMandatory '--jacobian' 'Jacobian' 'image' "jacobian image or  already registered to fmri data"
+
+opts_AddMandatory '--brainmask' 'BrainMask' 'mask' "brain mask in fmri space"
+
+opts_AddMandatory '--usejacobian' 'UseJacobian' 'true or false' "apply jacobian modulation: true/false"
+
+#Optional Args
+opts_AddOptional '--ofmri' 'OutputfMRI' 'image' "output basename for fmri data" "$FSLDIR/bin/remove_ext"
+
+opts_AddOptional '--inscout' 'ScoutInput' 'image' "input name for scout image (pre-sat EPI)"
+
+opts_AddOptional '--oscout' 'ScoutOutput' 'image' "output name for normalized scout image"
+
+opts_AddOptional '--workingdir' 'WD' 'path' "working dir" ""
+
+opts_AddOptional '--fmrimask' 'fMRIMask' '' "type of mask to use for generating final fMRI output volume: 
         "T1_fMRI_FOV" (default) - T1w brain based mask combined with fMRI FOV mask
         "T1_DILATED_fMRI_FOV" - once dilated T1w brain based mask combined with fMRI FOV
         "T1_DILATED2x_fMRI_FOV" - twice dilated T1w brain based mask combined with fMRI FOV
-        "fMRI_FOV" - fMRI FOV mask only (i.e., voxels having spatial coverage at all time points)
+        "fMRI_FOV" - fMRI FOV mask only (i.e., voxels having spatial coverage at all time points)" "T1_fMRI_FOV"
 
-EOF
-}
+opts_ParseArguments "$@"
 
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+# parse arguments
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+#display the parsed/default values
+opts_ShowValues
+
+log_Check_Env_Var FSLDIR
+
+
+# show_usage() {
+# 	cat <<EOF
+
+# ${script_name}
+
+# Usage: ${script_name} [options]
+
+       
+
+# EOF
+# }
+
+# # Allow script to return a Usage statement, before any other output or checking
+# if [ "$#" = "0" ]; then
+#     show_usage
+#     exit 1
+# fi
 
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
+# if [ -z "${HCPPIPEDIR}" ]; then
+#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+#   exit 1
+# fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+# # source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+# # source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 
-opts_ShowVersionIfRequested $@
+# opts_ShowVersionIfRequested $@
 
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
+# if opts_CheckForHelpRequest $@; then
+# 	show_usage
+# 	exit 0
+# fi
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
 
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
+# log_Check_Env_Var HCPPIPEDIR
+# log_Check_Env_Var FSLDIR
 
-################################################ SUPPORT FUNCTIONS ##################################################
+# ################################################ SUPPORT FUNCTIONS ##################################################
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-  if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-      echo $fn | sed "s/^${sopt}=//"
-      return 0
-  fi
-    done
-}
+# # function for parsing options
+# getopt1() {
+#     sopt="$1"
+#     shift 1
+#     for fn in $@ ; do
+#   if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
+#       echo $fn | sed "s/^${sopt}=//"
+#       return 0
+#   fi
+#     done
+# }
 
-defaultopt() {
-    echo $1
-}
+# defaultopt() {
+#     echo $1
+# }
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -106,16 +152,16 @@ defaultopt() {
 
 ################################################## OPTION PARSING #####################################################
 
-# parse arguments
-InputfMRI=`getopt1 "--infmri" $@`  # "$1"
-BiasField=`getopt1 "--biasfield" $@`  # "$2"
-Jacobian=`getopt1 "--jacobian" $@`  # "$3"
-BrainMask=`getopt1 "--brainmask" $@`  # "$4"
-OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
-ScoutInput=`getopt1 "--inscout" $@`  # "$6"
-ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
-UseJacobian=`getopt1 "--usejacobian" $@`  # 
-fMRIMask=`getopt1 "--fmrimask" $@`
+# # parse arguments
+# InputfMRI=`getopt1 "--infmri" $@`  # "$1"
+# BiasField=`getopt1 "--biasfield" $@`  # "$2"
+# Jacobian=`getopt1 "--jacobian" $@`  # "$3"
+# BrainMask=`getopt1 "--brainmask" $@`  # "$4"
+# OutputfMRI=`getopt1 "--ofmri" $@`  # "$5"
+# ScoutInput=`getopt1 "--inscout" $@`  # "$6"
+# ScoutOutput=`getopt1 "--oscout" $@`  # "$7"
+# UseJacobian=`getopt1 "--usejacobian" $@`  # 
+# fMRIMask=`getopt1 "--fmrimask" $@`
 
 verbose_red_echo "---> Intensity normalization"
 
@@ -132,10 +178,10 @@ verbose_echo "     --usejacobian: ${UseJacobian}"
 verbose_echo "        --fmrimask: ${fMRIMask}"
 verbose_echo " "
 
-# default parameters
+# # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
-WD=`defaultopt $WD ${OutputfMRI}.wdir`
-fMRIMask=`defaultopt $fMRIMask "T1_fMRI_FOV"`
+# WD=`defaultopt $WD ${OutputfMRI}.wdir`
+# fMRIMask=`defaultopt $fMRIMask "T1_fMRI_FOV"`
 
 #sanity check the jacobian option
 if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
@@ -147,6 +193,11 @@ fi
 jacobiancom=""
 if [[ $UseJacobian == "true" ]] ; then
     jacobiancom="-mul $Jacobian"
+fi
+
+if [[ "$WD" == "" ]]
+then
+    WD="${OutputfMRI}.wdir"
 fi
 
 biascom=""
