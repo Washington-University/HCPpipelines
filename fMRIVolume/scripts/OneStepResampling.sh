@@ -86,48 +86,6 @@ opts_ShowValues
 
 log_Check_Env_Var FSLDIR
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-#   echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-#   exit 1
-# fi
-
-
-# opts_ShowVersionIfRequested $@
-
-# if opts_CheckForHelpRequest $@; then
-# 	show_usage
-# 	exit 0
-# fi
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-# log_Check_Env_Var HCPPIPEDIR
-# log_Check_Env_Var FSLDIR
-
-# ################################################ SUPPORT FUNCTIONS ##################################################
-
-# # function for parsing options
-# getopt1() {
-#     sopt="$1"
-#     shift 1
-#     for fn in $@ ; do
-#   if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-#       echo $fn | sed "s/^${sopt}=//"
-#       return 0
-#   fi
-#     done
-# }
-
-# defaultopt() {
-#     echo $1
-# }
-
 ################################################### OUTPUT FILES #####################################################
 
 # Outputs (in $WD):
@@ -144,31 +102,6 @@ log_Check_Env_Var FSLDIR
 #     ${JacobianOut}
 #     ${ScoutOutput}
 #          NB: last three images are all in low-res standard space
-
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-# WD=`getopt1 "--workingdir" $@`  # "$1"
-# InputfMRI=`getopt1 "--infmri" $@`  # "$2"
-# T1wImage=`getopt1 "--t1" $@`  # "$3"
-# FinalfMRIResolution=`getopt1 "--fmriresout" $@`  # "$4"
-# fMRIFolder=`getopt1 "--fmrifolder" $@`
-# fMRIToStructuralInput=`getopt1 "--fmri2structin" $@`  # "$6"
-# StructuralToStandard=`getopt1 "--struct2std" $@`  # "$7"
-# OutputTransform=`getopt1 "--owarp" $@`  # "$8"
-# OutputInvTransform=`getopt1 "--oiwarp" $@`
-# MotionMatrixFolder=`getopt1 "--motionmatdir" $@`  # "$9"
-# MotionMatrixPrefix=`getopt1 "--motionmatprefix" $@`  # "${10}"
-# OutputfMRI=`getopt1 "--ofmri" $@`  # "${11}"
-# FreeSurferBrainMask=`getopt1 "--freesurferbrainmask" $@`  # "${12}"
-# BiasField=`getopt1 "--biasfield" $@`  # "${13}"
-# GradientDistortionField=`getopt1 "--gdfield" $@`  # "${14}"
-# ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
-# ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
-# ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
-# JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
-# fMRIReferencePath=`getopt1 "--fmrirefpath" $@` # "${19}"
-# fMRIReferenceReg=`getopt1 "--fmrirefreg" $@`  # "${20}"
 
 #hidden: toggle for unreleased new resampling command, default off
 #with wb_command -volume-resample, the warpfields and per-frame motion affines do not need to be combined in advance,
