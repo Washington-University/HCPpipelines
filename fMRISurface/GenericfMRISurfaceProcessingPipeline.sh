@@ -18,54 +18,48 @@
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+set -eu
 
-show_usage() {
-	cat <<EOF
-
-${script_name}: Run fMRISurface processing pipeline
-
-Usage: ${script_name} [options]
-
-  --path=<path to study folder>
-  --subject=<subject ID>
-  --fmriname=<fMRI name> 
-  --lowresmesh=<low res mesh number>
-  --fmrires=<final fMRI resolution (mm), as used in fMRIVolume pipeline>
-  --smoothingFWHM=<smoothing FWHM (mm)>
-  --grayordinatesres=<grayordinates res (mm)>
-  [--regname=<surface registration name>] defaults to 'MSMSulc'
-  [--fmri-qc=<"YES|NO|ONLY">
-      Controls whether to generate a QC scene and snapshots (default=YES).
-      ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/opts.shlib"                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 
-opts_ShowVersionIfRequested "$@"
+opts_SetScriptDescription "Run fMRISurface processing"
 
-if opts_CheckForHelpRequest "$@"; then
-	show_usage
-	exit 0
+opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all subject" "--path"
+
+opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+
+opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for the output'
+
+opts_AddMandatory '--lowresmesh' 'LowResMesh' 'number' 'low res mesh number'
+
+opts_AddMandatory '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data'
+
+opts_AddMandatory '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm)'
+
+opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolution' 'number' 'grayordinates resolution (mm)'
+
+opts_AddOptional '--regname' 'RegName' 'string' "The surface registeration name, defaults to 'MSMSulc'" "MSMSulc"
+
+opts_AddOptional '--fmri-qc' 'QCMode' 'YES OR NO OR ONLY' "Controls whether to generate a QC scene and snapshots (default=YES). ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)" "YES"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+opts_ShowValues
 
 "$HCPPIPEDIR"/show_version
 
@@ -86,34 +80,12 @@ HCPPIPEDIR_fMRISurf=${HCPPIPEDIR}/fMRISurface/scripts
 log_Msg "Platform Information Follows: "
 uname -a
 
-log_Msg "Parsing Command Line Options"
-
-# parse arguments
-Path=`opts_GetOpt1 "--path" $@`
-Subject=`opts_GetOpt1 "--subject" $@`
-NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
-LowResMesh=`opts_GetOpt1 "--lowresmesh" $@`
-FinalfMRIResolution=`opts_GetOpt1 "--fmrires" $@`
-SmoothingFWHM=`opts_GetOpt1 "--smoothingFWHM" $@`
-GrayordinatesResolution=`opts_GetOpt1 "--grayordinatesres" $@`
-RegName=`opts_GetOpt1 "--regname" $@`
-RegName=`opts_DefaultOpt $RegName MSMSulc`
-QCMode=`opts_GetOpt1 "--fmri-qc" $@`
-QCMode=`opts_DefaultOpt $QCMode YES`
+##Convert to lowercase for QCMode
 QCMode="$(echo ${QCMode} | tr '[:upper:]' '[:lower:]')"  # Convert to all lowercase
 
 doProcessing=1
 doQC=1
 
-log_Msg "Path: ${Path}"
-log_Msg "Subject: ${Subject}"
-log_Msg "NameOffMRI: ${NameOffMRI}"
-log_Msg "LowResMesh: ${LowResMesh}"
-log_Msg "FinalfMRIResolution: ${FinalfMRIResolution}"
-log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
-log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
-log_Msg "RegName: ${RegName}"
-log_Msg "QCMode: $QCMode"
 case "$QCMode" in
     (yes)
         ;;
@@ -122,7 +94,7 @@ case "$QCMode" in
         ;;
     (only)
         doProcessing=0
-		log_Warn "Only generating fMRI QC scene and snapshots from existing data (no other processing)"
+        log_Warn "Only generating fMRI QC scene and snapshots from existing data (no other processing)"
         ;;
     (*)
         log_Err_Abort "unrecognized value '$QCMode' for --fmri-qc, use 'YES', 'NO', or 'ONLY'"
