@@ -16,7 +16,11 @@
 #
 # * Jure Demsar, Faculty of Computer and Information Science, University of Ljubljana
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * Mikhail V. Milchenko, Department of Radiology, Washington University in St. Louis
 #
+
+# Version: v.0.1, 10/23/2023
+
 # ## Product
 #
 # [Human Connectome Project](http://www.humanconnectome.org) (HCP) Pipelines
@@ -122,6 +126,9 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
 opts_AddOptional '--extra-reconall-arg-base' 'extra_reconall_args_base' 'token' "(repeatable)  Generic single token argument to pass to recon-all for base template preparation.  Provides a mechanism to:  (i) customize the recon-all command  (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)  If you want to avoid running all the stages inherent to the '-all' flag in recon-all,  you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use  equal signs in its argument specification).  e.g., --extra-reconall-arg-base=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all.  But, --extra-reconall-arg-base='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg-base multiple times (in the proper sequential fashion).  e.g., --extra-reconall-arg-base=-norm3diters --extra-reconall-arg-base=3  will be translated to '-norm3diters 3' when passed to recon-all."
 
+opts_AddOptional '--generate_template_only' 'generate_template_only' 'integer' 'Set to 1 to generate template only without timepoints [0]'
+opts_AddOptional '--generate_timepoints_only' 'generate_timepoints_only' 'integer' 'Set to 1 to generate timepoints only (assuming the template has been generated previously with "--generate_template_only" option) [0]'
+
 opts_AddOptional '--extra-reconall-arg-long' 'extra_reconall_arg_long' 'token' "(repeatable)  Generic single token argument to pass to recon-all for the actual longitudinal processing.  See the description for extra_reconall_arg_base parameter for extra details."
 
 opts_ParseArguments "$@"
@@ -141,6 +148,10 @@ opts_ShowValues
 #TSC: now use an array for proper argument handling
 extra_reconall_args_base=(${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"})
 extra_reconall_args_long=(${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"})
+
+
+echo "extra_reconall_args_base: ${extra_reconall_args_base[@]}"
+echo "extra_reconall_args_long: ${extra_reconall_args_long[@]}"
 
 ${HCPPIPEDIR}/show_version
 
@@ -277,6 +288,7 @@ validate_freesurfer_version
 log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 
+
 # ----------------------------------------------------------------------
 # Log values retrieved from positional parameters
 # ----------------------------------------------------------------------
@@ -302,59 +314,97 @@ for Session in ${Sessions} ; do
   ln -sf ${Source} ${Target}
 done
 
-# ----------------------------------------------------------------------
-log_Msg "Creating the base template: ${TemplateID}"
-# ----------------------------------------------------------------------
-# backup template dir if it exists
-if [ -d "${LongDIR}/${TemplateID}" ]; then
-  TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-  log_Msg "Base template dir: ${LongDIR}/${TemplateID} already exists, backing up to ${LongDIR}/${TemplateID}.${TimeStamp}"
-  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
+
+if (( generate_timepoints_only != 1 )); then 
+
+	# ----------------------------------------------------------------------
+	log_Msg "Creating the base template: ${TemplateID}"
+	# ----------------------------------------------------------------------
+	# backup template dir if it exists
+	if [ -d "${LongDIR}/${TemplateID}" ]; then
+	  TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
+	  log_Msg "Base template dir: ${LongDIR}/${TemplateID} already exists, backing up to ${LongDIR}/${TemplateID}.${TimeStamp}"
+	  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
+	fi
+
+	recon_all_cmd="recon-all.v6.hires"
+	recon_all_cmd+=" -sd ${LongDIR}"
+	recon_all_cmd+=" -base ${TemplateID}"
+	for Session in ${Sessions} ; do
+	  recon_all_cmd+=" -tp ${Session}"
+	done
+	recon_all_cmd+=" -all"
+
+	if [ ! -z "${recon_all_seed}" ]; then
+	  recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
+	fi
+
+
+	#---------------------------------------------------------------------------------------
+	log_Msg "Running the recon-all to generate common template"
+	#---------------------------------------------------------------------------------------
+
+	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
+	recon_all_cmd+=" ${extra_reconall_args_base[@]}"
+	echo "recon_all_cmd:"
+	echo ${recon_all_cmd}
+	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
+
+	${recon_all_cmd}
+	return_code=$?
+	if [ "${return_code}" != "0" ]; then
+	  log_Err_Abort "recon-all command failed with return_code: ${return_code}"
+	fi
 fi
+if (( generate_template_only != 1)); then 
 
-recon_all_cmd="recon-all.v6.hires"
-recon_all_cmd+=" -sd ${LongDIR}"
-recon_all_cmd+=" -base ${TemplateID}"
-for Session in ${Sessions} ; do
-  recon_all_cmd+=" -tp ${Session}"
-done
-recon_all_cmd+=" -all"
+	# ----------------------------------------------------------------------
+	log_Msg "Running the longitudinal recon-all on each timepoint"
+	# ----------------------------------------------------------------------
 
-if [ ! -z "${recon_all_seed}" ]; then
-  recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
+	for Session in ${Sessions} ; do
+	  log_Msg "Running longitudinal recon all for session: ${Session}"
+	  recon_all_cmd="recon-all.v6.hires"
+	  recon_all_cmd+=" -sd ${LongDIR}"
+	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
+	  
+	  #recon_all_cmd+=(${extra_reconall_args_long[@]+"${extra_reconall_args_long[@]}"})
+	  recon_all_cmd+=" ${extra_reconall_args_long[@]}"
+	  T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
+	  
+	  if [ -f "$T2w" ]; then 
+		  recon_all_cmd+=" -T2 $T2w"
+	  else
+	  	  log_Msg "WARNING: No T2-weighed image $T2w, T2-weighted processing will not run."
+	  fi
+	  	  
+	  T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
+	  emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
+	  
+	  if [ -f "$T1w" -a -f "$emregmask" ]; then 
+	  	recon_all_cmd+=" -emregmask $emregmask" #-i $T1w 
+	  else
+	  	log_Msg "ERROR: one of required files missing ($T1w or $emregmask)"
+	  	exit -1	  	
+	  fi
+	  	  	  
+	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
+	  echo ${recon_all_cmd}
+
+	  ${recon_all_cmd}
+	  return_code=$?
+	  if [ "${return_code}" != "0" ]; then
+	    log_Err_Abort "recon-all command failed with return_code: ${return_code}"
+	  fi
+
+	  log_Msg "Organizing the folder structure for: ${Session}"
+	  # create the symlink
+	  TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
+	  mkdir -p "${TargetDIR}"
+	  ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
+	  break
+	done
 fi
-
-recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
-
-log_Msg "...recon_all_cmd: ${recon_all_cmd}"
-${recon_all_cmd}
-return_code=$?
-if [ "${return_code}" != "0" ]; then
-  log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-fi
-
-# ----------------------------------------------------------------------
-log_Msg "Running the longitudinal recon-all"
-# ----------------------------------------------------------------------
-for Session in ${Sessions} ; do
-  log_Msg "Running longitudinal recon all for session: ${Session}"
-  recon_all_cmd="recon-all.v6.hires"
-  recon_all_cmd+=" -sd ${LongDIR}"
-  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
-  recon_all_cmd+=(${extra_reconall_args_long[@]+"${extra_reconall_args_long[@]}"})
-  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
-  ${recon_all_cmd}
-  return_code=$?
-  if [ "${return_code}" != "0" ]; then
-    log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-  fi
-
-  log_Msg "Organizing the folder structure for: ${Session}"
-  # create the symlink
-  TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
-  mkdir -p "${TargetDIR}"
-  ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
-done
 
 # ----------------------------------------------------------------------
 log_Msg "Cleaning up the folder structure"
