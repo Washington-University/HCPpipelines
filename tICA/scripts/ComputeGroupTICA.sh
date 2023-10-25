@@ -112,6 +112,8 @@ fMRIListName="$OutputFolder/fMRIList.txt"
 
 tempfiles_add "$TCSListName" "$SpectraListName" "$SubjListName" "$fMRIListName"
 
+#when running cleanup on a cluster, output folder may not exist, so make it
+mkdir -p "$OutputFolder"
 rm -f -- "$TCSListName" "$SpectraListName" "$SubjListName" "$fMRIListName"
 
 for Subject in "${SubjList[@]}"

@@ -28,7 +28,7 @@ debug_on_error()
         local me=`basename "$0"`
         local startreport=""
         local endreport=""
-        local command=$(eval debug_first "$2")
+        local command=$(eval echo $(debug_first $2))
 
         # --- output a regular HCP error log
 
@@ -49,7 +49,13 @@ debug_on_error()
             echo "         script: $me"
             echo "stopped at line: $1"
             echo "           call: $2"
-            echo "  expanded call: $(eval echo "$2")"
+            #blacklist subshell syntax (`foo` and $(foo), but $((foo)) is fine) and redirection, which can make eval run a command, write to a file, hang, etc
+            #eval is documented as treating the arguments as a "single command", which limits the type of trouble it can get into (newline, semicolon, pipe, and boolean operators don't seem to be an issue)
+            #while it is tempting to whitelist /dev/null redirection, it breaks the eval anyway, and would be challenging to fix properly
+            if ! [[ "$2" =~ (\`|\$\([^\(]|>|<) ]]
+            then
+                echo "  expanded call: $(eval echo "$2")"
+            fi
             echo "       hostname: $(hostname)"
             echo "      exit code: $3"
             echo -e "---------------------------------------------------${endreport}"
