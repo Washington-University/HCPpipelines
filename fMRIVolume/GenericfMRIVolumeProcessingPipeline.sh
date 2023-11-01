@@ -52,7 +52,8 @@ opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for t
 
 opts_AddMandatory '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data'
 
-opts_AddMandatory '--biascorrection' 'BiasCorrection' 'SEBASED OR LEGACY OR NONE' "SEBASED: use bias field derived from spin echo images, must also use --dcmethod='${SPIN_ECHO_METHOD_OPT}'
+opts_AddMandatory '--biascorrection' 'BiasCorrection' "Method for receive bias correction, accepted values are: 'SEBASED OR LEGACY OR NONE' 
+SEBASED: use bias field derived from spin echo images, must also use --dcmethod='${SPIN_ECHO_METHOD_OPT}'
 
 LEGACY: use the bias field derived from T1w and T2w images, same as was used in pipeline version 3.14.1 or older (No longer recommended) 
 
@@ -60,7 +61,7 @@ NONE: don't do bias correction"
 
 opts_AddOptional '--fmriscout' 'fMRIScout' 'volume' "Used as the target for motion correction and for BBR registration to the structurals.  In HCP-Style acquisitions, the 'SBRef' (single-band reference) volume associated with a run is   typically used as the 'scout'. Default: 'NONE' (in which case the first volume of the time-series is extracted and used as the 'scout')  It must have identical dimensions, voxel resolution, and distortions (i.e., phase-encoding   polarity and echo-spacing) as the input fMRI time series" "NONE"
 
-opts_AddOptional '--mctype' 'MotionCorrectionType' 'MCFLIRT OR FLIRT' "What time of motion correction to use MCFLIRT or FLIRT" "MCFLIRT"
+opts_AddOptional '--mctype' 'MotionCorrectionType' 'MCFLIRT OR FLIRT' "What type of motion correction to use MCFLIRT or FLIRT, Default is MCFLIRT" "MCFLIRT"
 
 opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'file' "Set to 'NONE' to skip gradient non-linearity distortion correction (GDC)."
 
@@ -406,11 +407,6 @@ then
 fi
 log_Msg "RUN: ${RUN}"
 
-# if [[ -n $HCPPIPEDEBUG ]]
-# then
-#     set -x
-# fi
-
 # Setup PATHS
 GlobalScripts=${HCPPIPEDIR_Global}
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
@@ -477,8 +473,6 @@ esac
 #  Compliance check of Legacy Style Data options
 # ------------------------------------------------------------------------------
 
-# ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
-# ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 Compliance="HCPStyleData"
 ComplianceMsg=""
 ComplianceWarn=""
@@ -823,8 +817,7 @@ ${RUN} ${PipelineScripts}/OneStepResampling.sh \
        --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
        --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
        --fmrirefpath=${fMRIReferencePath} \
-       --fmrirefreg=${fMRIReferenceReg} \
-       --wb-resample=1 #REMOVE AFTER TESTING!!
+       --fmrirefreg=${fMRIReferenceReg}
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
