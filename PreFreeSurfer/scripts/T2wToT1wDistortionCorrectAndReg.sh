@@ -26,7 +26,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -55,8 +55,6 @@ opts_AddMandatory '--ot1brain' 'OutputT1wImageBrain' 'image' "output corrected, 
 opts_AddMandatory '--ot1warp' 'OutputT1wTransform' 'image' "output warpfield for distortion correction of T1w image"
 
 opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' "output corrected T2w image"
-
-# opts_AddMandatory '--ot2brain' 'Ot2brain' 'image' "output corrected, brain-extracted T2w image" ## THIS ONE DOES NOT EXIST IN THE VARS?
 
 opts_AddMandatory '--ot2warp' 'OutputT2wTransform' 'warpfield' "output warpfield for distortion correction of T2w image"
 
@@ -381,8 +379,6 @@ for TXw in $Modalities ; do
     ${FSLDIR}/bin/flirt -in ${WD}/FieldMap.nii.gz -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -out ${WD}/FieldMap2${TXwImageBasename}
 
     # Convert to shift map then to warp field and unwarp the TXw
-
-    #VAR TWx ISNT USED ANYWHERE ELSE?????????????
     verbose_echo "      ... Converting to shift map, to warp field and unwarping $TXw"
     ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap2${TXwImageBasename} --dwell=${TXwSampleSpacing} --saveshift=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz
     ${FSLDIR}/bin/convertwarp --relout --rel --ref=${TXwImageBrain} --shiftmap=${WD}/FieldMap2${TXwImageBasename}_ShiftMap.nii.gz --shiftdir=${UnwarpDir} --out=${WD}/FieldMap2${TXwImageBasename}_Warp.nii.gz
