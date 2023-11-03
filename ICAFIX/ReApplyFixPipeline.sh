@@ -130,10 +130,10 @@ have_hand_reclassification()
 log_Msg "Starting main functionality"
 
 # Naming Conventions and other variables
-local Caret7_Command="${CARET7DIR}/wb_command"
+Caret7_Command="${CARET7DIR}/wb_command"
 log_Msg "Caret7_Command: ${Caret7_Command}"
 
-local RegString=""
+RegString=""
 if [[ "$RegName" != "" ]] ; then
 	RegString="_${RegName}"
 fi
@@ -157,13 +157,13 @@ log_Msg "RegString: ${RegString}"
 # Since addpath adds to the front of the matlab path, we are now overriding the fix settings for cifti I/O,
 # and adding '${HCPPIPEDIR}/global/matlab', so functions in these folders will now replace what fix would normally run.
 export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-local ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab');"
+ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab');"
 
 # Some defaults
-local aggressive=0
-local hp=${HighPass}
-local DoVol=0
-local fixlist=".fix"
+aggressive=0
+hp=${HighPass}
+DoVol=0
+fixlist=".fix"
 
 if (( hp >= 0 )); then
 	hpStr="_hp${hp}"
@@ -303,11 +303,11 @@ case ${MatlabRunMode} in
 	0)
 		# Use Compiled MATLAB
 
-		local matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
+		matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
 
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
-		local matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${hp}")
+		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${hp}")
 		if (( ! DoVol )); then
 			matlab_function_arguments+=("${DoVol}")
 		fi
@@ -327,7 +327,7 @@ case ${MatlabRunMode} in
 		fi
 		log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
 
-		local matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
+		matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
 		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 		# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
@@ -341,15 +341,15 @@ case ${MatlabRunMode} in
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 		if [[ ${MatlabRunMode} == "1" ]]; then
-			local interpreter=(matlab -nojvm -nodisplay -nosplash)
+			interpreter=(matlab -nojvm -nodisplay -nosplash)
 		else
-			local interpreter=(octave-cli -q --no-window-system)
+			interpreter=(octave-cli -q --no-window-system)
 		fi
 
 		if (( DoVol )); then
-			local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});"
+			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp});"
 		else
-			local matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});"
+			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${hp},${DoVol});"
 		fi
 		
 		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
@@ -376,11 +376,11 @@ log_Msg "Done running fix_3_clean"
 # Remove any existing old versions of the cleaned data (normally they should be overwritten
 # in the renaming that follows, but this ensures that any old versions don't linger)
 cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
-local fmri=${fMRIName}
+fmri=${fMRIName}
 if (( hp >= 0 )); then
-	local fmrihp=${fmri}_hp${hp}
+	fmrihp=${fmri}_hp${hp}
 else
-	local fmrihp=${fmri}
+	fmrihp=${fmri}
 fi
 
 /bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii

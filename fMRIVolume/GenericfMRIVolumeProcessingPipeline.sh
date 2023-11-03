@@ -52,7 +52,7 @@ opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for t
 
 opts_AddMandatory '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data'
 
-opts_AddMandatory '--biascorrection' 'BiasCorrection' "Method for receive bias correction, accepted values are: 'SEBASED OR LEGACY OR NONE' 
+opts_AddMandatory '--biascorrection' 'BiasCorrection' "Method for receive bias correction, accepted values are:
 SEBASED: use bias field derived from spin echo images, must also use --dcmethod='${SPIN_ECHO_METHOD_OPT}'
 
 LEGACY: use the bias field derived from T1w and T2w images, same as was used in pipeline version 3.14.1 or older (No longer recommended) 

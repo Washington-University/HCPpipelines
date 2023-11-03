@@ -31,7 +31,7 @@ opts_AddMandatory '--fmri-name' 'fMRIName' 'string' "fMRI name"
 opts_AddMandatory '--high-pass' 'HighPass' 'amount' "high-pass filter used in ICA+FIX"
 
 ##Optional Args 
-## MATLAB RUN MODE IS NOT ACTUALLY USED
+## deprecated, matlab code is not used
 opts_AddOptional '--matlab-run-mode' 'g_matlab_run_mode' '0, 1, 2' "defaults to ${G_DEFAULT_MATLAB_RUN_MODE} 
      0 = Use compiled MATLAB
      1 = Use interpreted MATLAB
@@ -56,141 +56,6 @@ log_Msg "Showing HCP Pipelines version"
 log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
-
-# show_usage()
-# {
-# 	cat << EOF
-
-# ${g_script_name}: Apply Hand Reclassifications of Noise and Signal components
-# from FIX using the ReclassifyAsNoise.txt and ReclassifyAsSignal.txt input files.
-
-# Generates HandNoise.txt and HandSignal.txt as output.
-# Script does NOT reapply the FIX cleanup.
-# For that, use the ReApplyFix scripts.
-
-# Usage: ${g_script_name} PARAMETER..."
-
-# PARAMETERs are: [ ] = optional; < > = user supplied value
-#   [--help] : show usage information and exit
-#    --path=<path to study folder> OR --study-folder=<path to study folder>
-#    --subject=<subject ID>
-#    --fmri-name=<fMRI name>
-#    --high-pass=<high-pass filter used in ICA+FIX>
-
-# EOF
-# }
-
-# ------------------------------------------------------------------------------
-#  Get the command line options for this script.
-# ------------------------------------------------------------------------------
-# get_options()
-# {
-# 	local arguments=($@)
-
-# 	# initialize global output variables
-# 	unset p_StudyFolder
-# 	unset p_Subject
-# 	unset p_fMRIName
-# 	unset p_HighPass
-# 	g_matlab_run_mode=0
-
-# 	# parse arguments
-# 	local num_args=${#arguments[@]}
-# 	local argument
-# 	local index=0
-
-# 	while [ ${index} -lt ${num_args} ]; do
-# 		argument=${arguments[index]}
-
-# 		case ${argument} in
-# 			--help)
-# 				show_usage
-# 				exit 0
-# 				;;
-# 			--path=*)
-# 				p_StudyFolder=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			--study-folder=*)
-# 				p_StudyFolder=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			--subject=*)
-# 				p_Subject=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			--fmri-name=*)
-# 				p_fMRIName=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			--high-pass=*)
-# 				p_HighPass=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			--matlab-run-mode=*)
-# 				g_matlab_run_mode=${argument#*=}
-# 				index=$(( index + 1 ))
-# 				;;
-# 			*)
-# 				show_usage
-# 				log_Err_Abort "unrecognized option: ${argument}"
-# 				;;
-# 		esac
-# 	done
-
-# 	local error_count=0
-
-# 	# check required parameters
-# 	if [ -z "${p_StudyFolder}" ]; then
-# 		log_Err "Study Folder (--path= or --study-folder=) required"
-# 		error_count=$(( error_count + 1 ))
-# 	else
-# 		log_Msg "p_StudyFolder: ${p_StudyFolder}"
-# 	fi
-
-# 	if [ -z "${p_Subject}" ]; then
-# 		log_Err "Subject ID (--subject=) required"
-# 		error_count=$(( error_count + 1 ))
-# 	else
-# 		log_Msg "p_Subject: ${p_Subject}"
-# 	fi
-
-# 	if [ -z "${p_fMRIName}" ]; then
-# 		log_Err "fMRI Name (--fmri-name=) required"
-# 		error_count=$(( error_count + 1 ))
-# 	else
-# 		log_Msg "p_fMRIName: ${p_fMRIName}"
-# 	fi
-
-# 	if [ -z "${p_HighPass}" ]; then
-# 		log_Err "High Pass: (--high-pass=) required"
-# 		error_count=$(( error_count + 1 ))
-# 	else
-# 		log_Msg "p_HighPass: ${p_HighPass}"
-# 	fi
-
-# 	#--matlab-run-mode is now ignored, but still accepted, to make old scripts work without changes
-
-# 	if [ ${error_count} -gt 0 ]; then
-# 		log_Err_Abort "For usage information, use --help"
-# 	fi
-# }
-
-# ------------------------------------------------------------------------------
-#  Show Tool Versions
-# ------------------------------------------------------------------------------
-
-# show_tool_versions()
-# {
-# 	# Show HCP Pipelines Version
-# 	log_Msg "Showing HCP Pipelines version"
-# 	"${HCPPIPEDIR}"/show_version --short
-
-# 	# Show FSL version
-# 	log_Msg "Showing FSL version"
-# 	fsl_version_get fsl_ver
-# 	log_Msg "FSL version: ${fsl_ver}"
-# }
 
 # ------------------------------------------------------------------------------
 #  List lookup helper function for this script
@@ -222,8 +87,6 @@ list_file_to_lookup()
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-# main()
-# {
 #get_options $@
 show_tool_versions
 
@@ -362,50 +225,3 @@ echo "[$training_labels]" > "${TrainingLabelsName}"
 
 log_Msg "merging classifications complete"
 log_Msg "Completed!"
-
-# }
-
-# ------------------------------------------------------------------------------
-#  "Global" processing - everything above here should be in a function
-# ------------------------------------------------------------------------------
-
-# # Set global variables
-# g_script_name=$(basename "${0}")
-
-# # Allow script to return a Usage statement, before any other output
-# if [ "$#" = "0" ]; then
-#     show_usage
-#     exit 1
-# fi
-
-# # Verify that HCPPIPEDIR environment variable is set
-# if [ -z "${HCPPIPEDIR}" ]; then
-#     echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-#     exit 1
-# fi
-
-# # Load function libraries
-# source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-# source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-# source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
-
-# opts_ShowVersionIfRequested $@
-
-# if opts_CheckForHelpRequest $@; then
-# 	show_usage
-# 	exit 0
-# fi
-
-# ${HCPPIPEDIR}/show_version
-
-# Verify required environment variables are set and log value
-# log_Check_Env_Var HCPPIPEDIR
-# log_Check_Env_Var FSLDIR
-
-# Invoke the 'main' function to get things started
-# main $@
-
-
-
-  
-
