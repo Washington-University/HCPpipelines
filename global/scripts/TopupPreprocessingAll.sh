@@ -4,39 +4,11 @@
 #  installed versions of: FSL, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-# 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-# 	exit 1
-# else
-# 	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
-# fi
-
-# if [ -z "${FSLDIR}" ]; then
-# 	echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-# 	exit 1
-# else
-# 	echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-# fi
-
-# if [ -z "${HCPPIPEDIR_Global}" ]; then
-# 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR_Global environment variable must be set"
-# 	exit 1
-# else
-# 	echo "$(basename ${0}): HCPPIPEDIR_Global: ${HCPPIPEDIR_Global}"
-# fi
-
 ################################################ SUPPORT FUNCTIONS ##################################################
 
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
-
-# source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
 
 set -eu
 
@@ -54,7 +26,6 @@ source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line op
 
 opts_SetScriptDescription "Script for using topup to do distortion correction for EPI (scout)"
 
-#ARE THESE DESCRIPTIONS OK?????
 opts_AddMandatory '--phaseone' 'PhaseEncodeOne' 'image(s)' "first set of SE EPI images: assumed to be the 'negative' PE direction"
 
 opts_AddMandatory '--phasetwo' 'PhaseEncodeTwo' 'image(s)' "second set of SE EPI images: assumed to be the 'positive' PE direction"
@@ -96,53 +67,6 @@ opts_ShowValues
 # Verify required environment variables are set and log value
 log_Check_Env_Var FSLDIR
 
-
-# Usage() {
-#   echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"
-#   echo " "
-  # echo "Usage: `basename $0` [--workingdir=<working directory>]"
-  # echo "            --phaseone=<first set of SE EPI images: assumed to be the 'negative' PE direction>"
-  # echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
-  # echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
-  # echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
-  # echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
-  # echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
-  # echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
-  # echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
-  # echo "            [--ofmap=<output scaled topup field map image>]"
-  # echo "            [--ojacobian=<output Jacobian image> (of the TOPUP warp field)]"
-  # echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
-#   # echo "            [--topupconfig=<topup config file>]"
-#   echo "            --usejacobian=<\"true\" or \"false\">"
-#   echo "                 Whether to apply the jacobian of the gradient non-linearity distortion correction"
-#   echo "                 Irrelevant if --gdcoeffs=NONE"
-#   echo "                 (Has nothing to do with the jacobian of the TOPUP warp field)"
-#   echo " "
-#   echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
-# }
-
-# # function for parsing options
-# getopt1() {
-#     sopt="$1"
-#     shift 1
-#     for fn in $@ ; do
-# 	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-# 	    echo $fn | sed "s/^${sopt}=//"
-# 	    return 0
-# 	fi
-#     done
-# }
-
-# defaultopt() {
-#     echo $1
-# }
-
-# # --------------------------------------------------------------------------------
-# #  Establish tool name for logging
-# # --------------------------------------------------------------------------------
-
-# log_SetToolName "TopupPreprocessingAll.sh"
-
 ################################################### OUTPUT FILES #####################################################
 
 # Output images (in $WD): 
@@ -157,38 +81,8 @@ log_Check_Env_Var FSLDIR
 
 ################################################## OPTION PARSING #####################################################
 
-# # Just give usage if no arguments specified
-# if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# # check for correct options
-# if [ $# -lt 7 ] ; then Usage; exit 1; fi
-
-# # parse arguments
-# WD=`getopt1 "--workingdir" $@`  # "$1"
-# PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT ASSUMES PhaseOne is the 'negative' direction when setting up the acqparams.txt file for TOPUP
-# PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT ASSUMES PhaseTwo is the 'positive' direction when setting up the acqparams.txt file for TOPUP
-# ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
-# EchoSpacing=`getopt1 "--echospacing" $@`  # "$5"
-# UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
-# DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
-# DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
-# DistortionCorrectionMagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`
-# DistortionCorrectionFieldOutput=`getopt1 "--ofmap" $@`
-# JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
-# GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
-# TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
-# UseJacobian=`getopt1 "--usejacobian" $@`
-
-# if [[ -n $HCPPIPEDEBUG ]]
-# then
-#     set -x
-# fi
-
 #sanity check the jacobian option
 UseJacobian=$(opts_StringToBool "$UseJacobian")
-# if [[ "$UseJacobian" != "true" && "$UseJacobian" != "false" ]]
-# then
-#     log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
-# fi
 
 GlobalScripts=${HCPPIPEDIR_Global}
 

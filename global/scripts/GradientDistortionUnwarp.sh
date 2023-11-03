@@ -4,28 +4,7 @@
 #  installed versions of: FSL, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, PATH for gradient_unwarp.py
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
-
-# if [ -z "${HCPPIPEDIR}" ]; then
-# 	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-# 	exit 1
-# else
-# 	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
-# fi
-
-# if [ -z "${FSLDIR}" ]; then
-#   echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-#   exit 1
-# else
-#   echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
-fi
-
 ################################################ SUPPORT FUNCTIONS ##################################################
-
-# source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
 set -eu
 
 pipedirguessed=0
@@ -68,33 +47,6 @@ opts_ShowValues
 
 log_Check_Env_Var FSLDIR
 
-
-# Usage() {
-#   echo "$(basename $0): Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
-#   echo " "
-  # echo "Usage: $(basename $0) [--workingdir=<working dir>]"
-  # echo "              --coeffs=<Siemens gradient coefficient file>"
-  # echo "              --in=<input image>"
-  # echo "              --out=<output image>"
-  # echo "              --owarp=<output warp>"
-# }
-
-# # function for parsing options
-# getopt1() {
-#     sopt="$1"
-#     shift 1
-#     for fn in $@ ; do
-# 	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-# 	    echo $fn | sed "s/^${sopt}=//"
-# 	    return 0
-# 	fi
-#     done
-# }
-
-# defaultopt() {
-#     echo $1
-# }
-
 ################################################### OUTPUT FILES #####################################################
 
 # Outputs (in $WD except for those starting with $Output) : 
@@ -105,18 +57,6 @@ log_Check_Env_Var FSLDIR
 #        $OutputFile         (spline interpolated 4D output)
 
 ################################################## OPTION PARSING #####################################################
-
-# # Just give usage if no arguments specified
-# if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# # check for correct options
-# if [ $# -lt 5 ] ; then Usage; exit 1; fi
-
-# # parse arguments
-# WD=`getopt1 "--workingdir" $@`  # "$1"
-# InputCoefficients=`getopt1 "--coeffs" $@`  # "$2"
-# InputFile=`getopt1 "--in" $@`  # "$3"
-# OutputFile=`getopt1 "--out" $@`  # "$4"
-# OutputTransform=`getopt1 "--owarp" $@`  # "$5"
 
 
 # default parameters

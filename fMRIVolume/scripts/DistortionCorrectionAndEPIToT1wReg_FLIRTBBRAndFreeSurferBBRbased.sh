@@ -19,9 +19,6 @@ NONE_METHOD_OPT="NONE"
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-# script_name=$(basename "${0}")
-
-
 set -eu
 
 pipedirguessed=0

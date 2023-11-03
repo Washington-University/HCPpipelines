@@ -181,19 +181,15 @@ else
 fi
 
 # Naming Conventions and other variables
-# local AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
-# local ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
 log_Msg "ResultsFolder: ${ResultsFolder}"
 
-# local ICAFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica/filtered_func_data.ica"
 ICAFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica/filtered_func_data.ica"
 log_Msg "ICAFolder: ${ICAFolder}"
 
-# local FIXFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica"
 FIXFolder="${ResultsFolder}/${fMRIName}${hpStr}.ica"
 log_Msg "FIXFolder: ${FIXFolder}"
 
@@ -211,7 +207,6 @@ ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${ICAFolder}/melodic_oIC_
 
 ## Prep variables for prepareICAs
 log_Msg "Set up for prepareICAs MATLAB code"
-# local HighPassUse
 HighPassUse=""
 if ((ReuseHighPass)) ; then
 	dtseriesName="${ResultsFolder}/${fMRIName}_Atlas${hpStr}" #No Extension Here
