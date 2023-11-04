@@ -105,7 +105,6 @@ verbose_echo " --> Geting a 6 DOF approximation"
 $CARET7DIR/wb_command -convert-affine -from-flirt "$WD"/full2std.mat "$Input".nii.gz "$Reference" -to-world "$WD"/full2std_world.mat
 ${HCPPIPEDIR}/global/scripts/aff2rigid_world "$WD"/full2std_world.mat "$WD"/full2std_rigid_world.mat
 $CARET7DIR/wb_command -convert-affine -from-world "$WD"/full2std_rigid_world.mat -to-flirt "$OutputMatrix" "$Input".nii.gz "$Reference"
-${FSLDIR}/bin/aff2rigid "$WD"/full2std.mat "$OutputMatrix"
 
 # Create a resampled image (ACPC aligned) using spline interpolation
 verbose_echo " --> Creating a resampled image"

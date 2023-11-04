@@ -16,7 +16,7 @@ fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "MSM Remove Group Drift - Compute Group Registration Drift"
 
@@ -25,11 +25,11 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "path to study folder"
 
 opts_AddMandatory '--subject-list' 'Subjlist' 'list' "@ delimited list of subject ids"
 
-opts_AddMandatory '--group-folder' 'CommonFolder' 'path' "path to study folder" "" "--common-folder "
+opts_AddMandatory '--group-folder' 'CommonFolder' 'path' "group-average folder" "--common-folder"
 
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'name' "output group average name (e.g. S900)"
 
-opts_AddMandatory '--input-registration-name' 'InRegName' 'string' "Name of the input registration (e.g. MSMAll)"
+opts_AddMandatory '--input-registration-name' 'InRegName' 'string' "Name of the input registration (e.g. MSMSulc)"
 
 opts_AddMandatory '--target-registration-name' 'TargetRegName' 'string' "Name of the target registration (e.g. MSMAll)"
 
@@ -39,6 +39,7 @@ opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'numstring' "representing the 
 
 opts_AddMandatory '--low-res-meshes' 'LowResMesh' 'numstring' "representing the low res mesh (@ delimited list) (e.g. 32)"
 
+opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
@@ -48,8 +49,6 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-# Verify required environment variables are set and log value
-# log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 
 Subjlist=${Subjlist//@/ }
