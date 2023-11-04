@@ -76,7 +76,7 @@ log_Msg "BrainOrdinatesResolution: ${BrainOrdinatesResolution}"
 VolumefMRI="${ResultsFolder}/${NameOffMRI}"
 log_Msg "VolumefMRI: ${VolumefMRI}"
 
-Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 log_Msg "Sigma: ${Sigma}"
 
 #NOTE: wmparc has dashes in structure names, which -cifti-create-* won't accept

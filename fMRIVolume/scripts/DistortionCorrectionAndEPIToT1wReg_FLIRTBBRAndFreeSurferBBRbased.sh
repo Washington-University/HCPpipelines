@@ -26,7 +26,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -102,7 +102,7 @@ opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' 'number' "'negativ
 
 opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'number' "'positive' polarity SE-EPI image"
 
-opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file" "${HCPPIPEDIR_Config}/b02b0.cnf"
+opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
 opts_AddOptional '--subjectfolder' 'SubjectFolder' 'path' "subject processing folder"
 
@@ -138,8 +138,12 @@ log_Check_Env_Var HCPPIPEDIR_Global
 
 UseJacobian=$(opts_StringToBool "$UseJacobian")
 
-HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
+HCPPIPEDIR_fMRIVol="$HCPPIPEDIR"/fMRIVolume/scripts
 
+if [[ "$TopupConfig" == "" ]]
+then
+    TopupConfig="$HCPPIPEDIR"/global/config/b02b0.cnf
+fi
 
 ################################################### OUTPUT FILES #####################################################
 

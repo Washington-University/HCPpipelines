@@ -30,7 +30,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -67,8 +67,6 @@ opts_AddOptional '--fmrimask' 'fMRIMask' '' "type of mask to use for generating 
 
 opts_ParseArguments "$@"
 
-# parse arguments
-
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
@@ -100,7 +98,6 @@ verbose_echo "     --usejacobian: ${UseJacobian}"
 verbose_echo "        --fmrimask: ${fMRIMask}"
 verbose_echo " "
 
-# # default parameters
 OutputfMRI=`$FSLDIR/bin/remove_ext $OutputfMRI`
 
 #sanity check the jacobian option

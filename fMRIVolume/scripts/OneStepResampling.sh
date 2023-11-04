@@ -15,7 +15,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -66,7 +66,7 @@ opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + dist
 #Optional Args 
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
-opts_AddOptional '--wb-resample' 'useWbResample' 'True OR False' "Use wb command to do volume resampeling instead of applywarp" "0"
+opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampeling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 

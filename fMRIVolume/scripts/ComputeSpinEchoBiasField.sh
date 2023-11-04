@@ -14,7 +14,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -50,7 +50,7 @@ log_Check_Env_Var FSLDIR
 
 ########################################## DO WORK ##########################################
 
-Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command
 
 T1wFolder="${SubjectFolder}/T1w" #brainmask, wmparc, ribbon

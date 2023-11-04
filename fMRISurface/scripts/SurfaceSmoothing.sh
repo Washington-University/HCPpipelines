@@ -58,7 +58,7 @@ DownSampleFolder="$3"
 LowResMesh="$4"
 SmoothingFWHM="$5"
 
-Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
 
 for Hemisphere in L R ; do

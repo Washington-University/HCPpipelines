@@ -57,8 +57,8 @@ log_Msg "Subjlist: ${Subjlist}"
 CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 log_Msg "CommonAtlasFolder: ${CommonAtlasFolder}"
 
-CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
-log_Msg "CommonDownSampleFolder: ${CommonDownSampleFolder}"
+#CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
+#log_Msg "CommonDownSampleFolder: ${CommonDownSampleFolder}"
 
 if [ ! -e ${CommonAtlasFolder}/${RegName} ] ; then
 	mkdir -p ${CommonAtlasFolder}/${RegName}
