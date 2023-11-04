@@ -25,7 +25,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "path to study folder"
 
 opts_AddMandatory '--subject-list' 'Subjlist' 'list' "@ delimited list of subject ids"
 
-opts_AddMandatory '--common-folder' 'CommonFolder' 'path' "path to study folder"
+opts_AddMandatory '--group-folder' 'CommonFolder' 'path' "path to study folder" "" "--common-folder "
 
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'name' "output group average name (e.g. S900)"
 
@@ -51,11 +51,6 @@ opts_ShowValues
 # Verify required environment variables are set and log value
 # log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
-
-
-# ------------------------------------------------------------------------------
-#  Get the command line options for this script.
-# ------------------------------------------------------------------------------
 
 Subjlist=${Subjlist//@/ }
 log_Msg "Subjlist: ${Subjlist}"
