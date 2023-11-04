@@ -39,7 +39,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 # Load function libraries
@@ -81,6 +81,7 @@ opts_AddMandatory '--std-maps' 'STDMaps' 'mapstring@mapstring' "maps you want to
 
 opts_AddMandatory '--multi-maps' 'MultiMaps' 'mapstring@mapstring' "Maps with more than one map (column) that cannot be merged and must be averaged (@ delimited list) (e.g. NONE)"
 
+opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
@@ -94,22 +95,15 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
 
-
-# ------------------------------------------------------------------------------
-#  Show Tool Versions
-# ------------------------------------------------------------------------------
-# 	# Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
 "${HCPPIPEDIR}"/show_version --short
-# Show wb_command version
+
 log_Msg "Showing Connectome Workbench (wb_command) version"
 ${CARET7DIR}/wb_command -version
 
-# Show fsl version
 log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
-
 
 # ------------------------------------------------------------------------------
 #  Main processing of script.

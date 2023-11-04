@@ -32,10 +32,7 @@ opts_AddMandatory '--high-pass' 'HighPass' 'amount' "high-pass filter used in IC
 
 ##Optional Args 
 ## deprecated, matlab code is not used
-opts_AddOptional '--matlab-run-mode' 'g_matlab_run_mode' '0, 1, 2' "defaults to ${G_DEFAULT_MATLAB_RUN_MODE} 
-     0 = Use compiled MATLAB
-     1 = Use interpreted MATLAB
-     2 = Use octave" "${G_DEFAULT_MATLAB_RUN_MODE}"
+opts_AddOptional '--matlab-run-mode' 'g_matlab_run_mode' '0, 1, 2' "deprecated, this code does not currently use matlab"
 
 opts_ParseArguments "$@"
 
