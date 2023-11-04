@@ -110,8 +110,7 @@ opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "General Electri
 
 opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "Degrees of freedom for the EPI to T1 registration: 6 (default) or 9 or or 12" "6"
 
-opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE OR FALSE' "Controls whether the jacobian of the *distortion corrections* (GDC and SDC) are applied to the output data.  (The jacobian of the nonlinear T1 to template (MNI152) registration is NOT applied, regardless of value). Default: 'TRUE' if using --dcmethod='${SPIN_ECHO_METHOD_OPT}'; 'FALSE' for all other SDC methods." "TRUE"
-
+opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE OR FALSE' "Controls whether the jacobian of the *distortion corrections* (GDC and SDC) are applied to the output data.  (The jacobian of the nonlinear T1 to template (MNI152) registration is NOT applied, regardless of value). Default: 'TRUE' if using --dcmethod='${SPIN_ECHO_METHOD_OPT}'; 'FALSE' for all other SDC methods."
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
@@ -237,13 +236,6 @@ of HCP-Style data analysis when compared to gold-standard fieldmap-based correct
 EOF
 }
 
-
-#Create a parser for processing mode????####
-# if opts_CheckForFlag --processing-mode-info "$@"; then
-#   show_processing_mode_info
-#   exit 0
-# fi
-
 "$HCPPIPEDIR"/show_version
 
 # ------------------------------------------------------------------------------
@@ -359,7 +351,7 @@ if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" ]]; then
 fi
 
 
-# # Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
+# Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
 BiasCorrection="$(echo ${BiasCorrection} | tr '[:lower:]' '[:upper:]')"
 log_Msg "BiasCorrection: ${BiasCorrection}"
 
@@ -381,7 +373,6 @@ fi
 
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
-# log_Msg "UseJacobian: ${UseJacobian}"
 
 JacobianDefault="true"
 if [[ $DistortionCorrection != "${SPIN_ECHO_METHOD_OPT}" ]]
@@ -393,6 +384,11 @@ then
     then
         log_Msg "WARNING: using --jacobian=true with --dcmethod other than ${SPIN_ECHO_METHOD_OPT} is not recommended, as the distortion warpfield is less stable than ${SPIN_ECHO_METHOD_OPT}"
     fi
+fi
+
+if [[ "$UseJacobian" == "" ]]
+then
+    UseJacobian="$JacobianDefault"
 fi
 
 #sanity check the jacobian option
@@ -602,7 +598,6 @@ if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir ${fMRIFolder}"
   mkdir "$fMRIFolder"
 fi
-ls "$fMRITimeSeries"
 ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 
 # --- Do slice time correction if indicated

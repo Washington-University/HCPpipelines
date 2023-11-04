@@ -17,12 +17,12 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Script for using topup to do distortion correction for EPI (scout)"
 
@@ -55,6 +55,7 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'path' "topup config file"
 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Whether to apply the jacobian of the gradient non-linearity distortion correction Irrelevant if --gdcoeffs=NONE (Has nothing to do with the jacobian of the TOPUP warp field)"
 
+opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
@@ -79,23 +80,21 @@ log_Check_Env_Var FSLDIR
 # Output images (not in $WD): 
 #          ${DistortionCorrectionWarpFieldOutput}  ${JacobianOutput}
 
-################################################## OPTION PARSING #####################################################
-
 #sanity check the jacobian option
 UseJacobian=$(opts_StringToBool "$UseJacobian")
 
 GlobalScripts=${HCPPIPEDIR_Global}
 
-# default parameters #Breaks when --owarp becomes optional
-DistortionCorrectionWarpFieldOutput=`$FSLDIR/bin/remove_ext $DistortionCorrectionWarpFieldOutput`
+# deal with default that depends on another argument
+DistortionCorrectionWarpFieldOutput=$("$FSLDIR"/bin/remove_ext "$DistortionCorrectionWarpFieldOutput")
 if [[ $WD == "" ]]
 then
-  WD=${DistortionCorrectionWarpFieldOutput}.wdir
-fi 
+    WD=${DistortionCorrectionWarpFieldOutput}.wdir
+fi
 
 log_Msg "START: Topup Field Map Generation and Gradient Unwarping"
 
-mkdir -p $WD
+mkdir -p "$WD"
 
 # Record the input options in a log file
 echo "$0 $@" >> $WD/log.txt

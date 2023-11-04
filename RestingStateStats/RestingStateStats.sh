@@ -502,7 +502,7 @@ main()
 		### MG: Note that bias field correction and variance normalization are two incompatible goals
 		log_Msg "Calculate CIFTI version of the bias field"
 
-		Sigma=`echo "$g_smoothing_fwhm / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+		Sigma=`echo "$g_smoothing_fwhm / (2 * sqrt(2 * l(2)))" | bc -l`
 
 		# ----------------------------------------
 		# Input File(s)

@@ -4,7 +4,6 @@
 #  installed versions of: FSL, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, PATH for gradient_unwarp.py
 
-################################################ SUPPORT FUNCTIONS ##################################################
 set -eu
 
 pipedirguessed=0
@@ -12,7 +11,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 # Load function libraries
@@ -80,7 +79,7 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Extract first volume and run gradient distortion correction on this (all others follow suit as scanner coordinate system is unchanged, even with subject motion)
-${FSLDIR}/bin/fslroi ${InputFile}.nii.gz $WD/${BaseName}_vol1.nii.gz 0 1
+${FSLDIR}/bin/fslroi "$InputFile" $WD/${BaseName}_vol1.nii.gz 0 1
 
 # move (temporarily) into the working directory as gradient_unwarp.py outputs some files directly into pwd
 InputCoeffs=`${FSLDIR}/bin/fsl_abspath $InputCoefficients`

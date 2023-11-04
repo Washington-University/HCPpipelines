@@ -74,7 +74,7 @@ case $DistortionCorrection in
         # --------------------------------------
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
-            if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == ""]]
+            if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == "" ]]
             then 
                 log_Err_Abort "$DistortionCorrection method requires --fmapmag, --fmapphase, and --echodiff"
             fi
@@ -97,7 +97,7 @@ case $DistortionCorrection in
         # --------------------------------------
         # -- Philips Gradient Echo Field Maps --
         # --------------------------------------
-        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == ""]]
+        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == "" ]]
         then 
             log_Err_Abort "$DistortionCorrection method requires --fmapmag, --fmapphase, and --echodiff"
         fi

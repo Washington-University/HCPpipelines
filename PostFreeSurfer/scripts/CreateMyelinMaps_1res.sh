@@ -110,8 +110,8 @@ LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
 MyelinMappingFWHM="5"
 SurfaceSmoothingFWHM="4"
-MyelinMappingSigma=`echo "$MyelinMappingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
-SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+MyelinMappingSigma=`echo "$MyelinMappingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
+SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
 
