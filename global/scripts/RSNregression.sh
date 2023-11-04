@@ -41,6 +41,8 @@ opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', o
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
 opts_AddOptional '--low-ica-template-name' 'ICATemplateName' 'filename' "filename template where 'REPLACEDIM' will be replaced by each of the --low-ica-dims values in turn to form the low-dim inputs"
+opts_AddOptional '--tICA-mixing-matrix' 'tICAMM' 'filename' "path to a previously computed tICA mixing matrix with matching sICA components"
+
 #outputs
 opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like group_ICA_d127"
 opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "number of samples to use when computing frequency spectrum" '0'
@@ -158,6 +160,19 @@ case "$Method" in
             echo "$ICATemplateName" | sed "s/REPLACEDIM/$dim/g" >> "$tempname.params.txt"
         done
         ;;
+    (tICA_weighted)
+        MethodStr="TWR"
+        if [[ "$LowICADims" == "" || "$ICATemplateName" == "" || "$tICAMM" == "" ]]
+        then
+            log_Err_Abort "When using 'tICA_weighted' method, you must use --low-ica-dims, --low-ica-template-name and --tICA-mixing-matrix"
+        fi
+        IFS='@' read -a LowDimArray <<< "$LowICADims"
+        for dim in "${LowDimArray[@]}"
+        do
+            #yes, quotes can nest when there is a $() separating them
+            echo "$ICATemplateName" | sed "s/REPLACEDIM/$dim/g" >> "$tempname.params.txt"
+        done
+        ;;
     (dual)
         MethodStr="DR"
         ;;
@@ -225,6 +240,10 @@ then
     matlab_argarray+=("GroupMaps" "$GroupMaps")
     matlab_argarray+=("VAWeightsName" "$tempfile.91k.dscalar.nii")
 fi
+if [[ "$Method" == "tICA_weighted" ]]
+then
+    matlab_argarray+=("tICAMM" "$tICAMM")
+fi
 if ((DoZ))
 then
     matlab_argarray+=("OutputZ" "$OutputZ")
@@ -287,7 +306,7 @@ case "$MatlabMode" in
         ;;
 esac
 
-if [[ "$SpectraParams" != "" ]] && [[ ! ${Method} == "single" ]]
+if [[ "$SpectraParams" != "" ]] && [[ ! ${Method} == "single" ]] && [[ ! ${Method} == "tICA_weighted" ]]
 then
     wb_command -file-information "$GroupMaps" -only-map-names > "$tempname.mapnames.txt"
     TR=$(wb_command -file-information "$SpectraTRFile" -only-step-interval)

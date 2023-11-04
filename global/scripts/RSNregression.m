@@ -1,5 +1,5 @@
 function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, varargin)
-    optional = myargparse(varargin, {'GroupMaps' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
+    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
     
     %InputFile - text file containing filenames of timeseries to concatenate
     %InputVNFile - text file containing filenames of the variance maps of each input
@@ -139,13 +139,13 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         clear vnvolsum;
     end
     
-    if strcmp(Method,'weighted') || strcmp(Method,'dual')
+    if strcmp(Method,'weighted') || strcmp(Method,'dual') || strcmp(Method,'tICA_weighted') 
         GroupMapcii = ciftiopen(optional.GroupMaps, wbcommand);
         weightscii = ciftiopen(optional.VAWeightsName, wbcommand); %normalized vertex areas, voxels are all 1s
         AreaWeights = weightscii.cdata;
     end
     switch Method
-        case 'weighted'
+        case {'weighted', 'tICA_weighted'}
             if strcmp(optional.WRSmoothingSigma, '')
                 error '"weighted" method requires WRSmoothingSigma to be specified'
             end
@@ -178,6 +178,56 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             
             betaICAone = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights .* ScaledAlignmentQuality);
             [betaICA, NODEts] = weightedDualRegression(normalise(betaICAone), inputConcat, AreaWeights);
+            
+            if strcmp(Method, "tICA_weighted") % based on tICA/scripts/ComputeGroupTICA.m but for one subject as a group
+                NODEts=NODEts';
+                disp(['NODEts'])
+                size(NODEts)
+                SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
+                nTPsForSpectra =str2double(SpectraArray{1}{1});
+                thisStart = 1;
+                TCSRunVarSub = [];
+                for i = 1:size(inputArray, 1)
+                    dtseriesName=[inputArray{i}];
+                    if exist(dtseriesName, 'file')
+                        [~, runLengthStr] = system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
+                        disp(['runLengthStr ' runLengthStr])
+                        runLength = str2double(runLengthStr);
+                        nextStart = thisStart + runLength;
+                        TCSRunVarSub = [TCSRunVarSub repmat(std(NODEts(:, thisStart:(nextStart - 1)), [], 2), 1, runLength)];
+    
+                        thisStart = nextStart;
+                    end
+                end
+                
+                sICAtcsvars = std(NODEts, [], 2);
+                NODEts = (NODEts ./ TCSRunVarSub) .* repmat(sICAtcsvars, 1, size(TCSRunVarSub, 2)); %Making all runs contribute equally improves tICA decompositions
+                NODEts(~isfinite(NODEts)) = 0;
+
+                A = load(optional.tICAMM);
+
+                if size(A,1) ~= size(NODEts,1)
+                    error('Mixing matrix to be used does not match dimensions of the sICA components');
+                end
+                
+                % unmix the sICA timeseries
+                W = pinv(A);
+                normicasig = W * NODEts;
+                icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(NODEts, 2)); %Unormalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
+                
+                tICAtcs = icasig';
+                TSTDs = std(tICAtcs, [], 1); %unnormalized tICA temporal standard deviations
+                TIs = [1:1:length(TSTDs)];
+
+                tICAtcs(:, [1:1:length(TIs)]) = single(tICAtcs(:, TIs));
+                tICAtcs=tICAtcs';
+                tICAtcsAll = reshape(tICAtcs, size(A,1), nTPsForSpectra, 1);
+                tICATCS = squeeze(tICAtcsAll(:, std(tICAtcsAll(:, :, 1), [], 1) > 0, 1));
+
+                % single regression
+                NODEts = tICATCS';
+                betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
+            end
         case 'dual'
             [betaICA, NODEts] = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights);
         case 'single'
@@ -194,7 +244,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     
     %outputs
     %Save Timeseries and Spectra if Desired
-    if ~strcmp(optional.SpectraParams, '') && ~strcmp(Method,'single')
+    if ~strcmp(optional.SpectraParams, '') && ~strcmp(Method,'single') && ~strcmp(Method,'tICA_weighted')
         SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
         nTPsForSpectra = min(str2double(SpectraArray{1}{1}), size(NODEts, 1));
         OutputSpectraTS = SpectraArray{1}{2};
