@@ -84,9 +84,6 @@ list_file_to_lookup()
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 
-#get_options $@
-show_tool_versions
-
 # NOTE: HighPass flag may be "pd*", if polynomial detrending was requested in 
 # hcp_fix_multi_run (not supported in hcp_fix currently)
 
