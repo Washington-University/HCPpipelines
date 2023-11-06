@@ -190,7 +190,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 for i = 1:size(inputArray, 1)
                     dtseriesName=[inputArray{i}];
                     if exist(dtseriesName, 'file')
-                        [~, runLengthStr] = system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
+                        [~, runLengthStr] = my_system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
                         disp(['runLengthStr ' runLengthStr])
                         runLength = str2double(runLengthStr);
                         nextStart = thisStart + runLength;
@@ -215,17 +215,10 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 normicasig = W * NODEts;
                 icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(NODEts, 2)); %Unormalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
                 
-                tICAtcs = icasig';
-                TSTDs = std(tICAtcs, [], 1); %unnormalized tICA temporal standard deviations
-                TIs = [1:1:length(TSTDs)];
-
-                tICAtcs(:, [1:1:length(TIs)]) = single(tICAtcs(:, TIs));
-                tICAtcs=tICAtcs';
-                tICAtcsAll = reshape(tICAtcs, size(A,1), nTPsForSpectra, 1);
-                tICATCS = squeeze(tICAtcsAll(:, std(tICAtcsAll(:, :, 1), [], 1) > 0, 1));
+                tICAtcs = single(icasig);
 
                 % single regression
-                NODEts = tICATCS';
+                NODEts = tICAtcs';
                 betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
             end
         case 'dual'
@@ -355,7 +348,7 @@ function outstruct = open_vol_as_cifti(volName, ciftiTemplate, wbcommand)
 end
 
 %like call_fsl, but without sourcing fslconf
-function my_system(command)
+function [exitStatus, stdout]=my_system(command)
     if ismac()
         ldsave = getenv('DYLD_LIBRARY_PATH');
     else
@@ -375,7 +368,10 @@ function my_system(command)
     else
         setenv('LD_LIBRARY_PATH');
     end
-    if system(command) ~= 0
+
+    [exitStatus, stdout] = system(command, '-echo');
+
+    if exitStatus ~= 0
         error(['command failed: ' command]);
     end
 end
