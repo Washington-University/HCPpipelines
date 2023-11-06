@@ -190,7 +190,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 for i = 1:size(inputArray, 1)
                     dtseriesName=[inputArray{i}];
                     if exist(dtseriesName, 'file')
-                        [~, runLengthStr] = my_system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
+                        runLengthStr = my_system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
                         disp(['runLengthStr ' runLengthStr])
                         runLength = str2double(runLengthStr);
                         nextStart = thisStart + runLength;
@@ -230,7 +230,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             NODEts=NODEts.cdata';
             betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
         otherwise
-            error(['unrecognized method: "' Method '", use "weighted", "dual", or "single"']);
+            error(['unrecognized method: "' Method '", use "weighted", "tICA_weighted", "dual", or "single"']);
     end
     
     NODEtsnorm = normalise(NODEts);
@@ -348,7 +348,7 @@ function outstruct = open_vol_as_cifti(volName, ciftiTemplate, wbcommand)
 end
 
 %like call_fsl, but without sourcing fslconf
-function [exitStatus, stdout]=my_system(command)
+function stdout=my_system(command)
     if ismac()
         ldsave = getenv('DYLD_LIBRARY_PATH');
     else
@@ -369,7 +369,7 @@ function [exitStatus, stdout]=my_system(command)
         setenv('LD_LIBRARY_PATH');
     end
 
-    [exitStatus, stdout] = system(command, '-echo');
+    [exitStatus, stdout] = system(command);
 
     if exitStatus ~= 0
         error(['command failed: ' command]);
