@@ -181,10 +181,6 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             
             if strcmp(Method, "tICA_weighted") % based on tICA/scripts/ComputeGroupTICA.m but for one subject as a group
                 NODEts=NODEts';
-                disp(['NODEts'])
-                size(NODEts)
-                SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
-                nTPsForSpectra =str2double(SpectraArray{1}{1});
                 thisStart = 1;
                 TCSRunVarSub = [];
                 for i = 1:size(inputArray, 1)
