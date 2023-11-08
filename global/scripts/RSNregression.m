@@ -213,9 +213,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 % normicasig has stdev = 1 (more or less), just like the fastica/icasso output, we want to multiply the (approximate) amplitudes from A into it
                 % but, we also want to pretend that the input to tICA was normalized, so:
                 % tICAinput = A * normicasig
-                % pretendtICAinput = diag(1 / stdev(tICAinput)) * A * normicasig
+                % pretendtICAinput = diag(1 / std(tICAinput)) * A * normicasig
                 % ...assume normicasig doesn't change...
-                % pretendA = diag(1 / stdev(tICAinput)) * A = A ./ repmat(stdev(tICAinput), ...)
+                % pretendA = diag(1 / std(tICAinput)) * A = A ./ repmat(std(tICAinput), ...)
                 % then use std() to extract the approximate amplitudes from pretendA...sqrt(mean(x .^ 2)) might be better, but this was how we did it in tICA, so...
                 icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(NODEts, 2)); %Un-normalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
 
