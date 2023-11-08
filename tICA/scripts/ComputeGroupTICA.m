@@ -127,6 +127,13 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             [iq, A, W, normicasig, sR] = icasso('bootstrap', TCSFullConcat.cdata, iterations, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', sICAdim, 'numOfIC', tICAdim, 'maxNumIterations', 1000); %x4
         end
 
+        % normicasig has stdev = 1, we want to multiply the (approximate) amplitudes from A into it
+        % but, we also want to pretend that the input to tICA was normalized, so:
+        % tICAinput = A * normicasig
+        % pretendtICAinput = diag(1 / std(tICAinput)) * A * normicasig
+        % ...assume normicasig doesn't change...
+        % pretendA = diag(1 / std(tICAinput)) * A = A ./ repmat(std(tICAinput), ...)
+        % then use std() to extract the approximate amplitudes from pretendA...sqrt(mean(x .^ 2)) might be better, but this was how we did it originally, so...
         icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(TCSFullConcat.cdata, 2)); %Unormalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
         
 
