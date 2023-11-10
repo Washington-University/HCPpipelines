@@ -148,6 +148,8 @@ fi
 
 opts_ShowValues
 
+script_name=$(basename "$0")
+
 show_processing_mode_info() {
   cat <<EOF
 
