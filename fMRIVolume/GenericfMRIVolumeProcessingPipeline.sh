@@ -526,8 +526,6 @@ if [ "$fMRIReference" = "NONE" ]; then
   fMRIReferencePath="NONE"
   ReferenceResultsFolder="NONE"
 else
-  fMRIReferenceReg=`opts_DefaultOpt $fMRIReferenceReg "linear"`
-
   # --fmriref and --fmriscout are mutally exclusive
   if [ $fMRIScout != "NONE" ] ; then
     log_Err_Abort "Both fMRI Reference (--fmriref=${fMRIReference}) and fMRI Scout (--fmriscout=${fMRIScout}) were specified! The two options are mutually exclusive."
