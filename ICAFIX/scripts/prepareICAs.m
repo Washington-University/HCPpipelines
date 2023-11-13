@@ -26,7 +26,7 @@ fprintf('%s - TR: %d\n', func_name, TR);
 
 %%%%  read and highpass CIFTI version of the data if it exists
 dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
-ICAs = load(ICAs);
+ICAs = load(ICAs, '-ascii');
 
 if hp==0
   dtseries.cdata=detrend(dtseries.cdata')';
