@@ -476,7 +476,7 @@ main() {
 
 	# if the number of slices are odd, check that the user has a way to deal with that
 	if [ "${EnsureEvenSlices}" == "false" ] && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
-		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_Neg_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
 			log_Msg "Either supply a topup configuration file that doesn't use subsampling (e.g., FSL's 'b02b0_1.cnf') using the --topup-config-file=<file> flag (recommended)"
@@ -533,7 +533,7 @@ main() {
 	fi
 
 	if [ "${EnsureEvenSlices}" == "true" ]; then
-		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_Neg_b0 dim3)
 		if [ $(isodd $dimz) -eq 1 ]; then
 			echo "Removing one slice from data to get even number of slices"
 			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
