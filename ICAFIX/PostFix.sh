@@ -103,7 +103,7 @@ log_Msg "FSL version: ${fsl_ver}"
 
 case ${MatlabRunMode} in
 	0)
-		log_Msg "MATLAB Run Mode: ${p_MatlabRunMode}"
+		log_Msg "MATLAB Run Mode: ${MatlabRunMode}"
 		if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
 			log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 		else
