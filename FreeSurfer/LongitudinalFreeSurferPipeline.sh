@@ -402,7 +402,6 @@ if (( generate_template_only != 1)); then
 	  TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
 	  mkdir -p "${TargetDIR}"
 	  ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
-	  break
 	done
 fi
 
