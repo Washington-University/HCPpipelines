@@ -29,7 +29,7 @@
 
 #  Define Sources and pipe-dir
 # -----------------------------------------------------------------------------------
-
+echo 2
 set -eu
 
 pipedirguessed=0
