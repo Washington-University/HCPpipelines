@@ -5,7 +5,7 @@ function [Out] = icaDim(Origdata, DEMDT, VN, Iterate, NDist)
 % Estimates the number of ica components that are not due to random noise,
 %   and makes a standard deviation map of the random noise estimate
 %
-% DEMDT: 1 to detrend, 0 to only demean, -1 to do nothing
+% DEMDT: 1 to detrend, 0 to only demean, -1 to do nothing, >1 to do nothing and also set the DOF to the specified value
 % VN: mode/initial guess of # of non-random-noise components for variance normalization
 % Iterate: mode/count for iterating the estimation
 % NDist: number of wisharts to fit
@@ -59,20 +59,24 @@ clear Origdata;
 
 Nmask = size(data,1);
 
+Out.DOF=0;
+
 %Remove Constant Timeseries and Detrend Data
 % Reuse 'data' variable for memory efficiency
 if DEMDT==1
     % In this case, preserve the trend for adding back later
     data_detrend = detrend(data')';
     data_trend = data - data_detrend; 
-	data = data_detrend;
-	clear data_detrend;
+	  data = data_detrend;
+	  clear data_detrend;
 elseif DEMDT==0
 	% In this case, preserve the mean (over time) for adding back later
     data_mean = mean(data')';
     data = demean(data')';
 elseif DEMDT==-1
     % No demeaning or detrending; no additional prep necessary
+elseif DEMDT>1
+    Out.DOF=DEMDT; %Set DOF for a partial concat of an MRI+FIX run by subtracting the near zero DOF for the full MR+FIX run
 end
 
 %Precompute PCA reconstruction
@@ -82,7 +86,9 @@ end
 % but, we use the end of the eigenvalues to estimate the wishart distribution, so we need to detect and exclude those zeroes
 % due to rounding error, they won't be exactly zero, so exclude all "zeroish" components, thresholding at 10% of the stdev of all eigenvalues seems to work
 [u,EigS,v]=nets_svds(data',0); %Eigenvalues of data
-Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
+if Out.DOF==0
+    Out.DOF=sum(diag(EigS)>(std(diag(EigS))*0.1)); %Compute degrees of freedom
+end
 
 u(isnan(u))=0; v(isnan(v))=0;
 

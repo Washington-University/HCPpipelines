@@ -1,5 +1,5 @@
 function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, varargin)
-    optional = myargparse(varargin, {'GroupMaps' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
+    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma'});
     
     %InputFile - text file containing filenames of timeseries to concatenate
     %InputVNFile - text file containing filenames of the variance maps of each input
@@ -139,13 +139,13 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         clear vnvolsum;
     end
     
-    if strcmp(Method,'weighted') || strcmp(Method,'dual')
+    if strcmp(Method,'weighted') || strcmp(Method,'dual') || strcmp(Method,'tICA_weighted') 
         GroupMapcii = ciftiopen(optional.GroupMaps, wbcommand);
         weightscii = ciftiopen(optional.VAWeightsName, wbcommand); %normalized vertex areas, voxels are all 1s
         AreaWeights = weightscii.cdata;
     end
     switch Method
-        case 'weighted'
+        case {'weighted', 'tICA_weighted'}
             if strcmp(optional.WRSmoothingSigma, '')
                 error '"weighted" method requires WRSmoothingSigma to be specified'
             end
@@ -178,6 +178,52 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             
             betaICAone = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights .* ScaledAlignmentQuality);
             [betaICA, NODEts] = weightedDualRegression(normalise(betaICAone), inputConcat, AreaWeights);
+            
+            if strcmp(Method, "tICA_weighted") % based on tICA/scripts/ComputeGroupTICA.m but for one subject as a group
+                NODEts=NODEts';
+                thisStart = 1;
+                TCSRunVarSub = [];
+                for i = 1:size(inputArray, 1)
+                    dtseriesName=[inputArray{i}];
+                    if exist(dtseriesName, 'file')
+                        runLengthStr = my_system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
+                        disp(['runLengthStr ' runLengthStr])
+                        runLength = str2double(runLengthStr);
+                        nextStart = thisStart + runLength;
+                        TCSRunVarSub = [TCSRunVarSub repmat(std(NODEts(:, thisStart:(nextStart - 1)), [], 2), 1, runLength)];
+    
+                        thisStart = nextStart;
+                    end
+                end
+                
+                sICAtcsvars = std(NODEts, [], 2);
+                NODEts = (NODEts ./ TCSRunVarSub) .* repmat(sICAtcsvars, 1, size(TCSRunVarSub, 2)); %Making all runs contribute equally improves tICA decompositions
+                NODEts(~isfinite(NODEts)) = 0;
+
+                A = load(optional.tICAMM);
+
+                if size(A,1) ~= size(NODEts,1)
+                    error('Mixing matrix to be used does not match dimensions of the sICA components');
+                end
+                
+                % unmix the sICA timeseries
+                W = pinv(A);
+                normicasig = W * NODEts;
+                
+                % normicasig has stdev = 1 (more or less), just like the fastica/icasso output, we want to multiply the (approximate) amplitudes from A into it
+                % but, we also want to pretend that the input to tICA was normalized, so:
+                % tICAinput = A * normicasig
+                % pretendtICAinput = diag(1 / std(tICAinput)) * A * normicasig
+                % ...assume normicasig doesn't change...
+                % pretendA = diag(1 / std(tICAinput)) * A = A ./ repmat(std(tICAinput), ...)
+                % then use std() to extract the approximate amplitudes from pretendA...sqrt(mean(x .^ 2)) might be better, but this was how we did it in tICA, so...
+                icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(NODEts, 2)); %Un-normalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
+
+                tICAtcs = single(icasig);
+                % single regression
+                NODEts = tICAtcs';
+                betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
+            end
         case 'dual'
             [betaICA, NODEts] = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights);
         case 'single'
@@ -187,14 +233,14 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             NODEts=NODEts.cdata';
             betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
         otherwise
-            error(['unrecognized method: "' Method '", use "weighted", "dual", or "single"']);
+            error(['unrecognized method: "' Method '", use "weighted", "tICA_weighted", "dual", or "single"']);
     end
     
     NODEtsnorm = normalise(NODEts);
     
     %outputs
     %Save Timeseries and Spectra if Desired
-    if ~strcmp(optional.SpectraParams, '') && ~strcmp(Method,'single')
+    if ~strcmp(optional.SpectraParams, '') && ~strcmp(Method,'single') && ~strcmp(Method,'tICA_weighted')
         SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
         nTPsForSpectra = min(str2double(SpectraArray{1}{1}), size(NODEts, 1));
         OutputSpectraTS = SpectraArray{1}{2};
@@ -305,7 +351,7 @@ function outstruct = open_vol_as_cifti(volName, ciftiTemplate, wbcommand)
 end
 
 %like call_fsl, but without sourcing fslconf
-function my_system(command)
+function stdout=my_system(command)
     if ismac()
         ldsave = getenv('DYLD_LIBRARY_PATH');
     else
@@ -325,7 +371,10 @@ function my_system(command)
     else
         setenv('LD_LIBRARY_PATH');
     end
-    if system(command) ~= 0
+
+    [exitStatus, stdout] = system(command);
+
+    if exitStatus ~= 0
         error(['command failed: ' command]);
     end
 end
