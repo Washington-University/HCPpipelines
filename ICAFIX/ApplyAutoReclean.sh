@@ -16,12 +16,12 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements spatial ICA reclean"
+opts_SetScriptDescription "implements spatial ICA reclean (per subject)"
 
 #mandatory (mrfix name must be specified if applicable, so including it here despite being mechanically optional)
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
-opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of subject IDs separated by @s"
+opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of fmri run names separated by @s" #Needs to be the single fMRI run names only (for DVARS and GS code) for MR+FIX, is also the SR+FIX input names
 opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
@@ -86,16 +86,9 @@ if [[ "$VoteThresh" == "" ]]; then
     VoteThresh=$((count - 1))
 fi
 
-IFS='@' read -a SubjlistArray <<<"$SubjlistRaw"
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
-tempfiles_create SubjectList_XXXXXX.txt SubjListName
 tempfiles_create fMRIList_XXXXXX.txt fMRIListName
-
-for Subject in "${SubjlistArray[@]}"
-do
-    echo "$Subject" >> "$SubjListName"
-done
 
 # check SR or MR FIX
 if [ ! ${MRFixConcatName} = "" ] ; then
@@ -113,13 +106,11 @@ else
 fi
 
 # check if FIX features are generated (csv with 181 features)
-for Subject in "${SubjlistArray[@]}" ; do
-    for fMRIName in ${fMRINameToUse} ; do
-        FixFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix/features.csv"
-        if [[ ! -e "$FixFeaturePath" ]]; then
-            log_Err_Abort "$FixFeaturePath is not doesn't exist, make sure ICA+FIX is applied to this subject: ${Subject}, fMRI run: ${fMRIName}"
-        fi
-    done
+for fMRIName in ${fMRINameToUse} ; do
+    FixFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix/features.csv"
+    if [[ ! -e "$FixFeaturePath" ]]; then
+        log_Err_Abort "$FixFeaturePath is not doesn't exist, make sure ICA+FIX is applied to this subject: ${Subject}, fMRI run: ${fMRIName}"
+    fi
 done
 
 # Preprocess step 1: Merge and dropout
@@ -134,37 +125,35 @@ DeleteIntermediates="TRUE" #TRUE/FALSE
 CorticalLUT="$HCPPIPEDIR/global/config/FreeSurferCorticalLabelTableLut.txt"
 SubCorticalLUT="$HCPPIPEDIR/global/config/FreeSurferSubcorticalLabelTableLut.txt"
 
-for Subject in "${SubjlistArray[@]}" ; do
-  if [ ! ${MRFixConcatName} = "" ] ; then
+if [ ! ${MRFixConcatName} = "" ] ; then
     DropOutSubSTRING=""
     for fMRIName in "${fMRINamesArray[@]}" ; do
-      if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ] ; then
+        if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ] ; then
         DropOutSubSTRING=`echo "${DropOutSubSTRING}${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz "`
-      fi
+        fi
     done
     if [ ! -z "${DropOutSubSTRING}" ] ; then
-      fslmerge -t ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${DropOutSubSTRING}
-      fslmaths ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz -Tmean ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz
-      WorkingDirectory="/tmp/${Subject}"
-      mkdir -p ${WorkingDirectory}
-      cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
-      gunzip -f ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
-      "$HCPPIPEDIR"/ICAFIX/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${MRFixConcatName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.dscalar.nii ${MRFixConcatName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
-      rm -r ${WorkingDirectory}
+        fslmerge -t ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${DropOutSubSTRING}
+        fslmaths ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz -Tmean ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz
+        WorkingDirectory="/tmp/${Subject}"
+        mkdir -p ${WorkingDirectory}
+        cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
+        gunzip -f ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
+        "$HCPPIPEDIR"/global/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${MRFixConcatName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.dscalar.nii ${MRFixConcatName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
+        rm -r ${WorkingDirectory}
     fi
-  else
+else
     for fMRIName in "${fMRINamesArray[@]}" ; do
-      if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ] ; then
+        if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ] ; then
         WorkingDirectory="/tmp/${Subject}"
         mkdir -p ${WorkingDirectory}
         cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
         gunzip -f ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
-        "$HCPPIPEDIR"/ICAFIX/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${fMRIName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${fMRIName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.dscalar.nii ${fMRIName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
+        "$HCPPIPEDIR"/global/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${fMRIName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${fMRIName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.dscalar.nii ${fMRIName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
         rm -r ${WorkingDirectory}
-      fi
+        fi
     done
-  fi
-done
+fi
 
 # compute additional features from matlab script
 #FIXME: parcellation files are saved under tICA folder--reclassify-as-signal-file
@@ -177,7 +166,7 @@ CSFLabelFile="$HCPPIPEDIR/global/config/FreeSurferCSFRegLut.txt"
 this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/scripts"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$SubjListName" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$SubCorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$SubCorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile")
 
 case "$MatlabMode" in
     (0)
@@ -214,36 +203,34 @@ esac
 FixProbThresh="10"
 
 # inference each subjects under python environment
-for Subject in "${SubjlistArray[@]}" ; do
-    for fMRIName in ${fMRINameToUse} ; do
-        RecleanFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_reclean_features.csv"
-        FixProbPath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_prob.csv"
-        PredictionResult="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica"
+for fMRIName in ${fMRINameToUse} ; do
+    RecleanFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_reclean_features.csv"
+    FixProbPath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_prob.csv"
+    PredictionResult="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica"
 
-        # ReclassifyAsSignalTxt="${PredictionResult}/ReclassifyAsSignalRecleanVote${VoteThresh}.txt"
-        # ReclassifyAsNoiseTxt="${PredictionResult}/ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
+    # ReclassifyAsSignalTxt="${PredictionResult}/ReclassifyAsSignalRecleanVote${VoteThresh}.txt"
+    # ReclassifyAsNoiseTxt="${PredictionResult}/ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
 
-        # ReclassifyAsSignalTxt="${PredictionResult}/${ReclassifyAsSignalFile}"
-        # ReclassifyAsNoiseTxt="${PredictionResult}/${ReclassifyAsNoiseFile}"
+    # ReclassifyAsSignalTxt="${PredictionResult}/${ReclassifyAsSignalFile}"
+    # ReclassifyAsNoiseTxt="${PredictionResult}/${ReclassifyAsNoiseFile}"
 
-        ReclassifyAsSignalTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsSignalFile}"
-        ReclassifyAsNoiseTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}"
+    ReclassifyAsSignalTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsSignalFile}"
+    ReclassifyAsNoiseTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}"
 
-        pythonCode=(
-            "singularity exec --bind /media $PythonSingularity python3 $HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
-            "--input_csv=$RecleanFeaturePath"
-            "--input_fix_prob_csv=$FixProbPath"
-            "--fix_prob_threshold=$FixProbThresh"
-            "--trained_folder=$ModelFolder"
-            "--model=$ModelToUse"
-            "--output_folder=$PredictionResult"
-            "--voting_threshold=$VoteThresh"
-            "--reclassify_as_signal_file=$ReclassifyAsSignalTxt"
-            "--reclassify_as_noise_file=$ReclassifyAsNoiseTxt"
-        )
+    pythonCode=(
+        "singularity exec --bind /media $PythonSingularity python3 $HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
+        "--input_csv=$RecleanFeaturePath"
+        "--input_fix_prob_csv=$FixProbPath"
+        "--fix_prob_threshold=$FixProbThresh"
+        "--trained_folder=$ModelFolder"
+        "--model=$ModelToUse"
+        "--output_folder=$PredictionResult"
+        "--voting_threshold=$VoteThresh"
+        "--reclassify_as_signal_file=$ReclassifyAsSignalTxt"
+        "--reclassify_as_noise_file=$ReclassifyAsNoiseTxt"
+    )
 
-        cmd="${pythonCode[*]}"
-        log_Msg "Run python inference: $cmd"
-        eval "$cmd"
-    done
+    cmd="${pythonCode[*]}"
+    log_Msg "Run python inference: $cmd"
+    eval "$cmd"
 done

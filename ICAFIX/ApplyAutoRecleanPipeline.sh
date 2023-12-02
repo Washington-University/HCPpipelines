@@ -16,12 +16,12 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "the spatial ICA reclean pipeline"
+opts_SetScriptDescription "the spatial ICA reclean pipeline (per subject)"
 
 #mandatory (mrfix name must be specified if applicable, so including it here despite being mechanically optional)
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
-opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of subject IDs separated by @s"
+opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of fmri run names separated by @s" #Needs to be the single fMRI run names only (for DVARS and GS code) for MR+FIX, is also the SR+FIX input names
 opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
@@ -75,7 +75,7 @@ ReclassifyAsNoiseFile="ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
 log_Msg "Begin to run the reclean pipeline..."
 "$HCPPIPEDIR"/ICAFIX/ApplyAutoReclean.sh \
     --study-folder="$StudyFolder" \
-    --subject-list="$SubjlistRaw" \
+    --subject="$Subject" \
     --fmri-names="$fMRINames" \
     --mrfix-concat-name="$MRFixConcatName" \
     --fix-high-pass="$HighPass" \
@@ -91,7 +91,6 @@ log_Msg "Begin to run the reclean pipeline..."
 
 # apply the reclassification results
 log_Msg "Begin to apply the reclassification results..."
-IFS='@' read -a SubjlistArray <<<"$SubjlistRaw"
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
 # check SR or MR FIX
@@ -107,17 +106,15 @@ else
     fMRINameToUse="${fMRINameToUse:1}"
 fi
 
-for Subject in "${SubjlistArray[@]}" ; do
-    for fMRIName in ${fMRINameToUse} ; do
-        "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
-            --study-folder="$StudyFolder" \
-            --subject="$Subject" \
-            --fmri-name="$fMRIName" \
-            --high-pass="$HighPass" \
-            --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
-            --reclassify-as-noise-file="$ReclassifyAsNoiseFile" \
-            --matlab-run-mode="$MatlabMode"
-    done
+for fMRIName in ${fMRINameToUse} ; do
+    "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-name="$fMRIName" \
+        --high-pass="$HighPass" \
+        --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
+        --reclassify-as-noise-file="$ReclassifyAsNoiseFile" \
+        --matlab-run-mode="$MatlabMode"
 done
 
 # reapply fix
@@ -134,45 +131,43 @@ DeleteIntermediates=FALSE
 config=""
 processingmode="HCPStyleData"
 
-for Subject in "${SubjlistArray[@]}" ; do
-    if [ -z ${MRFixConcatName} ]; then
-        # Single Run
-        for fMRIName in "${fMRINamesArray[@]}"; do
+if [ -z ${MRFixConcatName} ]; then
+    # Single Run
+    for fMRIName in "${fMRINamesArray[@]}"; do
 
-            "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
-                --path="$StudyFolder" \
-                --subject="$Subject" \
-                --fmri-name="$fMRIName" \
-                --high-pass="$HighPass" \
-                --reg-name="$RegName" \
-                --low-res-mesh="$LowResMesh" \
-                --matlab-run-mode="$MatlabMode" \
-                --motion-regression="${MotionReg}" \
-                --delete-intermediates="${DeleteIntermediates}"
-                    
-        done
-    else 
-        SubjfMRINames=""
-        for fMRIName in "${fMRINamesArray[@]}"; do
-            if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}.dtseries.nii" ]]; then
-                SubjfMRINames+="@${fMRIName}"
-            fi
-        done
-        # Remove the leading @
-        SubjfMRINames="${SubjfMRINames:1}"
-
-        # Multi-Run
-        "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+        "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
             --path="$StudyFolder" \
             --subject="$Subject" \
-            --fmri-names="$SubjfMRINames" \
+            --fmri-name="$fMRIName" \
             --high-pass="$HighPass" \
             --reg-name="$RegName" \
-            --concat-fmri-name="$MRFixConcatName" \
             --low-res-mesh="$LowResMesh" \
             --matlab-run-mode="$MatlabMode" \
-            --motion-regression="$MotionReg" \
-            --config="$config" \
-            --processing-mode="$processingmode"
-    fi
-done
+            --motion-regression="${MotionReg}" \
+            --delete-intermediates="${DeleteIntermediates}"
+                
+    done
+else 
+    SubjfMRINames=""
+    for fMRIName in "${fMRINamesArray[@]}"; do
+        if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}.dtseries.nii" ]]; then
+            SubjfMRINames+="@${fMRIName}"
+        fi
+    done
+    # Remove the leading @
+    SubjfMRINames="${SubjfMRINames:1}"
+
+    # Multi-Run
+    "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+        --path="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-names="$SubjfMRINames" \
+        --high-pass="$HighPass" \
+        --reg-name="$RegName" \
+        --concat-fmri-name="$MRFixConcatName" \
+        --low-res-mesh="$LowResMesh" \
+        --matlab-run-mode="$MatlabMode" \
+        --motion-regression="$MotionReg" \
+        --config="$config" \
+        --processing-mode="$processingmode"
+fi
