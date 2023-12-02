@@ -70,58 +70,6 @@ fi
 	    $Caret7_Command -volume-parcel-resampling-generic $volumeIn $currentParcel $newParcel $kernel $volumeOut ${ResampleFlag}
     fi 
      
-
-##generate subject-roi space fMRI cifti for subcortical
-#if [[ `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l | cut -f1 -d.` == "1" ]]
-#then
-#    log_Msg "Creating subject-roi subcortical cifti at same resolution as output"
-#    $Caret7_Command -cifti-create-dense-timeseries ${WorkingDir}/${fMRIName}_temp_subject.dtseries.nii -volume ${WorkingDir}/${fMRIName}_${File}.${VolExT} "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz
-#else
-#    log_Msg "Creating subject-roi subcortical cifti at differing fMRI resolution"
-#    $Caret7_Command -volume-affine-resample "$ROIFolder"/ROIs."$BrainOrdinatesResolution".nii.gz $FSLDIR/etc/flirtsch/ident.mat ${WorkingDir}/${fMRIName}_${File}.${VolExT} ENCLOSING_VOXEL ${WorkingDir}/ROIs."$FinalfMRIResolution".nii.gz
-#    $Caret7_Command -cifti-create-dense-timeseries ${WorkingDir}/${fMRIName}_temp_subject.dtseries.nii -volume ${WorkingDir}/${fMRIName}_${File}.${VolExT} ${WorkingDir}/ROIs."$FinalfMRIResolution".nii.gz
-#    rm -f ${WorkingDir}/ROIs."$FinalfMRIResolution".nii.gz
-#fi
-
-#log_Msg "Dilating out zeros"
-##dilate out any exact zeros in the input data, for instance if the brain mask is wrong. Note that the CIFTI space cannot contain zeros to produce a valid CIFTI file (dilation also occurs below).
-#$Caret7_Command -cifti-dilate ${WorkingDir}/${fMRIName}_temp_subject.dtseries.nii COLUMN 0 30 ${WorkingDir}/${fMRIName}_temp_subject_dilate.dtseries.nii
-#rm -f ${WorkingDir}/${fMRIName}_temp_subject.dtseries.nii
-
-#log_Msg "Generate atlas subcortical template cifti"
-#$Caret7_Command -cifti-create-label ${WorkingDir}/${fMRIName}_temp_template.dlabel.nii -volume "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz "$ROIFolder"/Atlas_ROIs."$BrainOrdinatesResolution".nii.gz
-
-##As of wb_command 1.4.0 and later, volume predilate is much less important for reducing edge ringing, and could be reduced
-#if [[ `echo "${Sigma} > 0" | bc -l | cut -f1 -d.` == "1" ]]
-#then
-#    log_Msg "Smoothing and resampling"
-#    #this is the whole timeseries, so don't overwrite, in order to allow on-disk writing, then delete temporary
-#    $Caret7_Command -cifti-smoothing ${WorkingDir}/${fMRIName}_temp_subject_dilate.dtseries.nii 0 ${Sigma} COLUMN ${WorkingDir}/${fMRIName}_temp_subject_smooth.dtseries.nii -fix-zeros-volume
-#    #resample, delete temporary
-#    $Caret7_Command -cifti-resample ${WorkingDir}/${fMRIName}_temp_subject_smooth.dtseries.nii COLUMN ${WorkingDir}/${fMRIName}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${WorkingDir}/${fMRIName}_temp_atlas.dtseries.nii -volume-predilate 10
-#    rm -f ${WorkingDir}/${fMRIName}_temp_subject_smooth.dtseries.nii
-#else
-#    log_Msg "Resampling"
-#    $Caret7_Command -cifti-resample ${WorkingDir}/${fMRIName}_temp_subject_dilate.dtseries.nii COLUMN ${WorkingDir}/${fMRIName}_temp_template.dlabel.nii COLUMN ADAP_BARY_AREA CUBIC ${WorkingDir}/${fMRIName}_temp_atlas.dtseries.nii -volume-predilate 10
-#fi
-
-##delete common temporaries
-#rm -f ${WorkingDir}/${fMRIName}_temp_subject_dilate.dtseries.nii
-#rm -f ${WorkingDir}/${fMRIName}_temp_template.dlabel.nii
-
-##the standard space output cifti must not contain zeros (or correlation, ICA, variance normalization, etc will break), so dilate in case freesurfer was unable to segment something (may only be applicable for bad quality structurals)
-##NOTE: wb_command v1.4.0 and later should only output exact 0s past the edge of predilate, so this works as desired
-##earlier verions of wb_command may produce undesired results in the subjects that need this dilation
-#$Caret7_Command -cifti-dilate ${WorkingDir}/${fMRIName}_temp_atlas.dtseries.nii COLUMN 0 30 ${WorkingDir}/${fMRIName}_temp_atlas_dilate.dtseries.nii
-#rm -f ${WorkingDir}/${fMRIName}_temp_atlas.dtseries.nii
-
-##write output volume, delete temporary
-##NOTE: $VolumefMRI contains a path in it, it is not a file in the current directory
-#$Caret7_Command -cifti-separate ${WorkingDir}/${fMRIName}_temp_atlas_dilate.dtseries.nii COLUMN -volume-all ${WorkingDir}/${File}_AtlasSubcortical.${VolExT}
-#rm -f ${WorkingDir}/${fMRIName}_temp_atlas_dilate.dtseries.nii
-#     
-     
-        
     for Hemisphere in L R ; do
 	    #Map bias field volume to surface using the same approach as when fMRI data are projected to the surface
 	    volume="${WorkingDir}/${fMRIName}_${File}.${VolExT}"
