@@ -30,6 +30,10 @@ opts_AddMandatory '--fmri-name' 'fMRIName' 'string' "fMRI name"
 
 opts_AddMandatory '--high-pass' 'HighPass' 'amount' "high-pass filter used in ICA+FIX"
 
+opts_AddOptional '--reclassify-as-signal-file' 'ReclassifyAsSignal' 'file' "text file of which components should be changed to signal category, default ReclassifyAsSignal.txt"
+
+opts_AddOptional '--reclassify-as-noise-file' 'ReclassifyAsNoise' 'file' "text file of which components should be changed as nuisance/artifact category, default ReclassifyAsNoise.txt"
+
 ##Optional Args 
 ## deprecated, matlab code is not used
 opts_AddOptional '--matlab-run-mode' 'g_matlab_run_mode' '0, 1, 2' "deprecated, this code does not currently use matlab"
@@ -125,10 +129,17 @@ log_Msg "OriginalFixSignal: ${OriginalFixSignal}"
 OriginalFixNoise="${FIXFolder}/Noise.txt"
 log_Msg "OriginalFixNoise: ${OriginalFixNoise}"
 
-ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
+#handle defaults that rely on other parameters
+if [[ "$ReclassifyAsSignal" == "" ]]
+then
+    ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
+fi
 log_Msg "ReclassifyAsSignal: ${ReclassifyAsSignal}"
 
-ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
+if [[ "$ReclassifyAsSignal" == "" ]]
+then
+    ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
+fi
 log_Msg "ReclassifyAsNoise: ${ReclassifyAsNoise}"
 
 HandSignalName="${FIXFolder}/HandSignal.txt"
