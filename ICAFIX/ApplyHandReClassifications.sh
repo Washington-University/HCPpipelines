@@ -23,6 +23,8 @@ PARAMETERs are: [ ] = optional; < > = user supplied value
    --subject=<subject ID>
    --fmri-name=<fMRI name>
    --high-pass=<high-pass filter used in ICA+FIX>
+   --reclassify-as-signal-file=<the ReclassifyAsSignal file name>
+   --reclassify-as-noise-file=<the ReclassifyAsNoise file name>
 
 EOF
 }
@@ -39,7 +41,12 @@ get_options()
 	unset p_Subject
 	unset p_fMRIName
 	unset p_HighPass
+	unset p_ReclassifyAsSignalFile
+	unset p_ReclassifyAsNoiseFile
 	g_matlab_run_mode=0
+
+	p_ReclassifyAsSignalFile="ReclassifyAsSignal.txt"
+	p_ReclassifyAsNoiseFile="ReclassifyAsNoise.txt"
 
 	# parse arguments
 	local num_args=${#arguments[@]}
@@ -72,6 +79,14 @@ get_options()
 				;;
 			--high-pass=*)
 				p_HighPass=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--reclassify-as-signal-file=*)
+				p_ReclassifyAsSignalFile=${argument#*=}
+				index=$(( index + 1 ))
+				;;
+			--reclassify-as-noise-file=*)
+				p_ReclassifyAsNoiseFile=${argument#*=}
 				index=$(( index + 1 ))
 				;;
 			--matlab-run-mode=*)
@@ -215,10 +230,10 @@ main()
 	OriginalFixNoise="${FIXFolder}/Noise.txt"
 	log_Msg "OriginalFixNoise: ${OriginalFixNoise}"
 
-	ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
+	ReclassifyAsSignal="${ResultsFolder}/${p_ReclassifyAsSignalFile}"
 	log_Msg "ReclassifyAsSignal: ${ReclassifyAsSignal}"
 
-	ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
+	ReclassifyAsNoise="${ResultsFolder}/${p_ReclassifyAsNoiseFile}"
 	log_Msg "ReclassifyAsNoise: ${ReclassifyAsNoise}"
 
 	HandSignalName="${FIXFolder}/HandSignal.txt"
