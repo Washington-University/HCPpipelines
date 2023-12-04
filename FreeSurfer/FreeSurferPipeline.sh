@@ -142,6 +142,8 @@ opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that 
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
+opts_AddOptional '--high-myelin' 'high_myelin' "High Myelin" 'Value of the high myeling extra recon-all parameter. Set to NONE to disable the use of this parameter.' "0.3"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -449,6 +451,7 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_subject: ${existing_subject}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
+log_Msg "high_myelin: ${high_myelin}"
 
 if ((! existing_subject)); then
 
@@ -512,6 +515,14 @@ recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 if ((conf2hires)); then
     recon_all_cmd+=(-conf2hires)
 fi
+
+# high_myelin
+if [[ "${high_myelin}" != "NONE" ]]; then
+    recon_all_cmd+=(-high-myelin "${high_myelin}")
+fi
+
+# expert options
+recon_all_cmd+=(-expert "${HCPPIPEDIR}/FreeSurfer/expert-options.txt")
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
 "${recon_all_cmd[@]}"
