@@ -127,47 +127,15 @@ MotionReg=FALSE
 # clean up intermediates
 DeleteIntermediates=FALSE
 
-#MR FIX config support for non-HCP settings
-config=""
-processingmode="HCPStyleData"
-
-if [ -z ${MRFixConcatName} ]; then
-    # Single Run
-    for fMRIName in "${fMRINamesArray[@]}"; do
-
-        "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
-            --path="$StudyFolder" \
-            --subject="$Subject" \
-            --fmri-name="$fMRIName" \
-            --high-pass="$HighPass" \
-            --reg-name="$RegName" \
-            --low-res-mesh="$LowResMesh" \
-            --matlab-run-mode="$MatlabMode" \
-            --motion-regression="${MotionReg}" \
-            --delete-intermediates="${DeleteIntermediates}"
-                
-    done
-else 
-    SubjfMRINames=""
-    for fMRIName in "${fMRINamesArray[@]}"; do
-        if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}.dtseries.nii" ]]; then
-            SubjfMRINames+="@${fMRIName}"
-        fi
-    done
-    # Remove the leading @
-    SubjfMRINames="${SubjfMRINames:1}"
-
-    # Multi-Run
-    "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
-        --path="$StudyFolder" \
-        --subject="$Subject" \
-        --fmri-names="$SubjfMRINames" \
-        --high-pass="$HighPass" \
-        --reg-name="$RegName" \
-        --concat-fmri-name="$MRFixConcatName" \
-        --low-res-mesh="$LowResMesh" \
-        --matlab-run-mode="$MatlabMode" \
-        --motion-regression="$MotionReg" \
-        --config="$config" \
-        --processing-mode="$processingmode"
-fi
+# reapply fix main processing + add rclean substring
+"$HCPPIPEDIR"/ICAFIX/ReApplyFixProcessingWrapper.sh \
+    --study-folder="$StudyFolder" \
+    --subject="$Subject" \
+    --fmri-names="$fMRINames" \
+    --mrfix-concat-name="$MRFixConcatName" \
+    --fix-high-pass="$HighPass" \
+    --surf-reg-name="$RegName" \
+    --low-res="$LowResMesh" \
+    --matlab-run-mode="$MatlabMode" \
+    --motion-regression="${MotionReg}" \
+    --delete-intermediates="${DeleteIntermediates}"

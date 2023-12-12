@@ -7,9 +7,10 @@ function computeRecleanFeatures(StudyFolder, ...
                                 CorticalParcellationFile, ...
                                 SubRegionParcellationFile, ...
                                 WMLabelFile, ...
-                                CSFLabelFile)
+                                CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile)
 
 HCPPIPEDIR = getenv('HCPPIPEDIR')
+FullGreyordinateLength = 91282; 
 
 fMRINames = myreadtext(fMRIListName);
 RunsXNumTimePoints = str2double(RunsXNumTimePoints);
@@ -17,30 +18,34 @@ ResolutionNum = str2double(Resolution);
 
 CorticalParcellation=ciftiopen(CorticalParcellationFile,'wb_command');
 
-VisualAreas=[1 2 3 4 5 6 7 13 16 17 18 19 20 21 22 23 48 49 142 152 153 154 156 158 159 160 163 181 182 183 184 185 186 187 193 196 197 198 199 200 201 202 203 228 229 322 332 333 334 336 338 339 340 343];
+VisualAreas=get_ROI_from_txt(VisualAreasFile); % VisualAreasFile HCPpipelines/global/config/Visual.ROI.txt
+
 VisualROI=single(zeros(length(CorticalParcellation.cdata),1));
 for i=VisualAreas
     VisualROI(CorticalParcellation.cdata==i)=1;
 end
 NonVisualROI=(VisualROI-1)*-1;
-VisualROI=[VisualROI' single(zeros(1,91282-length(VisualROI)))]';
-NonVisualROI=[NonVisualROI' single(zeros(1,91282-length(NonVisualROI)))]';
+VisualROI=[VisualROI' single(zeros(1,FullGreyordinateLength-length(VisualROI)))]';
+NonVisualROI=[NonVisualROI' single(zeros(1,FullGreyordinateLength-length(NonVisualROI)))]';
 
-LanguageAreas=[12 25 26 43 44 74 75 192 205 206 223 224 244 245];
+LanguageAreas=get_ROI_from_txt(LanguageAreasFile); % LanguageAreasFile HCPpipelines/global/config/Language.ROI.txt
+
 LanguageROI=single(zeros(length(CorticalParcellation.cdata),1));
 for i=LanguageAreas
     LanguageROI(CorticalParcellation.cdata==i)=1;
 end
 NonLanguageROI=(LanguageROI-1)*-1;
-LanguageROI=[LanguageROI' single(zeros(1,91282-length(LanguageROI)))]';
-NonLanguageROI=[NonLanguageROI' single(zeros(1,91282-length(NonLanguageROI)))]';
+LanguageROI=[LanguageROI' single(zeros(1,FullGreyordinateLength-length(LanguageROI)))]';
+NonLanguageROI=[NonLanguageROI' single(zeros(1,FullGreyordinateLength-length(NonLanguageROI)))]';
 
-CorticalParcellation.cdata(length(CorticalParcellation.cdata)+1:91282,1)=0;
+CorticalParcellation.cdata(length(CorticalParcellation.cdata)+1:FullGreyordinateLength,1)=0;
 
 SubRegionParcellation=ciftiopen(SubRegionParcellationFile,'wb_command');
-SubRegionParcellation.cdata(length(SubRegionParcellation.cdata)+1:91282,1)=0;
+SubRegionParcellation.cdata(length(SubRegionParcellation.cdata)+1:FullGreyordinateLength,1)=0;
 
-SubRegions=[176 177 178 179 180 356 357 358 359 360];
+SubRegions=get_ROI_from_txt(SubRegionsFile); % SubRegionsFile HCPpipelines/global/config/SubRegions.ROI.txt
+
+NonGreyParcels=get_ROI_from_txt(NonGreyParcelsFile); % NonGreyParcelsFile HCPpipelines/global/config/NonGreyParcels.ROI.txt
 
 FinalSpatialSmoothingFWHM=4;
 
@@ -89,7 +94,7 @@ for j=1:length(fMRINames)
         CIFTI=ciftiopen([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'],'wb_command');
         CIFTIVN=ciftiopen([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_Atlas_hp' hp '_clean_vn.dscalar.nii'],'wb_command');
         CIFTI.cdata=CIFTI.cdata./repmat(CIFTIVN.cdata,1,size(CIFTI.cdata,2));
-        %unix(['/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/Scripts/MSMAllResampleAndSmoothSICA.sh ' SubjFolderlist ' ' subj ' ' fMRIName ' ' hp ' ' Resolution ' ' num2str(FinalSpatialSmoothingFWHM) ' wb_command']);
+        %system(['/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/Scripts/MSMAllResampleAndSmoothSICA.sh ' SubjFolderlist ' ' subj ' ' fMRIName ' ' hp ' ' Resolution ' ' num2str(FinalSpatialSmoothingFWHM) ' wb_command']);
         CIFTI_file=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'];
         CIFTIMSMAll_file=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll.dscalar.nii'];
         CIFTIMSMAll_smooth_file=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_4.dscalar.nii'];
@@ -98,16 +103,11 @@ for j=1:length(fMRINames)
         vn_file_path=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn.dscalar.nii'];
         vn_smooth_file_path=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'];
 
-        left_msmsulc_msmall_cmd=['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.L.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.L.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.L.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.L.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii'];
-        unix(left_msmsulc_msmall_cmd);
-        right_msmsulc_msmall_cmd=['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.R.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.R.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.R.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.R.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii'];
-        unix(right_msmsulc_msmall_cmd);
-        surf_resample_cmd=['wb_command -cifti-resample ' CIFTI_file ' COLUMN ' CIFTI_file ' COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ' CIFTIMSMAll_file ' -surface-postdilate 10 -nearest -left-spheres ' fs_path '/' subj '.L.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.sphere.32k_fs_LR.surf.gii -left-area-surfs ' fs_path '/' subj '.L.midthickness.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-spheres ' fs_path '/' subj '.R.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii ' fs_path '/' subj '.R.sphere.32k_fs_LR.surf.gii -right-area-surfs ' fs_path '/' subj '.L.midthickness.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii'];
-        unix(surf_resample_cmd);
-        surf_smooth_cmd=['wb_command -cifti-smoothing ' CIFTIMSMAll_file ' 1.47106851007471610247 1.47106851007471610247 COLUMN ' CIFTIMSMAll_smooth_file ' -left-surface ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-surface ' fs_path '/' subj '.R.midthickness_MSMAll.32k_fs_LR.surf.gii'];
-        unix(surf_smooth_cmd);
-        vn_smooth_cmd=['wb_command -cifti-smoothing ' vn_file_path ' 1.47106851007471610247 1.47106851007471610247 COLUMN ' vn_smooth_file_path ' -left-surface ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-surface ' fs_path '/' subj '.R.midthickness_MSMAll.32k_fs_LR.surf.gii'];
-        unix(vn_smooth_cmd);
+        system(['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.L.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.L.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.L.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.L.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii']);
+        system(['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.R.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.R.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.R.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.R.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii']);
+        system(['wb_command -cifti-resample ' CIFTI_file ' COLUMN ' CIFTI_file ' COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ' CIFTIMSMAll_file ' -surface-postdilate 10 -nearest -left-spheres ' fs_path '/' subj '.L.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.sphere.32k_fs_LR.surf.gii -left-area-surfs ' fs_path '/' subj '.L.midthickness.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-spheres ' fs_path '/' subj '.R.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii ' fs_path '/' subj '.R.sphere.32k_fs_LR.surf.gii -right-area-surfs ' fs_path '/' subj '.L.midthickness.32k_fs_LR.surf.gii ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii']);
+        system(['wb_command -cifti-smoothing ' CIFTIMSMAll_file ' 1.47106851007471610247 1.47106851007471610247 COLUMN ' CIFTIMSMAll_smooth_file ' -left-surface ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-surface ' fs_path '/' subj '.R.midthickness_MSMAll.32k_fs_LR.surf.gii']);
+        system(['wb_command -cifti-smoothing ' vn_file_path ' 1.47106851007471610247 1.47106851007471610247 COLUMN ' vn_smooth_file_path ' -left-surface ' fs_path '/' subj '.L.midthickness_MSMAll.32k_fs_LR.surf.gii -right-surface ' fs_path '/' subj '.R.midthickness_MSMAll.32k_fs_LR.surf.gii']);
 
         CIFTIMSMAll=ciftiopen(CIFTIMSMAll_file,'wb_command');
         CIFTIMSMAllVN=ciftiopen(vn_file_path,'wb_command');
@@ -122,10 +122,8 @@ for j=1:length(fMRINames)
         WMPARC=read_avw([SubjFolderlist '/MNINonLinear/ROIs/wmparc.' Resolution '.nii.gz']);
         ROIFolder=[SubjFolderlist '/MNINonLinear/ROIs'];
 
-        csf_cmd=['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' CSFLabelFile ' ' ROIFolder '/CSFReg.' Resolution '.nii.gz -discard-others -drop-unused-labels'];
-        unix(csf_cmd);
-        wm_cmd=['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' WMLabelFile ' ' ROIFolder '/WMReg.' Resolution '.nii.gz -discard-others -drop-unused-labels'];
-        unix(wm_cmd);
+        system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' CSFLabelFile ' ' ROIFolder '/CSFReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
+        system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' WMLabelFile ' ' ROIFolder '/WMReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
 
         WM=read_avw([SubjFolderlist '/MNINonLinear/ROIs/WMReg.' Resolution '.nii.gz']);
         CSF=read_avw([SubjFolderlist '/MNINonLinear/ROIs/CSFReg.' Resolution '.nii.gz']);
@@ -156,7 +154,6 @@ for j=1:length(fMRINames)
         Volume.cdata=Volume.cdata./std(Volume.cdata(:));
         CIFTI.cdata=CIFTI.cdata./std(CIFTI.cdata(:));
 
-        NonGreyParcels=[4 5 14 15 24 31 43 44 63 72 213 221 2 41 77 78 79 85 100 109 155 156 157 158 159 160 161 162 192 219 223 251 252 253 254 255 703 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010 3011 3012 3013 3014 3015 3016 3017 3018 3019 3020 3021 3022 3023 3024 3025 3026 3027 3028 3029 3030 3031 3032 3033 3034 3035 3100 3101 3102 3103 3104 3105 3106 3107 3108 3109 3110 3111 3112 3113 3114 3115 3116 3117 3118 3119 3120 3121 3122 3123 3124 3125 3126 3127 3128 3129 3130 3131 3132 3133 3134 3135 3136 3137 3138 3139 3140 3141 3142 3143 3144 3145 3146 3147 3148 3149 3150 3151 3152 3153 3154 3155 3156 3157 3158 3159 3160 3161 3162 3163 3164 3165 3166 3167 3168 3169 3170 3171 3172 3173 3174 3175 3176 3177 3178 3179 3180 3181 4000 4001 4002 4003 4004 4005 4006 4007 4008 4009 4010 4011 4012 4013 4014 4015 4016 4017 4018 4019 4020 4021 4022 4023 4024 4025 4026 4027 4028 4029 4030 4031 4032 4033 4034 4035 4100 4101 4102 4103 4104 4105 4106 4107 4108 4109 4110 4111 4112 4113 4114 4115 4116 4117 4118 4119 4120 4121 4122 4123 4124 4125 4126 4127 4128 4129 4130 4131 4132 4133 4134 4135 4136 4137 4138 4139 4140 4141 4142 4143 4144 4145 4146 4147 4148 4149 4150 4151 4152 4153 4154 4155 4156 4157 4158 4159 4160 4161 4162 4163 4164 4165 4166 4167 4168 4169 4170 4171 4172 4173 4174 4175 4176 4177 4178 4179 4180 4181 5001 5002 13100 13101 13102 13103 13104 13105 13106 13107 13108 13109 13110 13111 13112 13113 13114 13115 13116 13117 13118 13119 13120 13121 13122 13123 13124 13125 13126 13127 13128 13129 13130 13131 13132 13133 13134 13135 13136 13137 13138 13139 13140 13141 13142 13143 13144 13145 13146 13147 13148 13149 13150 13151 13152 13153 13154 13155 13156 13157 13158 13159 13160 13161 13162 13163 13164 13165 13166 13167 13168 13169 13170 13171 13172 13173 13174 13175 14100 14101 14102 14103 14104 14105 14106 14107 14108 14109 14110 14111 14112 14113 14114 14115 14116 14117 14118 14119 14120 14121 14122 14123 14124 14125 14126 14127 14128 14129 14130 14131 14132 14133 14134 14135 14136 14137 14138 14139 14140 14141 14142 14143 14144 14145 14146 14147 14148 14149 14150 14151 14152 14153 14154 14155 14156 14157 14158 14159 14160 14161 14162 14163 14164 14165 14166 14167 14168 14169 14170 14171 14172 14173 14174 14175];
         NonGrey=single(zeros(length(wmparc.cdata),1));
         for k=NonGreyParcels
             NonGrey(wmparc.cdata==k)=1;
@@ -171,13 +168,25 @@ for j=1:length(fMRINames)
         VOLSMOOTHROIS(std(VOLUME,[],2)>0)=VolSmoothROIs.cdata;
         VOLSMOOTHROIS=reshape(VOLSMOOTHROIS,size(SBREFOrig,1),size(SBREFOrig,2),size(SBREFOrig,3),size(SBREFOrig,4));
         save_avw(VOLSMOOTHROIS,[SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz'],'f',[1.6 1.6 1.6 1]);
-        unix(['fslcpgeom ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
-        unix([HCPPIPEDIR '/ICAFIX/scripts/VolumeSmoothSICA.sh ' SubjFolderlist ' ' subj ' ' fMRIName ' ' hp ' ' Resolution ' ' num2str(FinalSpatialSmoothingFWHM) ' wb_command']);
+        system(['fslcpgeom ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
+        system([HCPPIPEDIR '/ICAFIX/scripts/VolumeSmoothSICA.sh ' SubjFolderlist ' ' subj ' ' fMRIName ' ' hp ' ' Resolution ' ' num2str(FinalSpatialSmoothingFWHM) ' wb_command']);
         VOLUMESMOOTH=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_s' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
         VOLUMESMOOTH=reshape(VOLUMESMOOTH,size(VOLUMESMOOTH,1)*size(VOLUMESMOOTH,2)*size(VOLUMESMOOTH,3),size(VOLUMESMOOTH,4));
         VolumeSmooth.cdata=VOLUMESMOOTH(std(VOLUMESMOOTH,[],2)>0,:);
         VolumeSmooth.cdata=VolumeSmooth.cdata./std(Volume.cdata(:));
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./std(CIFTIMSMAll.cdata(:));
+        
+        % structure idx
+        CIFTI_LENGTH=length(CIFTI.cdata);
+        CORTEX_start_idx=min(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist);
+        CORTEX_LEFT_end_idx=max(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist);
+        CORTEX_RIGHT_end_idx=min(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist);
+
+        CORTEX_end_idx=max(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist);
+        CEREBELLUM_start_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_LEFT').ciftilist);
+        CEREBELLUM_end_idx=max(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_RIGHT').ciftilist);
+        BRIAN_STEM_start_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist);
+        BRIAN_STEM_end_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist);
         
         row_names=cell(num_comps, 1);
         probs=zeros(num_comps,1);
@@ -192,16 +201,13 @@ for j=1:length(fMRINames)
             NewFeatures(k,4)=sum(Powerspectra(PowerspectraScale<0.005,k))./sum(Powerspectra((PowerspectraScale>0.005).*(PowerspectraScale<0.1)==1,k)); %Ratio of power spectrum greater than 0.25 to BOLD range
             NewFeatures(k,5)=sum(abs(sICAweighted(sICAnoisy,k)))./sum(abs(sICAweighted(:,k))); %Ratio of amplitude at noisy (top 12.5% variance) timepoints to all timepoints weighted by explained variance
             NewFeatures(k,6)=sum(abs(sICA(sICAnoisy,k)))./sum(abs(sICA(:,k))); %Ratio of amplitude at noisy (top 12.5% variance) timepoints to all timepoints unweighted
-
-
-
             NewFeatures(k,7)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume.cdata(:,k))); %CIFTI/Volume
-            NewFeatures(k,8)=sum(abs(CIFTI.cdata(1:29696+29716,k)))./sum(abs(Volume.cdata(:,k))); %Cerebral Cortex/Volume
-            NewFeatures(k,9)=sum(abs(CIFTI.cdata(29696+29716:end,k)))./sum(abs(Volume.cdata(:,k))); %Subcortical/Volume
-            NewFeatures(k,10)=sum(abs(CIFTI.cdata(65289+1:83142,k)))./sum(abs(Volume.cdata(:,k))); %Cerebellum/Volume
-            NewFeatures(k,11)=sum(abs(CIFTI.cdata(60334+1:60334+1+3472,k)))./sum(abs(Volume.cdata(:,k))); %Brainstem/Volume
-            NewFeatures(k,12)=sum(abs(CIFTI.cdata(setdiff(1:91282,[1:29696+29716 60334+1:60334+1+3472 65289+1:83142]),k)))./sum(abs(Volume.cdata(:,k))); %Diencephalon/Volume
-            NewFeatures(k,13)=sum(abs(CIFTI.cdata(1:29696,k)))./sum(abs(CIFTI.cdata(29696+1:29696+29716,k))); %Left Cerebral Cortex/Right Cerebral Cortex
+            NewFeatures(k,8)=sum(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_end_idx,k)))./sum(abs(Volume.cdata(:,k))); %Cerebral Cortex/Volume
+            NewFeatures(k,9)=sum(abs(CIFTI.cdata(CORTEX_end_idx:end,k)))./sum(abs(Volume.cdata(:,k))); %Subcortical/Volume
+            NewFeatures(k,10)=sum(abs(CIFTI.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k)))./sum(abs(Volume.cdata(:,k))); %Cerebellum/Volume
+            NewFeatures(k,11)=sum(abs(CIFTI.cdata(BRIAN_STEM_start_idx:BRIAN_STEM_end_idx,k)))./sum(abs(Volume.cdata(:,k))); %Brainstem/Volume
+            NewFeatures(k,12)=sum(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_start_idx:CEREBELLUM_end_idx BRIAN_STEM_start_idx:BRIAN_STEM_end_idx CEREBELLUM_start_idx:CEREBELLUM_end_idx]),k)))./sum(abs(Volume.cdata(:,k))); %Diencephalon/Volume
+            NewFeatures(k,13)=sum(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_LEFT_end_idx,k)))./sum(abs(CIFTI.cdata(CORTEX_RIGHT_end_idx:CEREBELLUM_end_idx,k))); %Left Cerebral Cortex/Right Cerebral Cortex
             NewFeatures(k,14)=sum(abs(Volume.cdata(wm.cdata==1,k)))./sum(abs(Volume.cdata(:,k))); %2 Voxel Eroded WM/Volume
             NewFeatures(k,15)=sum(abs(Volume.cdata(csf.cdata==1,k)))./sum(abs(Volume.cdata(:,k))); %2 Voxel Eroded CSF/Volume
             NewFeatures(k,16)=sum(abs(Volume.cdata(edge.cdata==1,k)))./sum(abs(Volume.cdata(:,k))); %Edge/Volume (CSF outside brain)
@@ -209,25 +215,24 @@ for j=1:length(fMRINames)
             NewFeatures(k,18)=sum(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./sum(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,19)=sum(abs(Volume.cdata(noisy.cdata==1,k)))./sum(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,20)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(65289+1:83142,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k))); %VisualCortexCIFTI/CerebellumCIFTI              
             NewFeatures(k,22)=sum(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,23)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume.cdata(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,24)=sum(abs(CIFTI.cdata(1:29696+29716,k)))./sum(abs(Volume.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,24)=sum(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(Volume.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,25)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,26)=sum(abs(CIFTI.cdata(1:29696+29716,k)))./sum(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,26)=sum(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
             NewFeatures(k,27)=sum(abs(CIFTIMSMAllSmooth.cdata(:,k)))./sum(abs(VolumeSmooth.cdata(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,28)=sum(abs(CIFTIMSMAllSmooth.cdata(1:29696+29716,k)))./sum(abs(VolumeSmooth.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,28)=sum(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(VolumeSmooth.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,29)=sum(abs(CIFTIMSMAllSmooth.cdata(:,k)))./sum(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,30)=sum(abs(CIFTIMSMAllSmooth.cdata(1:29696+29716,k)))./sum(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
-
+            NewFeatures(k,30)=sum(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
 
             NewFeatures(k,31)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume.cdata(:,k))); %CIFTI/Volume
-            NewFeatures(k,32)=mean(abs(CIFTI.cdata(1:29696+29716,k)))./mean(abs(Volume.cdata(:,k))); %Cerebral Cortex/Volume
-            NewFeatures(k,33)=mean(abs(CIFTI.cdata(29696+29716:end,k)))./mean(abs(Volume.cdata(:,k))); %Subcortical/Volume
-            NewFeatures(k,34)=mean(abs(CIFTI.cdata(65289+1:83142,k)))./mean(abs(Volume.cdata(:,k))); %Cerebellum/Volume
-            NewFeatures(k,35)=mean(abs(CIFTI.cdata(60334+1:60334+1+3472,k)))./mean(abs(Volume.cdata(:,k))); %Brainstem/Volume
-            NewFeatures(k,36)=mean(abs(CIFTI.cdata(setdiff(1:91282,[1:29696+29716 60334+1:60334+1+3472 65289+1:83142]),k)))./mean(abs(Volume.cdata(:,k))); %Diencephalon/Volume
-            NewFeatures(k,37)=mean(abs(CIFTI.cdata(1:29696,k)))./mean(abs(CIFTI.cdata(29696+1:29696+29716,k))); %Left Cerebral Cortex/Right Cerebral Cortex
+            NewFeatures(k,32)=mean(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_end_idx,k)))./mean(abs(Volume.cdata(:,k))); %Cerebral Cortex/Volume
+            NewFeatures(k,33)=mean(abs(CIFTI.cdata(CORTEX_end_idx:end,k)))./mean(abs(Volume.cdata(:,k))); %Subcortical/Volume
+            NewFeatures(k,34)=mean(abs(CIFTI.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k)))./mean(abs(Volume.cdata(:,k))); %Cerebellum/Volume
+            NewFeatures(k,35)=mean(abs(CIFTI.cdata(BRIAN_STEM_start_idx:BRIAN_STEM_end_idx,k)))./mean(abs(Volume.cdata(:,k))); %Brainstem/Volume
+            NewFeatures(k,36)=mean(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[1:CEREBELLUM_end_idx BRIAN_STEM_start_idx:BRIAN_STEM_end_idx CEREBELLUM_start_idx:CEREBELLUM_end_idx]),k)))./mean(abs(Volume.cdata(:,k))); %Diencephalon/Volume
+            NewFeatures(k,37)=mean(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_LEFT_end_idx,k)))./mean(abs(CIFTI.cdata(CORTEX_RIGHT_end_idx:CEREBELLUM_end_idx,k))); %Left Cerebral Cortex/Right Cerebral Cortex
             NewFeatures(k,38)=mean(abs(Volume.cdata(wm.cdata==1,k)))./mean(abs(Volume.cdata(:,k))); %2 Voxel Eroded WM/Volume
             NewFeatures(k,39)=mean(abs(Volume.cdata(csf.cdata==1,k)))./mean(abs(Volume.cdata(:,k))); %2 Voxel Eroded CSF/Volume
             NewFeatures(k,40)=mean(abs(Volume.cdata(edge.cdata==1,k)))./mean(abs(Volume.cdata(:,k))); %Edge/Volume (CSF outside brain)
@@ -235,17 +240,16 @@ for j=1:length(fMRINames)
             NewFeatures(k,42)=mean(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./mean(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,43)=mean(abs(Volume.cdata(noisy.cdata==1,k)))./mean(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,44)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(65289+1:83142,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k))); %VisualCortexCIFTI/CerebellumCIFTI              
             NewFeatures(k,46)=mean(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,47)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume.cdata(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,48)=mean(abs(CIFTI.cdata(1:29696+29716,k)))./mean(abs(Volume.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,48)=mean(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(Volume.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,49)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,50)=mean(abs(CIFTI.cdata(1:29696+29716,k)))./mean(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,50)=mean(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(Volume.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
             NewFeatures(k,51)=mean(abs(CIFTIMSMAllSmooth.cdata(:,k)))./mean(abs(VolumeSmooth.cdata(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,52)=mean(abs(CIFTIMSMAllSmooth.cdata(1:29696+29716,k)))./mean(abs(VolumeSmooth.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,52)=mean(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(VolumeSmooth.cdata(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,53)=mean(abs(CIFTIMSMAllSmooth.cdata(:,k)))./mean(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,54)=mean(abs(CIFTIMSMAllSmooth.cdata(1:29696+29716,k)))./mean(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
-
+            NewFeatures(k,54)=mean(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(VolumeSmooth.cdata(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
 
             for l=1:max(CorticalParcellation.cdata)
                 NewFeatures(k,l+54)=mean(abs(CIFTIMSMAll.cdata(CorticalParcellation.cdata==l,k)));

@@ -158,15 +158,19 @@ fi
 # compute additional features from matlab script
 #FIXME: parcellation files are saved under tICA folder--reclassify-as-signal-file
 CorticalParcellationFile="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii"
-SubCorticalParcellationFile="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedParcellation210.CorticalAreasAndSubRegions_dil.32k_fs_LR.dlabel.nii"
+SubRegionParcellation="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedParcellation210.CorticalAreasAndSubRegions_dil.32k_fs_LR.dlabel.nii"
 WMLabelFile="$HCPPIPEDIR/global/config/FreeSurferWMRegLut.txt"
 CSFLabelFile="$HCPPIPEDIR/global/config/FreeSurferCSFRegLut.txt"
+VisualAreasFile="$HCPPIPEDIR/global/config/Visual.ROI.txt"
+LanguageAreasFile="$HCPPIPEDIR/global/config/Language.ROI.txt"
+SubRegionsFile="$HCPPIPEDIR/global/config/SubRegions.ROI.txt"
+NonGreyParcelsFile="$HCPPIPEDIR/global/config/NonGreyParcels.ROI.txt"
 
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/scripts"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$SubCorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$SubRegionParcellation" "$WMLabelFile" "$CSFLabelFile" "$VisualAreasFile" "$LanguageAreasFile" "$SubRegionsFile" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)
@@ -188,6 +192,7 @@ case "$MatlabMode" in
         
         matlabcode="
             addpath('$HCPPIPEDIR/global/matlab');
+            addpath('$HCPPIPEDIR/global/scripts');
             addpath('$HCPCIFTIRWDIR');
             addpath('$this_script_dir/scripts');
             addpath('$this_script_dir');
@@ -218,19 +223,20 @@ for fMRIName in ${fMRINameToUse} ; do
     ReclassifyAsNoiseTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}"
 
     pythonCode=(
-        "singularity exec --bind /media $PythonSingularity python3 $HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
-        "--input_csv=$RecleanFeaturePath"
-        "--input_fix_prob_csv=$FixProbPath"
-        "--fix_prob_threshold=$FixProbThresh"
-        "--trained_folder=$ModelFolder"
-        "--model=$ModelToUse"
-        "--output_folder=$PredictionResult"
-        "--voting_threshold=$VoteThresh"
-        "--reclassify_as_signal_file=$ReclassifyAsSignalTxt"
-        "--reclassify_as_noise_file=$ReclassifyAsNoiseTxt"
+        singularity exec --bind /media "$PythonSingularity"
+        python3 "$HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
+        --input_csv="$RecleanFeaturePath"
+        --input_fix_prob_csv="$FixProbPath"
+        --fix_prob_threshold="$FixProbThresh"
+        --trained_folder="$ModelFolder"
+        --model="$ModelToUse"
+        --output_folder="$PredictionResult"
+        --voting_threshold="$VoteThresh"
+        --reclassify_as_signal_file="$ReclassifyAsSignalTxt"
+        --reclassify_as_noise_file="$ReclassifyAsNoiseTxt"
     )
 
-    cmd="${pythonCode[*]}"
-    log_Msg "Run python inference: $cmd"
-    eval "$cmd"
+    log_Msg "Run python inference..."
+    log_Msg "${pythonCode[@]}"
+    "${pythonCode[@]}"
 done
