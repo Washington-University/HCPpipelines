@@ -27,8 +27,6 @@ opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60'"
 opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
-#TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
-opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity" "$HCPPIPEDIR/ArealClassifier/hcp_python_singularity.simg"
 opts_AddOptional '--model-folder' 'ModelFolder' 'string' "the folder path of the trained models" "$HCPPIPEDIR/ICAFIX/rclean_models"
@@ -81,7 +79,7 @@ log_Msg "Begin to run the reclean pipeline..."
     --fix-high-pass="$HighPass" \
     --fmri-resolution="$fMRIResolution" \
     --subject-expected-timepoints="$subjectExpectedTimepoints" \
-    --surf-reg-name="$RegName" \
+    --surf-reg-name="MSMAll" \
     --low-res="${LowResMesh}" \
     --python-singularity="${PythonSingularity}" \
     --model-to-use="$ModelToUse" \
@@ -128,13 +126,27 @@ MotionReg=FALSE
 DeleteIntermediates=FALSE
 
 # reapply fix main processing + add rclean substring
+# MSMAll reclean
 "$HCPPIPEDIR"/ICAFIX/ReApplyFixProcessingWrapper.sh \
     --study-folder="$StudyFolder" \
     --subject="$Subject" \
     --fmri-names="$fMRINames" \
     --mrfix-concat-name="$MRFixConcatName" \
     --fix-high-pass="$HighPass" \
-    --surf-reg-name="$RegName" \
+    --surf-reg-name="MSMAll" \
+    --low-res="$LowResMesh" \
+    --matlab-run-mode="$MatlabMode" \
+    --motion-regression="${MotionReg}" \
+    --delete-intermediates="${DeleteIntermediates}"
+
+# Volume+MSMSulc reclean
+"$HCPPIPEDIR"/ICAFIX/ReApplyFixProcessingWrapper.sh \
+    --study-folder="$StudyFolder" \
+    --subject="$Subject" \
+    --fmri-names="$fMRINames" \
+    --mrfix-concat-name="$MRFixConcatName" \
+    --fix-high-pass="$HighPass" \
+    --surf-reg-name="NONE" \
     --low-res="$LowResMesh" \
     --matlab-run-mode="$MatlabMode" \
     --motion-regression="${MotionReg}" \
