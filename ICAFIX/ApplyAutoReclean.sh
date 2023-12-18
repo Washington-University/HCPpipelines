@@ -32,7 +32,8 @@ opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string 
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--reclassify-as-signal-file' 'ReclassifyAsSignalFile' 'file name' "the file name for the output ReclassifyAsSignal file"
 opts_AddMandatory '--reclassify-as-noise-file' 'ReclassifyAsNoiseFile' 'file name' "the file name for the output ReclassifyAsNoise file"
-opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity" "$HCPPIPEDIR/ArealClassifier/hcp_python_singularity.simg"
+opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify 'NONE' or empty string to use native environment instead" ""
+opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
 opts_AddOptional '--model-folder' 'ModelFolder' 'string' "the folder path of the trained models" "$HCPPIPEDIR/ICAFIX/rclean_models"
 opts_AddOptional '--model-to-use' 'ModelToUse' 'string' "the models to use separated by '@'" "RandomForest@MLP"
 opts_AddOptional '--vote-threshold' 'VoteThresh' 'integer' "a decision threshold for determing reclassifications, should be less than to equal to the number of models to use" ""
@@ -71,14 +72,25 @@ case "$MatlabMode" in
         ;;
 esac
 
-if [ ! -f "$PythonSingularity" ]; then
-    log_Err_Abort "the singularity container doesn't exists under python version: $PythonSingularity"
-fi
+UseLocalPython="TRUE"
+singularity_command=""
+if [[ "$PythonSingularity" != "" && "$PythonSingularity" != "NONE" ]]; then
+    if [ ! -f "$PythonSingularity" ]; then
+        log_Err_Abort "the singularity container doesn't exists under python version: $PythonSingularity"
+    fi
 
-if command -v singularity &> /dev/null; then
-    log_Msg "Singularity is installed."
+    if command -v singularity &> /dev/null; then
+        log_Msg "Singularity is installed."
+    else
+        log_Err_Abort "Singularity is not installed or not in PATH."
+    fi
+    UseLocalPython="FALSE"
+    singularity_command=(singularity exec --bind "$PythonSingularityMountPath" "$PythonSingularity" python3)
 else
-    log_Err_Abort "Singularity is not installed or not in PATH."
+    # native env using conda
+    if [[ "${HCPCONDAENV:-}" == "" ]]; then
+        log_Err_Abort "HCPCONDAENV is not set, you must specify the conda env in your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+    fi
 fi
 
 if [[ "$VoteThresh" == "" ]]; then
@@ -225,8 +237,7 @@ for fMRIName in ${fMRINameToUse} ; do
     ReclassifyAsNoiseTxt="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}"
 
     pythonCode=(
-        singularity exec --bind /media "$PythonSingularity"
-        python3 "$HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
+        "$HCPPIPEDIR/ICAFIX/scripts/RecleanClassifierInference.py"
         --input_csv="$RecleanFeaturePath"
         --input_fix_prob_csv="$FixProbPath"
         --fix_prob_threshold="$FixProbThresh"
@@ -238,7 +249,15 @@ for fMRIName in ${fMRINameToUse} ; do
         --reclassify_as_noise_file="$ReclassifyAsNoiseTxt"
     )
 
+    if [ "$UseLocalPython" = "FALSE" ]; then
+        # use singularity
+        PythonLaunchCommand=("${singularity_command[@]}" "${pythonCode[@]}")
+    else
+        # use native env
+        PythonLaunchCommand=("${HCPCONDAENV}/bin/python3" "${pythonCode[@]}")
+    fi
+
     log_Msg "Run python inference..."
-    log_Msg "${pythonCode[@]}"
-    "${pythonCode[@]}"
+    log_Msg "${PythonLaunchCommand[@]}"
+    "${PythonLaunchCommand[@]}"
 done

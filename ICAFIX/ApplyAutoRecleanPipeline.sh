@@ -28,7 +28,8 @@ opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value th
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60'"
 opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
-opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity" "$HCPPIPEDIR/ArealClassifier/hcp_python_singularity.simg"
+opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify 'NONE' or empty string to use native environment instead" ""
+opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
 opts_AddOptional '--model-folder' 'ModelFolder' 'string' "the folder path of the trained models" "$HCPPIPEDIR/ICAFIX/rclean_models"
 opts_AddOptional '--model-to-use' 'ModelToUse' 'string' "the models to use separated by '@'" "RandomForest@MLP"
 opts_AddOptional '--vote-threshold' 'VoteThresh' 'integer' "a decision threshold for determing reclassifications, should be less than to equal to the number of models to use" ""
@@ -82,6 +83,7 @@ log_Msg "Begin to run the reclean pipeline..."
     --surf-reg-name="MSMAll" \
     --low-res="${LowResMesh}" \
     --python-singularity="${PythonSingularity}" \
+    --python-singularity-mount-path="${PythonSingularityMountPath}" \
     --model-to-use="$ModelToUse" \
     --vote-threshold="$VoteThresh" \
     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
