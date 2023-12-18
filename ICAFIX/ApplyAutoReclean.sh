@@ -116,6 +116,7 @@ done
 # Preprocess step 1: Merge and dropout
 Caret7_Command="wb_command"
 
+#TODO: enable multiple resolutions like macaque (1.25mm resolution) or 7T (1.6mm resolution)
 FinalfMRIResolution="2"
 SmoothingFWHM="2"
 BrainOrdinatesResolution="2"
@@ -165,12 +166,13 @@ VisualAreasFile="$HCPPIPEDIR/global/config/Visual.ROI.txt"
 LanguageAreasFile="$HCPPIPEDIR/global/config/Language.ROI.txt"
 SubRegionsFile="$HCPPIPEDIR/global/config/SubRegions.ROI.txt"
 NonGreyParcelsFile="$HCPPIPEDIR/global/config/NonGreyParcels.ROI.txt"
+GrayOrdinateTemplateFile="$HCPPIPEDIR/global/templates/91282_Greyordinates/91282_Greyordinates.dscalar.nii"
 
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/scripts"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$SubRegionParcellation" "$WMLabelFile" "$CSFLabelFile" "$VisualAreasFile" "$LanguageAreasFile" "$SubRegionsFile" "$NonGreyParcelsFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$GrayOrdinateTemplateFile" "$CorticalParcellationFile" "$SubRegionParcellation" "$WMLabelFile" "$CSFLabelFile" "$VisualAreasFile" "$LanguageAreasFile" "$SubRegionsFile" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)

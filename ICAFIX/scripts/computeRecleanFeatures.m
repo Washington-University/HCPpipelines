@@ -4,41 +4,32 @@ function computeRecleanFeatures(StudyFolder, ...
                                 RunsXNumTimePoints, ...
                                 hp, ...
                                 Resolution, ...
+                                GrayOrdinateTemplateFile, ...
                                 CorticalParcellationFile, ...
                                 SubRegionParcellationFile, ...
                                 WMLabelFile, ...
                                 CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile)
 
 HCPPIPEDIR = getenv('HCPPIPEDIR')
-FullGreyordinateLength = 91282; 
+
+GrayOrdinateTemplate=ciftiopen(GrayOrdinateTemplateFile,'wb_command');
+GrayOrdinateTemplate.cdata=single(zeros(size(GrayOrdinateTemplate.cdata))); % make a zero template
+FullGreyordinateLength = length(GrayOrdinateTemplate.cdata); 
 
 fMRINames = myreadtext(fMRIListName);
 RunsXNumTimePoints = str2double(RunsXNumTimePoints);
 ResolutionNum = str2double(Resolution);
 
 CorticalParcellation=ciftiopen(CorticalParcellationFile,'wb_command');
-
 VisualAreas=get_ROI_from_txt(VisualAreasFile); % VisualAreasFile HCPpipelines/global/config/Visual.ROI.txt
-
-VisualROI=single(zeros(length(CorticalParcellation.cdata),1));
-for i=VisualAreas
-    VisualROI(CorticalParcellation.cdata==i)=1;
-end
-NonVisualROI=(VisualROI-1)*-1;
-VisualROI=[VisualROI' single(zeros(1,FullGreyordinateLength-length(VisualROI)))]';
-NonVisualROI=[NonVisualROI' single(zeros(1,FullGreyordinateLength-length(NonVisualROI)))]';
+[VisualROI_CIFTI, NonVisualROI_CIFTI]  = get_cortex_ROI_in_cifti(VisualAreas, CorticalParcellation, GrayOrdinateTemplate);
+VisualROI=VisualROI_CIFTI.cdata;
+NonVisualROI=NonVisualROI_CIFTI.cdata;
 
 LanguageAreas=get_ROI_from_txt(LanguageAreasFile); % LanguageAreasFile HCPpipelines/global/config/Language.ROI.txt
-
-LanguageROI=single(zeros(length(CorticalParcellation.cdata),1));
-for i=LanguageAreas
-    LanguageROI(CorticalParcellation.cdata==i)=1;
-end
-NonLanguageROI=(LanguageROI-1)*-1;
-LanguageROI=[LanguageROI' single(zeros(1,FullGreyordinateLength-length(LanguageROI)))]';
-NonLanguageROI=[NonLanguageROI' single(zeros(1,FullGreyordinateLength-length(NonLanguageROI)))]';
-
-CorticalParcellation.cdata(length(CorticalParcellation.cdata)+1:FullGreyordinateLength,1)=0;
+[LanguageROI_CIFTI, NonLanguageROI_CIFTI]  = get_cortex_ROI_in_cifti(LanguageAreas, CorticalParcellation, GrayOrdinateTemplate);
+LanguageROI=LanguageROI_CIFTI.cdata;
+NonLanguageROI=NonLanguageROI_CIFTI.cdata;
 
 SubRegionParcellation=ciftiopen(SubRegionParcellationFile,'wb_command');
 SubRegionParcellation.cdata(length(SubRegionParcellation.cdata)+1:FullGreyordinateLength,1)=0;
