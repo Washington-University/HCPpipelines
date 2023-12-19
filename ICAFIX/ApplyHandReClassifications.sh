@@ -132,7 +132,7 @@ log_Msg "OriginalFixNoise: ${OriginalFixNoise}"
 #handle defaults that rely on other parameters
 if [[ "$ReclassifyAsSignal" == "" ]]
 then
-    ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
+	ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
 else
 	ReclassifyAsSignal="${ResultsFolder}/${ReclassifyAsSignal}"
 fi
@@ -140,7 +140,7 @@ log_Msg "ReclassifyAsSignal: ${ReclassifyAsSignal}"
 
 if [[ "$ReclassifyAsNoise" == "" ]]
 then
-    ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
+	ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
 else
 	ReclassifyAsNoise="${ResultsFolder}/${ReclassifyAsNoise}"
 fi
