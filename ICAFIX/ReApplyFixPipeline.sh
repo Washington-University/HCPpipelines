@@ -317,7 +317,9 @@ case ${MatlabRunMode} in
 		# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
 		if [ -z "${FSL_FIX_MCR}" ]; then
 			debug_disable_trap
+			set +u
 			source ${FSL_FIXDIR}/settings.sh
+			set -u
 			debug_enable_trap
 			export FSL_FIX_WBC="${Caret7_Command}"
 			# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
@@ -358,7 +360,15 @@ case ${MatlabRunMode} in
 		# Use bash redirection ("here-string") to pass multiple commands into matlab
 		# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 		# get interpreted as separating different bash shell commands)
-		(debug_disable_trap; source "${FSL_FIXDIR}/settings.sh"; debug_enable_trap; export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
+		(
+			#FIX's settings isn't safe to unset variables or exit codes, so disable all that
+			#TSC: when non-interactive, -u by itself causes exit on unset variable, so we need to disable that too
+			debug_disable_trap
+			set +u
+			source "${FSL_FIXDIR}/settings.sh"
+			set -u
+			debug_enable_trap
+			export FSL_FIX_WBC="${Caret7_Command}"; "${interpreter[@]}" <<<"${matlab_cmd}")
 		;;
 
 	*)
