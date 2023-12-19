@@ -155,7 +155,7 @@ done
 ```bash
 conda env create -f environment.yml
 ```
-If using the native conda environment, please specify the conda env path `HCPCONDAENV` in the environment script (an edited copy of Examples/Scripts/SetUpHCPPipeline.sh). An example would be `export HCPCONDAENV=/my/conda/path/envs/hcp_python_env`
+If using the native env, please specify `--python-interpreter` and an example would be `--python-interpreter=/my/conda/path/envs/hcp_python_env/bin/python3`.
 
 <!-- References -->
 

@@ -21,18 +21,15 @@ RunsXNumTimePoints = str2double(RunsXNumTimePoints);
 ResolutionNum = str2double(Resolution);
 
 CorticalParcellation=ciftiopen(CorticalParcellationFile,'wb_command');
-VisualAreas=get_ROI_from_txt(VisualAreasFile); % VisualAreasFile HCPpipelines/global/config/Visual.ROI.txt
-[VisualROI_CIFTI, NonVisualROI_CIFTI]  = get_cortex_ROI_in_cifti(VisualAreas, CorticalParcellation, GrayOrdinateTemplate);
+VisualROI_CIFTI=ciftiopen(VisualAreasFile,'wb_command');
 VisualROI=VisualROI_CIFTI.cdata;
-NonVisualROI=NonVisualROI_CIFTI.cdata;
+NonVisualROI=1-VisualROI_CIFTI.cdata;
 
-LanguageAreas=get_ROI_from_txt(LanguageAreasFile); % LanguageAreasFile HCPpipelines/global/config/Language.ROI.txt
-[LanguageROI_CIFTI, NonLanguageROI_CIFTI]  = get_cortex_ROI_in_cifti(LanguageAreas, CorticalParcellation, GrayOrdinateTemplate);
+LanguageROI_CIFTI=ciftiopen(LanguageAreasFile,'wb_command');
 LanguageROI=LanguageROI_CIFTI.cdata;
-NonLanguageROI=NonLanguageROI_CIFTI.cdata;
+NonLanguageROI=1-LanguageROI_CIFTI.cdata;
 
 SubRegionParcellation=ciftiopen(SubRegionParcellationFile,'wb_command');
-SubRegionParcellation.cdata(length(SubRegionParcellation.cdata)+1:FullGreyordinateLength,1)=0;
 
 SubRegions=get_ROI_from_txt(SubRegionsFile); % SubRegionsFile HCPpipelines/global/config/SubRegions.ROI.txt
 

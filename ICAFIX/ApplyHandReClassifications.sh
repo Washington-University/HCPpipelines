@@ -133,12 +133,16 @@ log_Msg "OriginalFixNoise: ${OriginalFixNoise}"
 if [[ "$ReclassifyAsSignal" == "" ]]
 then
     ReclassifyAsSignal="${ResultsFolder}/ReclassifyAsSignal.txt"
+else
+	ReclassifyAsSignal="${ResultsFolder}/${ReclassifyAsSignal}"
 fi
 log_Msg "ReclassifyAsSignal: ${ReclassifyAsSignal}"
 
-if [[ "$ReclassifyAsSignal" == "" ]]
+if [[ "$ReclassifyAsNoise" == "" ]]
 then
     ReclassifyAsNoise="${ResultsFolder}/ReclassifyAsNoise.txt"
+else
+	ReclassifyAsNoise="${ResultsFolder}/${ReclassifyAsNoise}"
 fi
 log_Msg "ReclassifyAsNoise: ${ReclassifyAsNoise}"
 

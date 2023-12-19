@@ -9,9 +9,11 @@ function [ROI_OUT_CIFTI, NonROI_CIFTI]  = get_cortex_ROI_in_cifti(ROI_label, cif
         ROI_CORTEX_LEFT(CORTEX_LEFT==i)=1;
         ROI_CORTEX_RIGHT(CORTEX_RIGHT==i)=1;
     end
-    NonROI_CORTEX_LEFT=(ROI_CORTEX_LEFT-1)*-1;
-    NonROI_CORTEX_RIGHT=(ROI_CORTEX_RIGHT-1)*-1;
+    NonROI_CORTEX_LEFT=1-ROI_CORTEX_LEFT;
+    NonROI_CORTEX_RIGHT=1-ROI_CORTEX_RIGHT;
     
+    cifti_space_out.cdata=zeros(size(cifti_space_out.cdata, 1), 1, "single");
+
     ROI_OUT_CIFTI=cifti_space_out; % a zero template
     ROI_OUT_CIFTI=cifti_struct_dense_replace_surface_data(ROI_OUT_CIFTI,ROI_CORTEX_LEFT,'CORTEX_LEFT',1);
     ROI_OUT_CIFTI=cifti_struct_dense_replace_surface_data(ROI_OUT_CIFTI,ROI_CORTEX_RIGHT,'CORTEX_RIGHT',1);

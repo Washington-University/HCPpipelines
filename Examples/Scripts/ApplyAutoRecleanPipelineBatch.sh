@@ -126,6 +126,10 @@ main() {
 	PythonSingularity="/path/to/singularity.img"
 	PythonSingularityMountPath="/path/to/data" # where the data dir need to mount to the singularity
 
+	# # set python interpreter
+	# PythonInterpreter="/my/conda/path/envs/hcp_python_env/bin/python3"
+	PythonInterpreter=""
+	
 	# models to use
 	Models="RandomForest@MLP@Xgboost@WeightedKNN@XgboostEnsemble"
 
@@ -160,6 +164,7 @@ main() {
 		--low-res="$LowResMesh" \
 		--python-singularity="$PythonSingularity" \
 		--python-singularity-mount-path="$PythonSingularityMountPath" \
+		--python-interpreter="$PythonInterpreter" \
 		--model-to-use="$Models" \
 		--vote-threshold="$VoteThresh"
 

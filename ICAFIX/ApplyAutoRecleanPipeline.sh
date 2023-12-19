@@ -30,6 +30,7 @@ opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 's
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify 'NONE' or empty string to use native environment instead" ""
 opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
+opts_AddOptional '--python-interpreter' 'PythonInterpreter' 'string' "the python interpreter path" ""
 opts_AddOptional '--model-folder' 'ModelFolder' 'string' "the folder path of the trained models" "$HCPPIPEDIR/ICAFIX/rclean_models"
 opts_AddOptional '--model-to-use' 'ModelToUse' 'string' "the models to use separated by '@'" "RandomForest@MLP"
 opts_AddOptional '--vote-threshold' 'VoteThresh' 'integer' "a decision threshold for determing reclassifications, should be less than to equal to the number of models to use" ""
@@ -72,7 +73,7 @@ ReclassifyAsNoiseFile="ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
 
 # compute addtional features, inference by new base learners, produce reclassify files
 log_Msg "Begin to run the reclean pipeline..."
-"$HCPPIPEDIR"/ICAFIX/ApplyAutoReclean.sh \
+"$HCPPIPEDIR"/ICAFIX/scripts/RecleanClassify.sh \
     --study-folder="$StudyFolder" \
     --subject="$Subject" \
     --fmri-names="$fMRINames" \
@@ -84,6 +85,7 @@ log_Msg "Begin to run the reclean pipeline..."
     --low-res="${LowResMesh}" \
     --python-singularity="${PythonSingularity}" \
     --python-singularity-mount-path="${PythonSingularityMountPath}" \
+    --python-interpreter="${PythonInterpreter}" \
     --model-to-use="$ModelToUse" \
     --vote-threshold="$VoteThresh" \
     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
