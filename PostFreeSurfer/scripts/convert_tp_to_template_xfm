@@ -28,10 +28,15 @@ temp=`mktemp XXXX.lta`
 echo cp $lta $temp
 cp $lta $temp
 
-mov=$workdir/$TP/T1w/$TP/mri/norm.mgz
+#mov=$workdir/$TP/T1w/$TP/mri/norm.mgz
+mov=$workdir/$TP/T1w/$TP/mri/orig/001.mgz
+
 if [ ! -f "$mov" ]; then echo "ERROR: cannot find $mov"; exit -1; fi
 
-targ=$workdir/$subject.long.$template/T1w/$template/mri/norm_template.mgz
+#targ=$workdir/$subject.long.$template/T1w/$template/mri/norm_template.mgz
+targ=$workdir/$subject.long.$template/T1w/$TP.long.$template/mri/rawavg.mgz
+
+
 if [ ! -f "$targ" ]; then echo "ERROR: cannot find $targ"; exit -1; fi
 
 echo tkregister --mov $mov --targ $targ --reg $temp --fslregout $output --noedit
