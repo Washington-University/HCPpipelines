@@ -71,25 +71,25 @@ esac
 ReclassifyAsSignalFile="ReclassifyAsSignalRecleanVote${VoteThresh}.txt"
 ReclassifyAsNoiseFile="ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
 
-# # compute addtional features, inference by new base learners, produce reclassify files
-# log_Msg "Begin to run the reclean pipeline..."
-# "$HCPPIPEDIR"/ICAFIX/scripts/RecleanClassify.sh \
-#     --study-folder="$StudyFolder" \
-#     --subject="$Subject" \
-#     --fmri-names="$fMRINames" \
-#     --mrfix-concat-name="$MRFixConcatName" \
-#     --fix-high-pass="$HighPass" \
-#     --fmri-resolution="$fMRIResolution" \
-#     --subject-expected-timepoints="$subjectExpectedTimepoints" \
-#     --surf-reg-name="MSMAll" \
-#     --low-res="${LowResMesh}" \
-#     --python-singularity="${PythonSingularity}" \
-#     --python-singularity-mount-path="${PythonSingularityMountPath}" \
-#     --python-interpreter="${PythonInterpreter}" \
-#     --model-to-use="$ModelToUse" \
-#     --vote-threshold="$VoteThresh" \
-#     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
-#     --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
+# compute addtional features, inference by new base learners, produce reclassify files
+log_Msg "Begin to run the reclean pipeline..."
+"$HCPPIPEDIR"/ICAFIX/scripts/RecleanClassify.sh \
+    --study-folder="$StudyFolder" \
+    --subject="$Subject" \
+    --fmri-names="$fMRINames" \
+    --mrfix-concat-name="$MRFixConcatName" \
+    --fix-high-pass="$HighPass" \
+    --fmri-resolution="$fMRIResolution" \
+    --subject-expected-timepoints="$subjectExpectedTimepoints" \
+    --surf-reg-name="MSMAll" \
+    --low-res="${LowResMesh}" \
+    --python-singularity="${PythonSingularity}" \
+    --python-singularity-mount-path="${PythonSingularityMountPath}" \
+    --python-interpreter="${PythonInterpreter}" \
+    --model-to-use="$ModelToUse" \
+    --vote-threshold="$VoteThresh" \
+    --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
+    --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
 
 # apply the reclassification results
 log_Msg "Begin to apply the reclassification results..."
