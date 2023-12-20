@@ -80,6 +80,8 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
+opts_AddOptional '--clean-substring' 'CleanSubstring' 'string' "the clean mode substring, can be 'clean' as sICA+FIX cleaned,'clean_rclean' as sICA+FIX cleaned and reclean, default to 'clean'" "clean"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -772,35 +774,35 @@ cd ..
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
-# Remove any existing old versions of the cleaned data (normally they should be overwritten
-# in the renaming that follows, but this ensures that any old versions don't linger)
-/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+# # Remove any existing old versions of the cleaned data (normally they should be overwritten
+# # in the renaming that follows, but this ensures that any old versions don't linger)
+# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
 
-if (( DoVol )); then
-	$FSLDIR/bin/imrm  ${concatfmrihp}_clean
-	$FSLDIR/bin/imrm  ${concatfmrihp}_clean_vn
-fi
+# if (( DoVol )); then
+# 	$FSLDIR/bin/imrm  ${concatfmrihp}_clean
+# 	$FSLDIR/bin/imrm  ${concatfmrihp}_clean_vn
+# fi
 
 # Rename some of the outputs from fix_3_clean.
 # Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 # So check whether those files exist before moving/renaming them
 if [ -f ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-	/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
+	/bin/mv ${concatfmrihp}.ica/Atlas_clean.dtseries.nii ${concatfmri}_Atlas${RegString}_hp${hp}_${CleanSubstring}.dtseries.nii
 else
 	log_Err_Abort "Something went wrong; ${concatfmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
 if [ -f ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-	/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+	/bin/mv ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ${concatfmri}_Atlas${RegString}_hp${hp}_${CleanSubstring}_vn.dscalar.nii
 fi
 
 if (( DoVol )); then
-	$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
+	$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_${CleanSubstring}
 	if [ "$?" -ne "0" ]; then
 		log_Err_Abort "Something went wrong; ${concatfmrihp}.ica/filtered_func_data_clean wasn't created"
 	fi
 	if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
-		$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
+		$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_${CleanSubstring}_vn
 	fi
 fi
 log_Msg "Done renaming files"
@@ -849,8 +851,8 @@ for fmriname in $fmris ; do
 	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
 	log_Msg "${fmriNoExt}: Start=${Start} Stop=${Stop}"
 
-	cifti_out=${fmriNoExt}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-	"${Caret7_Command}" -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii -column ${Start} -up-to ${Stop}
+	cifti_out=${fmriNoExt}_Atlas${RegString}_hp${hp}_${CleanSubstring}.dtseries.nii
+	"${Caret7_Command}" -cifti-merge ${cifti_out} -cifti ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_${CleanSubstring}.dtseries.nii -column ${Start} -up-to ${Stop}
 	"${Caret7_Command}" -cifti-math "((TCS / VNA) * VN) + Mean" ${cifti_out} -var TCS ${cifti_out} -var VNA ${ConcatFolder}/${concatfmri}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var VN ${fmriNoExt}_Atlas${RegString}_hp${hp}_vn.dscalar.nii -select 1 1 -repeat -var Mean ${fmriNoExt}_Atlas${RegString}_mean.dscalar.nii -select 1 1 -repeat
 
 	readme_for_cifti_out=${cifti_out%.dtseries.nii}.README.txt

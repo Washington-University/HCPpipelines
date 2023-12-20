@@ -71,25 +71,25 @@ esac
 ReclassifyAsSignalFile="ReclassifyAsSignalRecleanVote${VoteThresh}.txt"
 ReclassifyAsNoiseFile="ReclassifyAsNoiseRecleanVote${VoteThresh}.txt"
 
-# compute addtional features, inference by new base learners, produce reclassify files
-log_Msg "Begin to run the reclean pipeline..."
-"$HCPPIPEDIR"/ICAFIX/scripts/RecleanClassify.sh \
-    --study-folder="$StudyFolder" \
-    --subject="$Subject" \
-    --fmri-names="$fMRINames" \
-    --mrfix-concat-name="$MRFixConcatName" \
-    --fix-high-pass="$HighPass" \
-    --fmri-resolution="$fMRIResolution" \
-    --subject-expected-timepoints="$subjectExpectedTimepoints" \
-    --surf-reg-name="MSMAll" \
-    --low-res="${LowResMesh}" \
-    --python-singularity="${PythonSingularity}" \
-    --python-singularity-mount-path="${PythonSingularityMountPath}" \
-    --python-interpreter="${PythonInterpreter}" \
-    --model-to-use="$ModelToUse" \
-    --vote-threshold="$VoteThresh" \
-    --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
-    --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
+# # compute addtional features, inference by new base learners, produce reclassify files
+# log_Msg "Begin to run the reclean pipeline..."
+# "$HCPPIPEDIR"/ICAFIX/scripts/RecleanClassify.sh \
+#     --study-folder="$StudyFolder" \
+#     --subject="$Subject" \
+#     --fmri-names="$fMRINames" \
+#     --mrfix-concat-name="$MRFixConcatName" \
+#     --fix-high-pass="$HighPass" \
+#     --fmri-resolution="$fMRIResolution" \
+#     --subject-expected-timepoints="$subjectExpectedTimepoints" \
+#     --surf-reg-name="MSMAll" \
+#     --low-res="${LowResMesh}" \
+#     --python-singularity="${PythonSingularity}" \
+#     --python-singularity-mount-path="${PythonSingularityMountPath}" \
+#     --python-interpreter="${PythonInterpreter}" \
+#     --model-to-use="$ModelToUse" \
+#     --vote-threshold="$VoteThresh" \
+#     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
+#     --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
 
 # apply the reclassification results
 log_Msg "Begin to apply the reclassification results..."
@@ -130,28 +130,80 @@ MotionReg=FALSE
 DeleteIntermediates=FALSE
 
 # reapply fix main processing + add rclean substring
-# MSMAll reclean
-"$HCPPIPEDIR"/ICAFIX/ReApplyFixProcessingWrapper.sh \
-    --study-folder="$StudyFolder" \
-    --subject="$Subject" \
-    --fmri-names="$fMRINames" \
-    --mrfix-concat-name="$MRFixConcatName" \
-    --fix-high-pass="$HighPass" \
-    --surf-reg-name="MSMAll" \
-    --low-res="$LowResMesh" \
-    --matlab-run-mode="$MatlabMode" \
-    --motion-regression="${MotionReg}" \
-    --delete-intermediates="${DeleteIntermediates}"
+if [ -z ${MRFixConcatName} ]; then
+    # Single Run
+    for fMRIName in "${fMRINamesArray[@]}"; do
 
-# Volume+MSMSulc reclean
-"$HCPPIPEDIR"/ICAFIX/ReApplyFixProcessingWrapper.sh \
-    --study-folder="$StudyFolder" \
-    --subject="$Subject" \
-    --fmri-names="$fMRINames" \
-    --mrfix-concat-name="$MRFixConcatName" \
-    --fix-high-pass="$HighPass" \
-    --surf-reg-name="NONE" \
-    --low-res="$LowResMesh" \
-    --matlab-run-mode="$MatlabMode" \
-    --motion-regression="${MotionReg}" \
-    --delete-intermediates="${DeleteIntermediates}"
+        # MSMAll
+        "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
+            --path="$StudyFolder" \
+            --subject="$Subject" \
+            --fmri-name="$fMRIName" \
+            --high-pass="$HighPass" \
+            --reg-name="MSMAll" \
+            --low-res-mesh="$LowResMesh" \
+            --matlab-run-mode="$MatlabMode" \
+            --motion-regression="${MotionReg}" \
+            --delete-intermediates="${DeleteIntermediates}" \
+            --clean-substring="clean_rclean"
+
+        # Volume+MSMSulc
+        "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
+            --path="$StudyFolder" \
+            --subject="$Subject" \
+            --fmri-name="$fMRIName" \
+            --high-pass="$HighPass" \
+            --reg-name="NONE" \
+            --low-res-mesh="$LowResMesh" \
+            --matlab-run-mode="$MatlabMode" \
+            --motion-regression="${MotionReg}" \
+            --delete-intermediates="${DeleteIntermediates}" \
+            --clean-substring="clean_rclean"
+
+    done
+else 
+
+    #MR FIX config support for non-HCP settings
+    config=""
+    processingmode="HCPStyleData"
+
+    SubjfMRINames=""
+    for fMRIName in "${fMRINamesArray[@]}"; do
+        if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
+            SubjfMRINames+="@${fMRIName}"
+        fi
+    done
+    # Remove the leading @
+    SubjfMRINames="${SubjfMRINames:1}"
+
+    # Multi-Run
+    # MSMAll
+    "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+        --path="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-names="$SubjfMRINames" \
+        --high-pass="$HighPass" \
+        --reg-name="MSMAll" \
+        --concat-fmri-name="$MRFixConcatName" \
+        --low-res-mesh="$LowResMesh" \
+        --matlab-run-mode="$MatlabMode" \
+        --motion-regression="$MotionReg" \
+        --config="$config" \
+        --processing-mode="$processingmode" \
+        --clean-substring="clean_rclean"
+    
+    # Volume+MSMSulc
+    "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
+        --path="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-names="$SubjfMRINames" \
+        --high-pass="$HighPass" \
+        --reg-name="NONE" \
+        --concat-fmri-name="$MRFixConcatName" \
+        --low-res-mesh="$LowResMesh" \
+        --matlab-run-mode="$MatlabMode" \
+        --motion-regression="$MotionReg" \
+        --config="$config" \
+        --processing-mode="$processingmode" \
+        --clean-substring="clean_rclean"
+fi
