@@ -155,151 +155,138 @@ SPIN_ECHO_METHOD_OPT="TOPUP"
 GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 
+# -----------------------------------------------------------------------------------
+#  Define Sources and pipe-dir
+# -----------------------------------------------------------------------------------
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"
+#description to use in usage - syntax of parameters is now explained automatically
+opts_SetScriptDescription "Prepares raw data for running the FreeSurfer HCP pipeline"
+
 # ------------------------------------------------------------------------------
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
 
-show_usage() {
-  cat <<EOF
+opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to study data folder (required)  Used with --subject input to create full path to root  directory for all outputs generated as path/subject)"
 
-${script_name}
+opts_AddMandatory '--subject' 'Subject' 'subject' "Subject ID (required)  Used with --path input to create full path to root  directory for all outputs generated as path/subject"
 
-Usage: ${script_name} [options]
+opts_AddMandatory '--t1' 'T1wInputImages' "T1" "An @ symbol separated list of full paths to T1-weighted  (T1w) structural images for the subject (required)"
 
-  --path=<path>                       Path to study data folder (required)
-                                      Used with --subject input to create full path to root
-                                      directory for all outputs generated as path/subject
-  --subject=<subject>                 Subject ID (required)
-                                      Used with --path input to create full path to root
-                                      directory for all outputs generated as path/subject
-  --t1=<T1w images>                   An @ symbol separated list of full paths to T1-weighted
-                                      (T1w) structural images for the subject (required)
-  --t2=<T2w images>                   An @ symbol separated list of full paths to T2-weighted
-                                      (T2w) structural images for the subject (required for 
-                                      hcp-style data, can be NONE for legacy-style data, 
-                                      see --processing-mode option)
-  --t1template=<file path>            MNI T1w template
-  --t1templatebrain=<file path>       Brain extracted MNI T1wTemplate
-  --t1template2mm=<file path>         MNI 2mm T1wTemplate
-  --t2template=<file path>            MNI T2w template
-  --t2templatebrain=<file path>       Brain extracted MNI T2wTemplate
-  --t2template2mm=<file path>         MNI 2mm T2wTemplate
-  --templatemask=<file path>          Brain mask MNI Template
-  --template2mmmask=<file path>       Brain mask MNI 2mm Template
-  --brainsize=<size value>            Brain size estimate in mm, 150 for humans
-  --fnirtconfig=<file path>           FNIRT 2mm T1w Configuration file
-  --fmapmag=<file path>               Siemens/Philips Gradient Echo Fieldmap magnitude file
-  --fmapphase=<file path>             Siemens/Philips Gradient Echo Fieldmap phase file
-  --fmapgeneralelectric=<file path>   General Electric Gradient Echo Field Map file
-                                      Two volumes in one file
-                                      1. field map in deg
-                                      2. magnitude
-  --echodiff=<delta TE>               Delta TE in ms for field map or "NONE" if
-                                      not used
-  --SEPhaseNeg={<file path>, NONE}    For spin echo field map, path to volume with
-                                      a negative phase encoding direction (LR in
-                                      HCP data), set to "NONE" if not using Spin
-                                      Echo Field Maps
-  --SEPhasePos={<file path>, NONE}    For spin echo field map, path to volume with
-                                      a positive phase encoding direction (RL in
-                                      HCP data), set to "NONE" if not using Spin
-                                      Echo Field Maps
-  --seechospacing=<seconds>           Effective Echo Spacing of Spin Echo Field Map,
-                                      (in seconds) or "NONE" if not used
-  --seunwarpdir={x,y,NONE}            Phase encoding direction (according to the *voxel* axes)
-             or={i,j,NONE}            of the spin echo field map. 
-                                      (Only applies when using a spin echo field map.)
-  --t1samplespacing=<seconds>         T1 image sample spacing, "NONE" if not used
-  --t2samplespacing=<seconds>         T2 image sample spacing, "NONE" if not used
-  --unwarpdir={x,y,z,x-,y-,z-}        Readout direction of the T1w and T2w images (according to the *voxel axes)
-           or={i,j,k,i-,j-,k-}        (Used with either a gradient echo field map 
-                                      or a spin echo field map)
-  --gdcoeffs=<file path>              File containing gradient distortion
-                                      coefficients, Set to "NONE" to turn off
-  --avgrdcmethod=<avgrdcmethod>       Averaging and readout distortion correction method. 
-                                      See below for supported values.
+opts_AddMandatory '--t2' 'T2wInputImages' "T2" "An @ symbol separated list of full paths to T2-weighted  (T2w) structural images for the subject (required for   hcp-style data, can be NONE for legacy-style data,   see --processing-mode option)"
 
-      "${NONE_METHOD_OPT}"
-         average any repeats with no readout distortion correction
+opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
 
-      "${SPIN_ECHO_METHOD_OPT}"
-         average any repeats and use Spin Echo Field Maps for readout
-         distortion correction
+opts_AddMandatory '--t1templatebrain' 'T1wTemplateBrain' 'file_path' "Brain extracted MNI T1wTemplate"
 
-      "${PHILIPS_METHOD_OPT}"
-         average any repeats and use Philips specific Gradient Echo
-         Field Maps for readout distortion correction
+opts_AddMandatory '--t1template2mm' 'T1wTemplate2mm' 'file_path' "MNI 2mm T1wTemplate"
 
-      "${GENERAL_ELECTRIC_METHOD_OPT}"
-         average any repeats and use General Electric specific Gradient
-         Echo Field Maps for readout distortion correction
+opts_AddMandatory '--t2template' 'T2wTemplate' 'file_path' "MNI T2w template"
 
-      "${SIEMENS_METHOD_OPT}"
-         average any repeats and use Siemens specific Gradient Echo
-         Field Maps for readout distortion correction
+opts_AddMandatory '--t2templatebrain' 'T2wTemplateBrain' 'file_path' "Brain extracted MNI T2wTemplate"
 
-      "${FIELDMAP_METHOD_OPT}"
-         equivalent to "${SIEMENS_METHOD_OPT}" (preferred)
-         This option value is maintained for backward compatibility.
+opts_AddMandatory '--t2template2mm' 'T2wTemplate2mm' 'file_path' "MNI 2mm T2wTemplate"
 
-  --topupconfig=<file path>           Configuration file for topup or "NONE" if not used
-  [--bfsigma=<value>]                 Bias Field Smoothing Sigma (optional)
-  [--custombrain=(NONE|MASK|CUSTOM)]  If PreFreeSurfer has been run before and you have created a custom
-                                      brain mask saved as "<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz", specify "MASK". 
-                                      If PreFreeSurfer has been run before and you have created custom structural images, e.g.: 
-                                      - "<subject>/T1w/T1w_acpc_dc_restore_brain.nii.gz"
-                                      - "<subject>/T1w/T1w_acpc_dc_restore.nii.gz"
-                                      - "<subject>/T1w/T2w_acpc_dc_restore_brain.nii.gz"
-                                      - "<subject>/T1w/T2w_acpc_dc_restore.nii.gz"
-                                      to be used when peforming MNI152 Atlas registration, specify "CUSTOM".
-                                      When "MASK" or "CUSTOM" is specified, only the AtlasRegistration step is run.
-                                      If the parameter is omitted or set to NONE (the default), 
-                                      standard image processing will take place.
-                                      If using "MASK" or "CUSTOM", the data still needs to be staged properly by 
-                                      running FreeSurfer and PostFreeSurfer afterwards.
-                                      NOTE: This option allows manual correction of brain images in cases when they
-                                      were not successfully processed and/or masked by the regular use of the pipelines.
-                                      Before using this option, first ensure that the pipeline arguments used were 
-                                      correct and that templates are a good match to the data.
-  [--processing-mode=(HCPStyleData|   Controls whether the HCP acquisition and processing guidelines should be treated as requirements.
-               LegacyStyleData)]      "HCPStyleData" (the default) follows the processing steps described in Glasser et al. (2013) 
-                                         and requires 'HCP-Style' data acquistion. 
-                                      "LegacyStyleData" allows additional processing functionality and use of some acquisitions
-                                         that do not conform to 'HCP-Style' expectations.
-                                         In this script, it allows not having a high-resolution T2w image.
+opts_AddMandatory '--templatemask' 'TemplateMask' 'file_path' "Brain mask MNI Template"
 
-EOF
-}
+opts_AddMandatory '--template2mmmask' 'Template2mmMask' 'file_path' "Brain mask MNI 2mm Template"
 
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
+opts_AddMandatory '--brainsize' 'BrainSize' 'size_value' "Brain size estimate in mm, 150 for humans"
 
+opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Configuration file"
+
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap magnitude file"
+
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file"
+
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file_path' "General Electric Gradient Echo Field Map file  Two volumes in one file  1. field map in deg  2. magnitude"
+
+opts_AddOptional '--echodiff' 'TE' 'delta_TE' "Delta TE in ms for field map or 'NONE' if  not used"
+
+opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a negative phase encoding direction (LR in  HCP data), set to 'NONE' if not using Spin  Echo Field Maps"
+
+opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a positive phase encoding direction (RL in  HCP data), set to 'NONE' if not using Spin  Echo Field Maps" 
+
+opts_AddMandatory '--seechospacing' 'SEEchoSpacing' 'seconds' "Effective Echo Spacing of Spin Echo Field Map,  (in seconds) or 'NONE' if not used"
+
+opts_AddMandatory '--seunwarpdir' 'SEUnwarpDir' '{x,y,NONE} OR {i,j,NONE}' "Phase encoding direction (according to the *voxel* axes)  of the spin echo field map.   (Only applies when using a spin echo field map.)"
+
+opts_AddMandatory '--t1samplespacing' 'T1wSampleSpacing' 'seconds' "T1 image sample spacing, 'NONE' if not used"
+
+opts_AddMandatory '--t2samplespacing' 'T2wSampleSpacing' 'seconds' "T2 image sample spacing, 'NONE' if not used"
+
+opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} OR {i,j,k,i-,j-,k-}' "Readout direction of the T1w and T2w images (according to the *voxel axes)  (Used with either a gradient echo field map   or a spin echo field map)"
+
+opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'file_path' "File containing gradient distortion  coefficients, Set to 'NONE' to turn off"
+
+opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and readout distortion correction method.   See below for supported values. 
+  '${NONE_METHOD_OPT}' 
+      average any repeats with no readout distortion correction
+
+  '${SPIN_ECHO_METHOD_OPT}' 
+      average any repeats and use Spin Echo Field Maps for readout
+      distortion correction
+
+  '${PHILIPS_METHOD_OPT}' 
+      average any repeats and use Philips specific Gradient Echo
+      Field Maps for readout distortion correction
+
+  '${GENERAL_ELECTRIC_METHOD_OPT}' 
+      average any repeats and use General Electric specific Gradient
+      Echo Field Maps for readout distortion correction
+
+  '${SIEMENS_METHOD_OPT}' 
+      average any repeats and use Siemens specific Gradient Echo
+      Field Maps for readout distortion correction
+
+  '${FIELDMAP_METHOD_OPT}' 
+      equivalent to '${SIEMENS_METHOD_OPT}' (preferred)
+      This option value is maintained for backward compatibility."
+
+opts_AddOptional '--topupconfig' 'TopupConfig' 'file_path' "Configuration file for topup or 'NONE' if not used"
+
+opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias Field Smoothing Sigma (optional)"
+
+opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom  brain mask saved as '<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.   If PreFreeSurfer has been run before and you have created custom structural images, e.g.:  
+- '<subject>/T1w/T1w_acpc_dc_restore_brain.nii.gz' 
+- '<subject>/T1w/T1w_acpc_dc_restore.nii.gz' 
+- '<subject>/T1w/T2w_acpc_dc_restore_brain.nii.gz' 
+- '<subject>/T1w/T2w_acpc_dc_restore.nii.gz' 
+  to be used when peforming MNI152 Atlas registration, specify 'CUSTOM'.  When 'MASK' or 'CUSTOM' is specified, only the AtlasRegistration step is run.  If the parameter is omitted or set to NONE (the default),   standard image processing will take place.  If using 'MASK' or 'CUSTOM', the data still needs to be staged properly by   running FreeSurfer and PostFreeSurfer afterwards.  NOTE: This option allows manual correction of brain images in cases when they  were not successfully processed and/or masked by the regular use of the pipelines.  Before using this option, first ensure that the pipeline arguments used were   correct and that templates are a good match to the data. " "NONE"
+
+opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls_whether_the_HCP_acquisition_and_processing_guidelines_should_be_treated_as_requirements.__LegacyStyleData' "'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image. " "HCPStyleData"
+
+opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use jacobian modulation when correcting spin echo fieldmaps for gradient distortion" "True" # NOT IN THE ORIGNAL SCRIPT
 # ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
+#  Parse Arugments
 # ------------------------------------------------------------------------------
+opts_ParseArguments "$@"
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+#display the parsed/default values
+opts_ShowValues
 
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
-
+#processing code goes here
 ${HCPPIPEDIR}/show_version
+
+
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -320,58 +307,19 @@ uname -a
 
 log_Msg "Parsing Command Line Options"
 
-StudyFolder=`opts_GetOpt1 "--path" $@`
-Subject=`opts_GetOpt1 "--subject" $@`
-T1wInputImages=`opts_GetOpt1 "--t1" $@`
-T2wInputImages=`opts_GetOpt1 "--t2" $@`
-T1wTemplate=`opts_GetOpt1 "--t1template" $@`
-T1wTemplateBrain=`opts_GetOpt1 "--t1templatebrain" $@`
-T1wTemplate2mm=`opts_GetOpt1 "--t1template2mm" $@`
-T2wTemplate=`opts_GetOpt1 "--t2template" $@`
-T2wTemplateBrain=`opts_GetOpt1 "--t2templatebrain" $@`  # This file/argument not used anywhere
-T2wTemplate2mm=`opts_GetOpt1 "--t2template2mm" $@`
-TemplateMask=`opts_GetOpt1 "--templatemask" $@`
-Template2mmMask=`opts_GetOpt1 "--template2mmmask" $@`
-BrainSize=`opts_GetOpt1 "--brainsize" $@`
-FNIRTConfig=`opts_GetOpt1 "--fnirtconfig" $@`
-MagnitudeInputName=`opts_GetOpt1 "--fmapmag" $@`
-PhaseInputName=`opts_GetOpt1 "--fmapphase" $@`
-GEB0InputName=`opts_GetOpt1 "--fmapgeneralelectric" $@`
-TE=`opts_GetOpt1 "--echodiff" $@`
-SpinEchoPhaseEncodeNegative=`opts_GetOpt1 "--SEPhaseNeg" $@`
-SpinEchoPhaseEncodePositive=`opts_GetOpt1 "--SEPhasePos" $@`
-SEEchoSpacing=`opts_GetOpt1 "--seechospacing" $@`
-SEUnwarpDir=`opts_GetOpt1 "--seunwarpdir" $@`
-T1wSampleSpacing=`opts_GetOpt1 "--t1samplespacing" $@`
-T2wSampleSpacing=`opts_GetOpt1 "--t2samplespacing" $@`
-UnwarpDir=`opts_GetOpt1 "--unwarpdir" $@`
-GradientDistortionCoeffs=`opts_GetOpt1 "--gdcoeffs" $@`
-AvgrdcSTRING=`opts_GetOpt1 "--avgrdcmethod" $@`
-TopupConfig=`opts_GetOpt1 "--topupconfig" $@`
-BiasFieldSmoothingSigma=`opts_GetOpt1 "--bfsigma" $@`
-CustomBrain=`opts_GetOpt1 "--custombrain" $@`
-ProcessingMode=`opts_GetOpt1 "--processing-mode" $@`
-
 # NOTE: UseJacobian only affects whether the spin echo field maps 
 # get intensity modulated by the gradient distortion correction warpfield 
 # (T2wToT1wDistortionCorrectAndReg -> TopupPreprocessingAll)
-UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
-UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
+UseJacobian="$(opts_StringToBool ${UseJacobian})"
 
 # Use --printcom=echo for just printing everything and not actually
 # running the commands (the default is to actually run the commands)
-RUN=`opts_GetOpt1 "--printcom" $@`
-
+RUN="" # SHORT CIRCUT RUN SO IT DOESNT DO ANYTHING 
 if [[ "$RUN" != "" ]]
 then
     log_Err_Abort "--printcom is not consistently implemented, do not rely on it"
 fi
-
-# Defaults
-UseJacobian=`opts_DefaultOpt $UseJacobian "true"`
-CustomBrain=`opts_DefaultOpt $CustomBrain "NONE"`
-ProcessingMode=`opts_DefaultOpt $ProcessingMode "HCPStyleData"`
 
 # ------------------------------------------------------------------------------
 #  Compliance check
@@ -392,41 +340,6 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 # ------------------------------------------------------------------------------
 #  Show Command Line Options
 # ------------------------------------------------------------------------------
-
-log_Msg "Finished Parsing Command Line Options"
-log_Msg "StudyFolder: ${StudyFolder}"
-log_Msg "Subject: ${Subject}"
-log_Msg "T1wInputImages: ${T1wInputImages}"
-log_Msg "T2wInputImages: ${T2wInputImages}"
-log_Msg "T1wTemplate: ${T1wTemplate}"
-log_Msg "T1wTemplateBrain: ${T1wTemplateBrain}"
-log_Msg "T1wTemplate2mm: ${T1wTemplate2mm}"
-log_Msg "T2wTemplate: ${T2wTemplate}"
-log_Msg "T2wTemplateBrain: ${T2wTemplateBrain}"  # This variable not used anywhere
-log_Msg "T2wTemplate2mm: ${T2wTemplate2mm}"
-log_Msg "TemplateMask: ${TemplateMask}"
-log_Msg "Template2mmMask: ${Template2mmMask}"
-log_Msg "BrainSize: ${BrainSize}"
-log_Msg "FNIRTConfig: ${FNIRTConfig}"
-log_Msg "MagnitudeInputName: ${MagnitudeInputName}"
-log_Msg "PhaseInputName: ${PhaseInputName}"
-log_Msg "GEB0InputName: ${GEB0InputName}"
-log_Msg "TE: ${TE}"
-log_Msg "SpinEchoPhaseEncodeNegative: ${SpinEchoPhaseEncodeNegative}"
-log_Msg "SpinEchoPhaseEncodePositive: ${SpinEchoPhaseEncodePositive}"
-log_Msg "SEEchoSpacing: ${SEEchoSpacing}"
-log_Msg "SEUnwarpDir: ${SEUnwarpDir}"
-log_Msg "T1wSampleSpacing: ${T1wSampleSpacing}"
-log_Msg "T2wSampleSpacing: ${T2wSampleSpacing}"
-log_Msg "UnwarpDir: ${UnwarpDir}"
-log_Msg "GradientDistortionCoeffs: ${GradientDistortionCoeffs}"
-log_Msg "AvgrdcSTRING: ${AvgrdcSTRING}"
-log_Msg "TopupConfig: ${TopupConfig}"
-log_Msg "BiasFieldSmoothingSigma: ${BiasFieldSmoothingSigma}"
-log_Msg "UseJacobian: ${UseJacobian}"
-log_Msg "T1wBiasCorrect: ${T1wBiasCorrect}"
-log_Msg "CustomBrain: ${CustomBrain}"
-log_Msg "ProcessingMode: ${ProcessingMode}"
 
 # Naming Conventions
 T1wImage="T1w"
@@ -476,7 +389,7 @@ if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
   mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
-log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT}
+# log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS? 
 
 # ------------------------------------------------------------------------------
 #  Do primary work

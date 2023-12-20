@@ -104,6 +104,9 @@ MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #MotionRegression=TRUE
 #MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
+MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
+MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
+
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
@@ -154,8 +157,9 @@ for Subject in "${Subjlist[@]}" ; do
         --fix-names="$fixNames" \
         --dont-fix-names="$dontFixNames" \
         --smoothing-fwhm="$SmoothingFWHM" \
-        --highpass="$HighPass" \
+        --high-pass="$HighPass" \
         --matlab-run-mode="$MatlabMode" \
-        --motion-regression="$MotionRegression"
+        --motion-regression="$MotionRegression" \
+        --myelin-target-file="$MyelinTargetFile"
 done
 

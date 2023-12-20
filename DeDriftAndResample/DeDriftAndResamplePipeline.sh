@@ -51,9 +51,9 @@ opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshnum@meshnum@...' "low r
 opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll_InitalReg'"
 opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name strings corresponding to maps that are not myelin maps, e.g. 'sulc@curvature@corrThickness@thickness'"
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
-opts_AddMandatory '--highpass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
+opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass' '--highpass'
 opts_AddMandatory '--motion-regression' 'MotionRegression' 'TRUE or FALSE' 'whether FIX should do motion regression'
-opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
+opts_AddMandatory '--myelin-target-file' 'MyelinTargetFile' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
 # optional inputs
 opts_AddOptional '--dedrift-reg-files' 'DeDriftRegFiles' 'string' "</Path/to/File/Left.sphere.surf.gii@/Path/to/File/Right.sphere.surf.gii>] Usually the spheres in global/templates/MSMAll/, defaults to ''." ''
 opts_AddOptional '--concat-reg-name' 'OutputRegName' 'MSMAll' "String corresponding to the output name for the dedrifted registration (referred to as the concatenated registration), usually MSMAll. Requires --dedrift-reg-files, defaults to ''." ''
@@ -66,7 +66,6 @@ opts_AddOptional '--multirun-fix-extract-extra-regnames' 'mrFIXExtractExtraRegNa
 opts_AddOptional '--multirun-fix-extract-volume' 'mrFIXExtractDoVol' 'TRUE or FALSE' "whether to also extract the specified MR FIX runs from the volume data, requires --multirun-fix-extract-concat-names to work, defaults to 'FALSE'." 'FALSE'
 opts_AddOptional '--fix-names' 'fixNames' 'ICA+FIXed@fMRI@Names' "@-delimited fMRIName strings corresponding to maps that will have single-run ICA+FIX reapplied to them (could be either rfMRI or tfMRI). Do not specify runs processed with MR FIX here. Previously known as --rfmri-names, defaults to ''." ''
 opts_AddOptional '--dont-fix-names' 'dontFixNames' 'not@ICA+FIXed@fMRI@Names' "@-delimited fMRIName strings corresponding to maps that will not have ICA+FIX reapplied to them (not recommended, MR FIX or at least single-run ICA+FIX is recommended for all fMRI data). Previously known as --tfmri-names, defaults to ''." ''
-opts_AddOptional '--myelin-target-file' 'MyelinTargetFile' 'string' "alternate myelin map target, relative to the --msm-all-templates folder." 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--input-reg-name' 'InRegName' 'string' "A string to enable multiple fMRI resolutions, e.g. '_1.6mm', defaults to ''." ''
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the individual myelin map as the group reference map's mean" 'YES'
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -123,8 +122,10 @@ log_Msg "After delimiter substitution, Maps: ${Maps}"
 #these elses result in empty when given the empty string, make NONE do the same
 if [[ "${MyelinMaps}" == "NONE" ]] ; then
 	MyelinMaps=""
+	MyelinMapsArray=()
 else
 	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
+	IFS=' ' read -a MyelinMapsArray <<< "${MyelinMaps}"
 fi
 log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
 
@@ -134,7 +135,7 @@ else
 	#fixNames=`echo "$fixNames" | sed s/"@"/" "/g`
 	IFS=@ read -a fixNames <<< "${fixNames}"
 fi
-log_Msg "After delimiter substitution, fixNames: ${fixNames[@]}"
+log_Msg "After delimiter substitution, fixNames: ${fixNames[*]+${fixNames[*]}}"
 
 if [[ "${dontFixNames}" == "NONE" ]] ; then
 	dontFixNames=()
@@ -142,7 +143,7 @@ else
 	#dontFixNames=`echo "$dontFixNames" | sed s/"@"/" "/g`
 	IFS=@ read -a dontFixNames <<< "${dontFixNames}"
 fi
-log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[@]}"
+log_Msg "After delimiter substitution, dontFixNames: ${dontFixNames[*]+${dontFixNames[*]}}"
 
 if [[ "${mrFIXNames}" == "NONE" ]] ; then
 	mrFIXNames=()
@@ -152,7 +153,7 @@ else
 	#two-level list, % and @, parse only one stage here
 	IFS=% read -a mrFIXNames <<< "${mrFIXNames}"
 fi
-log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[@]}"
+log_Msg "After delimiter substitution, mrFIXNames: ${mrFIXNames[*]+${mrFIXNames[*]}}"
 
 if [[ "$mrFIXConcatNames" == "NONE" ]]
 then
@@ -160,7 +161,7 @@ then
 else
 	IFS=@ read -a mrFIXConcatNames <<< "$mrFIXConcatNames"
 fi
-log_Msg "After delimiter substitution, mrFIXConcatNames: ${mrFIXConcatNames[@]}"
+log_Msg "After delimiter substitution, mrFIXConcatNames: ${mrFIXConcatNames[*]+${mrFIXConcatNames[*]}}"
 
 if (( ${#mrFIXNames[@]} != ${#mrFIXConcatNames[@]} ))
 then
@@ -173,7 +174,7 @@ else
 	#two-level list, % and @, parse only one stage here
 	IFS=% read -a mrFIXExtractNamesArr <<< "${mrFIXExtractNames}"
 fi
-log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[@]}"
+log_Msg "After delimiter substitution, mrFIXExtractNamesArr: ${mrFIXExtractNamesArr[*]+${mrFIXExtractNamesArr[*]}}"
 
 if [[ "$mrFIXExtractConcatNames" == "NONE" ]]
 then
@@ -181,7 +182,7 @@ then
 else
 	IFS=@ read -a mrFIXExtractConcatNamesArr <<< "$mrFIXExtractConcatNames"
 fi
-log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[@]}"
+log_Msg "After delimiter substitution, mrFIXExtractConcatNamesArr: ${mrFIXExtractConcatNamesArr[*]+${mrFIXExtractConcatNamesArr[*]}}"
 
 if (( ${#mrFIXExtractNamesArr[@]} != ${#mrFIXExtractConcatNamesArr[@]} ))
 then
@@ -199,7 +200,7 @@ then
 else
 	IFS=@ read -a extractExtraRegNamesArr <<< "$mrFIXExtractExtraRegNames"
 fi
-log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[@]}"
+log_Msg "After delimiter substitution, extractExtraRegNamesArr: ${extractExtraRegNamesArr[*]+${extractExtraRegNamesArr[*]}}"
 
 if ((mrFIXExtractDoVolBool && ${#mrFIXExtractConcatNamesArr[@]} == 0))
 then
@@ -408,74 +409,40 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 
 	# Resample scalar maps and apply new bias field
 	log_Msg "Resample scalar maps and apply new bias field"
-
-	for Map in ${Maps} ${MyelinMaps} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
+	
+	BiasFieldComputed=false
+	MyelinMapsToUse=""
+	# myelin map only loop
+	for MyelinMap in ${MyelinMaps} ; do
+		if [ "$BiasFieldComputed" = false ]; then
+			# ----- Begin moved statements -----
+			# Recompute Myelin Map Bias Field Based on Better Registration
+			log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
+			log_Debug_Msg "Point 1.1"
+			
+			# Myelin Map BC using low res
+			"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
+				--study-folder="$StudyFolder" \
+				--subject="$Subject" \
+				--registration-name="$OutputRegName" \
+				--use-ind-mean="$UseIndMean" \
+				--low-res-mesh="$LowResMesh" \
+				--myelin-target-file="$MyelinTargetFile" \
+				--map="$MyelinMap"
+			# ----- End moved statements -----
+			# bias field is computed in the module MyelinMap_BC.sh
+			BiasFieldComputed=true
+		else
+			# bias field in native space is already generated
+			# BC the other types of given myelin maps
+			${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${MyelinMap}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
+		fi
+		MyelinMapsToUse+="${MyelinMap}_BC "
+	done
+	
+	log_Debug_Msg "Point 2.0"
+	for Map in ${Maps} ${MyelinMapsToUse} SphericalDistortion ArealDistortion EdgeDistortion StrainJ StrainR ; do
 		log_Msg "Map: ${Map}"
-
-		for MapMap in ${MyelinMaps} ; do
-			log_Msg "MapMap: ${MapMap}"
-
-			if [ ${MapMap} = ${Map} ] ; then
-
-				# ----- Begin moved statements -----
-
-				# Recompute Myelin Map Bias Field Based on Better Registration
-				log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
-
-				cifti_in=${NativeFolder}/${Subject}.MyelinMap.native.dscalar.nii
-				log_File_Must_Exist "${cifti_in}" # 1
-
-				cifti_template=${DownSampleFolder}/${Subject}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
-				log_File_Must_Exist "${cifti_template}" # 2
-
-				cifti_out=${DownSampleFolder}/${Subject}.MyelinMap_${OutputRegName}.${LowResMesh}k_fs_LR.dscalar.nii
-
-				left_spheres_current_sphere=${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii
-				log_File_Must_Exist "${left_spheres_current_sphere}" # 3
-
-				left_spheres_new_sphere=${DownSampleFolder}/${Subject}.L.sphere.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${left_spheres_new_sphere}" # 4
-
-				left_area_surfs_current_area=${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii
-				log_File_Must_Exist "${left_area_surfs_current_area}" # 5
-
-				left_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${left_area_surfs_new_area}" # 6 - This is the one that doesn't exist
-
-				right_spheres_current_sphere=${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii
-				log_File_Must_Exist "${right_spheres_current_sphere}"
-
-				right_spheres_new_sphere=${DownSampleFolder}/${Subject}.R.sphere.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${right_spheres_new_sphere}"
-
-				right_area_surfs_current_area=${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii
-				log_File_Must_Exist "${right_area_surfs_current_area}"
-
-				right_area_surfs_new_area=${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii
-				log_File_Must_Exist "${right_area_surfs_new_area}"
-
-				log_Debug_Msg "Point 1.1"
-
-				${Caret7_Command} -cifti-resample ${cifti_in} COLUMN ${cifti_template} COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${cifti_out} -surface-postdilate 40 -left-spheres ${left_spheres_current_sphere} ${left_spheres_new_sphere} -left-area-surfs ${left_area_surfs_current_area} ${left_area_surfs_new_area} -right-spheres ${right_spheres_current_sphere} ${right_spheres_new_sphere} -right-area-surfs ${right_area_surfs_current_area} ${right_area_surfs_new_area}
-
-				log_Debug_Msg "Point 1.2"
-				# Myelin Map BC using 32k
-				"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
-					--study-folder="$StudyFolder" \
-					--subject="$Subject" \
-					--registration-name="$RegName" \
-					--msm-all-templates="$MSMAllTemplates" \
-					--use-ind-mean="$UseIndMean" \
-					--low-res-mesh="$LowResMesh" \
-					--myelin-target-file="$MyelinTargetFile"
-				# ----- End moved statements -----
-				Map="${Map}_BC"
-
-				log_Debug_Msg "Point 1.3"
-			fi
-		done
-
-		log_Debug_Msg "Point 2.0"
 
 		if [[ ${Map} = "ArealDistortion" || ${Map} = "EdgeDistortion" || ${Map} = "StrainJ" || ${Map} = "StrainR" || ${Map} = "MyelinMap_BC" || ${Map} = "SmoothedMyelinMap_BC" ]] ; then
 			NativeMap="${Map}_${OutputRegName}"
@@ -487,21 +454,20 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 
 		if [ ! ${Mesh} = ${HighResMesh} ] ; then
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii
-			for MapMap in ${Maps} ${MyelinMaps} ; do
-				if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
+			for MapMap in ${Maps} ${MyelinMapsToUse} ; do
+				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 					${Caret7_Command} -add-to-spec-file ${DownSampleT1wFolder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 				fi
 			done
 		else
 			${Caret7_Command} -cifti-resample ${NativeFolder}/${Subject}.${NativeMap}.native.dscalar.nii COLUMN ${Folder}/${Subject}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolder}/${Subject}.L.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeT1wFolder}/${Subject}.L.midthickness.native.surf.gii ${Folder}/${Subject}.L.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolder}/${Subject}.R.sphere.${OutputRegName}.native.surf.gii ${Folder}/${Subject}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeT1wFolder}/${Subject}.R.midthickness.native.surf.gii ${Folder}/${Subject}.R.midthickness_${OutputRegName}.${Mesh}k_fs_LR.surf.gii   
-			for MapMap in ${Maps} ${MyelinMaps} ; do
-				if [[ ${MapMap} = ${Map} || ${MapMap}_BC = ${Map} ]] ; then
+			for MapMap in ${Maps} ${MyelinMapsToUse} ; do
+				if [[ ${MapMap} = ${Map} ]] ; then
 					${Caret7_Command} -add-to-spec-file ${Folder}/${Subject}.${OutputRegName}.${Mesh}k_fs_LR.wb.spec INVALID ${Folder}/${Subject}.${Map}_${OutputRegName}.${Mesh}k_fs_LR.dscalar.nii
 				fi
 			done
 		fi
-
 		log_Debug_Msg "Point 4.0"
 	done
 	log_Debug_Msg "Point 5.0"
@@ -526,7 +492,7 @@ LowResMesh=`echo ${LowResMeshes} | cut -d " " -f 1`
 
 # Resample (and resmooth) TS from Native 
 log_Msg "Resample (and resmooth) TS from Native"
-for fMRIName in "${fixNames[@]}" "${dontFixNames[@]}" "${mrFIXNamesAll[@]}" ; do
+for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ${dontFixNames[@]+"${dontFixNames[@]}"} ${mrFIXNamesAll[@]+"${mrFIXNamesAll[@]}"} ; do
 	log_Msg "fMRIName: ${fMRIName}"
 	cp ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas${InRegName}.dtseries.nii ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii
 	for Hemisphere in L R ; do
@@ -542,7 +508,7 @@ for fMRIName in "${fixNames[@]}" "${dontFixNames[@]}" "${mrFIXNamesAll[@]}" ; do
 		${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
 		${Caret7_Command} -metric-dilate ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -nearest
 		${Caret7_Command} -metric-mask ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
-		Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+		Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 		${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${Sigma} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
 		${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
 	done
@@ -550,8 +516,8 @@ done
 
 # ReApply FIX Cleanup
 log_Msg "ReApply FIX Cleanup"
-log_Msg "fixNames: ${fixNames[@]}"
-for fMRIName in "${fixNames[@]}" ; do
+log_Msg "fixNames: ${fixNames[*]+${fixNames[*]}}"
+for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ; do
 	log_Msg "fMRIName: ${fMRIName}"
 	reapply_fix_cmd=("${HCPPIPEDIR}/ICAFIX/ReApplyFixPipeline.sh" --path="${StudyFolder}" --subject="${Subject}" --fmri-name="${fMRIName}" --high-pass="${HighPass}" --reg-name="${OutputRegName}" --matlab-run-mode="${MatlabRunMode}" --motion-regression="${MotionRegression}")
 	log_Msg "reapply_fix_cmd: ${reapply_fix_cmd[*]}"
@@ -569,7 +535,7 @@ do
 	log_Msg "reapply_mr_fix_cmd: ${reapply_mr_fix_cmd[*]}"
 	"${reapply_mr_fix_cmd[@]}"
 
-	for regname in "$OutputRegName" "${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}"
+	for regname in "$OutputRegName" ${extractExtraRegNamesArr[@]+"${extractExtraRegNamesArr[@]}"}
 	do
 		#MSMSulc special naming convention
 		if [[ "$regname" == "MSMSulc" ]]

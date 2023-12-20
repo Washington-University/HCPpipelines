@@ -127,6 +127,13 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             [iq, A, W, normicasig, sR] = icasso('bootstrap', TCSFullConcat.cdata, iterations, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', sICAdim, 'numOfIC', tICAdim, 'maxNumIterations', 1000); %x4
         end
 
+        % normicasig has stdev = 1, we want to multiply the (approximate) amplitudes from A into it
+        % but, we also want to pretend that the input to tICA was normalized, so:
+        % tICAinput = A * normicasig
+        % pretendtICAinput = diag(1 / std(tICAinput)) * A * normicasig
+        % ...assume normicasig doesn't change...
+        % pretendA = diag(1 / std(tICAinput)) * A = A ./ repmat(std(tICAinput), ...)
+        % then use std() to extract the approximate amplitudes from pretendA...sqrt(mean(x .^ 2)) might be better, but this was how we did it originally, so...
         icasig = normicasig .* repmat(std(A ./ repmat(sICAtcsvars, 1, size(A, 2)))', 1, size(TCSFullConcat.cdata, 2)); %Unormalize the icasig assuming sICAtcs with std = 1 (approximately undo the original variance normalization)
         
 
@@ -140,26 +147,31 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         tICAVolMaps = sICAVolMaps;
         tICAVolMaps.cdata = sICAVolMaps.cdata * (tICAmix ./ repmat(mean(sICAtcsvars), size(A, 1), size(A, 2))); %voxels X spatial ica * spatial ica X temporal ica (undo overall effect of variance normalization on mixing matrix)
 
-        %pos = max(tICAMaps.cdata) > abs(min(tICAMaps.cdata));
-        neg = max(tICAMaps.cdata) < abs(min(tICAMaps.cdata));
-        %pos = ~neg;
-        %all = single(pos) - neg; %TSC: don't name a variable 'all', it is a special value to 'clear'
+        if ~strcmp(tICAmode,'USE')
+            %pos = max(tICAMaps.cdata) > abs(min(tICAMaps.cdata));
+            neg = max(tICAMaps.cdata) < abs(min(tICAMaps.cdata));
+            %pos = ~neg;
+            %all = single(pos) - neg; %TSC: don't name a variable 'all', it is a special value to 'clear'
 
-        negList = find(neg);
-        tICAmix(:, negList) = -tICAmix(:, negList);
-        %tICAunmix(negList, :) = -tICAunmix(negList, :);
-        tICAtcs.cdata(:, negList) = -tICAtcs.cdata(:, negList);
-        tICAMaps.cdata(:, negList) = -tICAMaps.cdata(:, negList);
-        tICAVolMaps.cdata(:, negList) = -tICAVolMaps.cdata(:, negList);
+            negList = find(neg);
+            tICAmix(:, negList) = -tICAmix(:, negList);
+            %tICAunmix(negList, :) = -tICAunmix(negList, :);
+            tICAtcs.cdata(:, negList) = -tICAtcs.cdata(:, negList);
+            tICAMaps.cdata(:, negList) = -tICAMaps.cdata(:, negList);
+            tICAVolMaps.cdata(:, negList) = -tICAVolMaps.cdata(:, negList);
         
-        %tICAmix = tICAmix .* repmat(sign(all), size(tICAmix, 1), 1);
-        %%tICAunmix = (tICAunmix' .* repmat(sign(all), size(tICAmix, 1), 1))';
-        %tICAtcs.cdata = tICAtcs.cdata .* repmat(sign(all), size(tICAtcs.cdata, 1), 1);
-        %tICAMaps.cdata = tICAMaps.cdata .* repmat(sign(all), size(tICAMaps.cdata, 1), 1);
-        %tICAVolMaps.cdata = tICAVolMaps.cdata .* repmat(sign(all), size(tICAVolMaps.cdata, 1), 1);
+            %tICAmix = tICAmix .* repmat(sign(all), size(tICAmix, 1), 1);
+            %%tICAunmix = (tICAunmix' .* repmat(sign(all), size(tICAmix, 1), 1))';
+            %tICAtcs.cdata = tICAtcs.cdata .* repmat(sign(all), size(tICAtcs.cdata, 1), 1);
+            %tICAMaps.cdata = tICAMaps.cdata .* repmat(sign(all), size(tICAMaps.cdata, 1), 1);
+            %tICAVolMaps.cdata = tICAVolMaps.cdata .* repmat(sign(all), size(tICAVolMaps.cdata, 1), 1);
 
-        [TSTDs TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
-
+           [TSTDs TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
+        else
+            TSTDs = std(tICAtcs.cdata, [], 1); %unnormalized tICA temporal standard deviations
+            TIs = [1:1:length(TSTDs)];
+        end
+        
         Is = TIs;
 
         tICAPercentVariances = (((TSTDs .^ 2) / sum(TSTDs .^ 2)) * 100)';

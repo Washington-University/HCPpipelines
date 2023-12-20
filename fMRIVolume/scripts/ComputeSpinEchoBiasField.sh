@@ -7,91 +7,50 @@
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
+set -eu
 
-script_name=$(basename "${0}")
-
-show_usage() {
-	cat <<EOF
-
-${script_name}
-
-Usage: ${script_name} [options]
-
-  --workingdir=<working dir>
-  --subjectfolder=<subject processing folder>
-  --fmriname=<name of fmri run>
-  --corticallut=<FreeSurfer cortical label table>
-  --subcorticallut=<FreeSurfer subcortical label table>
-  --smoothingfwhm=<smoothing FWHM (in mm)>
-  --inputdir=<input dir>
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-opts_ShowVersionIfRequested $@
+opts_SetScriptDescription "Tool for computing Spin Echo Bias Field"
 
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working dir'
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+opts_AddMandatory '--subjectfolder' 'SubjectFolder' 'path' "subject processing folder"
 
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
+opts_AddMandatory '--fmriname' 'fMRIName' 'name' "name of fmri run"
 
-################################################ SUPPORT FUNCTIONS ##################################################
+opts_AddMandatory '--corticallut' 'CorticalLUT' 'table' "FreeSurfer cortical label table"
 
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in "$@" ; do
-	if [ `echo "$fn" | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo "$fn" | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
+opts_AddMandatory '--subcorticallut' 'SubCorticalLUT' 'table' "FreeSurfer subcortical label table"
 
-################################################## OPTION PARSING #####################################################
+opts_AddMandatory '--smoothingfwhm' 'SmoothingFWHM' 'value (mm)' "smoothing FWHM (in mm)"
 
-WD=`getopt1 "--workingdir" "$@"`
-SubjectFolder=`getopt1 "--subjectfolder" "$@"` #replaces StudyFolder and Subject
-fMRIName=`getopt1 "--fmriname" "$@"`
-CorticalLUT=`getopt1 "--corticallut" "$@"`
-SubCorticalLUT=`getopt1 "--subcorticallut" "$@"`
-SmoothingFWHM=`getopt1 "--smoothingfwhm" "$@"`
-InputDir=`getopt1 "--inputdir" "$@"`
+opts_AddMandatory '--inputdir' 'InputDir' 'path' "input dir"
 
-if [[ -n $HCPPIPEDEBUG ]]
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
 then
-    set -x
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+#display the parsed/default values
+opts_ShowValues
+
+log_Check_Env_Var FSLDIR
 
 ########################################## DO WORK ##########################################
 
-Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command
 
 T1wFolder="${SubjectFolder}/T1w" #brainmask, wmparc, ribbon

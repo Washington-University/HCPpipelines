@@ -63,6 +63,7 @@ opts_AddMandatory '--input-registration-name' 'InputRegName' 'MSMAll' "the regis
 opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg'"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), like '32' for 32k_fs_LR"
+opts_AddMandatory '--myelin-target-file' 'MyelinTarget' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
 #MSMAll inputs
 opts_AddOptional '--module-name' 'ModuleName' 'string' "name of script or code used to run registration, defaults to 'MSMAll.sh'" 'MSMAll.sh'
 opts_AddOptional '--iteration-modes' 'IterationModes' 'string' "Specifieds what modalities:
@@ -82,7 +83,6 @@ opts_AddOptional '--vn' 'VN' 'YES/NO' "whether to perform variance normalization
 opts_AddOptional '--rerun-if-exists' 'ReRunIfExists' 'YES/NO' "whether to re-run even if output already exists, defaults to 'YES'" 'YES'
 opts_AddOptional '--registration-configure-path' 'RegConfPath' 'string' "it can be either the relative path where the registration configuration exists in 'MSMCONFIGDIR', or an absolute path" 'MSMAllStrainFinalconf1to1_1to3'
 opts_AddOptional '--registration-configure-override-variables' 'RegConfOverrideVars' 'string' "the registration configure variables to override instead of using the configuration file. Please use quotes, and space between parameters is not recommended. e.g. 'REGNUMBER=1,REGPOWER=3', defaults to 'NONE'" 'NONE'
-opts_AddOptional '--myelin-target-file' 'MyelinTarget' 'string' "alternate myelin map target, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'
 opts_AddOptional '--rsn-template-file' 'RSNTemplates' 'string' "alternate rsn template file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.nii'
 opts_AddOptional '--rsn-weights-file' 'RSNWeights' 'string' "alternate rsn weights file, relative to the --msm-all-templates folder" 'rfMRI_REST_Atlas_MSMAll_2_d41_WRN_DeDrift_hp2000_clean_PCA.ica_dREPLACEDIM_ROW_vn/Weights.txt'
 opts_AddOptional '--topography-roi-file' 'TopographyROIs' 'string' "alternate topography roi file, relative to the --msm-all-templates folder" 'Q1-Q6_RelatedParcellation210.atlas_Topographic_ROIs.32k_fs_LR.dscalar.nii'
@@ -124,7 +124,6 @@ then
 fi
 log_Msg "RegConfPath: ${RegConfPath}"
 # MSMAll templates defaults
-MyelinTarget="${MSMAllTemplates}/${MyelinTarget}"
 log_File_Must_Exist "${MyelinTarget}"
 RSNTemplates="${MSMAllTemplates}/${RSNTemplates}"
 log_Msg "RSNTemplates: ${RSNTemplates}"

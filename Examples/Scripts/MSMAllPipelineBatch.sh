@@ -96,6 +96,7 @@ HighPass="0"
 #Name to reflect high pass setting
 fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
+MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
 RegName="MSMAll_InitalReg"
 HighResMesh="164"
 LowResMesh="32"
@@ -126,6 +127,7 @@ for Subject in $Subjlist ; do
         --high-pass="$HighPass" \
         --fmri-proc-string="$fMRIProcSTRING" \
         --msm-all-templates="$MSMAllTemplates" \
+        --myelin-target-file="$MyelinTargetFile" \
         --output-registration-name="$RegName" \
         --high-res-mesh="$HighResMesh" \
         --low-res-mesh="$LowResMesh" \

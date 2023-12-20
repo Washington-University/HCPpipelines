@@ -92,33 +92,24 @@ tICAspectranorm=ciftiopen([OutputFolder '/tICA_Spectra_norm_' num2str(tICAdim) '
 % group norm surface map
 tICAMapsGroupNorm=tICAMaps;
 tICAMapsGroupNorm.cdata=(tICAMapsGroupNorm.cdata-mean(reshape(tICAMapsGroupNorm.cdata,[],1)))/std(reshape(tICAMapsGroupNorm.cdata,[],1));
-if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'])
-    ciftisave(tICAMapsGroupNorm,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
-end
+ciftisave(tICAMapsGroupNorm,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
+
 % group norm volume map
 tICAVolMapsGroupNorm=tICAVolMaps;
 tICAVolMapsGroupNorm.cdata=(tICAVolMapsGroupNorm.cdata-mean(reshape(tICAVolMapsGroupNorm.cdata,[],1)))/std(reshape(tICAVolMapsGroupNorm.cdata,[],1));
-if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'])
-    ciftisave(tICAVolMapsGroupNorm,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
-end
+ciftisave(tICAVolMapsGroupNorm,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii'],wbcommand);
+
 % convert to nifti space
-if ~isfile([OutputFolder '/volmap.nii.gz'])
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp.nii.gz']);
-    unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap.nii.gz']);
-end
-if ~isfile([OutputFolder '/volmap_GroupNorm.nii.gz'])
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp2.nii.gz']);
-    unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp2.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap_GroupNorm.nii.gz']);
-end
+unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp.nii.gz']);
+unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap.nii.gz']);
+unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_GroupNorm.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmap_tmp2.nii.gz']);
+unix(['wb_command -volume-resample ' OutputFolder '/volmap_tmp2.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmap_GroupNorm.nii.gz']);
+
 tICAVolNifti=niftiread([OutputFolder '/volmap.nii.gz']);
 tICAVolNiftiGroupNorm=niftiread([OutputFolder '/volmap_GroupNorm.nii.gz']);
+unix(['rm ' OutputFolder '/volmap_tmp.nii.gz'])
+unix(['rm ' OutputFolder '/volmap_tmp2.nii.gz'])
 
-if isfile([OutputFolder '/volmap_tmp.nii.gz'])
-    unix(['rm ' OutputFolder '/volmap_tmp.nii.gz'])
-end
-if isfile([OutputFolder '/volmap_tmp2.nii.gz'])
-    unix(['rm ' OutputFolder '/volmap_tmp2.nii.gz'])
-end
 % additional information
 Stats=load([OutputFolder '/stats_' num2str(tICAdim) '_' nonlinear '.wb_annsub.csv']);
 Mix=load([OutputFolder '/melodic_mix_' num2str(tICAdim) '_' nonlinear]);
@@ -317,92 +308,67 @@ tICAspectra_SS.cdata=tICAspectra.cdata*0;
 %Find strongest individual subjects for components
 [~, I]=max(TCSVARS);
 for i=1:size(TCSVARS,2)
-    %if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii']) && ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
-        %Subjlist{I(i)}
-        SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
-        tICAMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
-        tICAVolMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
-        tICAMaps_SS.cdata(:,i)=tICAMaps_sub.cdata(:,i);
-        try
-            tICAVolMaps_SS.cdata(:,i)=tICAVolMaps_sub.cdata(:,i);
-        catch
-           [StudyFolder '/' Subjlist{I(i)}]
-           tICAFeaturesProcString
-        end
-        tICAMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
-        tICAVolMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
-        tICAMapsZ_SS.cdata(:,i)=tICAMapsZ_sub.cdata(:,i);
-        tICAVolMapsZ_SS.cdata(:,i)=tICAVolMapsZ_sub.cdata(:,i);
-        tICATCS_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
-        tICASpectra_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
-        tICAtcs_SS.cdata(i,1:length(tICATCS_sub.cdata(i,:)))=tICATCS_sub.cdata(i,:);
-        tICAspectra_SS.cdata(i,1:length(tICASpectra_sub.cdata(i,:)))=tICASpectra_sub.cdata(i,:);
+    %Subjlist{I(i)}
+    SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
+    tICAMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
+    tICAVolMaps_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
+    tICAMaps_SS.cdata(:,i)=tICAMaps_sub.cdata(:,i);
+    try
+        tICAVolMaps_SS.cdata(:,i)=tICAVolMaps_sub.cdata(:,i);
+    catch
+       [StudyFolder '/' Subjlist{I(i)}]
+       tICAFeaturesProcString
+    end
+    tICAMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
+    tICAVolMapsZ_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
+    tICAMapsZ_SS.cdata(:,i)=tICAMapsZ_sub.cdata(:,i);
+    tICAVolMapsZ_SS.cdata(:,i)=tICAVolMapsZ_sub.cdata(:,i);
+    tICATCS_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
+    tICASpectra_sub=ciftiopen([SubjFolderlist '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
+    tICAtcs_SS.cdata(i,1:length(tICATCS_sub.cdata(i,:)))=tICATCS_sub.cdata(i,:);
+    tICAspectra_SS.cdata(i,1:length(tICASpectra_sub.cdata(i,:)))=tICASpectra_sub.cdata(i,:);
 
-        tICASingleComponentSpaceXTime=zeros(size(CorticalROIs,2),length(tICATCS_sub.cdata),size(tICATCS_sub.cdata,1),'single');
-        for j=1:size(tICAMaps.cdata,2)
-            tICASingleComponentSpaceXTime(:,:,j)=CorticalROIs'*(tICAMaps_sub.cdata(:,j)*tICATCS_sub.cdata(j,:));
-        end
-        rtICASingleComponentSpaceXTime=[];
+    tICASingleComponentSpaceXTime=zeros(size(CorticalROIs,2),length(tICATCS_sub.cdata),size(tICATCS_sub.cdata,1),'single');
+    for j=1:size(tICAMaps.cdata,2)
+        tICASingleComponentSpaceXTime(:,:,j)=CorticalROIs'*(tICAMaps_sub.cdata(:,j)*tICATCS_sub.cdata(j,:));
+    end
+    rtICASingleComponentSpaceXTime=[];
 
-        for k=1:size(tICAMaps.cdata,2)%tICA_dim
-        c=1;
-        for j=ParcelReorder
-            rtICASingleComponentSpaceXTime(c:c-1+round((a(j)/min(a))),:,k)=repmat(tICASingleComponentSpaceXTime(j,:,k),round((a(j)/min(a))),1);
-            c=c+round((a(j)/min(a)));
-        end
-        end
+    for k=1:size(tICAMaps.cdata,2)%tICA_dim
+    c=1;
+    for j=ParcelReorder
+        rtICASingleComponentSpaceXTime(c:c-1+round((a(j)/min(a))),:,k)=repmat(tICASingleComponentSpaceXTime(j,:,k),round((a(j)/min(a))),1);
+        c=c+round((a(j)/min(a)));
+    end
+    end
 
-        temp=tICAtcs_SS;
-        temp.cdata=zeros(size(rtICASingleComponentSpaceXTime,1),size(tICAtcs_SS.cdata,2),'single');
-        temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(rtICASingleComponentSpaceXTime(:,:,i))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
-        if ~isfile([OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'])
-            ciftisavereset(temp,[OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
-        end
-        temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(sum(rtICASingleComponentSpaceXTime(:,:,:),3))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
-        if ~isfile([OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'])
-            ciftisavereset(temp,[OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
-        end
-    %end
+    temp=tICAtcs_SS;
+    temp.cdata=zeros(size(rtICASingleComponentSpaceXTime,1),size(tICAtcs_SS.cdata,2),'single');
+    temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(rtICASingleComponentSpaceXTime(:,:,i))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
+    ciftisavereset(temp,[OutputFolder '/tICA' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
+    temp.cdata(:,1:size(rtICASingleComponentSpaceXTime,2))=squeeze(sum(rtICASingleComponentSpaceXTime(:,:,:),3))./repmat(std(sum(rtICASingleComponentSpaceXTime,3),[],2),1,size(rtICASingleComponentSpaceXTime,2));
+    ciftisavereset(temp,[OutputFolder '/All' num2str(i,'%02.f') '_SS.sdseries.nii'],'wb_command');
 end
-if ~isfile([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
-end
-if ~isfile([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAVolMaps_SS,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
-end
-if ~isfile([OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
-    ciftisave(tICAMapsZ_SS,[OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
-end
-if ~isfile([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii'])
+ciftisave(tICAMaps_SS,[OutputFolder '/tICA_Maps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
+ciftisave(tICAVolMaps_SS,[OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
+ciftisave(tICAMapsZ_SS,[OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 ciftisave(tICAVolMapsZ_SS,[OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'],wbcommand);
 unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_' nonlinear '_SS.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
 unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ_ss.nii.gz']);
-end
-if isfile([OutputFolder '/volmapZ_tmp.nii.gz'])
-    unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
-end
-if ~isfile([OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'])
-    ciftisave(tICAtcs_SS,[OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
-end
-if ~isfile([OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'])
-    ciftisave(tICAspectra_SS,[OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
-end
+unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
+ciftisave(tICAtcs_SS,[OutputFolder '/tICA_TCS_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
+ciftisave(tICAspectra_SS,[OutputFolder '/tICA_Spectra_' num2str(tICAdim) '_' nonlinear '_SS.sdseries.nii'],wbcommand);
 
 tICAMapsZ_SS=ciftiopen([OutputFolder '/tICA_MapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'], wbcommand);
 tICAVolMapsZ_SS=ciftiopen([OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii'], wbcommand);
 
 % convert to nifti space
-if ~isfile([OutputFolder '/volmapZ.nii.gz'])
-    unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
-    unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ.nii.gz']);
-end
+unix(['wb_command -cifti-separate ' OutputFolder '/tICA_VolMapsZ_' num2str(tICAdim) '_tanhF_SS.dscalar.nii COLUMN -volume-all ' OutputFolder '/volmapZ_tmp.nii.gz']);
+unix(['wb_command -volume-resample ' OutputFolder '/volmapZ_tmp.nii.gz ' NiftiTemplateFile ' CUBIC ' OutputFolder '/volmapZ.nii.gz']);
 
 tICAVolSSZNiftiOrig=niftiread([OutputFolder '/volmapZ.nii.gz']);
 tICAVolSSZNifti=reshape(tICAVolSSZNiftiOrig,[],size(tICAVolSSZNiftiOrig,4));
-
-if isfile([OutputFolder '/volmapZ_tmp.nii.gz'])
-    unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
-end
+unix(['rm ' OutputFolder '/volmapZ_tmp.nii.gz'])
 
 disp('generateing features...')
 num_space_metrics=4;
@@ -706,16 +672,8 @@ other_features.GSCOVS=GSCOVS;
 
 if strcmp(ToSave, 'YES')
     disp('saving features...')
-    c=clock;
-    clock_string=[];
-    for i=1:5 % to minute only (5)
-        clock_string=[clock_string '_' num2str(c(i))];
-    end
-    writetable(features, [OutputFolder '/features' clock_string '.csv'], 'WriteRowNames',true);
-    % overwrite the current feature files
-    unix(['cp ' OutputFolder '/features' clock_string '.csv ' OutputFolder '/features.csv']);
-    save([OutputFolder '/other_features' clock_string '.mat'], 'other_features', '-v7.3');
-    unix(['cp ' OutputFolder '/other_features' clock_string '.mat ' OutputFolder '/other_features.mat']);
+    writetable(features, [OutputFolder '/features.csv'], 'WriteRowNames',true);
+    save([OutputFolder '/other_features.mat'], 'other_features', '-v7.3');
 end
 disp('done!')
 end

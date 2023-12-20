@@ -4,53 +4,47 @@
 #  installed versions of: FSL, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, PATH for gradient_unwarp.py
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set
-# ------------------------------------------------------------------------------
+set -eu
 
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "$(basename ${0}): ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-else
-	echo "$(basename ${0}): HCPPIPEDIR: ${HCPPIPEDIR}"
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-if [ -z "${FSLDIR}" ]; then
-  echo "$(basename ${0}): ABORTING: FSLDIR environment variable must be set"
-  exit 1
-else
-  echo "$(basename ${0}): FSLDIR: ${FSLDIR}"
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+
+
+opts_SetScriptDescription "Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
+
+opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)"
+
+opts_AddMandatory '--coeffs' 'InputCoefficients' 'path' "Siemens gradient coefficient file"
+
+opts_AddMandatory '--in' 'InputFile' 'image' "input image"
+
+opts_AddMandatory '--out' 'OutputFile' 'image' "output image"
+
+opts_AddMandatory '--owarp' 'OutputTransform' 'warpfield' "output warp"
+
+#Optional Arguments
+opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-################################################ SUPPORT FUNCTIONS ##################################################
+#display the parsed/default values
+opts_ShowValues
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "$(basename $0): Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
-  echo " "
-  echo "Usage: $(basename $0) [--workingdir=<working dir>]"
-  echo "              --coeffs=<Siemens gradient coefficient file>"
-  echo "              --in=<input image>"
-  echo "              --out=<output image>"
-  echo "              --owarp=<output warp>"
-}
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
+log_Check_Env_Var FSLDIR
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -63,17 +57,6 @@ defaultopt() {
 
 ################################################## OPTION PARSING #####################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 5 ] ; then Usage; exit 1; fi
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-InputCoefficients=`getopt1 "--coeffs" $@`  # "$2"
-InputFile=`getopt1 "--in" $@`  # "$3"
-OutputFile=`getopt1 "--out" $@`  # "$4"
-OutputTransform=`getopt1 "--owarp" $@`  # "$5"
 
 # default parameters
 OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
@@ -96,7 +79,7 @@ echo " " >> $WD/log.txt
 ########################################## DO WORK ########################################## 
 
 # Extract first volume and run gradient distortion correction on this (all others follow suit as scanner coordinate system is unchanged, even with subject motion)
-${FSLDIR}/bin/fslroi ${InputFile} $WD/${BaseName}_vol1.nii.gz 0 1
+${FSLDIR}/bin/fslroi "$InputFile" $WD/${BaseName}_vol1.nii.gz 0 1
 
 # move (temporarily) into the working directory as gradient_unwarp.py outputs some files directly into pwd
 InputCoeffs=`${FSLDIR}/bin/fsl_abspath $InputCoefficients`

@@ -403,7 +403,7 @@ if $runDense ; then
 		# total level of smoothing, the additional spatial smoothing added here must be reduced
 		# by the original smoothing applied earlier
 		AdditionalSmoothingFWHM=`echo "sqrt(( $FinalSmoothingFWHM ^ 2 ) - ( $OriginalSmoothingFWHM ^ 2 ))" | bc -l`
-		AdditionalSigma=`echo "$AdditionalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+		AdditionalSigma=`echo "$AdditionalSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 		log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: AdditionalSmoothingFWHM: ${AdditionalSmoothingFWHM}"
 		log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: AdditionalSigma: ${AdditionalSigma}"
 		log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: Applying additional surface smoothing to CIFTI Dense data"
@@ -431,7 +431,7 @@ if $runVolume ; then
 
 	#Add edge-constrained volume smoothing
 	log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_NIFTI: Add edge-constrained volume smoothing"
-	FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+	FinalSmoothingSigma=`echo "$FinalSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 	InputfMRI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}
 	InputSBRef=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef
 	fslmaths ${InputSBRef} -bin ${FEATDir}/mask_orig
@@ -634,13 +634,16 @@ if $runVolume ; then
 	rm -f ${SmoothedDilatedResultFile}*.nii.gz
 fi
 
+#make an unmatched * expression become "no arguments" instead of something nonexistent
+shopt -s nullglob
+
 # Clean up contrasts where cope has no non-zero voxels (created from 'versus rest' contrasts from conditions with empty EVs)
 # NOTE WELL: This will not remove 'condition A versus condition B' contrasts where one condition has no events.
 for Analysis in GrayordinatesStats ParcellatedStats StandardVolumeStats; do
-	for file in $( ls ${FEATDir}/${Analysis}/cope*.nii* 2>/dev/null ); do 
-		filebase=$( basename $file )
-		sd=$( fslstats $file -V | awk '{ print $1 }' )
-		if [ $sd == 0 ]; then 
+	for file in "$FEATDir"/"$Analysis"/cope*.nii*; do
+		filebase=$( basename "$file" )
+		sd=$( fslstats "$file" -V | awk '{ print $1 }' )
+		if [[ "$sd" == 0 ]]; then 
 			log_Msg "CLEANUP $filebase has 0 non-zero voxels. Removing all associated files."
 			prefixes=( cope pe tstat varcope zstat )
 			for pre in "${prefixes[@]}"; do 

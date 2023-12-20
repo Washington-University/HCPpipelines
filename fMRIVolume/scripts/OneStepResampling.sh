@@ -8,90 +8,79 @@
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-script_name=$(basename "${0}")
+set -eu
 
-show_usage() {
-	cat <<EOF
-
-${script_name}: Script to combine warps and affine transforms together and do a single resampling, with specified output resolution
-
-Usage: ${script_name} [options]
-
-  --workingdir=<working dir>
-  --infmri=<input fMRI 4D image>
-  --t1=<input T1w restored image>
-  --fmriresout=<output resolution for images, typically the fmri resolution>
-  --fmrifolder=<fMRI processing folder>
-  --fmri2structin=<input fMRI to T1w warp>
-  --struct2std=<input T1w to MNI warp>
-  --owarp=<output fMRI to MNI warp>
-  --oiwarp=<output MNI to fMRI warp>
-  --motionmatdir=<input motion correcton matrix directory>
-  --motionmatprefix=<input motion correcton matrix filename prefix>
-  --ofmri=<input fMRI 4D image>
-  --freesurferbrainmask=<input FreeSurfer brain mask, nifti format in atlas (MNI152) space>
-  --biasfield=<input biasfield image, in atlas (MNI152) space>
-  --gdfield=<input warpfield for gradient non-linearity correction>
-  --scoutin=<input scout image (EPI pre-sat, before gradient non-linearity distortion correction)>
-  --scoutgdcin=<input scout gradient nonlinearity distortion corrected image (EPI pre-sat)>
-  --oscout=<output transformed + distortion corrected scout image>
-  --ojacobian=<output transformed + distortion corrected Jacobian image>
-  [--fmrirefpath=<path to an external BOLD reference or NONE (default)>]
-  [--fmrirefreg=<whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image>]
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source ${HCPPIPEDIR}/global/scripts/tempfiles.shlib
 
-opts_ShowVersionIfRequested $@
 
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
+opts_SetScriptDescription "Script to combine warps and affine transforms together and do a single resampling, with specified output resolution"
+
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working dir'
+
+opts_AddMandatory '--infmri' 'InputfMRI' 'image' "input fMRI 4D image"
+
+opts_AddMandatory '--t1' 'T1wImage' 'image' "input T1w restored image"
+
+opts_AddMandatory '--fmriresout' 'FinalfMRIResolution' 'resolution' "output resolution for images or typically the fmri resolution"
+
+opts_AddMandatory '--fmrifolder' 'fMRIFolder' 'path' "fMRI processing folder"
+
+opts_AddMandatory '--fmri2structin' 'fMRIToStructuralInput' 'path' "input fMRI to T1w warp"
+
+opts_AddMandatory '--struct2std' 'StructuralToStandard' 'path' "input T1w to MNI warp"
+
+opts_AddMandatory '--owarp' 'OutputTransform' 'path' "output fMRI to MNI warp"
+
+opts_AddMandatory '--oiwarp' 'OutputInvTransform' 'path' "output MNI to fMRI warp"
+
+opts_AddMandatory '--motionmatdir' 'MotionMatrixFolder' 'path' "input motion correcton matrix directory"
+
+opts_AddMandatory '--motionmatprefix' 'MotionMatrixPrefix' 'string' "input motion correcton matrix filename prefix"
+
+opts_AddMandatory '--ofmri' 'OutputfMRI' 'image' "input fMRI 4D image"
+
+opts_AddMandatory '--freesurferbrainmask' 'FreeSurferBrainMask' 'mask' "input FreeSurfer brain mask or nifti format in atlas (MNI152) space"
+
+opts_AddMandatory '--biasfield' 'BiasField' 'image' "input biasfield image or in atlas (MNI152) space"
+
+opts_AddMandatory '--gdfield' 'GradientDistortionField' 'gradient' "input warpfield for gradient non-linearity correction"
+
+opts_AddMandatory '--scoutin' 'ScoutInput' 'image' "input scout image (EPI pre-sat, before gradient non-linearity distortion correction)"
+
+opts_AddMandatory '--scoutgdcin' 'ScoutInputgdc' 'gradient' "input scout gradient nonlinearity distortion corrected image (EPI pre-sat)"
+
+opts_AddMandatory '--oscout' 'ScoutOutput' 'image' "output transformed + distortion corrected scout image"
+
+opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + distortion corrected Jacobian image"
+
+#Optional Args 
+opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
+
+opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampeling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
+
+opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
+#display the parsed/default values
+opts_ShowValues
 
-log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-  if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-      echo $fn | sed "s/^${sopt}=//"
-      return 0
-  fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
 
 ################################################### OUTPUT FILES #####################################################
 
@@ -110,34 +99,7 @@ defaultopt() {
 #     ${ScoutOutput}
 #          NB: last three images are all in low-res standard space
 
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-InputfMRI=`getopt1 "--infmri" $@`  # "$2"
-T1wImage=`getopt1 "--t1" $@`  # "$3"
-FinalfMRIResolution=`getopt1 "--fmriresout" $@`  # "$4"
-fMRIFolder=`getopt1 "--fmrifolder" $@`
-fMRIToStructuralInput=`getopt1 "--fmri2structin" $@`  # "$6"
-StructuralToStandard=`getopt1 "--struct2std" $@`  # "$7"
-OutputTransform=`getopt1 "--owarp" $@`  # "$8"
-OutputInvTransform=`getopt1 "--oiwarp" $@`
-MotionMatrixFolder=`getopt1 "--motionmatdir" $@`  # "$9"
-MotionMatrixPrefix=`getopt1 "--motionmatprefix" $@`  # "${10}"
-OutputfMRI=`getopt1 "--ofmri" $@`  # "${11}"
-FreeSurferBrainMask=`getopt1 "--freesurferbrainmask" $@`  # "${12}"
-BiasField=`getopt1 "--biasfield" $@`  # "${13}"
-GradientDistortionField=`getopt1 "--gdfield" $@`  # "${14}"
-ScoutInput=`getopt1 "--scoutin" $@`  # "${15}"
-ScoutInputgdc=`getopt1 "--scoutgdcin" $@`  # "${15}"
-ScoutOutput=`getopt1 "--oscout" $@`  # "${16}"
-JacobianOut=`getopt1 "--ojacobian" $@`  # "${18}"
-fMRIReferencePath=`getopt1 "--fmrirefpath" $@` # "${19}"
-fMRIReferenceReg=`getopt1 "--fmrirefreg" $@`  # "${20}"
-
 #hidden: toggle for unreleased new resampling command, default off
-useWbResample=`getopt1 "--wb-resample" $@`
-useWbResample="${useWbResample:-0}"
 #with wb_command -volume-resample, the warpfields and per-frame motion affines do not need to be combined in advance,
 #and the timeseries can be resampled without splitting into one-frame files, resulting in much less file IO
 
@@ -152,10 +114,6 @@ case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
         log_Err_Abort "unrecognized boolean '$useWbResample', please use yes/no, true/false, or 1/0"
         ;;
 esac
-
-# defaults
-fMRIReferencePath=${fMRIReferencePath:-NONE}
-fMRIReferenceReg=${fMRIReferenceReg:-NONE}
 
 # --- Report arguments
 

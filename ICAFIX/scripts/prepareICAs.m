@@ -26,7 +26,7 @@ fprintf('%s - TR: %d\n', func_name, TR);
 
 %%%%  read and highpass CIFTI version of the data if it exists
 dtseries = ciftiopen([dtseriesName '.dtseries.nii'],wbcommand);
-ICAs = load(ICAs);
+ICAs = load(ICAs, '-ascii');
 
 if hp==0
   dtseries.cdata=detrend(dtseries.cdata')';
@@ -67,7 +67,7 @@ ICA_dtseries.cdata = (pinv([ones(length(ICAs),1) ICAs])*dtseries.cdata')';
 ICA_dtseries.cdata = ICA_dtseries.cdata(:,2:size(ICA_dtseries.cdata,2));
 ciftisavereset(ICA_dtseries,ICAdtseries,wbcommand);
 
-NoiseICAs=load(NoiseICAs);
+NoiseICAs=load(NoiseICAs, '-ascii');
 
 Signalmat = [];
 Noisemat = [];
