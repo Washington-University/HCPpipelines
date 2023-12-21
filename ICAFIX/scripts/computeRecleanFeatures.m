@@ -140,7 +140,7 @@ for j=1:length(fMRINames)
         VolSmoothROIs_data(Grey==1)=2;
         VolSmoothROIs_data(edge_data==1)=3;
         VOLSMOOTHROIS=WMPARC.*0;
-        VOLSMOOTHROIS(std(VOLUME,[],2)>0)=VolSmoothROIs_data;
+        VOLSMOOTHROIS(volumeValid) = VolSmoothROIs_data;
         VOLSMOOTHROIS=reshape(VOLSMOOTHROIS,size(SBREFOrig,1),size(SBREFOrig,2),size(SBREFOrig,3),size(SBREFOrig,4));
         save_avw(VOLSMOOTHROIS,[SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz'],'f',[1.6 1.6 1.6 1]);
         system(['fslcpgeom ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
@@ -150,22 +150,18 @@ for j=1:length(fMRINames)
         system(['wb_command -volume-parcel-smoothing ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz ' num2str(SmoothingSigma) ' ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
 
         VOLUMESMOOTH=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
-        VOLUMESMOOTH=reshape(VOLUMESMOOTH,size(VOLUMESMOOTH,1)*size(VOLUMESMOOTH,2)*size(VOLUMESMOOTH,3),size(VOLUMESMOOTH,4));
-        VolumeSmooth_data=VOLUMESMOOTH(std(VOLUMESMOOTH,[],2)>0,:);
+        VolumeSmooth_data = vol_reshape_and_mask(VOLUMESMOOTH, volumeValid);;
         VolumeSmooth_data=VolumeSmooth_data./std(Volume_data(:));
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./std(CIFTIMSMAll.cdata(:));
         
         % structure idx
         CIFTI_LENGTH=length(CIFTI.cdata);
-        CORTEX_start_idx=min(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist);
-        CORTEX_LEFT_end_idx=max(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist);
-        CORTEX_RIGHT_end_idx=min(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist);
 
-        CORTEX_end_idx=max(cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist);
-        CEREBELLUM_start_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_LEFT').ciftilist);
-        CEREBELLUM_end_idx=max(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_RIGHT').ciftilist);
-        BRIAN_STEM_start_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist);
-        BRIAN_STEM_end_idx=min(cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist);
+        CORTEX_Left_idx_list = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist;
+        CORTEX_Right_idx_list = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist;
+        CORTEX_idx_list = [CORTEX_Left_idx_list, CORTEX_Right_idx_list];
+        CEREBELLUM_idx_list = [cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_LEFT').ciftilist, cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_RIGHT').ciftilist];
+        BRAIN_STEM_idx_list = [cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist, cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist];
         
         row_names=cell(num_comps, 1);
         probs=zeros(num_comps,1);
@@ -181,12 +177,12 @@ for j=1:length(fMRINames)
             NewFeatures(k,5)=sum(abs(sICAweighted(sICAnoisy,k)))./sum(abs(sICAweighted(:,k))); %Ratio of amplitude at noisy (top 12.5% variance) timepoints to all timepoints weighted by explained variance
             NewFeatures(k,6)=sum(abs(sICA(sICAnoisy,k)))./sum(abs(sICA(:,k))); %Ratio of amplitude at noisy (top 12.5% variance) timepoints to all timepoints unweighted
             NewFeatures(k,7)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume_data(:,k))); %CIFTI/Volume
-            NewFeatures(k,8)=sum(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_end_idx,k)))./sum(abs(Volume_data(:,k))); %Cerebral Cortex/Volume
-            NewFeatures(k,9)=sum(abs(CIFTI.cdata(CORTEX_end_idx:end,k)))./sum(abs(Volume_data(:,k))); %Subcortical/Volume
-            NewFeatures(k,10)=sum(abs(CIFTI.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k)))./sum(abs(Volume_data(:,k))); %Cerebellum/Volume
-            NewFeatures(k,11)=sum(abs(CIFTI.cdata(BRIAN_STEM_start_idx:BRIAN_STEM_end_idx,k)))./sum(abs(Volume_data(:,k))); %Brainstem/Volume
-            NewFeatures(k,12)=sum(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_start_idx:CEREBELLUM_end_idx BRIAN_STEM_start_idx:BRIAN_STEM_end_idx CEREBELLUM_start_idx:CEREBELLUM_end_idx]),k)))./sum(abs(Volume_data(:,k))); %Diencephalon/Volume
-            NewFeatures(k,13)=sum(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_LEFT_end_idx,k)))./sum(abs(CIFTI.cdata(CORTEX_RIGHT_end_idx:CEREBELLUM_end_idx,k))); %Left Cerebral Cortex/Right Cerebral Cortex
+            NewFeatures(k, 8)=sum(abs(CIFTI.cdata(CORTEX_idx_list, k))) ./ sum(abs(Volume_data(:, k))); %Cerebral Cortex/Volume
+            NewFeatures(k,9)=sum(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_idx_list]),k)))./sum(abs(Volume_data(:,k))); %Subcortical/Volume
+            NewFeatures(k,10)=sum(abs(CIFTI.cdata(CEREBELLUM_idx_list,k)))./sum(abs(Volume_data(:,k))); %Cerebellum/Volume
+            NewFeatures(k,11)=sum(abs(CIFTI.cdata(BRAIN_STEM_idx_list,k)))./sum(abs(Volume_data(:,k))); %Brainstem/Volume
+            NewFeatures(k,12)=sum(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_idx_list BRAIN_STEM_idx_list CEREBELLUM_idx_list]),k)))./sum(abs(Volume_data(:,k))); %Diencephalon/Volume
+            NewFeatures(k,13)=sum(abs(CIFTI.cdata(CORTEX_Left_idx_list,k)))./sum(abs(CIFTI.cdata(CORTEX_Right_idx_list,k))); %Left Cerebral Cortex/Right Cerebral Cortex
             NewFeatures(k,14)=sum(abs(Volume_data(wm_data==1,k)))./sum(abs(Volume_data(:,k))); %2 Voxel Eroded WM/Volume
             NewFeatures(k,15)=sum(abs(Volume_data(csf_data==1,k)))./sum(abs(Volume_data(:,k))); %2 Voxel Eroded CSF/Volume
             NewFeatures(k,16)=sum(abs(Volume_data(edge_data==1,k)))./sum(abs(Volume_data(:,k))); %Edge/Volume (CSF outside brain)
@@ -194,24 +190,24 @@ for j=1:length(fMRINames)
             NewFeatures(k,18)=sum(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./sum(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,19)=sum(abs(Volume_data(noisy_data==1,k)))./sum(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,20)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI              
             NewFeatures(k,22)=sum(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,23)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume_data(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,24)=sum(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,24)=sum(abs(CIFTI.cdata(CORTEX_idx_list,k)))./sum(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,25)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume_data(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,26)=sum(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(Volume_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,26)=sum(abs(CIFTI.cdata(CORTEX_idx_list,k)))./sum(abs(Volume_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
             NewFeatures(k,27)=sum(abs(CIFTIMSMAllSmooth.cdata(:,k)))./sum(abs(VolumeSmooth_data(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,28)=sum(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(VolumeSmooth_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,28)=sum(abs(CIFTIMSMAllSmooth.cdata(CORTEX_idx_list,k)))./sum(abs(VolumeSmooth_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,29)=sum(abs(CIFTIMSMAllSmooth.cdata(:,k)))./sum(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,30)=sum(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./sum(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,30)=sum(abs(CIFTIMSMAllSmooth.cdata(CORTEX_idx_list,k)))./sum(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
 
             NewFeatures(k,31)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume_data(:,k))); %CIFTI/Volume
-            NewFeatures(k,32)=mean(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_end_idx,k)))./mean(abs(Volume_data(:,k))); %Cerebral Cortex/Volume
-            NewFeatures(k,33)=mean(abs(CIFTI.cdata(CORTEX_end_idx:end,k)))./mean(abs(Volume_data(:,k))); %Subcortical/Volume
-            NewFeatures(k,34)=mean(abs(CIFTI.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k)))./mean(abs(Volume_data(:,k))); %Cerebellum/Volume
-            NewFeatures(k,35)=mean(abs(CIFTI.cdata(BRIAN_STEM_start_idx:BRIAN_STEM_end_idx,k)))./mean(abs(Volume_data(:,k))); %Brainstem/Volume
-            NewFeatures(k,36)=mean(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[1:CEREBELLUM_end_idx BRIAN_STEM_start_idx:BRIAN_STEM_end_idx CEREBELLUM_start_idx:CEREBELLUM_end_idx]),k)))./mean(abs(Volume_data(:,k))); %Diencephalon/Volume
-            NewFeatures(k,37)=mean(abs(CIFTI.cdata(CORTEX_start_idx:CORTEX_LEFT_end_idx,k)))./mean(abs(CIFTI.cdata(CORTEX_RIGHT_end_idx:CEREBELLUM_end_idx,k))); %Left Cerebral Cortex/Right Cerebral Cortex
+            NewFeatures(k,32)=mean(abs(CIFTI.cdata(CORTEX_idx_list,k)))./mean(abs(Volume_data(:,k))); %Cerebral Cortex/Volume
+            NewFeatures(k,33)=mean(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_idx_list]),k)))./mean(abs(Volume_data(:,k))); %Subcortical/Volume
+            NewFeatures(k,34)=mean(abs(CIFTI.cdata(CEREBELLUM_idx_list,k)))./mean(abs(Volume_data(:,k))); %Cerebellum/Volume
+            NewFeatures(k,35)=mean(abs(CIFTI.cdata(BRAIN_STEM_idx_list,k)))./mean(abs(Volume_data(:,k))); %Brainstem/Volume
+            NewFeatures(k,36)=mean(abs(CIFTI.cdata(setdiff(1:CIFTI_LENGTH,[CORTEX_idx_list BRAIN_STEM_idx_list CEREBELLUM_idx_list]),k)))./mean(abs(Volume_data(:,k))); %Diencephalon/Volume
+            NewFeatures(k,37)=mean(abs(CIFTI.cdata(CORTEX_Left_idx_list,k)))./mean(abs(CIFTI.cdata(CORTEX_Right_idx_list,k))); %Left Cerebral Cortex/Right Cerebral Cortex
             NewFeatures(k,38)=mean(abs(Volume_data(wm_data==1,k)))./mean(abs(Volume_data(:,k))); %2 Voxel Eroded WM/Volume
             NewFeatures(k,39)=mean(abs(Volume_data(csf_data==1,k)))./mean(abs(Volume_data(:,k))); %2 Voxel Eroded CSF/Volume
             NewFeatures(k,40)=mean(abs(Volume_data(edge_data==1,k)))./mean(abs(Volume_data(:,k))); %Edge/Volume (CSF outside brain)
@@ -219,23 +215,23 @@ for j=1:length(fMRINames)
             NewFeatures(k,42)=mean(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./mean(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,43)=mean(abs(Volume_data(noisy_data==1,k)))./mean(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,44)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(CEREBELLUM_start_idx:CEREBELLUM_end_idx,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI              
             NewFeatures(k,46)=mean(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,47)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume_data(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,48)=mean(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,48)=mean(abs(CIFTI.cdata(CORTEX_idx_list,k)))./mean(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,49)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume_data(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,50)=mean(abs(CIFTI.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(Volume_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,50)=mean(abs(CIFTI.cdata(CORTEX_idx_list,k)))./mean(abs(Volume_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
             NewFeatures(k,51)=mean(abs(CIFTIMSMAllSmooth.cdata(:,k)))./mean(abs(VolumeSmooth_data(NonGrey==1,k))); %CIFTI/NonGrey
-            NewFeatures(k,52)=mean(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(VolumeSmooth_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
+            NewFeatures(k,52)=mean(abs(CIFTIMSMAllSmooth.cdata(CORTEX_idx_list,k)))./mean(abs(VolumeSmooth_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
             NewFeatures(k,53)=mean(abs(CIFTIMSMAllSmooth.cdata(:,k)))./mean(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %CIFTI/NonGreyPlusEdge
-            NewFeatures(k,54)=mean(abs(CIFTIMSMAllSmooth.cdata(1:CEREBELLUM_end_idx,k)))./mean(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
+            NewFeatures(k,54)=mean(abs(CIFTIMSMAllSmooth.cdata(CORTEX_idx_list,k)))./mean(abs(VolumeSmooth_data(NonGreyPlusEdge==1,k))); %Cerebral Cortex/NonGreyPlusEdge
 
-            for l=1:max(CorticalParcellation.cdata)
-                NewFeatures(k,l+54)=mean(abs(CIFTIMSMAll.cdata(CorticalParcellation.cdata==l,k)));
+            for idx=1:max(CorticalParcellation.cdata)
+                NewFeatures(k,idx+54)=mean(abs(CIFTIMSMAll.cdata(CorticalParcellation.cdata==idx,k)));
             end
 
-            for l=1:size(SubRegionsROI.cdata, 2)
-                NewFeatures(k,l+54+max(CorticalParcellation.cdata))=mean(abs(CIFTIMSMAll.cdata(SubRegionsROI.cdata(:,l)==1,k)));
+            for idx=1:size(SubRegionsROI.cdata, 2)
+                NewFeatures(k,idx+54+max(CorticalParcellation.cdata))=mean(abs(CIFTIMSMAll.cdata(SubRegionsROI.cdata(:,idx)==1,k)));
             end
 
         end
