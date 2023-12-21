@@ -24,8 +24,6 @@ NonLanguageROI=1-LanguageROI_CIFTI.cdata;
 
 SubRegionsROI=ciftiopen(SubRegionsFile,'wb_command');
 
-NonGreyParcels=get_ROI_from_txt(NonGreyParcelsFile); % NonGreyParcelsFile HCPpipelines/global/config/NonGreyParcels.ROI.txt
-
 FinalSpatialSmoothingFWHM=4;
 
 % Calculate AdditionalSigma
@@ -101,40 +99,40 @@ for j=1:length(fMRINames)
 
         system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' CSFLabelFile ' ' ROIFolder '/CSFReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
         system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' WMLabelFile ' ' ROIFolder '/WMReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
+        system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' NonGreyParcelsFile ' ' ROIFolder '/NonGrey.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
 
         WM=read_avw([SubjFolderlist '/MNINonLinear/ROIs/WMReg.' Resolution '.nii.gz']);
         CSF=read_avw([SubjFolderlist '/MNINonLinear/ROIs/CSFReg.' Resolution '.nii.gz']);
+        NONGREY=read_avw([SubjFolderlist '/MNINonLinear/ROIs/NonGrey.' Resolution '.nii.gz']);
         % dropout file is not ready for lifespan
         %DROPOUT=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz']);
         dropout_file=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz'];
 
         DROPOUT=read_avw(dropout_file);
         VOLUME=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz']);
-        VOLUME=reshape(VOLUME,size(VOLUME,1)*size(VOLUME,2)*size(VOLUME,3),size(VOLUME,4));
-        Volume_data=VOLUME(std(VOLUME,[],2)>0,:);
-        WMPARC=reshape(WMPARC,size(WMPARC,1)*size(WMPARC,2)*size(WMPARC,3),size(WMPARC,4));
-        wmparc_data=WMPARC(std(VOLUME,[],2)>0,:);
-        WM=reshape(WM,size(WM,1)*size(WM,2)*size(WM,3),size(WM,4));
-        wm_data=WM(std(VOLUME,[],2)>0,:);
-        wm_data(wm_data~=0)=1;
-        CSF=reshape(CSF,size(CSF,1)*size(CSF,2)*size(CSF,3),size(CSF,4));
-        csf_data=CSF(std(VOLUME,[],2)>0,:);
-        csf_data(csf_data~=0)=1;
-        DROPOUT=reshape(DROPOUT,size(DROPOUT,1)*size(DROPOUT,2)*size(DROPOUT,3),size(DROPOUT,4));
-        dropout_data=DROPOUT(std(VOLUME,[],2)>0,:);
-        SBREF=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
-        SBREFOrig=SBREF;
-        SBREF=reshape(SBREF,size(SBREF,1)*size(SBREF,2)*size(SBREF,3),size(SBREF,4));
-        sbref_data=SBREF(std(VOLUME,[],2)>0,:);
+        SBREFOrig = read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
+        
+        VOLUME = reshape(VOLUME, prod(size(VOLUME, [1 2 3])), size(VOLUME, 4));
+        volumeValid = range(VOLUME, 2) > 0;
+        Volume_data = VOLUME(volumeValid, :);
+        
+        [wmparc_data, WMPARC] = vol_reshape_and_mask(WMPARC, volumeValid);
+        wm_data = vol_reshape_and_mask(WM, volumeValid);
+        csf_data = vol_reshape_and_mask(CSF, volumeValid);
+        nongray_data = vol_reshape_and_mask(NONGREY, volumeValid);
+        dropout_data = vol_reshape_and_mask(DROPOUT, volumeValid);
+        sbref_data = vol_reshape_and_mask(SBREFOrig, volumeValid);
+        
+        wm_data(wm_data ~= 0) = 1;
+        csf_data(csf_data ~= 0) = 1;
         noisy_data=(sum(Volume_data,2)./sbref_data)>prctile(sum(Volume_data,2)./sbref_data,87.5);
         edge_data=wmparc_data==0;
         Volume_data=Volume_data./std(Volume_data(:));
         CIFTI.cdata=CIFTI.cdata./std(CIFTI.cdata(:));
+        
+        nongray_data(nongray_data ~= 0) =1;
 
-        NonGrey=single(zeros(length(wmparc_data),1));
-        for k=NonGreyParcels
-            NonGrey(wmparc_data==k)=1;
-        end
+        NonGrey=nongray_data;
         NonGreyPlusEdge=NonGrey+edge_data;
         Grey=(NonGreyPlusEdge-1)*-1;
         VolSmoothROIs_data=wmparc_data.*0;
@@ -267,4 +265,9 @@ function lines = myreadtext(filename)
     array = textscan(fid, '%s', 'Delimiter', {'\n'});
     fclose(fid);
     lines = array{1};
+end
+
+function [maskeddata, flatdata] = vol_reshape_and_mask(indata, mask)
+    flatdata = reshape(indata, prod(size(indata, [1 2 3])), size(indata, 4));
+    maskeddata = flatdata(mask, :);
 end
