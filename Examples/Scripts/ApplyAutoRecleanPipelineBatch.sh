@@ -129,7 +129,7 @@ main() {
 	# # set python interpreter
 	# PythonInterpreter="/my/conda/path/envs/hcp_python_env/bin/python3"
 	PythonInterpreter=""
-	
+
 	# models to use
 	Models="RandomForest@MLP@Xgboost@WeightedKNN@XgboostEnsemble"
 
@@ -167,22 +167,6 @@ main() {
 		--python-interpreter="$PythonInterpreter" \
 		--model-to-use="$Models" \
 		--vote-threshold="$VoteThresh"
-
-		# # instead of running via singularity, one can also run via native enviroment enabled by conda
-		# # you must specify the $HCPCONDAENV in the env script to source
-		# "${queuing_command[@]}" "$HCPPIPEDIR"/ICAFIX/ApplyAutoRecleanPipeline.sh \
-		# --study-folder="$StudyFolder" \
-		# --subject="$Subject" \
-		# --fmri-names="$fMRINames" \
-		# --mrfix-concat-name="$MRConcatfMRIName" \
-		# --fix-high-pass="$highpass" \
-		# --fmri-resolution="$fMRIResolution" \
-		# --subject-expected-timepoints="$subjectExpectedTimepoints" \
-		# --low-res="$LowResMesh" \
-		# --python-singularity="NONE" \
-		# --python-singularity-mount-path="" \
-		# --model-to-use="$Models" \
-		# --vote-threshold="$VoteThresh"
 
 	done
 }  # main()

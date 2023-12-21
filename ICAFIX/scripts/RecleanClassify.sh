@@ -112,14 +112,7 @@ if [ ! ${MRFixConcatName} = "" ] ; then
     echo "${MRFixConcatName}" >> "$fMRIListName"
     fMRINameToUse=${MRFixConcatName}
 else
-    fMRINameToUse=""
-    for fMRIName in "${fMRINamesArray[@]}"
-    do
-        echo "${fMRIName}" >> "$fMRIListName"
-        fMRINameToUse+=" $fMRIName"
-    done
-    # Remove the leading space
-    fMRINameToUse="${fMRINameToUse:1}"
+    fMRINameToUse="$(IFS=' '; echo "${fMRINamesArray[*]}")"
 fi
 
 # check if FIX features are generated (csv with 181 features)
@@ -153,7 +146,7 @@ if [ ! ${MRFixConcatName} = "" ] ; then
     if [ ! -z "${DropOutSubSTRING}" ] ; then
         fslmerge -t ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${DropOutSubSTRING}
         fslmaths ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz -Tmean ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz
-        WorkingDirectory="/tmp/${Subject}"
+        WorkingDirectory="/tmp/RecleanClassify_MR_${Subject}_${MRFixConcatName}"
         mkdir -p ${WorkingDirectory}
         cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
         gunzip -f ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
@@ -163,7 +156,7 @@ if [ ! ${MRFixConcatName} = "" ] ; then
 else
     for fMRIName in "${fMRINamesArray[@]}" ; do
         if [ -e ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ] ; then
-        WorkingDirectory="/tmp/${Subject}"
+        WorkingDirectory="/tmp/RecleanClassify_SR_${Subject}_${fMRIName}"
         mkdir -p ${WorkingDirectory}
         cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
         gunzip -f ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
@@ -174,7 +167,6 @@ else
 fi
 
 # compute additional features from matlab script
-#FIXME: parcellation files are saved under tICA folder--reclassify-as-signal-file
 CorticalParcellationFile="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii"
 SubRegionParcellation="$HCPPIPEDIR/global/templates/tICA/Q1-Q6_RelatedParcellation210.CorticalAreasAndSubRegions_dil.32k_fs_LR.dlabel.nii"
 WMLabelFile="$HCPPIPEDIR/global/config/FreeSurferWMRegLut.txt"
@@ -183,13 +175,13 @@ VisualAreasFile="$HCPPIPEDIR/global/config/Visual.ROI.txt"
 LanguageAreasFile="$HCPPIPEDIR/global/config/Language.ROI.txt"
 SubRegionsFile="$HCPPIPEDIR/global/config/SubRegions.ROI.txt"
 NonGreyParcelsFile="$HCPPIPEDIR/global/config/NonGreyParcels.ROI.txt"
-GrayOrdinateTemplateFile="$HCPPIPEDIR/global/templates/91282_Greyordinates/91282_Greyordinates.dscalar.nii"
+GrayOrdinateTemplateFile="$HCPPIPEDIR"/global/templates/91282_Greyordinates/91282_Greyordinates.dscalar.nii
 
 tempfiles_create MMPROIs_temp_XXXXXX.dlabel.nii roitemp
-wb_command -cifti-create-dense-from-template "$HCPPIPEDIR"/global/templates/91282_Greyordinates/91282_Greyordinates.dscalar.nii "$roitemp" -cifti "$CorticalParcellationFile"
+wb_command -cifti-create-dense-from-template "$GrayOrdinateTemplateFile" "$roitemp" -cifti "$CorticalParcellationFile"
 
 tempfiles_create MMPSubRegionROIs_temp_XXXXXX.dlabel.nii roisubtemp
-wb_command -cifti-create-dense-from-template "$HCPPIPEDIR"/global/templates/91282_Greyordinates/91282_Greyordinates.dscalar.nii "$roisubtemp" -cifti "$SubRegionParcellation"
+wb_command -cifti-create-dense-from-template "$GrayOrdinateTemplateFile" "$roisubtemp" -cifti "$SubRegionParcellation"
 
 tempfiles_create VisualROI_temp_XXXXXX.dlabel.nii VisualROItemp
 tempfiles_add "$VisualROItemp"_labels.dlabel.nii
@@ -201,11 +193,15 @@ tempfiles_add "$LanguageROItemp"_labels.dlabel.nii
 wb_command -cifti-label-import "$roitemp" "$HCPPIPEDIR"/global/config/Language.ROI.txt "$LanguageROItemp"_labels.dlabel.nii -discard-others
 wb_command -cifti-math 'x > 0' "$LanguageROItemp" -var x "$LanguageROItemp"_labels.dlabel.nii
 
+tempfiles_create SubRegionsROI_temp_XXXXXX.dscalar.nii SubRegionsROItemp
+tempfiles_add "$SubRegionsROItemp"_labels.dlabel.nii "$SubRegionsROItemp"_all_labels.dlabel.nii
+wb_command -cifti-label-import "$roisubtemp" "$HCPPIPEDIR"/global/config/SubRegions.ROI.txt "$SubRegionsROItemp"_labels.dlabel.nii -discard-others
+wb_command -cifti-all-labels-to-rois "$SubRegionsROItemp"_labels.dlabel.nii 1 "$SubRegionsROItemp"
+
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
-HelpFuncPath="$this_script_dir/scripts"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$GrayOrdinateTemplateFile" "$CorticalParcellationFile" "$roisubtemp" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsFile" "$NonGreyParcelsFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)
@@ -229,7 +225,6 @@ case "$MatlabMode" in
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$HCPPIPEDIR/global/scripts');
             addpath('$HCPCIFTIRWDIR');
-            addpath('$this_script_dir/scripts');
             addpath('$this_script_dir');
             computeRecleanFeatures($matlab_args);"
 

@@ -91,33 +91,7 @@ log_Msg "Begin to run the reclean pipeline..."
     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
     --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
 
-# apply the reclassification results
-log_Msg "Begin to apply the reclassification results..."
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
-
-# check SR or MR FIX
-if [ ! ${MRFixConcatName} = "" ] ; then
-    fMRINameToUse=${MRFixConcatName}
-else
-    fMRINameToUse=""
-    for fMRIName in "${fMRINamesArray[@]}"
-    do
-        fMRINameToUse+=" $fMRIName"
-    done
-    # Remove the leading space
-    fMRINameToUse="${fMRINameToUse:1}"
-fi
-
-for fMRIName in ${fMRINameToUse} ; do
-    "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
-        --study-folder="$StudyFolder" \
-        --subject="$Subject" \
-        --fmri-name="$fMRIName" \
-        --high-pass="$HighPass" \
-        --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
-        --reclassify-as-noise-file="$ReclassifyAsNoiseFile" \
-        --matlab-run-mode="$MatlabMode"
-done
 
 # reapply fix
 log_Msg "Begin to reapply FIX..."
@@ -133,6 +107,16 @@ DeleteIntermediates=FALSE
 if [ -z ${MRFixConcatName} ]; then
     # Single Run
     for fMRIName in "${fMRINamesArray[@]}"; do
+
+        # apply the reclassification results
+        "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-name="$fMRIName" \
+        --high-pass="$HighPass" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}" \
+        --matlab-run-mode="$MatlabMode"
 
         # MSMAll
         "$HCPPIPEDIR"/ICAFIX/ReApplyFixPipeline.sh \
@@ -162,19 +146,27 @@ if [ -z ${MRFixConcatName} ]; then
 
     done
 else 
+    # apply the reclassification results
+    "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --fmri-name="$MRFixConcatName" \
+        --high-pass="$HighPass" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${ReclassifyAsNoiseFile}" \
+        --matlab-run-mode="$MatlabMode"
 
     #MR FIX config support for non-HCP settings
     config=""
     processingmode="HCPStyleData"
 
-    SubjfMRINames=""
+    fMRINamesExist=()
     for fMRIName in "${fMRINamesArray[@]}"; do
         if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
-            SubjfMRINames+="@${fMRIName}"
+            fMRINamesExist+=("$fMRIName")
         fi
     done
-    # Remove the leading @
-    SubjfMRINames="${SubjfMRINames:1}"
+    SubjfMRINames="$(IFS='@'; echo "${fMRINamesExist[*]}")"
 
     # Multi-Run
     # MSMAll

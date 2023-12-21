@@ -41,6 +41,7 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
+#NOTE: this variable is used as both a default, and to decide whether to add an extra identifier to the RegString
 G_DEFAULT_LOW_RES_MESH=32
 
 # Load function libraries
@@ -396,13 +397,13 @@ else
 	fmrihp=${fmri}
 fi
 
-# /bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
-# /bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
+/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}.dtseries.nii
+/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}_vn.dscalar.nii
 
-# if (( DoVol )); then
-# 	$FSLDIR/bin/imrm ${fmrihp}_clean
-# 	$FSLDIR/bin/imrm ${fmrihp}_clean_vn
-# fi
+if (( DoVol )); then
+	$FSLDIR/bin/imrm ${fmrihp}_${CleanSubstring}
+	$FSLDIR/bin/imrm ${fmrihp}_${CleanSubstring}_vn
+fi
 
 # Rename some of the outputs from fix_3_clean.
 # Note that the variance normalization ("_vn") outputs require use of fix1.067 or later

@@ -774,15 +774,15 @@ cd ..
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
-# # Remove any existing old versions of the cleaned data (normally they should be overwritten
-# # in the renaming that follows, but this ensures that any old versions don't linger)
-# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean.dtseries.nii
-# /bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_clean_vn.dscalar.nii
+# Remove any existing old versions of the cleaned data (normally they should be overwritten
+# in the renaming that follows, but this ensures that any old versions don't linger)
+/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_${CleanSubstring}.dtseries.nii
+/bin/rm -f ${concatfmri}_Atlas${RegString}_hp${hp}_${CleanSubstring}_vn.dscalar.nii
 
-# if (( DoVol )); then
-# 	$FSLDIR/bin/imrm  ${concatfmrihp}_clean
-# 	$FSLDIR/bin/imrm  ${concatfmrihp}_clean_vn
-# fi
+if (( DoVol )); then
+	$FSLDIR/bin/imrm  ${concatfmrihp}_${CleanSubstring}
+	$FSLDIR/bin/imrm  ${concatfmrihp}_${CleanSubstring}_vn
+fi
 
 # Rename some of the outputs from fix_3_clean.
 # Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
