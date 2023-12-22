@@ -235,7 +235,7 @@ esac
 FixProbThresh="10"
 
 # inference each subjects under python environment
-for fMRIName in ${fMRINamesToUse} ; do
+for fMRIName in "${fMRINamesToUse[@]}" ; do
     RecleanFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_reclean_features.csv"
     FixProbPath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix_prob.csv"
     PredictionResult="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica"
