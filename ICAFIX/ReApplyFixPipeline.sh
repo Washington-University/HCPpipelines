@@ -41,6 +41,8 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
+#NOTE: this variable is used as both a default, and to decide whether to add an extra identifier to the RegString
+G_DEFAULT_LOW_RES_MESH=32
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
@@ -65,7 +67,7 @@ opts_AddMandatory '--high-pass' 'HighPass' 'number' "high-pass filter used in IC
 #Optional Args 
 opts_AddOptional '--reg-name' 'RegName' 'name' "surface registration name (Use NONE for MSMSulc registration)"
 
-opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "low res mesh number" "32"
+opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "low res mesh number" "${G_DEFAULT_LOW_RES_MESH}"
 
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, 2' "defaults to 1
      0 = Use compiled MATLAB
@@ -75,6 +77,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, 2' "defaults to 1
 opts_AddOptional '--motion-regression' 'MotionRegression' 'TRUE or FALSE' "Perform motion regression, default false" "FALSE"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' "Delete the high-pass filtered files, default false" "FALSE"
+
+opts_AddOptional '--clean-substring' 'CleanSubstring' 'string' "the clean mode substring, can be 'clean' as sICA+FIX cleaned,'clean_rclean' as sICA+FIX cleaned and reclean, default to 'clean'" "clean"
 
 opts_ParseArguments "$@"
 
@@ -393,33 +397,33 @@ else
 	fmrihp=${fmri}
 fi
 
-/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
-/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
+/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}.dtseries.nii
+/bin/rm -f ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}_vn.dscalar.nii
 
 if (( DoVol )); then
-	$FSLDIR/bin/imrm ${fmrihp}_clean
-	$FSLDIR/bin/imrm ${fmrihp}_clean_vn
+	$FSLDIR/bin/imrm ${fmrihp}_${CleanSubstring}
+	$FSLDIR/bin/imrm ${fmrihp}_${CleanSubstring}_vn
 fi
 
 # Rename some of the outputs from fix_3_clean.
 # Note that the variance normalization ("_vn") outputs require use of fix1.067 or later
 # So check whether those files exist before moving/renaming them
 if [ -f ${fmrihp}.ica/Atlas_clean.dtseries.nii ]; then
-	/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}${hpStr}_clean.dtseries.nii
+	/bin/mv ${fmrihp}.ica/Atlas_clean.dtseries.nii ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}.dtseries.nii
 else
 	log_Err_Abort "Something went wrong; ${fmrihp}.ica/Atlas_clean.dtseries.nii wasn't created"
 fi
 if [ -f ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
-	/bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}${hpStr}_clean_vn.dscalar.nii
+	/bin/mv ${fmrihp}.ica/Atlas_clean_vn.dscalar.nii ${fmri}_Atlas${RegString}${hpStr}_${CleanSubstring}_vn.dscalar.nii
 fi
 
 if (( DoVol )); then
-	$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_clean
+	$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean ${fmrihp}_${CleanSubstring}
 	if [ "$?" -ne "0" ]; then
 		log_Err_Abort "Something went wrong; ${fmrihp}.ica/filtered_func_data_clean wasn't created"
 	fi
 	if [ `$FSLDIR/bin/imtest ${fmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
-		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_clean_vn
+		$FSLDIR/bin/immv ${fmrihp}.ica/filtered_func_data_clean_vn ${fmrihp}_${CleanSubstring}_vn
 	fi
 fi
 log_Msg "Done renaming files"
@@ -443,7 +447,7 @@ else
 		# 'OR' mv command with "true" to avoid returning an error code if file doesn't exist for some reason
 		mv -f ${fmrihp}.ica/Atlas_hp_preclean.dtseries.nii ${fmri}_Atlas_hp${hp}.dtseries.nii || true 
 	fi
-	fi
+fi
 
 cd ${DIR}  # Return to directory where script was launched
 
