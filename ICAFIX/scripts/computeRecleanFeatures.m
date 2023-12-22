@@ -8,8 +8,6 @@ function computeRecleanFeatures(StudyFolder, ...
                                 WMLabelFile, ...
                                 CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile)
 
-HCPPIPEDIR = getenv('HCPPIPEDIR')
-
 fMRINames = myreadtext(fMRIListName);
 RunsXNumTimePoints = str2double(RunsXNumTimePoints);
 
@@ -61,7 +59,6 @@ for j=1:length(fMRINames)
         TR = CIFTIDenseTimeSeries.diminfo{2}.seriesStep;
 
         PowerspectraScale=[(1/(TR*2))/size(Powerspectra,1):(1/(TR*2))/size(Powerspectra,1):1/(TR*2)];
-        StandardPowerspectraScale=[(1/(TR*2))/(RunsXNumTimePoints/2):(1/(TR*2))/(RunsXNumTimePoints/2):1/(TR*2)];
         sICAweighted=sICA.*repmat(Stats(:,1)',length(sICA),1);
         sICAnoisy=sum(abs(sICA),2);
         sICAnoisy=sICAnoisy>prctile(sICAnoisy,87.5);
