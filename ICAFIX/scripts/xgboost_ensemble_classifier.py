@@ -110,37 +110,3 @@ class XGBoostEnsembleClassifier(BaseEstimator, ClassifierMixin):
         print("model is loaded!")
         # Return the classifier
         return self
-
-# directly run is not supported because of the relative module path
-if __name__=='__main__':
-    from sklearn.datasets import load_breast_cancer
-    data = load_breast_cancer()
-    mdl=XGBoostEnsembleClassifier(random_state=12345)
-    mdl.fit(data.data, data.target)
-    pred_0=mdl.predict(data.data)
-    pred_0_1=mdl.predict_proba(data.data)
-    
-    mdl=XGBoostEnsembleClassifier(random_state=12345)
-    mdl.fit(data.data, data.target)
-    pred_1=mdl.predict(data.data)
-    pred_1_1=mdl.predict_proba(data.data)
-    
-    mdl=XGBoostEnsembleClassifier(random_state=0)
-    mdl.fit(data.data, data.target)
-    pred_2=mdl.predict(data.data)
-    pred_2_1=mdl.predict_proba(data.data)
-    
-    save_path = '/media/myelin/alex/tICA/tICAClassify/results/test'
-    mdl.save(save_path)
-    
-    mdl=XGBoostEnsembleClassifier(random_state=67890)
-    mdl.load(save_path)
-    pred_3=mdl.predict(data.data)
-    pred_3_1=mdl.predict_proba(data.data)
-    
-    # reproducibility check
-    assert np.array_equal(pred_0_1, pred_1_1)
-    # reproducibility check
-    assert not np.array_equal(pred_0_1, pred_2_1)
-    # load and save model check
-    assert np.array_equal(pred_2_1, pred_3_1)

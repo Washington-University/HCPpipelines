@@ -150,7 +150,7 @@ if [ ! ${MRFixConcatName} = "" ] ; then
         mkdir -p ${WorkingDirectory}
         cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.nii.gz ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
         gunzip -f ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii.gz
-        "$HCPPIPEDIR"/global/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${MRFixConcatName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.dscalar.nii ${MRFixConcatName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
+        "$HCPPIPEDIR"/ICAFIX/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${MRFixConcatName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${MRFixConcatName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${MRFixConcatName}_dropouts.dscalar.nii ${MRFixConcatName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
         rm -r ${WorkingDirectory}
     fi
 else
@@ -160,7 +160,7 @@ else
         mkdir -p ${WorkingDirectory}
         cp ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.nii.gz ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
         gunzip -f ${WorkingDirectory}/${fMRIName}_dropouts.nii.gz
-        "$HCPPIPEDIR"/global/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${fMRIName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${fMRIName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.dscalar.nii ${fMRIName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
+        "$HCPPIPEDIR"/ICAFIX/scripts/MapVolumeToCIFTI.sh ${StudyFolder} ${Subject} ${fMRIName} ${CorticalLUT} ${SubCorticalLUT} ${Caret7_Command} ${LowResMesh} ${RegName} ${SmoothingFWHM} ${FinalfMRIResolution} ${BrainOrdinatesResolution} ${WorkingDirectory}/${fMRIName}_dropouts.nii ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_dropouts.dscalar.nii ${fMRIName}_dropouts ${Flag} ${DeleteIntermediates} nii ${WorkingDirectory}
         rm -r ${WorkingDirectory}
         fi
     done

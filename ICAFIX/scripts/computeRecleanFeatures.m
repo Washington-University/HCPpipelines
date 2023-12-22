@@ -150,7 +150,7 @@ for j=1:length(fMRINames)
         system(['wb_command -volume-parcel-smoothing ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz ' num2str(SmoothingSigma) ' ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
 
         VOLUMESMOOTH=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
-        VolumeSmooth_data = vol_reshape_and_mask(VOLUMESMOOTH, volumeValid);;
+        VolumeSmooth_data = vol_reshape_and_mask(VOLUMESMOOTH, volumeValid);
         VolumeSmooth_data=VolumeSmooth_data./std(Volume_data(:));
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./std(CIFTIMSMAll.cdata(:));
         
@@ -264,6 +264,6 @@ function lines = myreadtext(filename)
 end
 
 function [maskeddata, flatdata] = vol_reshape_and_mask(indata, mask)
-    flatdata = reshape(indata, prod(size(indata, [1 2 3])), size(indata, 4));
+    flatdata = reshape(indata, prod(size(indata, 1:3)), size(indata, 4));
     maskeddata = flatdata(mask, :);
 end

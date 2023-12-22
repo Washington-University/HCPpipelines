@@ -17,7 +17,7 @@ DeleteIntermediates="${16}" #TRUE/FALSE
 VolExT="${17}"
 WorkingDir="${18}"
 
-Sigma=`echo "$SmoothingFWHM / ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l`
+Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
 RegNames=`echo ${RegNames} | sed 's/@/ /g'`
 
