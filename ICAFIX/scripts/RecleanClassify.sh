@@ -108,18 +108,14 @@ IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 tempfiles_create fMRIList_XXXXXX.txt fMRIListName
 
 # check SR or MR FIX
-if [ ! ${MRFixConcatName} = "" ] ; then
-    echo "${MRFixConcatName}" >> "$fMRIListName"
+if [[ "$MRFixConcatName" != "" ]] ; then
     fMRINamesToUse=("$MRFixConcatName")
 else
     fMRINamesToUse=("${fMRINamesArray[@]}")
-    for fMRIName in "${fMRINamesArray[@]}"
-    do
-        echo "${fMRIName}" >> "$fMRIListName"
-    done
 fi
 # check if FIX features are generated (csv with 181 features)
 for fMRIName in "${fMRINamesToUse[@]}" ; do
+    echo "${fMRIName}" >> "$fMRIListName"
     FixFeaturePath="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/fix/features.csv"
     if [[ ! -e "$FixFeaturePath" ]]; then
         log_Err_Abort "$FixFeaturePath is not doesn't exist, make sure ICA+FIX is applied to this subject: ${Subject}, fMRI run: ${fMRIName}"
