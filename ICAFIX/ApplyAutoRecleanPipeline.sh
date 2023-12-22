@@ -12,7 +12,6 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically

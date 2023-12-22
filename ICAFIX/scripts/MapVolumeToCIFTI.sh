@@ -1,3 +1,5 @@
+set -eu
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 StudyFolder="${1}"
 Subject="${2}"
 fMRIName="${3}"
