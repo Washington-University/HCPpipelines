@@ -122,13 +122,15 @@ main() {
 	# set resolution
 	fMRIResolution="2"
 
-	# set singularity path
+	#run in singularity
 	PythonSingularity="/path/to/singularity.img"
 	PythonSingularityMountPath="/path/to/data" # where the data dir need to mount to the singularity
-
-	# # set python interpreter
-	# PythonInterpreter="/my/conda/path/envs/hcp_python_env/bin/python3"
 	PythonInterpreter=""
+
+	#run in conda
+	#PythonSingularity=""
+	#PythonSingularityMountPath=""
+	#PythonInterpreter="/my/conda/path/envs/hcp_python_env/bin/python3"
 
 	# models to use
 	Models="RandomForest@MLP@Xgboost@WeightedKNN@XgboostEnsemble"
