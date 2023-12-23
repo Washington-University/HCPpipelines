@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ -z "$2" ]; then
+	echo "usage: fs_to_gii <freesurfer dir> <in> <out gii>"
+	exit -1
+fi
+
+FreeSurferFolder=$1
+in=$2
+out=$3
+
+set -x
+mris_convert $in $out.temp.gii
+set +x
+
+MatrixXYZ=`mri_info --cras ${FreeSurferFolder}/mri/brain.finalsurfs.mgz`
+MatrixX=`echo ${MatrixXYZ} | awk '{print $1;}'`
+MatrixY=`echo ${MatrixXYZ} | awk '{print $2;}'`
+MatrixZ=`echo ${MatrixXYZ} | awk '{print $3;}'`
+echo "1 0 0 ${MatrixX}" >  ${FreeSurferFolder}/mri/c_ras.mat
+echo "0 1 0 ${MatrixY}" >> ${FreeSurferFolder}/mri/c_ras.mat
+echo "0 0 1 ${MatrixZ}" >> ${FreeSurferFolder}/mri/c_ras.mat
+echo "0 0 0 1"          >> ${FreeSurferFolder}/mri/c_ras.mat
+
+
+set -x
+wb_command -surface-apply-affine $out.temp.gii "$FreeSurferFolder"/mri/c_ras.mat $out
+rm $out.temp.gii
+set +x
+
