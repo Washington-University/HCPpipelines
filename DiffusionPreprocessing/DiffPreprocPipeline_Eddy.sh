@@ -67,102 +67,115 @@
 #  Usage Description Function
 # --------------------------------------------------------------------------------
 
-show_usage() {
-	cat <<EOF
+set -eu
 
-Perform the Eddy step of the HCP Diffusion Preprocessing Pipeline
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
 
-Usage: ${g_script_name} PARAMETER...
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
+source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"          # Functions for getting FSL version
+source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-PARAMETERs are: [ ] = optional; < > = user supplied value
-  [--help]                show usage information and exit with non-zero return code
-  [--version]             show version information and exit with 0 as return code
-  [--detailed-outlier-stats=True]
-                          produce detailed outlier statistics from eddy after each
-                          iteration. Note: This option has no effect if the
-                          GPU-enabled version of eddy is not used.
-  [--detailed-outlier-stats]
-                          same as --detailed-outlier-stats=True
-                          Preferred over --detailed-outler-stats=True, but support
-                          for =True version kept for backwards compatibility
-  [--replace-outliers=True]
-                          ask eddy to replace any outliers it detects by their
-                          expectations. Note: This option has no effect if the
-                          GPU-enabled version of eddy is not used.
-  [--replace-outliers]    same as --replace-outliers=True
-                          Preferred over --replace-outliers=True, but support for
-                          =True version kept for backwards compatibility
-  [--nvoxhp=<number-of-voxel-hyperparameters>]
-                          number of voxel hyperparameters to use. Note: This
-                          option has no effect if the GPU-enabled version of eddy
-                          is not used.
-  [--sep_offs_move=True]  Stop DWI from drifting relative to b=0. Note: This
-                          option has no effect if the GPU-enabled version of eddy
-                          is not used.
-  [--sep_offs_move]       same as --sep_offs_move=True
-  [--sep-offs-move]       same as --sep_offs_move=True
-                          This version is preferred, but support for =True version
-                          kept for backwards compatibility. --sep_offs_move version
-                          kept to try to avoid parameter name issues.
-  [--rms=True]            Write root-mean-squared movement files for QA purposes
-                          Note: This option has no effect if the GPU-enabled version
-                          of eddy is not used.
-  [--rms]                 same as --rms=True
-                          Preferred over --rms=True, but support for =True version
-                          kept for backwards compatibility
-  [--ff=<ff-value>]       ff-value to be passed to the eddy binary. See eddy
-                          documentation at
-                          http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/EDDY/UsersGuide#A--ff
-                          for further information. Note: This option has no effect
-                          if the GPU-enabled version of eddy is not used.
-  --path=<study-path>     path to subject's data folder
-  --subject=<subject-id>  subject ID
-  [--dwiname=<DWIName>]   name to give DWI output directories
-                          Defaults to Diffusion
-  [--dont_peas]           pass the --dont_peas (Do NOT perform a post-eddy
-                          alignment of shells) option to the eddy invocation
-  [--fwhm=<value>]        --fwhm value to pass to the eddy binary
-                          Defaults to --fwhm=0
-  [--resamp=<value>]      --resamp value to pass to the eddy binary
-                          If unspecified, no --resamp option is passed to the
-                          eddy binary.
-  [--ol_nstd=<value>]     --ol_nstd value to pass to the eddy binary
-                          If unspecified, no --ol_nstd option is passed to the
-                          eddy binary
-  [--extra-eddy-arg=<token>]
-                          Generic single token (no whitespace) argument to be
-                          passed to the run_eddy.sh script and subsequently to
-                          the eddy binary. To build a multi-token series of
-                          arguments, you can specify this --extra-eddy-arg=
-                          parameter several times. E.g.
-                          --extra-eddy-arg=--verbose --extra-eddy-arg=T
-                          will ultimately be translated to --verbose T when
-                          passed to the eddy binary.
-  [--no-gpu]              If specified, use the non-GPU-enabled version of eddy.
-                          Defaults to using the GPU-enabled version of eddy.
-  [--cuda-version=X.Y]    If using the GPU-enabled version of eddy, then this
-                          option can be used to specify which eddy_cuda binary
-                          version to use. If specified, FSLDIR/bin/eddy_cudaX.Y
-                          will be used.
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
 
-Return Status Value:
+opts_SetScriptDescription "Perform the Eddy step of the HCP Diffusion Preprocessing Pipeline"
 
-  0                       All parameters were properly formed and processing succeeded,
-                          or help requested.
-  Non-zero                otherwise - malformed parameters or a processing failure was detected
+#   [--detailed-outlier-stats=True]
+#                           produce detailed outlier statistics from eddy after each
+#                           iteration. Note: This option has no effect if the
+#                           GPU-enabled version of eddy is not used.
+ 
+opts_AddOptional '--detailed-outlier-stats' 'DetailedOutlierStats' 'Boolean' "Produce detailed outlier statistics from eddy after each iteration. Note: This option has no effect if the GPU-enabled version of eddy is not used." "False"
+#   [--replace-outliers=True]
+#                           ask eddy to replace any outliers it detects by their
+#                           expectations. Note: This option has no effect if the
+#                           GPU-enabled version of eddy is not used.
+opts_AddOptional '--replace-outliers' 'ReplaceOutliers' 'Boolean' "Ask eddy to replace any outliers it detects by their expectations. Note: This option has no effect if the GPU-enabled version of eddy is not used." "False"
 
-Required Environment Variables:
+opts_AddOptional '--nvoxhp' 'nvoxhp' 'Number' "Number of voxel hyperparameters to use. Note: This option has no effect if the GPU-enabled version of eddy is not used."
 
-  HCPPIPEDIR              The home directory for the version of the HCP Pipeline
-                          Scripts being used.
+opts_AddOptional '--sep_offs_move' 'sep_offs_move' 'Boolean' "Stop DWI from drifting relative to b=0. Note: This option has no effect if the GPU-enabled version of eddy  is not used." "False" "--sep-offs-move"
 
-EOF
-}
+#   [--sep_offs_move]       same as --sep_offs_move=True
+#   [--sep-offs-move]       same as --sep_offs_move=True
+#                           This version is preferred, but support for =True version
+#                           kept for backwards compatibility. --sep_offs_move version
+#                           kept to try to avoid parameter name issues.
+opts_AddOptional '--rms' 'rms' 'Boolean' "Write root-mean-squared movement files for QA purposes Note: This option has no effect if the GPU-enabled version of eddy is not used." "False"
+#   [--rms]                 same as --rms=True
+#                           Preferred over --rms=True, but support for =True version
+#                           kept for backwards compatibility
+
+opts_AddOptional '--ff' 'ff_val' 'Number' "Ff-value to be passed to the eddy binary. See eddy documentation at http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/EDDY/UsersGuide#A--ff for further information. Note: This option has no effect if the GPU-enabled version of eddy is not used."
+
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+  
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+
+opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion" 
+
+opts_AddOptional '--dont_peas' 'dont_peas' 'String' "Pass the --dont_peas (Do NOT perform a post-eddy alignment of shells) option to the eddy invocation"
+
+opts_AddOptional '--fwhm' 'fwhm_value' 'Number' 'Fwhm value to pass to the eddy binary Defaults to 0' "0"
+
+opts_AddOptional '--resamp' 'resamp_value' 'Number' 'Resamp value to pass to the eddy binary If unspecified, no option is passed to the eddy binary.'
+
+opts_AddOptional '--ol_nstd' 'ol_nstd_value' 'Number' 'Ol_nstd value to pass to the eddy binary If unspecified, no ol_nstd option is passed to the eddy binary'
+
+
+## THERE ARE TWO VARS extra_eddy_args and extra_eddy_arg can this take multiple values???
+opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' 'Generic single token (no whitespace) argument to be passed to the run_eddy.sh script and subsequently to the eddy binary. To build a multi-token series of arguments, you can specify this parameter several times. E.g.  --extra-eddy-arg=--verbose --extra-eddy-arg=T will ultimately be translated to --verbose T when passed to the eddy binary.'
+
+## This is an extremely confusing flag should rework it to just use-gpu?
+opts_AddOptional '--no-gpu' 'no_gpu' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. False." "False"
+
+opts_AddOptional '--cuda-version' 'cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
+
+opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
+
+"$HCPPIPEDIR"/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+
+# Set other necessary variables, contingent on HCPPIPEDIR
+HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+
+
+# Establish output directory paths
+outdir=${StudyFolder}/${Subject}/${DWIName}
+
+
+# Return Status Value:
+
+#   0                       All parameters were properly formed and processing succeeded,
+#                           or help requested.
+#   Non-zero                otherwise - malformed parameters or a processing failure was detected
+
+# Required Environment Variables:
+
+#   HCPPIPEDIR              The home directory for the version of the HCP Pipeline
+#                           Scripts being used.
+
+# EOF
+# }
 
 #
 # Function Description
@@ -204,145 +217,187 @@ EOF
 #  Support Functions
 # --------------------------------------------------------------------------------
 
-get_options() {
-	local arguments=($@)
+# get_options() {
+# 	local arguments=($@)
 
-	# initialize global output variables
-	unset StudyFolder
-	unset Subject
-	DWIName="Diffusion"
-	DetailedOutlierStats="False"
-	ReplaceOutliers="False"
-	runcmd=""
-	nvoxhp=""
-	sep_offs_move="False"
-	rms="False"
-	ff_val=""
-	dont_peas=""
-	fwhm_value="0"
-	resamp_value=""
-	unset ol_nstd_value
-	extra_eddy_args=""
-	no_gpu="False"
-	cuda_version=""
+# 	# initialize global output variables
+# 	unset StudyFolder
+# 	unset Subject
+# 	DWIName="Diffusion"
+# 	DetailedOutlierStats="False"
+# 	ReplaceOutliers="False"
+# 	runcmd=""
+# 	nvoxhp=""
+# 	sep_offs_move="False"
+# 	rms="False"
+# 	ff_val="" ############DO THESE EMPTY STRING DEFAULTS NEED TO BE THERE?
+# 	dont_peas=""
+# 	fwhm_value="0"
+# 	resamp_value=""
+# 	unset ol_nstd_value
+# 	extra_eddy_args=""
+# 	no_gpu="False"
+# 	cuda_version=""
 
-	# parse arguments
-	local index=0
-	local numArgs=${#arguments[@]}
-	local argument
+# 	# parse arguments
+# 	local index=0
+# 	local numArgs=${#arguments[@]}
+# 	local argument
 
-	while [ ${index} -lt ${numArgs} ]; do
-		argument=${arguments[index]}
+# 	while [ ${index} -lt ${numArgs} ]; do
+# 		argument=${arguments[index]}
 
-		case ${argument} in
-		--help)
-			show_usage
-			exit 0
-			;;
-		--version)
-			version_show "$@"
-			exit 0
-			;;
-		--path=*)
-			StudyFolder=${argument#*=}
-			index=$((index + 1))
-			;;
-		--subject=*)
-			Subject=${argument#*=}
-			index=$((index + 1))
-			;;
-		--detailed-outlier-stats=*)
-			DetailedOutlierStats=${argument#*=}
-			index=$((index + 1))
-			;;
-		--detailed-outlier-stats)
-			DetailedOutlierStats="True"
-			index=$((index + 1))
-			;;
-		--replace-outliers=*)
-			ReplaceOutliers=${argument#*=}
-			index=$((index + 1))
-			;;
-		--replace-outliers)
-			ReplaceOutliers="True"
-			index=$((index + 1))
-			;;
-		--printcom=*)
-			runcmd=${argument#*=}
-			index=$((index + 1))
-			;;
-		--dwiname=*)
-			DWIName=${argument#*=}
-			index=$((index + 1))
-			;;
-		--nvoxhp=*)
-			nvoxhp=${argument#*=}
-			index=$((index + 1))
-			;;
-		--sep_offs_move=*)
-			sep_offs_move=${argument#*=}
-			index=$((index + 1))
-			;;
-		--sep_offs_move)
-			sep_offs_move="True"
-			index=$((index + 1))
-			;;
-		--sep-offs-move)
-			sep_offs_move="True"
-			index=$((index + 1))
-			;;
-		--rms=*)
-			rms=${argument#*=}
-			index=$((index + 1))
-			;;
-		--rms)
-			rms="True"
-			index=$((index + 1))
-			;;
-		--ff=*)
-			ff_val=${argument#*=}
-			index=$((index + 1))
-			;;
-		--dont_peas)
-			dont_peas="--dont_peas"
-			index=$((index + 1))
-			;;
-		--fwhm=*)
-			fwhm_value=${argument#*=}
-			index=$((index + 1))
-			;;
-		--resamp=*)
-			resamp_value=${argument#*=}
-			index=$((index + 1))
-			;;
-		--ol_nstd=*)
-			ol_nstd_value=${argument#*=}
-			index=$((index + 1))
-			;;
-		--extra-eddy-arg=*)
-			extra_eddy_arg=${argument#*=}
-			extra_eddy_args+=" ${extra_eddy_arg} "
-			index=$((index + 1))
-			;;
-		--no-gpu)
-			no_gpu="TRUE"
-			index=$((index + 1))
-			;;
-		--cuda-version=*)
-			cuda_version=${argument#*=}
-			index=$((index + 1))
-			;;
-		*)
-			show_usage
-			echo "ERROR: Unrecognized Option: ${argument}"
-			exit 1
-			;;
-		esac
-	done
+# 		case ${argument} in
+# 		--help)
+# 			show_usage
+# 			exit 0
+# 			;;
+# 		--version)
+# 			version_show "$@"
+# 			exit 0
+# 			;;
+# 		--path=*)
+# 			StudyFolder=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--subject=*)
+# 			Subject=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--detailed-outlier-stats=*)
+# 			DetailedOutlierStats=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--detailed-outlier-stats)
+# 			DetailedOutlierStats="True"
+# 			index=$((index + 1))
+# 			;;
+# 		--replace-outliers=*)
+# 			ReplaceOutliers=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--replace-outliers)
+# 			ReplaceOutliers="True"
+# 			index=$((index + 1))
+# 			;;
+# 		--printcom=*)
+# 			runcmd=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--dwiname=*)
+# 			DWIName=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--nvoxhp=*)
+# 			nvoxhp=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--sep_offs_move=*)
+# 			sep_offs_move=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--sep_offs_move)
+# 			sep_offs_move="True"
+# 			index=$((index + 1))
+# 			;;
+# 		--sep-offs-move)
+# 			sep_offs_move="True"
+# 			index=$((index + 1))
+# 			;;
+# 		--rms=*)
+# 			rms=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--rms)
+# 			rms="True"
+# 			index=$((index + 1))
+# 			;;
+# 		--ff=*)
+# 			ff_val=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--dont_peas)
+# 			dont_peas="--dont_peas"
+# 			index=$((index + 1))
+# 			;;
+# 		--fwhm=*)
+# 			fwhm_value=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--resamp=*)
+# 			resamp_value=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--ol_nstd=*)
+# 			ol_nstd_value=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		--extra-eddy-arg=*)
+# 			extra_eddy_arg=${argument#*=}
+# 			extra_eddy_args+=" ${extra_eddy_arg} "
+# 			index=$((index + 1))
+# 			;;
+# 		--no-gpu)
+# 			no_gpu="TRUE"
+# 			index=$((index + 1))
+# 			;;
+# 		--cuda-version=*)
+# 			cuda_version=${argument#*=}
+# 			index=$((index + 1))
+# 			;;
+# 		*)
+# 			show_usage
+# 			echo "ERROR: Unrecognized Option: ${argument}"
+# 			exit 1
+# 			;;
+# 		esac
+# 	done
 
-	local error_msgs=""
+# 	local error_msgs=""
 
-	# check required parameters
+# 	# check required parameters
+# 	if [ -z ${StudyFolder} ]; then
+# 		error_msgs+="\nERROR: <study-path> not specified"
+# 	fi
+
+# 	if [ -z ${Subject} ]; then
+# 		error_msgs+="\nERROR: <subject-id> not specified"
+# 	fi
+
+# 	if [ -z ${DWIName} ]; then
+# 		error_msgs+="\nERROR: <DWIName> not specified"
+# 	fi
+
+# 	if [ ! -z "${error_msgs}" ]; then
+# 		show_usage
+# 		echo -e ${error_msgs}
+# 		echo ""
+# 		exit 1
+# 	fi
+
+# 	# report parameters
+# 	echo "-- ${g_script_name}: Specified Command-Line Parameters - Start --"
+# 	echo "   StudyFolder: ${StudyFolder}"
+# 	echo "   Subject: ${Subject}"
+# 	echo "   DWIName: ${DWIName}"
+# 	echo "   DetailedOutlierStats: ${DetailedOutlierStats}"
+# 	echo "   ReplaceOutliers: ${ReplaceOutliers}"
+# 	echo "   runcmd: ${runcmd}"
+# 	echo "   nvoxhp: ${nvoxhp}"
+# 	echo "   sep_offs_move: ${sep_offs_move}"
+# 	echo "   rms: ${rms}"
+# 	echo "   ff_val: ${ff_val}"
+# 	echo "   dont_peas: ${dont_peas}"
+# 	echo "   fwhm_value: ${fwhm_value}"
+# 	echo "   resamp_value: ${resamp_value}"
+# 	echo "   ol_nstd_value: ${ol_nstd_value}"
+# 	echo "   extra_eddy_args: ${extra_eddy_args}"
+# 	echo "   no_gpu: ${no_gpu}"
+# 	echo "   cuda-version: ${cuda_version}"
+# 	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
+# }
+
+# check required parameters
 	if [ -z ${StudyFolder} ]; then
 		error_msgs+="\nERROR: <study-path> not specified"
 	fi
@@ -354,35 +409,6 @@ get_options() {
 	if [ -z ${DWIName} ]; then
 		error_msgs+="\nERROR: <DWIName> not specified"
 	fi
-
-	if [ ! -z "${error_msgs}" ]; then
-		show_usage
-		echo -e ${error_msgs}
-		echo ""
-		exit 1
-	fi
-
-	# report parameters
-	echo "-- ${g_script_name}: Specified Command-Line Parameters - Start --"
-	echo "   StudyFolder: ${StudyFolder}"
-	echo "   Subject: ${Subject}"
-	echo "   DWIName: ${DWIName}"
-	echo "   DetailedOutlierStats: ${DetailedOutlierStats}"
-	echo "   ReplaceOutliers: ${ReplaceOutliers}"
-	echo "   runcmd: ${runcmd}"
-	echo "   nvoxhp: ${nvoxhp}"
-	echo "   sep_offs_move: ${sep_offs_move}"
-	echo "   rms: ${rms}"
-	echo "   ff_val: ${ff_val}"
-	echo "   dont_peas: ${dont_peas}"
-	echo "   fwhm_value: ${fwhm_value}"
-	echo "   resamp_value: ${resamp_value}"
-	echo "   ol_nstd_value: ${ol_nstd_value}"
-	echo "   extra_eddy_args: ${extra_eddy_args}"
-	echo "   no_gpu: ${no_gpu}"
-	echo "   cuda-version: ${cuda_version}"
-	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
-}
 
 #
 # Function Description
@@ -403,115 +429,102 @@ validate_scripts() {
 	fi
 }
 
-#
-# Function Description
-#  Main processing of script
-#
-#  Gets user specified command line options, runs Eddy step of Diffusiong Preprocessing
-#
-main() {
-	# Get Command Line Options
-	get_options "$@"
+# Validate scripts
+validate_scripts "$@"
 
-	# Validate scripts
-	validate_scripts "$@"
+# Determine stats_option value to pass to run_eddy.sh script
+if [ "${DetailedOutlierStats}" = "True" ]; then
+	stats_option="--wss"
+else
+	stats_option=""
+fi
 
-	# Establish output directory paths
-	outdir=${StudyFolder}/${Subject}/${DWIName}
+# Determine replace_outliers_option value to pass to run_eddy.sh script
+if [ "${ReplaceOutliers}" = "True" ]; then
+	replace_outliers_option="--repol"
+else
+	replace_outliers_option=""
+fi
 
-	# Determine stats_option value to pass to run_eddy.sh script
-	if [ "${DetailedOutlierStats}" = "True" ]; then
-		stats_option="--wss"
-	else
-		stats_option=""
+# Determine nvoxhp_option value to pass to run_eddy.sh script
+if [ "${nvoxhp}" != "" ]; then
+	nvoxhp_option="--nvoxhp=${nvoxhp}"
+else
+	nvoxhp_option=""
+fi
+
+# Determine sep_offs_move_option value to pass to run_eddy.sh script
+if [ "${sep_offs_move}" = "True" ]; then
+	sep_offs_move_option="--sep_offs_move"
+else
+	sep_offs_move_option=""
+fi
+
+# Determine rms_option value to pass to run_eddy.sh script
+if [ "${rms}" = "True" ]; then
+	rms_option="--rms"
+else
+	rms_option=""
+fi
+
+# Determine ff_option value to pass to run_eddy.sh script
+if [ "${ff_val}" != "" ]; then
+	ff_option="--ff=${ff_val}"
+else
+	ff_option=""
+fi
+
+# Determine ol_nstd value to pass to run_eddy.sh script
+if [ -z ${ol_nstd_value} ]; then
+	ol_nstd_value_option=""
+else
+	ol_nstd_value_option="--ol_nstd=${ol_nstd_value}"
+fi
+
+log_Msg "Running Eddy"
+
+run_eddy_cmd="${runcmd} ${HCPPIPEDIR_dMRI}/run_eddy.sh "
+run_eddy_cmd+=" ${stats_option} "
+run_eddy_cmd+=" ${replace_outliers_option} "
+run_eddy_cmd+=" ${nvoxhp_option} "
+run_eddy_cmd+=" ${sep_offs_move_option} "
+run_eddy_cmd+=" ${rms_option} "
+run_eddy_cmd+=" ${ff_option} "
+run_eddy_cmd+=" ${ol_nstd_value_option} "
+
+if [ "${no_gpu}" != "TRUE" ]; then
+	# default is to use the GPU-enabled version
+	run_eddy_cmd+=" -g "
+	if [ ! -z "${cuda_version}" ]; then
+		run_eddy_cmd+=" --cuda-version=${cuda_version}"
 	fi
+fi
 
-	# Determine replace_outliers_option value to pass to run_eddy.sh script
-	if [ "${ReplaceOutliers}" = "True" ]; then
-		replace_outliers_option="--repol"
-	else
-		replace_outliers_option=""
-	fi
+run_eddy_cmd+=" -w ${outdir}/eddy "
 
-	# Determine nvoxhp_option value to pass to run_eddy.sh script
-	if [ "${nvoxhp}" != "" ]; then
-		nvoxhp_option="--nvoxhp=${nvoxhp}"
-	else
-		nvoxhp_option=""
-	fi
+if [ ! -z "${dont_peas}" ]; then
+	run_eddy_cmd+=" --dont_peas "
+fi
 
-	# Determine sep_offs_move_option value to pass to run_eddy.sh script
-	if [ "${sep_offs_move}" = "True" ]; then
-		sep_offs_move_option="--sep_offs_move"
-	else
-		sep_offs_move_option=""
-	fi
+run_eddy_cmd+=" --fwhm=${fwhm_value} "
 
-	# Determine rms_option value to pass to run_eddy.sh script
-	if [ "${rms}" = "True" ]; then
-		rms_option="--rms"
-	else
-		rms_option=""
-	fi
+if [ ! -z "${resamp_value}" ]; then
+	run_eddy_cmd+=" --resamp=${resamp_value} "
+fi
 
-	# Determine ff_option value to pass to run_eddy.sh script
-	if [ "${ff_val}" != "" ]; then
-		ff_option="--ff=${ff_val}"
-	else
-		ff_option=""
-	fi
+if [ ! -z "${extra_eddy_args}" ]; then
+	for extra_eddy_arg in ${extra_eddy_args}; do
+		run_eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
+	done
+fi
 
-	# Determine ol_nstd value to pass to run_eddy.sh script
-	if [ -z ${ol_nstd_value} ]; then
-		ol_nstd_value_option=""
-	else
-		ol_nstd_value_option="--ol_nstd=${ol_nstd_value}"
-	fi
+log_Msg "About to issue the following command to invoke the run_eddy.sh script"
+log_Msg "${run_eddy_cmd}"
+${run_eddy_cmd}
 
-	log_Msg "Running Eddy"
-
-	run_eddy_cmd="${runcmd} ${HCPPIPEDIR_dMRI}/run_eddy.sh "
-	run_eddy_cmd+=" ${stats_option} "
-	run_eddy_cmd+=" ${replace_outliers_option} "
-	run_eddy_cmd+=" ${nvoxhp_option} "
-	run_eddy_cmd+=" ${sep_offs_move_option} "
-	run_eddy_cmd+=" ${rms_option} "
-	run_eddy_cmd+=" ${ff_option} "
-	run_eddy_cmd+=" ${ol_nstd_value_option} "
-
-	if [ "${no_gpu}" != "TRUE" ]; then
-		# default is to use the GPU-enabled version
-		run_eddy_cmd+=" -g "
-		if [ ! -z "${cuda_version}" ]; then
-			run_eddy_cmd+=" --cuda-version=${cuda_version}"
-		fi
-	fi
-
-	run_eddy_cmd+=" -w ${outdir}/eddy "
-
-	if [ ! -z "${dont_peas}" ]; then
-		run_eddy_cmd+=" --dont_peas "
-	fi
-
-	run_eddy_cmd+=" --fwhm=${fwhm_value} "
-
-	if [ ! -z "${resamp_value}" ]; then
-		run_eddy_cmd+=" --resamp=${resamp_value} "
-	fi
-
-	if [ ! -z "${extra_eddy_args}" ]; then
-		for extra_eddy_arg in ${extra_eddy_args}; do
-			run_eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
-		done
-	fi
-
-	log_Msg "About to issue the following command to invoke the run_eddy.sh script"
-	log_Msg "${run_eddy_cmd}"
-	${run_eddy_cmd}
-
-	log_Msg "Completed!"
-	exit 0
-}
+log_Msg "Completed!"
+exit 0
+# }
 
 # ------------------------------------------------------------------------------
 #  "Global" processing - everything above here should be in a function
@@ -519,43 +532,39 @@ main() {
 
 # Establish defaults
 
-# Set global variables
-g_script_name=$(basename "${0}")
+# # Set global variables
+# g_script_name=$(basename "${0}")
 
-# Allow script to return a Usage statement, before any other output
-if [ "$#" = "0" ]; then
-	show_usage
-	exit 1
-fi
+# # Allow script to return a Usage statement, before any other output
+# if [ "$#" = "0" ]; then
+# 	show_usage
+# 	exit 1
+# fi
 
-# Verify that HCPPIPEDIR Environment variable is set
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
+# # Verify that HCPPIPEDIR Environment variable is set
+# if [ -z "${HCPPIPEDIR}" ]; then
+# 	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+# 	exit 1
+# fi
 
-# Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib         # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/version.shlib      # version_ functions
 
-opts_ShowVersionIfRequested "$@"
+# opts_ShowVersionIfRequested "$@"
 
-if opts_CheckForHelpRequest "$@"; then
-	show_usage
-	exit 0
-fi
+# if opts_CheckForHelpRequest "$@"; then
+# 	show_usage
+# 	exit 0
+# # fi
 
-${HCPPIPEDIR}/show_version
+# ${HCPPIPEDIR}/show_version
 
 # Verify required environment variables are set and log value
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
+# log_Check_Env_Var HCPPIPEDIR
+# log_Check_Env_Var FSLDIR
 
-# Set other necessary variables, contingent on HCPPIPEDIR
-HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+# # Set other necessary variables, contingent on HCPPIPEDIR
+# HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 
-#
-# Invoke the 'main' function to get things started
-#
-main "$@"
+# #
+# # Invoke the 'main' function to get things started
+# #
+# main "$@"

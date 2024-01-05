@@ -66,65 +66,83 @@
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
+#Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline 
 
-show_usage() {
-	cat <<EOF
+# show_usage() {
+# 	cat <<EOF
 
-Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline
+set -eu
 
-Usage: ${g_script_name} PARAMETER...
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
 
-PARAMETERs are: [ ] = optional; < > = user supplied value
-  [--help]                show usage information and exit with non-zero return code
-  [--version]             show version information and exit with 0 as return code
-  --path=<study-path>     path to subject's data folder
-  --subject=<subject-id>  subject ID
-  --gdcoeffs=<path-to-gradients-coefficients-file>
-                          path to file containing coefficients that describe
-                          spatial variations of the scanner gradients.
-                          Use --gdcoeffs=NONE if not available.
-  [--dwiname=<DWIName>]   name to give DWI output directories
-	                      Defaults to Diffusion
-  [--dof=<Degrees of Freedom>]
-                          Degrees of Freedom for registration to structural
-                          images. Defaults to ${DEFAULT_DEGREES_OF_FREEDOM}
-  [--select_best_b0]
-                          Whether the --select-best-b0 flag was used in
-                          DiffPreprocPipeline_PreEddy.
-  [--combine-data-flag=<value>]
-                          Specified value is passed as the CombineDataFlag value
-                          for the eddy_postproc.sh script.
-                          If JAC resampling has been used in eddy, this value
-                          determines what to do with the output file.
+# g_script_name=$(basename "${0}")
+
+# Load function libraries
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
+
+# Establish defaults
+DEFAULT_DEGREES_OF_FREEDOM=6
+
+opts_SetScriptDescription "Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
+
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+
+opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
+
+opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion"
+
+opts_AddOptional '--dof' 'DegreesOfFreedom' 'Number' "Degrees of Freedom for post eddy registration to structural images. Defaults to '${DEFAULT_DEGREES_OF_FREEDOM}'" "'${DEFAULT_DEGREES_OF_FREEDOM}'"
+
+opts_AddOptional '--select-best-b0' 'SelectBestB0' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
+
+opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified value is passed as the CombineDataFlag value for the eddy_postproc.sh script. If JAC resampling has been used in eddy, this value determines what to do with the output file.
                           2 - include in the output all volumes uncombined (i.e.
                               output file of eddy)
                           1 - include in the output and combine only volumes
                               where both LR/RL (or AP/PA) pairs have been
                               acquired
                           0 - As 1, but also include uncombined single volumes
-                          Defaults to 1
-  [--printcom=<print-command>]
-                          Use the specified <print-command> to echo or otherwise
-                          output the commands that would be executed instead of
-                          actually running them. --printcom=echo is intended to
-                          be used for testing purposes
+                          Defaults to 1" "1"
 
-Return Status Value:
+opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
-  0                       All parameters were properly formed and processing succeeded,
-                          or help requested.
-  Non-zero                otherwise - malformed parameters or a processing failure was detected
 
-Required Environment Variables:
+opts_ParseArguments "$@"
 
-  HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
-  FSLDIR                  The home directory for FSL
-  HCPPIPEDIR_Global       Location of shared global scripts
-  PATH                    Standard PATH environment variable must be set to find
-                            HCP-customized version of gradient_unwarp.py
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
 
-EOF
-}
+opts_ShowValues
+
+"$HCPPIPEDIR"/show_version
+
+# Verify required environment variables are set and log value
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global # Needed in eddy_postproc.sh and DiffusionToStructural.sh
+
+# Set other necessary variables, contingent on HCPPIPEDIR
+HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+
+# Required Environment Variables:
+
+#   HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
+#   FSLDIR                  The home directory for FSL
+#   HCPPIPEDIR_Global       Location of shared global scripts
+#   PATH                    Standard PATH environment variable must be set to find
+#                             HCP-customized version of gradient_unwarp.py
 
 #
 # Function Description
@@ -145,124 +163,7 @@ EOF
 #						  empty string.
 #  ${CombineDataFlag}     CombineDataFlag value to pass to the eddy_postproc.sh
 #                         script.
-#
-get_options() {
-	local arguments=($@)
-
-	# initialize global output variables
-	unset StudyFolder
-	unset Subject
-	unset GdCoeffs
-	unset SelectBestB0
-	DWIName="Diffusion"
-	DegreesOfFreedom=${DEFAULT_DEGREES_OF_FREEDOM}
-	runcmd=""
-	CombineDataFlag=1
-	SelectBestB0="false"
-
-	# parse arguments
-	local index=0
-	local numArgs=${#arguments[@]}
-	local argument
-
-	while [ ${index} -lt ${numArgs} ]; do
-		argument=${arguments[index]}
-
-		case ${argument} in
-		--help)
-			show_usage
-			exit 0
-			;;
-		--version)
-			version_show "$@"
-			exit 0
-			;;
-		--path=*)
-			StudyFolder=${argument#*=}
-			index=$((index + 1))
-			;;
-		--subject=*)
-			Subject=${argument#*=}
-			index=$((index + 1))
-			;;
-		--gdcoeffs=*)
-			GdCoeffs=${argument#*=}
-			index=$((index + 1))
-			;;
-		--dof=*)
-			DegreesOfFreedom=${argument#*=}
-			index=$((index + 1))
-			;;
-		--printcom=*)
-			runcmd=${argument#*=}
-			index=$((index + 1))
-			;;
-		--dwiname=*)
-			DWIName=${argument#*=}
-			index=$((index + 1))
-			;;
-		--combine-data-flag=*)
-			CombineDataFlag=${argument#*=}
-			index=$((index + 1))
-			;;
-		--select-best-b0)
-			SelectBestB0="true"
-			index=$((index + 1))
-			;;
-		*)
-			show_usage
-			echo "ERROR: Unrecognized Option: ${argument}"
-			exit 1
-			;;
-		esac
-	done
-
-	local error_msgs=""
-
-	# check required parameters
-	if [ -z ${StudyFolder} ]; then
-		error_msgs+="\nERROR: <study-path> not specified"
-	fi
-
-	if [ -z ${Subject} ]; then
-		error_msgs+="\nERROR: <subject-id> not specified"
-	fi
-
-	if [ -z ${GdCoeffs} ]; then
-		error_msgs+="\nERROR: <path-to-gradients-coefficients-file> not specified"
-	fi
-
-	if [ -z ${DWIName} ]; then
-		error_msgs+="\nERROR: <DWIName> not specified"
-	fi
-
-	if [ -z ${DegreesOfFreedom} ]; then
-		error_msgs+="\nERROR: DegreesOfFreedom not specified"
-	fi
-
-	if [ -z ${CombineDataFlag} ]; then
-		error_msgs+="\nERROR: CombineDataFlag not specified"
-	fi
-
-	if [ ! -z "${error_msgs}" ]; then
-		show_usage
-		echo -e ${error_msgs}
-		echo ""
-		exit 1
-	fi
-
-	# report parameters
-	echo "-- ${g_script_name}: Specified Command-Line Parameters - Start --"
-	echo "   StudyFolder: ${StudyFolder}"
-	echo "   Subject: ${Subject}"
-	echo "   DWIName: ${DWIName}"
-	echo "   GdCoeffs: ${GdCoeffs}"
-	echo "   DegreesOfFreedom: ${DegreesOfFreedom}"
-	echo "   runcmd: ${runcmd}"
-	echo "   CombineDataFlag: ${CombineDataFlag}"
-	echo "   SelectBestB0: ${SelectBestB0}"
-	echo "-- ${g_script_name}: Specified Command-Line Parameters - End --"
-}
+# #
 
 #
 # Function Description
@@ -293,127 +194,73 @@ validate_scripts() {
 #
 #  Gets user specified command line options, runs Post-Eddy steps of Diffusion Preprocessing
 #
-main() {
-	# Get Command Line Options
-	get_options "$@"
+# Validate scripts
+validate_scripts "$@"
 
-	# Validate scripts
-	validate_scripts "$@"
+# Establish output directory paths
+outdir=${StudyFolder}/${Subject}/${DWIName}
+outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
 
-	# Establish output directory paths
-	outdir=${StudyFolder}/${Subject}/${DWIName}
-	outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
-
-	# Determine whether Gradient Nonlinearity Distortion coefficients are supplied
-	GdFlag=0
-	if [ ! ${GdCoeffs} = "NONE" ]; then
-		log_Msg "Gradient nonlinearity distortion correction coefficients found!"
-		GdFlag=1
-	fi
-
-	log_Msg "Running Eddy PostProcessing"
-	# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
-	select_flag="0"
-	if [ "${SelectBestB0}" == "true" ]; then
-		select_flag="1"
-	fi
-	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
-
-	# Establish variables that follow naming conventions
-	T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
-	T1wImage="${T1wFolder}/T1w_acpc_dc"
-	T1wRestoreImage="${T1wFolder}/T1w_acpc_dc_restore"
-	T1wRestoreImageBrain="${T1wFolder}/T1w_acpc_dc_restore_brain"
-	BiasField="${T1wFolder}/BiasField_acpc_dc"
-	FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
-	RegOutput="${outdir}"/reg/"Scout2T1w"
-	QAImage="${outdir}"/reg/"T1wMulEPI"
-	DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
-	DiffRes=$(printf "%0.2f" ${DiffRes})
-
-	log_Msg "Running Diffusion to Structural Registration"
-	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-		--t1folder="${T1wFolder}" \
-		--subject="${Subject}" \
-		--workingdir="${outdir}/reg" \
-		--datadiffdir="${outdir}/data" \
-		--t1="${T1wImage}" \
-		--t1restore="${T1wRestoreImage}" \
-		--t1restorebrain="${T1wRestoreImageBrain}" \
-		--biasfield="${BiasField}" \
-		--brainmask="${FreeSurferBrainMask}" \
-		--datadiffT1wdir="${outdirT1w}" \
-		--regoutput="${RegOutput}" \
-		--QAimage="${QAImage}" \
-		--dof="${DegreesOfFreedom}" \
-		--gdflag=${GdFlag} \
-		--diffresol=${DiffRes}
-
-	to_location="${outdirT1w}/eddylogs"
-	from_directory="${outdir}/eddy"
-	log_Msg "Copying eddy log files to package location: ${to_location}"
-
-	# Log files are any 'eddy' output that doesn't have a .nii extension
-	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
-
-	${runcmd} mkdir -p ${to_location}
-	for filename in ${from_files}; do
-		${runcmd} cp -p ${filename} ${to_location}
-	done
-
-	${runcmd} mkdir -p ${outdirT1w}/QC
-	${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
-	${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
-
-	log_Msg "Completed!"
-	exit 0
-}
-
-# ------------------------------------------------------------------------------
-#  "Global" processing - everything above here should be in a function
-# ------------------------------------------------------------------------------
-
-# Establish defaults
-DEFAULT_DEGREES_OF_FREEDOM=6
-
-# Set global variables
-g_script_name=$(basename "${0}")
-
-# Allow script to return a Usage statement, before any other output
-if [ "$#" = "0" ]; then
-	show_usage
-	exit 1
+# Determine whether Gradient Nonlinearity Distortion coefficients are supplied
+GdFlag=0
+if [ ! ${GdCoeffs} = "NONE" ]; then
+	log_Msg "Gradient nonlinearity distortion correction coefficients found!"
+	GdFlag=1
 fi
 
-# Verify that HCPPIPEDIR Environment variable is set
-if [ -z "${HCPPIPEDIR}" ]; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
+log_Msg "Running Eddy PostProcessing"
+# Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
+select_flag="0"
+if [ "${SelectBestB0}" == "true" ]; then
+	select_flag="1"
 fi
+${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
 
-# Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
-source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
+# Establish variables that follow naming conventions
+T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
+T1wImage="${T1wFolder}/T1w_acpc_dc"
+T1wRestoreImage="${T1wFolder}/T1w_acpc_dc_restore"
+T1wRestoreImageBrain="${T1wFolder}/T1w_acpc_dc_restore_brain"
+BiasField="${T1wFolder}/BiasField_acpc_dc"
+FreeSurferBrainMask="${T1wFolder}/brainmask_fs"
+RegOutput="${outdir}"/reg/"Scout2T1w"
+QAImage="${outdir}"/reg/"T1wMulEPI"
+DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
+DiffRes=$(printf "%0.2f" ${DiffRes})
 
-opts_ShowVersionIfRequested "$@"
+log_Msg "Running Diffusion to Structural Registration"
+${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
+	--t1folder="${T1wFolder}" \
+	--subject="${Subject}" \
+	--workingdir="${outdir}/reg" \
+	--datadiffdir="${outdir}/data" \
+	--t1="${T1wImage}" \
+	--t1restore="${T1wRestoreImage}" \
+	--t1restorebrain="${T1wRestoreImageBrain}" \
+	--biasfield="${BiasField}" \
+	--brainmask="${FreeSurferBrainMask}" \
+	--datadiffT1wdir="${outdirT1w}" \
+	--regoutput="${RegOutput}" \
+	--QAimage="${QAImage}" \
+	--dof="${DegreesOfFreedom}" \
+	--gdflag=${GdFlag} \
+	--diffresol=${DiffRes}
 
-if opts_CheckForHelpRequest "$@"; then
-	show_usage
-	exit 0
-fi
+to_location="${outdirT1w}/eddylogs"
+from_directory="${outdir}/eddy"
+log_Msg "Copying eddy log files to package location: ${to_location}"
 
-${HCPPIPEDIR}/show_version
+# Log files are any 'eddy' output that doesn't have a .nii extension
+from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 
-# Verify required environment variables are set and log value
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
-log_Check_Env_Var HCPPIPEDIR_Global # Needed in eddy_postproc.sh and DiffusionToStructural.sh
+${runcmd} mkdir -p ${to_location}
+for filename in ${from_files}; do
+	${runcmd} cp -p ${filename} ${to_location}
+done
 
-# Set other necessary variables, contingent on HCPPIPEDIR
-HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
+${runcmd} mkdir -p ${outdirT1w}/QC
+${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
+${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 
-#
-# Invoke the 'main' function to get things started
-#
-main "$@"
+log_Msg "Completed!"
+exit 0
