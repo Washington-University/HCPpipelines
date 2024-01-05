@@ -21,8 +21,6 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
 
-opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)"
-
 opts_AddMandatory '--coeffs' 'InputCoefficients' 'path' "Siemens gradient coefficient file"
 
 opts_AddMandatory '--in' 'InputFile' 'image' "input image"
