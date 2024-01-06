@@ -59,7 +59,7 @@ log_Check_Env_Var FSLDIR
 # default parameters
 OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
 OutputTransformFile=`${FSLDIR}/bin/remove_ext ${OutputTransform}`
-WD=`defaultopt $WD ${OutputFile}.wdir`
+WD=`opts_DefaultOpt $WD ${OutputFile}.wdir`
 
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
 BaseName=`basename $BaseName`;
