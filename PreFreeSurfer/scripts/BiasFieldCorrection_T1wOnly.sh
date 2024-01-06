@@ -29,9 +29,9 @@ opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
 
 opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
 
-opts_AddMandatory '--obias' 'oBias' 'image' "output bias field image"
-
 #optional args 
+opts_AddOptional '--obias' 'oBias' 'image' "output bias field image"
+
 opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
 
 opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
