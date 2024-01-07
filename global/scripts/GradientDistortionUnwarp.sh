@@ -30,7 +30,7 @@ opts_AddMandatory '--out' 'OutputFile' 'image' "output image"
 opts_AddMandatory '--owarp' 'OutputTransform' 'warpfield' "output warp"
 
 #Optional Arguments
-opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
+opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "${OutputFile}.wdir"
 
 opts_ParseArguments "$@"
 
@@ -59,7 +59,6 @@ log_Check_Env_Var FSLDIR
 # default parameters
 OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
 OutputTransformFile=`${FSLDIR}/bin/remove_ext ${OutputTransform}`
-WD=`opts_DefaultOpt $WD ${OutputFile}.wdir`
 
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
 BaseName=`basename $BaseName`;
