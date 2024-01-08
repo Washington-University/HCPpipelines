@@ -83,8 +83,8 @@ cd $ORIGDIR
 
 # Now create an appropriate warpfield output (relative convention) and apply it to all timepoints
 #convertwarp's jacobian output has 8 frames, each combination of one-sided differences, so average them
-${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform --jacobian=${OutputTransformFile}_jacobian
-${FSLDIR}/bin/fslmaths ${OutputTransformFile}_jacobian -Tmean ${OutputTransformFile}_jacobian
+${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform --jacobian=${OutputTransform}_jacobian
+${FSLDIR}/bin/fslmaths ${OutputTransform}_jacobian -Tmean ${OutputTransform}_jacobian
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
 log_Msg "END"
