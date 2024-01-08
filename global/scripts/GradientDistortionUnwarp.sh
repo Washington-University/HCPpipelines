@@ -21,6 +21,8 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
 
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working dir'
+
 opts_AddMandatory '--coeffs' 'InputCoefficients' 'path' "Siemens gradient coefficient file"
 
 opts_AddMandatory '--in' 'InputFile' 'image' "input image"
@@ -28,9 +30,6 @@ opts_AddMandatory '--in' 'InputFile' 'image' "input image"
 opts_AddMandatory '--out' 'OutputFile' 'image' "output image"
 
 opts_AddMandatory '--owarp' 'OutputTransform' 'warpfield' "output warp"
-
-#Optional Arguments
-opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "${OutputFile}.wdir"
 
 opts_ParseArguments "$@"
 
@@ -54,11 +53,6 @@ log_Check_Env_Var FSLDIR
 #        $OutputFile         (spline interpolated 4D output)
 
 ################################################## OPTION PARSING #####################################################
-
-
-# default parameters
-OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
-OutputTransformFile=`${FSLDIR}/bin/remove_ext ${OutputTransform}`
 
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
 BaseName=`basename $BaseName`;
