@@ -111,6 +111,64 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
 source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_eddy_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--select-best-b0|--ensure-even-slices)
+                #"--select-best-b0 true" and similar works as-is, detect it and copy it as-is, but don't trigger the argument change
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=("${origargs[i]}" "${origargs[i + 1]}")
+                    #skip the boolean value, we took care of it
+                    i=$((i + 1))
+                else
+                    newargs+=("${origargs[i]}"=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (--no-gpu)
+                #we removed the negation, just replace
+                newargs+=(--gpu=FALSE)
+                changeargs=1
+                ;;
+            (--extra-eddy-arg=*)
+                #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
+                #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
+                extra_eddy_args_manual+=("${origargs[i]#*=}")
+                changeargs=1
+                ;;
+            (--extra-eddy-arg)
+                #also support "--extra-eddy-arg foo", for fewer surprises
+                if ((i + 1 >= ${#origargs[@]}))
+                then
+                    log_Err_Abort "--extra-reconall-arg requires an argument"
+                fi
+                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                #skip the next argument, we took care of it
+                i=$((i + 1))
+                changeargs=1
+                ;;
+            (*)
+                #copy anything unrecognized
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+        echo "extra eddy arguments: ${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}"
+    fi
+fi
+
 # Establish defaults
 DEFAULT_B0_MAX_BVAL=50
 DEFAULT_DEGREES_OF_FREEDOM=6
@@ -140,11 +198,11 @@ opts_AddOptional '--b0maxbval' 'b0maxbval' 'Value' "Volumes with a bvalue smalle
 
 opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by ${HCPPIPEDIR_Config}).'" "'${HCPPIPEDIR_Config}/b02b0.cnf'"
 
-opts_AddOptional '--select-best-b0' 'SelectBestB0' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
+opts_AddOptional '--select-best-b0' 'SelectBestB0String' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
 
-opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlices' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
+opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlicesString' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
 
-opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' "Generic single token (no whitespace) argument to pass to the DiffPreprocPipeline_Eddy.sh script and subsequently to the run_eddy.sh script and finally to the command that actually invokes the eddy binary. The following will work:
+opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' "(repeatable) Generic single token (no whitespace) argument to pass to the DiffPreprocPipeline_Eddy.sh script and subsequently to the run_eddy.sh script and finally to the command that actually invokes the eddy binary. The following will work:
                             --extra-eddy-arg=--val=1
                           because '--val=1' is a single token containing no whitespace.
                           The following will not work:
@@ -175,15 +233,23 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
-
 opts_ParseArguments "$@"
-
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+#TSC: hack around the lack of repeatable option support, use a single string for display
+extra_eddy_args=${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}
+
 opts_ShowValues
+
+#TSC: now use an array for proper argument handling
+extra_eddy_args=(${extra_eddy_args_manual[@]+"${extra_eddy_args_manual[@]}"})
+
+#parse booleans
+SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
+EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
 
 "$HCPPIPEDIR"/show_version
 
@@ -239,7 +305,7 @@ log_Check_Env_Var FSLDIR
 #                         subsequently to eddy_postproc.sh script
 #
 
-if [ "${SelectBestB0}" == "true" ]; then
+if ((SelectBestB0)); then
 		dont_peas_set=false
 		fwhm_set=false
 		if [ ! -z "${extra_eddy_args}" ]; then
@@ -312,10 +378,10 @@ pre_eddy_cmd+=" --echospacing=${echospacing} "
 pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
 pre_eddy_cmd+=" --topup-config-file=${TopupConfig} "
 pre_eddy_cmd+=" --printcom=${runcmd} "
-if [ "${SelectBestB0}" == "true" ]; then
+if ((SelectBestB0)); then
 	pre_eddy_cmd+=" --select-best-b0 "
 fi
-if [ "${EnsureEvenSlices}" == "true" ]; then
+if ((EnsureEvenSlices)); then
 	pre_eddy_cmd+=" --ensure-even-slices "
 fi
 
@@ -357,7 +423,7 @@ post_eddy_cmd+=" --gdcoeffs=${GdCoeffs} "
 post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
 post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
 post_eddy_cmd+=" --printcom=${runcmd} "
-if [ "${SelectBestB0}" == "true" ]; then
+if ((SelectBestB0)); then
 	post_eddy_cmd+=" --select-best-b0 "
 fi
 
