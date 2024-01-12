@@ -391,19 +391,6 @@ determine_eddy_tools_to_use() {
 	fi
 }
 
-#
-# Function Description
-#  Main processing of script
-#
-#  Gets user specified command line options, runs appropriate eddy
-#
-# main() {
-# Get Command Line Options
-#
-# Global Variables Set:
-#  See documentation for get_options function
-# get_options "$@"
-
 # Determine the eddy tools to use
 determine_eddy_tools_to_use
 

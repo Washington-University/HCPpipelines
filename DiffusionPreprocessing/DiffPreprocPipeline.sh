@@ -104,8 +104,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-# g_script_name=$(basename "${0}")
-
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"    # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  # Command line option functions
@@ -259,7 +257,7 @@ log_Check_Env_Var FSLDIR
 if ((SelectBestB0)); then
     dont_peas_set=false
     fwhm_set=false
-    for extra_eddy_arg in "${extra_eddy_args[@]}"; do
+    for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}; do
         if [[ ${extra_eddy_arg} == "--fwhm"* ]]; then
             fwhm_set=true
         fi

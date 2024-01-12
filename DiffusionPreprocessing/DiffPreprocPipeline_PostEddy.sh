@@ -63,14 +63,6 @@
 #
 #~ND~END~
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-#Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline 
-
-# show_usage() {
-# 	cat <<EOF
-
 set -eu
 
 pipedirguessed=0
@@ -80,8 +72,6 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
-
-# g_script_name=$(basename "${0}")
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
@@ -172,35 +162,6 @@ log_Check_Env_Var HCPPIPEDIR_Global # Needed in eddy_postproc.sh and DiffusionTo
 
 # Set other necessary variables, contingent on HCPPIPEDIR
 HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
-
-# Required Environment Variables:
-
-#   HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
-#   FSLDIR                  The home directory for FSL
-#   HCPPIPEDIR_Global       Location of shared global scripts
-#   PATH                    Standard PATH environment variable must be set to find
-#                             HCP-customized version of gradient_unwarp.py
-
-#
-# Function Description
-#  Get the command line options for this script
-#
-# Global Output Variables
-#  ${StudyFolder}         Path to subject's data folder
-#  ${Subject}             Subject ID
-#  ${GdCoeffs}			  Path to file containing coefficients that describe
-#                         spatial variations of the scanner gradients. NONE
-#                         if not available.
-#  ${DegreesOfFreedom}    Degrees of Freedom for registration to structural
-#                         images
-#  ${DWIName}             Name to give DWI output directories
-#  ${runcmd}              Set to a user specifed command to use if user has
-#                         requested that commands be echo'd (or printed)
-#                         instead of actually executed. Otherwise, set to
-#						  empty string.
-#  ${CombineDataFlag}     CombineDataFlag value to pass to the eddy_postproc.sh
-#                         script.
-# #
 
 #
 # Function Description

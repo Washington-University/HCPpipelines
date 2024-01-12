@@ -62,11 +62,6 @@
 #
 #~ND~END~
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-#Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline
-
 set -eu
 
 pipedirguessed=0
@@ -76,8 +71,6 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
-
-# g_script_name=$(basename "${0}")
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
