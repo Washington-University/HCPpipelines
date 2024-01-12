@@ -84,6 +84,43 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
+#compatibility
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_eddy_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--select-best-b0|--ensure-even-slices)
+                #"--select-best-b0 true" and similar work as-is, detect it and copy it as-is, but don't trigger the argument change
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=("${origargs[i]}" "${origargs[i + 1]}")
+                    #skip the boolean value, we took care of it
+                    i=$((i + 1))
+                else
+                    newargs+=("${origargs[i]}"=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (*)
+                #copy anything unrecognized
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+        echo "extra eddy arguments: ${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}"
+    fi
+fi
+
 # Establish defaults
 DEFAULT_B0_MAX_BVAL=50
 
@@ -101,18 +138,17 @@ opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "
 
 opts_AddMandatory '--echospacing' 'echospacing' 'Number in msec' "Echo spacing in msecs"
 
-opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by ${HCPPIPEDIR_Config}).'" "'${HCPPIPEDIR_Config}/b02b0.cnf'"
+opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by HCPPIPEDIR_Config).'"
 
 opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion"
 
 opts_AddOptional '--b0maxbval' 'b0maxbval' 'Value' "Volumes with a bvalue smaller than this value will be considered as b0s. Defaults to '${DEFAULT_B0_MAX_BVAL}'" "'${DEFAULT_B0_MAX_BVAL}'"
 
-opts_AddOptional '--select-best-b0' 'SelectBestB0' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
+opts_AddOptional '--select-best-b0' 'SelectBestB0String' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
 
-opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlices' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
+opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlicesString' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
-
 
 opts_ParseArguments "$@"
 
@@ -123,45 +159,22 @@ fi
 
 opts_ShowValues
 
+#parse booleans
+SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
+EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
+
+#defaults that depend on env variables
+if [[ "$TopupConfig" == "" ]]
+then
+    TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+fi
+
 "$HCPPIPEDIR"/show_version
 
 # Verify required environment variables are set and log value
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var HCPPIPEDIR_Config # Needed in run_topup.sh
-
-
-# Required Environment Variables:
-
-#   HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
-#   FSLDIR                  The home directory for FSL
-#   HCPPIPEDIR_Config       Location of global configuration files
-
-#
-# Function Description
-#  Get the command line options for this script
-#
-# Global Output Variables
-#  ${StudyFolder}         Path to subject's data folder
-#  ${Subject}             Subject ID
-#  ${PEdir}	              Phase Encoding Direction, 1=RL/LR, 2=PA/AP
-#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase
-#                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
-#                         encoding direction
-#  ${echospacing}         Echo spacing in msecs
-#  ${DWIName}             Name to give DWI output directories
-#  ${TopupConfig}         Filename with topup configuration
-#  ${b0maxbval}           Volumes with a bvalue smaller than this value will
-#                         be considered as b0s
-#  ${SelectBestB0}        If "true" will select the least distorted B0 for topup
-#  ${EnsureEvenSlices}    If "true" will ensure input images to topup/eddy have
-#                         even number of slices
-#  ${runcmd}              Set to a user specified command to use if user has
-#                         requested that commands be echo'd (or printed)
-#                         instead of actually executed. Otherwise, set to
-#                         empty string.
-#
 
 # --------------------------------------------------------------------------------
 #  Support Functions
@@ -176,32 +189,28 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 
 #
 # Function Description
-#  Validate necessary scripts exist
+#  Validate necessary scripts exist before running anything
 #
 validate_scripts() {
 	local error_msgs=""
 
 	for extension in norm_intensity sequence best_b0; do
-		if [ ! -e ${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh ]; then
+		if [[ ! -f "${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh" ]]; then
 			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh not found"
 		fi
 	done
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/run_topup.sh ]; then
+	if [[ ! -f "${HCPPIPEDIR_dMRI}"/run_topup.sh ]]; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
 	fi
 
-	if [ ! -z "${error_msgs}" ]; then
-		show_usage
-		echo -e ${error_msgs}
-		echo ""
-		exit 1
+	if [[ "$error_msgs" != "" ]]; then
+		log_Err_Abort "$error_msgs"
 	fi
 }
 
 # Validate scripts
 validate_scripts "$@"
-
 
 #
 # Function Description
@@ -327,7 +336,7 @@ if [ ${Pos_count} -ne ${Neg_count} ]; then
 fi
 
 # if the number of slices are odd, check that the user has a way to deal with that
-if [ "${EnsureEvenSlices}" == "false" ] && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
+if ((! EnsureEvenSlices)) && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
 	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
 	if [ $(isodd $dimz) -eq 1 ]; then
 		log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
@@ -376,7 +385,7 @@ fi
 log_Msg "Running Intensity Normalisation"
 ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
-if [ "${SelectBestB0}" == "true" ]; then
+if ((SelectBestB0)); then
 	log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
 else
@@ -384,9 +393,9 @@ else
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 fi
 
-if [ "${EnsureEvenSlices}" == "true" ]; then
+if ((EnsureEvenSlices)); then
 	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
-	if [ $(isodd $dimz) -eq 1 ]; then
+	if [[ $(isodd $dimz) == 1 ]]; then
 		echo "Removing one slice from data to get even number of slices"
 		for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
 			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
@@ -405,4 +414,4 @@ log_Msg "Running Topup"
 ${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
 
 log_Msg "Completed!"
-exit 0
+

@@ -57,42 +57,91 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
-
-##THIS WILL ALSO NEED THE MAGIC T/F converter
 
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
+#compatibility, repeatable option
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_eddy_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--gpu|-g|--wss|--repol|--sep-offs-move|--sep_offs_move|--rms)
+                #"--gpu true" and similar work as-is, detect it and copy it as-is, but don't trigger the argument change
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=("${origargs[i]}" "${origargs[i + 1]}")
+                    #skip the boolean value, we took care of it
+                    i=$((i + 1))
+                else
+                    newargs+=("${origargs[i]}"=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (--dont-peas)
+                #we removed the negation, just replace
+                newargs+=(--peas=FALSE)
+                changeargs=1
+                ;;
+            (--extra-eddy-arg=*)
+                #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
+                #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
+                extra_eddy_args_manual+=("${origargs[i]#*=}")
+                changeargs=1
+                ;;
+            (--extra-eddy-arg)
+                #also support "--extra-eddy-arg foo", for fewer surprises
+                if ((i + 1 >= ${#origargs[@]}))
+                then
+                    log_Err_Abort "--extra-reconall-arg requires an argument"
+                fi
+                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                #skip the next argument, we took care of it
+                i=$((i + 1))
+                changeargs=1
+                ;;
+            (*)
+                #copy anything unrecognized
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+        echo "extra eddy arguments: ${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}"
+    fi
+fi
+
 opts_SetScriptDescription "Perform the Eddy steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--workingdir' 'workingdir' 'Path' 'The working directory' "" "-w"
+opts_AddMandatory '--workingdir' 'workingdir' 'Path' 'The working directory' "-w"
 
-##BELOW HAS A SECOND FLAG THAT WORKS WITH ONE - NOT SURE IF THAT IS COMPATIBLE?
-#   -w <working-dir> OR
-#   -w=<working-dir> OR
-#   --workingdir <working-dir> OR
-#   --workingdir=<working-dir> : the working directory (REQUIRED)
+opts_AddOptional '--gpu' 'useGpuVersionString' 'Boolean' 'Whether to use a GPU version of eddy' "False" "-g"
 
-opts_AddOptional '--gpu' 'useGpuVersion' 'Boolean' 'The working directory' "False" "-g"
-##BELOW HAS A SECOND FLAG THAT WORKS WITH ONE - NOT SURE IF THAT IS COMPATIBLE?
-#   [-g | --gpu]  : use the GPU-enabled version of eddy.
+opts_AddOptional '--wss' 'produceDetailedOutlierStatsString' 'Boolean' "Produce detailed outlier statistics after each iteration by using the --wss option to a call to eddy. Note that this option has no effect unless the GPU-enabled version of eddy is used." "False"
 
-opts_AddOptional '--wss' 'produceDetailedOutlierStats' 'Boolean' "Produce detailed outlier statistics after each iteration by using the --wss option to a call to eddy. Note that this option has no effect unless the GPU-enabled version of eddy is used." "False"
-
-opts_AddOptional '--repol' 'replaceOutliers' 'Boolean' "Replace outliers. Note that this option has no effect unless the GPU-enabled version of eddy is used." "False"
+opts_AddOptional '--repol' 'replaceOutliersString' 'Boolean' "Replace outliers. Note that this option has no effect unless the GPU-enabled version of eddy is used." "False"
 
 opts_AddOptional '--nvoxhp' 'nvoxhp' 'Number' "Number of voxel hyperparameters to use Note that this option has no effect unless the GPU-enabled version of  eddy is used."
 
-opts_AddOptional '--sep_offs_move' 'sep_offs_move' 'Boolean' "This option stops dwi from drifting relative to b=0 Note that this option has no effect unless the GPU-enabled version of eddy is used." "False"
+opts_AddOptional '--sep-offs-move' 'sepOffsMoveString' 'Boolean' "This option stops dwi from drifting relative to b=0 Note that this option has no effect unless the GPU-enabled version of eddy is used." "False" '--sep_offs_move'
 
-opts_AddOptional '--rms' 'rms' 'Boolean' "Write root-mean-squared movement files for QA purposes Note: This option has no effect if the GPU-enabled version of eddy is not used." "False"
+opts_AddOptional '--rms' 'rmsString' 'Boolean' "Write root-mean-squared movement files for QA purposes Note: This option has no effect if the GPU-enabled version of eddy is not used." "False"
 
 opts_AddOptional '--ff' 'ff_val' 'Value' "Determines level of Q-space smoothing during esimation of movement/distortions"
 
-opts_AddOptional '--dont_peas' 'dont_peas' 'Boolean' "Pass the --dont_peas (Do NOT perform a post-eddy alignment of shells) option to eddy invocation"
+opts_AddOptional '--peas' 'peasString' 'Boolean' "Whether to perform a post-eddy alignment of shells"
 
 opts_AddOptional '--fwhm' 'fwhm_value' 'Value' "Fwhm value to pass to eddy If unspecified, defaults to --fwhm=0" "0"
 
@@ -100,7 +149,7 @@ opts_AddOptional '--resamp' 'resamp_value' 'Value' 'Resamp value to pass to the 
 
 opts_AddOptional '--ol_nstd' 'ol_nstd_val' 'Value' 'Ol_nstd value to pass to the eddy binary If unspecified, no ol_nstd option is passed to the eddy binary'
 
-opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' 'Generic single token (no whitespace) argument to be passed to the run_eddy.sh script and subsequently to the eddy binary. To build a multi-token series of arguments, you can specify this parameter several times. E.g.  --extra-eddy-arg=--verbose --extra-eddy-arg=T will ultimately be translated to --verbose T when passed to the eddy binary.'
+opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' '(repeatable) Generic single token (no whitespace) argument to be passed to the run_eddy.sh script and subsequently to the eddy binary. To build a multi-token series of arguments, you can specify this parameter several times. E.g.  --extra-eddy-arg=--verbose --extra-eddy-arg=T will ultimately be translated to --verbose T when passed to the eddy binary.'
 
 opts_AddOptional '--cuda-version' 'g_cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
 
@@ -111,7 +160,21 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+#TSC: hack around the lack of repeatable option support, use a single string for display
+extra_eddy_args=${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}
+
 opts_ShowValues
+
+#TSC: now use an array for proper argument handling
+extra_eddy_args=(${extra_eddy_args_manual[@]+"${extra_eddy_args_manual[@]}"})
+
+#parse booleans
+useGpuVersion=$(opts_StringToBool "$useGpuVersionString")
+produceDetailedOutlierStats=$(opts_StringToBool "$produceDetailedOutlierStatsString")
+replaceOutliers=$(opts_StringToBool "$replaceOutliersString")
+sepOffsMove=$(opts_StringToBool "$sepOffsMoveString")
+rms=$(opts_StringToBool "$rmsString")
+peas=$(opts_StringToBool "$peasString")
 
 "$HCPPIPEDIR"/show_version
 
@@ -121,30 +184,6 @@ log_Check_Env_Var FSLDIR
 
 # Set other necessary variables, contingent on HCPPIPEDIR
 HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
-
-
-
-#
-# Function Description:
-#  Get the command line options for this script.
-#
-# Global Ouput Variables
-#  ${useGpuVersion}   - Set to "True" if user has requested an attempt to use
-#                       the GPU-enabled version of eddy
-#  ${workingdir}      - User specified working directory
-#  ${produceDetailedOutlierStats}
-#                     - Set to "True" if user has requested that the GPU-enabled version
-#                       of eddy produce detailed statistics about outliers after each iteration
-#  ${replaceOutliers} - Set to "True" if user has requested that the GPU-enabled version
-#                       of eddy replace any outliers it detects by their expectations
-#  ${nvoxhp}          - User specified number of voxel hyperparameters (empty string if unspecified)
-#  ${sep_offs_move}   - Set to "True" if user has specified the --sep_offs_move command line option
-#  ${rms}             - Set to "True" if user has specified the --rms command line option
-#  ${ff_val}          - User specified ff value (empty string if unspecified)
-#  ${ol_nstd_val}     - User specified value for ol_nstd option
-#  ${extra_eddy_args} - User specified value for the --extra-eddy-args command line option
-#  ${g_cuda_version}  - User specified value for the --cuda-version command line option
-#
 
 #
 # Determine g_stdEddy and g_gpuEnabledEddy for a supported
@@ -165,8 +204,8 @@ determine_eddy_tools_for_supported_six_series() {
 	    g_stdEddy="${FSLDIR}/bin/eddy_cpu"
 	fi
 
-	if [ "${useGpuVersion}" = "True" ]; then
-		if [ ! -z "${g_cuda_version}" ]; then
+	if ((useGpuVersion)); then
+		if [[ ! -z "${g_cuda_version}" ]]; then
 			# The user has asked to use the GPU-enabled version and
 			# explicitly specified the CUDA version to use (via
 			# the --cuda-version= option). So set things up to
@@ -179,10 +218,10 @@ determine_eddy_tools_for_supported_six_series() {
 			# that the user has created a symbolic link of either
 			# 'eddy_cuda' or (more dangerously) 'eddy' to the specific
 			# desired CUDA binary (e.g., ${FSLDIR}/bin/eddy_cuda -> eddy_cuda9.1)
-			if [ -e ${FSLDIR}/bin/eddy_cuda ]; then
+			if [[ -e "${FSLDIR}/bin/eddy_cuda" ]]; then
 				# They have an ${FSLDIR}/bin/eddy_cuda. So use it.
 				g_gpuEnabledEddy="${FSLDIR}/bin/eddy_cuda"
-			elif [ -e ${FSLDIR}/bin/eddy ]; then
+			elif [[ -e "${FSLDIR}/bin/eddy" ]]; then
 				# They have an ${FSLDIR}/bin/eddy. It is dangerous to assume that this
 				# is a symlink to an eddy_cudaX.X version, esp. since recent FSL installers
 				# run an 'eddy_configuration.sh' script, that symlinks 'eddy' to 'eddy_openmp'
@@ -209,12 +248,12 @@ determine_eddy_tools_for_supported_six_series() {
 
 			# If g_stdEddy and g_gpuEnabledEddy are the same, we have a problem
 			# (probably a consequence of 'eddy' existing as a symlink to 'eddy_openmp')
-			if [ -e ${g_stdEddy} ]; then
+			if [[ -e "${g_stdEddy}" ]]; then
 				# Check if files differ (which is what we want) within an 'if' statement
 				# so that we don't trigger any active error trapping if they do differ.
 				# 'diff' returns "true" if files are the same, in which case we want to abort.
 				# Don't wrap the 'diff' command in () or [], as that will likely change the behavior.
-				if diff -q ${g_stdEddy} ${g_gpuEnabledEddy} > /dev/null; then
+				if diff -q "${g_stdEddy}" "${g_gpuEnabledEddy}" > /dev/null; then
 					log_Err "Since you have requested the use of GPU-enabled eddy,"
 					log_Err "you must either:"
 					log_Err "1. Set ${FSLDIR}/bin/eddy_cuda as a symbolic link to the version"
@@ -375,9 +414,9 @@ gpuEnabledEddy="${g_gpuEnabledEddy}"
 # the user requested use of the GPU-enabled version of eddy
 # and whether the requested version of eddy can be found.
 
-if [ "${useGpuVersion}" = "True" ]; then
+if ((useGpuVersion)); then
 	log_Msg "User requested GPU-enabled version of eddy"
-	if [ -e ${gpuEnabledEddy} ]; then
+	if [[ -e "${gpuEnabledEddy}" ]]; then
 		log_Msg "GPU-enabled version of eddy found: ${gpuEnabledEddy}"
 		eddyExec="${gpuEnabledEddy}"
 	else
@@ -385,7 +424,7 @@ if [ "${useGpuVersion}" = "True" ]; then
 	fi
 else
 	log_Msg "User did not request GPU-enabled version of eddy"
-	if [ -e ${stdEddy} ]; then
+	if [[ -e "${stdEddy}" ]]; then
 		log_Msg "Non-GPU-enabled version of eddy found: ${stdEddy}"
 		eddyExec="${stdEddy}"
 	else
@@ -395,105 +434,57 @@ fi
 
 log_Msg "eddy executable command to use: ${eddyExec}"
 
-# Add option to eddy command for producing detailed outlier stats after each
-# iteration if user has requested that option _and_ the GPU-enabled version
-# of eddy is to be used.  Also add option to eddy command for replacing
-# outliers if the user has requested that option _and_ the GPU-enabled
-# version of eddy to to be used.
-outlierStatsOption=""
-replaceOutliersOption=""
-nvoxhpOption=""
-sep_offs_moveOption=""
-rmsOption=""
-ff_valOption=""
-ol_nstd_option=""
-
-if [ "${eddyExec}" = "${gpuEnabledEddy}" ]; then
-	if [ "${produceDetailedOutlierStats}" = "True" ]; then
-		outlierStatsOption="--wss"
-	fi
-
-	if [ "${replaceOutliers}" = "True" ]; then
-		replaceOutliersOption="--repol"
-	fi
-
-	if [ "${nvoxhp}" != "" ]; then
-		nvoxhpOption="--nvoxhp=${nvoxhp}"
-	fi
-
-	if [ "${sep_offs_move}" = "True" ]; then
-		sep_offs_moveOption="--sep_offs_move"
-	fi
-
-	if [ "${rms}" = "True" ]; then
-		rmsOption="--rms"
-	fi
-
-	if [ "${ff_val}" != "" ]; then
-		ff_valOption="--ff=${ff_val}"
-	fi
-
-	if [ -z "${ol_nstd_val}" ]; then
-		ol_nstd_option=""
-	else
-		ol_nstd_option="--ol_nstd=${ol_nstd_val}"
-	fi
-fi
-
-log_Msg "outlier statistics option: ${outlierStatsOption}"
-log_Msg "replace outliers option: ${replaceOutliersOption}"
-log_Msg "nvoxhp option: ${nvoxhpOption}"
-log_Msg "sep_offs_move option: ${sep_offs_moveOption}"
-log_Msg "rms option: ${rmsOption}"
-log_Msg "ff option: ${ff_valOption}"
-log_Msg "ol_nstd_option: ${ol_nstd_option}"
-
-# Main processing - Run eddy
-
 topupdir=$(dirname ${workingdir})/topup
 
 ${FSLDIR}/bin/imcp ${topupdir}/nodif_brain_mask ${workingdir}/
 
-eddy_command="${eddyExec} "
-eddy_command+="${outlierStatsOption} "
-eddy_command+="${replaceOutliersOption} "
-eddy_command+="${nvoxhpOption} "
-eddy_command+="${sep_offs_moveOption} "
-eddy_command+="${rmsOption} "
-eddy_command+="${ff_valOption} "
-eddy_command+="--cnr_maps "  #Hard-coded as an option to 'eddy', so we can run EDDY QC (QUAD)
-eddy_command+="--imain=${workingdir}/Pos_Neg "
-eddy_command+="--mask=${workingdir}/nodif_brain_mask "
-eddy_command+="--index=${workingdir}/index.txt "
-eddy_command+="--acqp=${workingdir}/acqparams.txt "
-eddy_command+="--bvecs=${workingdir}/Pos_Neg.bvecs "
-eddy_command+="--bvals=${workingdir}/Pos_Neg.bvals "
-eddy_command+="--fwhm=${fwhm_value} "
-eddy_command+="--topup=${topupdir}/topup_Pos_Neg_b0 "
-eddy_command+="--out=${workingdir}/eddy_unwarped_images "
-
-if [ ! -z "${dont_peas}" ]; then
-	eddy_command+="--dont_peas "
+#TSC: currently using same order as previous construct
+#if it doesn't matter, move the other gpu-only thing into the gpu block
+eddy_command=("${eddyExec}")
+#various options only implemented in gpu version
+if [[ "${eddyExec}" == "${gpuEnabledEddy}" ]]; then
+    if ((produceDetailedOutlierStats)); then
+        eddy_command+=(--wss)
+    fi
+    if ((replaceOutliers)); then
+        eddy_command+=(--repol)
+    fi
+    if [[ "$nvoxhp" != "" ]] ; then
+        eddy_command+=(--nvoxhp="${nvoxhp}")
+    fi
+    if ((sepOffsMove)); then
+        eddy_command+=(--sep_offs_move)
+    fi
+    if ((rms)); then
+        eddy_command+=(--rms)
+    fi
+    if [[ "$ff_val" != "" ]] ; then
+        eddy_command+=(--nvoxhp="${ff_val}")
+    fi
 fi
-
-if [ ! -z "${resamp_value}" ]; then
-	eddy_command+="--resamp=${resamp_value} "
+eddy_command+=("--cnr_maps"  #Hard-coded as an option to 'eddy', so we can run EDDY QC (QUAD)
+    "--imain=${workingdir}/Pos_Neg"
+    "--mask=${workingdir}/nodif_brain_mask"
+    "--index=${workingdir}/index.txt"
+    "--acqp=${workingdir}/acqparams.txt"
+    "--bvecs=${workingdir}/Pos_Neg.bvecs"
+    "--bvals=${workingdir}/Pos_Neg.bvals"
+    "--fwhm=${fwhm_value}"
+    "--topup=${topupdir}/topup_Pos_Neg_b0"
+    "--out=${workingdir}/eddy_unwarped_images")
+if ((! peas)); then
+    eddy_command+=(--dont_peas)
 fi
-
-if [ ! -z "${ol_nstd_option}" ]; then
-	eddy_command+="${ol_nstd_option} "
+if [[ "${resamp_value}" != "" ]]; then
+	eddy_command+=("--resamp=${resamp_value}")
 fi
-
-if [ ! -z "${extra_eddy_args}" ]; then
-	for extra_eddy_arg in ${extra_eddy_args}; do
-		eddy_command+=" ${extra_eddy_arg} "
-	done
+#another gpu-dependent option
+if [[ "${eddyExec}" == "${gpuEnabledEddy}" && "${ol_nstd_val}" != "" ]]; then
+	eddy_command+=("--ol_nstd=${ol_nstd_val}")
 fi
+eddy_command+=(${extra_eddy_args[@]+"${extra_eddy_args[@]}"})
 
 log_Msg "About to issue the following eddy command: "
-log_Msg "${eddy_command}"
-${eddy_command}
-eddyReturnValue=$?
+log_Msg "${eddy_command[*]}"
+"${eddy_command[@]}"
 
-log_Msg "Completed with return value: ${eddyReturnValue}"
-exit ${eddyReturnValue}

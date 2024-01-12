@@ -107,10 +107,10 @@ fi
 # g_script_name=$(basename "${0}")
 
 # Load function libraries
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/opts.shlib"         # Command line option functions
-source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"    # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  # Command line option functions
 
+#compatibility, repeatable option
 if (($# > 0))
 then
     newargs=()
@@ -121,7 +121,7 @@ then
     do
         case "${origargs[i]}" in
             (--select-best-b0|--ensure-even-slices)
-                #"--select-best-b0 true" and similar works as-is, detect it and copy it as-is, but don't trigger the argument change
+                #"--select-best-b0 true" and similar work as-is, detect it and copy it as-is, but don't trigger the argument change
                 if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
                 then
                     newargs+=("${origargs[i]}" "${origargs[i + 1]}")
@@ -196,44 +196,36 @@ opts_AddOptional '--dof' 'DegreesOfFreedom' 'Number' "Degrees of Freedom for pos
 
 opts_AddOptional '--b0maxbval' 'b0maxbval' 'Value' "Volumes with a bvalue smaller than this value will be considered as b0s. Defaults to '${DEFAULT_B0_MAX_BVAL}'" "'${DEFAULT_B0_MAX_BVAL}'"
 
-opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by ${HCPPIPEDIR_Config}).'" "'${HCPPIPEDIR_Config}/b02b0.cnf'"
+opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by HCPPIPEDIR_Config).'"
 
 opts_AddOptional '--select-best-b0' 'SelectBestB0String' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
 
 opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlicesString' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
 
 opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' "(repeatable) Generic single token (no whitespace) argument to pass to the DiffPreprocPipeline_Eddy.sh script and subsequently to the run_eddy.sh script and finally to the command that actually invokes the eddy binary. The following will work:
-                            --extra-eddy-arg=--val=1
-                          because '--val=1' is a single token containing no whitespace.
-                          The following will not work:
-                            --extra-eddy-arg='--val1=1 --val2=2'
-                          because '--val1=1 --val2=2' is NOT a single token.
-                          To build a multi-token series of arguments, you can
-                          specify this --extra-eddy-arg= parameter several times.
-                          e.g.,
-                            --extra-eddy-arg=--val1=1 --extra-eddy-arg=--val2=2
-                          To get an argument like '-flag value' (where there is no
-                          '=' between the flag and the value) passed to the
-                          eddy binary, the following sequence will work:
-                            --extra-eddy-arg=-flag --extra-eddy-arg=value"
+  --extra-eddy-arg=--val=1
+because '--val=1' is a single token containing no whitespace. The following will NOT work:
+  --extra-eddy-arg='--val1=1 --val2=2'
+because '--val1=1' and '--val2=2' need to be treated as separate arguments. To build a multi-token series of arguments, you can specify this --extra-eddy-arg= parameter several times, e.g.,
+  --extra-eddy-arg=--val1=1 --extra-eddy-arg=--val2=2
+To get an argument like '-flag value' (where there is no '=' between the flag and the value) passed to the eddy binary, the following sequence will work:
+  --extra-eddy-arg=-flag --extra-eddy-arg=value"
 
 ## This is an extremely confusing flag should rework it to just use-gpu?
-opts_AddOptional '--no-gpu' 'no_gpu' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. False." "False"
+opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. True." "True"
 
 opts_AddOptional '--cuda-version' 'cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
 
 opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified value is passed as the CombineDataFlag value for the eddy_postproc.sh script. If JAC resampling has been used in eddy, this value determines what to do with the output file.
-                          2 - include in the output all volumes uncombined (i.e.
-                              output file of eddy)
-                          1 - include in the output and combine only volumes
-                              where both LR/RL (or AP/PA) pairs have been
-                              acquired
-                          0 - As 1, but also include uncombined single volumes
-                          Defaults to 1" "1"
+  2 - include in the output all volumes uncombined (i.e. output file of eddy)
+  1 - include in the output and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
+  0 - As 1, but also include uncombined single volumes
+Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
 opts_ParseArguments "$@"
+
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
@@ -250,6 +242,13 @@ extra_eddy_args=(${extra_eddy_args_manual[@]+"${extra_eddy_args_manual[@]}"})
 #parse booleans
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
 EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
+gpu=$(opts_StringToBool "$gpuString")
+
+#defaults that depend on env variables
+if [[ "$TopupConfig" == "" ]]
+then
+    TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+fi
 
 "$HCPPIPEDIR"/show_version
 
@@ -257,104 +256,54 @@ EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 
-
-# Required Environment Variables:
-
-#   HCPPIPEDIR              The home directory for the version of the HCP Pipeline Scripts being used.
-#   FSLDIR                  The home directory for FSL
-#   FREESURFER_HOME         The home directory for FreeSurfer
-#   PATH                    Standard PATH environment variable must be set to find
-#                             HCP-customized version of gradient_unwarp.py
-
-#
-# Function Description
-#  Get the command line options for this script
-#
-# Global Output Variables
-#  ${StudyFolder}         Path to subject's data folder
-#  ${Subject}             Subject ID
-#  ${PEdir}               Phase Encoding Direction, 1=LR/RL, 2=AP/PA
-#  ${PosInputImages}      @ symbol separated list of data with 'positive' phase
-#                         encoding direction
-#  ${NegInputImages}      @ symbol separated lsit of data with 'negative' phase
-#                         encoding direction
-#  ${echospacing}         Echo spacing in msecs
-#  ${GdCoeffs}            Path to file containing coefficients that describe
-#                         spatial variations of the scanner gradients. NONE
-#                         if not available.
-#  ${DWIName}             Name to give DWI output directories
-#  ${DegreesOfFreedom}    Degrees of Freedom for post eddy registration to
-#                         structural images
-#  ${b0maxbval}           Volumes with a bvalue smaller than this value will
-#                         be considered as b0s
-#  ${TopupConfig}         Filename with topup configuration
-#  ${runcmd}              Set to a user specifed command to use if user has
-#                         requested that commands be echo'd (or printed)
-#                         instead of actually executed. Otherwise, set to
-#                         empty string.
-#  ${extra_eddy_args}     Generic string of arguments to be passed to the
-#                         eddy binary
-#  ${SelectBestB0}        true if we should preselect the least motion corrupted b0's for topup
-#                         Anything else or unset means use uniformly sampled b0's
-#  ${no_gpu}              true if we should use the non-GPU-enabled version of eddy
-#                         Anything else or unset means use the GPU-enabled version of eddy
-#  ${cuda_version}        If using the GPU-enabled version, this value _may_ be
-#                         given to specify the version of the CUDA libraries in use.
-#  ${CombineDataFlag}     CombineDataFlag value to pass to
-#                         DiffPreprocPipeline_PostEddy.sh script and
-#                         subsequently to eddy_postproc.sh script
-#
-
 if ((SelectBestB0)); then
-		dont_peas_set=false
-		fwhm_set=false
-		if [ ! -z "${extra_eddy_args}" ]; then
-			for extra_eddy_arg in ${extra_eddy_args}; do
-				if [[ ${extra_eddy_arg} == "--fwhm"* ]]; then
-					fwhm_set=true
-				fi
-				if [[ ${extra_eddy_arg} == "--dont_peas"* ]]; then
-					show_usage
-					log_Err "When using --select-best-b0, post-alignment of shells in eddy is required, "
-					log_Err "as the first b0 could be taken from anywhere within the diffusion data and "
-					log_Err "hence might not be aligned to the first diffusion-weighted image."
-					log_Err_Abort "Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
-				fi
-			done
-		fi
-		if [ ${fwhm_set} == false ]; then
-			log_Warn "Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy."
-			log_Warn "To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
-			log_Warn "we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
-			log_Warn "This can be done by setting the --extra_eddy_args=--fwhm=... flag"
-		fi
-	fi
+    dont_peas_set=false
+    fwhm_set=false
+    for extra_eddy_arg in "${extra_eddy_args[@]}"; do
+        if [[ ${extra_eddy_arg} == "--fwhm"* ]]; then
+            fwhm_set=true
+        fi
+        if [[ ${extra_eddy_arg} == "--dont_peas"* ]]; then
+            log_Err "When using --select-best-b0, post-alignment of shells in eddy is required, "
+            log_Err "as the first b0 could be taken from anywhere within the diffusion data and "
+            log_Err "hence might not be aligned to the first diffusion-weighted image."
+            log_Err_Abort "Remove either the --extra_eddy_args=--dont_peas flag or the --select-best-b0 flag"
+        fi
+    done
+    if [[ "$fwhm_set" == "false" ]]; then
+        log_Warn "Using --select-best-b0 prepends the best b0 to the start of the file passed into eddy."
+        log_Warn "To ensure eddy succesfully aligns this new first b0 with the actual first volume,"
+        log_Warn "we recommend to increase the FWHM for the first eddy iterations if using --select-best-b0"
+        log_Warn "This can be done by setting the --extra_eddy_args=--fwhm=... flag"
+    fi
+fi
 
 
 #
 # Function Description
-#  Validate necessary scripts exist
+#  Validate necessary scripts exist before starting to run anything
 #
 validate_scripts() {
 	local error_msgs=""
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]; then
+	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]; then
+	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
 	fi
 
-	if [ ! -e ${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]; then
+	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/scripts/run_eddy.sh ]]; then
+		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/scripts/run_eddy.sh not found"
+	fi
+
+	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]]; then
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
-	if [ ! -z "${error_msgs}" ]; then
-		show_usage
-		echo -e ${error_msgs}
-		echo ""
-		exit 1
+	if [[ "${error_msgs}" != "" ]]; then
+		log_Err_Abort "${error_msgs}"
 	fi
 }
 
@@ -366,69 +315,53 @@ validate_scripts() {
 validate_scripts "$@"
 
 log_Msg "Invoking Pre-Eddy Steps"
-pre_eddy_cmd=""
-pre_eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh "
-pre_eddy_cmd+=" --path=${StudyFolder} "
-pre_eddy_cmd+=" --subject=${Subject} "
-pre_eddy_cmd+=" --dwiname=${DWIName} "
-pre_eddy_cmd+=" --PEdir=${PEdir} "
-pre_eddy_cmd+=" --posData=${PosInputImages} "
-pre_eddy_cmd+=" --negData=${NegInputImages} "
-pre_eddy_cmd+=" --echospacing=${echospacing} "
-pre_eddy_cmd+=" --b0maxbval=${b0maxbval} "
-pre_eddy_cmd+=" --topup-config-file=${TopupConfig} "
-pre_eddy_cmd+=" --printcom=${runcmd} "
-if ((SelectBestB0)); then
-	pre_eddy_cmd+=" --select-best-b0 "
-fi
-if ((EnsureEvenSlices)); then
-	pre_eddy_cmd+=" --ensure-even-slices "
-fi
+pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
+    "--path=${StudyFolder}"
+    "--subject=${Subject}"
+    "--dwiname=${DWIName}"
+    "--PEdir=${PEdir}"
+    "--posData=${PosInputImages}"
+    "--negData=${NegInputImages}"
+    "--echospacing=${echospacing}"
+    "--b0maxbval=${b0maxbval}"
+    "--topup-config-file=${TopupConfig}"
+    "--printcom=${runcmd}"
+    "--select-best-b0=${SelectBestB0}"
+    "--ensure-even-slices=${EnsureEvenSlices}")
 
-log_Msg "pre_eddy_cmd: ${pre_eddy_cmd}"
-${pre_eddy_cmd}
+log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
+"${pre_eddy_cmd[@]}"
 
 log_Msg "Invoking Eddy Step"
-eddy_cmd=""
-eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh "
-eddy_cmd+=" --path=${StudyFolder} "
-eddy_cmd+=" --subject=${Subject} "
-eddy_cmd+=" --dwiname=${DWIName} "
-eddy_cmd+=" --printcom=${runcmd} "
+eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
+    --path="$StudyFolder"
+    --subject="$Subject"
+    --dwiname="$DWIName"
+    --printcom="$runcmd"
+    --gpu="$gpu"
+    --cuda-version="$cuda_version")
+for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
+do
+    eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+done
 
-if [ "${no_gpu}" == "true" ]; then
-	# default is to use the GPU-enabled version
-	eddy_cmd+=" --no-gpu "
-else
-	if [ ! -z "${cuda_version}" ]; then
-		eddy_cmd+=" --cuda-version=${cuda_version}"
-	fi
-fi
-if [ ! -z "${extra_eddy_args}" ]; then
-	for extra_eddy_arg in ${extra_eddy_args}; do
-		eddy_cmd+=" --extra-eddy-arg=${extra_eddy_arg} "
-	done
-fi
-
-log_Msg "eddy_cmd: ${eddy_cmd}"
-${eddy_cmd}
+log_Msg "eddy_cmd: ${eddy_cmd[*]}"
+"${eddy_cmd[@]}"
 
 log_Msg "Invoking Post-Eddy Steps"
-post_eddy_cmd=""
-post_eddy_cmd+="${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh "
-post_eddy_cmd+=" --path=${StudyFolder} "
-post_eddy_cmd+=" --subject=${Subject} "
-post_eddy_cmd+=" --dwiname=${DWIName} "
-post_eddy_cmd+=" --gdcoeffs=${GdCoeffs} "
-post_eddy_cmd+=" --dof=${DegreesOfFreedom} "
-post_eddy_cmd+=" --combine-data-flag=${CombineDataFlag} "
-post_eddy_cmd+=" --printcom=${runcmd} "
-if ((SelectBestB0)); then
-	post_eddy_cmd+=" --select-best-b0 "
-fi
+post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
+    "--path=${StudyFolder}"
+    "--subject=${Subject}"
+    "--dwiname=${DWIName}"
+    "--gdcoeffs=${GdCoeffs}"
+    "--dof=${DegreesOfFreedom}"
+    "--combine-data-flag=${CombineDataFlag}"
+    "--printcom=${runcmd}"
+    "--select-best-b0=${SelectBestB0}")
 
-log_Msg "post_eddy_cmd: ${post_eddy_cmd}"
-${post_eddy_cmd}
+log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
+"${post_eddy_cmd[@]}"
 
 log_Msg "Completed!"
 exit 0
+

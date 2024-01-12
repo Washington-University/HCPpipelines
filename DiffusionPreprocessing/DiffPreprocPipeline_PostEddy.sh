@@ -88,6 +88,43 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; al
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/version.shlib"      # version_ functions
 
+#compatibility
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_eddy_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--select-best-b0)
+                #"--select-best-b0 true" works as-is, detect it and copy it as-is, but don't trigger the argument change
+                if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
+                then
+                    newargs+=("${origargs[i]}" "${origargs[i + 1]}")
+                    #skip the boolean value, we took care of it
+                    i=$((i + 1))
+                else
+                    newargs+=("${origargs[i]}"=TRUE)
+                    changeargs=1
+                fi
+                ;;
+            (*)
+                #copy anything unrecognized
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+        echo "extra eddy arguments: ${extra_eddy_args_manual[*]+"${extra_eddy_args_manual[*]}"}"
+    fi
+fi
+
 # Establish defaults
 DEFAULT_DEGREES_OF_FREEDOM=6
 
@@ -103,16 +140,13 @@ opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directo
 
 opts_AddOptional '--dof' 'DegreesOfFreedom' 'Number' "Degrees of Freedom for post eddy registration to structural images. Defaults to '${DEFAULT_DEGREES_OF_FREEDOM}'" "'${DEFAULT_DEGREES_OF_FREEDOM}'"
 
-opts_AddOptional '--select-best-b0' 'SelectBestB0' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
+opts_AddOptional '--select-best-b0' 'SelectBestB0String' 'Boolean' "If set selects the best b0 for each phase encoding direction to pass on to topup rather than the default behaviour of using equally spaced b0's throughout the scan. The best b0 is identified as the least distorted (i.e., most similar to the average b0 after registration)." "False"
 
 opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified value is passed as the CombineDataFlag value for the eddy_postproc.sh script. If JAC resampling has been used in eddy, this value determines what to do with the output file.
-                          2 - include in the output all volumes uncombined (i.e.
-                              output file of eddy)
-                          1 - include in the output and combine only volumes
-                              where both LR/RL (or AP/PA) pairs have been
-                              acquired
-                          0 - As 1, but also include uncombined single volumes
-                          Defaults to 1" "1"
+  2 - include in the output all volumes uncombined (i.e., output file of eddy)
+  1 - include in the output and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
+  0 - As 1, but also include uncombined single volumes
+Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
@@ -125,6 +159,9 @@ then
 fi
 
 opts_ShowValues
+
+#parse booleans
+SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
 
 "$HCPPIPEDIR"/show_version
 
@@ -211,7 +248,7 @@ fi
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 select_flag="0"
-if [ "${SelectBestB0}" == "true" ]; then
+if ((SelectBestB0)); then
 	select_flag="1"
 fi
 ${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
