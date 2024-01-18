@@ -214,7 +214,7 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 # Establish output directory paths
 outdir=${StudyFolder}/${Subject}/${DWIName}
 
-run_eddy_cmd=("$runcmd" "${HCPPIPEDIR_dMRI}"/run_eddy.sh
+run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddy.sh
     --nvoxhp="$nvoxhp"
     --ff="$ff_val"
     --wss="$DetailedOutlierStats"
@@ -235,7 +235,8 @@ done
 
 log_Msg "About to issue the following command to invoke the run_eddy.sh script"
 log_Msg "${run_eddy_cmd[*]}"
-"${run_eddy_cmd[@]}"
+#runcmd can't be quoted, it depends on bash expanding it before word splitting
+${runcmd} "${run_eddy_cmd[@]}"
 
 log_Msg "Completed!"
 
