@@ -109,7 +109,7 @@ for j=1:length(fMRINames)
         VOLUME=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz']);
         SBREFOrig = read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
         
-        VOLUME = reshape(VOLUME, prod(size(VOLUME, [1 2 3])), size(VOLUME, 4));
+        VOLUME = reshape(VOLUME, prod([size(VOLUME, 1), size(VOLUME, 2), size(VOLUME, 3)]), size(VOLUME, 4));
         volumeValid = range(VOLUME, 2) > 0;
         Volume_data = VOLUME(volumeValid, :);
         
@@ -154,12 +154,25 @@ for j=1:length(fMRINames)
         % structure idx
         CIFTI_LENGTH=length(CIFTI.cdata);
 
-        CORTEX_Left_idx_list = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT').ciftilist;
-        CORTEX_Right_idx_list = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT').ciftilist;
+        CORTEX_Left_idx_list_tmp = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_LEFT');
+        CORTEX_Left_idx_list = CORTEX_Left_idx_list_tmp.ciftilist;
+
+        CORTEX_Right_idx_list_tmp = cifti_diminfo_dense_get_surface_info(CIFTI.diminfo{1}, 'CORTEX_RIGHT');
+        CORTEX_Right_idx_list = CORTEX_Right_idx_list_tmp.ciftilist;
+
         CORTEX_idx_list = [CORTEX_Left_idx_list, CORTEX_Right_idx_list];
-        CEREBELLUM_idx_list = [cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_LEFT').ciftilist, cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_RIGHT').ciftilist];
-        BRAIN_STEM_idx_list = [cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist, cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM').ciftilist];
+
+        CEREBELLUM_Left_idx_list_tmp = cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_LEFT');
+        CEREBELLUM_Left_idx_list = CEREBELLUM_Left_idx_list_tmp.ciftilist;
+
+        CEREBELLUM_Right_idx_list_tmp = cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'CEREBELLUM_RIGHT');
+        CEREBELLUM_Right_idx_list = CEREBELLUM_Right_idx_list_tmp.ciftilist;
+
+        CEREBELLUM_idx_list = [CEREBELLUM_Left_idx_list, CEREBELLUM_Right_idx_list];
         
+        BRAIN_STEM_idx_list_tmp = cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM');
+        BRAIN_STEM_idx_list = BRAIN_STEM_idx_list_tmp.ciftilist;
+
         row_names=cell(num_comps, 1);
         probs=zeros(num_comps,1);
         for k=1:num_comps
@@ -261,6 +274,6 @@ function lines = myreadtext(filename)
 end
 
 function [maskeddata, flatdata] = vol_reshape_and_mask(indata, mask)
-    flatdata = reshape(indata, prod(size(indata, 1:3)), size(indata, 4));
+    flatdata = reshape(indata, prod([size(indata, 1), size(indata, 2), size(indata, 3)]), size(indata, 4));
     maskeddata = flatdata(mask, :);
 end

@@ -73,9 +73,9 @@ compile_prepareICAs()
 # Compile the functionhighpassandvariancenormalize MATLAB code
 # ------------------------------------------------------------------------------
 
-compile_functionhighpassandvariancenormalize()
+compile_computeRecleanFeatures()
 {
-	local app_name=functionhighpassandvariancenormalize
+	local app_name=computeRecleanFeatures
 	local output_directory=Compiled_${app_name}
 
 	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
@@ -88,11 +88,10 @@ compile_functionhighpassandvariancenormalize()
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
 				  -I "${HCPPIPEDIR}/global/matlab" \
-				  -I "${HCPPIPEDIR}/global/matlab/icaDim" \
 				  -I "${HCPCIFTIRWDIR}" \
 				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
 				  -d "${output_directory}"
-	
+
 	popd > /dev/null
 }
 
@@ -102,8 +101,9 @@ compile_functionhighpassandvariancenormalize()
 
 main()
 {
-	compile_prepareICAs
-	compile_functionhighpassandvariancenormalize
+	#compile_prepareICAs
+	#compile_functionhighpassandvariancenormalize
+	compile_computeRecleanFeatures
 }
 
 # ------------------------------------------------------------------------------
