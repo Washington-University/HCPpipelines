@@ -88,7 +88,8 @@ log_Msg "Begin to run the reclean pipeline..."
     --model-to-use="$ModelToUse" \
     --vote-threshold="$VoteThresh" \
     --reclassify-as-signal-file="$ReclassifyAsSignalFile" \
-    --reclassify-as-noise-file="$ReclassifyAsNoiseFile"
+    --reclassify-as-noise-file="$ReclassifyAsNoiseFile" \
+    --matlab-run-mode="$MatlabMode"
 
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
