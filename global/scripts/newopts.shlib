@@ -571,9 +571,9 @@ function opts_add_switch()
     local opts_index
     for ((opts_index = 1; opts_index <= $#; ++opts_index))
     do
-        if [[ "${!opts_index}" != --* ]]
+        if [[ "${!opts_index}" != -* ]]
         then
-            log_Err_Abort "developer error: parameter '${opts_param_switches["$opts_new_index"]}' added improperly, legacy switch '${!opts_index}' doesn't start with '--', check your quoting"
+            log_Err_Abort "developer error: parameter '${opts_param_switches["$opts_new_index"]}' added improperly, legacy switch '${!opts_index}' doesn't start with '-', check your quoting"
         fi
         opts_compat_aliases+=("${!opts_index}" "$opts_new_index")
     done
