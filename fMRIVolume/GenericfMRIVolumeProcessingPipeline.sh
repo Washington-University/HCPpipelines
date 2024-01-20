@@ -391,6 +391,13 @@ if [ -z ${Subject} ]; then
 	log_Err_Abort "--subject must be specified"
 fi
 
+# Added by T.Yamamoto (Jan 20th, 2024)
+Session=`opts_GetOpt1 "--session" $@`
+if [ ! -z ${Session} ]; then
+	log_Msg "Session: ${Session}"
+	Session="_${Session}"
+fi
+
 fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
 log_Msg "fMRITimeSeries: ${fMRITimeSeries}"
 if [ -z ${fMRITimeSeries} ]; then
