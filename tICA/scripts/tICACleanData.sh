@@ -297,7 +297,6 @@ then
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                #TODO: naming conventions
                 useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
                 useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_vn.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
@@ -328,7 +327,6 @@ then
                 useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz"
                 if ((DoFixBias))
                 then
-                    #TODO: naming conventions
                     useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
                     useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_vn.nii.gz"
                     #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
@@ -366,7 +364,6 @@ else
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                #TODO: naming conventions
                 useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
                     -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
@@ -384,9 +381,7 @@ else
                 useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
                 if ((DoFixBias))
                 then
-                    #TODO: naming conventions
                     useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
-                    #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
                     wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
                         -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
                         -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
