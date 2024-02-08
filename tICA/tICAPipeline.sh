@@ -632,7 +632,6 @@ do
                 done
                 fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
                 #for now, always do volume outputs
-                #older bash doesn't like @ expanding an empty array with set -u, which is what the ugly ${...[@]+${...}} construct is for
                 par_addjob "$HCPPIPEDIR"/tICA/scripts/tICACleanData.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Subject" \
