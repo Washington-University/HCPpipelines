@@ -130,6 +130,18 @@ then
     log_Err_Abort "--parallel-limit must be a positive integer or -1, provided value: '$parLimit'"
 fi
 
+if [[ "$concatNameOut" != "" ]]
+then
+    if [[ "$MRFixConcatName" == "" ]]
+    then
+        log_Err_Abort "--mrfix-concat-name is required when using --concat-fmri-out"
+    fi
+    if [[ "$concatNamesToUse" == "" ]]
+    then
+        log_Err_Abort "--extract-fmri-name-list is required when using --concat-fmri-out"
+    fi
+fi
+
 signalTxtName="Signal.txt"
 if ((RecleanMode))
 then
