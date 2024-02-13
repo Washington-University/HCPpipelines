@@ -10,7 +10,10 @@
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+# For GE HealthCare Fieldmap Distortion Correction methods 
+# see explanations in global/scripts/FieldMapPreprocessingAll.sh
+GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
@@ -82,7 +85,11 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              opposing polarity for SDC
 
         '${GENERAL_ELECTRIC_METHOD_OPT}'
-             use General Electric specific Gradient Echo Field Maps for SDC
+           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in a single NIfTI file via --fmapgeneralelectric argument).
+           This option is maintained for backward compatibility.
+
+        '${GE_HEALTHCARE_METHOD_OPT}'
+             use GE HealthCare specific Gradient Echo Field Maps for SDC (fieldmap in Hz and magnitude in two separate NIfTI files via --fmapphase and --fmapmag).
 
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC
@@ -106,13 +113,13 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
 opts_AddOptional '--subjectfolder' 'SubjectFolder' 'path' "subject processing folder"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "input Siemens field map magnitude image"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "input field map magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input Siemens field map phase image"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
 
 opts_AddOptional '--echodiff' 'deltaTE' 'number (milliseconds)' "difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input General Electric field map image"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
 
 opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "degrees of freedom for EPI to T1 registration" '6'
 
@@ -258,7 +265,7 @@ fi
 
 case $DistortionCorrection in
 
-    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
         if [ $DistortionCorrection = "${FIELDMAP_METHOD_OPT}" ] || [ $DistortionCorrection = "${SIEMENS_METHOD_OPT}" ] ; then
             # --------------------------------------
@@ -278,15 +285,33 @@ case $DistortionCorrection in
                 --gdcoeffs=${GradientDistortionCoeffs}
 
         elif [ $DistortionCorrection = "${GENERAL_ELECTRIC_METHOD_OPT}" ] ; then
-            # -----------------------------------------------
-            # -- General Electric Gradient Echo Field Maps --
-            # -----------------------------------------------
+            # ---------------------------------------------------
+            # -- GE HealthCare Legacy Gradient Echo Field Maps --
+            # ---------------------------------------------------
 
             # process fieldmap with gradient non-linearity distortion correction
             ${GlobalScripts}/FieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
-                --method="GeneralElectricFieldMap" \
+                --method="GEHealthCareLegacyFieldMap" \
                 --fmap=${GEB0InputName} \
+                --echodiff=${deltaTE} \
+                --ofmapmag=${WD}/Magnitude \
+                --ofmapmagbrain=${WD}/Magnitude_brain \
+                --ofmap=${WD}/FieldMap \
+                --gdcoeffs=${GradientDistortionCoeffs}
+        
+        elif [ $DistortionCorrection = "${GE_HEALTHCARE_METHOD_OPT}" ] ; then
+            # --------------------------------------------
+            # -- GE HealthCare Gradient Echo Field Maps --
+            # --------------------------------------------
+
+            # process fieldmap with gradient non-linearity distortion correction
+            ${GlobalScripts}/FieldMapPreprocessingAll.sh \
+                --workingdir=${WD}/FieldMap \
+                --method="GEHealthCareFieldMap" \
+                --fmapmag=${MagnitudeInputName} \
+                --fmapphase=${PhaseInputName} \
+                --echodiff=${deltaTE} \
                 --ofmapmag=${WD}/Magnitude \
                 --ofmapmagbrain=${WD}/Magnitude_brain \
                 --ofmap=${WD}/FieldMap \

@@ -32,10 +32,16 @@ source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"          # Functions for
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+# For GE HealthCare Fieldmap Distortion Correction methods 
+# see explanations in global/scripts/FieldMapPreprocessingAll.sh
+GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
+
+# Minimum required FSL version for GENERAL_ELECTRIC_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
+GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -79,7 +85,11 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              opposing polarity for SDC
 
         '${GENERAL_ELECTRIC_METHOD_OPT}'
-             use General Electric specific Gradient Echo Field Maps for SDC
+           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in a single NIfTI file via --fmapgeneralelectric argument).
+           This option is maintained for backward compatibility.
+
+        '${GE_HEALTHCARE_METHOD_OPT}'
+             use GE HealthCare specific Gradient Echo Field Maps for SDC (fieldmap in Hz and magnitude in two separate NIfTI files via --fmapphase and --fmapmag).
 
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC
@@ -98,13 +108,13 @@ opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'file' "positive p
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file to use"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "Siemens field map magnitude image to use"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "input field map magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "Siemens field map phase image to use"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
 
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "General Electric field map image to use"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
 
 # OTHER OPTIONS:
 
@@ -252,41 +262,10 @@ log_Check_Env_Var HCPPIPEDIR_Global
 HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 
 # ------------------------------------------------------------------------------
-#  Check for incompatible FSL version
+#  Check for incompatible FSL version - abort if incompatible
 # ------------------------------------------------------------------------------
 
-check_fsl_version()
-{
-	local fsl_version=${1}
-	local fsl_version_array
-	local fsl_primary_version
-	local fsl_secondary_version
-	local fsl_tertiary_version
-
-	# parse the FSL version information into primary, secondary, and tertiary parts
-	fsl_version_array=(${fsl_version//./ })
-	
-	fsl_primary_version="${fsl_version_array[0]}"
-	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-
-	fsl_secondary_version="${fsl_version_array[1]}"
-	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-
-	fsl_tertiary_version="${fsl_version_array[2]}"
-	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
-
-	# FSL version 6.0.0 is unsupported
-	if [[ $(( ${fsl_primary_version} )) -eq 6 ]]; then
-		if [[ $(( ${fsl_secondary_version} )) -eq 0 ]]; then
-			if [[ $(( ${fsl_tertiary_version} )) -eq 0 ]]; then
-				log_Err_Abort "FSL version 6.0.0 is unsupported. Please upgrade to at least version 6.0.1"
-			fi
-		fi
-	fi
-}
-
-fsl_version_get fsl_ver
-check_fsl_version ${fsl_ver}
+fsl_minimum_required_version_check "6.0.1" "FSL version 6.0.0 is unsupported. Please upgrade to at least version 6.0.1"
 
 ## Case checking for which distortion correction was used ## 
 
@@ -319,6 +298,27 @@ case "$DistortionCorrection" in
 		if [ -z ${GEB0InputName} ]; then
 			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
 		fi
+    if [ -z ${deltaTE} ]; then
+      log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+    fi
+    # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+    fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+      "For ${DistortionCorrection} method the minimun required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
+		;;
+  
+  ${GE_HEALTHCARE_METHOD_OPT})
+		if [ -z ${MagnitudeInputName} ]; then
+			log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${PhaseInputName} ]; then
+			log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+		if [ -z ${deltaTE} ]; then
+			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+		fi
+    # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+    fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+      "For ${DistortionCorrection} method the minimun required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
 		;;
 
   ${PHILIPS_METHOD_OPT})

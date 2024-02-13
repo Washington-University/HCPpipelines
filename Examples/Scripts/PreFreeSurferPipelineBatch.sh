@@ -252,9 +252,18 @@ main()
 		#     Average any repeats and use Spin Echo Field Maps for readout
 		#     distortion correction
 		#
-		#   "GeneralElectricFieldMap"
-		#     Average any repeats and use General Electric specific Gradient
-		#     Echo Field Map for readout distortion correction
+		#   "GEHealthCareLegacyFieldMap"
+		#     Average any repeats and use GE HeathCare Legacy specific Gradient
+		#     Echo Field Map for readout distortion correction. 
+		#	  The Legacy fieldmap is a two volume file: 1. field map in Hz and 2. magnitude.
+		# 	  Use "GEB0InputName" variable to specify the 2-Volume file. 
+		#	  Set "TE" variable to the EchoTime difference (TE2-TE1). 
+		#	 
+		#	"GEHealthCareFieldMap" 
+		#	  Average any repeats and use GE HealthCare specific Gradient Echo
+		#     Field Maps for readout distortion correction
+		#	  This uses two separate NIfTI file for the fieldmap in Hz and the magnitude
+		#	  Use variables "MagnitudeInputName", "PhaseInputName" and "TE"
 		#
 		#   "SiemensFieldMap"
 		#     Average any repeats and use Siemens specific Gradient Echo
@@ -283,7 +292,7 @@ main()
 		# volume or "NONE" if not used
 		PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz"
 
-		# The TE variable should be set to 2.46ms for 3T scanner, 1.02ms for 7T
+		# The DeltaTE (echo time difference) variable should be set to 2.46ms for 3T scanner, 1.02ms for 7T
 		# scanner or "NONE" if not using
 		TE="2.46"
 
@@ -346,24 +355,50 @@ main()
 		TopupConfig="NONE"
 
 		# ----------------------------------------------------------------------
-		# Variables related to using General Electric specific Gradient Echo
-		# Field Maps
+		# Variables related to using GE HealthCare Legacy specific Gradient Echo
+		# Field Maps (GEHealthCareLegacyFieldMap)
 		# ----------------------------------------------------------------------
 
 		# The following variables would be set to values other than "NONE" for
-		# using General Electric specific Gradient Echo Field Maps (i.e. when
-		# AvgrdcSTRING="GeneralElectricFieldMap")
+		# using GE HealthCare Legacy specific Gradient Echo Field Maps (i.e. when
+		# AvgrdcSTRING="GEHealthCareLegacyFieldMap")
 
-		# Example value for when using General Electric Gradient Echo Field Map
+		# Example value for when using GE HealthCare Legacy Gradient Echo Field Map
 		#
-		# GEB0InputName should be a General Electric style B0 fieldmap with two
+		# GEB0InputName should be a GE HealthCare Legacy style B0 fieldmap with two
 		# volumes
-		#   1) fieldmap in deg and
+		#   1) fieldmap in hertz and
 		#   2) magnitude,
-		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap
-		#
+		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap or GEHealthCareFieldMap
+		#  
+		# For Example:
 		#   GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_GradientEchoFieldMap.nii.gz"
+		#	TE=2.304 
+		#   Here TE refers to the DeltaTE in ms
+		#   NOTE: At 3.0T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272 ms 3D B0MAP.
+		#   NOTE: The Delta can be found in json files (if data converted with recent dcm2niix)
+		#   NOTE: Then DeltaTE = (EchoTime2-EchoTime1)*1000
+		#	NOTE: In the DICOM DeltaTE = round(abs(1e6/( 2*pi*(0019,10E2) )))
 		GEB0InputName="NONE"
+
+		# ---------------------------------------------------------------
+		# Variables related to using GE HealthCare specific Gradient Echo
+		# Field Maps (GEHealthCareFieldMap)
+		# ----------------------------------------------------------------
+
+		# The following variables would be set to values other than "NONE" for
+		# using GE HealthCare specific Gradient Echo Field Maps (i.e. when
+		# AvgrdcSTRING="GEHealthCareFieldMap"). 
+
+		# Example: set MagnitudeInputName to magnitude image, set PhaseInputName 
+		# to the input fieldmap in Hertz and TE (a.k.a DeltaTE)
+		# (for DeltaTE see NOTE above)
+		#
+		# MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_BOMap_Magnitude.nii.gz"
+		# PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_B0Map_fieldmaphz.nii.gz"
+		# TE="2.272"
+
+		# ---------------------------------------------------------------
 
 		# Templates
 

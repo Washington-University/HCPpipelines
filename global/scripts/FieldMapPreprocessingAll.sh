@@ -9,8 +9,22 @@
 # -----------------------------------------------------------------------------------
 
 SIEMENS_METHOD_OPT="SiemensFieldMap"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+
+GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap"
+# "GEHealthCareLegacyFieldMap" refers to fieldmap in the form of a single NIfTI file 
+# with 2 volumes in it (volume-1: the Fieldmap in Hertz; volume-2: the magnitude image). 
+# Note: dcm2niix (pre-v1.0.20210410) use to convert the GEHC B0Maps as a 2 volumes NIFTI file. 
+
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
+# "GEHealthCareFieldMap" refers to fieldmap in the form of 2 NIfTI files.
+# One file withe the Fieldmap in Hertz and the magnitude image). 
+# Note: dcm2niix (v1.0.20210410 and later) convert the GEHC B0Maps as 2 NIFTI files
+# using the suffix _fieldmaphz for the fieldmap in Hertz and no suffix for the magnitude. 
+
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
+
+# Minimum required FSL version for GENERAL_ELECTRIC_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
+GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
 
 set -eu
 
@@ -24,15 +38,17 @@ fi
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"          # FSL-version checks functions
 
-opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL from Siemens Gradient Echo field map, and also do gradient non-linearity distortion correction of these"
+opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL from Gradient Echo field map, and also do gradient non-linearity distortion correction of these"
 
 opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)
         '${SIEMENS_METHOD_OPT}'
              use Siemens specific Gradient Echo Field Maps for SDC
         '${GENERAL_ELECTRIC_METHOD_OPT}'
-             use General Electric specific Gradient Echo Field Maps for SDC
-
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in a single NIfTI file via --GEB0InputName argument).
+        '${GE_HEALTHCARE_METHOD_OPT}'
+             use GE HealthCare specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in two separate NIfTI files).
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC"
 
@@ -42,14 +58,15 @@ opts_AddMandatory '--ofmapmagbrain' 'MagnitudeBrainOutput' 'image' "output disto
 
 opts_AddMandatory '--ofmap' 'FieldMapOutput' 'image' "output distortion corrected fieldmap image (rad/s)"
 
-#Optional Arguments
-opts_AddOptional '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time difference for Siemens and Philips fieldmap images (in milliseconds)"
+# options --echodiff is now mandatory - used by all "--method" (and all manufacturer). 
+opts_AddMandatory '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
-opts_AddOptional '--fmap' 'GEB0InputName' 'number (degrees)' "input General Electric fieldmap with fieldmap in deg and magnitude image"
+# Optional Arguments
+opts_AddOptional '--fmap' 'GEB0InputName' 'image (hertz and magnitude)' "input GE HealthCare Legacy fieldmap with fieldmap in hertz and magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'number (radians)' "input Siemens/Philips fieldmap phase image - in radians"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or hertz)' "input phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input Siemens/Philips fieldmap magnitude image - can be a 4D containing more than one"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input Siemens/Philips/GE HealthCare fieldmap magnitude image - can be a 4D containing more than one"
 
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "."
 
@@ -74,22 +91,44 @@ case $DistortionCorrection in
         # --------------------------------------
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
-            if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == "" ]]
-            then 
-                log_Err_Abort "$DistortionCorrection method requires --fmapmag, --fmapphase, and --echodiff"
-            fi
+        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" ]]
+        then 
+            log_Err_Abort "$DistortionCorrection method requires --fmapmag and --fmapphase"
+        fi
         ;;
 
     ${GENERAL_ELECTRIC_METHOD_OPT})
 
-        # -----------------------------------------------
-        # -- General Electric Gradient Echo Field Maps --
-        # ----------------------------------------------- 
+        # ---------------------------------------------------
+        # -- GE HealthCare Legacy Gradient Echo Field Maps --
+        # --------------------------------------------------- 
 
         if [[ $GEB0InputName == "" ]]
         then 
             log_Err_Abort "$DistortionCorrection method requires --fmap"
         fi
+        
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For $DistortionCorrection method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
+
+        ;;
+
+    ${GE_HEALTHCARE_METHOD_OPT})
+        
+        # --------------------------------------------
+        # -- GE HealthCare Gradient Echo Field Maps --
+        # --------------------------------------------
+
+        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" ]]
+        then 
+            log_Err_Abort "$DistortionCorrection method requires --fmapmag and --fmapphase"
+        fi
+        
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For $DistortionCorrection method the minimun required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
+        
         ;;
 
     ${PHILIPS_METHOD_OPT})
@@ -97,9 +136,9 @@ case $DistortionCorrection in
         # --------------------------------------
         # -- Philips Gradient Echo Field Maps --
         # --------------------------------------
-        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" || $DeltaTE == "" ]]
+        if [[ $MagnitudeInputName == "" ||  $PhaseInputName == "" ]]
         then 
-            log_Err_Abort "$DistortionCorrection method requires --fmapmag, --fmapphase, and --echodiff"
+            log_Err_Abort "$DistortionCorrection method requires --fmapmag and --fmapphase"
         fi
         ;;
 
@@ -141,18 +180,29 @@ case $DistortionCorrection in
 
     ${GENERAL_ELECTRIC_METHOD_OPT})
 
-        # -----------------------------------------------
-        # -- General Electric Gradient Echo Field Maps --
-        # ----------------------------------------------- 
+        # ---------------------------------------------------
+        # -- GE HealthCare Legacy Gradient Echo Field Maps --
+        # --------------------------------------------------- 
 
-        ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
-		    mv vol0000.nii.gz ${WD}/FieldMap_deg.nii.gz
-		    mv vol0001.nii.gz ${WD}/Magnitude.nii.gz
+            ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
+		    ${FSLDIR}/bin/immv vol0000 ${WD}/FieldMapHertz
+		    ${FSLDIR}/bin/immv vol0001 ${WD}/Magnitude
 		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-		    ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_deg.nii.gz -mul 6.28 ${WD}/FieldMap.nii.gz
+		    ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
         ;;
+    ${GE_HEALTHCARE_METHOD_OPT})
 
+        # --------------------------------------------
+        # -- GE HealthCare Gradient Echo Field Maps --
+        # -------------------------------------------- 
+        	
+            ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude #normally only one volume 
+		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+		    ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMapHertz
+		    ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+
+        ;;
     ${PHILIPS_METHOD_OPT})
 
         # --------------------------------------

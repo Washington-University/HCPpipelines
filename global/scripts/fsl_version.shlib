@@ -1,3 +1,9 @@
+#!/bin/echo This script should not be run directly:
+
+# Max number of dots in FSL-version strings.
+# We assume the FSL is maximum 4 digits separated 
+# by 3 dots such as X.Y.Z.W (e.g. 6.0.7.6)
+MAX_NDOTS_IN_FSLVERSION=3
 #
 # Function Description
 #  Get the current version string for FSL
@@ -10,20 +16,162 @@
 # 
 fsl_version_get()
 {
-	local fsl_version_file
-	local fsl_version
-	local __functionResultVar=${1}
+    local fsl_version_file
+    local fsl_version
+    local __functionResultVar=${1}
 
-	fsl_version_file="${FSLDIR}/etc/fslversion"
+    fsl_version_file="${FSLDIR}/etc/fslversion"
 
-	if [ -f ${fsl_version_file} ]
-	then
-		fsl_version=`cat ${fsl_version_file}`
-		log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
-	else
-		log_Msg "ERROR: Cannot tell which version of FSL you are using."
-		exit 1
-	fi
+    if [ -f ${fsl_version_file} ]
+    then
+        fsl_version=`cat ${fsl_version_file}`
+        log_Msg "INFO: Determined that the FSL version in use is ${fsl_version}"
+    else
+        log_Msg "ERROR: Cannot tell which version of FSL you are using."
+        exit 1
+    fi
 
-	eval $__functionResultVar="'${fsl_version}'"
+    eval $__functionResultVar="'${fsl_version}'"
+}
+
+#
+# Function Description
+#  Standardize the FSL-version number (in argument 1) for easy
+#  version check and comparison
+#  
+#  This function take a version number (e.g. 6.0.4)
+#  and format it as Num.Num.Num.Num (e.g. 6.0.4.0). 
+#  This make the version comparison/check easier 
+#  (e.g. when comparing 6.0.4.0 with 6.0.4.1). 
+#  Here we assume that FSL-version is not using more than
+#  4 digits and 3 dots (M.X.Y.Z), otherwise increase max_ndots. 
+#
+#  Some formatting examples:
+#  6 => 6.0.0.0 
+#  6.0 => 6.0.0.0
+#  6.0.4 => 6.0.4.0
+#  6.0.4.12 => 6.0.4.12 
+#
+# Usage Example:
+#  fsl_ver2=$(fsl_version_format "6.0.4")
+#
+fsl_version_format(){
+    local fv="${1}"
+    local ndots
+    # maximum number of dots in FSL-version string
+    local max_ndots=$MAX_NDOTS_IN_FSLVERSION
+
+    ndots=$(awk -F"." '{print NF-1}' <<< "$fv")
+
+    while [ "$ndots" -lt "$max_ndots" ]; do
+        fv="$fv".0
+        ndots=$(awk -F"." '{print NF-1}' <<< "$fv")
+    done
+    
+    echo "$fv"
+}
+
+# Function Description
+#  Check if the current FSL version (the FSL version in use) 
+#  is at least equal to the version given in argument 1 ($1). 
+#
+#  This function echoes string "true" (if FSL-version >= argument1) 
+#  or "false" (if FSL-version < argument1).
+#  It is up to the user to decide what to do with this information. 
+# 
+# Usage Example:
+#  ret_val=$(fsl_minimum_required_version "6.0.7.2")
+#  if [ "$ret_val" == "false" ]; then
+#      log_Msg "ERROR: FSL minimun required version is 6.0.7.2. 
+#      exit 1
+#  else 
+#      log_Msg "INFO: FSL version > 6.0.7.2"
+#      echo "do something..."
+#  fi 
+# 
+fsl_minimum_required_version(){
+    local min_ver="${1}" 
+    local cur_ver 
+    local min_ver_array
+    local cur_ver_array
+    # maximum number of dots in FSL-version string
+    local max_ndots=$MAX_NDOTS_IN_FSLVERSION
+
+    # get current FSL version, format it in X.Y.Z.W, format min version too
+    fsl_version_get cur_ver >> /dev/null
+    cur_ver=$(fsl_version_format "$cur_ver")
+    min_ver=$(fsl_version_format "$min_ver")
+
+    # if the 2 version strings are identical, no need to test further
+    if [ "$cur_ver" == "$min_ver" ]; 
+    then
+        echo "true"
+        return 0
+    fi
+
+    # split version by dots - assuming the format X.Y.Z.W
+    for k in $(seq 0 $max_ndots); 
+    do 
+        cur_ver_array[$k]=$(awk -F"." -v i=$((k+1)) '{print $i}' <<< "$cur_ver")
+        min_ver_array[$k]=$(awk -F"." -v i=$((k+1)) '{print $i}' <<< "$min_ver")
+    done
+
+    for k in $(seq 0 $max_ndots)
+    do
+        # In case the version string is not exactly as expected.
+        if [[ -z "${cur_ver_array[$k]}" ]]; then
+            cur_ver_array[$k]=0
+        fi
+
+        if [[ -z "${min_ver_array[$k]}" ]]; then
+            min_ver_array[$k]=0
+        fi
+
+        # compare version numbers. is "current < minimum" ?
+        if [[ "${cur_ver_array[$k]}" -lt "${min_ver_array[$k]}" ]]; 
+        then
+            echo "false"
+            return 0
+        fi
+        # compare version numbers. is "current > minimum" ?
+        if [[ "${cur_ver_array[$k]}" -gt "${min_ver_array[$k]}" ]]; 
+        then
+            echo "true"
+            return 0
+        fi
+
+    done
+
+    # This situation should never happen as the "=" case is tested before.
+    echo "true"
+    return 0
+}
+
+# Function Description
+#  Log the current version of FSL (the FSL version in use) 
+#  Check if the current version is at least equal to the version 
+#  given in argument 1 ($1) and abort if the minimum FSL version
+#  criterion is not met. A specialized error message can be given 
+#  in argument 2 ($2).  
+#
+# Usage Example:
+#  fsl_minimum_required_version_check "6.0.7.1" "My Optionnal Error Message"
+# 
+fsl_minimum_required_version_check(){
+    local min_ver="${1}"
+    local my_err_msg="${2}"
+    local cur_ver
+    local min_criterion_met
+    
+    fsl_version_get cur_ver
+    min_criterion_met=$(fsl_minimum_required_version "$min_ver")
+
+    if [ "$min_criterion_met" == "true" ]; then
+        log_Msg "INFO: The minimum FSL version criterion is met (mininum-version: ${min_ver} <= current-version ${cur_ver})"
+    else
+        if [[ -n "$my_err_msg" ]]; then
+            log_Err "$my_err_msg"
+        fi
+        log_Err_Abort "The minimum FSL version criterion is NOT met (mininum-version: ${min_ver} > current-version ${cur_ver})"
+    fi
 }

@@ -10,7 +10,10 @@
 
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+# For GE HealthCare Fieldmap Distortion Correction methods 
+# see explanations in global/scripts/FieldMapPreprocessingAll.sh
+GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 FIELDMAP_METHOD_OPT="FIELDMAP"
 
@@ -64,9 +67,13 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
 
         '${PHILIPS_METHOD_OPT}'
            use Philips specific Gradient Echo Field Maps for readout distortion correction
-
+        
         '${GENERAL_ELECTRIC_METHOD_OPT}'
-           use General Electric specific Gradient Echo Field Maps for readout distortion correction
+           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in a single NIfTI file via --fmapgeneralelectric argument).
+           This option is maintained for backward compatibility.
+
+        '${GE_HEALTHCARE_METHOD_OPT}'
+             use GE HealthCare specific Gradient Echo Field Maps for SDC (fieldmap in Hz and magnitude in two separate NIfTI files via --fmapphase and --fmapmag).
 
         '${SIEMENS_METHOD_OPT}'
            use Siemens specific Gradient Echo Field Maps for readout distortion correction
@@ -81,9 +88,9 @@ opts_AddOptional '--workingdir' 'WD' 'path' "working directory" "."
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input fieldmap magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images (single 4D image containing 2x3D volumes)"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'deg OR magnitude' "input General Electric field map (two volumes: 1. field map in deg or  2. magnitude)"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
 
 opts_AddOptional '--echodiff' 'TE' 'value (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
@@ -226,9 +233,9 @@ case $DistortionCorrection in
 
     ${GENERAL_ELECTRIC_METHOD_OPT})
 
-        # -----------------------------------------------
-        # -- General Electric Gradient Echo Field Maps --
-        # -----------------------------------------------
+        # ---------------------------------------------------
+        # -- GE HealthCare Legacy Gradient Echo Field Maps --
+        # ---------------------------------------------------
 
         ### Create fieldmaps (and apply gradient non-linearity distortion correction)
         echo " "
@@ -237,8 +244,33 @@ case $DistortionCorrection in
 
         ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
             --workingdir=${WD}/FieldMap \
-            --method="GeneralElectricFieldMap" \
+            --method="GEHealthCareLegacyFieldMap" \
             --fmap=${GEB0InputName} \
+            --echodiff=${TE} \
+            --ofmapmag=${WD}/Magnitude \
+            --ofmapmagbrain=${WD}/Magnitude_brain \
+            --ofmap=${WD}/FieldMap \
+            --gdcoeffs=${GradientDistortionCoeffs}
+
+        ;;
+
+    ${GE_HEALTHCARE_METHOD_OPT})
+
+        # -------------------------------------------
+        # -- GE HealthCare Gradient Echo Field Maps --
+        # --------------------------------------------
+
+        ### Create fieldmaps (and apply gradient non-linearity distortion correction)
+        echo " "
+        echo " "
+        echo " " 
+
+        ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
+            --workingdir=${WD}/FieldMap \
+            --method="GEHealthCareFieldMap" \
+            --fmapmag=${MagnitudeInputName} \
+            --fmapphase=${PhaseInputName} \
+            --echodiff=${TE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \
@@ -360,7 +392,7 @@ for TXw in $Modalities ; do
 
     case $DistortionCorrection in
 
-        ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+        ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
             ;;
