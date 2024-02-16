@@ -167,11 +167,11 @@ fsl_minimum_required_version_check(){
     min_criterion_met=$(fsl_minimum_required_version "$min_ver")
 
     if [ "$min_criterion_met" == "true" ]; then
-        log_Msg "INFO: The minimum FSL version criterion is met (mininum-version: ${min_ver} <= current-version ${cur_ver})"
+        log_Msg "INFO: The minimum FSL version criterion is met (minimum-version: ${min_ver} <= current-version ${cur_ver})"
     else
         if [[ -n "$my_err_msg" ]]; then
             log_Err "$my_err_msg"
         fi
-        log_Err_Abort "The minimum FSL version criterion is NOT met (mininum-version: ${min_ver} > current-version ${cur_ver})"
+        log_Err_Abort "The minimum FSL version criterion is NOT met (minimum-version: ${min_ver} > current-version ${cur_ver})"
     fi
 }
