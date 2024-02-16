@@ -127,7 +127,7 @@ case $DistortionCorrection in
         
         # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
         fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
-            "For $DistortionCorrection method the minimun required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
+            "For $DistortionCorrection method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
         
         ;;
 
