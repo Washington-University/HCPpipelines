@@ -82,7 +82,7 @@ fsl_version_format(){
 # Usage Example:
 #  ret_val=$(fsl_minimum_required_version "6.0.7.2")
 #  if [ "$ret_val" == "false" ]; then
-#      log_Msg "ERROR: FSL minimun required version is 6.0.7.2. 
+#      log_Msg "ERROR: FSL minimum required version is 6.0.7.2. 
 #      exit 1
 #  else 
 #      log_Msg "INFO: FSL version > 6.0.7.2"
