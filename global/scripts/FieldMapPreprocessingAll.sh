@@ -171,10 +171,10 @@ case $DistortionCorrection in
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
 
-	${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
-	${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-	${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
-	${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+        ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+        ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+        ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
+        ${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
         ;;
 
@@ -185,10 +185,10 @@ case $DistortionCorrection in
         # --------------------------------------------------- 
 
         ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
-	${FSLDIR}/bin/immv vol0000 ${WD}/FieldMapHertz
-	${FSLDIR}/bin/immv vol0001 ${WD}/Magnitude
-	${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-	${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+        ${FSLDIR}/bin/immv vol0000 ${WD}/FieldMapHertz
+        ${FSLDIR}/bin/immv vol0001 ${WD}/Magnitude
+        ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+        ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
         ;;
     ${GE_HEALTHCARE_METHOD_OPT})
