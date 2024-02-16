@@ -155,7 +155,7 @@ fsl_minimum_required_version(){
 #  in argument 2 ($2).  
 #
 # Usage Example:
-#  fsl_minimum_required_version_check "6.0.7.1" "My Optionnal Error Message"
+#  fsl_minimum_required_version_check "6.0.7.1" "My Optional Error Message"
 # 
 fsl_minimum_required_version_check(){
     local min_ver="${1}"
