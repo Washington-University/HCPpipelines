@@ -94,13 +94,13 @@ fsl_minimum_required_version(){
     local cur_ver 
     local min_ver_array
     local cur_ver_array
+    local ndots_cur_ver
+    local ndots_min_ver
     # maximum number of dots in FSL-version string
-    local max_ndots=$MAX_NDOTS_IN_FSLVERSION
+    local max_ndots
 
-    # get current FSL version, format it in X.Y.Z.W, format min version too
+    # get current FSL version
     fsl_version_get cur_ver >> /dev/null
-    cur_ver=$(fsl_version_format "$cur_ver")
-    min_ver=$(fsl_version_format "$min_ver")
 
     # if the 2 version strings are identical, no need to test further
     if [ "$cur_ver" == "$min_ver" ]; 
@@ -109,12 +109,21 @@ fsl_minimum_required_version(){
         return 0
     fi
 
-    # split version by dots - assuming the format X.Y.Z.W
-    for k in $(seq 0 $max_ndots); 
-    do 
-        cur_ver_array[$k]=$(awk -F"." -v i=$((k+1)) '{print $i}' <<< "$cur_ver")
-        min_ver_array[$k]=$(awk -F"." -v i=$((k+1)) '{print $i}' <<< "$min_ver")
-    done
+    # split version by dots
+    IFS=. read -a cur_ver_array <<< "$cur_ver"
+    IFS=. read -a min_ver_array <<< "$min_ver"
+
+    # count the dots
+    ndots_cur_ver=$(awk -F"." '{print NF-1}' <<< "$cur_ver")
+    ndots_min_ver=$(awk -F"." '{print NF-1}' <<< "$min_ver")
+
+    # get the maximum number of dots
+    if [ "$ndots_cur_ver" -ge "$ndots_min_ver" ]; 
+    then
+        max_ndots=$ndots_cur_ver
+    else 
+        max_ndots=$ndots_min_ver
+    fi
 
     for k in $(seq 0 $max_ndots)
     do
@@ -139,10 +148,9 @@ fsl_minimum_required_version(){
             echo "true"
             return 0
         fi
-
     done
 
-    # This situation should never happen as the "=" case is tested before.
+    # This situation is "=" case but different string length.
     echo "true"
     return 0
 }
