@@ -197,10 +197,10 @@ case $DistortionCorrection in
         # -- GE HealthCare Gradient Echo Field Maps --
         # -------------------------------------------- 
         	
-            ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude #normally only one volume 
-		    ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
-		    ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMapHertz
-		    ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
+        ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude #normally only one volume 
+        ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+        ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMapHertz
+        ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
 
         ;;
     ${PHILIPS_METHOD_OPT})
