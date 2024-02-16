@@ -213,7 +213,7 @@ opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Confi
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/GE HealthCare Gradient Echo Fieldmap magnitude file"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fielmap in Hertz"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fieldmap in Hertz"
 
 opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map file. Two volumes in one file  1. field map in hertz  2. magnitude"
 
