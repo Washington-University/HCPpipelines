@@ -292,8 +292,8 @@ main()
 		# volume or "NONE" if not used
 		PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz"
 
-		# The DeltaTE (echo time difference) variable should be set to 2.46ms for 3T scanner, 1.02ms for 7T
-		# scanner or "NONE" if not using
+		# The DeltaTE (echo time difference) of the fieldmap.  For HCP Young Adult data, this variable should be set to 2.46ms for 3T scans, 1.02ms for 7T
+		# scans, or "NONE" if not using readout distortion correction
 		TE="2.46"
 
 		# ----------------------------------------------------------------------
