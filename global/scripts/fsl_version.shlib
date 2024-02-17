@@ -114,44 +114,35 @@ fsl_minimum_required_version(){
     IFS=. read -a min_ver_array <<< "$min_ver"
 
     # count the dots
-    ndots_cur_ver=$(awk -F"." '{print NF-1}' <<< "$cur_ver")
-    ndots_min_ver=$(awk -F"." '{print NF-1}' <<< "$min_ver")
+    ndots_cur_ver=$((${#cur_ver_array[@]} - 1))
+    ndots_min_ver=$((${#min_ver_array[@]} - 1))
 
-    # get the maximum number of dots
-    if [ "$ndots_cur_ver" -ge "$ndots_min_ver" ]; 
-    then
-        max_ndots=$ndots_cur_ver
-    else 
-        max_ndots=$ndots_min_ver
-    fi
-
-    for k in $(seq 0 $max_ndots)
-    do
-        # In case the version string is not exactly as expected.
-        if [[ -z "${cur_ver_array[$k]}" ]]; then
-            cur_ver_array[$k]=0
-        fi
-
-        if [[ -z "${min_ver_array[$k]}" ]]; then
-            min_ver_array[$k]=0
-        fi
-
+    # the version comparison consider "x.0 is newer than x"
+    for ((i = 0; i < ${#cur_ver_array[@]} && i < ${#min_ver_array[@]}; ++i)); 
+    do 
         # compare version numbers. is "current < minimum" ?
-        if [[ "${cur_ver_array[$k]}" -lt "${min_ver_array[$k]}" ]]; 
-        then
+        if ((cur_ver_array[i] < min_ver_array[i])); 
+        then 
             echo "false"
             return 0
         fi
+
         # compare version numbers. is "current > minimum" ?
-        if [[ "${cur_ver_array[$k]}" -gt "${min_ver_array[$k]}" ]]; 
-        then
+        if ((cur_ver_array[i] > min_ver_array[i])); 
+        then 
             echo "true"
             return 0
         fi
     done
 
-    # This situation is "=" case but different string length.
-    echo "true"
+    # if current string length >= minimum version string length then true
+    if ((${#cur_ver_array[@]} >= ${#min_ver_array[@]})); 
+    then 
+        echo "true"
+        return 0
+    fi
+    
+    echo "false"
     return 0
 }
 
