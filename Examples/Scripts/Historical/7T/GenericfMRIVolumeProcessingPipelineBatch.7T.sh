@@ -215,13 +215,13 @@ do
 		# For GE HealthCare, see related notes in PreFreeSurferPipelineBatch.sh and FieldMapProcessingAll.sh
 
 		# Path to GE HEalthCare Legacy style B0 fieldmap with two volumes
-        #   1. field map in hertz
-        #   2. magnitude
-        # Set to "NONE" if not using "GEHealthCareLegacyFieldMap" as the value for the DistortionCorrection variable
-        #
-        # Example Value: 
-        #  GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_GradientEchoFieldMap.nii.gz" 
-        #  DeltaTE=2.272 # ms 
+		#   1. field map in hertz
+		#   2. magnitude
+		# Set to "NONE" if not using "GEHealthCareLegacyFieldMap" as the value for the DistortionCorrection variable
+		#
+		 # Example Value: 
+		#  GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_GradientEchoFieldMap.nii.gz" 
+		#  DeltaTE=2.272 # ms 
 		GEB0InputName="NONE"
 		
 		FinalFMRIResolution="1.60"
