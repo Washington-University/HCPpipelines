@@ -235,7 +235,7 @@ for Subject in $Subjlist ; do
 
         # Path to GE HealthCare Legacy style B0 fieldmap with two volumes
         #   1. field map in hertz
-        #   2. magnitude
+        #   2. magnitude image
         # Set to "NONE" if not using "GEHealthCareLegacyFieldMap" as the value for the DistortionCorrection variable
         #
         # Example Value: 
