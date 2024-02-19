@@ -13,7 +13,7 @@ SIEMENS_METHOD_OPT="SiemensFieldMap"
 GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap"
 # "GEHealthCareLegacyFieldMap" refers to fieldmap in the form of a single NIfTI file 
 # with 2 volumes in it (volume-1: the Fieldmap in Hertz; volume-2: the magnitude image). 
-# Note: dcm2niix (pre-v1.0.20210410) use to convert the GEHC B0Maps as a 2 volumes NIFTI file. 
+# Note: dcm2niix (pre-v1.0.20210410) used to convert the GEHC B0Maps in this format (a single NIFTI file with 2 volumes). 
 
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 # "GEHealthCareFieldMap" refers to fieldmap in the form of 2 NIfTI files.
