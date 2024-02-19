@@ -85,7 +85,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              opposing polarity for SDC
 
         '${GENERAL_ELECTRIC_METHOD_OPT}'
-             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (fieldmap and magnitude in a single NIfTI file via --fmapgeneralelectric argument).
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --fmapgeneralelectric argument).
              This option is maintained for backward compatibility.
 
         '${GE_HEALTHCARE_METHOD_OPT}'
