@@ -119,7 +119,7 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase im
 
 opts_AddOptional '--echodiff' 'deltaTE' 'number (milliseconds)' "difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz  and 2. magnitude image)"
 
 opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "degrees of freedom for EPI to T1 registration" '6'
 
