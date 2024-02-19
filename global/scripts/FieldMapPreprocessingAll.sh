@@ -16,7 +16,7 @@ GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap"
 # Note: dcm2niix (pre-v1.0.20210410) used to convert the GEHC B0Maps in this format (a single NIFTI file with 2 volumes). 
 
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
-# "GEHealthCareFieldMap" refers to fieldmap in the form of 2 NIfTI files.
+# "GEHealthCareFieldMap" refers to fieldmap in the form of 2 separate NIfTI files.
 # One file withe the Fieldmap in Hertz and the magnitude image). 
 # Note: dcm2niix (v1.0.20210410 and later) convert the GEHC B0Maps as 2 NIFTI files
 # using the suffix _fieldmaphz for the fieldmap in Hertz and no suffix for the magnitude. 
