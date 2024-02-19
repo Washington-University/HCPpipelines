@@ -230,7 +230,7 @@ for Subject in $Subjlist ; do
         # or set the following inputs if using regular FIELDMAP (i.e. SiemensFieldMap GEHealthCareFieldMap PhilipsFieldMap)
         MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D volumes (differing echo times) - or a single 3D Volume
         PhaseInputName="NONE" #Expects a 3D Phase difference volume (Siemen's style) -or Fieldmap in Hertz for GE Healthcare
-        DeltaTE="NONE" #2.46ms for 3T, 1.02ms for 7T - for GE Healthcare at 3.0T, *usually* 2.304ms for 2D-B0MAP and 2.272 ms 3D B0MAP.
+        DeltaTE="NONE" #For Siemens, typically 2.46ms for 3T, 1.02ms for 7T; For GE Healthcare at 3T, *usually* 2.304ms for 2D-B0MAP and 2.272ms for 3D-B0MAP
         # For GE HealthCare, see related notes in PreFreeSurferPipelineBatch.sh and FieldMapProcessingAll.sh
 
         # Path to GE HEalthCare Legacy style B0 fieldmap with two volumes
