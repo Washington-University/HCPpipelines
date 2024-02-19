@@ -73,7 +73,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
            This option is maintained for backward compatibility.
 
         '${GE_HEALTHCARE_METHOD_OPT}'
-           use GE HealthCare specific Gradient Echo Field Maps for SDC (fieldmap in Hz and magnitude in two separate NIfTI files via --fmapphase and --fmapmag).
+           use GE HealthCare specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
 
         '${SIEMENS_METHOD_OPT}'
            use Siemens specific Gradient Echo Field Maps for readout distortion correction
