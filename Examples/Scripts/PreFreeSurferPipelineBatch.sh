@@ -187,7 +187,7 @@ main()
 	# The HCP Pipeline Scripts currently support the use of gradient echo field
 	# maps or spin echo field maps as they are produced by the Siemens Connectom
 	# Scanner. They also support the use of gradient echo field maps as generated
-	# by General Electric scanners.
+	# by GE HealthCare scanners.
 	#
 	# Change either the gradient echo field map or spin echo field map scan
 	# settings to match your data. This script is setup to use gradient echo
@@ -257,13 +257,13 @@ main()
 		#     Echo Field Map for readout distortion correction. 
 		#	  The Legacy fieldmap is a two volume file: 1. field map in Hz and 2. magnitude image.
 		# 	  Use "GEB0InputName" variable to specify the 2-Volume file. 
-		#	  Set "TE" variable to the EchoTime difference (TE2-TE1). 
+		#	  Set "DeltaTE" variable to the EchoTime difference (TE2-TE1). 
 		#	 
 		#	"GEHealthCareFieldMap" 
 		#	  Average any repeats and use GE HealthCare specific Gradient Echo
 		#     Field Maps for readout distortion correction
-		#	  This uses separate NIfTI files for the fieldmap in Hz and the magnitude image
-		#	  Use variables "MagnitudeInputName", "PhaseInputName" and "TE"
+		#	  This uses two separate NIfTI files for the fieldmap in Hz and the magnitude image
+		#	  Use variables "MagnitudeInputName", "PhaseInputName" and "DeltaTE"
 		#
 		#   "SiemensFieldMap"
 		#     Average any repeats and use Siemens specific Gradient Echo
@@ -272,7 +272,7 @@ main()
 		# Current Setup is for Siemens specific Gradient Echo Field Maps
 		#
 		#   The following settings for AvgrdcSTRING, MagnitudeInputName,
-		#   PhaseInputName, and TE are for using the Siemens specific
+		#   PhaseInputName, and DeltaTE are for using the Siemens specific
 		#   Gradient Echo Field Maps that are collected and used in the
 		#   standard HCP-YA protocol.
 		#
@@ -294,7 +294,7 @@ main()
 
 		# The DeltaTE (echo time difference) of the fieldmap.  For HCP Young Adult data, this variable would typically be 2.46ms for 3T scans, 1.02ms for 7T
 		# scans, or "NONE" if not using readout distortion correction
-		TE="2.46"
+		DeltaTE="2.46"
 
 		# ----------------------------------------------------------------------
 		# Variables related to using Spin Echo Field Maps
@@ -373,12 +373,12 @@ main()
 		#  
 		# For Example:
 		#   GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_GradientEchoFieldMap.nii.gz"
-		#	TE=2.304 
-		#   Here TE refers to the DeltaTE in ms
+		#	DeltaTE=2.304 
+		#   Here DeltaTE refers to the DeltaTE in ms
 		#   NOTE: At 3T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272ms 3D-B0MAP.
 		#   NOTE: The Delta can be found in json files (if data converted with recent dcm2niix)
 		#   NOTE: Then DeltaTE = (EchoTime2-EchoTime1)*1000
-		#	NOTE: In the DICOM, DeltaTE = round(abs(1e6/( 2*pi*(0019,10E2) )))
+		#	NOTE: In the DICOM, DeltaTE in ms = round(abs(1e6/( 2*pi*(0019,10E2) )))*1e-3 
 		GEB0InputName="NONE"
 
 		# ---------------------------------------------------------------
@@ -391,12 +391,12 @@ main()
 		# AvgrdcSTRING="GEHealthCareFieldMap"). 
 
 		# Example: set MagnitudeInputName to magnitude image, set PhaseInputName 
-		# to the input fieldmap in Hertz and TE (a.k.a DeltaTE)
+		# to the input fieldmap in Hertz and DeltaTE 
 		# (for DeltaTE see NOTE above)
 		#
 		# MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_BOMap_Magnitude.nii.gz"
 		# PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_B0Map_fieldmaphz.nii.gz"
-		# TE="2.272"
+		# DeltaTE="2.272"
 
 		# ---------------------------------------------------------------
 
@@ -498,7 +498,7 @@ main()
 			--fmapmag="$MagnitudeInputName" \
 			--fmapphase="$PhaseInputName" \
 			--fmapgeneralelectric="$GEB0InputName" \
-			--echodiff="$TE" \
+			--echodiff="$DeltaTE" \
 			--SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
 			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
 			--seechospacing="$SEEchoSpacing" \
