@@ -215,7 +215,7 @@ opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/G
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fieldmap in Hertz"
 
-opts_AddOptional '--fmap' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map approach, which contains two volumes in one file: 1. field map in hertz; 2. magnitude image"
+opts_AddOptional '--fmapgelegacy' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map approach, which contains two volumes in one file: 1. field map in hertz; 2. magnitude image"
 
 opts_AddOptional '--echodiff' 'TE' 'delta_TE' "Delta TE in ms for field map or 'NONE' if  not used"
 
@@ -248,7 +248,7 @@ opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and 
       Field Maps for readout distortion correction
 
   '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-      use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmap argument).
+      use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapgelegacy argument).
       This option is maintained for backward compatibility.
 
   '${GE_HEALTHCARE_METHOD_OPT}'
@@ -553,7 +553,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --t2brain=${T2wFolder_T2wImageWithPath_acpc_brain} \
         --fmapmag=${MagnitudeInputName} \
         --fmapphase=${PhaseInputName} \
-        --fmap=${GEB0InputName} \
+        --fmapgelegacy=${GEB0InputName} \
         --echodiff=${TE} \
         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \

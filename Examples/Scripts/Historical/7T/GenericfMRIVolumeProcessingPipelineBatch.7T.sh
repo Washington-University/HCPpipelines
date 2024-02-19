@@ -264,7 +264,7 @@ do
 			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
 			--fmapmag="$MagnitudeInputName" \
 			--fmapphase="$PhaseInputName" \
-			--fmap="$GEB0InputName" \
+			--fmapgelegacy="$GEB0InputName" \
 			--echospacing="$EchoSpacing" \
 			--echodiff="$DeltaTE" \
 			--unwarpdir="$UnwarpDir" \

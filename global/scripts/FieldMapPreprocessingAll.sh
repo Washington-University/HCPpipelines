@@ -62,7 +62,7 @@ opts_AddMandatory '--ofmap' 'FieldMapOutput' 'image' "output distortion correcte
 opts_AddMandatory '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
 # Optional Arguments
-opts_AddOptional '--fmap' 'GEB0InputName' 'image (hertz and magnitude)' "GE HealthCare Legacy fieldmap with field map in Hz and magnitude image included as two volumes in a single file"
+opts_AddOptional '--fmapgelegacy' 'GEB0InputName' 'image (hertz and magnitude)' "GE HealthCare Legacy fieldmap with field map in Hz and magnitude image included as two volumes in a single file"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or Hz)' "phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
@@ -105,7 +105,7 @@ case $DistortionCorrection in
 
         if [[ $GEB0InputName == "" ]]
         then 
-            log_Err_Abort "$DistortionCorrection method requires --fmap"
+            log_Err_Abort "$DistortionCorrection method requires --fmapgelegacy"
         fi
         
         # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)

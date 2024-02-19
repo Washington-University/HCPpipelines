@@ -85,7 +85,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              opposing polarity for SDC
 
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --fmap argument).
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --fmapgelegacy argument).
              This option is maintained for backward compatibility.
 
         '${GE_HEALTHCARE_METHOD_OPT}'
@@ -119,7 +119,7 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "fieldmap phase images i
 
 opts_AddOptional '--echodiff' 'deltaTE' 'number (milliseconds)' "difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmap' 'GEB0InputName' 'image' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz  and 2. magnitude image)"
+opts_AddOptional '--fmapgelegacy' 'GEB0InputName' 'image' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz  and 2. magnitude image)"
 
 opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "degrees of freedom for EPI to T1 registration" '6'
 
@@ -293,7 +293,7 @@ case $DistortionCorrection in
             ${GlobalScripts}/FieldMapPreprocessingAll.sh \
                 --workingdir=${WD}/FieldMap \
                 --method="GEHealthCareLegacyFieldMap" \
-                --fmap=${GEB0InputName} \
+                --fmapgelegacy=${GEB0InputName} \
                 --echodiff=${deltaTE} \
                 --ofmapmag=${WD}/Magnitude \
                 --ofmapmagbrain=${WD}/Magnitude_brain \

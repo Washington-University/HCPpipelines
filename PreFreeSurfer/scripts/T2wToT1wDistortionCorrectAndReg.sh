@@ -69,7 +69,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
            use Philips specific Gradient Echo Field Maps for readout distortion correction
         
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmap argument).
+           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapgelegacy argument).
            This option is maintained for backward compatibility.
 
         '${GE_HEALTHCARE_METHOD_OPT}'
@@ -90,7 +90,7 @@ opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input fieldmap magnit
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 
-opts_AddOptional '--fmap' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
+opts_AddOptional '--fmapgelegacy' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
 
 opts_AddOptional '--echodiff' 'DeltaTE' 'value (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
@@ -245,7 +245,7 @@ case $DistortionCorrection in
         ${HCPPIPEDIR_Global}/FieldMapPreprocessingAll.sh \
             --workingdir=${WD}/FieldMap \
             --method="GEHealthCareLegacyFieldMap" \
-            --fmap=${GEB0InputName} \
+            --fmapgelegacy=${GEB0InputName} \
             --echodiff=${DeltaTE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
