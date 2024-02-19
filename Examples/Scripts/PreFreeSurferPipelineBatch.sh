@@ -255,7 +255,7 @@ main()
 		#   "GEHealthCareLegacyFieldMap"
 		#     Average any repeats and use GE HeathCare Legacy specific Gradient
 		#     Echo Field Map for readout distortion correction. 
-		#	  The Legacy fieldmap is a two volume file: 1. field map in Hz and 2. magnitude.
+		#	  The Legacy fieldmap is a two volume file: 1. field map in Hz and 2. magnitude image.
 		# 	  Use "GEB0InputName" variable to specify the 2-Volume file. 
 		#	  Set "TE" variable to the EchoTime difference (TE2-TE1). 
 		#	 
