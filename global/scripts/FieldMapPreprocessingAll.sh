@@ -58,7 +58,7 @@ opts_AddMandatory '--ofmapmagbrain' 'MagnitudeBrainOutput' 'image' "output disto
 
 opts_AddMandatory '--ofmap' 'FieldMapOutput' 'image' "output distortion corrected fieldmap image (rad/s)"
 
-# options --echodiff is now mandatory - used by all "--method" (and all manufacturer). 
+# options --echodiff is now mandatory; used by all "--method" options (and necessary for processing of all vendors). 
 opts_AddMandatory '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
 # Optional Arguments
