@@ -115,7 +115,7 @@ opts_AddOptional '--subjectfolder' 'SubjectFolder' 'path' "subject processing fo
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "field map magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 
 opts_AddOptional '--echodiff' 'deltaTE' 'number (milliseconds)' "difference of echo times for fieldmap, in milliseconds"
 
