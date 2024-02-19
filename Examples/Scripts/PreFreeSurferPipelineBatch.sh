@@ -368,7 +368,7 @@ main()
 		# GEB0InputName should be a GE HealthCare Legacy style B0 fieldmap with two
 		# volumes
 		#   1) fieldmap in hertz and
-		#   2) magnitude,
+		#   2) magnitude image,
 		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap or GEHealthCareFieldMap
 		#  
 		# For Example:
