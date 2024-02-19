@@ -108,7 +108,7 @@ opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'file' "positive p
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file to use"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "input field map magnitude image"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "field map magnitude image"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
 
