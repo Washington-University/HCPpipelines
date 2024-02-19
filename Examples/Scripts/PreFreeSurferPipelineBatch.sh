@@ -375,7 +375,7 @@ main()
 		#   GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_GradientEchoFieldMap.nii.gz"
 		#	TE=2.304 
 		#   Here TE refers to the DeltaTE in ms
-		#   NOTE: At 3.0T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272 ms 3D B0MAP.
+		#   NOTE: At 3T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272ms 3D-B0MAP.
 		#   NOTE: The Delta can be found in json files (if data converted with recent dcm2niix)
 		#   NOTE: Then DeltaTE = (EchoTime2-EchoTime1)*1000
 		#	NOTE: In the DICOM DeltaTE = round(abs(1e6/( 2*pi*(0019,10E2) )))
