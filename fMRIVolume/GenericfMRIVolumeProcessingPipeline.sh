@@ -114,7 +114,7 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in
 
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
 
 # OTHER OPTIONS:
 
