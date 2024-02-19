@@ -45,7 +45,7 @@ opts_AddMandatory '--output-string' 'OutString' 'string' "filename part to descr
 opts_AddOptional '--do-vol' 'DoVolString' 'YES or NO' "whether to generate voxel-based outputs"
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
 opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --concat-fmri-out output"
-opts_AddOptional '--concat-fmri-out' 'concatNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
+opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -66,7 +66,7 @@ then
     log_Err_Abort "--fix-high-pass is required when using --subject-concat-timeseries"
 fi
 
-if [[ "$concatNameOut" != "" ]]
+if [[ "$extractNameOut" != "" ]]
 then
     if [[ "$InputConcat" == "" ]]
     then
@@ -259,10 +259,10 @@ then
     MRFixConcatName="$InputConcat"
 
     #extract specified runs to another concatenated file (generally intended to recreate the REST concatenated set)
-    if [[ "$concatNameOut" != "" ]]
+    if [[ "$extractNameOut" != "" ]]
     then
-        cp "$MNIFolder/Results/$concatNameOut/${concatNameOut}_Atlas${RegString}${OutString}_vn.dscalar.nii" \
-            "$MNIFolder/Results/$concatNameOut/${concatNameOut}_Atlas${RegString}${OutString}_vn.dscalar.nii"
+        cp "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}_vn.dscalar.nii" \
+            "$MNIFolder/Results/$extractNameOut/${extractNameOut}_Atlas${RegString}${OutString}_vn.dscalar.nii"
         extractcmd=("$HCPPIPEDIR"/global/scripts/ExtractFromMRFIXConcat.sh
                     --study-folder="$StudyFolder"
                     --subject="$Subject"
@@ -270,13 +270,13 @@ then
                     --multirun-fix-names-to-use="$concatNamesToUse"
                     --surf-reg-name="$RegName"
                     --concat-cifti-input="$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}.dtseries.nii"
-                    --cifti-out="$MNIFolder/Results/$concatNameOut/${concatNameOut}_Atlas${RegString}${OutString}.dtseries.nii")
+                    --cifti-out="$MNIFolder/Results/$extractNameOut/${extractNameOut}_Atlas${RegString}${OutString}.dtseries.nii")
         if ((DoVol))
         then
             cp "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}_vn.nii.gz" \
-                "$MNIFolder/Results/$concatNameOut/${concatNameOut}${OutString}_vn.nii.gz"
+                "$MNIFolder/Results/$extractNameOut/${extractNameOut}${OutString}_vn.nii.gz"
             extractcmd+=(--concat-volume-input="$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}.nii.gz"
-                         --volume-out="$MNIFolder/Results/$concatNameOut/${concatNameOut}${OutString}.nii.gz")
+                         --volume-out="$MNIFolder/Results/$extractNameOut/${extractNameOut}${OutString}.nii.gz")
         fi
         "${extractcmd[@]}"
     fi

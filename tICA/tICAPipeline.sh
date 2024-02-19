@@ -95,7 +95,7 @@ opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text 
 # 'YES' only when dealing with old 3T HCP data with 'hp2000', 'NO' otherwise
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether the input data used the legacy bias correction' 'NO'
 opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --concat-fmri-out output after tICA cleanup"
-opts_AddOptional '--concat-fmri-out' 'concatNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
+opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list" '' '--concat-fmri-out'
 
 #general settings
 opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for rerunning with similar settings, or for reusing these results for future cleaning"
@@ -130,7 +130,7 @@ then
     log_Err_Abort "--parallel-limit must be a positive integer or -1, provided value: '$parLimit'"
 fi
 
-if [[ "$concatNameOut" != "" ]]
+if [[ "$extractNameOut" != "" ]]
 then
     if [[ "$MRFixConcatName" == "" ]]
     then
@@ -648,7 +648,7 @@ do
                     --fix-legacy-bias="$FixLegacyBias" \
                     --matlab-run-mode="$MatlabMode" \
                     --extract-fmri-name-list="$concatNamesToUse" \
-                    --concat-fmri-out="$concatNameOut"
+                    --concat-fmri-out="$extractNameOut"
             done
             par_runjobs "$parLimit"
             ;;
