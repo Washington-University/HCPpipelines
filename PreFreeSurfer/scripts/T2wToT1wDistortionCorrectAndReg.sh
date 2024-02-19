@@ -88,7 +88,7 @@ opts_AddOptional '--workingdir' 'WD' 'path' "working directory" "."
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input fieldmap magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 
 opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz or  2. magnitude)"
 
