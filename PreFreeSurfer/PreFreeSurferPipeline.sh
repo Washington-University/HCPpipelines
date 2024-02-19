@@ -215,7 +215,7 @@ opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/G
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fieldmap in Hertz"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map file. Two volumes in one file  1. field map in hertz  2. magnitude"
+opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map approach, which contains two volumes in one file: 1. field map in hertz; 2. magnitude image"
 
 opts_AddOptional '--echodiff' 'TE' 'delta_TE' "Delta TE in ms for field map or 'NONE' if  not used"
 
