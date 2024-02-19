@@ -1,7 +1,7 @@
 #!/bin/echo This script should not be run directly:
 
 # Max number of dots in FSL-version strings.
-# We assume the FSL is maximum 4 digits separated 
+# We assume the FSL version is a maximum of 4 digits separated 
 # by 3 dots such as X.Y.Z.W (e.g. 6.0.7.6)
 MAX_NDOTS_IN_FSLVERSION=3
 #
