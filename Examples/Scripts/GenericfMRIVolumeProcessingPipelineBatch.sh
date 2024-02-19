@@ -233,7 +233,7 @@ for Subject in $Subjlist ; do
         DeltaTE="NONE" #For Siemens, typically 2.46ms for 3T, 1.02ms for 7T; For GE Healthcare at 3T, *usually* 2.304ms for 2D-B0MAP and 2.272ms for 3D-B0MAP
         # For GE HealthCare, see related notes in PreFreeSurferPipelineBatch.sh and FieldMapProcessingAll.sh
 
-        # Path to GE HEalthCare Legacy style B0 fieldmap with two volumes
+        # Path to GE HealthCare Legacy style B0 fieldmap with two volumes
         #   1. field map in hertz
         #   2. magnitude
         # Set to "NONE" if not using "GEHealthCareLegacyFieldMap" as the value for the DistortionCorrection variable
