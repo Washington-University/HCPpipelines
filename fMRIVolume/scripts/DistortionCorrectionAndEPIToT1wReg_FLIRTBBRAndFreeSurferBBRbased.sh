@@ -12,7 +12,7 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 # For GE HealthCare Fieldmap Distortion Correction methods 
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
-GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
@@ -84,7 +84,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              use a pair of Spin Echo EPI images ('Spin Echo Field Maps') acquired with
              opposing polarity for SDC
 
-        '${GENERAL_ELECTRIC_METHOD_OPT}'
+        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --fmapgeneralelectric argument).
              This option is maintained for backward compatibility.
 
@@ -265,7 +265,7 @@ fi
 
 case $DistortionCorrection in
 
-    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
         if [ $DistortionCorrection = "${FIELDMAP_METHOD_OPT}" ] || [ $DistortionCorrection = "${SIEMENS_METHOD_OPT}" ] ; then
             # --------------------------------------
@@ -284,7 +284,7 @@ case $DistortionCorrection in
                 --ofmap=${WD}/FieldMap \
                 --gdcoeffs=${GradientDistortionCoeffs}
 
-        elif [ $DistortionCorrection = "${GENERAL_ELECTRIC_METHOD_OPT}" ] ; then
+        elif [ $DistortionCorrection = "${GE_HEALTHCARE_LEGACY_METHOD_OPT}" ] ; then
             # ---------------------------------------------------
             # -- GE HealthCare Legacy Gradient Echo Field Maps --
             # ---------------------------------------------------

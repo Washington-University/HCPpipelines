@@ -10,7 +10,7 @@
 
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 
-GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap"
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap"
 # "GEHealthCareLegacyFieldMap" refers to fieldmap in the form of a single NIfTI file 
 # with 2 volumes in it (volume-1: the Fieldmap in Hertz; volume-2: the magnitude image). 
 # Note: dcm2niix (pre-v1.0.20210410) used to convert the GEHC B0Maps in this format (a single NIFTI file with 2 volumes). 
@@ -23,7 +23,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 
-# Minimum required FSL version for GENERAL_ELECTRIC_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
+# Minimum required FSL version for GE_HEALTHCARE_LEGACY_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
 GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
 
 set -eu
@@ -45,7 +45,7 @@ opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL fro
 opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)
         '${SIEMENS_METHOD_OPT}'
              use Siemens specific Gradient Echo Field Maps for SDC
-        '${GENERAL_ELECTRIC_METHOD_OPT}'
+        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --GEB0InputName argument).
         '${GE_HEALTHCARE_METHOD_OPT}'
              use GE HealthCare specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in two separate NIfTI files).
@@ -97,7 +97,7 @@ case $DistortionCorrection in
         fi
         ;;
 
-    ${GENERAL_ELECTRIC_METHOD_OPT})
+    ${GE_HEALTHCARE_LEGACY_METHOD_OPT})
 
         # ---------------------------------------------------
         # -- GE HealthCare Legacy Gradient Echo Field Maps --
@@ -178,7 +178,7 @@ case $DistortionCorrection in
 
         ;;
 
-    ${GENERAL_ELECTRIC_METHOD_OPT})
+    ${GE_HEALTHCARE_LEGACY_METHOD_OPT})
 
         # ---------------------------------------------------
         # -- GE HealthCare Legacy Gradient Echo Field Maps --

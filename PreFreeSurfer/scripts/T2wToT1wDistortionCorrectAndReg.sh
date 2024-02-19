@@ -12,7 +12,7 @@ SIEMENS_METHOD_OPT="SiemensFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 # For GE HealthCare Fieldmap Distortion Correction methods 
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
-GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 FIELDMAP_METHOD_OPT="FIELDMAP"
@@ -68,7 +68,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
         '${PHILIPS_METHOD_OPT}'
            use Philips specific Gradient Echo Field Maps for readout distortion correction
         
-        '${GENERAL_ELECTRIC_METHOD_OPT}'
+        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
            use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapgeneralelectric argument).
            This option is maintained for backward compatibility.
 
@@ -231,7 +231,7 @@ case $DistortionCorrection in
 
         ;;
 
-    ${GENERAL_ELECTRIC_METHOD_OPT})
+    ${GE_HEALTHCARE_LEGACY_METHOD_OPT})
 
         # ---------------------------------------------------
         # -- GE HealthCare Legacy Gradient Echo Field Maps --
@@ -392,7 +392,7 @@ for TXw in $Modalities ; do
 
     case $DistortionCorrection in
 
-        ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+        ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
             ;;

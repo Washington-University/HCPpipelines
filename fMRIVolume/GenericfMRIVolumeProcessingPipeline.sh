@@ -34,13 +34,13 @@ FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 # For GE HealthCare Fieldmap Distortion Correction methods 
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
-GENERAL_ELECTRIC_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 
-# Minimum required FSL version for GENERAL_ELECTRIC_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
+# Minimum required FSL version for GE_HEALTHCARE_LEGACY_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
 GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
 
 # --------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              use a pair of Spin Echo EPI images ('Spin Echo Field Maps') acquired with
              opposing polarity for SDC
 
-        '${GENERAL_ELECTRIC_METHOD_OPT}'
+        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapgeneralelectric argument).
              This option is maintained for backward compatibility.
 
@@ -294,7 +294,7 @@ case "$DistortionCorrection" in
 		fi
 		;;
 
-	${GENERAL_ELECTRIC_METHOD_OPT})
+	${GE_HEALTHCARE_LEGACY_METHOD_OPT})
 		if [ -z ${GEB0InputName} ]; then
 			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
 		fi
