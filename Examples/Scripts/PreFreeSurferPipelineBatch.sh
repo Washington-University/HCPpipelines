@@ -262,7 +262,7 @@ main()
 		#	"GEHealthCareFieldMap" 
 		#	  Average any repeats and use GE HealthCare specific Gradient Echo
 		#     Field Maps for readout distortion correction
-		#	  This uses two separate NIfTI file for the fieldmap in Hz and the magnitude
+		#	  This uses separate NIfTI files for the fieldmap in Hz and the magnitude image
 		#	  Use variables "MagnitudeInputName", "PhaseInputName" and "TE"
 		#
 		#   "SiemensFieldMap"
