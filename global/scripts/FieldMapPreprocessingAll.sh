@@ -64,7 +64,7 @@ opts_AddMandatory '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time diff
 # Optional Arguments
 opts_AddOptional '--fmap' 'GEB0InputName' 'image (hertz and magnitude)' "GE HealthCare Legacy fieldmap with field map in Hz and magnitude image included as two volumes in a single file"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or hertz)' "input phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or Hz)' "phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input Siemens/Philips/GE HealthCare fieldmap magnitude image - can be a 4D containing more than one"
 
