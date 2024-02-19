@@ -92,7 +92,7 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase im
 
 opts_AddOptional '--fmap' 'GEB0InputName' 'image' "input GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
 
-opts_AddOptional '--echodiff' 'TE' 'value (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
+opts_AddOptional '--echodiff' 'DeltaTE' 'value (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
 opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' 'image' "input spin echo negative phase encoding image"
 
@@ -173,7 +173,7 @@ verbose_echo "                T2wImageBrain             (t2brain): $T2wImageBrai
 verbose_echo "           MagnitudeInputName             (fmapmag): $MagnitudeInputName"
 verbose_echo "               PhaseInputName           (fmapphase): $PhaseInputName"
 verbose_echo "                GEB0InputName (fmapgeneralelectric): $GEB0InputName"
-verbose_echo "                           TE            (echodiff): $TE"
+verbose_echo "                      DeltaTE            (echodiff): $DeltaTE"
 verbose_echo "  SpinEchoPhaseEncodeNegative          (SEPhaseNeg): $SpinEchoPhaseEncodeNegative"
 verbose_echo "  SpinEchoPhaseEncodePositive          (SEPhasePos): $SpinEchoPhaseEncodePositive"
 verbose_echo "               SEEchoSpacing        (seechospacing): $SEEchoSpacing"
@@ -223,7 +223,7 @@ case $DistortionCorrection in
             --method="SiemensFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
-            --echodiff=${TE} \
+            --echodiff=${DeltaTE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \
@@ -246,7 +246,7 @@ case $DistortionCorrection in
             --workingdir=${WD}/FieldMap \
             --method="GEHealthCareLegacyFieldMap" \
             --fmap=${GEB0InputName} \
-            --echodiff=${TE} \
+            --echodiff=${DeltaTE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \
@@ -270,7 +270,7 @@ case $DistortionCorrection in
             --method="GEHealthCareFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
-            --echodiff=${TE} \
+            --echodiff=${DeltaTE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \
@@ -294,7 +294,7 @@ case $DistortionCorrection in
             --method="PhilipsFieldMap" \
             --fmapmag=${MagnitudeInputName} \
             --fmapphase=${PhaseInputName} \
-            --echodiff=${TE} \
+            --echodiff=${DeltaTE} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
             --ofmap=${WD}/FieldMap \
