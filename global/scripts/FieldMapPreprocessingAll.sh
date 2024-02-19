@@ -66,7 +66,7 @@ opts_AddOptional '--fmap' 'GEB0InputName' 'image (hertz and magnitude)' "GE Heal
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or Hz)' "phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input Siemens/Philips/GE HealthCare fieldmap magnitude image - can be a 4D containing more than one"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "Siemens/Philips/GE HealthCare fieldmap magnitude image; multiple volumes (i.e., magnitude images from both echoes) are allowed"
 
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "."
 
