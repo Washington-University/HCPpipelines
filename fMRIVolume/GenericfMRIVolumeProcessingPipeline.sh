@@ -85,7 +85,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              opposing polarity for SDC
 
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapgeneralelectric argument).
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmap argument).
              This option is maintained for backward compatibility.
 
         '${GE_HEALTHCARE_METHOD_OPT}'
@@ -114,7 +114,7 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in
 
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
+opts_AddOptional '--fmap' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)"
 
 # OTHER OPTIONS:
 
@@ -296,7 +296,7 @@ case "$DistortionCorrection" in
 
 	${GE_HEALTHCARE_LEGACY_METHOD_OPT})
 		if [ -z ${GEB0InputName} ]; then
-			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
+			log_Err_Abort "--fmap must be specified with --dcmethod=${DistortionCorrection}"
 		fi
     if [ -z ${deltaTE} ]; then
       log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
@@ -751,7 +751,7 @@ if [ $fMRIReference = "NONE" ] ; then
          --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
          --fmapmag=${MagnitudeInputName} \
          --fmapphase=${PhaseInputName} \
-         --fmapgeneralelectric=${GEB0InputName} \
+         --fmap=${GEB0InputName} \
          --echodiff=${deltaTE} \
          --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
          --SEPhasePos=${SpinEchoPhaseEncodePositive} \

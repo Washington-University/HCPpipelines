@@ -497,7 +497,7 @@ main()
 			--fnirtconfig="$FNIRTConfig" \
 			--fmapmag="$MagnitudeInputName" \
 			--fmapphase="$PhaseInputName" \
-			--fmapgeneralelectric="$GEB0InputName" \
+			--fmap="$GEB0InputName" \
 			--echodiff="$DeltaTE" \
 			--SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
 			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
