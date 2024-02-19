@@ -302,6 +302,8 @@ case "$DistortionCorrection" in
       log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
     fi
     # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+    # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+    # The intention is to catch the error as early as possible. 
     fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
       "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
 		;;
@@ -317,6 +319,8 @@ case "$DistortionCorrection" in
 			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
 		fi
     # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+    # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+    # The intention is to catch the error as early as possible. 
     fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
       "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
 		;;
