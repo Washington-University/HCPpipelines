@@ -378,7 +378,7 @@ main()
 		#   NOTE: At 3T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272ms 3D-B0MAP.
 		#   NOTE: The Delta can be found in json files (if data converted with recent dcm2niix)
 		#   NOTE: Then DeltaTE = (EchoTime2-EchoTime1)*1000
-		#	NOTE: In the DICOM DeltaTE = round(abs(1e6/( 2*pi*(0019,10E2) )))
+		#	NOTE: In the DICOM, DeltaTE = round(abs(1e6/( 2*pi*(0019,10E2) )))
 		GEB0InputName="NONE"
 
 		# ---------------------------------------------------------------
