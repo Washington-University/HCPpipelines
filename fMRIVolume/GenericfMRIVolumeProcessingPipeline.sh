@@ -110,7 +110,7 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file t
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "field map magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "input fieldmap phase images in radians (Siemens/Philips) or in hertz (GE HealthCare)"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
