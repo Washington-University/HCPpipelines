@@ -40,7 +40,7 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging funct
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"          # FSL-version checks functions
 
-opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL from Gradient Echo field map, and also do gradient non-linearity distortion correction of these"
+opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL from a dual-echo Gradient Echo field map acquisition, and also do gradient non-linearity distortion correction of these"
 
 opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)
         '${SIEMENS_METHOD_OPT}'
