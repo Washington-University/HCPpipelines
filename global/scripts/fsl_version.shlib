@@ -4,6 +4,12 @@
 # We assume the FSL version is a maximum of 4 digits separated 
 # by 3 dots such as X.Y.Z.W (e.g. 6.0.7.6)
 MAX_NDOTS_IN_FSLVERSION=3
+
+# Minimum required FSL version for GE_HEALTHCARE_LEGACY_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
+# for processing of B0Maps. See global/scripts/FieldMapPreprocessingAll.sh
+# and fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh
+GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
+
 #
 # Function Description
 #  Get the current version string for FSL

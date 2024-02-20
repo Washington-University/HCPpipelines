@@ -40,9 +40,6 @@ PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 
-# Minimum required FSL version for GE_HEALTHCARE_LEGACY_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
-GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
-
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
@@ -304,6 +301,7 @@ case "$DistortionCorrection" in
     # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
     # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
     # The intention is to catch the error as early as possible. 
+    # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
     fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
       "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
 		;;
@@ -321,6 +319,7 @@ case "$DistortionCorrection" in
     # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
     # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
     # The intention is to catch the error as early as possible. 
+    # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
     fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
       "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
 		;;

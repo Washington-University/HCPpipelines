@@ -23,9 +23,6 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 
-# Minimum required FSL version for GE_HEALTHCARE_LEGACY_METHOD_OPT and GE_HEALTHCARE_METHOD_OPT
-GEHEALTHCARE_MINIMUM_FSL_VERSION="6.0.7.1"
-
 set -eu
 
 pipedirguessed=0
@@ -109,6 +106,7 @@ case $DistortionCorrection in
         fi
         
         # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
         fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
             "For $DistortionCorrection method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
 
@@ -126,6 +124,7 @@ case $DistortionCorrection in
         fi
         
         # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
         fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
             "For $DistortionCorrection method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}."
         
