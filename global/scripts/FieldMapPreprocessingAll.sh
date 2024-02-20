@@ -46,7 +46,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
         '${SIEMENS_METHOD_OPT}'
              use Siemens specific Gradient Echo Field Maps for SDC
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --GEB0InputName argument).
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in a single NIfTI file, via --fmapcombined argument).
         '${GE_HEALTHCARE_METHOD_OPT}'
              use GE HealthCare specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in two separate NIfTI files).
         '${PHILIPS_METHOD_OPT}'
@@ -62,7 +62,7 @@ opts_AddMandatory '--ofmap' 'FieldMapOutput' 'image' "output distortion correcte
 opts_AddMandatory '--echodiff' 'DeltaTE' 'number (milliseconds)' "echo time difference for fieldmap images (in milliseconds)"
 
 # Optional Arguments
-opts_AddOptional '--fmapgelegacy' 'GEB0InputName' 'image (hertz and magnitude)' "GE HealthCare Legacy fieldmap with field map in Hz and magnitude image included as two volumes in a single file"
+opts_AddOptional '--fmapcombined' 'GEB0InputName' 'image (Hz and magnitude)' "GE HealthCare Legacy fieldmap with field map in Hz and magnitude image included as two volumes in a single file" '' '--fmap'
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or Hz)' "phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
@@ -105,7 +105,7 @@ case $DistortionCorrection in
 
         if [[ $GEB0InputName == "" ]]
         then 
-            log_Err_Abort "$DistortionCorrection method requires --fmapgelegacy"
+            log_Err_Abort "$DistortionCorrection method requires --fmapcombined"
         fi
         
         # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)

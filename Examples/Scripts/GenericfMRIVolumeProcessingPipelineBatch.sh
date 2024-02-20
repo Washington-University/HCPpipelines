@@ -277,7 +277,7 @@ for Subject in $Subjlist ; do
             --SEPhasePos="$SpinEchoPhaseEncodePositive" \
             --fmapmag="$MagnitudeInputName" \
             --fmapphase="$PhaseInputName" \
-            --fmapgelegacy="$GEB0InputName" \
+            --fmapcombined="$GEB0InputName" \
             --echospacing="$EchoSpacing" \
             --echodiff="$DeltaTE" \
             --unwarpdir="$UnwarpDir" \
@@ -299,7 +299,7 @@ for Subject in $Subjlist ; do
             --SEPhasePos=$SpinEchoPhaseEncodePositive \
             --fmapmag=$MagnitudeInputName \
             --fmapphase=$PhaseInputName \
-            --fmapgelegacy=$GEB0InputName \
+            --fmapcombined=$GEB0InputName \
             --echospacing=$EchoSpacing \
             --echodiff=$DeltaTE \
             --unwarpdir=$UnwarpDir \
