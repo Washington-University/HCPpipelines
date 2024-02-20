@@ -94,8 +94,8 @@ opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text 
 # It can either be a mandatory general input or optional input, even a varaible created by a check on process string
 # 'YES' only when dealing with old 3T HCP data with 'hp2000', 'NO' otherwise
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether the input data used the legacy bias correction' 'NO'
-opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --concat-fmri-out output after tICA cleanup"
-opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list" '' '--concat-fmri-out'
+opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --extract-fmri-out output after tICA cleanup"
+opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 
 #general settings
 opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for rerunning with similar settings, or for reusing these results for future cleaning"
@@ -134,11 +134,11 @@ if [[ "$extractNameOut" != "" ]]
 then
     if [[ "$MRFixConcatName" == "" ]]
     then
-        log_Err_Abort "--mrfix-concat-name is required when using --concat-fmri-out"
+        log_Err_Abort "--mrfix-concat-name is required when using --extract-fmri-out"
     fi
     if [[ "$concatNamesToUse" == "" ]]
     then
-        log_Err_Abort "--extract-fmri-name-list is required when using --concat-fmri-out"
+        log_Err_Abort "--extract-fmri-name-list is required when using --extract-fmri-out"
     fi
 fi
 
@@ -648,7 +648,7 @@ do
                     --fix-legacy-bias="$FixLegacyBias" \
                     --matlab-run-mode="$MatlabMode" \
                     --extract-fmri-name-list="$concatNamesToUse" \
-                    --concat-fmri-out="$extractNameOut"
+                    --extract-fmri-out="$extractNameOut"
             done
             par_runjobs "$parLimit"
             ;;

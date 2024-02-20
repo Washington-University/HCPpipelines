@@ -44,7 +44,7 @@ opts_AddOptional '--fix-high-pass' 'HighPass' 'integer' 'the high pass value tha
 opts_AddMandatory '--output-string' 'OutString' 'string' "filename part to describe the outputs, like _hp2000_clean_tclean"
 opts_AddOptional '--do-vol' 'DoVolString' 'YES or NO' "whether to generate voxel-based outputs"
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
-opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --concat-fmri-out output"
+opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --extract-fmri-out output"
 opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
@@ -70,11 +70,11 @@ if [[ "$extractNameOut" != "" ]]
 then
     if [[ "$InputConcat" == "" ]]
     then
-        log_Err_Abort "--subject-concat-timeseries is required when using --concat-fmri-out"
+        log_Err_Abort "--subject-concat-timeseries is required when using --extract-fmri-out"
     fi
     if [[ "$concatNamesToUse" == "" ]]
     then
-        log_Err_Abort "--extract-fmri-name-list is required when using --concat-fmri-out"
+        log_Err_Abort "--extract-fmri-name-list is required when using --extract-fmri-out"
     fi
 fi
 
