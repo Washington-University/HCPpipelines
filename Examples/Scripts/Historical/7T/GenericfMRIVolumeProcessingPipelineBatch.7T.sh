@@ -184,7 +184,7 @@ do
 		EchoSpacing="0.00032"
 
 		# Susceptibility distortion correction method (required for accurate processing)
-        # Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GEHealthCareLegacyFieldMap, GEHealthCareFieldMap, PhilipsFieldMap
+		# Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GEHealthCareLegacyFieldMap, GEHealthCareFieldMap, PhilipsFieldMap
 		DistortionCorrection="TOPUP"
 		
 		# Receive coil bias field correction method
