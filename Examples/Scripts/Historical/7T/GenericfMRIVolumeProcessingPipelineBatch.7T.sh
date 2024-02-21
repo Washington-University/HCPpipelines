@@ -231,9 +231,9 @@ do
 		dof_epi2t1=12
 		
 		# Gradient distortion correction
-        # Set to NONE to skip gradient distortion correction
-        # (These files are considered proprietary and therefore not provided as part of the HCP Pipelines -- contact Siemens to obtain)
-        # GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
+		# Set to NONE to skip gradient distortion correction
+		# (These files are considered proprietary and therefore not provided as part of the HCP Pipelines -- contact Siemens to obtain)
+		# GradientDistortionCoeffs="${HCPPIPEDIR_Config}/coeff_SC72C_Skyra.grad"
 		GradientDistortionCoeffs="NONE"
 		
 		# Use mcflirt motion correction
