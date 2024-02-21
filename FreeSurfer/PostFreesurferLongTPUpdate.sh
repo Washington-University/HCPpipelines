@@ -1,3 +1,5 @@
+#As 12/2023, this script is deprecated and should not be used. 
+
 #!/bin/bash
 if [ -z "$2" ]; then
     echo "Usage: PostFreesurferLongTPUpdate.sh <cross-sectional experiment dir> <longitudinal experiment dir> [longitudinal template dir]"

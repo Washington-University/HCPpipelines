@@ -198,6 +198,7 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 # ------------------------------------------------------------------------------
 
 if ((doProcessing)); then
+
     log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
     log_Msg "RegName: ${RegName}"
 
