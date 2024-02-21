@@ -152,7 +152,10 @@ NONE_METHOD_OPT="NONE"
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+# For GE HealthCare Fieldmap Distortion Correction methods 
+# see explanations in global/scripts/FieldMapPreprocessingAll.sh
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 
 # -----------------------------------------------------------------------------------
@@ -208,11 +211,11 @@ opts_AddMandatory '--brainsize' 'BrainSize' 'size_value' "Brain size estimate in
 
 opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Configuration file"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap magnitude file"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/GE HealthCare Gradient Echo Fieldmap magnitude file"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fieldmap in Hertz"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file_path' "General Electric Gradient Echo Field Map file  Two volumes in one file  1. field map in deg  2. magnitude"
+opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file_path' "GE HealthCare Legacy Gradient Echo Field Map approach, which contains two volumes in one file: 1. field map in hertz; 2. magnitude image" '' '--fmap'
 
 opts_AddOptional '--echodiff' 'TE' 'delta_TE' "Delta TE in ms for field map or 'NONE' if  not used"
 
@@ -244,10 +247,13 @@ opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and 
       average any repeats and use Philips specific Gradient Echo
       Field Maps for readout distortion correction
 
-  '${GENERAL_ELECTRIC_METHOD_OPT}' 
-      average any repeats and use General Electric specific Gradient
-      Echo Field Maps for readout distortion correction
+  '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
+      use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapcombined argument).
+      This option is maintained for backward compatibility.
 
+  '${GE_HEALTHCARE_METHOD_OPT}'
+      use GE HealthCare specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
+    
   '${SIEMENS_METHOD_OPT}' 
       average any repeats and use Siemens specific Gradient Echo
       Field Maps for readout distortion correction
@@ -525,7 +531,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   case $AvgrdcSTRING in
 
-    ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+    ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
       log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
       wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
@@ -547,7 +553,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --t2brain=${T2wFolder_T2wImageWithPath_acpc_brain} \
         --fmapmag=${MagnitudeInputName} \
         --fmapphase=${PhaseInputName} \
-        --fmapgeneralelectric=${GEB0InputName} \
+        --fmapcombined=${GEB0InputName} \
         --echodiff=${TE} \
         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
