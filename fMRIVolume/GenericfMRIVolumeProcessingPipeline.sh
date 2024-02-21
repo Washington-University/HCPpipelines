@@ -267,92 +267,92 @@ fsl_minimum_required_version_check "6.0.1" "FSL version 6.0.0 is unsupported. Pl
 ## Case checking for which distortion correction was used ## 
 
 case "$DistortionCorrection" in
-	${SPIN_ECHO_METHOD_OPT})
-		if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
-			log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${SpinEchoPhaseEncodePositive} ]; then
-			log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${TopupConfig} ]; then
-			log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		;;
+    ${SPIN_ECHO_METHOD_OPT})
+        if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
+            log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${SpinEchoPhaseEncodePositive} ]; then
+            log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${TopupConfig} ]; then
+            log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
-		if [ -z ${MagnitudeInputName} ]; then
-			log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${PhaseInputName} ]; then
-			log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${deltaTE} ]; then
-			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		;;
+    ${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${GE_HEALTHCARE_LEGACY_METHOD_OPT})
-		if [ -z ${GEB0InputName} ]; then
-			log_Err_Abort "--fmapcombined must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-    if [ -z ${deltaTE} ]; then
-      log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
-    # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
-    # The intention is to catch the error as early as possible. 
-    # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
-    fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
-      "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
-		;;
+    ${GE_HEALTHCARE_LEGACY_METHOD_OPT})
+        if [ -z ${GEB0InputName} ]; then
+            log_Err_Abort "--fmapcombined must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+        # The intention is to catch the error as early as possible. 
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
+        ;;
   
   ${GE_HEALTHCARE_METHOD_OPT})
-		if [ -z ${MagnitudeInputName} ]; then
-			log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${PhaseInputName} ]; then
-			log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${deltaTE} ]; then
-			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-    # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
-    # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
-    # The intention is to catch the error as early as possible. 
-    # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
-    fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
-      "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
-		;;
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+        # The intention is to catch the error as early as possible. 
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
+        ;;
 
-  ${PHILIPS_METHOD_OPT})
-    if [ -z ${MagnitudeInputName} ]; then
-      log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    if [ -z ${PhaseInputName} ]; then
-      log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    if [ -z ${deltaTE} ]; then
-      log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    ;;
+    ${PHILIPS_METHOD_OPT})
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${NONE_METHOD_OPT})
-		# Do nothing
-		;;
+    ${NONE_METHOD_OPT})
+        # Do nothing
+        ;;
 
-	*)
-		log_Err_Abort "unrecognized value for --dcmethod (${DistortionCorrection})"
-		;;
+    *)
+        log_Err_Abort "unrecognized value for --dcmethod (${DistortionCorrection})"
+        ;;
 
 esac
 # Additionally, EchoSpacing and UnwarpDir needed for all except NONE
 if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" ]]; then
-	if [ -z ${EchoSpacing} ]; then
-		log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
-	fi
-	if [ -z ${UnwarpDir} ]; then
-		log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
-	fi
+    if [ -z ${EchoSpacing} ]; then
+        log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
+    fi
+    if [ -z ${UnwarpDir} ]; then
+        log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
+    fi
 fi
 
 
@@ -452,23 +452,23 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 case "$BiasCorrection" in
     NONE)
         UseBiasFieldMNI=""
-		;;
+        ;;
     LEGACY)
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
-		;;    
+        ;;    
     SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
         then
             log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
-		;;
+        ;;
     "")
         log_Err_Abort "--biascorrection option not specified"
-		;;
+        ;;
     *)
         log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-		;;
+        ;;
 esac
 
 # ------------------------------------------------------------------------------
@@ -687,26 +687,26 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
     mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-		   --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
-		   --coeffs="$GradientDistortionCoeffs" \
-		   --in="$fMRIFolder"/"$OrigTCSName" \
-		   --out="$fMRIFolder"/"$NameOffMRI"_gdc \
-		   --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
-	
-    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"	
+           --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
+           --coeffs="$GradientDistortionCoeffs" \
+           --in="$fMRIFolder"/"$OrigTCSName" \
+           --out="$fMRIFolder"/"$NameOffMRI"_gdc \
+           --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
+    
+    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"    
     mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-		   --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
-		   --coeffs="$GradientDistortionCoeffs" \
-		   --in="$fMRIFolder"/"$OrigScoutName" \
-		   --out="$fMRIFolder"/"$ScoutName"_gdc \
-		   --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
-	
-	if [[ $UseJacobian == "true" ]]
-	then
-	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
-	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
-	fi
+           --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
+           --coeffs="$GradientDistortionCoeffs" \
+           --in="$fMRIFolder"/"$OrigScoutName" \
+           --out="$fMRIFolder"/"$ScoutName"_gdc \
+           --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
+    
+    if [[ $UseJacobian == "true" ]]
+    then
+        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
+        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
+    fi
 else
     log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
