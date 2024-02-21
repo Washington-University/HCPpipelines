@@ -238,7 +238,7 @@ do
 		
 		# Use mcflirt motion correction
 		# Values: MCFLIRT (default), FLIRT
-        # (3T HCP-YA processing used 'FLIRT', but 'MCFLIRT' now recommended)
+		# (3T HCP-YA processing used 'FLIRT', but 'MCFLIRT' now recommended)
 		MCType="MCFLIRT"
 		
 		# Determine output name for the fMRI
