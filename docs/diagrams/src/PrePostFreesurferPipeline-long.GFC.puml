@@ -1,0 +1,35 @@
+@startuml
+group Copy brain mask from FS-long output
+    split
+        -[hidden]->
+        #palegreen:$T1w_dir_long/$Timepoint_long
+        /mri/brain.mgz;
+    split again
+        -[hidden]->
+        #palegreen:$T1w_dir_long/xfms
+        /norm_to_T1w_cross.lta;
+    end split
+    :mri_vol2vol;
+    #palegreen:$T1w_dir_long
+    /${T1wImage}_acpc_dc_brain.nii.gz;
+end group
+group Apply gain field correction
+
+#palegreen:$T1w_dir_long
+${T1wImage}_acpc_dc,
+$T1w_dir_long
+${T1wImage}_acpc_dc_brain;
+    if ( Use T2w ?) then (yes)
+        #palegreen:$T1w_dir_long
+        /${T2wImage}_acpc_dc;
+        :BiasFieldCorrection_sqrtT1wXT2w.sh;
+        #palegreen:${T1w_dir_long}/${T2wImage}_acpc_dc_restore,
+        ${T1w_dir_long}/${T2wImage}_acpc_dc_restore_brain;
+    else (no)
+        :BiasFieldCorrection_T1wOnly.sh;
+    endif
+    #palegreen:${T1w_dir_long}/BiasField_acpc_dc,
+    ${T1w_dir_long}/${T1wImage}_acpc_dc_restore,
+    ${T1w_dir_long}/${T1wImage}_acpc_dc_restore_brain;
+end group
+@enduml

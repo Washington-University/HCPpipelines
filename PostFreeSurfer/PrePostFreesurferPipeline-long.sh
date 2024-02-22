@@ -204,17 +204,17 @@ if (( Use_T2w )); then
 fi
 #end block
 
-###################################################################################################################
-# The next block creates T1w_acpc_dc_brain images from long Freesurfer mask. Needed for bias field correction.
 
-#Freesurfer brain is in the 'normalized FS' space. Resample/resize it to FSL/T1w template space. 
-# Note again that norm_to_T1w_cross.lta is not a registration transform, but rather resample/resize only. 
+##############################################################################################################
+# The next block runs gain field correction in the template space for the TXw images.
+
+# creates T1w_acpc_dc_brain images from long Freesurfer mask. Needed for bias field correction.
+# Freesurfer brain is in the 'normalized FS' space. Resample/resize it to FSL/T1w template space. 
+# Note again that norm_to_T1w_cross.lta is not a registration transform, but rather resample/resize only.
 T1w_fs_brain_long=$T1w_dir_long/$Timepoint_long/mri/brain
 mri_vol2vol --mov $T1w_fs_brain_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
     --targ $T1w_long --o $T1w_dir_long/$T1w_dir_long/${T1wImage}_acpc_dc_brain.nii.gz
 
-##############################################################################################################
-# The next block runs gain field correction in the template space for the TXw images.
 HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
 if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
     BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
