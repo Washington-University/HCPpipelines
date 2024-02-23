@@ -8,26 +8,30 @@ split
  split
    -[hidden]->
    if (Gradient distortion unwarp used?) then (no)
-     :create_zero_warp $T1w_dir_cross/$T1w1_gdc.nii.gz;        
+     :create_zero_warp $T1w_dir_cross
+     /$T1w1_gdc.nii.gz;        
    endif
-   #palegreen:$T1w_dir_cross/$T1w1_gdc.nii.gz;
+   #orange:$T1w_dir_cross
+   /$T1w1_gdc.nii.gz;
  split again
   -[hidden]->
-  #palegreen:$T1_dir_cross/xfms/acpc.mat;
+  #palegreen:$T1_dir_cross
+  /xfms/acpc.mat;
  split again
   -[hidden]->
-  :Use longitudinal FS->template transform  
+  :Longitudinal FS->template transform  
   to obtain T1w_cross->T1w_long transform;
-  #palegreen:T1w_cross_to_T1w_long.mat;
+  #orange:T1w_cross_to_T1w_long.mat;
  end split
    :convertwarp;
-   #palegreen:$T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz;
+   #orange:$T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz;
  split again
    -[hidden]->
-   #palegreen:$T1w_dir_cross/T1w.nii.gz;
+   #palegreen:$T1w_dir_cross
+   /T1w.nii.gz;
  end split
  :applywarp;
- #palegreen:$T1w_dir_long/T1w_acpc_dc.nii.gz;
+ #orange:$T1w_dir_long/T1w_acpc_dc.nii.gz;
 end group
-end
+detach
 @enduml

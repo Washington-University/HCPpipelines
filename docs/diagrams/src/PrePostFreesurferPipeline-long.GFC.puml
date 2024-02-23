@@ -1,5 +1,7 @@
 @startuml
-group Copy brain mask from FS-long output
+group PrePostFreesurferPipeline-long Gain Field Correction
+split
+    -[hidden]->
     split
         -[hidden]->
         #palegreen:$T1w_dir_long/$Timepoint_long
@@ -10,26 +12,43 @@ group Copy brain mask from FS-long output
         /norm_to_T1w_cross.lta;
     end split
     :mri_vol2vol;
-    #palegreen:$T1w_dir_long
-    /${T1wImage}_acpc_dc_brain.nii.gz;
-end group
-group Apply gain field correction
-
+    #orange:$T1w_dir_long
+    /T1w_acpc_dc_brain;
+split again
+-[hidden]->
 #palegreen:$T1w_dir_long
-${T1wImage}_acpc_dc,
-$T1w_dir_long
-${T1wImage}_acpc_dc_brain;
+/T1w_acpc_dc;
+end split
     if ( Use T2w ?) then (yes)
         #palegreen:$T1w_dir_long
-        /${T2wImage}_acpc_dc;
+        /T2w_acpc_dc;
         :BiasFieldCorrection_sqrtT1wXT2w.sh;
-        #palegreen:${T1w_dir_long}/${T2wImage}_acpc_dc_restore,
-        ${T1w_dir_long}/${T2wImage}_acpc_dc_restore_brain;
-    else (no)
+    
+    else (no)        
         :BiasFieldCorrection_T1wOnly.sh;
     endif
-    #palegreen:${T1w_dir_long}/BiasField_acpc_dc,
-    ${T1w_dir_long}/${T1wImage}_acpc_dc_restore,
-    ${T1w_dir_long}/${T1wImage}_acpc_dc_restore_brain;
+    #orange:${T1w_dir_long}/BiasField_acpc_dc;
+    :Take absolute value, 
+    divide by the gain field;
+    split
+        #palegreen:$T1w_dir_long
+        /T1w_acpc_dc,
+        #palegreen:$T1w_dir_long
+        /T2w_acpc_dc;
+        :apply brain mask;
+        if ( Use T2w ?) then (yes)
+            #orange: $T1w_dir_long
+            /T2w_acpc_dc_restore_brain;
+        endif
+        detach
+        #orange:$T1w_dir_long
+        /T1w_acpc_dc_restore_brain;
+        detach 
+
+    split again 
+        #orange:$T1w_dir_long
+        /$T1w_acpc_dc_restore;
+        detach
+    end split
 end group
 @enduml

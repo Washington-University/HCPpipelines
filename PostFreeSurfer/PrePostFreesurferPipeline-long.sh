@@ -4,7 +4,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2022-2024 The Human Connectome Project
+# Copyright (C) 2012-2024 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -289,7 +289,7 @@ AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear
 AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
 
 WARP=xfms/acpc_dc2standard.nii.gz
-INVWARP=/xfms/standard2acpc_dc.nii.gz
+INVWARP=xfms/standard2acpc_dc.nii.gz
 
 
 # run template->MNI registration if it hasn't been run.

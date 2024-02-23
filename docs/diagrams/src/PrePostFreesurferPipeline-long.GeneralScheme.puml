@@ -1,0 +1,46 @@
+@startuml PrePostFreesurferPipeline-long general scheme
+
+|c| Cross-sectional TP
+|p| Longitudinal TP
+|t| Template (run once)
+
+|c|
+split
+-[hidden]->
+#palegreen:T1w, T1w_acpc_dc,
+(optional)T2w, T2w_acpc_dc;
+split again
+|t|
+-[hidden]->
+#palegreen:Longitudinal FS
+template and transforms;
+end split
+|p|
+:Compute transform from T1w_acpc_dc (cross) 
+to T1w_acpc_dc (long_template);
+
+:Resample T1w from native to the longitudinal acpc_dc 
+template space, using cross-sectional readout 
+distortion correction warp;
+:(optional) Create the warp from T2w to template space, 
+including readout distortion correction, 
+and resample T2w to template space;
+:Create T1w_acpc_dc_brain image from longitudinal 
+Freesurfer mask (needed for the next step);
+:Run gain field correction in the template space for 
+{T1w,T2w} images;
+:Re-create (taking absolute value, dividing by 
+gain field and applying brain mask)
+{T1w,T2w}_acpc_dc_restore, 
+{T1w,T2w}_acpc_dc_restore_brain images;
+|t|
+:Create template images in T1w_acpc_dc 
+space from longitudinal FS output;
+:Run atlas registration from longitudinal
+template to MNI152 (FLIRT and FNIRT);
+|p|
+:Copy {T1w,T2w}->MNI space transforms,
+warp {T1w,T2w}_acpc_dc_restore to MNI space
+to create {T1w,T2w}_restore, {T1w,T2w}_restore_brain 
+in MNINonLinear/;
+@enduml
