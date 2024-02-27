@@ -4,7 +4,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2012-2024 The Human Connectome Project
+# Copyright (C) 2022-2024 The Human Connectome Project
 #
 # * Washington University in St. Louis
 # * University of Minnesota
@@ -163,7 +163,7 @@ fi
 convertwarp --premat=$T1_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
  --warp1 $T1_dir_cross/xfms/T1w_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz 
 #second, apply warp. 
-applywarp -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
+applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
     -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
 #end block
 
@@ -184,6 +184,9 @@ if [ -f "$T2w_dir_cross/T2wToT1wReg/T2w2T1w.mat" ]; then #No readout distortion 
     #create single warp from T2w acpc, "dc warp", and post-dc T2w_acpc->template transforms
     convertwarp --premat $T2w_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
         --warp1 $T2w_dir_long/xfms/T2w_acpc_Warp.nii.gz --postmat $T2w_dir_long/xfms/T2w_acpc2Template.mat -o $T2w_dir_long/xfms/T2w2template.nii.gz
+
+    #NOTE. Rewrite this by removing convert_xfm and using ${T1wFolder}/xfms/${T2wImage}_reg_dc combined transform from cross-sectional.
+
 
 elif [ -f "$T2w_dir_cross/T2wToT1wDistortionCorrectAndReg/T2w_reg.mat" -a -f "$T2w_dir_cross/T2wToT1wDistortionCorrectAndReg/${T2wImage}_acpc_Warp.nii.gz" ]; then #Distortion correction was run
     #concatenate T2w->T1w_cross and T1w_cross->template transforms
@@ -212,8 +215,8 @@ fi
 # Freesurfer brain is in the 'normalized FS' space. Resample/resize it to FSL/T1w template space. 
 # Note again that norm_to_T1w_cross.lta is not a registration transform, but rather resample/resize only.
 T1w_fs_brain_long=$T1w_dir_long/$Timepoint_long/mri/brain
-mri_vol2vol --mov $T1w_fs_brain_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
-    --targ $T1w_long --o $T1w_dir_long/$T1w_dir_long/${T1wImage}_acpc_dc_brain.nii.gz
+mri_vol2vol --cubic --mov $T1w_fs_brain_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
+    --targ $T1w_long --o $T1w_dir_long/${T1wImage}_acpc_dc_brain.nii.gz
 
 HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
 if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
@@ -223,7 +226,7 @@ fi
 if (( Use_T2w )); then 
     log_Msg "Running gain field correction using sqrt (T1w x T2w)"
     ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_sqrtT1wXT2w.sh --workingdir="$T1w_dir_long/BiasFieldCorrection_sqrtT1wXT2w" --T1im=${T1w_dir_long}/${T1wImage}_acpc_dc \
-      --T1brain=${T1w_dir_long}/${T1wImage}_acpc_dc_brain --T2im=${T1w_dir_long}_acpc_dc --obias=${T1w_dir_long}/BiasField_acpc_dc \
+      --T1brain=${T1w_dir_long}/${T1wImage}_acpc_dc_brain --T2im=${T1w_dir_long}/${T2wImage}_acpc_dc --obias=${T1w_dir_long}/BiasField_acpc_dc \
       --oT1im=${T1w_dir_long}/${T1wImage}_acpc_dc_restore --oT1brain=${T1w_dir_long}/${T1wImage}_acpc_dc_restore_brain \
       --oT2im=${T1w_dir_long}/${T2wImage}_acpc_dc_restore --oT2brain=${T1w_dir_long}/${T2wImage}_acpc_dc_restore_brain $BiasFieldSmoothingSigma
 else 
@@ -281,6 +284,7 @@ if (( GenTemplate )); then
     fi
 fi
 # end block
+#NOTE. Rewrite using FS timepoint output.
 
 ################################################################################################################
 # This block creates / copies TXw->MNI nonlinear warp files.
@@ -289,7 +293,7 @@ AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear
 AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
 
 WARP=xfms/acpc_dc2standard.nii.gz
-INVWARP=xfms/standard2acpc_dc.nii.gz
+INVWARP=/xfms/standard2acpc_dc.nii.gz
 
 
 # run template->MNI registration if it hasn't been run.

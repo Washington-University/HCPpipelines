@@ -6,17 +6,21 @@ split
  split
  -[hidden]->
  split
-   -[hidden]->
-   if (Gradient distortion unwarp used?) then (no)
-     :create_zero_warp $T1w_dir_cross
-     /$T1w1_gdc.nii.gz;        
-   endif
-   #orange:$T1w_dir_cross
-   /$T1w1_gdc.nii.gz;
- split again
+
   -[hidden]->
   #palegreen:$T1_dir_cross
   /xfms/acpc.mat;
+
+   split again
+
+   -[hidden]->
+   if (Readout distortion unwarp used?) then (no)
+     :create_zero_warp $T1w_dir_cross
+     /xfms/T1w_dc.nii.gz;
+   endif
+   #orange:$T1w_dir_cross   
+   /xfms/T1w_dc.nii.gz;
+
  split again
   -[hidden]->
   :Longitudinal FS->template transform  
