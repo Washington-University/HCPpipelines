@@ -68,12 +68,11 @@ for Hemisphere in L R ; do
 	fi
 	
 	#Calculate Affine Transform and Apply
-	if [ ! -e "$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii ] ; then
-	  wb_command -surface-affine-regression "$NativeFolder"/"$Subject"."$Hemisphere".sphere.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$NativeFolder"/"$RegName"/"$Hemisphere".mat
-	  wb_command -surface-apply-affine "$NativeFolder"/"$Subject"."$Hemisphere".sphere.native.surf.gii "$NativeFolder"/"$RegName"/"$Hemisphere".mat "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii
-	  wb_command -surface-modify-sphere "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii 100 "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii
-	  cp "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii
-	fi
+	wb_command -surface-affine-regression "$NativeFolder"/"$Subject"."$Hemisphere".sphere.native.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii "$NativeFolder"/"$RegName"/"$Hemisphere".mat
+	wb_command -surface-apply-affine "$NativeFolder"/"$Subject"."$Hemisphere".sphere.native.surf.gii "$NativeFolder"/"$RegName"/"$Hemisphere".mat "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii
+	wb_command -surface-modify-sphere "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii 100 "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii
+	cp "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii "$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii
+	rm "$NativeFolder"/"$RegName"/"$Hemisphere".sphere_rot.surf.gii
   
 	(
 		cd "$NativeFolder"/"$RegName"
