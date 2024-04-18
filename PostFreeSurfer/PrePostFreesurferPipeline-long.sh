@@ -94,7 +94,8 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins
 #question: is 'subject ID' appropriate internal data type?
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label"
 opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer template ID)"
-opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID list' "cross-sectional timepoint labels (same as Freesurfer timepoint ID). Must specify all timepoints (comma sep) if template_processing=1"
+opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint\
+                    processing, specify current timepoint. For template processing, must specify all timepoints, ';' separated"
 opts_AddMandatory '--template_processing' '0 or 1' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
@@ -124,53 +125,63 @@ T2wFolder="T2w" #Location of T2w images
 Modalities="T1w T2w"
 MNI_0.8mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
+IFS=';' read -r -a timepoints <<< "$Timepoints_cross"
+Timepoint_cross=${timepoints[0]}
 
 ############################################################################################################
 # The next block computes the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (long_template).
-
 Timepoint_long=$Timepoint_cross.long.$Template
 T1w_dir_cross=$StudyFolder/$Timepoint_cross/T1w
 T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
 T1w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
 LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_long}_to_${Template}.lta
 
-mkdir -p $T1w_dir_long/xfms
-Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
-lta_convert $Snorm.mgz $Snorm.nii.gz
+if (( template_processing == 0 )); then #timepoint mode
 
-T1w_cross=$T1w_dir_cross/T1w_acpc_dc_restore.nii.gz
-T1w_long=$T1w_dir_long/T1w_acpc_dc_restore.nii.gz
-T2w_long=$T1w_dir_long/T2w_acpc_dc_restore.nii.gz
+    mkdir -p $T1w_dir_long/xfms
+    Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
+    lta_convert $Snorm.mgz $Snorm.nii.gz
 
-#1. create resample transform from timepoints' T1w to 'norm' (equiv. to 'orig') space. This only applies reorient/resample, no actual registration
-lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta	
+    T1w_cross=$T1w_dir_cross/T1w_acpc_dc_restore.nii.gz
+    T1w_long=$T1w_dir_long/T1w_acpc_dc_restore.nii.gz
+    T2w_long=$T1w_dir_long/T2w_acpc_dc_restore.nii.gz
 
-#2. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
-mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_Template $T1w_dir_long/xfms/T1w_cross_to_template.lta
-#3. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
-lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta --outlta $T1w_dir_long/xfms/norm_to_T1w_cross.lta --invert
-#4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
-mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta	
-#5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
-lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_long --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
+    #1. create resample transform from timepoints' T1w to 'norm' (equiv. to 'orig') space. This only applies reorient/resample, no actual registration
+    lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta	
+
+    #2. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
+    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_Template $T1w_dir_long/xfms/T1w_cross_to_template.lta
+    #3. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
+    lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta --outlta $T1w_dir_long/xfms/norm_to_T1w_cross.lta --invert
+    #4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
+    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta	
+    #5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
+    lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_long --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
+else #Template mode
+    :
+fi    
 #end block
 
 #################################################################################################################
 # The next block resamples T1w from native to the longitudinal acpc_dc template space, using cross-sectional 
 # readout distortion correction warp.
 
-T1w_cross_gdc_warp=$T1w_dir_cross/xfms/$T1wImage1_gdc_warp.nii.gz
-if [ ! -f "$T1w_cross_gdc_warp" ]; then
-    log_Msg "NOT USING GRADIENT DISTORTION CORRECTION WARP"
-    create_zero_warp $T1w_dir_cross/${T1wImage}1_gdc.nii.gz $T1w_cross_gdc_warp
-fi
+if (( template_processing == 0 )); then 
+    T1w_cross_gdc_warp=$T1w_dir_cross/xfms/$T1wImage1_gdc_warp.nii.gz
+    if [ ! -f "$T1w_cross_gdc_warp" ]; then
+        log_Msg "NOT USING GRADIENT DISTORTION CORRECTION WARP"
+        create_zero_warp $T1w_dir_cross/${T1wImage}1_gdc.nii.gz $T1w_cross_gdc_warp
+    fi
 
-#first, create the warp transform.
-convertwarp --premat=$T1_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
- --warp1 $T1_dir_cross/xfms/T1w_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz 
-#second, apply warp. 
-applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
-    -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
+    #first, create the warp transform.
+    convertwarp --premat=$T1_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
+    --warp1 $T1_dir_cross/xfms/T1w_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz 
+    #second, apply warp. 
+    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
+        -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
+else 
+    :
+fi
 #end block
 
 
@@ -179,20 +190,26 @@ applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
 
 T2w_dir_cross=$StudyFolder/$Timepoint_cross/T2w
 T2w_dir_long=$StudyFolder/$Timepoint_long/T2w
+T2w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
 Use_T2w=1
-mkdir -p $T2w_dir_long/xfms
 
-#This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
-if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
-    convertwarp --premat $T2w_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
-        --warp1 $T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T2w_dir_long/xfms/T2w2template.nii.gz
-else
-    log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
-    Use_T2w=0
-fi
-if (( Use_T2w )); then
-    applywarp -i $T2w_dir_cross/T2w.nii.gz -r $MNI_0.8mm_template \
-        -w $T2w_dir_long/xfms/T2w2template.nii.gz -o $T1w_dir_long/T2w_acpc_dc.nii.gz
+if (( template_processing == 0 )); then 
+    mkdir -p $T2w_dir_long/xfms
+
+    #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
+    if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
+        convertwarp --premat $T2w_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
+            --warp1 $T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T2w_dir_long/xfms/T2w2template.nii.gz
+    else
+        log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
+        Use_T2w=0
+    fi
+    if (( Use_T2w )); then
+        applywarp -i $T2w_dir_cross/T2w.nii.gz -r $MNI_0.8mm_template \
+            -w $T2w_dir_long/xfms/T2w2template.nii.gz -o $T1w_dir_long/T2w_acpc_dc.nii.gz
+    fi
+else 
+    :
 fi
 #end block
 
@@ -200,31 +217,48 @@ fi
 # The next block creates brain mask from wmparc.mgz
 #Convert FreeSurfer Volumes
 FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
+FreeSurferFolder_Template="$T1w_dir_template/$Subject.long.$Template"
 Image="wmparc"
 
-if [ -e "$FreeSurferFolder_TP_long"/mri/"$Image".mgz ] ; then
-    mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
-    applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
-fi
+if (( template_processing == 0 )); then 
+    if [ -e "$FreeSurferFolder_TP_long"/mri/"$Image".mgz ] ; then
+        mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
+        applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
+    fi
 
-#Create FreeSurfer Brain Mask
-fslmaths "$T1w_dir_long"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
-${CARET7DIR}/wb_command -volume-fill-holes "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
-fslmaths "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz -bin "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
-applywarp --rel --interp=nn -i "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz
-#applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz
+    #Create FreeSurfer Brain Mask
+    fslmaths "$T1w_dir_long"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
+    ${CARET7DIR}/wb_command -volume-fill-holes "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
+    fslmaths "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz -bin "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz
+    applywarp --rel --interp=nn -i "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz
+    #applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$T1wImageBrainMask".nii.gz
+else 
+    mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_Template"/mri/wmparc.mgz "$T1w_dir_template"/wmparc_1mm.nii.gz
+    applywarp --rel --interp=nn -i "$T1w_dir_template"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/wmparc.nii.gz
+
+    fslmaths "$T1w_dir_template"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
+    ${CARET7DIR}/wb_command -volume-fill-holes "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
+    fslmaths "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -bin "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
+    applywarp --rel --interp=nn -i "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/"$T1wImageBrainMask".nii.gz    
+fi
 
 ##############################################################################################################
 # The next block runs gain field correction in the template space for the TXw images.
+
 
 # Applies warp field from the one computed for cross-sectional runs.
 BiasField_cross="$T1w_dir_cross/BiasField_acpc_dc"
 BiasField_long="$T1w_dir_long/BiasField_acpc_dc"
 
-if [ -f "$BiasField_cross.nii.gz" ]; then
-    applywarp --interp=spline -i $BiasField_cross -r $MNI_0.8mm_template \
-        -premat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
+if (( template_processing == 0 )); then 
 
+    if [ -f "$BiasField_cross.nii.gz" ]; then
+        applywarp --interp=spline -i $BiasField_cross -r $MNI_0.8mm_template \
+            -premat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
+
+    fi
+else #no bias field in case of template is output.
+    :
 fi
 #end block
 
@@ -234,6 +268,7 @@ fi
 
  # T1w
 #Applies GFC to T1w and T2w
+if (( template_processing == 0 )); then 
 
   OutputT1wImage=${T1w_dir_long}/${T1wImage}_acpc_dc
   ${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc.nii.gz -div $BiasField_long -mas "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz $T1w_long -odt float
@@ -248,112 +283,107 @@ fi
     fslmaths ${OutputT2wImage} -div ${T1w_dir_long}/BiasField_acpc_dc ${OutputT2wImage}_restore
     fslmaths ${OutputT2wImage}_restore -mas "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz ${OutputT2wImage}_restore_brain
   fi
-# end block
+else #make restored tempate images
+    OutputT1wImage=${T1w_dir_template}/${T1wImage}_acpc_dc_restore
+    OutputT2wImage=${T1w_dir_template}/${T2wImage}_acpc_dc_restore
 
-################################################################################################################
-# This block creates template images.
-# TODO: create from all timepoints.
-
-GenTemplate=1 #only generate template images once.
-T1w_template_long=$T1w_dir_template/$Template/mri/orig.mgz
-T1w_template_brain_long=$T1w_dir_template/$Template/mri/norm.mgz
-
-#as seen in Long-FS output
-T2w_template_long=$T1w_dir_template/$Template/mri/T2.norm.mgz
-T2w_template_brain_long=$T1w_dir_template/$Template/mri/T2.mgz
-
-
-if [ -f "$T1w_dir_template/${T1wImage}_acpc_dc_restore.nii.gz" ]; then 
-    GenTemplate=0
-fi
-if (( GenTemplate )); then
-    mri_vol2vol --mov $T1w_template_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
-        --targ $T1w_long --o $T1w_dir_template/${T1wImage}_acpc_dc_restore.nii.gz
-    mri_vol2vol --mov $T1w_template_brain_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
-        --targ $T1w_long --o $T1w_dir_template/${T1wImage}_acpc_dc_restore_brain.nii.gz
-
-    if (( Use_T2w )); then     
-        mri_vol2vol --mov $T2w_template_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
-            --targ $T1w_long --o $T1w_dir_template/${T2wImage}_acpc_dc_restore.nii.gz
-        mri_vol2vol --mov $T2w_template_brain_long --lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta \
-            --targ $T1w_long --o $T1w_dir_template/${T2wImage}_acpc_dc_restore_brain.nii.gz
+    nTP=${#timepoints} 
+    template_cmd='fslmaths '
+    template_cmd_t2w
+    for tp in ${timepoints[@]}; do
+        template_cmd+=" -add $StudyFolder/$tp.long.$Template/T1w/${T1wImage}_acpc_dc_restore"
+        template_cmd_t2w+=" -add $StudyFolder/$tp.long.$Template/T1w/${T2wImage}_acpc_dc_restore"
+    done
+    template_cmd+=" -odt float -div $nTP $OutputT1wImage"
+    template_cmd_t2w+=" -odt float -div $nTP $OutputT2wImage"
+    $template_cmd
+    fslmaths $OutputT1wImage -mas "T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT1wImage}_restore_brain
+    if (( Use_T2w )); then 
+        $template_cmd_t2w
+        fslmaths $OutputT2wImage -mas "T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT2wImage}_restore_brain
     fi
 fi
 # end block
-#TODO. Rewrite the previous block using FS timepoint output.
 
 ################################################################################################################
-# This block creates / copies TXw->MNI nonlinear warp files.
+# Register template to MNI space and resample all timepoints to MNI space using acquired transform.
 
-AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear
-AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
+if (( template_processing ==  1 )); then 
+    AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear
+    AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
+    WARP=xfms/acpc_dc2standard.nii.gz
+    INVWARP=/xfms/standard2acpc_dc.nii.gz
 
-WARP=xfms/acpc_dc2standard.nii.gz
-INVWARP=/xfms/standard2acpc_dc.nii.gz
 
+    # run template->MNI registration if it hasn't been run.
 
-# run template->MNI registration if it hasn't been run.
-if (( GenTemplate )); then 
     #NB. _acpc_dc images will be the same as acpc_dc_restore as 'unrestore' version is meaningless for the template.
     log_Msg "Performing Atlas Registration from longitudinal template to MNI152 (FLIRT and FNIRT)"    
 
     ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
-    --workingdir=${AtlasSpaceFolder_template} \
-    --t1=${T1w_dir_template}/${T1wImage}_acpc_dc_restore \
-    --t1rest=${T1w_dir_template}/${T1wImage}_acpc_dc_restore \
-    --t1restbrain=${T1w_dir_template}/${T1wImage}_acpc_dc_restore_brain \
-    --t2=${T1w_dir_template}/${T2wImage}_acpc_dc_restore \
-    --t2rest=${T1w_dir_template}/${T2wImage}_acpc_dc_restore \
-    --t2restbrain=${T1w_dir_template}/${T2wImage}_acpc_dc_restore_brain \
-    --ref=${T1wTemplate} \
-    --refbrain=${T1wTemplateBrain} \
-    --refmask=${TemplateMask} \
-    --ref2mm=${T1wTemplate2mm} \
-    --ref2mmmask=${Template2mmMask} \
-    --owarp=${AtlasSpaceFolder_template}/$WARP \
-    --oinvwarp=${AtlasSpaceFolder_template}/$INVWARP \
-    --ot1=${AtlasSpaceFolder_template}/${T1wImage} \
-    --ot1rest=${AtlasSpaceFolder_template}/${T1wImage}_restore \
-    --ot1restbrain=${AtlasSpaceFolder_template}/${T1wImage}_restore_brain \
-    --ot2=${AtlasSpaceFolder_template}/${T2wImage} \
-    --ot2rest=${AtlasSpaceFolder_template}/${T2wImage}_restore \
-    --ot2restbrain=${AtlasSpaceFolder_template}/${T2wImage}_restore_brain \
-    --fnirtconfig=${FNIRTConfig} 
-    #Q. Should we remove _acpc_dc images from the AtlasSpaceFolder?
+        --workingdir=${AtlasSpaceFolder_template} \
+        --t1=${T1w_dir_template}/${T1wImage}_acpc_dc_restore \
+        --t1rest=${T1w_dir_template}/${T1wImage}_acpc_dc_restore \
+        --t1restbrain=${T1w_dir_template}/${T1wImage}_acpc_dc_restore_brain \
+        --t2=${T1w_dir_template}/${T2wImage}_acpc_dc_restore \
+        --t2rest=${T1w_dir_template}/${T2wImage}_acpc_dc_restore \
+        --t2restbrain=${T1w_dir_template}/${T2wImage}_acpc_dc_restore_brain \
+        --ref=${T1wTemplate} \
+        --refbrain=${T1wTemplateBrain} \
+        --refmask=${TemplateMask} \
+        --ref2mm=${T1wTemplate2mm} \
+        --ref2mmmask=${Template2mmMask} \
+        --owarp=${AtlasSpaceFolder_template}/$WARP \
+        --oinvwarp=${AtlasSpaceFolder_template}/$INVWARP \
+        --ot1=${AtlasSpaceFolder_template}/${T1wImage} \
+        --ot1rest=${AtlasSpaceFolder_template}/${T1wImage}_restore \
+        --ot1restbrain=${AtlasSpaceFolder_template}/${T1wImage}_restore_brain \
+        --ot2=${AtlasSpaceFolder_template}/${T2wImage} \
+        --ot2rest=${AtlasSpaceFolder_template}/${T2wImage}_restore \
+        --ot2restbrain=${AtlasSpaceFolder_template}/${T2wImage}_restore_brain \
+        --fnirtconfig=${FNIRTConfig} 
+        #Q. Should we remove _acpc_dc images from the AtlasSpaceFolder?
+    fi
 
+    #finalize all TP's with template to MNI152 atlas transform
+
+    for tp in ${timepoints[@]}; do
+        #TODO replace unique timepoint name below with tp variable cycled over.
+
+        #copy altas transforms to the timepoint directory.
+        cp ${AtlasSpaceFolder_template}/$WARP ${AtlasSpaceFolder_timepoint}/$WARP
+        cp ${AtlasSpaceFolder_template}/$INVWARP ${AtlasSpaceFolder_timepoint}/$INVWARP
+
+        # T1w set of warped outputs (brain/whole-head + restored/orig)
+        verbose_echo " --> Generarting T1w set of warped outputs"
+
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
+            -o ${AtlasSpaceFolder_timepoint}/${T1wImage}
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
+            -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore
+        ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T1wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
+            -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
+        ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore \
+            -mas ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
+
+        # T2w set of warped outputs (brain/whole-head + restored/orig)
+        if (( Use_T2w )); then
+        verbose_echo " --> Creating T2w set of warped outputs"
+
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
+                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
+                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore
+        ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T2wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
+                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
+        ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore \
+                -mas ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
+        else
+        verbose_echo " ... skipping T2w processing"
+        fi
+    done
 fi
 
-#copy altas transforms to the timepoint directory.
-cp ${AtlasSpaceFolder_template}/$WARP ${AtlasSpaceFolder_timepoint}/$WARP
-cp ${AtlasSpaceFolder_template}/$INVWARP ${AtlasSpaceFolder_timepoint}/$INVWARP
-
-# T1w set of warped outputs (brain/whole-head + restored/orig)
-verbose_echo " --> Generarting T1w set of warped outputs"
-
-${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
-    -o ${AtlasSpaceFolder_timepoint}/${T1wImage}
-${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
-    -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore
-${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T1wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
-    -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
-${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore \
-    -mas ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
-
-# T2w set of warped outputs (brain/whole-head + restored/orig)
-if (( Use_T2w )); then
-  verbose_echo " --> Creating T2w set of warped outputs"
-
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
-        -o ${AtlasSpaceFolder_timepoint}/${T2wImage}
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
-        -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore
-  ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T2wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
-        -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
-  ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore \
-        -mas ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
-else
-  verbose_echo " ... skipping T2w processing"
-fi
 #end block
 
 #ACPC alginment: 
