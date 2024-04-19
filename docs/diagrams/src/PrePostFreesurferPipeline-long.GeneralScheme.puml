@@ -28,21 +28,34 @@ group T2w2acpc_dc_template.puml
 including readout distortion correction, 
 and resample T2w to template space;
 end group
+group Create brain mask
+-[hidden]->
+:Warp wmparc.mgz to template space (T1w);
+|t|
+-[hidden]->
+:Warp wmparc.mgz to template space (T1w);
+end group
 group GFC.puml
-:Create T1w_acpc_dc_brain image from longitudinal 
-Freesurfer mask (needed for the next step);
-:Run gain field correction in the template space for 
-{T1w,T2w} images;
+|c|
+-[hidden]->
+#lightgreen:Gain field in T1w_acpc_dc space;
+|p|
+:Resample the gain field to template space;
 :Re-create (taking absolute value, dividing by 
 gain field and applying brain mask)
 {T1w,T2w}_acpc_dc_restore, 
-{T1w,T2w}_acpc_dc_restore_brain images;
+{T1w,T2w}_acpc_dc_restore_brain;
 end group
 |t|
-group TemplateCreation.puml
-:Create template images in T1w_acpc_dc 
-space from longitudinal FS output;
+group Create average template
+:Create average template 
+T1w_acpc_dc_restore
+from all timepoints;
+:(optional) create average 
+template T2w_acpc_dc_restore 
+from all timepoints;
 end group
+|p|
 group MNI.Nonlinear.puml
 :Run atlas registration from longitudinal
 template to MNI152 (FLIRT and FNIRT);

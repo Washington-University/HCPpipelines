@@ -309,13 +309,12 @@ fi
 # Register template to MNI space and resample all timepoints to MNI space using acquired transform.
 
 if (( template_processing ==  1 )); then 
-    AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear
-    AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
+    AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear    
     WARP=xfms/acpc_dc2standard.nii.gz
-    INVWARP=/xfms/standard2acpc_dc.nii.gz
+    INVWARP=xfms/standard2acpc_dc.nii.gz
 
 
-    # run template->MNI registration if it hasn't been run.
+    # run template->MNI registration
 
     #NB. _acpc_dc images will be the same as acpc_dc_restore as 'unrestore' version is meaningless for the template.
     log_Msg "Performing Atlas Registration from longitudinal template to MNI152 (FLIRT and FNIRT)"    
@@ -346,9 +345,11 @@ if (( template_processing ==  1 )); then
     fi
 
     #finalize all TP's with template to MNI152 atlas transform
-
     for tp in ${timepoints[@]}; do
-        #TODO replace unique timepoint name below with tp variable cycled over.
+        #These variables are redefined
+        Timepoint_long=$tp.long.$Template
+        AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
+        T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
 
         #copy altas transforms to the timepoint directory.
         cp ${AtlasSpaceFolder_template}/$WARP ${AtlasSpaceFolder_timepoint}/$WARP
@@ -357,47 +358,30 @@ if (( template_processing ==  1 )); then
         # T1w set of warped outputs (brain/whole-head + restored/orig)
         verbose_echo " --> Generarting T1w set of warped outputs"
 
-        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
             -o ${AtlasSpaceFolder_timepoint}/${T1wImage}
-        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T1wImage}_acpc_dc_restore -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
             -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore
-        ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T1wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
+        ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T1wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
             -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
         ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore \
             -mas ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
 
         # T2w set of warped outputs (brain/whole-head + restored/orig)
         if (( Use_T2w )); then
-        verbose_echo " --> Creating T2w set of warped outputs"
+            verbose_echo " --> Creating T2w set of warped outputs"
 
-        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc -r ${T1wTemplate} -w $WARP \
-                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}
-        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc_restore -r ${T1wTemplate} -w $WARP \
-                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore
-        ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T2wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w $WARP \
-                -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
-        ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore \
-                -mas ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
+                    -o ${AtlasSpaceFolder_timepoint}/${T2wImage}
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/${T2wImage}_acpc_dc_restore -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
+                    -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore
+            ${FSLDIR}/bin/applywarp --rel --interp=nn -i $T1w_dir_long/${T2wImage}_acpc_dc_restore_brain -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
+                    -o ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
+            ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore \
+                    -mas ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T2wImage}_restore_brain
         else
-        verbose_echo " ... skipping T2w processing"
+            verbose_echo " ... skipping T2w processing"
         fi
     done
 fi
-
 #end block
-
-#ACPC alginment: 
-#Do we need acpc.mat for PostFreesurfer?
-
-#Brain extraction:
-#For timepoints, brain mask will be extracted from FS output. 
-#For template, we need to acquire brain mask, for subsequent registration to MNI space. 
-#TODO: special case template processing, and copy/resample the brain mask. 
-
-#T2-weighted processing
-#TODO: add T2-weighted processing.
-
-#Distortion correction.
-
-#Bias field correction.
-#This is applied AFTER the resampling from TXw to TXw_acpc_dc (above)

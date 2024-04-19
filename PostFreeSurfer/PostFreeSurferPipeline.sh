@@ -71,6 +71,8 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleD
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
+opts_AddOptional '--longitudinal' 'IsLongitudinal' '1|0' "assume longitudinal processing" "0"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -225,6 +227,7 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
+    arglist+=("$IsLongitudinal")            # ${24}
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
@@ -282,6 +285,7 @@ if ((doProcessing)); then
     argList+=("$CorrectionSigma")
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
+    argList+=("$IsLongitudinal")
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
