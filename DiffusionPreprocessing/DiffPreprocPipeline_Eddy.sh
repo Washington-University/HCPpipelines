@@ -230,7 +230,7 @@ run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddy.sh
     --resamp="$resamp_value")
 for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
 do
-    eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+    run_eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
 done
 
 log_Msg "About to issue the following command to invoke the run_eddy.sh script"
