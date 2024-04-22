@@ -95,7 +95,7 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label"
 opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer template ID)"
 opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint\
-                    processing, specify current timepoint. For template processing, must specify all timepoints, ';' separated"
+                    processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated"
 opts_AddMandatory '--template_processing' '0 or 1' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
@@ -125,7 +125,7 @@ T2wFolder="T2w" #Location of T2w images
 Modalities="T1w T2w"
 MNI_0.8mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
-IFS=';' read -r -a timepoints <<< "$Timepoints_cross"
+IFS='@' read -r -a timepoints <<< "$Timepoints_cross"
 Timepoint_cross=${timepoints[0]}
 
 ############################################################################################################
