@@ -42,10 +42,10 @@ function create_zero_warp
     fslmaths $target_image -mul 0 $temp
 
     # Step 3: Merge it into a 4D file with three volumes (all zeros)
-    fslmerge -t $temp $temp $temp $warp_file
+    fslmerge -t $warp_file $temp $temp $temp
 
     # Optional: Set the voxel dimensions correctly if needed
-    fslcreatehd $dim1 $dim2 $dim3 3 $pixdim1 $pixdim2 $pixdim3 1 0 0 0 16 $warp_file -odt float
+    fslcreatehd $dim1 $dim2 $dim3 3 $pixdim1 $pixdim2 $pixdim3 1 0 0 0 16 $warp_file
 }
 
 
@@ -96,7 +96,7 @@ opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label"
 opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer template ID)"
 opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint\
                     processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated"
-opts_AddMandatory '--template_processing' '0 or 1' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
+opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
 opts_AddMandatory '--t1templatebrain' 'T1wTemplateBrain' 'file_path' "Brain extracted MNI T1wTemplate"
@@ -123,7 +123,7 @@ T1wFolder="T1w" #Location of T1w images
 T2wImage="T2w"
 T2wFolder="T2w" #Location of T2w images
 Modalities="T1w T2w"
-MNI_0.8mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
+MNI_08mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
 IFS='@' read -r -a timepoints <<< "$Timepoints_cross"
 Timepoint_cross=${timepoints[0]}
@@ -134,13 +134,13 @@ Timepoint_long=$Timepoint_cross.long.$Template
 T1w_dir_cross=$StudyFolder/$Timepoint_cross/T1w
 T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
 T1w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
-LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_long}_to_${Template}.lta
+LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cross}_to_${Template}.lta
 
-if (( template_processing == 0 )); then #timepoint mode
+if (( TemplateProcessing == 0 )); then #timepoint mode
 
     mkdir -p $T1w_dir_long/xfms
     Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
-    lta_convert $Snorm.mgz $Snorm.nii.gz
+    mri_convert $Snorm.mgz $Snorm.nii.gz
 
     T1w_cross=$T1w_dir_cross/T1w_acpc_dc_restore.nii.gz
     T1w_long=$T1w_dir_long/T1w_acpc_dc_restore.nii.gz
@@ -150,7 +150,7 @@ if (( template_processing == 0 )); then #timepoint mode
     lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta	
 
     #2. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
-    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_Template $T1w_dir_long/xfms/T1w_cross_to_template.lta
+    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_template $T1w_dir_long/xfms/T1w_cross_to_template.lta
     #3. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta --outlta $T1w_dir_long/xfms/norm_to_T1w_cross.lta --invert
     #4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
@@ -166,18 +166,18 @@ fi
 # The next block resamples T1w from native to the longitudinal acpc_dc template space, using cross-sectional 
 # readout distortion correction warp.
 
-if (( template_processing == 0 )); then 
-    T1w_cross_gdc_warp=$T1w_dir_cross/xfms/$T1wImage1_gdc_warp.nii.gz
+if (( TemplateProcessing == 0 )); then 
+    T1w_cross_gdc_warp=$T1w_dir_cross/xfms/${T1wImage}1_gdc_warp.nii.gz
     if [ ! -f "$T1w_cross_gdc_warp" ]; then
         log_Msg "NOT USING GRADIENT DISTORTION CORRECTION WARP"
         create_zero_warp $T1w_dir_cross/${T1wImage}1_gdc.nii.gz $T1w_cross_gdc_warp
     fi
 
     #first, create the warp transform.
-    convertwarp --premat=$T1_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
-    --warp1 $T1_dir_cross/xfms/T1w_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz 
-    #second, apply warp. 
-    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_0.8mm_template \
+    convertwarp --premat="$T1w_dir_cross/xfms/acpc.mat" --ref=$MNI_08mm_template \
+        --warp1=$T1w_dir_cross/xfms/T1w_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz
+    #second, apply warp.
+    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_08mm_template \
         -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
 else 
     :
@@ -193,19 +193,19 @@ T2w_dir_long=$StudyFolder/$Timepoint_long/T2w
 T2w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
 Use_T2w=1
 
-if (( template_processing == 0 )); then 
+if (( TemplateProcessing == 0 )); then 
     mkdir -p $T2w_dir_long/xfms
 
     #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
     if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
-        convertwarp --premat $T2w_dir_cross/xfms/acpc.mat --ref $MNI_0.8mm_template \
-            --warp1 $T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $T2w_dir_long/xfms/T2w2template.nii.gz
+        convertwarp --premat=$T2w_dir_cross/xfms/acpc.mat --ref=$MNI_08mm_template \
+            --warp1=$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T2w_dir_long/xfms/T2w2template.nii.gz
     else
         log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
         Use_T2w=0
     fi
     if (( Use_T2w )); then
-        applywarp -i $T2w_dir_cross/T2w.nii.gz -r $MNI_0.8mm_template \
+        applywarp --interp=spline -i $T2w_dir_cross/T2w.nii.gz -r $MNI_08mm_template \
             -w $T2w_dir_long/xfms/T2w2template.nii.gz -o $T1w_dir_long/T2w_acpc_dc.nii.gz
     fi
 else 
@@ -220,7 +220,7 @@ FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
 FreeSurferFolder_Template="$T1w_dir_template/$Subject.long.$Template"
 Image="wmparc"
 
-if (( template_processing == 0 )); then 
+if (( TemplateProcessing == 0 )); then 
     if [ -e "$FreeSurferFolder_TP_long"/mri/"$Image".mgz ] ; then
         mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
         applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
@@ -250,11 +250,11 @@ fi
 BiasField_cross="$T1w_dir_cross/BiasField_acpc_dc"
 BiasField_long="$T1w_dir_long/BiasField_acpc_dc"
 
-if (( template_processing == 0 )); then 
+if (( TemplateProcessing == 0 )); then 
 
     if [ -f "$BiasField_cross.nii.gz" ]; then
-        applywarp --interp=spline -i $BiasField_cross -r $MNI_0.8mm_template \
-            -premat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
+        applywarp --interp=spline -i $BiasField_cross -r $MNI_08mm_template \
+            --premat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
 
     fi
 else #no bias field in case of template is output.
@@ -268,7 +268,7 @@ fi
 
  # T1w
 #Applies GFC to T1w and T2w
-if (( template_processing == 0 )); then 
+if (( TemplateProcessing == 0 )); then 
 
   OutputT1wImage=${T1w_dir_long}/${T1wImage}_acpc_dc
   ${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc.nii.gz -div $BiasField_long -mas "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz $T1w_long -odt float
@@ -308,7 +308,7 @@ fi
 ################################################################################################################
 # Register template to MNI space and resample all timepoints to MNI space using acquired transform.
 
-if (( template_processing ==  1 )); then 
+if (( TemplateProcessing ==  1 )); then 
     AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear    
     WARP=xfms/acpc_dc2standard.nii.gz
     INVWARP=xfms/standard2acpc_dc.nii.gz
