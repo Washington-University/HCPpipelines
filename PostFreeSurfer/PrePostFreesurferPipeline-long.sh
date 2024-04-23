@@ -140,7 +140,8 @@ LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cros
 if (( TemplateProcessing == 0 )); then #timepoint mode
 
     mkdir -p $T1w_dir_long/xfms
-    Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
+    #Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
+    Snorm=$T1w_dir_cross/$Timepoint_cross/mri/norm
     mri_convert $Snorm.mgz $Snorm.nii.gz
 
     T1w_cross=$T1w_dir_cross/T1w_acpc_dc_restore.nii.gz
