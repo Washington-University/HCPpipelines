@@ -157,7 +157,7 @@ if (( TemplateProcessing == 0 )); then #timepoint mode
     #4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
     mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta	
     #5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
-    lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_long --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
+    lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_cross --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
 else #Template mode
     :
 fi    
@@ -343,7 +343,6 @@ if (( TemplateProcessing ==  1 )); then
         --ot2restbrain=${AtlasSpaceFolder_template}/${T2wImage}_restore_brain \
         --fnirtconfig=${FNIRTConfig} 
         #Q. Should we remove _acpc_dc images from the AtlasSpaceFolder?
-    fi
 
     #finalize all TP's with template to MNI152 atlas transform
     for tp in ${timepoints[@]}; do
