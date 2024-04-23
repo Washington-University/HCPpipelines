@@ -17,7 +17,7 @@ opts_SetScriptDescription "Run MSMSulc registration and save distortion outputs"
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
-opts_AddOptional '--regname' 'RegName' 'my reg' "set a new registration name, default MSMSulc" 'MSMSulc'
+opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
 opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
@@ -52,8 +52,6 @@ if [[ "$RefData" == "" ]]
 then
 	RefData="$SurfaceTemplateFolder"/HEMISPHERE.refsulc.164k_fs_LR.shape.gii
 fi
-
-#do the same with the conf file
 
 #Make MSMSulc Directory
 mkdir -p "$NativeFolder"/"$RegName"
