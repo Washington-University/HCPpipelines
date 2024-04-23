@@ -140,7 +140,8 @@ LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cros
 if (( TemplateProcessing == 0 )); then #timepoint mode
 
     mkdir -p $T1w_dir_long/xfms
-    Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
+    #Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
+    Snorm=$T1w_dir_cross/$Timepoint_cross/mri/norm
     mri_convert $Snorm.mgz $Snorm.nii.gz
 
     T1w_cross=$T1w_dir_cross/T1w_acpc_dc_restore.nii.gz
@@ -218,7 +219,7 @@ fi
 # The next block creates brain mask from wmparc.mgz
 #Convert FreeSurfer Volumes
 FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
-FreeSurferFolder_Template="$T1w_dir_template/$Subject.long.$Template"
+FreeSurferFolder_Template="$T1w_dir_template/$Template"
 Image="wmparc"
 
 if (( TemplateProcessing == 0 )); then 
@@ -240,7 +241,7 @@ else
     fslmaths "$T1w_dir_template"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
     ${CARET7DIR}/wb_command -volume-fill-holes "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
     fslmaths "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -bin "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz
-    applywarp --rel --interp=nn -i "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/"$T1wImageBrainMask".nii.gz    
+    applywarp --rel --interp=nn -i "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage"_acpc_dc.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/"$T1wImageBrainMask".nii.gz    
 fi
 
 ##############################################################################################################
@@ -288,20 +289,22 @@ else #make restored tempate images
     OutputT1wImage=${T1w_dir_template}/${T1wImage}_acpc_dc_restore
     OutputT2wImage=${T1w_dir_template}/${T2wImage}_acpc_dc_restore
 
-    nTP=${#timepoints} 
-    template_cmd='fslmaths '
-    template_cmd_t2w
-    for tp in ${timepoints[@]}; do
+    nTP=${#timepoints[@]}
+    tp=${timepoints[0]}
+    template_cmd="fslmaths $StudyFolder/$tp.long.$Template/T1w/${T1wImage}_acpc_dc_restore"
+    template_cmd_t2w="fslmaths $StudyFolder/$tp.long.$Template/T1w/${T2wImage}_acpc_dc_restore"
+    for (( i=1; i<nTP; i++)); do
+        tp=${timepoints[i]}
         template_cmd+=" -add $StudyFolder/$tp.long.$Template/T1w/${T1wImage}_acpc_dc_restore"
         template_cmd_t2w+=" -add $StudyFolder/$tp.long.$Template/T1w/${T2wImage}_acpc_dc_restore"
     done
-    template_cmd+=" -odt float -div $nTP $OutputT1wImage"
-    template_cmd_t2w+=" -odt float -div $nTP $OutputT2wImage"
+    template_cmd+=" -div $nTP $OutputT1wImage -odt float"
+    template_cmd_t2w+=" -div $nTP $OutputT2wImage -odt float"
     $template_cmd
-    fslmaths $OutputT1wImage -mas "T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT1wImage}_restore_brain
+    fslmaths $OutputT1wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT1wImage}_restore_brain
     if (( Use_T2w )); then 
         $template_cmd_t2w
-        fslmaths $OutputT2wImage -mas "T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT2wImage}_restore_brain
+        fslmaths $OutputT2wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT2wImage}_restore_brain
     fi
 fi
 # end block
