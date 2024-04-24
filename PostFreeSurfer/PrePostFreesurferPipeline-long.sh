@@ -301,10 +301,10 @@ else #make restored tempate images
     template_cmd+=" -div $nTP $OutputT1wImage -odt float"
     template_cmd_t2w+=" -div $nTP $OutputT2wImage -odt float"
     $template_cmd
-    fslmaths $OutputT1wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT1wImage}_restore_brain
+    fslmaths $OutputT1wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT1wImage}_brain
     if (( Use_T2w )); then 
         $template_cmd_t2w
-        fslmaths $OutputT2wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT2wImage}_restore_brain
+        fslmaths $OutputT2wImage -mas "$T1w_dir_template/$T1wImageBrainMask.nii.gz" ${OutputT2wImage}_brain
     fi
 fi
 # end block
@@ -313,7 +313,7 @@ fi
 # Register template to MNI space and resample all timepoints to MNI space using acquired transform.
 
 if (( TemplateProcessing ==  1 )); then 
-    AtlasSpaceFolder_template=$StudyFolder/$Template/MNINonLinear    
+    AtlasSpaceFolder_template=$StudyFolder/$Subject.long.$Template/MNINonLinear
     WARP=xfms/acpc_dc2standard.nii.gz
     INVWARP=xfms/standard2acpc_dc.nii.gz
 
@@ -345,6 +345,7 @@ if (( TemplateProcessing ==  1 )); then
         --ot2rest=${AtlasSpaceFolder_template}/${T2wImage}_restore \
         --ot2restbrain=${AtlasSpaceFolder_template}/${T2wImage}_restore_brain \
         --fnirtconfig=${FNIRTConfig} 
+        
         #Q. Should we remove _acpc_dc images from the AtlasSpaceFolder?
 
     #finalize all TP's with template to MNI152 atlas transform
