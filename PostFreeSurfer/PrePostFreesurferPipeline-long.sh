@@ -316,6 +316,7 @@ if (( TemplateProcessing ==  1 )); then
     AtlasSpaceFolder_template=$StudyFolder/$Subject.long.$Template/MNINonLinear
     WARP=xfms/acpc_dc2standard.nii.gz
     INVWARP=xfms/standard2acpc_dc.nii.gz
+    WARP_JACOBIANS=xfms/NonlinearRegJacobians.nii.gz
 
 
     # run template->MNI registration
@@ -354,11 +355,13 @@ if (( TemplateProcessing ==  1 )); then
         Timepoint_long=$tp.long.$Template
         AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
         T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
+        mkdir -p $AtlasSpaceFolder_timepoint/xfms
 
         #copy altas transforms to the timepoint directory.
         cp ${AtlasSpaceFolder_template}/$WARP ${AtlasSpaceFolder_timepoint}/$WARP
         cp ${AtlasSpaceFolder_template}/$INVWARP ${AtlasSpaceFolder_timepoint}/$INVWARP
-
+        cp ${AtlasSpaceFolder_template}/$WARP_JACOBIANS ${AtlasSpaceFolder_timepoint}/$WARP_JACOBIANS
+        
         # T1w set of warped outputs (brain/whole-head + restored/orig)
         verbose_echo " --> Generarting T1w set of warped outputs"
 
@@ -370,6 +373,9 @@ if (( TemplateProcessing ==  1 )); then
             -o ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
         ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore \
             -mas ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain ${AtlasSpaceFolder_timepoint}/${T1wImage}_restore_brain
+
+        # Resample brain mask (FS) to atlas space
+        applywarp --rel --interp=nn -i "$T1w_dir_long"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder_timepoint"/"${T1wImage}_restore" -w "${AtlasSpaceFolder_template}"/"$WARP" -o "$AtlasSpaceFolder_timepoint"/"$T1wImageBrainMask".nii.gz
 
         # T2w set of warped outputs (brain/whole-head + restored/orig)
         if (( Use_T2w )); then
