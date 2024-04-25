@@ -102,13 +102,21 @@ verbose_red_echo " ===> Running ${script_name}"
 verbose_echo " "
 
 # -- check for presence of T2w image
-if [ `${FSLDIR}/bin/imtest ${OrginalT2wImage}` -eq 0 ]; then
-  T2wPresent="NO"
-else
-  T2wPresent="YES"
-fi
-
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
+
+if (( IsLongitudinal )); then 
+	if [ `${FSLDIR}/bin/imtest "$T1wFolder/T2w_acpc_dc.nii.gz"` -eq 0 ]; then
+		T2wPresent="NO"
+	else
+		T2wPresent="YES"
+	fi
+else
+	if [ `${FSLDIR}/bin/imtest ${OrginalT2wImage}` -eq 0 ]; then
+		T2wPresent="NO"
+	else
+		T2wPresent="YES"
+	fi
+fi
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"

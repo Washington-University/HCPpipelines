@@ -12,8 +12,8 @@ split
 split again
 |t|
 -[hidden]->
-#palegreen:Longitudinal FS
-template and transforms;
+#palegreen:Longitudinal FS transforms 
+to common template;
 end split
 |p|
 :Compute transform from T1w_acpc_dc (cross) 
@@ -41,7 +41,7 @@ group GFC.puml
 #lightgreen:Gain field in T1w_acpc_dc space;
 |p|
 :Resample the gain field to template space;
-:Re-create (taking absolute value, dividing by 
+:Create (taking absolute value, dividing by 
 gain field and applying brain mask)
 {T1w,T2w}_acpc_dc_restore, 
 {T1w,T2w}_acpc_dc_restore_brain;
