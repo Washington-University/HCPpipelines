@@ -96,7 +96,7 @@ for Hemisphere in $Hemi ; do
 	rm "$NativeFolder"/"$Subject"."$Hemisphere".Strain_"$RegName".native.shape.gii
 done
 
-if [[ "$Hemi" == "L R" ]] ; then
+if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
 	#Create CIFTI Files
 	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.ArealDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.ArealDistortion_"$RegName".native.shape.gii
 	wb_command -set-map-names "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_ArealDistortion_"$RegName"
