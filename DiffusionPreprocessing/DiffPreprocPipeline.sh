@@ -190,9 +190,9 @@ opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coeffi
 
 opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion"
 
-opts_AddOptional '--dof' 'DegreesOfFreedom' 'Number' "Degrees of Freedom for post eddy registration to structural images. Defaults to '${DEFAULT_DEGREES_OF_FREEDOM}'" "'${DEFAULT_DEGREES_OF_FREEDOM}'"
+opts_AddOptional '--dof' 'DegreesOfFreedom' 'Number' "Degrees of Freedom for post eddy registration to structural images. Defaults to '${DEFAULT_DEGREES_OF_FREEDOM}'" "${DEFAULT_DEGREES_OF_FREEDOM}"
 
-opts_AddOptional '--b0maxbval' 'b0maxbval' 'Value' "Volumes with a bvalue smaller than this value will be considered as b0s. Defaults to '${DEFAULT_B0_MAX_BVAL}'" "'${DEFAULT_B0_MAX_BVAL}'"
+opts_AddOptional '--b0maxbval' 'b0maxbval' 'Value' "Volumes with a bvalue smaller than this value will be considered as b0s. Defaults to '${DEFAULT_B0_MAX_BVAL}'" "${DEFAULT_B0_MAX_BVAL}"
 
 opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by HCPPIPEDIR_Config).'"
 
