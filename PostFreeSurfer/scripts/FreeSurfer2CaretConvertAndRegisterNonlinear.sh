@@ -425,7 +425,7 @@ for Hemisphere in L R ; do
 
         cp "$AtlasSpaceFolder"/"$NativeFolder"/${Hemisphere}.sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
 
-        ./global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName"
+        ./global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
 
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere."$RegName".native.surf.gii"
     else
