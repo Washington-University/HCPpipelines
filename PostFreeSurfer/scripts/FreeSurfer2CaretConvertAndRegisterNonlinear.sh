@@ -421,6 +421,7 @@ for Hemisphere in L R ; do
 
     #If desired, run MSMSulc folding-based registration to FS_LR initialized with FS affine
     if [ ${RegName} = "MSMSulc" ] ; then
+        
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
 
         cp "$AtlasSpaceFolder"/"$NativeFolder"/${Hemisphere}.sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
