@@ -58,7 +58,7 @@ fi
 mkdir -p "$NativeFolder"/"$RegName"
 
 #Loop through left and right hemispheres
-for Hemisphere in "$Hemi" ; do
+for Hemisphere in $Hemi ; do
 
 	if [[ "$Hemisphere" == "L" ]] ; then
 		Structure="CORTEX_LEFT"
