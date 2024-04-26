@@ -19,6 +19,7 @@ opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all sub
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
 opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
 opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
+opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "default L R" "L R"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
 
@@ -57,7 +58,7 @@ fi
 mkdir -p "$NativeFolder"/"$RegName"
 
 #Loop through left and right hemispheres
-for Hemisphere in L R ; do
+for Hemisphere in "$Hemi" ; do
 
 	if [[ "$Hemisphere" == "L" ]] ; then
 		Structure="CORTEX_LEFT"
@@ -95,21 +96,22 @@ for Hemisphere in L R ; do
 	rm "$NativeFolder"/"$Subject"."$Hemisphere".Strain_"$RegName".native.shape.gii
 done
 
-#Create CIFTI Files
-wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.ArealDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.ArealDistortion_"$RegName".native.shape.gii
-wb_command -set-map-names "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_ArealDistortion_"$RegName"
-wb_command -cifti-palette "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+if [[ "$Hemi" == "L R" ]] ; then
+	#Create CIFTI Files
+	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.ArealDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.ArealDistortion_"$RegName".native.shape.gii
+	wb_command -set-map-names "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_ArealDistortion_"$RegName"
+	wb_command -cifti-palette "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 
-wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.EdgeDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.EdgeDistortion_"$RegName".native.shape.gii
-wb_command -set-map-names "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_EdgeDistortion_"$RegName"
-wb_command -cifti-palette "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.EdgeDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.EdgeDistortion_"$RegName".native.shape.gii
+	wb_command -set-map-names "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_EdgeDistortion_"$RegName"
+	wb_command -cifti-palette "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".EdgeDistortion_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 
-wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainJ_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainJ_"$RegName".native.shape.gii
-wb_command -set-map-names "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainJ_"$RegName"
-wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainJ_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainJ_"$RegName".native.shape.gii
+	wb_command -set-map-names "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainJ_"$RegName"
+	wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainJ_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 
-wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainR_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainR_"$RegName".native.shape.gii
-wb_command -set-map-names "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainR_"$RegName"
-wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainR_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainR_"$RegName".native.shape.gii
+	wb_command -set-map-names "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainR_"$RegName"
+	wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 
 
