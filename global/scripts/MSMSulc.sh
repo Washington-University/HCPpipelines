@@ -58,12 +58,14 @@ fi
 mkdir -p "$NativeFolder"/"$RegName"
 
 #Loop through left and right hemispheres
-for Hemisphere in "$Hemi" ; do
+for Hemisphere in $Hemi ; do
 
 	if [[ "$Hemisphere" == "L" ]] ; then
 		Structure="CORTEX_LEFT"
 	elif [[ "$Hemisphere" == "R" ]] ; then
 		Structure="CORTEX_RIGHT"
+	else
+		log_Err_Abort "unrecognized hemisphere identifier '$Hemisphere', use L and/or R"
 	fi
 	  
 	#convert relative to absolute for correctness after cd, restrict HEMISPHERE replacement to filename only
@@ -96,7 +98,7 @@ for Hemisphere in "$Hemi" ; do
 	rm "$NativeFolder"/"$Subject"."$Hemisphere".Strain_"$RegName".native.shape.gii
 done
 
-if [[ "$Hemi" == "L R" ]] ; then
+if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
 	#Create CIFTI Files
 	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.ArealDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.ArealDistortion_"$RegName".native.shape.gii
 	wb_command -set-map-names "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_ArealDistortion_"$RegName"
@@ -113,5 +115,5 @@ if [[ "$Hemi" == "L R" ]] ; then
 	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainR_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainR_"$RegName".native.shape.gii
 	wb_command -set-map-names "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainR_"$RegName"
 	wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-
+fi
 
