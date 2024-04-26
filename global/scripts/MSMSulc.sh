@@ -19,7 +19,7 @@ opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all sub
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
 opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
 opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
-opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "default L R" "L R"
+opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, default L R" "L R"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
 
