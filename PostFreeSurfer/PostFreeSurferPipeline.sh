@@ -66,12 +66,15 @@ opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin m
 
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
-opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
+opts_AddMandatory '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
-opts_AddOptional '--longitudinal' 'IsLongitudinal' '1|0' "assume longitudinal processing" "0"
+opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT|TEMPLATE' "longitudinal processing mode" "NONE"
+opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
+opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT" ""
+
 
 opts_ParseArguments "$@"
 
@@ -114,6 +117,12 @@ log_Check_Env_Var FSLDIR
 HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
 PipelineScripts="$HCPPIPEDIR_PostFS"
 
+if (( LongitudinalMode==TIMEPOINT )); then
+    Subject="$LongitudinalTimepoint".long."$LongitudinalTemplate"
+elif (( LongitudinalMode==TEMPLATE )); then
+    Subject="$Subject".long."$LongitudinalTemplate"
+fi
+
 # ------------------------------------------------------------------------------
 #  Naming Conventions
 #  Do NOT include spaces in any of these names
@@ -124,7 +133,11 @@ T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
 AtlasSpaceFolder="MNINonLinear"
 NativeFolder="Native"
-FreeSurferFolder="$Subject"
+if (( LongitudinalMode == TEMPLATE ))
+    FreeSurferFolder="$LongitudinalTemplate"
+else 
+    FreeSurferFolder="$Subject"
+fi
 FreeSurferInput="T1w_acpc_dc_restore_1mm"
 AtlasTransform="acpc_dc2standard"
 InverseAtlasTransform="standard2acpc_dc"
@@ -227,7 +240,7 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
-    arglist+=("$IsLongitudinal")            # ${24}
+    argList+=("$IsLongitudinal")            # ${24}
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
