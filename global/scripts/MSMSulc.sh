@@ -113,5 +113,5 @@ if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
 	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.StrainR_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.StrainR_"$RegName".native.shape.gii
 	wb_command -set-map-names "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -map 1 "$Subject"_StrainR_"$RegName"
 	wb_command -cifti-palette "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii MODE_USER_SCALE "$NativeFolder"/"$Subject".StrainR_"$RegName".native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-
+fi
 
