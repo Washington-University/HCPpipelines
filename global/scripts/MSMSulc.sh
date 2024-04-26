@@ -64,6 +64,8 @@ for Hemisphere in $Hemi ; do
 		Structure="CORTEX_LEFT"
 	elif [[ "$Hemisphere" == "R" ]] ; then
 		Structure="CORTEX_RIGHT"
+	else
+		log_Err_Abort "unrecognized hemisphere identifier '$Hemisphere', use L and/or R"
 	fi
 	  
 	#convert relative to absolute for correctness after cd, restrict HEMISPHERE replacement to filename only
