@@ -184,7 +184,8 @@ opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "
 
 opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn"
 
-opts_AddMandatory '--echospacing' 'echospacing' 'Number in msec' "Echo spacing in msecs"
+opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED (or deprecated millisec option)"
+opts_AddOptional '--echospacing' 'echospacing' 'Number in millisec' "DEPRECATED: please use --echospacing-seconds"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
 
@@ -246,6 +247,36 @@ gpu=$(opts_StringToBool "$gpuString")
 if [[ "$TopupConfig" == "" ]]
 then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+fi
+
+#resolve echo spacing being required and exclusivity
+if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
+then
+    log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
+fi
+
+if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
+then
+    log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+fi
+
+#internally, other scripts expect milliseconds
+if [[ "$echospacingsec" != "" ]]
+then
+    echospacingmilli=$(echo "$echospacingsec * 1000" | bc -l)
+else
+    #could add a deprecation warning here, if we want to remove the old parameter in the future
+    echospacingmilli="$echospacing"
+fi
+
+#check for input unit errors
+if [[ $(echo "$echospacingmilli < 10 && $echospacingmilli > 0.01" | bc) == 0* ]]
+then
+    log_Err_Abort "$echospacingmilli milliseconds is not a sane value for echo spacing"
+fi
+if [[ $(echo "$echospacingmilli < 1 && $echospacingmilli > 0.1" | bc) == 0* ]]
+then
+    log_Warn "$echospacingmilli milliseconds seems unlikely for echo spacing, continuing anyway"
 fi
 
 "$HCPPIPEDIR"/show_version
@@ -320,7 +351,7 @@ pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.
     "--PEdir=${PEdir}"
     "--posData=${PosInputImages}"
     "--negData=${NegInputImages}"
-    "--echospacing=${echospacing}"
+    "--echospacing=${echospacingmilli}"
     "--b0maxbval=${b0maxbval}"
     "--topup-config-file=${TopupConfig}"
     "--printcom=${runcmd}"
