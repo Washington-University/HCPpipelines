@@ -19,7 +19,7 @@ opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all sub
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
 opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
 opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
-opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, default L R" "L R"
+opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, L=Left, R=Right, default B=Both" "B"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
 
@@ -58,6 +58,11 @@ fi
 mkdir -p "$NativeFolder"/"$RegName"
 
 #Loop through left and right hemispheres
+if [[ "$Hemi" == "B" ]]
+then
+	Hemi="L R"
+fi
+
 for Hemisphere in $Hemi ; do
 
 	if [[ "$Hemisphere" == "L" ]] ; then
@@ -98,7 +103,7 @@ for Hemisphere in $Hemi ; do
 	rm "$NativeFolder"/"$Subject"."$Hemisphere".Strain_"$RegName".native.shape.gii
 done
 
-if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
+if [[ "$Hemi" == "B" ]] ; then
 	#Create CIFTI Files
 	wb_command -cifti-create-dense-scalar "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -left-metric "$NativeFolder"/"$Subject".L.ArealDistortion_"$RegName".native.shape.gii -right-metric "$NativeFolder"/"$Subject".R.ArealDistortion_"$RegName".native.shape.gii
 	wb_command -set-map-names "$NativeFolder"/"$Subject".ArealDistortion_"$RegName".native.dscalar.nii -map 1 "$Subject"_ArealDistortion_"$RegName"
