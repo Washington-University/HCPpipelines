@@ -58,7 +58,7 @@ fi
 mkdir -p "$NativeFolder"/"$RegName"
 
 #Loop through left and right hemispheres
-if [[ "$Hemi" == "B" ]]
+if [[ "$Hemi" == *B* ]]
 then
 	Hemi="L R"
 fi
@@ -70,7 +70,7 @@ for Hemisphere in $Hemi ; do
 	elif [[ "$Hemisphere" == "R" ]] ; then
 		Structure="CORTEX_RIGHT"
 	else
-		log_Err_Abort "unrecognized hemisphere identifier '$Hemisphere', use L and/or R"
+		log_Err_Abort "unrecognized hemisphere identifier '$Hemisphere', use L, R, or B for both"
 	fi
 	  
 	#convert relative to absolute for correctness after cd, restrict HEMISPHERE replacement to filename only
