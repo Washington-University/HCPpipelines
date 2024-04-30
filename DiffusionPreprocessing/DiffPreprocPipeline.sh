@@ -260,7 +260,7 @@ then
     log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
 fi
 
-#internally, other scripts expect milliseconds
+#internally, PreEddy script expects milliseconds
 if [[ "$echospacingsec" != "" ]]
 then
     echospacingmilli=$(echo "$echospacingsec * 1000" | bc -l)
