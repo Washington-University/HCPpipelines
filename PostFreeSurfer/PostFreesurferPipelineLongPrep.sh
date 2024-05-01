@@ -139,6 +139,7 @@ LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cros
 
 if (( TemplateProcessing == 0 )); then #timepoint mode
 
+    log_Msg "Timepoint processing: computing the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (longitudinal template)"
     mkdir -p $T1w_dir_long/xfms
     #Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
     Snorm=$T1w_dir_cross/$Timepoint_cross/mri/norm
@@ -169,6 +170,7 @@ fi
 # readout distortion correction warp.
 
 if (( TemplateProcessing == 0 )); then 
+    log_Msg "Timepoint $Timepoint_long: combining warps and resampling T1w_acpc_dc to longitudinal template space"
     T1w_cross_gdc_warp=$T1w_dir_cross/xfms/${T1wImage}1_gdc_warp.nii.gz
     if [ ! -f "$T1w_cross_gdc_warp" ]; then
         log_Msg "NOT USING GRADIENT DISTORTION CORRECTION WARP"
@@ -196,10 +198,13 @@ T2w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
 Use_T2w=1
 
 if (( TemplateProcessing == 0 )); then 
+
+
     mkdir -p $T2w_dir_long/xfms
 
     #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
     if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
+        log_Msg "Timepoint $Timepoint_long: warping T2-weighted image to T2w_acpc_dc in longitudinal template space"
         convertwarp --premat=$T2w_dir_cross/xfms/acpc.mat --ref=$MNI_08mm_template \
             --warp1=$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T2w_dir_long/xfms/T2w2template.nii.gz
     else
@@ -223,6 +228,7 @@ FreeSurferFolder_Template="$T1w_dir_template/$Template"
 T1wImageBrainMask_orig="$T1wImageBrainMask"_orig
 
 if (( TemplateProcessing == 0 )); then 
+    log_Msg "Timepoint $Timepoint_long: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
 
@@ -232,6 +238,7 @@ if (( TemplateProcessing == 0 )); then
     fslmaths "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz -bin "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz -r "$T1w_dir_long"/"$T1wImage"_acpc_dc.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/"$T1wImageBrainMask_orig".nii.gz
 else 
+    log_Msg "Template $Template: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_Template"/mri/wmparc.mgz "$T1w_dir_template"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_template"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"${T1wImage}_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/wmparc.nii.gz
     fslmaths "$T1w_dir_template"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1w_dir_template"/"$T1wImageBrainMask_orig"_1mm.nii.gz
@@ -250,6 +257,7 @@ BiasField_long="$T1w_dir_long/BiasField_acpc_dc"
 
 if (( TemplateProcessing == 0 )); then 
 
+    log_Msg "Timepoint $Timepoint_long: warping bias field to longitudinal template space"
     if [ -f "$BiasField_cross.nii.gz" ]; then
         applywarp --interp=spline -i $BiasField_cross -r $MNI_08mm_template \
             --premat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
@@ -268,8 +276,9 @@ fi
 #Applies GFC to T1w and T2w
 if (( TemplateProcessing == 0 )); then 
 
+  log_Msg "Timepoint $Timepoint_long: applying gain field to T1w,T2w images in longitudinal acpc_dc template space"
   OutputT1wImage=${T1w_dir_long}/${T1wImage}_acpc_dc
-  ${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc.nii.gz -div $BiasField_long -mas "$T1w_dir_long"/"$T1wImageBrainMask".nii.gz $T1w_long -odt float
+  #${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc.nii.gz -div $BiasField_long -mas "$T1w_dir_long"/"$T1wImageBrainMask"_orig.nii.gz $T1w_long -odt float
 
   fslmaths ${OutputT1wImage} -abs ${OutputT1wImage} -odt float  # Use -abs (rather than '-thr 0') to avoid introducing zeros
   fslmaths ${OutputT1wImage} -div ${T1w_dir_long}/BiasField_acpc_dc ${OutputT1wImage}_restore
@@ -283,6 +292,7 @@ if (( TemplateProcessing == 0 )); then
   fi
 
 else #make tempate images
+    log_Msg "Template $Template: creating average templates and masks from timepoints"
     OutputBrainMask="${T1w_dir_template}/$T1wImageBrainMask"
     OutputT1wImage_unrestore="${T1w_dir_template}/${T1wImage}_acpc_dc"
     OutputT1wImage="${OutputT1wImage_unrestore}_restore"
@@ -342,7 +352,7 @@ if (( TemplateProcessing ==  1 )); then
     # run template->MNI registration
 
     #NB. _acpc_dc images will be the same as acpc_dc_restore as 'unrestore' version is meaningless for the template.
-    log_Msg "Performing Atlas Registration from longitudinal template to MNI152 (FLIRT and FNIRT)"    
+    log_Msg "template $Template: performing atlas registration from longitudinal template to MNI152 (FLIRT and FNIRT)"    
 
     ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
         --workingdir=${AtlasSpaceFolder_template} \
@@ -369,10 +379,12 @@ if (( TemplateProcessing ==  1 )); then
 
     # Resample brain mask (FS) to atlas space
     #applywarp --rel --interp=nn -i "$T1w_dir_template"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder_template"/"${T1wImage}_restore" -w "${AtlasSpaceFolder_template}"/"$WARP" -o "$AtlasSpaceFolder_template"/"$T1wImageBrainMask".nii.gz
+    log_Msg "Template $Template: warping brain mask to MNI space"
     applywarp --rel --interp=nn -i "$T1w_dir_template"/"$T1wImageBrainMask".nii.gz -r "$AtlasSpaceFolder_template"/"${T1wImage}_restore" -w "${AtlasSpaceFolder_template}"/"$WARP" -o "$AtlasSpaceFolder_template"/"$T1wImageBrainMask".nii.gz
-
-    #finalize all TP's with template to MNI152 atlas transform
+    
+    #finalize all TP's with template to MNI152 atlas transform    
     for tp in ${timepoints[@]}; do
+	log_Msg "Timepoint $tp: applying MNI152 atlas transform and brain mask"
         #These variables are redefined
         Timepoint_long=$tp.long.$Template
         AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
