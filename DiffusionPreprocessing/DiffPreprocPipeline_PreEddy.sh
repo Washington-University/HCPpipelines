@@ -174,6 +174,10 @@ log_Check_Env_Var HCPPIPEDIR_Config # Needed in run_topup.sh
 # --------------------------------------------------------------------------------
 
 isodd() {
+	if (($# < 1)) || [[ "$1" == "" ]]
+	then
+		log_Err_Abort "isodd function was passed no arguments or an empty string, something has gone wrong"
+	fi
 	echo "$(($1 % 2))"
 }
 
@@ -330,8 +334,9 @@ fi
 
 # if the number of slices are odd, check that the user has a way to deal with that
 if ((! EnsureEvenSlices)) && [ "${TopupConfig}" == "${HCPPIPEDIR_Config}/b02b0.cnf" ] ; then
-	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
-	if [ $(isodd $dimz) -eq 1 ]; then
+	#Pos_b0 doesn't exist yet, assume "$any" has the relevant dims to check
+	dimz=$(${FSLDIR}/bin/fslval "$any" dim3)
+	if [[ $(isodd "$dimz") == "1" ]]; then
 		log_Msg "Input images have an odd number of slices. This is incompatible with the default topup configuration file."
 		log_Msg "Either supply a topup configuration file that doesn't use subsampling (e.g., FSL's 'b02b0_1.cnf') using the --topup-config-file=<file> flag (recommended)"
 		log_Msg "or instruct the HCP pipelines to remove a slice using the --ensure-even-slices flag (legacy option)."
@@ -388,7 +393,7 @@ fi
 
 if ((EnsureEvenSlices)); then
 	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
-	if [[ $(isodd $dimz) == 1 ]]; then
+	if [[ $(isodd "$dimz") == 1 ]]; then
 		echo "Removing one slice from data to get even number of slices"
 		for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
 			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
