@@ -52,6 +52,8 @@ opts_AddOptional '--regname' 'RegName' 'string' "The surface registeration name,
 
 opts_AddOptional '--fmri-qc' 'QCMode' 'YES OR NO OR ONLY' "Controls whether to generate a QC scene and snapshots (default=YES). ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)" "YES"
 
+opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to do goodVoxel procedure (default = YES)" "YES"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -140,7 +142,7 @@ if ((doProcessing)); then
     log_Msg "Make fMRI Ribbon"
     log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
     mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}"
+    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}" "${doGoodVoxels}"
 
     #Surface Smoothing
     log_Msg "Surface Smoothing"
