@@ -124,8 +124,7 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
-opts_AddOptional '--concatinate-only' 'ConcatOnly' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
-
+opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
 opts_ParseArguments "$@"
 
@@ -136,6 +135,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+ConcatOnly=$(opts_StringToBool "$ConcatOnlyStr")
 
 #############################################################
 
@@ -683,8 +684,8 @@ log_Msg "Removing the concatenated demeaned time series"
 "$FSLDIR/bin/imrm" "${ConcatNameNoExt}_demean"
 /bin/rm -f "${ConcatNameNoExt}_Atlas_demean.dtseries.nii"
 
-if [ ${ConcatOnly} == "TRUE" ] ; then
-  exit
+if ((ConcatOnly)); then
+	exit
 fi
 
 ## ---------------------------------------------------------------------------
