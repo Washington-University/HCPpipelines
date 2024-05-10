@@ -986,10 +986,25 @@ if [[ ${nEcho} -gt 1 ]]; then
 
     echo ${echoTE} > ${EchoDir}/TEs.txt
 
-    matlab_cmd="addpath('${PipelineScripts}');
-        multiEchoCombine('${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz','${EchoDir}/TEs.txt','${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz','${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz');"
-    "${matlab_interpreter[@]}" <<<"${matlab_cmd}"
-    echo "$matlab_cmd"
+    case "$MatlabMode" in
+        (0)
+            matlab_cmd=("$PipelineScripts/Compiled_multiEchoCombine/run_multiEchoCombine.sh" "$MATLAB_COMPILER_RUNTIME" \
+                "${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz" \
+                "${EchoDir}/TEs.txt" \
+                "${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz" \
+                "${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz")
+            log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+            "${matlab_cmd[@]}"
+            ;;
+        (1 | 2)
+            matlab_code="
+                addpath('${PipelineScripts}');
+                multiEchoCombine('${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz', '${EchoDir}/TEs.txt', '${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz', '${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz');"
+            log_Msg "running matlab code: $matlab_code"
+            "${matlab_interpreter[@]}" <<<"${matlab_code}"
+            echo
+            ;;
+    esac
 fi
 
 #Copy selected files to ResultsFolder
