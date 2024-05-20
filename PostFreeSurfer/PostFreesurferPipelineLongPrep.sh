@@ -92,13 +92,14 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins and templates" "--path"
-#question: is 'subject ID' appropriate internal data type?
-opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label"
-opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer template ID)"
+#The following options
+opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
+opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
 opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint\
                     processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated"
 opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
+#the following options have the same meaning as in PreFreesurferPipeline.
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
 opts_AddMandatory '--t1templatebrain' 'T1wTemplateBrain' 'file_path' "Brain extracted MNI T1wTemplate"
 opts_AddMandatory '--t1template2mm' 'T1wTemplate2mm' 'file_path' "MNI 2mm T1wTemplate"
@@ -111,7 +112,6 @@ opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Confi
 
 #needed to transform Freesurfer mask to MNI space.
 opts_AddMandatory '--freesurferlabels' 'FreeSurferLabels' 'file' "location of FreeSurferAllLut.txt"
-
 opts_ParseArguments "$@"
 
 #display the parsed/default values

@@ -54,7 +54,7 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label that matches root dir for a single subject experiment. For longitudinal experiment root to be identified correctly, must use longitudinal_timepoint and longitudinal_template options."
 opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
 opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
 opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
@@ -71,10 +71,28 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleD
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
+#Longitudinal_mode modes:
+#NONE: cross-sectional processing (default)
+#TIMEPOINT: timepoint processing 
+#TEMPLATE: template processing (must be run after all timepoints)
+
+#There are some specific conventions on timepoint and template processing directories:
+#In cross-sectional mode, 'Subject' label and subject study (timepoint) labels are treated as being the same by HCP in the original design. 
+#In longitudinal mode, 'Timepoint' is a study within a subject and, since there are multiple timepoints (studies) per subject, 
+#they must be labeled differently.
+#Timepoint label may be arbitrary but conventionally, should contain subject as part of name. E.g. if for subject 
+#HCA6002236 there are two timepoints, thay may be labeled HCA6002236_V1 and HCA6002236_V2. 
+#For crossectional (initial) processing, these are supplied instead of 'Subject' label to PreFreesurferPipeline. 
+#For the FreesurferPipeline-long, these are also supplied as timepoint labels, as well as chosen template label, e.g. HCA6002236_V1_V2. 
+#Then the same are supplied to PostFreesurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
+#internally, longitudinal timepoint directories will be named as: <Timepoint>.long.<Template>
+#Longitudinal template directory is named <Subject>.long.<Template>. 
+#Longitudinal Freesurfer files for timepoints are stored under <Timepoint>.long.<Template>/T1w/<Timepoint>.long.<Temlate>. 
+#Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. 
+
 opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT|TEMPLATE' "longitudinal processing mode" "NONE"
 opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
 opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT" ""
-
 
 opts_ParseArguments "$@"
 
@@ -117,10 +135,12 @@ log_Check_Env_Var FSLDIR
 HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
 PipelineScripts="$HCPPIPEDIR_PostFS"
 
+#ExperimentRoot points to actual experiment directory
+ExperimentRoot=$Subject
 if (( LongitudinalMode==TIMEPOINT )); then
-    Subject="$LongitudinalTimepoint".long."$LongitudinalTemplate"
+    ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
 elif (( LongitudinalMode==TEMPLATE )); then
-    Subject="$Subject".long."$LongitudinalTemplate"
+    ExperimentRoot="$Subject".long."$LongitudinalTemplate"
 fi
 
 # ------------------------------------------------------------------------------
@@ -133,11 +153,15 @@ T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
 AtlasSpaceFolder="MNINonLinear"
 NativeFolder="Native"
+
 if (( LongitudinalMode == TEMPLATE ))
     FreeSurferFolder="$LongitudinalTemplate"
-else 
+elif (( LongitudinalMode == TIMEPOINT )); then 
+    FreeSurferFolder="$LongitudinalTimepoint.long.$LongitudinalTemplate"
+else #Cross-sectional
     FreeSurferFolder="$Subject"
 fi
+
 FreeSurferInput="T1w_acpc_dc_restore_1mm"
 AtlasTransform="acpc_dc2standard"
 InverseAtlasTransform="standard2acpc_dc"
@@ -152,7 +176,7 @@ InitialT1wTransform="acpc.mat"
 dcT1wTransform="T1w_dc.nii.gz"
 InitialT2wTransform="acpc.mat"
 dcT2wTransform="T2w_reg_dc.nii.gz"
-FinalT2wTransform="$Subject/mri/transforms/T2wtoT1w.mat"
+FinalT2wTransform="$ExperimentRoot/mri/transforms/T2wtoT1w.mat"
 BiasField="BiasField_acpc_dc"
 OutputT1wImage="T1w_acpc_dc"
 OutputT1wImageRestore="T1w_acpc_dc_restore"
@@ -173,9 +197,9 @@ OutputOrigT2wToStandard="OrigT2w2standard.nii.gz"
 BiasFieldOutput="BiasField"
 Jacobian="NonlinearRegJacobians.nii.gz"
 
-T1wFolder="$StudyFolder"/"$Subject"/"$T1wFolder"
-T2wFolder="$StudyFolder"/"$Subject"/"$T2wFolder"
-AtlasSpaceFolder="$StudyFolder"/"$Subject"/"$AtlasSpaceFolder"
+T1wFolder="$StudyFolder"/"$ExperimentRoot"/"$T1wFolder"
+T2wFolder="$StudyFolder"/"$ExperimentRoot"/"$T2wFolder"
+AtlasSpaceFolder="$StudyFolder"/"$ExperimentRoot"/"$AtlasSpaceFolder"
 FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
@@ -218,7 +242,7 @@ if ((doProcessing)); then
     log_Msg "RegName: ${RegName}"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")                   # ${2}
+    argList+=("$ExperimentRoot")                   # ${2}
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
@@ -246,7 +270,7 @@ if ((doProcessing)); then
     log_Msg "Create FreeSurfer ribbon file at full resolution"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")                   # ${2}
+    argList+=("$ExperimentRoot")            # ${2}
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
@@ -259,7 +283,7 @@ if ((doProcessing)); then
     log_Msg "RegName: ${RegName}"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")
+    argList+=("$ExperimentRoot")
     argList+=("$AtlasSpaceFolder")
     argList+=("$NativeFolder")
     argList+=("$T1wFolder")                 # ${5}
@@ -306,7 +330,7 @@ if ((doQC)); then
 	log_Msg "Generating structural QC scene and snapshots"
     "$PipelineScripts"/GenerateStructuralScenes.sh \
         --study-folder="$StudyFolder" \
-        --subject="$Subject" \
+        --subject="$ExperimentRoot" \
         --output-folder="$AtlasSpaceFolder/StructuralQC"
 fi
 
