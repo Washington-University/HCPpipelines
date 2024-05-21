@@ -66,7 +66,7 @@ opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin m
 
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
-opts_AddMandatory '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
+opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
@@ -212,11 +212,18 @@ Compliance="HCPStyleData"
 ComplianceMsg=""
 
 # -- T2w image
-
-if [[ $("$FSLDIR"/bin/imtest "$T2wFolder/T2w") == '0' ]]; then
-    ComplianceMsg+=" T2w image not present"
-    Compliance="LegacyStyleData"
-    T2wRestoreImage="NONE"
+if [ "$LongitudinalMode" == NONE ]; then 
+    if [[ $("$FSLDIR"/bin/imtest "$T2wFolder/T2w") == '0' ]]; then
+        ComplianceMsg+=" T2w image not present"
+        Compliance="LegacyStyleData"
+        T2wRestoreImage="NONE"
+    fi
+else 
+    if [[ $("$FSLDIR"/bin/imtest "$T1wFolder/T2w_acpc_dc") == '0' ]]; then
+        ComplianceMsg+=" T2w image not present"
+        Compliance="LegacyStyleData"
+        T2wRestoreImage="NONE"
+    fi
 fi
 
 if [[ "${RegName}" == "FS" ]]; then
