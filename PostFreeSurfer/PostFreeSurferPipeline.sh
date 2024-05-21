@@ -137,9 +137,9 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 
 #ExperimentRoot points to actual experiment directory
 ExperimentRoot=$Subject
-if (( LongitudinalMode==TIMEPOINT )); then
+if [ "$LongitudinalMode" == "TIMEPOINT" ]; then
     ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
-elif (( LongitudinalMode==TEMPLATE )); then
+elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
     ExperimentRoot="$Subject".long."$LongitudinalTemplate"
 fi
 
@@ -154,9 +154,9 @@ T2wImage="T2w_acpc_dc"
 AtlasSpaceFolder="MNINonLinear"
 NativeFolder="Native"
 
-if (( LongitudinalMode == TEMPLATE ))
+if [ "$LongitudinalMode" == "TEMPLATE" ]; then
     FreeSurferFolder="$LongitudinalTemplate"
-elif (( LongitudinalMode == TIMEPOINT )); then 
+elif [ "$LongitudinalMode" == "TIMEPOINT" ]; then 
     FreeSurferFolder="$LongitudinalTimepoint.long.$LongitudinalTemplate"
 else #Cross-sectional
     FreeSurferFolder="$Subject"
