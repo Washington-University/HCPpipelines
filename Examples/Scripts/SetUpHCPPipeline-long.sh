@@ -23,8 +23,10 @@ fi
 
 
 ## Edit this section: set up other environment variables
-export MSMBINDIR="${HOME}/pipeline_tools/MSM"
+#export MSMBINDIR="${HOME}/pipeline_tools/MSM"
+export MSMBINDIR="/media/myelin/brainmappers/Connectome_Project/MishaLongitudinal/src/pipeline_tools"
 #export MSMBINDIR="/nrgpackages/packages/fsl6/bin"
+
 export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
 
 export FSL_FIXDIR=/usr/local/fix
