@@ -137,11 +137,17 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 
 #ExperimentRoot points to actual experiment directory
 ExperimentRoot=$Subject
+IsLongitudinal=0
 if [ "$LongitudinalMode" == "TIMEPOINT" ]; then
     ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
+    IsLongitudinal=1
 elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
     ExperimentRoot="$Subject".long."$LongitudinalTemplate"
+    IsLongitudinal=1
 fi
+
+echo ExperimentRoot: $ExperimentRoot
+
 
 # ------------------------------------------------------------------------------
 #  Naming Conventions
