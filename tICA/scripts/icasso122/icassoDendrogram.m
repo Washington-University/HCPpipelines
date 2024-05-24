@@ -100,7 +100,7 @@ imagesc(sR.cluster.similarity(sR.cluster.dendrogram.order, ...
 			      sR.cluster.dendrogram.order));
 colormap(1-gray);
 set(gca,'xtick',t,'ytick',t,'xticklabel','','yticklabel','', ...
-	'gridline','-','xcolor','r','ycolor','r');
+	'gridlinestyle','-','xcolor','r','ycolor','r');
 grid on; 
 title({'Similarities between estimates',
        '(arranged according to the dendrogram)'});

@@ -29,10 +29,14 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"          # Functions for getting FSL version
+g_matlab_default_mode=1
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
-GENERAL_ELECTRIC_METHOD_OPT="GeneralElectricFieldMap"
+# For GE HealthCare Fieldmap Distortion Correction methods 
+# see explanations in global/scripts/FieldMapPreprocessingAll.sh
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
@@ -78,8 +82,12 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              use a pair of Spin Echo EPI images ('Spin Echo Field Maps') acquired with
              opposing polarity for SDC
 
-        '${GENERAL_ELECTRIC_METHOD_OPT}'
-             use General Electric specific Gradient Echo Field Maps for SDC
+        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
+             use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapcombined argument).
+             This option is maintained for backward compatibility.
+
+        '${GE_HEALTHCARE_METHOD_OPT}'
+             use GE HealthCare specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
 
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC
@@ -90,7 +98,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 
-opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction for unwarping according to the *voxel* axes, Polarity matters!  If your distortions are twice as bad as in the original images, try using the opposite polarity for --unwarpdir."
+opts_AddOptional '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction for unwarping according to the *voxel* axes, Polarity matters!  If your distortions are twice as bad as in the original images, try using the opposite polarity for --unwarpdir."
 
 opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' 'file' "negative polarity SE-EPI image"
 
@@ -98,13 +106,13 @@ opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'file' "positive p
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file to use"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "Siemens field map magnitude image to use"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "field map magnitude image"
 
-opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "Siemens field map phase image to use"
+opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
-opts_AddOptional '--fmapgeneralelectric' 'GEB0InputName' 'file' "General Electric field map image to use"
+opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
 
 # OTHER OPTIONS:
 
@@ -114,10 +122,16 @@ opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE OR FALSE' "Controls whether
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
-  # -------- "LegacyStyleData" MODE OPTIONS --------
+opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
 
-  #  Use --processing-mode-info to see important additional information and warnings about the use of 
-  #  the following options!
+opts_AddOptional '--echoTE' 'echoTE' '@ delimited list of numbers' "TE for each echo (unused for single echo)" "0"
+
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0 (compiled), 1 (interpreted), or 2 (Octave)' "defaults to $g_matlab_default_mode" "$g_matlab_default_mode"
+
+# -------- "LegacyStyleData" MODE OPTIONS --------
+
+#  Use --processing-mode-info to see important additional information and warnings about the use of 
+#  the following options!
 
 opts_AddOptional '--preregistertool' 'PreregisterTool' 'epi_reg or flirt' "Specifies which software tool to use to preregister the fMRI to T1w image (prior to the final FreeSurfer BBR registration). 'epi_reg' is default, whereas 'flirt' might give better results with some legacy type data (e.g., single band, low resolution)." "epi_reg"
 
@@ -252,104 +266,119 @@ log_Check_Env_Var HCPPIPEDIR_Global
 HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 
 # ------------------------------------------------------------------------------
-#  Check for incompatible FSL version
+#  Check for incompatible FSL version - abort if incompatible
 # ------------------------------------------------------------------------------
 
-check_fsl_version()
-{
-	local fsl_version=${1}
-	local fsl_version_array
-	local fsl_primary_version
-	local fsl_secondary_version
-	local fsl_tertiary_version
+fsl_minimum_required_version_check "6.0.1" "FSL version 6.0.0 is unsupported. Please upgrade to at least version 6.0.1"
 
-	# parse the FSL version information into primary, secondary, and tertiary parts
-	fsl_version_array=(${fsl_version//./ })
-	
-	fsl_primary_version="${fsl_version_array[0]}"
-	fsl_primary_version=${fsl_primary_version//[!0-9]/}
 
-	fsl_secondary_version="${fsl_version_array[1]}"
-	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-
-	fsl_tertiary_version="${fsl_version_array[2]}"
-	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
-
-	# FSL version 6.0.0 is unsupported
-	if [[ $(( ${fsl_primary_version} )) -eq 6 ]]; then
-		if [[ $(( ${fsl_secondary_version} )) -eq 0 ]]; then
-			if [[ $(( ${fsl_tertiary_version} )) -eq 0 ]]; then
-				log_Err_Abort "FSL version 6.0.0 is unsupported. Please upgrade to at least version 6.0.1"
-			fi
-		fi
-	fi
-}
-
-fsl_version_get fsl_ver
-check_fsl_version ${fsl_ver}
+case "$MatlabMode" in
+    (0)
+        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
+        then
+            log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
+        fi
+        ;;
+    (1)
+        matlab_interpreter=(matlab -nodisplay -nosplash)
+        ;;
+    (2)
+        matlab_interpreter=(octave-cli -q --no-window-system)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
+        ;;
+esac
 
 ## Case checking for which distortion correction was used ## 
 
 case "$DistortionCorrection" in
-	${SPIN_ECHO_METHOD_OPT})
-		if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
-			log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${SpinEchoPhaseEncodePositive} ]; then
-			log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${TopupConfig} ]; then
-			log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		;;
+    ${SPIN_ECHO_METHOD_OPT})
+        if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
+            log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${SpinEchoPhaseEncodePositive} ]; then
+            log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${TopupConfig} ]; then
+            log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
-		if [ -z ${MagnitudeInputName} ]; then
-			log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${PhaseInputName} ]; then
-			log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		if [ -z ${deltaTE} ]; then
-			log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		;;
+    ${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${GENERAL_ELECTRIC_METHOD_OPT})
-		if [ -z ${GEB0InputName} ]; then
-			log_Err_Abort "--fmapgeneralelectric must be specified with --dcmethod=${DistortionCorrection}"
-		fi
-		;;
+    ${GE_HEALTHCARE_LEGACY_METHOD_OPT})
+        if [ -z ${GEB0InputName} ]; then
+            log_Err_Abort "--fmapcombined must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+        # The intention is to catch the error as early as possible. 
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. " 
+        ;;
+  
+  ${GE_HEALTHCARE_METHOD_OPT})
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        # Check that FSL is at least the minimum required FSL version, abort if needed (and log FSL-version)
+        # This FSL version check is duplicated in global/scripts/FieldMapPreprocessingAll.sh
+        # The intention is to catch the error as early as possible. 
+        # GEHEALTHCARE_MINIMUM_FSL_VERSION defined in global/scripts/fsl_version.shlib
+        fsl_minimum_required_version_check "$GEHEALTHCARE_MINIMUM_FSL_VERSION" \
+            "For ${DistortionCorrection} method the minimum required FSL version is ${GEHEALTHCARE_MINIMUM_FSL_VERSION}. "
+        ;;
 
-  ${PHILIPS_METHOD_OPT})
-    if [ -z ${MagnitudeInputName} ]; then
-      log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    if [ -z ${PhaseInputName} ]; then
-      log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    if [ -z ${deltaTE} ]; then
-      log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    ;;
+    ${PHILIPS_METHOD_OPT})
+        if [ -z ${MagnitudeInputName} ]; then
+            log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${PhaseInputName} ]; then
+            log_Err_Abort "--fmapphase must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${deltaTE} ]; then
+            log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
 
-	${NONE_METHOD_OPT})
-		# Do nothing
-		;;
+    ${NONE_METHOD_OPT})
+        # Do nothing
+        ;;
 
-	*)
-		log_Err_Abort "unrecognized value for --dcmethod (${DistortionCorrection})"
-		;;
+    *)
+        log_Err_Abort "unrecognized value for --dcmethod (${DistortionCorrection})"
+        ;;
 
 esac
 # Additionally, EchoSpacing and UnwarpDir needed for all except NONE
 if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" ]]; then
-	if [ -z ${EchoSpacing} ]; then
-		log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
-	fi
-	if [ -z ${UnwarpDir} ]; then
-		log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
-	fi
+    if [ -z ${EchoSpacing} ]; then
+        log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
+    fi
+    if [ -z ${UnwarpDir} ]; then
+        log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
+    fi
 fi
 
 
@@ -449,23 +478,23 @@ fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 case "$BiasCorrection" in
     NONE)
         UseBiasFieldMNI=""
-		;;
+        ;;
     LEGACY)
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
-		;;    
+        ;;    
     SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
         then
             log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
-		;;
+        ;;
     "")
         log_Err_Abort "--biascorrection option not specified"
-		;;
+        ;;
     *)
         log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-		;;
+        ;;
 esac
 
 # ------------------------------------------------------------------------------
@@ -543,11 +572,11 @@ else
     log_Err_Abort "Specified fMRI reference (--fmriref=${fMRIReference}) is the same as the current fMRI (--fmriname=${NameOffMRI})!"
   fi
 
-  if [ `${FSLDIR}/bin/imtest ${fMRIReferenceImage}` -eq 0 ] ; then
+  if [ $(${FSLDIR}/bin/imtest ${fMRIReferenceImage}) -eq 0 ] ; then
     log_Err_Abort "Intended fMRI Reference does not exist (${fMRIReferenceImage})!"
   fi 
 
-  if [ `${FSLDIR}/bin/imtest ${fMRIReferenceImageMask}` -eq 0 ] ; then
+  if [ $(${FSLDIR}/bin/imtest ${fMRIReferenceImageMask}) -eq 0 ] ; then
     log_Err_Abort "Intended fMRI Reference mask does not exist (${fMRIReferenceImageMask})!"
   fi 
 
@@ -581,6 +610,15 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
+# -- Multi-echo fMRI
+echoTE=$(echo ${echoTE} | sed 's/@/ /g')
+nEcho=$(echo ${echoTE} | wc -w)
+
+# -- Slice time correction for multiecho scans
+if [[ $DoSliceTimeCorrection = "TRUE" ]] && [[ $nEcho -gt 1 ]] ; then
+    log_Err_Abort "Slice time correction for multiecho scans is not supported."
+fi
+
 # ------------------------------------------------------------------------------
 #  End Compliance check
 # ------------------------------------------------------------------------------
@@ -595,10 +633,20 @@ ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
 
 if [ ! -e "$fMRIFolder" ] ; then
-  log_Msg "mkdir ${fMRIFolder}"
-  mkdir "$fMRIFolder"
+    log_Msg "mkdir ${fMRIFolder}"
+    mkdir "$fMRIFolder"
 fi
 ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
+
+
+if [[ $nEcho -gt 1 ]] ; then
+    log_Msg "$nEcho TE's supplied, running in multi-echo mode"
+    NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
+    FramesPerEcho=$((NumFrames / nEcho))
+    EchoDir="${fMRIFolder}/MultiEcho"
+    mkdir -p "$EchoDir"
+fi
+
 
 # --- Do slice time correction if indicated
 # Note that in the case of STC, $fMRIFolder/$OrigTCSName will NOT be the "original" time-series
@@ -607,7 +655,7 @@ ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 if [ $DoSliceTimeCorrection = "TRUE" ] ; then
     log_Msg "Running slice timing correction using FSL's 'slicetimer' tool ..."
     log_Msg "... $fMRIFolder/$OrigTCSName will be a slice-time-corrected version of the original data"
-    TR=`${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4`
+    TR=$(${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4)
     log_Msg "TR: ${TR}"
 
     IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
@@ -633,9 +681,9 @@ if [ "$fMRIReference" != "NONE" ]; then
 else    
     # --- Create fake "Scout" if it doesn't exist
     if [ $fMRIScout = "NONE" ] ; then
-      ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
+        ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
     else
-      ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+        ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
     fi
 fi
 
@@ -646,34 +694,34 @@ if [ $DistortionCorrection = "NONE" ] ; then
     # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
 
     # First though, detect if reorienting is even necessary
-    xorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' '`
-    yorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' '`
-    zorient=`$FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' '`
+    xorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' ')
+    yorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' ')
+    zorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' ')
 
     log_Msg "$fMRIFolder/$OrigTCSName: xorient=${xorient}, yorient=${yorient}, zorient=${zorient}"
 
     if [[ "$xorient" != "Right-to-Left" && "$xorient" != "Left-to-Right" || \
           "$yorient" != "Posterior-to-Anterior" || \
           "$zorient" != "Inferior-to-Superior" ]] ; then
-      reorient=TRUE
+        reorient=TRUE
     else 
-      reorient=FALSE
+        reorient=FALSE
     fi
 
     if [ $reorient = "TRUE" ] ; then
-      log_Warn "Performing fslreorient2std! Please take that into account when using the volume fMRI images in further analyses!"
+        log_Warn "Performing fslreorient2std! Please take that into account when using the volume fMRI images in further analyses!"
 
-      # --- reorient fMRI
-      ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_pre2std
-      ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_pre2std "$fMRIFolder"/"$OrigTCSName"
-      ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
+        # --- reorient fMRI
+        ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_pre2std
+        ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_pre2std "$fMRIFolder"/"$OrigTCSName"
+        ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
 
-      # --- reorient SCOUT
-      if [ "$fMRIReference" = "NONE" ]; then
-          ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
-          ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
-          ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
-      fi
+        # --- reorient SCOUT
+        if [ "$fMRIReference" = "NONE" ]; then
+            ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
+            ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
+            ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
+        fi
     fi
 fi
 
@@ -684,26 +732,26 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
     mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-		   --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
-		   --coeffs="$GradientDistortionCoeffs" \
-		   --in="$fMRIFolder"/"$OrigTCSName" \
-		   --out="$fMRIFolder"/"$NameOffMRI"_gdc \
-		   --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
-	
-    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"	
+        --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
+        --coeffs="$GradientDistortionCoeffs" \
+        --in="$fMRIFolder"/"$OrigTCSName" \
+        --out="$fMRIFolder"/"$NameOffMRI"_gdc \
+        --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
+
+    log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"
     mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
     ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-		   --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
-		   --coeffs="$GradientDistortionCoeffs" \
-		   --in="$fMRIFolder"/"$OrigScoutName" \
-		   --out="$fMRIFolder"/"$ScoutName"_gdc \
-		   --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
-	
-	if [[ $UseJacobian == "true" ]]
-	then
-	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
-	    ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
-	fi
+        --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
+        --coeffs="$GradientDistortionCoeffs" \
+        --in="$fMRIFolder"/"$OrigScoutName" \
+        --out="$fMRIFolder"/"$ScoutName"_gdc \
+        --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
+
+    if [[ $UseJacobian == "true" ]]
+    then
+        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
+        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
+    fi
 else
     log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
     ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
@@ -716,13 +764,38 @@ else
     ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
 fi
 
+#Split echos
+if [[ ${nEcho} -gt 1 ]]; then
+    log_Msg "Splitting echo(s)"
+    tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
+    for iEcho in $(seq 0 $((nEcho-1))) ; do
+        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
+        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
+        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
+        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
+        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
+            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+        wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
+            -subvolume "$(( iEcho + 1 ))"
+        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
+            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+        wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
+            -subvolume "$(( iEcho + 1 ))"
+    done
+else
+    tcsEchoesOrig[0]="${OrigTCSName}"
+    sctEchoesOrig[0]="${OrigScoutName}"
+    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
+    sctEchoesGdc[0]="${ScoutName}_gdc"
+fi
+
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
 mkdir -p "$fMRIFolder"/MotionCorrection
 
 ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$fMRIFolder"/MotionCorrection \
-       "$fMRIFolder"/"$NameOffMRI"_gdc \
-       "$fMRIFolder"/"$ScoutName"_gdc \
+       "$fMRIFolder/${tcsEchoesGdc[0]}" \
+       "$fMRIFolder/${sctEchoesGdc[0]}" \
        "$fMRIFolder"/"$NameOffMRI"_mc \
        "$fMRIFolder"/"$MovementRegressor" \
        "$fMRIFolder"/"$MotionMatrixFolder" \
@@ -730,49 +803,49 @@ ${RUN} "$PipelineScripts"/MotionCorrection.sh \
        "$MotionCorrectionType" \
        "$fMRIReferenceReg"
 
-# EPI Distortion Correction and EPI to T1w Registration
+#EPI Distortion Correction and EPI to T1w Registration
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 DCFolder=${fMRIFolder}/${DCFolderName}
 
 if [ $fMRIReference = "NONE" ] ; then
-  log_Msg "EPI Distortion Correction and EPI to T1w Registration"
+    log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
-  if [ -e ${DCFolder} ] ; then
-      ${RUN} rm -r ${DCFolder}
-  fi
-  log_Msg "mkdir -p ${DCFolder}"
-  mkdir -p ${DCFolder}
+    if [ -e ${DCFolder} ] ; then
+       ${RUN} rm -r ${DCFolder}
+    fi
+    log_Msg "mkdir -p ${DCFolder}"
+    mkdir -p ${DCFolder}
 
-  ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
-         --workingdir=${DCFolder} \
-         --scoutin=${fMRIFolder}/${ScoutName}_gdc \
-         --t1=${T1wFolder}/${T1wImage} \
-         --t1restore=${T1wFolder}/${T1wRestoreImage} \
-         --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
-         --fmapmag=${MagnitudeInputName} \
-         --fmapphase=${PhaseInputName} \
-         --fmapgeneralelectric=${GEB0InputName} \
-         --echodiff=${deltaTE} \
-         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-         --echospacing=${EchoSpacing} \
-         --unwarpdir=${UnwarpDir} \
-         --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-         --biasfield=${T1wFolder}/${BiasField} \
-         --oregim=${fMRIFolder}/${RegOutput} \
-         --freesurferfolder=${T1wFolder} \
-         --freesurfersubjectid=${Subject} \
-         --gdcoeffs=${GradientDistortionCoeffs} \
-         --qaimage=${fMRIFolder}/${QAImage} \
-         --method=${DistortionCorrection} \
-         --topupconfig=${TopupConfig} \
-         --ojacobian=${fMRIFolder}/${JacobianOut} \
-         --dof=${dof} \
-         --fmriname=${NameOffMRI} \
-         --subjectfolder=${SubjectFolder} \
-         --biascorrection=${BiasCorrection} \
-         --usejacobian=${UseJacobian} \
-         --preregistertool=${PreregisterTool}
+    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+        --workingdir=${DCFolder} \
+        --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
+        --t1=${T1wFolder}/${T1wImage} \
+        --t1restore=${T1wFolder}/${T1wRestoreImage} \
+        --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
+        --fmapmag=${MagnitudeInputName} \
+        --fmapphase=${PhaseInputName} \
+        --fmapcombined=${GEB0InputName} \
+        --echodiff=${deltaTE} \
+        --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+        --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+        --echospacing=${EchoSpacing} \
+        --unwarpdir=${UnwarpDir} \
+        --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+        --biasfield=${T1wFolder}/${BiasField} \
+        --oregim=${fMRIFolder}/${RegOutput} \
+        --freesurferfolder=${T1wFolder} \
+        --freesurfersubjectid=${Subject} \
+        --gdcoeffs=${GradientDistortionCoeffs} \
+        --qaimage=${fMRIFolder}/${QAImage} \
+        --method=${DistortionCorrection} \
+        --topupconfig=${TopupConfig} \
+        --ojacobian=${fMRIFolder}/${JacobianOut} \
+        --dof=${dof} \
+        --fmriname=${NameOffMRI} \
+        --subjectfolder=${SubjectFolder} \
+        --biascorrection=${BiasCorrection} \
+        --usejacobian=${UseJacobian} \
+        --preregistertool=${PreregisterTool}
 
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
@@ -786,40 +859,48 @@ else
     fi
     ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
  
-    if [ `${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str` -eq 0 ]; then
-      log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"    
+    if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
+        log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"    
     else
-      ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
+        ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
     fi
 fi
 
 #One Step Resampling
 log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
-
 mkdir -p ${fMRIFolder}/OneStepResampling
-${RUN} ${PipelineScripts}/OneStepResampling.sh \
-       --workingdir=${fMRIFolder}/OneStepResampling \
-       --infmri=${fMRIFolder}/${OrigTCSName}.nii.gz \
-       --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
-       --fmriresout=${FinalfMRIResolution} \
-       --fmrifolder=${fMRIFolder} \
-       --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-       --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
-       --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
-       --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
-       --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
-       --motionmatprefix=${MotionMatrixPrefix} \
-       --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-       --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
-       --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
-       --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
-       --scoutin=${fMRIFolder}/${OrigScoutName} \
-       --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
-       --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-       --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
-       --fmrirefpath=${fMRIReferencePath} \
-       --fmrirefreg=${fMRIReferenceReg}
+tscArgs="";sctArgs="";
+for iEcho in $(seq 0 $((nEcho-1))) ; do
+    ${RUN} ${PipelineScripts}/OneStepResampling.sh \
+        --workingdir=${fMRIFolder}/OneStepResampling \
+        --infmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" \
+        --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
+        --fmriresout=${FinalfMRIResolution} \
+        --fmrifolder=${fMRIFolder} \
+        --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+        --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
+        --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
+        --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
+        --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
+        --motionmatprefix=${MotionMatrixPrefix} \
+        --ofmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin" \
+        --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
+        --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
+        --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
+        --scoutin="${fMRIFolder}/${sctEchoesOrig[iEcho]}" \
+        --scoutgdcin="${fMRIFolder}/${sctEchoesGdc[iEcho]}" \
+        --oscout="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin" \
+        --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+        --fmrirefpath=${fMRIReferencePath} \
+        --fmrirefreg=${fMRIReferenceReg} \
+        --wb-resample=${useWbResample}
+    tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
+    sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
+done
+wb_command -volume-merge ${fMRIFolder}/${NameOffMRI}_nonlin.nii.gz ${tscArgs} # reconcatenate resampled outputs
+wb_command -volume-merge ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin.nii.gz ${sctArgs}
+${FSLDIR}/bin/immv "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask.nii.gz" "${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz"
 
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
@@ -849,7 +930,7 @@ then
         if [ "$fMRIReference" = "NONE" ]; then  
             ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_bias_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
             ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
-            
+
             ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/sebased_reference_dil.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
             ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz       
 
@@ -873,19 +954,76 @@ fi
 #Intensity Normalization and Bias Removal
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
-       --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-       --biasfield=${UseBiasFieldMNI} \
-       --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
-       --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
-       --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
-       --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-       --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
-       --usejacobian=${UseJacobian} \
-       --fmrimask=${fMRIMask}
+    --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
+    --biasfield=${UseBiasFieldMNI} \
+    --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+    --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
+    --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
+    --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
+    --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm \
+    --usejacobian=${UseJacobian} \
+    --fmrimask=${fMRIMask}
+
+
+if [[ ${nEcho} -gt 1 ]]; then
+    log_Msg "Creating echoMeans"
+    # Calculate echoMeans of intensity normalized result
+    tcsEchoes=(); tcsEchoesMu=();args=""
+    for iE in $(seq 0 $((nEcho-1))); do
+        tcsEchoes[iE]="${EchoDir}/${NameOffMRI}_nonlin_norm_E$(printf "%02d" "$iE").nii.gz"
+        tcsEchoesMu[iE]="${EchoDir}/${NameOffMRI}_nonlin_norm_E$(printf "%02d" "$iE")Mean.nii.gz"
+        wb_command -volume-merge "${tcsEchoes[iE]}" -volume "${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz" -subvolume $((1 + FramesPerEcho * iE)) -up-to $((FramesPerEcho * (iE + 1)))
+        wb_command -volume-reduce "${tcsEchoes[iE]}" MEAN "${tcsEchoesMu[iE]}"
+        args="${args} -volume ${tcsEchoesMu[iE]} -subvolume 1"
+    done # iE
+    wb_command -volume-merge ${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz ${args}
+
+    # # fit T2* and S0 then Combine Echoes
+    log_Msg "Fitting T2* and combining Echoes"
+
+    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz 
+    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz 
+
+    echo ${echoTE} > ${EchoDir}/TEs.txt
+
+    case "$MatlabMode" in
+        (0)
+            matlab_cmd=("$PipelineScripts/Compiled_multiEchoCombine/run_multiEchoCombine.sh" "$MATLAB_COMPILER_RUNTIME" \
+                "${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz" \
+                "${EchoDir}/TEs.txt" \
+                "${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz" \
+                "${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz")
+            log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+            "${matlab_cmd[@]}"
+            ;;
+        (1 | 2)
+            matlab_code="
+                addpath('${PipelineScripts}');
+                multiEchoCombine('${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz', '${EchoDir}/TEs.txt', '${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz', '${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz');"
+            log_Msg "running matlab code: $matlab_code"
+            "${matlab_interpreter[@]}" <<<"${matlab_code}"
+            echo
+            ;;
+    esac
+fi
 
 #Copy selected files to ResultsFolder
-${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
-${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
+if [[ ${nEcho} -gt 1 ]]; then
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_nonlin_norm_CombEchoes.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm_CombEchoes.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
+
+    ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_Echoes.nii.gz
+    ${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef_Echoes.nii.gz
+
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_nonlin_norm_T2star.nii.gz ${ResultsFolder}/${NameOffMRI}_T2star.nii.gz
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_nonlin_norm_S0.nii.gz ${ResultsFolder}/${NameOffMRI}_S0.nii.gz
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_nonlin_norm_EchoWeights.nii.gz ${ResultsFolder}/${NameOffMRI}_EchoWeights.nii.gz
+    ${RUN} cp ${EchoDir}/${NameOffMRI}_nonlin_norm_EchoMeans.nii.gz ${ResultsFolder}/${NameOffMRI}_EchoMeans.nii.gz
+else
+    ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}.nii.gz
+    ${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz
+fi
+
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm_nomask.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef_nomask.nii.gz
 ${RUN} cp ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
 ${RUN} cp ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
@@ -907,6 +1045,24 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 #${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
+
+# clean up split echo(s)
+if [[ $nEcho -gt 1 ]]; then
+    for iEcho in $(seq 0 $((nEcho-1))) ; do
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
+
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+    done
+    ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+    ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
+fi
 
 log_Msg "Completed!"
 

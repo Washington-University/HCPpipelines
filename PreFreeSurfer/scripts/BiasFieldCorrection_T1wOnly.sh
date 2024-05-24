@@ -29,9 +29,9 @@ opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
 
 opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
 
-opts_AddMandatory '--obias' 'oBias' 'image' "output bias field image"
-
 #optional args 
+opts_AddOptional '--obias' 'oBias' 'image' "output bias field image"
+
 opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
 
 opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
@@ -93,14 +93,14 @@ fi
 
 # Copy data out if output targets provided
 
-if [ ! -z ${oT1wImage} ] ; then 
-  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${oT1wImage}
-  verbose_echo " --> Copied T1_biascorr.nii.gz to ${oT1wImage}.nii.gz"
+if [ ! -z ${OutputT1wRestoredImage} ] ; then 
+  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${OutputT1wRestoredImage}
+  verbose_echo " --> Copied T1_biascorr.nii.gz to ${OutputT1wRestoredImage}.nii.gz"
 fi
 
-if [ ! -z ${oT1wBrain} ] ; then
-  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${oT1wBrain}
-  verbose_echo " --> Copied T1_biascorr_brain.nii.gz to ${oT1wBrain}.nii.gz"
+if [ ! -z ${OutputT1wRestoredBrainImage} ] ; then
+  ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${OutputT1wRestoredBrainImage}
+  verbose_echo " --> Copied T1_biascorr_brain.nii.gz to ${OutputT1wRestoredBrainImage}.nii.gz"
 fi 
 
 if [ ! -z ${oBias} ] ; then

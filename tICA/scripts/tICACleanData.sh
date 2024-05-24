@@ -41,11 +41,11 @@ opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename descri
 #this is only needed to build the different proc string of the _vn and _mean files, and therefore only when using --subject-concat-timeseries
 opts_AddOptional '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX, required when using --subject-concat-timeseries' '--melodic-high-pass'
 #outputs
-opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like _hp2000_clean_tclean"
-#opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
-#opts_AddOptional '--volume-fmrires-brain-mask' 'fMRIBrainMask' 'file' "volume ROI of which voxels of the fMRI data to use"
+opts_AddMandatory '--output-string' 'OutString' 'string' "filename part to describe the outputs, like _hp2000_clean_tclean"
 opts_AddOptional '--do-vol' 'DoVolString' 'YES or NO' "whether to generate voxel-based outputs"
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
+opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --extract-fmri-out output"
+opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -63,7 +63,19 @@ opts_ShowValues
 
 if [[ "$HighPass" == "" && "$InputConcat" != "" ]]
 then
-    log_Err_Abort "--fix-high-pass is required when using MR FIX data"
+    log_Err_Abort "--fix-high-pass is required when using --subject-concat-timeseries"
+fi
+
+if [[ "$extractNameOut" != "" ]]
+then
+    if [[ "$InputConcat" == "" ]]
+    then
+        log_Err_Abort "--subject-concat-timeseries is required when using --extract-fmri-out"
+    fi
+    if [[ "$concatNamesToUse" == "" ]]
+    then
+        log_Err_Abort "--extract-fmri-name-list is required when using --extract-fmri-out"
+    fi
 fi
 
 #sanity check boolean strings and convert to 1 and 0
@@ -240,11 +252,34 @@ then
 fi
 
 fMRIProcSTRING="_Atlas$RegString$ProcString"
-MRFixConcatName="$InputConcat"
 IFS='@' read -a SplitArray <<< "$InputList"
 
 if [[ "$InputConcat" != "" ]]
 then
+    MRFixConcatName="$InputConcat"
+
+    #extract specified runs to another concatenated file (generally intended to recreate the REST concatenated set)
+    if [[ "$extractNameOut" != "" ]]
+    then
+        cp "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}_vn.dscalar.nii" \
+            "$MNIFolder/Results/$extractNameOut/${extractNameOut}_Atlas${RegString}${OutString}_vn.dscalar.nii"
+        extractcmd=("$HCPPIPEDIR"/global/scripts/ExtractFromMRFIXConcat.sh
+                    --study-folder="$StudyFolder"
+                    --subject="$Subject"
+                    --multirun-fix-names="$InputList"
+                    --multirun-fix-names-to-use="$concatNamesToUse"
+                    --surf-reg-name="$RegName"
+                    --concat-cifti-input="$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}.dtseries.nii"
+                    --cifti-out="$MNIFolder/Results/$extractNameOut/${extractNameOut}_Atlas${RegString}${OutString}.dtseries.nii")
+        if ((DoVol))
+        then
+            cp "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}_vn.nii.gz" \
+                "$MNIFolder/Results/$extractNameOut/${extractNameOut}${OutString}_vn.nii.gz"
+            extractcmd+=(--concat-volume-input="$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}.nii.gz"
+                         --volume-out="$MNIFolder/Results/$extractNameOut/${extractNameOut}${OutString}.nii.gz")
+        fi
+        "${extractcmd[@]}"
+    fi
     curStart=1
     #write out fixed versions of _mean, like the matlab now writes out out fixed _vn files
     #the correct _vn, _mean files don't have "_clean" like fMRIProcString does
@@ -262,7 +297,6 @@ then
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                #TODO: naming conventions
                 useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
                 useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_vn.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
@@ -293,7 +327,6 @@ then
                 useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz"
                 if ((DoFixBias))
                 then
-                    #TODO: naming conventions
                     useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
                     useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_vn.nii.gz"
                     #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
@@ -331,7 +364,6 @@ else
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                #TODO: naming conventions
                 useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
                     -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
@@ -349,9 +381,7 @@ else
                 useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
                 if ((DoFixBias))
                 then
-                    #TODO: naming conventions
                     useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
-                    #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
                     wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
                         -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
                         -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \

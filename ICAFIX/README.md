@@ -150,6 +150,12 @@ do
     R CMD INSTALL "$package".tar.gz
 done
 ```
+# The installation of HCP python conda env
+
+```bash
+conda env create -f environment.yml
+```
+If using the native env, please specify `--python-interpreter` and an example would be `--python-interpreter=/my/conda/path/envs/hcp_python_env/bin/python3`.
 
 <!-- References -->
 

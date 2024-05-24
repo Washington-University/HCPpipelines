@@ -187,7 +187,7 @@ main()
 	# The HCP Pipeline Scripts currently support the use of gradient echo field
 	# maps or spin echo field maps as they are produced by the Siemens Connectom
 	# Scanner. They also support the use of gradient echo field maps as generated
-	# by General Electric scanners.
+	# by GE HealthCare scanners.
 	#
 	# Change either the gradient echo field map or spin echo field map scan
 	# settings to match your data. This script is setup to use gradient echo
@@ -252,9 +252,18 @@ main()
 		#     Average any repeats and use Spin Echo Field Maps for readout
 		#     distortion correction
 		#
-		#   "GeneralElectricFieldMap"
-		#     Average any repeats and use General Electric specific Gradient
-		#     Echo Field Map for readout distortion correction
+		#   "GEHealthCareLegacyFieldMap"
+		#     Average any repeats and use GE HeathCare Legacy specific Gradient
+		#     Echo Field Map for readout distortion correction. 
+		#	  The Legacy fieldmap is a two volume file: 1. field map in Hz and 2. magnitude image.
+		# 	  Use "GEB0InputName" variable to specify the 2-Volume file. 
+		#	  Set "DeltaTE" variable to the EchoTime difference (TE2-TE1). 
+		#	 
+		#	"GEHealthCareFieldMap" 
+		#	  Average any repeats and use GE HealthCare specific Gradient Echo
+		#     Field Maps for readout distortion correction
+		#	  This uses two separate NIfTI files for the fieldmap in Hz and the magnitude image
+		#	  Use variables "MagnitudeInputName", "PhaseInputName" and "DeltaTE"
 		#
 		#   "SiemensFieldMap"
 		#     Average any repeats and use Siemens specific Gradient Echo
@@ -263,7 +272,7 @@ main()
 		# Current Setup is for Siemens specific Gradient Echo Field Maps
 		#
 		#   The following settings for AvgrdcSTRING, MagnitudeInputName,
-		#   PhaseInputName, and TE are for using the Siemens specific
+		#   PhaseInputName, and DeltaTE are for using the Siemens specific
 		#   Gradient Echo Field Maps that are collected and used in the
 		#   standard HCP-YA protocol.
 		#
@@ -283,9 +292,9 @@ main()
 		# volume or "NONE" if not used
 		PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_FieldMap_Phase.nii.gz"
 
-		# The TE variable should be set to 2.46ms for 3T scanner, 1.02ms for 7T
-		# scanner or "NONE" if not using
-		TE="2.46"
+		# The DeltaTE (echo time difference) of the fieldmap.  For HCP Young Adult data, this variable would typically be 2.46ms for 3T scans, 1.02ms for 7T
+		# scans, or "NONE" if not using readout distortion correction
+		DeltaTE="2.46"
 
 		# ----------------------------------------------------------------------
 		# Variables related to using Spin Echo Field Maps
@@ -346,24 +355,50 @@ main()
 		TopupConfig="NONE"
 
 		# ----------------------------------------------------------------------
-		# Variables related to using General Electric specific Gradient Echo
-		# Field Maps
+		# Variables related to using GE HealthCare Legacy specific Gradient Echo
+		# Field Maps (GEHealthCareLegacyFieldMap)
 		# ----------------------------------------------------------------------
 
 		# The following variables would be set to values other than "NONE" for
-		# using General Electric specific Gradient Echo Field Maps (i.e. when
-		# AvgrdcSTRING="GeneralElectricFieldMap")
+		# using GE HealthCare Legacy specific Gradient Echo Field Maps (i.e. when
+		# AvgrdcSTRING="GEHealthCareLegacyFieldMap")
 
-		# Example value for when using General Electric Gradient Echo Field Map
+		# Example value for when using GE HealthCare Legacy Gradient Echo Field Map
 		#
-		# GEB0InputName should be a General Electric style B0 fieldmap with two
+		# GEB0InputName should be a GE HealthCare Legacy style B0 fieldmap with two
 		# volumes
-		#   1) fieldmap in deg and
-		#   2) magnitude,
-		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap
-		#
+		#   1) fieldmap in hertz and
+		#   2) magnitude image,
+		# set to NONE if using TOPUP or FIELDMAP/SiemensFieldMap or GEHealthCareFieldMap
+		#  
+		# For Example:
 		#   GEB0InputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_GradientEchoFieldMap.nii.gz"
+		#	DeltaTE=2.304 
+		#   Here DeltaTE refers to the DeltaTE in ms
+		#   NOTE: At 3T, the DeltaTE is *usually* 2.304ms for 2D-B0MAP and 2.272ms 3D-B0MAP.
+		#   NOTE: The Delta can be found in json files (if data converted with recent dcm2niix)
+		#   NOTE: Then DeltaTE = (EchoTime2-EchoTime1)*1000
+		#	NOTE: In the DICOM, DeltaTE in ms = round(abs(1e6/( 2*pi*(0019,10E2) )))*1e-3 
 		GEB0InputName="NONE"
+
+		# ---------------------------------------------------------------
+		# Variables related to using GE HealthCare specific Gradient Echo
+		# Field Maps (GEHealthCareFieldMap)
+		# ----------------------------------------------------------------
+
+		# The following variables would be set to values other than "NONE" for
+		# using GE HealthCare specific Gradient Echo Field Maps (i.e. when
+		# AvgrdcSTRING="GEHealthCareFieldMap"). 
+
+		# Example: set MagnitudeInputName to magnitude image, set PhaseInputName 
+		# to the input fieldmap in Hertz and DeltaTE 
+		# (for DeltaTE see NOTE above)
+		#
+		# MagnitudeInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_BOMap_Magnitude.nii.gz"
+		# PhaseInputName="${StudyFolder}/${Subject}/unprocessed/3T/T1w_MPR1/${Subject}_3T_B0Map_fieldmaphz.nii.gz"
+		# DeltaTE="2.272"
+
+		# ---------------------------------------------------------------
 
 		# Templates
 
@@ -462,8 +497,8 @@ main()
 			--fnirtconfig="$FNIRTConfig" \
 			--fmapmag="$MagnitudeInputName" \
 			--fmapphase="$PhaseInputName" \
-			--fmapgeneralelectric="$GEB0InputName" \
-			--echodiff="$TE" \
+			--fmapcombined="$GEB0InputName" \
+			--echodiff="$DeltaTE" \
 			--SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
 			--SEPhasePos="$SpinEchoPhaseEncodePositive" \
 			--seechospacing="$SEEchoSpacing" \

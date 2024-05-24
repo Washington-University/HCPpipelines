@@ -21,7 +21,7 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for performing Gradient Non-linearity Distortion Correction for general 4D images, based on gradunwarp python package from MGH (it requires a scanner-specific Siemens coefficient file)"
 
-opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for susceptibility distortion correction (SDC)"
+opts_AddMandatory '--workingdir' 'WD' 'path' 'working dir'
 
 opts_AddMandatory '--coeffs' 'InputCoefficients' 'path' "Siemens gradient coefficient file"
 
@@ -30,9 +30,6 @@ opts_AddMandatory '--in' 'InputFile' 'image' "input image"
 opts_AddMandatory '--out' 'OutputFile' 'image' "output image"
 
 opts_AddMandatory '--owarp' 'OutputTransform' 'warpfield' "output warp"
-
-#Optional Arguments
-opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
 
 opts_ParseArguments "$@"
 
@@ -56,12 +53,6 @@ log_Check_Env_Var FSLDIR
 #        $OutputFile         (spline interpolated 4D output)
 
 ################################################## OPTION PARSING #####################################################
-
-
-# default parameters
-OutputFile=`${FSLDIR}/bin/remove_ext ${OutputFile}`
-OutputTransformFile=`${FSLDIR}/bin/remove_ext ${OutputTransform}`
-WD=`defaultopt $WD ${OutputFile}.wdir`
 
 BaseName=`${FSLDIR}/bin/remove_ext $InputFile`;
 BaseName=`basename $BaseName`;
@@ -92,8 +83,8 @@ cd $ORIGDIR
 
 # Now create an appropriate warpfield output (relative convention) and apply it to all timepoints
 #convertwarp's jacobian output has 8 frames, each combination of one-sided differences, so average them
-${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform --jacobian=${OutputTransformFile}_jacobian
-${FSLDIR}/bin/fslmaths ${OutputTransformFile}_jacobian -Tmean ${OutputTransformFile}_jacobian
+${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_abs.nii.gz --relout --out=$OutputTransform --jacobian=${OutputTransform}_jacobian
+${FSLDIR}/bin/fslmaths ${OutputTransform}_jacobian -Tmean ${OutputTransform}_jacobian
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
 log_Msg "END"

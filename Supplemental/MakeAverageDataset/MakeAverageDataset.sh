@@ -47,6 +47,39 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging funct
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"        # Functions for getting FSL version
 
+#process legacy syntax
+if (($# > 0))
+then
+    newargs=()
+    origargs=("$@")
+    extra_reconall_args_manual=()
+    changeargs=0
+    for ((i = 0; i < ${#origargs[@]}; ++i))
+    do
+        case "${origargs[i]}" in
+            (--no-merged-t1t2-vols)
+                #this doesn't match a new argument, so we can just replace it
+                newargs+=(--merged-t1t2-vols=FALSE)
+                changeargs=1
+                ;;
+            (--no-label-vols)
+                newargs+=(--label-vols=FALSE)
+                changeargs=1
+                ;;
+            (*)
+                #copy anything that isn't legacy syntax
+                newargs+=("${origargs[i]}")
+                ;;
+        esac
+    done
+    if ((changeargs))
+    then
+        echo "original arguments: $*"
+        set -- "${newargs[@]}"
+        echo "new arguments: $*"
+    fi
+fi
+
 opts_SetScriptDescription "Tool for making average of a dataset"
 
 opts_AddMandatory '--subject-list' 'Subjlist' 'list' "@ delimited list of subject ids"
@@ -81,6 +114,10 @@ opts_AddMandatory '--std-maps' 'STDMaps' 'mapstring@mapstring' "maps you want to
 
 opts_AddMandatory '--multi-maps' 'MultiMaps' 'mapstring@mapstring' "Maps with more than one map (column) that cannot be merged and must be averaged (@ delimited list) (e.g. NONE)"
 
+opts_AddOptional '--merged-t1t2-vols' 'MergedT1T2volsStr' 'TRUE or FALSE' "make group-concatenated T1w and T2w images, default true" 'true'
+
+opts_AddOptional '--label-vols' 'LabelVolsStr' 'TRUE or FALSE' "make group-consensus label volumes, default true" 'true'
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -111,16 +148,11 @@ log_Msg "FSL version: ${fsl_ver}"
 
 log_Msg "Starting main functionality"
 
-if [ "${NoMergedT1T2vols}" != "TRUE" ]; then
-	NoMergedT1T2vols=""
-fi
-
-if [ "${NoLabelVols}" != "TRUE" ]; then
-	NoLabelVols=""
-fi
+MergedT1T2vols=$(opts_StringToBool "$MergedT1T2volsStr")
+LabelVols=$(opts_StringToBool "$LabelVolsStr")
 
 # Naming Conventions and other variables
-local Caret7_Command="${CARET7DIR}/wb_command"
+Caret7_Command="${CARET7DIR}/wb_command"
 log_Msg "Caret7_Command: ${Caret7_Command}"
 
 LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
@@ -201,18 +233,18 @@ for Volume in ${T1wName} ${T2wName} ; do
 	done
 	allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 	avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
-	if [ -n "${NoMergedT1T2vols}" ]; then
+	if ((MergedT1T2vols)); then
+		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
+		# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
+		#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
+		${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
+	else
 		# Creating a merged T1/T2 volume can be very time and memory intensive for large number of subjects.
 		# Therefore, the --no-merged-t1t2-vols flag exists to forego creation of merged T1/T2 volumes.
 		# In this case, create the average across subjects in single command using 'fsladd' (which
 		# implements its averaging in a highly memory efficient manner).
 		log_Msg "Skipping creation of merged ${Volume}. Only creating the average."
 		fsladd ${avgvolume} -m ${MergeVolumeSTRING}
-	else
-		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
-		# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
-		#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
-		${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
 	fi
 
 done
@@ -233,7 +265,7 @@ ${Caret7_Command} -volume-palette ${volume_out} \
 log_Msg "Label Volumes"
 for Volume in ${wmparc} ${ribbon} ; do
 
-	if [ -z "${NoLabelVols}" ]; then
+	if ((LabelVols)); then
 		MergeVolumeSTRING=""
 		for Subject in ${Subjlist} ; do
 			MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
