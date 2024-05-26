@@ -129,6 +129,40 @@ for i in ${!Subjlist[@]}; do
 		queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")	
   fi
 
+  #input variables specific for template mode (if any)
+  # ...
+  #process template. Must finish before timepoints are processed if MSMSulc is run.
+
+  job=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+      --study-folder="$StudyFolder" \
+      --subject="$Subject" \
+      --surfatlasdir="$SurfaceAtlasDIR" \
+      --grayordinatesdir="$GrayordinatesSpaceDIR" \
+      --grayordinatesres="$GrayordinatesResolution" \
+      --hiresmesh="$HighResMesh" \
+      --lowresmesh="$LowResMeshes" \
+      --subcortgraylabels="$SubcorticalGrayLabels" \
+      --freesurferlabels="$FreeSurferLabels" \
+      --refmyelinmaps="$ReferenceMyelinMaps" \
+      --regname="$RegName" \
+      --longitudinal_mode="TEMPLATE" \
+      --longitudinal_template="$LongitudinalTemplate" \
+      --longitudinal_timepoint_list="${Timepoint_list[i]}" \
+      --longitudinal_timepoint="$Timepoint")
+
+  #DEBUG
+  #break;
+  job_id=${job##* }  
+  echo "waiting for template processing to finish"
+  while true; do
+    if [[ $(qstat | grep -w $job_id) ]]; then 
+        sleep 10
+    else
+        break
+    fi
+  done
+  echo "template processing done"
+
   for Timepoint in ${Timepoints[@]}; do
   	#input variables specific for timepoint mode (if any)  		  
   	# ...
@@ -154,27 +188,8 @@ for i in ${!Subjlist[@]}; do
 	#DEBUG
 	#break
   done
-  #DEBUG
-  #break;
+ 
   
-  #input variables specific for template mode (if any)
-  # ...
-  #process template
-  $queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-      --study-folder="$StudyFolder" \
-      --subject="$Subject" \
-      --surfatlasdir="$SurfaceAtlasDIR" \
-      --grayordinatesdir="$GrayordinatesSpaceDIR" \
-      --grayordinatesres="$GrayordinatesResolution" \
-      --hiresmesh="$HighResMesh" \
-      --lowresmesh="$LowResMeshes" \
-      --subcortgraylabels="$SubcorticalGrayLabels" \
-      --freesurferlabels="$FreeSurferLabels" \
-      --refmyelinmaps="$ReferenceMyelinMaps" \
-      --regname="$RegName" \
-      --longitudinal_mode="TEMPLATE" \
-      --longitudinal_template="$LongitudinalTemplate" \
-      --longitudinal_timepoint="$Timepoint"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   

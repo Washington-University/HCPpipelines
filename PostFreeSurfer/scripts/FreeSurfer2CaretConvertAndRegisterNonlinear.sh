@@ -124,10 +124,27 @@ log_Msg "RegName: ${RegName}"
 InflateExtraScale="${23}"
 log_Msg "InflateExtraScale: ${InflateExtraScale}"
 
-IsLongitudinal="${24}"
+#NONE, TIMEPOINT or TEMPLATE
+LongitudinalMode="${24}"
+
+#In cross-sectional mode, $Subject=$LongSubjectLabel, and actual subject label is $Subject.
+#In long TIMEPOINT mode, $Subject=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
+#In long TEMPLATE mode, $Subject=$ExperimentRoot, defined as <LongSubjectLabel>.long.<LongTemplate>
+#In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform 
+#surface averaging for MSMSulc.
+
+#Actual subject label which is part of longitudinal timepoint and template experiment roots, see comment above.
+LongitudinalSubjectLabel="${25}"
+#Longitudinal template label
+LongitudinalTemplate="${26}"
+#LIST of all timepoints, @ separated
+LongitudinalTimepoints="${27}"
 
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
+
+LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
+log_Msg "LongitudinalTimepoints: $LongitudinalTimepoints"
 
 GrayordinatesResolutions=${GrayordinatesResolutions//@/ }
 log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
@@ -183,7 +200,7 @@ for Image in wmparc aparc.a2009s+aseg aparc+aseg ; do
 done
 
 #The following processing is done in PrePostFreesurfer-long pipeline in the case of longitudinal pipelines.
-if (( IsLongitudinal == 0 )); then 
+if [ "$LongitudinalMode" == "NONE" ]; then 
     #Create FreeSurfer Brain Mask
     fslmaths "$T1wFolder"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
     ${CARET7DIR}/wb_command -volume-fill-holes "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
@@ -429,13 +446,28 @@ for Hemisphere in L R ; do
 
     #If desired, run MSMSulc folding-based registration to FS_LR initialized with FS affine
     if [ ${RegName} = "MSMSulc" ] ; then
-        mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-
-        cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-
-        $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
-
-        RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere."$RegName".native.surf.gii"
+            mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
+            if [ "$LongitudinalMode" == "NONE" ]; then
+                cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
+                $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
+            elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
+                #average surfaces from different timepoints
+                average_cmd="wb_command -surface-average "
+                for timepoint in $LongitudinalTimepoints; do
+                    experiment_root="$StudyFolder/$LongitudinalSubjectLabel.long.$timepoint"
+                    average_cmd="$average_cmd -surf \"$experiment_root\"/\"$AtlasSpaceFolder\"/\"$NativeFolder\"/\"$Subject\".\"$Hemisphere\".sphere.rot.native.surf.gii"
+                done
+                average_cmd="$average_cmd \"$AtlasSpaceFolder\"/\"$NativeFolder\"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii"
+                $average_cmd 
+                #run MSMSulc.sh on average surface
+                $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
+                #copy the registration result to each timepoint
+                for timepoint in $LongitudinalTimepoints; do
+                    experiment_root="$StudyFolder/$LongitudinalSubjectLabel.long.$timepoint"
+                    cp -r "$AtlasSpaceFolder"/"$NativeFolder"/*MSMSulc* "$experiment_root"/"$AtlasSpaceFolder"/"$NativeFolder"
+                done
+            fi
+            RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere."$RegName".native.surf.gii"
     else
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
     fi

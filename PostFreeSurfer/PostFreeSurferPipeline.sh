@@ -92,6 +92,7 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 
 opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT|TEMPLATE' "longitudinal processing mode" "NONE"
 opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
+opts_AddOptional '--longitudinal_timepoint_list' 'LongitudinalTimepointList' 'FS longitudial timepoint list' "Longitudinal timepoint list '@' separated, if LongitudinalMode==TEMPLATE" ""
 opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT" ""
 
 opts_ParseArguments "$@"
@@ -255,7 +256,7 @@ if ((doProcessing)); then
     log_Msg "RegName: ${RegName}"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$ExperimentRoot")                   # ${2}
+    argList+=("$ExperimentRoot")            # ${2}
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
@@ -277,7 +278,11 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
-    argList+=("$IsLongitudinal")            # ${24}
+    argList+=("$LongitudinalMode")          # ${24}
+    argList+=("$Subject")                   # ${25} #LongitudinalSubjectLabel. In cross-sectional mode, this is the same as ExperimentRoot
+    argList+=("LongitudinalTemplate")       # ${26}
+    argList+=("LongitudinalTimepointList")  # ${27}
+
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
