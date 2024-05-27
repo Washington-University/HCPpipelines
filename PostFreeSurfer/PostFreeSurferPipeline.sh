@@ -280,8 +280,8 @@ if ((doProcessing)); then
     argList+=("$InflateExtraScale")         # ${23}
     argList+=("$LongitudinalMode")          # ${24}
     argList+=("$Subject")                   # ${25} #LongitudinalSubjectLabel. In cross-sectional mode, this is the same as ExperimentRoot
-    argList+=("LongitudinalTemplate")       # ${26}
-    argList+=("LongitudinalTimepointList")  # ${27}
+    argList+=("$LongitudinalTemplate")       # ${26}
+    argList+=("$LongitudinalTimepointList")  # ${27}
 
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 

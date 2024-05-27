@@ -154,7 +154,7 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
   job_list=()
   for TP in ${TPList[@]}; do
 	echo "Running ppFS-long for timepoint: $TP"
-        job=($queueing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
+        job=$($queueing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
             --template="$Template_ID" --timepoints="$TP" --template_processing=0 --t1template="$T1wTemplate" \
             --t1templatebrain="$T1wTemplateBrain" --t1template2mm="$T1wTemplate2mm" --t2template="T2wTemplate" \
             --t2templatebrain="$T2wTemplateBrain" --t2template2mm="$T2wTemplate2mm" --templatemask="$TemplateMask" \

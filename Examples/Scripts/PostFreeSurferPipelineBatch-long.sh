@@ -133,7 +133,7 @@ for i in ${!Subjlist[@]}; do
   # ...
   #process template. Must finish before timepoints are processed if MSMSulc is run.
 
-  job=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+  job=$($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
       --study-folder="$StudyFolder" \
       --subject="$Subject" \
       --surfatlasdir="$SurfaceAtlasDIR" \

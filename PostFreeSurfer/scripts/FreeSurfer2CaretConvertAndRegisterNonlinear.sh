@@ -455,9 +455,9 @@ for Hemisphere in L R ; do
                 average_cmd="wb_command -surface-average "
                 for timepoint in $LongitudinalTimepoints; do
                     experiment_root="$StudyFolder/$LongitudinalSubjectLabel.long.$timepoint"
-                    average_cmd="$average_cmd -surf \"$experiment_root\"/\"$AtlasSpaceFolder\"/\"$NativeFolder\"/\"$Subject\".\"$Hemisphere\".sphere.rot.native.surf.gii"
+                    average_cmd="$average_cmd -surf $experiment_root/$AtlasSpaceFolder/$NativeFolder/$Subject.$Hemisphere.sphere.rot.native.surf.gii"
                 done
-                average_cmd="$average_cmd \"$AtlasSpaceFolder\"/\"$NativeFolder\"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii"
+                average_cmd="$average_cmd $AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot.surf.gii"
                 $average_cmd 
                 #run MSMSulc.sh on average surface
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
