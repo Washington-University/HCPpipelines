@@ -73,7 +73,7 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 
 #Longitudinal_mode modes:
 #NONE: cross-sectional processing (default)
-#TIMEPOINT: timepoint processing 
+#TIMEPOINT_STAGE[1|2]: timepoint processing stage 1 or 2
 #TEMPLATE: template processing (must be run after all timepoints)
 
 #There are some specific conventions on timepoint and template processing directories:
@@ -90,10 +90,10 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 #Longitudinal Freesurfer files for timepoints are stored under <Timepoint>.long.<Template>/T1w/<Timepoint>.long.<Temlate>. 
 #Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. 
 
-opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT|TEMPLATE' "longitudinal processing mode" "NONE"
+opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode" "NONE"
 opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
 opts_AddOptional '--longitudinal_timepoint_list' 'LongitudinalTimepointList' 'FS longitudial timepoint list' "Longitudinal timepoint list '@' separated, if LongitudinalMode==TEMPLATE" ""
-opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT" ""
+opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT_STAGEX" ""
 
 opts_ParseArguments "$@"
 
@@ -139,7 +139,7 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 #ExperimentRoot points to actual experiment directory
 ExperimentRoot=$Subject
 IsLongitudinal=0
-if [ "$LongitudinalMode" == "TIMEPOINT" ]; then
+if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" -o "$LongitudinalMode" == "TIMEPOINT_STAGE2" ]; then
     ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
     IsLongitudinal=1
 elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
@@ -163,7 +163,7 @@ NativeFolder="Native"
 
 if [ "$LongitudinalMode" == "TEMPLATE" ]; then
     FreeSurferFolder="$LongitudinalTemplate"
-elif [ "$LongitudinalMode" == "TIMEPOINT" ]; then 
+elif [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" -o "$LongitudinalMode" == "TIMEPOINT_STAGE2" ]; then 
     FreeSurferFolder="$LongitudinalTimepoint.long.$LongitudinalTemplate"
 else #Cross-sectional
     FreeSurferFolder="$Subject"
@@ -284,6 +284,11 @@ if ((doProcessing)); then
     argList+=("$LongitudinalTimepointList")  # ${27}
 
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
+
+    if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
+        log_Msg "Longitudinal timepoint stage 1 completed"
+        exit 0
+    fi
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
 

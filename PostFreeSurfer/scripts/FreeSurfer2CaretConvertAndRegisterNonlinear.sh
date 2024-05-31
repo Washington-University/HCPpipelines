@@ -458,16 +458,16 @@ for Hemisphere in L R ; do
             if [ "$LongitudinalMode" == "NONE" ]; then
                 cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
-            elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
-            
+            elif [ "$LongitudinalMode" == "TEMPLATE" ]; then            
                 #average surfaces from different timepoints
-                average_cmd="wb_command -surface-average "
+                average_cmd_args=()
                 for timepoint in $LongitudinalTimepoints; do
                     experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                    average_cmd="$average_cmd -surf $experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii"
+                    average_cmd_args+=("-surf" "$experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
                 done
-                average_cmd="$average_cmd $AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot.surf.gii"
-                $average_cmd 
+                ${CARET7DIR}/wb_command -surface-average "${average_cmd_args}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
+                #fix the averaged surface to convert it into sphere
+                ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
                 
                 #run MSMSulc.sh on average surface
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName" --hemi "$Hemisphere"
@@ -482,8 +482,8 @@ for Hemisphere in L R ; do
                     	file_base=`basename $file`
                     	new_file=${file_base#${LongitudinalSubject}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
                     	cp $file $new_file
-                done
-                
+                    done
+                done                
             fi
             RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere."$RegName".native.surf.gii"
     else

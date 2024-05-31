@@ -129,11 +129,41 @@ for i in ${!Subjlist[@]}; do
 		queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")	
   fi
 
+  echo "Timepoint processing, stage 1"
+  job_list=()
+  for Timepoint in ${Timepoints[@]}; do
+  	#input variables specific for timepoint mode (if any)  		  
+  	# ...
+	
+	#DEBUG
+	#continue
+	#process each timepoint
+	job_list+=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+	      --study-folder="$StudyFolder" \
+	      --subject="$Subject" \
+	      --surfatlasdir="$SurfaceAtlasDIR" \
+	      --grayordinatesdir="$GrayordinatesSpaceDIR" \
+	      --grayordinatesres="$GrayordinatesResolution" \
+	      --hiresmesh="$HighResMesh" \
+	      --lowresmesh="$LowResMeshes" \
+	      --subcortgraylabels="$SubcorticalGrayLabels" \
+	      --freesurferlabels="$FreeSurferLabels" \
+	      --refmyelinmaps="$ReferenceMyelinMaps" \
+	      --regname="$RegName" \
+	      --longitudinal_mode="TIMEPOINT_STAGE1" \
+	      --longitudinal_template="$LongitudinalTemplate" \
+	      --longitudinal_timepoint="$Timepoint")
+	#DEBUG
+	#break
+  done
+  jl="${job_list[@]}"
+
+  
   #input variables specific for template mode (if any)
   # ...
   #process template. Must finish before timepoints are processed if MSMSulc is run.
-
-  job=$($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+  echo "template processing"
+  job=$($queuing_command -j ${jl// /,} "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
       --study-folder="$StudyFolder" \
       --subject="$Subject" \
       --surfatlasdir="$SurfaceAtlasDIR" \
@@ -150,27 +180,19 @@ for i in ${!Subjlist[@]}; do
       --longitudinal_timepoint_list="${Timepoint_list[i]}" \
       --longitudinal_timepoint="$Timepoint")
 
+  echo "Template processing job $job will wait for Stage 1 timepoint jobs: $jl" 
   #DEBUG
   #break;
-  job_id=${job##* }  
-  echo "waiting for template processing to finish"
-  while true; do
-    if [[ $(qstat | grep -w $job_id) ]]; then 
-        sleep 10
-    else
-        break
-    fi
-  done
-  echo "template processing done"
 
+  job_list=()
   for Timepoint in ${Timepoints[@]}; do
-  	#input variables specific for timepoint mode (if any)  		  
+  	#input variables specific for timepoint mode (if any)
   	# ...
 	
 	#DEBUG
 	#continue
 	#process each timepoint
-	$queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+	job=$($queuing_command -j $job "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 	      --study-folder="$StudyFolder" \
 	      --subject="$Subject" \
 	      --surfatlasdir="$SurfaceAtlasDIR" \
@@ -182,15 +204,15 @@ for i in ${!Subjlist[@]}; do
 	      --freesurferlabels="$FreeSurferLabels" \
 	      --refmyelinmaps="$ReferenceMyelinMaps" \
 	      --regname="$RegName" \
-	      --longitudinal_mode="TIMEPOINT" \
+	      --longitudinal_mode="TIMEPOINT_STAGE2" \
 	      --longitudinal_template="$LongitudinalTemplate" \
-	      --longitudinal_timepoint="$Timepoint"
+	      --longitudinal_timepoint="$Timepoint")
+    job_list+=("$job")
 	#DEBUG
 	#break
   done
- 
-  
-
+  echo "Stage 2 timepoint processing jobs (${job_list[*]}) will wait for the template job: $job"
+    
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   
   # echo "set -- --study-folder=$StudyFolder \

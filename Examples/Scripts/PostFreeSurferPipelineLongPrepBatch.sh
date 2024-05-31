@@ -9,18 +9,6 @@ get_usage_and_exit(){
     exit -1
 }
 
-any_job_running()
-{
-    local jobs="$1"
-    local jobs_running=0
-    for job in $jobs; do
-        if [[ $(qstat | grep -w $job) ]]; then
-            jobs_running=1; break; 
-        fi
-    done
-    echo $jobs_running
-}
-
 get_batch_options() {
     local arguments=("$@")
 
@@ -149,7 +137,7 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
       echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreesurfer/PrePostFreeSurferPipeline-long.sh"
       queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
   fi
-  if (( DEBUG==0 )); then
+  #if (( DEBUG==0 )); then
   #process all timepoints
   job_list=()
   for TP in ${TPList[@]}; do
@@ -159,28 +147,21 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
             --t1templatebrain="$T1wTemplateBrain" --t1template2mm="$T1wTemplate2mm" --t2template="T2wTemplate" \
             --t2templatebrain="$T2wTemplateBrain" --t2template2mm="$T2wTemplate2mm" --templatemask="$TemplateMask" \
             --template2mmmask="$Template2mmMask" --fnirtconfig="$FNIRTConfig" --freesurferlabels="$FreeSurferLabels")
-        job_id=${job##* }
-        job_list+=($job_id)
+        job_list+=("$job")
 	if (( $? )); then 
 		echo "Timepoint processing for $Subject failed, exiting"
 		exit -1
 	fi
   done
-  fi
-
-  echo "Waiting for timepoint processing"
-  while true; do
-    jobs_running=`any_job_running "${job_list[@]}"`
-    if (( jobs_running == 0 )); then break;
-    sleep 10
-  done
-
-  echo "Timepoint processing done"
+  #fi
+  jl="${job_list[@]}"  
   #Process template and finalize timepoints. This must wait until all timepoints are finished.
   echo "Running ppFS-long for template $Template"
-  $queueing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
+  job=$($queueing_command -j ${jl// /,} ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
 	--template="$Template_ID" --timepoints="${Timepoints[i]}" --template_processing=1 --t1template="$T1wTemplate" \
         --t1templatebrain="$T1wTemplateBrain" --t1template2mm="$T1wTemplate2mm" --t2template="T2wTemplate" \
         --t2templatebrain="$T2wTemplateBrain" --t2template2mm="$T2wTemplate2mm" --templatemask="$TemplateMask" \
-        --template2mmmask="$Template2mmMask" --fnirtconfig="$FNIRTConfig" --freesurferlabels="$FreeSurferLabels"
+        --template2mmmask="$Template2mmMask" --fnirtconfig="$FNIRTConfig" --freesurferlabels="$FreeSurferLabels")
+
+  echo "Template processing job $job will wait for timepoint jobs $jl"
 done
