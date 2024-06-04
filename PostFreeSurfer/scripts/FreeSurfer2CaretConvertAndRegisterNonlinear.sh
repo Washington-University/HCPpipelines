@@ -175,7 +175,9 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 #To prevent the code inside the if clause to be executed repeatedly when TIMEPOINT_STAGE2 mode is on
-if [ "$LongitudinalMode" != "$TIMEPOINT_STAGE2" ]; then
+if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
+
+	echo "000"
 
 	# Find c_ras offset between FreeSurfer surface and volume and generate matrix to transform surfaces
 	# -- Corrected code using native mri_info --cras function to build the needed variables
@@ -335,7 +337,7 @@ for Hemisphere in L R ; do
     #Convert and volumetrically register white and pial surfaces makign linear and nonlinear copies, add each to the appropriate spec file
     Types="ANATOMICAL@GRAY_WHITE ANATOMICAL@PIAL"
     i=1
-    if [ "$LongitudinalMode" != "$TIMEPOINT_STAGE2" ]; then #the following code is skipped in TIMEPOINT_STAGE2.
+    if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then #the following code is skipped in TIMEPOINT_STAGE2.
 	    for Surface in white pial ; do
 		Type=$(echo "$Types" | cut -d " " -f $i)
 		Secondary=$(echo "$Type" | cut -d "@" -f 2)
@@ -450,10 +452,10 @@ for Hemisphere in L R ; do
 	    rm -f "$AtlasSpaceFolder"/"$NativeFolder"/${Hemisphere}.sphere_rot.surf.gii rotate.${Hemisphere}.mat
     fi #end TIMEPOINT_STAGE2 condition
     
-    if [ "$LongitudinalMode" == "$TIMEPOINT_STAGE1" ]; then continue; fi #Stage 1 timepoint processing loop ends here.
+    if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then continue; fi #Stage 1 timepoint processing loop ends here.
             
     #If desired, run MSMSulc folding-based registration to FS_LR initialized with FS affine
-    if [ ${RegName} = "MSMSulc" ] ; then
+    if [ ${RegName} == "MSMSulc" ] ; then
             mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
             if [ "$LongitudinalMode" == "NONE" ]; then
                 cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
@@ -465,7 +467,7 @@ for Hemisphere in L R ; do
                     experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
                     average_cmd_args+=("-surf" "$experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
                 done
-                ${CARET7DIR}/wb_command -surface-average "${average_cmd_args}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
+                ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
                 #fix the averaged surface to convert it into sphere
                 ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
                 
@@ -478,10 +480,10 @@ for Hemisphere in L R ; do
                     cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
                     
                     #copy the output of MSMSulc to each of the timepoint native folders
-                    for file in "$AtlasSpaceFolder"/"$NativeFolder"/${LongitudinalSubject}.long.${LongitudinalTemplate}.*_${RegName}.*
+                    for file in "$AtlasSpaceFolder"/"$NativeFolder"/${LongitudinalSubjectLabel}.long.${LongitudinalTemplate}.*_${RegName}.*; do
                     	file_base=`basename $file`
-                    	new_file=${file_base#${LongitudinalSubject}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
-                    	cp $file $new_file
+                    	new_file=${file_base/${LongitudinalSubjectLabel}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
+                    	cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
                     done
                 done                
             fi
@@ -490,6 +492,7 @@ for Hemisphere in L R ; do
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
     fi
     
+    echo "111"
     #Ensure no zeros in atlas medial wall ROI
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} BARYCENTRIC "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".atlasroi.native.shape.gii -largest
     ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
@@ -592,11 +595,13 @@ for Hemisphere in L R ; do
     done
 done
 
-if [ "$LongitudinalMode" == "$TIMEPOINT_STAGE1" ]; then 
+
+if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then 
 	log_Msg "Timepoint Stage 1 end"
 	exit 0
 fi #Stage 1 longitudinal timepoint processing ends here.
 
+echo "222"
 
 STRINGII=""
 for LowResMesh in ${LowResMeshes} ; do
