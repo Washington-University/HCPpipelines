@@ -138,7 +138,7 @@ for i in ${!Subjlist[@]}; do
 	#DEBUG
 	#continue
 	#process each timepoint
-	job_list+=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+	job=$($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 	      --study-folder="$StudyFolder" \
 	      --subject="$Subject" \
 	      --surfatlasdir="$SurfaceAtlasDIR" \
@@ -153,17 +153,18 @@ for i in ${!Subjlist[@]}; do
 	      --longitudinal_mode="TIMEPOINT_STAGE1" \
 	      --longitudinal_template="$LongitudinalTemplate" \
 	      --longitudinal_timepoint="$Timepoint")
+	job_list+=("$job")
 	#DEBUG
 	#break
   done
   jl="${job_list[@]}"
 
-  
+  echo "Launched stage 1 timepoint jobs: $jl"
   #input variables specific for template mode (if any)
   # ...
   #process template. Must finish before timepoints are processed if MSMSulc is run.
   echo "template processing"
-  job=$($queuing_command -j ${jl// /,} "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+  template_job=$($queuing_command -j ${jl// /,} "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
       --study-folder="$StudyFolder" \
       --subject="$Subject" \
       --surfatlasdir="$SurfaceAtlasDIR" \
@@ -180,7 +181,8 @@ for i in ${!Subjlist[@]}; do
       --longitudinal_timepoint_list="${Timepoint_list[i]}" \
       --longitudinal_timepoint="$Timepoint")
 
-  echo "Template processing job $job will wait for Stage 1 timepoint jobs: $jl" 
+  echo "Launched template job $template_job"
+  echo "Template job $template_job will wait for Stage 1 timepoint jobs: $jl" 
   #DEBUG
   #break;
 
@@ -192,7 +194,7 @@ for i in ${!Subjlist[@]}; do
 	#DEBUG
 	#continue
 	#process each timepoint
-	job=$($queuing_command -j $job "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+	job=$($queuing_command -j $template_job "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 	      --study-folder="$StudyFolder" \
 	      --subject="$Subject" \
 	      --surfatlasdir="$SurfaceAtlasDIR" \
@@ -211,7 +213,8 @@ for i in ${!Subjlist[@]}; do
 	#DEBUG
 	#break
   done
-  echo "Stage 2 timepoint processing jobs (${job_list[*]}) will wait for the template job: $job"
+  echo "launched stage 2 timepoint jobs: ${job_list[@]}"
+  echo "Stage 2 timepoint jobs (${job_list[*]}) will wait for the template job: $template_job"
     
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   
