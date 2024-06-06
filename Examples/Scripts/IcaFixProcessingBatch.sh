@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
-DEFAULT_SUBJECT_LIST="100307 100610"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
-DEFAULT_RUN_LOCAL="FALSE"
+DEFAULT_STUDY_FOLDER="/mnt/myelin/burke/HCPpipelines/dev_study"
+DEFAULT_SUBJECT_LIST="100307"
+DEFAULT_ENVIRONMENT_SCRIPT="/mnt/myelin/burke/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_RUN_LOCAL="TRUE"
 #DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript
 
 #
@@ -135,11 +135,13 @@ main() {
 	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces (or @ like dedrift...) to otherwise separate runs
 	# the MR FIX groups determine what gets concatenated before doing ICA
 	# the groups can be whatever you want, you can make a day 1 group and a day 2 group, or just concatenate everything, etc
-	fMRINames="tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
+	fMRINames="tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
+	# fMRINames="tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
 
 	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
 	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
-	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
+	ConcatNames="tfMRI_EMOTION_RL_LR"  ## Use space (or @
+	# ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
 	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
 	#ConcatNames=""
 
@@ -153,6 +155,9 @@ main() {
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
+
+	# set the ICA Method (MELODIC or ICASSO)
+	ICAmethod=ICASSO
 	
 	# set the training data used in multi-run fix mode
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
@@ -233,7 +238,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode" --ica-method="$ICAmethod")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
