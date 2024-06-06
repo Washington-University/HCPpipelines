@@ -926,7 +926,7 @@ else
 	# need to add a FIX version dependency to the script
 	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
-echo $PWD
+
 log_Msg "fix_cmd: ${fix_cmd[*]}"
 ## MPH: The 'fix' script itself will continue to log to its own custom files
 ## Alert user to where those are
