@@ -32,10 +32,10 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,maxIter
 % Burke Rosen
 
 % ToDo:
-% () Currently the vnts file and brainMaskFile paths are inferred from
-%    ConcatFolder,concatfmrihp, and concatfmri. Maybe they should be their own 
+% () Currently the vnts file and brainMaskFile paths and names are inferred from
+%    ConcatFolder, concatfmrihp, and concatfmri. Maybe they should be their own 
 %    arguments for flexibility.
-% () Spin off a stand alone melodic mixture modeling utility
+% () Spin off a stand alone melodic mixture modeling only matlab wrapper utility
 
 %% parse parameters
 if nargin < 5 || any(cellfun(@isempty,{Dim,concatfmri,concatfmrihp,ConcatFolder}))
@@ -51,7 +51,7 @@ if ~ismember(vis,{'basic','off'})
   vis = 'basic';
 end
 if nargin < 7 || isempty(nICA) 
-  nICA = 2;%100
+  nICA = 100;
 else
   nICA = str2double(nICA);
 end
@@ -175,7 +175,7 @@ fid = fopen([outDir '/components.txt'],'w');
 fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
 [~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
   sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
-  outDir,outDir,outDir,tr)]);
+  outDir,outDir,outDir,tr)]);% note: saving this file is the only thing tr is used for
 
 %% Mixture modeling
 % follows recipe from https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
