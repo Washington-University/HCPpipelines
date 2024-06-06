@@ -188,8 +188,8 @@ fi
 # Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
 debug_disable_trap
 set +u
-source "${HCPPIPEDIR}/ICAFIX/settings.sh.WUSTL_CHPC2"
-# source "${HCPPIPEDIR}/ICAFIX/dev.settings.sh.WUSTL_CHPC2"
+source "${FSL_FIXDIR}/settings.sh"
+# source "${HCPPIPEDIR}/ICAFIX/settings.sh.WUSTL_CHPC2"
 set -u
 debug_enable_trap
 
@@ -361,7 +361,7 @@ then
 fi
 
 if [[ ${FSL_FIX_MATLAB_MODE} != 1 ]] && [[ ${ICAmethod} == ICASSO ]];then
-	log_Err_Abort "--ica-method=ICASSO is currently only implemented for interpreted matlab. Set FSL_FIX_MATLAB_MODE=1 in FIX settings file e.g. ${HCPPIPEDIR}/ICAFIX/settings.sh.WUSTL_CHPC2"
+	log_Err_Abort "--ica-method=ICASSO is currently only implemented for interpreted matlab. Set FSL_FIX_MATLAB_MODE=1 in FIX settings file"
 fi
 
 ## ---------------------------------------------------------------------------
