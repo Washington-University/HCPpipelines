@@ -25,8 +25,8 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,maxIter
 % ConcatFolder = '/mnt/myelin/burke/HCPpipelines/dev_study/100307/MNINonLinear/Results/tfMRI_EMOTION_RL_LR';
 % tr = '0.72';
 % vis = 'basic';
-% nICA = 2;
-% maxIter = 100;
+% nICA = '2';
+% maxIter = '100';
 
 % Created 2024-06-05
 % Burke Rosen
