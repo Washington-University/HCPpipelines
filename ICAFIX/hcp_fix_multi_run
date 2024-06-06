@@ -30,7 +30,7 @@
 #   3) Addition of FIX threshold as optional parameter
 #
 #   Changes by Burke Rosen
-#   1) Optionally use icasso instead of melodic for ICA estimation and use melodic for mixture modeling only
+#   1) Optionally use icasso instead of melodic for IC estimation and use melodic for mixture modeling only
 #      (Followed by FIX as usual)
 
 #############################################################
