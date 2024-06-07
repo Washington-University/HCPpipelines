@@ -57,7 +57,7 @@ Subjlist="HCA6002236"
 #TPlist="Subject1_TP1@Subject1_TP2 Subject2_TP1@Subject2_TP2"
 Timepoints="HCA6002236_V1_MR@HCA6002236_V2_MR"
 #Timepoints="HCA6002236_V1_MR"
-Template_ID="HCA6002236_V1_V2"
+Longitudinal_Template="HCA6002236_V1_V2"
 
 # Hires T1w MNI template
 T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz"
@@ -89,6 +89,9 @@ FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf"
 FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
 
 EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/MishaLongitudinal/hcp/scripts/SetUpHCPPipeline-long.sh" #Pipeline environment script
+
+
+
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -143,7 +146,7 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
   for TP in ${TPList[@]}; do
 	echo "Running ppFS-long for timepoint: $TP"
         job=$($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
-            --template="$Template_ID" --timepoints="$TP" --template_processing=0 --t1template="$T1wTemplate" \
+            --template="$Longitudinal_Template" --timepoints="$TP" --template_processing=0 --t1template="$T1wTemplate" \
             --t1templatebrain="$T1wTemplateBrain" --t1template2mm="$T1wTemplate2mm" --t2template="T2wTemplate" \
             --t2templatebrain="$T2wTemplateBrain" --t2template2mm="$T2wTemplate2mm" --templatemask="$TemplateMask" \
             --template2mmmask="$Template2mmMask" --fnirtconfig="$FNIRTConfig" --freesurferlabels="$FreeSurferLabels")
@@ -159,7 +162,7 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
   #Process template and finalize timepoints. This must wait until all timepoints are finished.
   echo "Running ppFS-long for template $Template"
   job=$($queuing_command -j ${jl// /,} ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh --subject="$Subject" --path="$StudyFolder" \
-	--template="$Template_ID" --timepoints="${Timepoints[i]}" --template_processing=1 --t1template="$T1wTemplate" \
+	--template="$Longitudinal_Template" --timepoints="${Timepoints[i]}" --template_processing=1 --t1template="$T1wTemplate" \
         --t1templatebrain="$T1wTemplateBrain" --t1template2mm="$T1wTemplate2mm" --t2template="T2wTemplate" \
         --t2templatebrain="$T2wTemplateBrain" --t2template2mm="$T2wTemplate2mm" --templatemask="$TemplateMask" \
         --template2mmmask="$Template2mmMask" --fnirtconfig="$FNIRTConfig" --freesurferlabels="$FreeSurferLabels")
