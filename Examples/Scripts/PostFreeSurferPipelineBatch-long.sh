@@ -80,21 +80,13 @@ echo "$@"
 QUEUE=""
 #QUEUE="hcp_priority.q"
 
-if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-echo "About to locally run longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh "
-		#NOTE: fsl_sub without -q runs locally and captures output in files
-	      	queuing_command=("$FSLDIR/bin/fsl_sub")
-else
-    echo "About to use fsl_sub to queue longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-	queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")	
-fi
-
-
 ########################################## INPUTS ########################################## 
 #Scripts called by this script do assume they run on the outputs of the longitudinal FreeSurfer Pipeline
 ######################################### DO WORK ##########################################
 
 Template_list=( ${Template_list[@]} )
+Timepoint_list=( ${Timepoint_list[@]} )
+Subjlist=( ${Subjlist[@]} )
 
 #iterate over all subjects.
 for i in ${!Subjlist[@]}; do
@@ -105,6 +97,15 @@ for i in ${!Subjlist[@]}; do
   echo Subject: $Subject
   echo Template: $LongitudinalTemplate
   echo Timepoints: ${Timepoints[@]}
+
+  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh "
+      #NOTE: fsl_sub without -q runs locally and captures output in files
+      queuing_command=("$FSLDIR/bin/fsl_sub")
+  else
+      echo "About to use fsl_sub to queue longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
+      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")	
+  fi
 
   ##########################################################################################
   # PostFreesurferPipelineLongPrep.sh processing
