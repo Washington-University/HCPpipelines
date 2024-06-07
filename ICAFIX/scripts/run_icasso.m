@@ -1,4 +1,4 @@
-function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,maxIter)
+function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,nClust,maxIter)
 % run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
@@ -15,17 +15,19 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,maxIter
 %
 % Optional Inputs:
 %   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
-%   nICA    : Number of ICA repetitions (default = '100')
+%   nICA    : Number of ICA repetitions per icasso repetition, @ delimited string, (default = '100')
+%   nClust  : Number of icasso repetitions (default = '1')
 %   maxIter : Maximum number of iterations per ica fit (default = '1000')
 %
 % example inputs:
 % Dim = '41';
 % concatfmri = 'tfMRI_EMOTION_RL_LR';
 % concatfmrihp = 'tfMRI_EMOTION_RL_LR_hp0';
-% ConcatFolder = '/mnt/myelin/burke/HCPpipelines/dev_study/100307/MNINonLinear/Results/tfMRI_EMOTION_RL_LR';
+% ConcatFolder = '/mnt/myelin/burke/HCPpipelines/dev_study/100307/MNINonLinear/Results/tfMRI_EMOTION_RL_LR_ICASSO';
 % tr = '0.72';
 % vis = 'basic';
-% nICA = '2';
+% nICA = '2@2';
+% nClust = '2';
 % maxIter = '100';
 
 % Created 2024-06-05
@@ -53,9 +55,17 @@ end
 if nargin < 7 || isempty(nICA) 
   nICA = 100;
 else
-  nICA = str2double(nICA);
+  nICA = cellfun(@str2double,regexp(nICA,'@','split'));
 end
-if nargin < 8 || isempty(maxIter) 
+if nargin < 8 || isempty(nClust) 
+  nClust = 1;
+else
+  nClust = str2double(nClust);
+end
+if numel(nICA) ~= nClust
+  error('nICA must be a @ delimited list with a number of elements equal to nClust')
+end
+if nargin < 9 || isempty(maxIter) 
   maxIter = 1000;
 else
   maxIter = str2double(maxIter);
@@ -80,25 +90,38 @@ volDim = size(vnts);
 
 %% run icasso
 % note: icasso fixes the randomization seed with rng('default')
+vntsT = vnts';
 [iq,A,~,~,~] = ...
-  icasso('both',vnts',nICA,'approach','symm','g','pow3',...
+  icasso('both',vntsT,nICA(1),'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
-[pcaE,pcaD] = fastica(vnts','only','pca');
+for iC = 2:nClust
+  [iq,A,~,~,~] = ...
+    icasso('bootstrap',vntsT,nICA(iC),'approach','symm','g','pow3','initGuess',A,...
+    'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
+end
 [S_final,A_final,~] = ...
-  fastica(vnts','initGuess',A,'approach','symm','g','pow3',...
+  fastica(vntsT,'initGuess',A,'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'pcaE',pcaE,'pcaD',pcaD,...
   'displayMode','off','maxNumIterations',maxIter);
+[~,pcaD] = fastica(vntsT,'only','pca');
 pcaD = diag(pcaD);
-totVariance = sum(pcaD(end-Dim+1:end))./sum(pcaD);% proportion of total variance explained by first <Dim> components
+totVariance = sum(pcaD(end-Dim+1:end))./sum(pcaD);
+  % proportion of total variance explained by first <Dim> components
+clear vntsT
 S_final = S_final';
 
 %% save icasso figures
 if strcmp(vis,'basic')
   figH = findall(0,'type','figure');
-  figH = figH(~contains({figH.Name},'centrotypes'));% the centrotypes figure isnt useful
+  figH = figH(~contains({figH.Name},'centrotypes'));% the centrotypes figure isn't useful
   for iF = 1:numel(figH)
-    figFile = sprintf('%s/%s.fig',outDir,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'));
-    savefig(figH(iF),figFile,'compact');
+    figFile = sprintf('%s/%s.fig',...
+      outDir,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'));
+    try
+      savefig(figH(iF),figFile,'compact');
+    catch 
+      warning('Could not save icasso figures.')
+    end
   end
   close all;
 end

@@ -130,7 +130,7 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) 
 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
-opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or hundred-pass ICASSO consensus method for ICA" 'MELODIC'
+opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
 
 
 opts_ParseArguments "$@"
@@ -189,7 +189,6 @@ fi
 debug_disable_trap
 set +u
 source "${FSL_FIXDIR}/settings.sh"
-# source "${HCPPIPEDIR}/ICAFIX/settings.sh.WUSTL_CHPC2"
 set -u
 debug_enable_trap
 
@@ -360,8 +359,15 @@ then
 	log_Err_Abort "--fallback-threshold is not allowed when --vol-wisharts=1 is used"
 fi
 
-if [[ ${FSL_FIX_MATLAB_MODE} != 1 ]] && [[ ${ICAmethod} == ICASSO ]];then
-	log_Err_Abort "--ica-method=ICASSO is currently only implemented for interpreted matlab. Set FSL_FIX_MATLAB_MODE=1 in FIX settings file"
+case "$ICAmethod" in
+    (MELODIC|ICASSO)
+        ;;
+    (*)
+        log_Err_Abort "--ica-method=${ICAmethod} must be MELODIC or ICASSO"
+        ;;
+esac
+if [[ ${FSL_FIX_MATLAB_MODE} == 0 ]] && [[ ${ICAmethod} == ICASSO ]];then
+	log_Err_Abort "--ica-method=ICASSO is not yet implemented for compiled matlab."
 fi
 
 ## ---------------------------------------------------------------------------
