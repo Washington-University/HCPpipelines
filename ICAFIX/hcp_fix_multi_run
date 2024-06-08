@@ -360,11 +360,11 @@ then
 fi
 
 case "$ICAmethod" in
-    (MELODIC|ICASSO)
-        ;;
-    (*)
-        log_Err_Abort "--ica-method=${ICAmethod} must be MELODIC or ICASSO"
-        ;;
+	(MELODIC|ICASSO)
+		;;
+	(*)
+		log_Err_Abort "--ica-method=${ICAmethod} must be MELODIC or ICASSO"
+		;;
 esac
 if [[ ${FSL_FIX_MATLAB_MODE} == 0 ]] && [[ ${ICAmethod} == ICASSO ]];then
 	log_Err_Abort "--ica-method=ICASSO is not yet implemented for compiled matlab."
