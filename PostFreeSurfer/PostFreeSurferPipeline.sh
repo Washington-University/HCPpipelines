@@ -54,7 +54,7 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label that matches root dir for a single subject experiment. For longitudinal experiment root to be identified correctly, must use longitudinal_timepoint and longitudinal_template options."
 opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
 opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
 opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
@@ -70,6 +70,30 @@ opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflatio
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
+
+#Longitudinal_mode modes:
+#NONE: cross-sectional processing (default)
+#TIMEPOINT_STAGE[1|2]: timepoint processing stage 1 or 2
+#TEMPLATE: template processing (must be run after all timepoints)
+
+#There are some specific conventions on timepoint and template processing directories:
+#In cross-sectional mode, 'Subject' label and subject study (timepoint) labels are treated as being the same by HCP in the original design. 
+#In longitudinal mode, 'Timepoint' is a study within a subject and, since there are multiple timepoints (studies) per subject, 
+#they must be labeled differently.
+#Timepoint label may be arbitrary but conventionally, should contain subject as part of name. E.g. if for subject 
+#HCA6002236 there are two timepoints, thay may be labeled HCA6002236_V1 and HCA6002236_V2. 
+#For crossectional (initial) processing, these are supplied instead of 'Subject' label to PreFreesurferPipeline. 
+#For the FreesurferPipeline-long, these are also supplied as timepoint labels, as well as chosen template label, e.g. HCA6002236_V1_V2. 
+#Then the same are supplied to PostFreesurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
+#internally, longitudinal timepoint directories will be named as: <Timepoint>.long.<Template>
+#Longitudinal template directory is named <Subject>.long.<Template>. 
+#Longitudinal Freesurfer files for timepoints are stored under <Timepoint>.long.<Template>/T1w/<Timepoint>.long.<Temlate>. 
+#Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. 
+
+opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode" "NONE"
+opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
+opts_AddOptional '--longitudinal_timepoint_list' 'LongitudinalTimepointList' 'FS longitudial timepoint list' "Longitudinal timepoint list '@' separated, if LongitudinalMode==TEMPLATE" ""
+opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT_STAGEX" ""
 
 opts_ParseArguments "$@"
 
@@ -112,6 +136,20 @@ log_Check_Env_Var FSLDIR
 HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
 PipelineScripts="$HCPPIPEDIR_PostFS"
 
+#ExperimentRoot points to actual experiment directory
+ExperimentRoot=$Subject
+IsLongitudinal=0
+if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" -o "$LongitudinalMode" == "TIMEPOINT_STAGE2" ]; then
+    ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
+    IsLongitudinal=1
+elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
+    ExperimentRoot="$Subject".long."$LongitudinalTemplate"
+    IsLongitudinal=1
+fi
+
+echo ExperimentRoot: $ExperimentRoot
+
+
 # ------------------------------------------------------------------------------
 #  Naming Conventions
 #  Do NOT include spaces in any of these names
@@ -122,7 +160,15 @@ T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
 AtlasSpaceFolder="MNINonLinear"
 NativeFolder="Native"
-FreeSurferFolder="$Subject"
+
+if [ "$LongitudinalMode" == "TEMPLATE" ]; then
+    FreeSurferFolder="$LongitudinalTemplate"
+elif [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" -o "$LongitudinalMode" == "TIMEPOINT_STAGE2" ]; then 
+    FreeSurferFolder="$LongitudinalTimepoint.long.$LongitudinalTemplate"
+else #Cross-sectional
+    FreeSurferFolder="$Subject"
+fi
+
 FreeSurferInput="T1w_acpc_dc_restore_1mm"
 AtlasTransform="acpc_dc2standard"
 InverseAtlasTransform="standard2acpc_dc"
@@ -137,7 +183,7 @@ InitialT1wTransform="acpc.mat"
 dcT1wTransform="T1w_dc.nii.gz"
 InitialT2wTransform="acpc.mat"
 dcT2wTransform="T2w_reg_dc.nii.gz"
-FinalT2wTransform="$Subject/mri/transforms/T2wtoT1w.mat"
+FinalT2wTransform="$ExperimentRoot/mri/transforms/T2wtoT1w.mat"
 BiasField="BiasField_acpc_dc"
 OutputT1wImage="T1w_acpc_dc"
 OutputT1wImageRestore="T1w_acpc_dc_restore"
@@ -158,9 +204,9 @@ OutputOrigT2wToStandard="OrigT2w2standard.nii.gz"
 BiasFieldOutput="BiasField"
 Jacobian="NonlinearRegJacobians.nii.gz"
 
-T1wFolder="$StudyFolder"/"$Subject"/"$T1wFolder"
-T2wFolder="$StudyFolder"/"$Subject"/"$T2wFolder"
-AtlasSpaceFolder="$StudyFolder"/"$Subject"/"$AtlasSpaceFolder"
+T1wFolder="$StudyFolder"/"$ExperimentRoot"/"$T1wFolder"
+T2wFolder="$StudyFolder"/"$ExperimentRoot"/"$T2wFolder"
+AtlasSpaceFolder="$StudyFolder"/"$ExperimentRoot"/"$AtlasSpaceFolder"
 FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
@@ -173,11 +219,18 @@ Compliance="HCPStyleData"
 ComplianceMsg=""
 
 # -- T2w image
-
-if [[ $("$FSLDIR"/bin/imtest "$T2wFolder/T2w") == '0' ]]; then
-    ComplianceMsg+=" T2w image not present"
-    Compliance="LegacyStyleData"
-    T2wRestoreImage="NONE"
+if [ "$LongitudinalMode" == NONE ]; then 
+    if [[ $("$FSLDIR"/bin/imtest "$T2wFolder/T2w") == '0' ]]; then
+        ComplianceMsg+=" T2w image not present"
+        Compliance="LegacyStyleData"
+        T2wRestoreImage="NONE"
+    fi
+else 
+    if [[ $("$FSLDIR"/bin/imtest "$T1wFolder/T2w_acpc_dc") == '0' ]]; then
+        ComplianceMsg+=" T2w image not present"
+        Compliance="LegacyStyleData"
+        T2wRestoreImage="NONE"
+    fi
 fi
 
 if [[ "${RegName}" == "FS" ]]; then
@@ -198,11 +251,12 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 # ------------------------------------------------------------------------------
 
 if ((doProcessing)); then
+
     log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
     log_Msg "RegName: ${RegName}"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")                   # ${2}
+    argList+=("$ExperimentRoot")            # ${2}
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
@@ -224,12 +278,22 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
+    argList+=("$LongitudinalMode")          # ${24}
+    argList+=("$Subject")                   # ${25} #LongitudinalSubjectLabel. In cross-sectional mode, this is the same as ExperimentRoot
+    argList+=("$LongitudinalTemplate")       # ${26}
+    argList+=("$LongitudinalTimepointList")  # ${27}
+
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
+
+    if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
+        log_Msg "Longitudinal timepoint stage 1 completed"
+        exit 0
+    fi
 
     log_Msg "Create FreeSurfer ribbon file at full resolution"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")                   # ${2}
+    argList+=("$ExperimentRoot")            # ${2}
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
@@ -242,7 +306,7 @@ if ((doProcessing)); then
     log_Msg "RegName: ${RegName}"
 
     argList=("$StudyFolder")                # ${1}
-    argList+=("$Subject")
+    argList+=("$ExperimentRoot")
     argList+=("$AtlasSpaceFolder")
     argList+=("$NativeFolder")
     argList+=("$T1wFolder")                 # ${5}
@@ -281,6 +345,7 @@ if ((doProcessing)); then
     argList+=("$CorrectionSigma")
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
+    argList+=("$IsLongitudinal")
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
@@ -288,7 +353,7 @@ if ((doQC)); then
 	log_Msg "Generating structural QC scene and snapshots"
     "$PipelineScripts"/GenerateStructuralScenes.sh \
         --study-folder="$StudyFolder" \
-        --subject="$Subject" \
+        --subject="$ExperimentRoot" \
         --output-folder="$AtlasSpaceFolder/StructuralQC"
 fi
 
