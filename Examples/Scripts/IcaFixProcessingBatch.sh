@@ -153,6 +153,9 @@ main() {
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
+
+	# set the ICA Method (MELODIC or ICASSO)
+	ICAmethod=MELODIC
 	
 	# set the training data used in multi-run fix mode
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
@@ -233,7 +236,7 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode" --ica-method="$ICAmethod")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
