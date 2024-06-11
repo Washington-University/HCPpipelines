@@ -1,4 +1,4 @@
-function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,nClust,maxIter)
+function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,maxIter)
 % run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
@@ -11,7 +11,6 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,nClust,
 %   concatfmri   : File name of original 4d time series without extension
 %   concatfmrihp : File name of high-passed 4d time series without extension
 %   ConcatFolder : Directory which contains concatfmri
-%   tr           : inverse sampling frequency of fMRI timeseries 
 %
 % Optional Inputs:
 %   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
@@ -24,11 +23,15 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,nClust,
 % concatfmri = 'tfMRI_EMOTION_RL_LR';
 % concatfmrihp = 'tfMRI_EMOTION_RL_LR_hp0';
 % ConcatFolder = '/mnt/myelin/burke/HCPpipelines/dev_study/100307/MNINonLinear/Results/tfMRI_EMOTION_RL_LR_ICASSO';
-% tr = '0.72';
 % vis = 'basic';
 % nICA = '2@2';
 % nClust = '2';
-% maxIter = '100';
+% maxIter = '1000';
+% 
+% Dim = str2double(Dim);
+% nICA = cellfun(@str2double,regexp(nICA,'@','split'));
+% nClust = str2double(nClust);
+% maxIter = str2double(maxIter);
 
 % Created 2024-06-05
 % Burke Rosen
@@ -40,24 +43,23 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,vis,nICA,nClust,
 % () Spin off a stand alone melodic mixture modeling only matlab wrapper utility
 
 %% parse parameters
-if nargin < 5 || any(cellfun(@isempty,{Dim,concatfmri,concatfmrihp,ConcatFolder}))
-  error('Dim, concatfmri, concatfmrihp, ConcatFolder, and tr are required!')
+if nargin < 4 || any(cellfun(@isempty,{Dim,concatfmri,concatfmrihp,ConcatFolder}))
+  error('Dim, concatfmri, concatfmrihp, and ConcatFolder are required!')
 end
 Dim = str2double(Dim);
-tr = str2double(tr);
-if nargin < 6 || isempty(vis) 
+if nargin < 5 || isempty(vis) 
   vis = 'basic';
 end
 if ~ismember(vis,{'basic','off'})
   warning('vis must be ''basic'' or ''off'', reverting to ''basic''')
   vis = 'basic';
 end
-if nargin < 7 || isempty(nICA) 
+if nargin < 6 || isempty(nICA) 
   nICA = 100;
 else
   nICA = cellfun(@str2double,regexp(nICA,'@','split'));
 end
-if nargin < 8 || isempty(nClust) 
+if nargin < 7 || isempty(nClust) 
   nClust = 1;
 else
   nClust = str2double(nClust);
@@ -65,7 +67,7 @@ end
 if numel(nICA) ~= nClust
   error('nICA must be a @ delimited list with a number of elements equal to nClust')
 end
-if nargin < 9 || isempty(maxIter) 
+if nargin < 8 || isempty(maxIter) 
   maxIter = 1000;
 else
   maxIter = str2double(maxIter);
@@ -99,11 +101,11 @@ for iC = 2:nClust
     icasso('bootstrap',vntsT,nICA(iC),'approach','symm','g','pow3','initGuess',A,...
     'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
 end
+[pcaE,pcaD] = fastica(vntsT,'only','pca');
 [S_final,A_final,~] = ...
   fastica(vntsT,'initGuess',A,'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'pcaE',pcaE,'pcaD',pcaD,...
   'displayMode','off','maxNumIterations',maxIter);
-[~,pcaD] = fastica(vntsT,'only','pca');
 pcaD = diag(pcaD);
 totVariance = sum(pcaD(end-Dim+1:end))./sum(pcaD);
   % proportion of total variance explained by first <Dim> components
@@ -171,49 +173,41 @@ niftiwrite(single(S_final4d),sprintf('%s/melodic_oIC',outDir),hdr,'Compressed',t
 niftiwrite(single(Z4d),sprintf('%s/melodic_IC',outDir),hdr,'Compressed',true)
 
 % save mixing matrices as tab-delimited text
-dlmwrite(sprintf('%s/melodic_mix',outDir),A_final,'\t');
-dlmwrite(sprintf('%s/melodic_unmix',outDir),W_final,'\t');
+dlmwrite(sprintf('%s/melodic_unmix', outDir), W_final, '\t');
+dlmwrite(sprintf('%s/melodic_mix',   outDir), A_final, '\t');
+copyfile(sprintf('%s/melodic_mix', outDir), sprintf('%s/melodic_Tmodes', outDir));% mix and Tmodes are the same
 
 % save variance explained as tab-delimited text
 ICstats = [tICAPercentVariances tICAPercentVariances * totVariance]; 
-dlmwrite([outDir '/melodic_ICstats'],ICstats, 'delimiter', '\t');
+dlmwrite([outDir '/melodic_ICstats'], ICstats, 'delimiter', '\t');
 
 % copy brainmask into melodic dir
 copyfile(brainMaskFile,[outDir '/mask.nii.gz'])
 
 % save pcaD and pcaE? Looks like FIX doesn't need them
 
-%% calculate FTmix spectra
+%% calculate and save FTmix spectra
 ts = struct();
 ts.Nsubjects = 1;
 ts.ts = A_final;
 [ts.NtimepointsPerSubject,ts.Nnodes] = size(ts.ts);
 ts_spectra = nets_spectra_sp(ts);
-
-% save A_final and spectra as tab-delimited text
-dlmwrite([outDir '/melodic_Tmodes'], ts.ts, 'delimiter', '\t'); 
 dlmwrite([outDir '/melodic_FTmix'], ts_spectra, 'delimiter', '\t');
 
-fid = fopen([outDir '/components.txt'],'w');
-fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
-[~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
-  sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
-  outDir,outDir,outDir,tr)]);% note: saving this file is the only thing tr is used for
+% % The components.text file and FTmix.sdseries.nii aren't need by FIX, so don't produce them
+% fid = fopen([outDir '/components.txt'],'w');
+% fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
+% [~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
+%   sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
+%   outDir,outDir,outDir,tr)]);
 
 %% Mixture modeling
 % follows recipe from https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
 fprintf('performing melodic mixture modeling ...\n')
-[~,~] = unix(sprintf('melodic -i %s/melodic_IC --ICs=%s/melodic_IC --mix=%s/melodic_mix -o %s --Oall --report -v --mmthresh=0.5',...
-  outDir,outDir,outDir,outDir));
-
-%ToDO make a mixture modeling matlab function that works on niftis of volume cifitis 
-% reads output of melodic mixture modeling as matlab variables 
-% % alternative more generalized recipe?
-% % https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MELODIC
-% [~,~] = unix(sprintf('echo "1" > %s/grot.txt',outDir));(sprintf('echo "1" > %s/grot.txt',outDir));
-% [~,out] = unix(sprintf('melodic -i %s/melodic_IC --ICs=%s/melodic_IC --mix=%s/grot.txt -o %s --Oall --report -v --mmthresh=0.5',...
-%   outDir,outDir,outDir,outDir));
-
+[~,~] = unix(sprintf(...
+  'melodic -i %s/melodic_IC --ICs=%s/melodic_IC --mix=%s/melodic_mix -o %s --Oall --report -v --mmthresh=0.5',...
+  outDir, outDir, outDir, outDir));
+% note the input to --mix is not used and can be any text file
 
 %% Helper subfunctions
 function [mtx,mtxDim] = reshape4d2d(img,msk)
