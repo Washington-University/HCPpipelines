@@ -209,16 +209,15 @@ ts.ts = A_final;
 [ts.NtimepointsPerSubject,ts.Nnodes] = size(ts.ts);
 ts_spectra = nets_spectra_sp(ts);
 dlmwrite([outDir '/melodic_FTmix'], ts_spectra, 'delimiter', '\t');
-
-% % The components.text file and FTmix.sdseries.nii aren't need by FIX, so don't produce them
 fid = fopen([outDir '/components.txt'],'w');
 fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
+
+% FTmix.sdseries.nii aren't need by FIX, so don't produce them
 % [~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
 %   sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
 %   outDir,outDir,outDir,tr)]);
 
 %% Mixture modeling
-% follows recipe from https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
 fprintf('performing melodic mixture modeling ...\n')
 mixtureModel([outDir '/melodic_IC.nii.gz']);% overwrites in-place without saving full report
 
