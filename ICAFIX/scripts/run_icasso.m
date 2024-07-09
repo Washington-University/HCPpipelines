@@ -1,10 +1,10 @@
 function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,maxIter)
-% run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
+run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
 % afterwards. Most but not all of MELODIC's outputs are created.
 % 
-% All of this functions inputs are strings
+% All of this function's inputs are strings
 %
 % Required Inputs (variable names verbatim from hcp_fix_multi_run.sh):
 %   Dim          : Data diminsionaliy estimate, typically Wishart-based
@@ -13,7 +13,7 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,max
 %   ConcatFolder : Directory which contains concatfmri
 %
 % Optional Inputs:
-%   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
+%   vis     : Whether to create and save icasso figures from last icasso level, see icasso.m 'basic' (default) or 'off'
 %   nICA    : Number of ICA repetitions per icasso repetition, @ delimited string, (default = '100')
 %   nClust  : Number of icasso repetitions (default = '1')
 %   maxIter : Maximum number of iterations per ica fit (default = '1000')
@@ -40,7 +40,6 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,max
 % () Currently the vnts file and brainMaskFile paths and names are inferred from
 %    ConcatFolder, concatfmrihp, and concatfmri. Maybe they should be their own 
 %    arguments for flexibility.
-% () Spin off a stand alone melodic mixture modeling only matlab wrapper utility
 
 %% parse parameters
 if nargin < 4 || any(cellfun(@isempty,{Dim,concatfmri,concatfmrihp,ConcatFolder}))
@@ -73,6 +72,23 @@ else
   maxIter = str2double(maxIter);
 end
 
+%% check IO dependencies
+% use imaging processing toolbox utilities, or if those are not available use FSL utilities 
+function out = out2(fun);[~,out] = fun();end
+function out = out3(fun);[~,~,out] = fun();end
+if isempty(which('niftiread'))
+  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
+  readNIFTI = @(fName) read_avw(fName);
+  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
+  if isempty(which('read_avw'))
+    error('neither niftiread nor read_avw on matlab path!')
+  end
+else
+  readNIFTI = @(fName) niftiread(fName);
+  infoNIFTI = @(fName) niftiinfo(fName);
+  writeNIFTI = @(img,fName,hdr) niftiwrite(img,fName,hdr);
+end
+
 %% parse paths
 % inputs
 vntsFile = sprintf('%s/%s_vnts.nii.gz',ConcatFolder,concatfmrihp);
@@ -85,8 +101,8 @@ outDir = sprintf('%s/%s.ica/filtered_func_data.ica',ConcatFolder,concatfmrihp);
 [~,~] = unix(['mkdir -p ' outDir]);
 
 %% load data, reshape to 2d, and apply brain mask
-vnts = double(niftiread(vntsFile));
-brainMask = logical(niftiread(brainMaskFile));
+vnts = double(readNIFTI(vntsFile));
+brainMask = logical(readNIFTI(brainMaskFile));
 volDim = size(vnts);
 [vnts,mtxDim] = reshape4d2d(vnts,brainMask);
 
@@ -113,12 +129,12 @@ clear vntsT
 S_final = S_final';
 
 %% save icasso figures
+% Note: only the figures from the final level of icasso are saved
 if strcmp(vis,'basic')
   figH = findall(0,'type','figure');
   figH = figH(~contains({figH.Name},'centrotypes'));% the centrotypes figure isn't useful
   for iF = 1:numel(figH)
-    figFile = sprintf('%s/%s.fig',...
-      outDir,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'));
+    figFile = sprintf('%s/%s.fig',outDir,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'));
     try
       savefig(figH(iF),figFile,'compact');
     catch 
@@ -167,15 +183,15 @@ S_final4d = reshape2d4d(S_final,volDim,brainMask,mtxDim);
 Z4d = reshape2d4d(Z,volDim,brainMask,mtxDim);
 
 % save betas and z-score as 4-d nifti volumes
-hdr = niftiinfo(vntsFile);
+hdr = infoNIFTI(vntsFile);
 hdr.ImageSize(end) = Dim;
-niftiwrite(single(S_final4d),sprintf('%s/melodic_oIC',outDir),hdr,'Compressed',true)
-niftiwrite(single(Z4d),sprintf('%s/melodic_IC',outDir),hdr,'Compressed',true)
+writeNIFTI(single(S_final4d),sprintf('%s/melodic_oIC',outDir),hdr)
+writeNIFTI(single(Z4d),sprintf('%s/melodic_IC',outDir),hdr)
 
 % save mixing matrices as tab-delimited text
 dlmwrite(sprintf('%s/melodic_unmix', outDir), W_final, '\t');
 dlmwrite(sprintf('%s/melodic_mix',   outDir), A_final, '\t');
-copyfile(sprintf('%s/melodic_mix', outDir), sprintf('%s/melodic_Tmodes', outDir));% mix and Tmodes are the same
+copyfile(sprintf('%s/melodic_mix',   outDir), sprintf('%s/melodic_Tmodes', outDir));% mix and Tmodes are the same
 
 % save variance explained as tab-delimited text
 ICstats = [tICAPercentVariances tICAPercentVariances * totVariance]; 
@@ -195,8 +211,8 @@ ts_spectra = nets_spectra_sp(ts);
 dlmwrite([outDir '/melodic_FTmix'], ts_spectra, 'delimiter', '\t');
 
 % % The components.text file and FTmix.sdseries.nii aren't need by FIX, so don't produce them
-% fid = fopen([outDir '/components.txt'],'w');
-% fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
+fid = fopen([outDir '/components.txt'],'w');
+fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
 % [~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
 %   sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
 %   outDir,outDir,outDir,tr)]);
@@ -204,10 +220,7 @@ dlmwrite([outDir '/melodic_FTmix'], ts_spectra, 'delimiter', '\t');
 %% Mixture modeling
 % follows recipe from https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
 fprintf('performing melodic mixture modeling ...\n')
-[~,~] = unix(sprintf(...
-  'melodic -i %s/melodic_IC --ICs=%s/melodic_IC --mix=%s/melodic_mix -o %s --Oall --report -v --mmthresh=0.5',...
-  outDir, outDir, outDir, outDir));
-% note the input to --mix is not used and can be any text file
+mixtureModel([outDir '/melodic_IC.nii.gz']);% overwrites in-place without saving full report
 
 %% Helper subfunctions
 function [mtx,mtxDim] = reshape4d2d(img,msk)
