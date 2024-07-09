@@ -6,7 +6,8 @@ function mixtureModel(inFile,outFile,wbcmd,melocmd)
 %   inFile  : file path to IC z-scores, file path including extension as string (accepts nifti or cifti files)
 % Optional Inputs
 %   outFile :  file path to IC z-scores with Gaussian mixture modeling, defaults to inFile 
-%              (can output nifti, nifit-gz, or cifti, depending on extension: .nii, .nii,gz, .dtseries.nii)
+%              Can output nifti, nifit-gz, or cifti, depending on extension: .nii, .nii.gz, .dscalar.nii,
+%              Output format does not have to match input format, unless output is cifti.
 %   wbcmd   : worbench command, defaults to 'wb_command' 
 %   melocmd : melodic command, defaults to 'melodic'
 %
@@ -17,9 +18,13 @@ function mixtureModel(inFile,outFile,wbcmd,melocmd)
 
 % Created by Burke Rosen
 % 2024-07-08
+% Dependencies:workbench, FSL
+% Written with workbench 2.0 and FSL 6.0.7.1
 %
 % ToDo: 
 % Feed arbitrary melodic arguments. 
+% Return workbench errors
+% Save melodic log?
 
 %% handle inputs 
 if nargin < 2 || isempty(outFile); outFile = inFile; end 
@@ -33,22 +38,28 @@ inFile0 = inFile;
 outFile0 = outFile;
 tDir = tempname;
 FSLOUTPUTTYPE0 = getenv('FSLOUTPUTTYPE');
-if endsWith(inFile0,'dtseries.nii')
+if endsWith(inFile0,'dscalar.nii')
   % convert to input cifti to nifti
-  inFile = strrep(inFile0,'dtseries.nii','');
-[~,~] = unix(sprintf('wb_command -cifti-convert -to nifti %s %s',inFile0,inFile));
+  inFile = [tempname '.nii'];
+  [~,~] = unix(sprintf('%s -cifti-convert -to-nifti %s %s -smaller-dims',wbcmd,inFile0,inFile));
+  [~,dims] = unix(sprintf('%s -file-information %s | grep Dimensions',wbcmd,inFile));
+  dims = str2num(dims(12:end));
+  if any(dims == 1) && find( dims == 1,1) < 4
+    warning('singleton dimension in converted nifti, melodic may not interpret correctly!');
+  end
+  inFile = strrep(inFile,'.nii','');
 elseif endsWith(inFile0,'.nii') 
   inFile = strrep(inFile0,'.nii','');
 elseif endsWith(inFile0,'.nii.gz') 
   inFile = strrep(inFile0,'.nii.gz','');
 else
-  error('inFile is not a nifti or dtseries cifti?')
+  error('inFile is not a nifti or dscalar cifti?')
 end
-if endsWith(outFile0,'dtseries.nii')
-  if ~endsWith(inFile0,'dtseries.nii')
+if endsWith(outFile0,'dscalar.nii')
+  if ~endsWith(inFile0,'dscalar.nii')
     error('cifti output only supported for cifti input.')
   end
-  outFile = strrep(outFile0,'dtseries.nii','');
+  outFile = strrep(outFile0,'.dscalar.nii','');
   FSLOUTPUTTYPE = 'NIFTI2_GZ';
 elseif endsWith(outFile0,'.nii') 
   outFile = strrep(outFile0,'.nii','');
@@ -57,23 +68,25 @@ elseif endsWith(outFile0,'.nii.gz')
   FSLOUTPUTTYPE = 'NIFTI2_GZ';
   outFile = strrep(outFile0,'.nii.gz','');
 else
-  error('outFile is not a nifti or dtseries cifti?')
+  error('outFile is not a nifti or dscalar cifti?')
 end
 
 %% run gaussian mixture modeling with melodic
 [~,~] = unix(sprintf('mkdir -p %s;echo "1" > %s/grot', tDir, tDir));
 [~,~] = unix(sprintf(...
-  'melodic -i %s --ICs=%s --mix=%s/grot -o %s --Oall --report -v --mmthresh=0',... 
-  inFile, inFile, tDir, tDir));
+  '%s -i %s --ICs=%s --mix=%s/grot -o %s --Oall --report -v --mmthresh=0',... 
+  melocmd,inFile, inFile, tDir, tDir));
 [~,~] = unix(sprintf(...
   'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
   FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0));
 [~,~] = unix(['rm -r ' tDir]);% clean up temporary files
 
-%% convert output to cifti, if called for
-if endsWith(outFile0,'dtseries.nii')
-  [~,~] = unix(sprintf('wb_command -cifti-convert -from-nifti %s.nii.gz %s %s',outFile,inFile0,outFile0));
-  delete([outFile '.nii.gz']);
+%% convert output to cifti, if needed
+if endsWith(outFile0,'dscalar.nii')
+  [~,~] = unix(sprintf('%s -cifti-convert -from-nifti %s.nii.gz %s %s',wbcmd,outFile,inFile0,outFile0));
+  [~,~] = unix(sprintf('imrm %s %s',inFile,outFile));% clean up intermediate niftis
+elseif endsWith(inFile0,'dscalar.nii')
+  [~,~] = unix(sprintf('imrm %s',inFile));
 end
 
 end % EOF
