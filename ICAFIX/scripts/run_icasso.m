@@ -112,10 +112,12 @@ vntsT = vnts';
 [iq,A,~,~,~] = ...
   icasso('both',vntsT,nICA(1),'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
+if strcmp(vis,'basic'); printFigs(outDir,1);end
 for iC = 2:nClust
   [iq,A,~,~,~] = ...
     icasso('bootstrap',vntsT,nICA(iC),'approach','symm','g','pow3','initGuess',A,...
     'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
+  if strcmp(vis,'basic'); printFigs(outDir,iC);end
 end
 [pcaE,pcaD] = fastica(vntsT,'only','pca');
 [S_final,A_final,~] = ...
@@ -130,19 +132,6 @@ S_final = S_final';
 
 %% save icasso figures
 % Note: only the figures from the final level of icasso are saved
-if strcmp(vis,'basic')
-  figH = findall(0,'type','figure');
-  figH = figH(~contains({figH.Name},'centrotypes'));% the centrotypes figure isn't useful
-  for iF = 1:numel(figH)
-    figFile = sprintf('%s/%s.fig',outDir,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'));
-    try
-      savefig(figH(iF),figFile,'compact');
-    catch 
-      warning('Could not save icasso figures.')
-    end
-  end
-  close all;
-end
 
 %% set component sign and sort by variance explained
 % set sign
@@ -222,6 +211,22 @@ fprintf('performing melodic mixture modeling ...\n')
 mixtureModel([outDir '/melodic_IC.nii.gz']);% overwrites in-place without saving full report
 
 %% Helper subfunctions
+function printFigs(outD,lvl)
+  figH = findall(0,'type','figure');
+  figH = figH(~contains({figH.Name},'centrotypes'));% the centrotypes figure isn't useful
+  for iF = 1:numel(figH)
+    figFile = sprintf('%s/%s_%i.fig',...
+      outD,strrep(strrep(strrep(figH(iF).Name,' ','_'),':',''),'Icasso','icasso'),lvl);
+    try
+      savefig(figH(iF),figFile,'compact');
+    catch 
+      warning('Could not save icasso figures.')
+    end
+  end
+  close all;
+end
+
+end
 function [mtx,mtxDim] = reshape4d2d(img,msk)
   % reshapes 4d img into 2d matrix where the first 3 dims are put into the 1st dim
   % second arg msk is 3d logical volume
