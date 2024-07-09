@@ -13,7 +13,7 @@ run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 %   ConcatFolder : Directory which contains concatfmri
 %
 % Optional Inputs:
-%   vis     : Whether to create and save icasso figures from last icasso level, see icasso.m 'basic' (default) or 'off'
+%   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
 %   nICA    : Number of ICA repetitions per icasso repetition, @ delimited string, (default = '100')
 %   nClust  : Number of icasso repetitions (default = '1')
 %   maxIter : Maximum number of iterations per ica fit (default = '1000')
