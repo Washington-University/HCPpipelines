@@ -100,12 +100,12 @@ end
 function out = out2(fun);[~,out] = fun();end
 function out = out3(fun);[~,~,out] = fun();end
 if isempty(which('niftiread'))
-  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
-  readNIFTI = @(fName) read_avw(fName);
-  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
   if isempty(which('read_avw'))
     error('neither niftiread nor read_avw on matlab path!')
   end
+  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
+  readNIFTI = @(fName) read_avw(fName);
+  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
 else
   readNIFTI = @(fName) niftiread(fName);
   infoNIFTI = @(fName) niftiinfo(fName);

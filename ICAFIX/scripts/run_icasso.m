@@ -1,5 +1,5 @@
 function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,maxIter)
-run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
+% run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
 % afterwards. Most but not all of MELODIC's outputs are created.
@@ -77,12 +77,12 @@ end
 function out = out2(fun);[~,out] = fun();end
 function out = out3(fun);[~,~,out] = fun();end
 if isempty(which('niftiread'))
-  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
-  readNIFTI = @(fName) read_avw(fName);
-  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
   if isempty(which('read_avw'))
     error('neither niftiread nor read_avw on matlab path!')
   end
+  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
+  readNIFTI = @(fName) read_avw(fName);
+  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
 else
   readNIFTI = @(fName) niftiread(fName);
   infoNIFTI = @(fName) niftiinfo(fName);
@@ -98,13 +98,13 @@ if ~exist(brainMaskFile,'file');error('%s doesn''t exist!',brainMaskFile);end
 
 % outputs
 outDir = sprintf('%s/%s.ica/filtered_func_data.ica',ConcatFolder,concatfmrihp);
-[~,~] = unix(['mkdir -p ' outDir]);
+if ~mkdir(outDir);error('Unable to make output folder!');end
 
 %% load data, reshape to 2d, and apply brain mask
-vnts = double(readNIFTI(vntsFile));
+vnts = double(readNIFTI(vntsFile));% fastica needs double
 brainMask = logical(readNIFTI(brainMaskFile));
 volDim = size(vnts);
-[vnts,mtxDim] = reshape4d2d(vnts,brainMask);
+[vnts,mtxDim] = maskAndSpatiallyFlatten(vnts,brainMask);
 
 %% run icasso
 % note: icasso fixes the randomization seed with rng('default')
@@ -168,8 +168,8 @@ Z(isnan(Z)) = 0;
 % reshape betas (S_final) and z-scores back to 4-d
 mtxDim = [mtxDim(1) Dim];
 volDim = [volDim(1:3) Dim];
-S_final4d = reshape2d4d(S_final,volDim,brainMask,mtxDim);
-Z4d = reshape2d4d(Z,volDim,brainMask,mtxDim);
+S_final4d = unmaskAndSpatiallyInflate(S_final,volDim,brainMask,mtxDim);
+Z4d = unmaskAndSpatiallyInflate(Z,volDim,brainMask,mtxDim);
 
 % save betas and z-score as 4-d nifti volumes
 hdr = infoNIFTI(vntsFile);
@@ -202,7 +202,7 @@ fid = fopen([outDir '/components.txt'],'w');
 fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
 
 % FTmix.sdseries.nii aren't need by FIX, so don't produce them
-% [~,~] = unix(['wb_command -cifti-create-scalar-series ' ...
+% [~,~] = system(['wb_command -cifti-create-scalar-series ' ...
 %   sprintf('%s/melodic_FTmix %s/melodic_FTmix.sdseries.nii -transpose -name-file %s/components.txt -series HERTZ 0 %f',...
 %   outDir,outDir,outDir,tr)]);
 
@@ -227,7 +227,7 @@ function printFigs(outD,lvl)
 end
 
 end
-function [mtx,mtxDim] = reshape4d2d(img,msk)
+function [mtx,mtxDim] = maskAndSpatiallyFlatten(img,msk)
   % reshapes 4d img into 2d matrix where the first 3 dims are put into the 1st dim
   % second arg msk is 3d logical volume
   % second output is size before mask is applied
@@ -240,7 +240,7 @@ function [mtx,mtxDim] = reshape4d2d(img,msk)
   end
 end
 
-function img = reshape2d4d(mtx,imgDim,msk,mtxDim)
+function img = unmaskAndSpatiallyInflate(mtx,imgDim,msk,mtxDim)
   % reshapes 2d mtx into 4d matrix where the first 1 dim are put into the
   % 1st 3 dims using the dimensions supplied in imgDim
   % if a msk is supplied then the size of the 2d mtx before the mask was
