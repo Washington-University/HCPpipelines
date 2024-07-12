@@ -1,4 +1,4 @@
-function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,maxIter)
+function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
@@ -14,8 +14,8 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,max
 %
 % Optional Inputs:
 %   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
-%   nICA    : Number of ICA repetitions per icasso repetition, @ delimited string, (default = '100')
-%   nClust  : Number of icasso repetitions (default = '1')
+%   nICA    : Number of ICA repetitions per icasso repetition, @ delimited string, (default = '100') 
+%             The number of icasso repetitions is equal to the the number delimiters + 1
 %   maxIter : Maximum number of iterations per ica fit (default = '1000')
 %
 % example inputs:
@@ -25,12 +25,10 @@ function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,nClust,max
 % ConcatFolder = '/mnt/myelin/burke/HCPpipelines/dev_study/100307/MNINonLinear/Results/tfMRI_EMOTION_RL_LR_ICASSO';
 % vis = 'basic';
 % nICA = '2@2';
-% nClust = '2';
 % maxIter = '1000';
 % 
 % Dim = str2double(Dim);
 % nICA = cellfun(@str2double,regexp(nICA,'@','split'));
-% nClust = str2double(nClust);
 % maxIter = str2double(maxIter);
 
 % Created 2024-06-05
@@ -58,15 +56,7 @@ if nargin < 6 || isempty(nICA)
 else
   nICA = cellfun(@str2double,regexp(nICA,'@','split'));
 end
-if nargin < 7 || isempty(nClust) 
-  nClust = 1;
-else
-  nClust = str2double(nClust);
-end
-if numel(nICA) ~= nClust
-  error('nICA must be a @ delimited list with a number of elements equal to nClust')
-end
-if nargin < 8 || isempty(maxIter) 
+if nargin < 7 || isempty(maxIter) 
   maxIter = 1000;
 else
   maxIter = str2double(maxIter);
@@ -113,7 +103,7 @@ vntsT = vnts';
   icasso('both',vntsT,nICA(1),'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
 if strcmp(vis,'basic'); printFigs(outDir,1);end
-for iC = 2:nClust
+for iC = 2:numel(nICA)
   [iq,A,~,~,~] = ...
     icasso('bootstrap',vntsT,nICA(iC),'approach','symm','g','pow3','initGuess',A,...
     'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
@@ -129,9 +119,6 @@ totVariance = sum(pcaD(end-Dim+1:end))./sum(pcaD);
   % proportion of total variance explained by first <Dim> components
 clear vntsT
 S_final = S_final';
-
-%% save icasso figures
-% Note: only the figures from the final level of icasso are saved
 
 %% set component sign and sort by variance explained
 % set sign
