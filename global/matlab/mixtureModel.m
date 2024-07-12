@@ -27,7 +27,9 @@ function mixtureModel(inFile,outFile,wbcmd,melocmd)
 % Save melodic log?
 
 %% handle inputs 
-if nargin < 2 || isempty(inFile) || isempty(outFile); help mixtureModel; return; end 
+if nargin < 2 || isempty(inFile) || isempty(outFile)
+  error('inFile and outFile arguments are required!'); 
+end 
 if nargin < 3 || isempty(wbcmd); wbcmd = 'wb_command'; end 
 if nargin < 4 || isempty(melocmd); melocmd = 'melodic'; end 
 [wbStat,~] = system(wbcmd);
@@ -60,12 +62,12 @@ if endsWith(outFile0,'dscalar.nii')
     error('cifti output only supported for cifti input.')
   end
   outFile = strrep(outFile0,'.dscalar.nii','');
-  FSLOUTPUTTYPE = 'NIFTI2_GZ';
+  FSLOUTPUTTYPE = 'NIFTI_GZ';
 elseif endsWith(outFile0,'.nii') 
   outFile = strrep(outFile0,'.nii','');
-  FSLOUTPUTTYPE = 'NIFTI2';
+  FSLOUTPUTTYPE = 'NIFTI';
 elseif endsWith(outFile0,'.nii.gz') 
-  FSLOUTPUTTYPE = 'NIFTI2_GZ';
+  FSLOUTPUTTYPE = 'NIFTI_GZ';
   outFile = strrep(outFile0,'.nii.gz','');
 else
   error('outFile is not a nifti or dscalar cifti?')
