@@ -23,8 +23,6 @@ function mixtureModel(inFile,outFile,wbcmd,melocmd)
 %
 % ToDo: 
 % Feed arbitrary melodic arguments. 
-% Return workbench errors
-% Save melodic log?
 
 %% handle inputs 
 if nargin < 2 || isempty(inFile) || isempty(outFile)
@@ -40,12 +38,13 @@ inFile0 = inFile;
 outFile0 = outFile;
 tDir = tempname;
 FSLOUTPUTTYPE0 = getenv('FSLOUTPUTTYPE');
+stat = zeros(9,1);
 if endsWith(inFile0,'dscalar.nii')
   % convert to input cifti to nifti
   inFile = [tempname '.nii'];
-  [~,~] = system(sprintf('%s -cifti-convert -to-nifti %s %s -smaller-dims',wbcmd,inFile0,inFile));
-  [~,dims] = system(sprintf('%s -file-information %s | grep Dimensions',wbcmd,inFile));% more elegant to use niftiinfo, but that adds dependency
-  dims = str2num(dims(12:end));
+  [stat(1),~] = system(sprintf('%s -cifti-convert -to-nifti %s %s -smaller-dims',wbcmd,inFile0,inFile),'-echo');
+  [stat(2),out] = system(sprintf('%s -file-information %s | grep Dimensions',wbcmd,inFile),'-echo');% more elegant to use niftiinfo, but that adds dependency
+  dims = str2num(out(12:end));
   if any(dims == 1) && find( dims == 1,1) < 4
     warning('singleton dimension in converted nifti, melodic may not interpret correctly!');
   end
@@ -74,21 +73,21 @@ else
 end
 
 %% run gaussian mixture modeling with melodic
-[~,~] = system(sprintf('mkdir -p %s;echo "1" > %s/grot', tDir, tDir));
-[~,~] = system(sprintf(...
-  '%s -i %s --ICs=%s --mix=%s/grot -o %s --Oall --report -v --mmthresh=0',... 
-  melocmd,inFile, inFile, tDir, tDir));
-[~,~] = system(sprintf(...
-  'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
-  FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0));
-[~,~] = system(['rm -r ' tDir]);% clean up temporary files
+[stat(3),~] = system(sprintf('mkdir -p %s;echo "1" > %s/grot', tDir, tDir),'-echo');
+[stat(4),~] = system(sprintf(...
+  '%s -i %s --ICs=%s --mix=%s/grotfoo -o %s --Oall --report -v --mmthresh=0',... 
+  melocmd,inFile, inFile, tDir, tDir),'-echo');
+[stat(5),~] = system(sprintf(...
+    'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
+    FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0),'-echo');
+[stat(6),~] = system(['rm -r ' tDir],'-echo');% clean up temporary files
 
 %% convert output to cifti, if needed
 if endsWith(outFile0,'dscalar.nii')
-  [~,~] = system(sprintf('%s -cifti-convert -from-nifti %s.nii.gz %s %s',wbcmd,outFile,inFile0,outFile0));
-  [~,~] = system(sprintf('imrm %s %s',inFile,outFile));% clean up intermediate niftis
+  [stat(7),~] = system(sprintf('%s -cifti-convert -from-nifti %s.nii.gz %s %s',wbcmd,outFile,inFile0,outFile0),'-echo');
+  [stat(8),~] = system(sprintf('imrm %s %s',inFile,outFile),'-echo');% clean up intermediate niftis
 elseif endsWith(inFile0,'dscalar.nii')
-  [~,~] = system(sprintf('imrm %s',inFile));
+  [stat(9),~] = system(sprintf('imrm %s',inFile),'-echo');
 end
-
+if any(stat);error('system commands failed, see console output!');end
 end % EOF
