@@ -821,6 +821,10 @@ else
 	# Switch to concat folder
 	cd ${ConcatFolder}
 
+	if [ -d "${concatfmrihp}.ica/fix" ]; then
+		mv "${concatfmrihp}.ica/fix" "${concatfmrihp}.ica/fix-bkp-$(date +"%Y-%m-%d.%H%M%S")"
+	fi
+
 fi
 
 ## ---------------------------------------------------------------------------
