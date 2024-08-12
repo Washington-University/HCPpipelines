@@ -1,4 +1,25 @@
-#!/bin/bash 
+#!/bin/bash
+
+function identify_timepoints
+{
+    local subject=$1
+    local tplist=""
+    local tp visit n
+
+    #build the list of timepoints
+    n=0
+    for visit in ${PossibleVisits[@]}; do
+        tp="${subject}_${visit}"
+        if [ -d "$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]${ExcludeVisits[*]}[[:space:]] ]]; then
+            if (( n==0 )); then 
+                tplist="$tp"
+            else
+                tplist="$tplist@tp"
+            fi
+        fi
+    done
+    echo $tplist
+}
 
 get_usage_and_exit(){
     echo "usage: "
@@ -20,15 +41,18 @@ done
 # General input variables
 ##################################################################################################
 #Location of Subject folders (named by subjectID)
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/MishaLongitudinal/hcp/FSLong-test" 
-#list of subject labels, space separated
-Subjlist="HCA6002236"
-#list of timepoints per each subject. Subject timepoint groups are space separated, timepoints within subject are @ separated
-Timepoint_list="HCA6002236_V1_MR@HCA6002236_V2_MR"
-#list of longitudinal template labels, one per subject, space separated
-Template_list="HCA6002236_V1_V2"
+StudyFolder="<MyStudyPath>"
+#The list of subject labels, space separated
+Subjects=(HCA6002236 HCA6002237 HCA6002238)
+#The list of possible visits that each subject may have. Timepoint directories should be named <Subject>_<Visit>.
+PossibleVisits=(V1_MR V2_MR V3_MR V4_MR V5_MR V6_MR V7_MR V8_MR V9_MR V10_MR)
+#The list of possible visits that each subject may have. Timepoint (visit) is expected to be named <Subject>_<Visit>.
+#Actual visits (timepoints) are determined based on existing directories that match the visit name pattern.
+ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
+#Longitudinal template labels, one per each subject.
+Templates=(HCA6002236_V1_V2 HCA6002237_V1_V2 HCA6002238_V1_V2)
 
-EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/MishaLongitudinal/hcp/scripts/SetUpHCPPipeline-long.sh" #Pipeline environment script
+EnvironmentScript="<HCPInstallDir>/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
 #  installed versions of: FSL, FreeSurfer, Connectome Workbench (wb_command), gradunwarp (HCP version)
@@ -55,18 +79,14 @@ QUEUE=""
 
 ######################################### DO WORK ##########################################
 
-Template_list=( ${Template_list[@]} )
-Timepoint_list=( ${Timepoint_list[@]} )
-Subjlist=( ${Subjlist[@]} )
-
 for i in ${!Subjlist[@]}; do
-  Subject=${Subjlist[i]}
+  Subject=${Subjects[i]}
   #Subject's time point list, @ separated.  
-  TPlist="${Timepoint_list[i]}"
+  TPlist=(`identify_timepoints $Subject`)
   #Array with timepoints
   IFS=@ read -ra Timepoints <<< "$TPlist"
   #Freesurfer longitudinal average template label
-  LongitudinalTemplate=${Template_list[i]}
+  LongitudinalTemplate=${Templates[i]}
 
   #Longitudinal FreeSurfer Input Variables
   SubjectID="$Subject" #FreeSurfer Subject ID Name
@@ -85,16 +105,19 @@ for i in ${!Subjlist[@]}; do
   fi
 
   #DO NOT PUT timepoint-specific options here!!!
-  echo "${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/LongitudinalFreeSurferPipeline.sh --subject="$Subject" --path="$StudyFolder" --sessions \
-    "$TPlist" --template-id "$LongitudinalTemplate" --extra-reconall-arg-long=-T2pial \
-    --extra-reconall-arg-base=-T2pial --extra-reconall-arg-base=-T2 \
-    --extra-reconall-arg-base=$StudyFolder/${Timepoints[0]}/T1w/T2w_acpc_dc_restore.nii.gz --generate_timepoints_only=0 --generate_template_only=0
+  cmd=("${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/LongitudinalFreeSurferPipeline.sh \
+    --subject="$Subject" \
+    --path="$StudyFolder" \
+    --sessions="$TPlist" \
+    --template-id="$LongitudinalTemplate" \
+    --extra-reconall-arg-long=-T2pial \
+    --extra-reconall-arg-base=-T2pial \
+    --extra-reconall-arg-base=-T2 \
+    --extra-reconall-arg-base=$StudyFolder/${Timepoints[0]}/T1w/T2w_acpc_dc_restore.nii.gz)
+
   #--extra-reconall-arg-base=-conf2hires Freesurfer reports this is unneeded.
-  
-  "${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/LongitudinalFreeSurferPipeline.sh --subject="$Subject" --path="$StudyFolder" \
-    --sessions "$TPlist" --template-id "$LongitudinalTemplate" --extra-reconall-arg-long=-T2pial \
-    --extra-reconall-arg-base=-T2pial --extra-reconall-arg-base=-T2 --extra-reconall-arg-base=$StudyFolder/${Timepoints[0]}/T1w/T2w_acpc_dc_restore.nii.gz \
-    --generate_timepoints_only=0 --generate_template_only=0
+  echo "Running command: ${cmd[*]}"
+  "$cmd[@]}"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/T1w/T2w_acpc_dc_restore.nii.gz -T2pial"

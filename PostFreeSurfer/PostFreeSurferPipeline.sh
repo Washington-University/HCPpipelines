@@ -54,7 +54,7 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label that matches root dir for a single subject experiment. For longitudinal experiment root to be identified correctly, must use longitudinal_timepoint and longitudinal_template options."
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label that matches root dir for a single time point processing. For longitudinal experiment root to be identified correctly, must use longitudinal-timepoint and longitudinal-template options."
 opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
 opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
 opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
@@ -71,29 +71,29 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleD
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
-#Longitudinal_mode modes:
-#NONE: cross-sectional processing (default)
-#TIMEPOINT_STAGE[1|2]: timepoint processing stage 1 or 2
-#TEMPLATE: template processing (must be run after all timepoints)
+opts_AddOptional '--longitudinal-mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode
+Longitudinal modes:
+NONE: cross-sectional processing (default)
+TIMEPOINT_STAGE[1|2]: timepoint processing stage 1 or 2
+TEMPLATE: template processing (must be run after all timepoints)
 
-#There are some specific conventions on timepoint and template processing directories:
-#In cross-sectional mode, 'Subject' label and subject study (timepoint) labels are treated as being the same by HCP in the original design. 
-#In longitudinal mode, 'Timepoint' is a study within a subject and, since there are multiple timepoints (studies) per subject, 
-#they must be labeled differently.
-#Timepoint label may be arbitrary but conventionally, should contain subject as part of name. E.g. if for subject 
-#HCA6002236 there are two timepoints, thay may be labeled HCA6002236_V1 and HCA6002236_V2. 
-#For crossectional (initial) processing, these are supplied instead of 'Subject' label to PreFreesurferPipeline. 
-#For the FreesurferPipeline-long, these are also supplied as timepoint labels, as well as chosen template label, e.g. HCA6002236_V1_V2. 
-#Then the same are supplied to PostFreesurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
-#internally, longitudinal timepoint directories will be named as: <Timepoint>.long.<Template>
-#Longitudinal template directory is named <Subject>.long.<Template>. 
-#Longitudinal Freesurfer files for timepoints are stored under <Timepoint>.long.<Template>/T1w/<Timepoint>.long.<Temlate>. 
-#Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. 
+There are some specific conventions on timepoint and template processing directories:
+In cross-sectional mode, _Subject_ label and subject study (timepoint) labels are treated as being the same by HCP in the original design. 
+In longitudinal mode, _Timepoint_ is a study within a subject and, since there are multiple timepoints (studies) per subject, 
+they must be labeled differently.
+Timepoint label may be arbitrary but conventionally, should contain subject as part of name. E.g. if for subject 
+HCA6002236 there are two timepoints, thay may be labeled HCA6002236_V1 and HCA6002236_V2. 
+For crossectional (initial) processing, these are supplied instead of _Subject_ label to PreFreesurferPipeline. 
+For the FreesurferPipeline-long, these are also supplied as timepoint labels, as well as chosen template label, e.g. HCA6002236_V1_V2. 
+Then the same are supplied to PostFreesurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
+internally, longitudinal timepoint directories will be named as: <Timepoint>.long.<Template>
+Longitudinal template directory is named <Subject>.long.<Template>. 
+Longitudinal Freesurfer files for timepoints are stored under <Timepoint>.long.<Template>/T1w/<Timepoint>.long.<Temlate>. 
+Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. " "NONE"
 
-opts_AddOptional '--longitudinal_mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode" "NONE"
-opts_AddOptional '--longitudinal_template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal tetmplate if LongitudinalMode!=NONE" ""
-opts_AddOptional '--longitudinal_timepoint_list' 'LongitudinalTimepointList' 'FS longitudial timepoint list' "Longitudinal timepoint list '@' separated, if LongitudinalMode==TEMPLATE" ""
-opts_AddOptional '--longitudinal_timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT_STAGEX" ""
+opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
+opts_AddOptional '--longitudinal-timepoint-list' 'LongitudinalTimepointList' 'FS longitudial timepoint list' "Longitudinal timepoint list '@' separated, if LongitudinalMode==TEMPLATE"
+opts_AddOptional '--longitudinal-timepoint' 'LongitudinalTimepoint' 'FS longitudinal timepoint label' "Longitudinal timepoint if LongitudinalMode==TIMEPOINT_STAGEX"
 
 opts_ParseArguments "$@"
 
@@ -137,15 +137,13 @@ HCPPIPEDIR_PostFS="$HCPPIPEDIR/PostFreeSurfer/scripts"
 PipelineScripts="$HCPPIPEDIR_PostFS"
 
 #ExperimentRoot points to actual experiment directory
-ExperimentRoot=$Subject
-IsLongitudinal=0
-if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" -o "$LongitudinalMode" == "TIMEPOINT_STAGE2" ]; then
-    ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"
-    IsLongitudinal=1
-elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
-    ExperimentRoot="$Subject".long."$LongitudinalTemplate"
-    IsLongitudinal=1
-fi
+case "$LongitudinalMode" in
+    NONE)       ExperimentRoot=$Subject; IsLongitudinal=0 ;;
+    TIMEPOINT_STAGE1|TIMEPOINT_STAGE2) 
+                ExperimentRoot="$LongitudinalTimepoint".long."$LongitudinalTemplate"; IsLongitudinal=1 ;;
+    TEMPLATE)   ExperimentRoot="$Subject".long."$LongitudinalTemplate"; IsLongitudinal=1 ;;
+    *)          log_Err_Abort "unrecognized value for --longitudinal mode: $LongitudinalMode" ;;
+esac
 
 echo ExperimentRoot: $ExperimentRoot
 

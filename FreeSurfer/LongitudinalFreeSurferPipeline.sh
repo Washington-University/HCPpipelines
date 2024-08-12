@@ -48,89 +48,20 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging fun
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 
-#process legacy syntax and repeatable arguments
-if (($# > 0))
-then
-    newargs=()
-    origargs=("$@")
-    extra_reconall_args_base_manual=()
-    extra_reconall_args_long_manual=()
-    changeargs=0
-    for ((i = 0; i < ${#origargs[@]}; ++i))
-    do
-        case "${origargs[i]}" in
-            (--extra-reconall-arg-base=*)
-                #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
-                #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
-                extra_reconall_args_base_manual+=("${origargs[i]#*=}")
-                changeargs=1
-                ;;
-            (--extra-reconall-arg-base)
-                #also support --extra-reconall-arg foo, for fewer surprises
-                if ((i + 1 >= ${#origargs[@]}))
-                then
-                    log_Err_Abort "--extra-reconall-args-base requires an argument"
-                fi
-                extra_reconall_args_base_manual+=("${origargs[i + 1]#*=}")
-                #skip the next argument, we took care of it
-                i=$((i + 1))
-                changeargs=1
-                ;;
-            (--extra-reconall-arg-long=*)
-                #repeatable options aren't yet a thing in newopts (indirect assignment to arrays seems to need eval)
-                #figure out whether these extra arguments could have a better syntax (if whitespace is supported, probably not)
-                extra_reconall_args_long_manual+=("${origargs[i]#*=}")
-                changeargs=1
-                ;;
-            (--extra-reconall-arg-long)
-                #also support --extra-reconall-arg foo, for fewer surprises
-                if ((i + 1 >= ${#origargs[@]}))
-                then
-                    log_Err_Abort "--extra-reconall-args-long requires an argument"
-                fi
-                extra_reconall_args_long_manual+=("${origargs[i + 1]#*=}")
-                #skip the next argument, we took care of it
-                i=$((i + 1))
-                changeargs=1
-                ;;
-            (*)
-                #copy anything unrecognized
-                newargs+=("${origargs[i]}")
-                ;;
-        esac
-    done
-    if ((changeargs))
-    then
-        echo "original arguments: $*"
-        set -- "${newargs[@]}"
-        echo "new arguments: $*"
-        echo "extra recon-all base arguments: ${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"}"
-        echo "extra recon-all long arguments: ${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"}"
-    fi
-fi
-
 #description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
 
 # Show usage information
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all outputs generated as path/subject"
-
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "An @ symbol separated list of session IDs (required)"
-
 opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required)"
-
+opts_AddMandatory '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" '1'
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
-opts_AddOptional '--extra-reconall-arg-base' 'extra_reconall_args_base' 'token' "(repeatable)  Generic single token argument to pass to recon-all for base template preparation.  Provides a mechanism to:  (i) customize the recon-all command  (ii) specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits)  If you want to avoid running all the stages inherent to the '-all' flag in recon-all,  you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use  equal signs in its argument specification).  e.g., --extra-reconall-arg-base=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all.  But, --extra-reconall-arg-base='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg-base multiple times (in the proper sequential fashion).  e.g., --extra-reconall-arg-base=-norm3diters --extra-reconall-arg-base=3  will be translated to '-norm3diters 3' when passed to recon-all."
-
-opts_AddOptional '--generate_template_only' 'generate_template_only' 'integer' 'Set to 1 to generate template only without timepoints [0]'
-opts_AddOptional '--generate_timepoints_only' 'generate_timepoints_only' 'integer' 'Set to 1 to generate timepoints only (assuming the template has been generated previously with "--generate_template_only" option) [0]'
-
-opts_AddOptional '--extra-reconall-arg-long' 'extra_reconall_arg_long' 'token' "(repeatable)  Generic single token argument to pass to recon-all for the actual longitudinal processing.  See the description for extra_reconall_arg_base parameter for extra details."
-
+opts_AddOptional '--generate-template' 'generate_template' 'integer' 'Set to 0 to not generate template (assuming it is already generated) [1]'
+opts_AddOptional '--generate-timepoints' 'generate_timepoints' 'integer' 'Set to 0 to not generate timepoints [1]'
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -138,21 +69,8 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-#TSC: hack around the lack of repeatable option support, use a single string for display
-extra_reconall_args_base=${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"}
-extra_reconall_args_long=${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"}
-
 #display the parsed/default values
 opts_ShowValues
-
-#TSC: now use an array for proper argument handling
-extra_reconall_args_base=(${extra_reconall_args_base_manual[*]+"${extra_reconall_args_base_manual[*]}"})
-extra_reconall_args_long=(${extra_reconall_args_long_manual[*]+"${extra_reconall_args_long_manual[*]}"})
-
-
-echo "extra_reconall_args_base: ${extra_reconall_args_base[@]}"
-echo "extra_reconall_args_long: ${extra_reconall_args_long[@]}"
-
 ${HCPPIPEDIR}/show_version
 
 #processing code goes here
@@ -288,7 +206,6 @@ validate_freesurfer_version
 log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 
-
 # ----------------------------------------------------------------------
 # Log values retrieved from positional parameters
 # ----------------------------------------------------------------------
@@ -297,14 +214,25 @@ log_Msg "SubjectID: ${SubjectID}"
 log_Msg "Sessions: ${Sessions}"
 log_Msg "TemplateID: ${TemplateID}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
-log_Msg "extra_reconall_args_base: ${extra_reconall_args_base[*]+"${extra_reconall_args_base[*]}"}"
-log_Msg "extra_reconall_args_long: ${extra_reconall_args_long[*]+"${extra_reconall_args_long[*]}"}"
 
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
 # ----------------------------------------------------------------------
 Sessions=`echo ${Sessions} | sed 's/@/ /g'`
+
+extra_reconall_args_base=""
+extra_reconall_args_long=""
+
+Session0=( $Sessions ); Session0=${Session0[0]}
+if (( UseT2w )); then
+  extra_reconall_args_base="-T2pial -T2 ${StudyFolder}/${Session0}/T1w/T2w_acpc_dc_restore.nii.gz"
+  extra_reconall_args_long="-T2pial"
+fi
+
+log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
+log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
 log_Msg "After delimiter substitution, Sessions: ${Sessions}"
+
 LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
 mkdir -p "${LongDIR}"
 for Session in ${Sessions} ; do
@@ -315,7 +243,7 @@ for Session in ${Sessions} ; do
 done
 
 
-if (( generate_timepoints_only != 1 )); then 
+if (( generate_template )); then 
 
 	# ----------------------------------------------------------------------
 	log_Msg "Creating the base template: ${TemplateID}"
@@ -344,8 +272,8 @@ if (( generate_timepoints_only != 1 )); then
 	log_Msg "Running the recon-all to generate common template"
 	#---------------------------------------------------------------------------------------
 
-	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
-	recon_all_cmd+=" ${extra_reconall_args_base[@]}"
+	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})  
+	recon_all_cmd+=" $extra_reconall_args_base "
 	echo "recon_all_cmd:"
 	echo ${recon_all_cmd}
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
@@ -356,7 +284,7 @@ if (( generate_timepoints_only != 1 )); then
 	  log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 	fi
 fi
-if (( generate_template_only != 1)); then 
+if (( generate_timepoints )); then 
 
 	# ----------------------------------------------------------------------
 	log_Msg "Running the longitudinal recon-all on each timepoint"
@@ -369,7 +297,7 @@ if (( generate_template_only != 1)); then
 	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
 	  
 	  #recon_all_cmd+=(${extra_reconall_args_long[@]+"${extra_reconall_args_long[@]}"})
-	  recon_all_cmd+=" ${extra_reconall_args_long[@]}"
+	  recon_all_cmd+=" $extra_reconall_args_long "
 	  T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
 	  
 	  if [ -f "$T2w" ]; then 

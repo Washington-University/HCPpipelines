@@ -7,10 +7,10 @@
 group Timepoint processing Stage 1
 :Run FreeSurfer2CaretConvertAndRegisterNonlinear;
 #palegreen: MNI152/Native/MSMSulc
-/{L|R}.sphere_rot.surf.gii;
+/{L|R}.sphere.rot.native.surf.gii;
 note
-generate average 
-surfaces, then stop
+generate surfaces 
+then stop
 end note
 stop
 end group
@@ -19,13 +19,13 @@ group Template processing
 :Run FreeSurfer2CaretConvertAndRegisterNonlinear
 until MSMSulc registration code;
 :Average MNI152/Native/MSMSulc
-/{L|R}.sphere_rot_average.surf.gii
+/{L|R}.sphere.rot.native.surf.gii
 across timepoints;
 #palegreen: MNI152/Native/MSMSulc
 /{L|R}.sphere_rot_average.surf.gii;
 :run MSMSulc.sh;
 :Rename and copy MSMSulc 
-registation to each timepoint'sh
+registation to each timepoint's
 MNI152/Native folder;
 :Run the rest of 
 FreeSurfer2CaretConvertAndRegisterNonlinear;

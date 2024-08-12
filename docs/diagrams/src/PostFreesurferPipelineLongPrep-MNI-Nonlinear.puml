@@ -1,0 +1,71 @@
+@startuml MNI nonlinear registration/copying
+group Nonlinear MNI atlas registration and post-processing of timepoints
+group Template processing
+split
+    -[hidden]->
+    #palegreen:T1w_acpc_dc_restore,
+    T1w_acpc_dc_restore_brain,
+    (optional)T2w_acpc_dc_restore
+    (optional)T2w_acpc_dc_restore_brain;
+    note 
+        All inputs are from 
+        $T1w_dir_template
+    end note
+    :AtlasRegistrationToMNI152_FLIRTandFNIRT.sh;
+    #pink:xfms/acpc_dc2standard, xfms/standard2acpc_dc.nii.gz
+    T1w, T1w_restore, T1w_restore_brain,
+    (optional)T2w, T2w_restore, T2w_restore_brain;
+    note
+        All outputs go to
+        AtlasSpaceFolder_template=
+        $StudyFolder
+        /$Template
+        /MNINonLinear
+    end note
+split again
+    -[hidden]->
+    #palegreen:"$T1w_dir_long"/"$T1wImageBrainMask";
+end split
+end group
+
+
+group Timepoint processing
+    split
+    -[hidden]->
+        #palegreen:"$T1w_dir_long"/"$T1wImageBrainMask";
+        :Warp template brain mask to MNI space (applywarp);
+        #pink: $AtlasSpaceFolder_template"/"$T1wImageBrainMask";
+        :Copy template atlas warp to all timepoints;
+        :Copy template brain mask to all timepoint's brain mask;
+        :Mask _acpc_dc and acpc_dc_restore timepoint images 
+        using template mask;
+
+    split again
+        -[hidden]->
+        #palegreen:T1w_acpc_dc, 
+        T1w_acpc_dc_restore,
+        T1w_acpc_dc_restore_brain,
+        (optional)T1w_acpc_dc,
+        T1w_acpc_dc_restore,
+        T1w_acpc_dc_restore_brain;
+        note right
+            All inputs are
+            from $T1w_dir_long
+        end note
+    end split
+    
+    :apply MNI152 warp;
+    #pink:T1w, T1w_restore,T1w_restore_brain,
+    (optional)T2w, T2w_restore,T2w_restore_brain;
+    note left
+        All processing is done in 
+        $StudyFolder
+        /$Timepoint_long/MNINonLinear
+    end note    
+    :fslmaths T1w_restore -mas T1w_restore_brain T1w_restore_brain
+    (optional) fslmaths T2w_restore -mas T1w_restore_brain T2w_restore_brain;
+    #pink:T1w_restore_brain, (optional)T2w_restore_brain;    
+    detach
+end group
+
+@enduml
