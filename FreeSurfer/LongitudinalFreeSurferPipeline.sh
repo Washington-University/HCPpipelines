@@ -52,10 +52,10 @@ source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check process
 opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
 
 # Show usage information
-opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all outputs generated as path/subject"
+opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-opts_AddMandatory '--sessions' 'Sessions' 'sessions' "An @ symbol separated list of session IDs (required)"
-opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required)"
+opts_AddMandatory '--sessions' 'Sessions' 'sessions' "An @ symbol separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each session directory"
+opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
 opts_AddMandatory '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" '1'
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 

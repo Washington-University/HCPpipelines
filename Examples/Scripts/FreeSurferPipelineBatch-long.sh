@@ -1,22 +1,22 @@
 #!/bin/bash
-
 function identify_timepoints
 {
     local subject=$1
     local tplist=""
     local tp visit n
 
-    #build the list of timepoints
+    #build the list of timepoints (sessions)
     n=0
-    for visit in ${PossibleVisits[@]}; do
-        tp="${subject}_${visit}"
-        if [ -d "$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]${ExcludeVisits[*]}[[:space:]] ]]; then
-            if (( n==0 )); then 
-                tplist="$tp"
-            else
-                tplist="$tplist@tp"
-            fi
+    for session in ${PossibleVisits[*]}; do
+        tp="${subject}_${session}"
+        if [ -d "$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+             if (( n==0 )); then 
+                    tplist="$tp"
+             else
+                    tplist="$tplist@$tp"
+             fi
         fi
+        ((n++))
     done
     echo $tplist
 }
@@ -44,7 +44,7 @@ done
 StudyFolder="<MyStudyPath>"
 #The list of subject labels, space separated
 Subjects=(HCA6002236 HCA6002237 HCA6002238)
-#The list of possible visits that each subject may have. Timepoint directories should be named <Subject>_<Visit>.
+#The list of possible visits (aka timepoints, sessions) that each subject may have. Timepoint directories should be named <Subject>_<Visit>.
 PossibleVisits=(V1_MR V2_MR V3_MR V4_MR V5_MR V6_MR V7_MR V8_MR V9_MR V10_MR)
 #The list of possible visits that each subject may have. Timepoint (visit) is expected to be named <Subject>_<Visit>.
 #Actual visits (timepoints) are determined based on existing directories that match the visit name pattern.

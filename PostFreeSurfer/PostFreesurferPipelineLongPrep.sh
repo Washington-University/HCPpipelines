@@ -95,8 +95,9 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins
 #The following options
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
 opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
-opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint\
-                    processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated"
+opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
+                    processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated.\
+                    Timepoint ID and Session are synonyms in HCP structural pipelines."
 opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
 #the following options have the same meaning as in PreFreesurferPipeline.
@@ -402,7 +403,7 @@ if (( TemplateProcessing ==  1 )); then
         cp ${AtlasSpaceFolder_template}/"$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
         cp "${T1w_dir_template}/$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_acpc_dc"
         
-        #mask the native space images.
+        #mask the acpc_dc space images.
         ${FSLDIR}/bin/fslmaths $T1w_dir_long/${T1wImage}_acpc_dc -mas "$Timepoint_brain_mask_acpc_dc" $T1w_dir_long/${T1wImage}_acpc_dc_brain
         ${FSLDIR}/bin/fslmaths $T1w_dir_long/${T1wImage}_acpc_dc_restore -mas "$Timepoint_brain_mask_acpc_dc" $T1w_dir_long/${T1wImage}_acpc_dc_restore_brain
 
