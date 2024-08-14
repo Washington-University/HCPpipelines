@@ -129,7 +129,7 @@ opts_SetScriptDescription "Runs the FreeSurfer HCP pipline on data processed by 
 # Show usage information
 opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session"
 
-opts_AddOptional '--sessionDIR' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "" "--session-dir"
+opts_AddOptional '--sessionDIR' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "" "--subject-dir"
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
 
@@ -141,7 +141,7 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/session.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE"
+opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/session.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
 opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-session flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
