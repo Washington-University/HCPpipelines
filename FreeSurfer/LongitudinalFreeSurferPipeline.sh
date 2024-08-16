@@ -56,12 +56,12 @@ opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "An @ symbol separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
-opts_AddMandatory '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" '1'
+opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
-opts_AddOptional '--generate-template' 'generate_template' 'integer' 'Set to 0 to not generate template (assuming it is already generated) [1]'
-opts_AddOptional '--generate-timepoints' 'generate_timepoints' 'integer' 'Set to 0 to not generate timepoints [1]'
+opts_AddOptional '--generate-template' 'generate_template' 'integer' 'Set to 0 to not generate template (assuming it is already generated) [1]' "1"
+opts_AddOptional '--generate-timepoints' 'generate_timepoints' 'integer' 'Set to 0 to not generate timepoints [1]' "1"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))

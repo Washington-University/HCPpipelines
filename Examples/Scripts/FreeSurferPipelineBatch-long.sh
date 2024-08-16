@@ -9,7 +9,7 @@ function identify_timepoints
     n=0
     for session in ${PossibleVisits[*]}; do
         tp="${subject}_${session}"
-        if [ -d "$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
              if (( n==0 )); then 
                     tplist="$tp"
              else
@@ -79,7 +79,7 @@ QUEUE=""
 
 ######################################### DO WORK ##########################################
 
-for i in ${!Subjlist[@]}; do
+for i in ${!Subjects[@]}; do
   Subject=${Subjects[i]}
   #Subject's time point list, @ separated.  
   TPlist=(`identify_timepoints $Subject`)
@@ -109,15 +109,11 @@ for i in ${!Subjlist[@]}; do
     --subject="$Subject" \
     --path="$StudyFolder" \
     --sessions="$TPlist" \
-    --template-id="$LongitudinalTemplate" \
-    --extra-reconall-arg-long=-T2pial \
-    --extra-reconall-arg-base=-T2pial \
-    --extra-reconall-arg-base=-T2 \
-    --extra-reconall-arg-base=$StudyFolder/${Timepoints[0]}/T1w/T2w_acpc_dc_restore.nii.gz)
+    --template-id="$LongitudinalTemplate")
 
   #--extra-reconall-arg-base=-conf2hires Freesurfer reports this is unneeded.
   echo "Running command: ${cmd[*]}"
-  "$cmd[@]}"
+  $cmd[@]
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/T1w/T2w_acpc_dc_restore.nii.gz -T2pial"

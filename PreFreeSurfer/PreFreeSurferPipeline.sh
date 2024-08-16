@@ -184,7 +184,7 @@ opts_SetScriptDescription "Prepares raw data for running the FreeSurfer HCP pipe
 
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to study data folder (required)  Used with --session input to create full path to root  directory for all outputs generated as path/session)"
 
-opts_AddMandatory '--session' 'Session' 'session' "Session ID (required)  Used with --path input to create full path to root  directory for all outputs generated as path/session" "default placeholder" --subject
+opts_AddMandatory '--session' 'Session' 'session' "Session ID (required)  Used with --path input to create full path to root  directory for all outputs generated as path/session" "--subject"
 
 opts_AddMandatory '--t1' 'T1wInputImages' "T1" "An @ symbol separated list of full paths to T1-weighted  (T1w) structural images for the session (required)"
 
