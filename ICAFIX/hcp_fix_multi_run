@@ -130,6 +130,8 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) 
 
 opts_AddOptional '--fix-only' 'RunFIXOnly' 'TRUE or FALSE' 'If TRUE, it skips running ICA using melodic and proceeds directly with running FIX. A previous ICA solution has to exist!' 'FALSE'
 
+opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -139,6 +141,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+ConcatOnly=$(opts_StringToBool "$ConcatOnlyStr")
 
 #############################################################
 
@@ -875,10 +879,6 @@ fi
 # Return to ${ConcatFolder}
 # Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
 cd ../..
-
-
-
-
 
 ## ---------------------------------------------------------------------------
 ## Actually run FIX

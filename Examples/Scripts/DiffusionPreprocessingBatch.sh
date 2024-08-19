@@ -131,13 +131,13 @@ for Subject in $Subjlist ; do
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
   
-  # "Effective" Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
+  # "Effective" Echo Spacing of dMRI image (now specified in seconds for the dMRI processing)
   # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
   #   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
   #   ReconMatrixPE = size of the reconstructed image in the PE dimension
   # In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
   # all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-  EchoSpacing=0.78
+  EchoSpacingSec=0.00078
   
   PEdir=1 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
@@ -158,7 +158,7 @@ for Subject in $Subjlist ; do
   "${queuing_command[@]}" "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline.sh \
       --posData="${PosData}" --negData="${NegData}" \
       --path="${StudyFolder}" --subject="${SubjectID}" \
-      --echospacing="${EchoSpacing}" --PEdir="${PEdir}" \
+      --echospacing-seconds="${EchoSpacingSec}" --PEdir="${PEdir}" \
       --gdcoeffs="${Gdcoeffs}" \
       --printcom="$PRINTCOM"
 
