@@ -31,7 +31,7 @@
 #
 #	Changes by Grega Repovš
 #
-#	1) Introduce --fix-only option to skip melodic and proceed with FIX on previously computed ICA solution
+#	1) Introduce --skip-ica option to skip melodic and proceed with FIX on previously computed ICA solution
 
 #############################################################
 set -eu
@@ -128,7 +128,7 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
-opts_AddOptional '--fix-only' 'RunFIXOnly' 'TRUE or FALSE' 'If TRUE, it skips running ICA using melodic and proceeds directly with running FIX. A previous ICA solution has to exist!' 'FALSE'
+opts_AddOptional '--skip-ica' 'SkipICAStr' 'TRUE or FALSE' 'If TRUE, it skips running ICA using melodic and proceeds directly with running FIX. A previous ICA solution has to exist!' 'FALSE'
 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
@@ -142,7 +142,9 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+#sanity check boolean strings and convert to 1 and 0
 ConcatOnly=$(opts_StringToBool "$ConcatOnlyStr")
+SkipICA=$(opts_StringToBool "$SkipICAStr")
 
 #############################################################
 
@@ -385,12 +387,12 @@ log_Msg "PWD: $DIR"
 # AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
 ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
+## ====================================================================================
+## RunICA unless RunFIXOnly is set to TRUE. In the latter case skip all steps until FIX 
+## ====================================================================================
 
-## ===========================================================================
-## Skip all steps until FIX if RunFIXOnly is set to TRUE
-## ===========================================================================
-
-if [[ "${RunFIXOnly}" == "FALSE" ]]; then
+if ((!SkipICA))
+then
 
 	## ---------------------------------------------------------------------------
 	## Preparation (highpass) on the individual runs
@@ -419,8 +421,10 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 
 		# Create necessary strings for merging across runs
 		# N.B. Some of these files don't exist yet, and are about to get created
-		NIFTIvolMergeARRAY+=("${fmriNoExt}_demean")
-		NIFTIvolhpVNMergeARRAY+=("${fmriNoExt}_hp${hp}_vnts")  #These are the individual run, VN'ed *time series*
+		#NIFTIvolMergeARRAY+=("${fmriNoExt}_demean")
+		NIFTIvolMergeARRAY+=(-volume "${fmriNoExt}_demean.nii.gz")
+		#NIFTIvolhpVNMergeARRAY+=("${fmriNoExt}_hp${hp}_vnts")  #These are the individual run, VN'ed *time series*
+		NIFTIvolhpVNMergeARRAY+=(-volume "${fmriNoExt}_hp${hp}_vnts.nii.gz")  #These are the individual run, VN'ed *time series*
 		SBRefVolARRAY+=("${fmriNoExt}_SBRef")
 		MeanVolARRAY+=("${fmriNoExt}_mean")
 		VNVolARRAY+=("${fmriNoExt}_hp${hp}_vn")  #These are the individual run, VN'ed NIFTI *maps* (created by functionhighpassandvariancenormalize)
@@ -632,19 +636,24 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 	ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
 	# Merge volumes from the individual runs
-	fslmerge -tr "${ConcatNameNoExt}_demean" "${NIFTIvolMergeARRAY[@]}" $tr
-	fslmerge -tr "${ConcatNameNoExt}_hp${hp}_vnts" "${NIFTIvolhpVNMergeARRAY[@]}" $tr
+	#fslmerge -tr "${ConcatNameNoExt}_demean" "${NIFTIvolMergeARRAY[@]}" $tr
+	${Caret7_Command} -volume-merge "${ConcatNameNoExt}_demean.nii.gz" "${NIFTIvolMergeARRAY[@]}"
+	#fslmerge -tr "${ConcatNameNoExt}_hp${hp}_vnts" "${NIFTIvolhpVNMergeARRAY[@]}" $tr
+	${Caret7_Command} -volume-merge "${ConcatNameNoExt}_hp${hp}_vnts.nii.gz" "${NIFTIvolhpVNMergeARRAY[@]}"
+
 	fslmerge -t  "${ConcatNameNoExt}_SBRef" "${SBRefVolARRAY[@]}"
 	fslmerge -t  "${ConcatNameNoExt}_mean" "${MeanVolARRAY[@]}"
 	fslmerge -t  "${ConcatNameNoExt}_hp${hp}_vn" "${VNVolARRAY[@]}"
 	# Average across runs
 	fslmaths "${ConcatNameNoExt}_SBRef" -Tmean "${ConcatNameNoExt}_SBRef"
 	fslmaths "${ConcatNameNoExt}_mean" -Tmean "${ConcatNameNoExt}_mean"  # "Grand" mean across runs
-	fslmaths "${ConcatNameNoExt}_demean" -add "${ConcatNameNoExt}_mean" "${ConcatNameNoExt}"
+	${Caret7_Command} -volume-math "TCS + MEAN" "${ConcatNameNoExt}.nii.gz" -var TCS "${ConcatNameNoExt}_demean.nii.gz" -var MEAN "${ConcatNameNoExt}_mean.nii.gz" -subvolume 1 -repeat
+	#fslmaths "${ConcatNameNoExt}_demean" -add "${ConcatNameNoExt}_mean" "${ConcatNameNoExt}"
 	# Preceding line adds back in the "grand" mean
 	# Resulting file not used below, but want this concatenated version (without HP or VN) to exist
 	fslmaths "${ConcatNameNoExt}_hp${hp}_vn" -Tmean "${ConcatNameNoExt}_hp${hp}_vn"  # Mean VN map across the individual runs
-	fslmaths "${ConcatNameNoExt}_hp${hp}_vnts" -mul "${ConcatNameNoExt}_hp${hp}_vn" "${ConcatNameNoExt}_hp${hp}"
+	${Caret7_Command} -volume-math "TCS * VN" "${ConcatNameNoExt}_hp${hp}.nii.gz" -var TCS "${ConcatNameNoExt}_hp${hp}_vnts.nii.gz" -var VN "${ConcatNameNoExt}_hp${hp}_vn.nii.gz" -subvolume 1 -repeat
+	#fslmaths "${ConcatNameNoExt}_hp${hp}_vnts" -mul "${ConcatNameNoExt}_hp${hp}_vn" "${ConcatNameNoExt}_hp${hp}"
 	# Preceding line restores the mean VN map
 	# The resulting TCS becomes the input to a 2nd pass of VN, which then becomes the input to melodic
 	fslmaths "${ConcatNameNoExt}_SBRef" -bin "${ConcatNameNoExt}_brain_mask"
@@ -658,19 +667,9 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 	${Caret7_Command} -cifti-average "${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii" "${VNCIFTIARRAY[@]}"
 	${Caret7_Command} -cifti-math "TCS * VN" "${ConcatNameNoExt}_Atlas_hp${hp}.dtseries.nii" -var TCS "${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii" -var VN "${ConcatNameNoExt}_Atlas_hp${hp}_vn.dscalar.nii" -select 1 1 -repeat
 
-	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
-	log_Msg "Removing the concatenated VN'ed time series"
-	"$FSLDIR/bin/imrm" "${ConcatNameNoExt}_hp${hp}_vnts"
-	/bin/rm -f "${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii"
-	# Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
-	# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmrihp file
-	# during the "2nd pass" VN (below)
-	#$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
-
-	# Nor do we need the concatenated demeaned time series (either volume or CIFTI)
-	log_Msg "Removing the concatenated demeaned time series"
-	"$FSLDIR/bin/imrm" "${ConcatNameNoExt}_demean"
-	/bin/rm -f "${ConcatNameNoExt}_Atlas_demean.dtseries.nii"
+	#Concatenate Movement regressors
+	log_Debug_Msg "About to put contents of ${MovementTXTMergeARRAY[*]} in Movement_Regressors_demean.txt file"
+	cat "${MovementTXTMergeARRAY[@]}" > ${ConcatFolder}/Movement_Regressors_demean.txt
 
 	# Also, we no longer need the individual run VN'ed or demeaned time series (either volume or CIFTI); delete to save space
 	for fmri in "${fmris[@]}" ; do
@@ -686,6 +685,24 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 		/bin/rm -f "${fmriNoExt}_Atlas_hp${hp}.dtseries.nii"
 	done
 
+	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
+	log_Msg "Removing the concatenated VN'ed time series"
+	"$FSLDIR/bin/imrm" "${ConcatNameNoExt}_hp${hp}_vnts"
+	/bin/rm -f "${ConcatNameNoExt}_Atlas_hp${hp}_vn.dtseries.nii"
+	# Alternatively, if the volume version is needed for any reason, need to at least rename it to avoid conflict with
+	# same named file that will get created by running functionhighpassandvariancenormalize on the concatfmrihp file
+	# during the "2nd pass" VN (below)
+	#$FSLDIR/bin/immv ${ConcatNameNoExt}_hp${hp}_vnts ${ConcatNameNoExt}_hp${hp}_vnts0
+
+	# Nor do we need the concatenated demeaned time series (either volume or CIFTI)
+	log_Msg "Removing the concatenated demeaned time series"
+	"$FSLDIR/bin/imrm" "${ConcatNameNoExt}_demean"
+	/bin/rm -f "${ConcatNameNoExt}_Atlas_demean.dtseries.nii"
+
+	if ((ConcatOnly)); then
+		exit
+	fi
+
 	## ---------------------------------------------------------------------------
 	## Prepare for melodic on concatenated file
 	## ---------------------------------------------------------------------------
@@ -699,8 +716,6 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 	#MPH: Need to be in original directory here, for the ${MovementNIFTI*ARRAY[@]} variables to work
 	#if user did not use absolute paths for input arguments
 	mkdir -p ${ConcatFolder}/${concatfmrihp}.ica
-	log_Debug_Msg "About to put contents of ${MovementTXTMergeARRAY[*]} in Movement_Regressors_demean.txt file"
-	cat "${MovementTXTMergeARRAY[@]}" > ${ConcatFolder}/Movement_Regressors_demean.txt
 	mkdir ${ConcatFolder}/${concatfmrihp}.ica/mc
 	fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp "${MovementNIFTIhpMergeARRAY[@]}" $tr
 	fslmerge -tr ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf "${MovementNIFTIMergeARRAY[@]}" $tr
@@ -810,11 +825,11 @@ if [[ "${RunFIXOnly}" == "FALSE" ]]; then
 	$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/concat_data
 
 	## ===========================================================================
-	## End skip in case of RunFIXOnly
+	## End skip in case of SkipICA
 	## ===========================================================================
 
 else
-	log_Msg "Skipping directly to FIX. All the files generated by ICA have to be present!"
+	log_Msg "Skipping ICA and proceeding directly to FIX. All the files generated by ICA have to be present!"
 
 	# Set the variables
 	ConcatFolder=`dirname ${ConcatName}`
@@ -826,10 +841,13 @@ else
 	cd ${ConcatFolder}
 
 	if [ -d "${concatfmrihp}.ica/fix" ]; then
-		mv "${concatfmrihp}.ica/fix" "${concatfmrihp}.ica/fix-bkp-$(date +"%Y-%m-%d.%H%M%S")"
+		fix_backup_suffix="-bkp-$(date +"%Y-%m-%d.%H%M%S")"
+		mv "${concatfmrihp}.ica/fix" "${concatfmrihp}.ica/fix${fix_backup_suffix}"
+		log_Msg "Previous fix solution found and renamed to fix${fix_backup_suffix}."
 	fi
 
 fi
+
 
 ## ---------------------------------------------------------------------------
 ## Housekeeping related to files expected for FIX
