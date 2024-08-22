@@ -391,7 +391,7 @@ ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWD
 ## RunICA unless RunFIXOnly is set to TRUE. In the latter case skip all steps until FIX 
 ## ====================================================================================
 
-if ((!SkipICA))
+if ((! SkipICA))
 then
 
 	## ---------------------------------------------------------------------------
