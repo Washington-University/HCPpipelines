@@ -13,7 +13,7 @@ function identify_timepoints
              if (( n==0 )); then 
                     tplist="$tp"
              else
-                    tplist="$tplist@$tp"
+                    tplist="$tplist,$tp"
              fi
         fi
         ((n++))
@@ -41,7 +41,7 @@ done
 # General input variables
 ##################################################################################################
 #Location of Subject folders (named by subjectID)
-StudyFolder="<MyStudyPath>"
+StudyFolder="/my/study/path"
 #The list of subject labels, space separated
 Subjects=(HCA6002236 HCA6002237 HCA6002238)
 #The list of possible visits (aka timepoints, sessions) that each subject may have. Timepoint directories should be named <Subject>_<Visit>.
@@ -84,7 +84,7 @@ for i in ${!Subjects[@]}; do
   #Subject's time point list, @ separated.  
   TPlist=(`identify_timepoints $Subject`)
   #Array with timepoints
-  IFS=@ read -ra Timepoints <<< "$TPlist"
+  IFS=, read -ra Timepoints <<< "$TPlist"
   #Freesurfer longitudinal average template label
   LongitudinalTemplate=${Templates[i]}
 
@@ -113,7 +113,7 @@ for i in ${!Subjects[@]}; do
 
   #--extra-reconall-arg-base=-conf2hires Freesurfer reports this is unneeded.
   echo "Running command: ${cmd[*]}"
-  $cmd[@]
+  ${cmd[@]}
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/T1w/T2w_acpc_dc_restore.nii.gz -T2pial"

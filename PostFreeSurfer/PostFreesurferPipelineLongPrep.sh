@@ -96,7 +96,7 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
 opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
 opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
-                    processing, specify current timepoint. For template processing, must specify all timepoints, '@' separated.\
+                    processing, specify current timepoint. For template processing, must specify all timepoints, ',' separated.\
                     Timepoint ID and Session are synonyms in HCP structural pipelines."
 opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
@@ -127,7 +127,7 @@ T2wFolder="T2w" #Location of T2w images
 Modalities="T1w T2w"
 MNI_08mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
-IFS='@' read -r -a timepoints <<< "$Timepoints_cross"
+IFS=',' read -r -a timepoints <<< "$Timepoints_cross"
 Timepoint_cross=${timepoints[0]}
 
 ############################################################################################################

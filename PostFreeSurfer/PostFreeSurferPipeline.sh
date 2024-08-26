@@ -56,7 +56,7 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
 
 opts_AddMandatory '--subject-long' 'Subject' 'subject ID' "subject label, may be different from Session"
-opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "placeholder" "--subject" #legacy --subject option
+opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "--subject" #legacy --subject option
 opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
 opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
 opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
@@ -94,7 +94,7 @@ Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Te
 Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. " "NONE"
 
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
-opts_AddOptional '--longitudinal-timepoint-list' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list '@' separated, if LongitudinalMode==TEMPLATE"
+opts_AddOptional '--longitudinal-timepoint-list' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list ',' separated, if LongitudinalMode==TEMPLATE"
 
 opts_ParseArguments "$@"
 

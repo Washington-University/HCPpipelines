@@ -54,7 +54,7 @@ opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
 # Show usage information
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-opts_AddMandatory '--sessions' 'Sessions' 'sessions' "An @ symbol separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
+opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
 opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
@@ -218,7 +218,7 @@ log_Msg "recon_all_seed: ${recon_all_seed}"
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
 # ----------------------------------------------------------------------
-Sessions=`echo ${Sessions} | sed 's/@/ /g'`
+Sessions=`echo ${Sessions} | sed 's/,/ /g'`
 
 extra_reconall_args_base=""
 extra_reconall_args_long=""

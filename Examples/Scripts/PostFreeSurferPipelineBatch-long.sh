@@ -10,11 +10,11 @@ function identify_timepoints
     n=0
     for visit in ${PossibleVisits[*]}; do
         tp="${subject}_${visit}"
-        if [ -d "$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
              if (( n==0 )); then 
                     tplist="$tp"
              else
-                    tplist="$tplist@$tp"
+                    tplist="$tplist,$tp"
              fi
         fi
         ((n++))
@@ -98,60 +98,50 @@ RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (Fr
 # Log the originating call
 echo "$@"
 
-#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
-#DO NOT include "-q " at the beginning
-#default to no queue, implying run local
-QUEUE=""
-#QUEUE="hcp_priority.q"
+#parallel mode: FSLSUB, BUILTIN, NONE
+parallel_mode=FSLSUB
+#parameter: queue name (fslsub), none (NONE)
+parallel_mode_param=short.q
 
-########################################## INPUTS ########################################## 
-#Scripts called by this script do assume they run on the outputs of the longitudinal FreeSurfer Pipeline
-######################################### DO WORK ##########################################
-if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-    echo "About to locally run longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh "
-    #NOTE: fsl_sub without -q runs locally and captures output in files
-    queuing_command="$FSLDIR/bin/fsl_sub"
-else
-    echo "About to use fsl_sub to queue longitudinal mode of ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
-    queuing_command="$FSLDIR/bin/fsl_sub -q $QUEUE"
-fi
 
-#iterate over all subjects. 
+#iterate over all subjects.
 for i in ${!Subjects[@]}; do
   Subject=${Subjects[i]}
   LongitudinalTemplate=${Templates[i]}
-  Timepoint_list=(`identify_timepoints $Subject`)  
+  Timepoint_list=(`identify_timepoints $Subject`)
   
   echo Subject: $Subject
   echo Template: $LongitudinalTemplate
   echo Timepoints: $Timepoint_list
 
-  cmd="${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongLauncher.sh \
-    --study-folder=\"$StudyFolder\"         \   
-    --subject=\"$Subject\"                  \
-    --template=\"$LongitudinalTemplate\"    \
-    --timepoints=\"$Timepoint_list\"        \
-    --queuing-command=\"$queuing_command\"  \
-    --t1template=\"$T1wTemplate\"           \
-    --t1templatebrain=\"$T1wTemplateBrain\" \
-    --t1template2mm=\"$T1wTemplate2mm\"     \
-    --t2template=\"$T2wTemplate\"           \
-    --t2templatebrain=\"$T2wTemplateBrain\" \
-    --t2template2mm=\"$T2wTemplate2mm\"     \
-    --templatemask=\"$TemplateMask\"        \
-    --template2mmmask=\"$Template2mmMask\"  \
-    --fnirtconfig=\"$FNIRTConfig\"          \
-    --freesurferlabels=\"$FreeSurferLabels\"\
-    --surfatlasdir=\"$SurfaceAtlasDIR\"     \
-    --grayordinatesres=\"$GrayordinatesResolutions\"    \
-    --grayordinatesdir=\"$GrayordinatesSpaceDIR\"       \
-    --hiresmesh=\"$HighResMesh\"            \
-    --lowresmesh=\"$LowResMeshes\"          \
-    --subcortgraylabels=\"$SubcorticalGrayLabels\"      \
-    --refmyelinmaps=\"$ReferenceMyelinMaps\"            \
-    --regname=\"$RegName\""
+  cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh \
+    --study-folder="$StudyFolder"         \
+    --subject="$Subject"                  \
+    --template="$LongitudinalTemplate"    \
+    --timepoints="$Timepoint_list"        \
+    --parallel-mode=$parallel_mode 	   \
+    --parallel-mode-param=$parallel_mode_param   \
+    --start-stage=POSTFS-T		   \
+    --t1template="$T1wTemplate"           \
+    --t1templatebrain="$T1wTemplateBrain" \
+    --t1template2mm="$T1wTemplate2mm"     \
+    --t2template="$T2wTemplate"           \
+    --t2templatebrain="$T2wTemplateBrain" \
+    --t2template2mm="$T2wTemplate2mm"     \
+    --templatemask="$TemplateMask"        \
+    --template2mmmask="$Template2mmMask"  \
+    --fnirtconfig="$FNIRTConfig"          \
+    --freesurferlabels="$FreeSurferLabels"\
+    --surfatlasdir="$SurfaceAtlasDIR"     \
+    --grayordinatesres="$GrayordinatesResolutions"    \
+    --grayordinatesdir="$GrayordinatesSpaceDIR"       \
+    --hiresmesh="$HighResMesh"            \
+    --lowresmesh="$LowResMeshes"          \
+    --subcortgraylabels="$SubcorticalGrayLabels"      \
+    --refmyelinmaps="$ReferenceMyelinMaps"            \
+    --regname="$RegName")
 
     echo "Running $cmd"
-    $cmd
+    ${cmd[@]}
 
 done

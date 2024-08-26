@@ -143,7 +143,7 @@ LongitudinalTimepoints="${27}"
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
+LongitudinalTimepoints="${LongitudinalTimepoints//,/ }"
 log_Msg "LongitudinalTimepoints: $LongitudinalTimepoints"
 
 GrayordinatesResolutions=${GrayordinatesResolutions//@/ }

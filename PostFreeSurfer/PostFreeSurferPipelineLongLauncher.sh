@@ -14,8 +14,9 @@ source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@" # Check proce
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" 
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label"
 opts_AddMandatory '--template' 'LongitudinalTemplate' 'template ID' "longitudinal template label (matching the one used in FreeSurferPipeline-long)"
-opts_AddMandatory '--timepoints' 'Timepoint_list' '@ separated list of timepoints (should match directory names)'
-opts_AddMandatory '--queuing-command' 'queuing_command' 'string' "queuing command"
+opts_AddMandatory '--timepoints' 'Timepoint_list' 'list' 'comma separated list of timepoints/sessions (should match directory names)'
+opts_AddMandatory '--parallel-mode' 'parallel_mode' 'string' "parallelization execution mode, one of FSLSUB, BUILTIN"
+opts_AddOptional '--parallel-mode-param' 'parallel_mode_param' 'custom' "FSLSUB: queue name [long.q]; BUILTIN: maximum number of threads [4]"
 
 #Options needed for PreFreesurferPipeline functionality
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
@@ -38,6 +39,7 @@ opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the stan
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
 opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin map to use for bias correction"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
+opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage [NONE]. One of PREP-T (PostFSPrepLong build template, skip timepoint processing), POSTFS-TP1 (PostFreeSurfer timepoint stage 1), POSTFS-T (PostFreesurfer template), POSTFS-TP2 (PostFreesurfer timepoint stage 2)" 
 
 opts_ParseArguments "$@"
 
@@ -56,127 +58,192 @@ verbose_echo " Using environment setting ..."
 verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
 verbose_echo " "
 
-IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
+IFS=, read -r -a Timepoints <<< "${Timepoint_list[i]}"
+echo "parallel mode: $parallel_mode"
+
+case $parallel_mode in
+	FSLSUB) 
+		if [ -z "$parallel_mode_param" ]; then parallel_mode_param=long.q; fi
+		queuing_command="$FSLDIR/bin/fsl_sub -q $parallel_mode_param"		
+		;;
+	BUILTIN)
+		if [ -z "$parallel_mode_param" ]; then parallel_mode_param=4; fi
+		queuing_command="custom_submit"
+		;;
+	*)	
+		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN"
+		;;
+esac		
+start_stage=0
+
+if [ -n "$StartStage" ]; then
+	
+	case $StartStage in
+		PREP-T) start_stage=1 ;;
+		POSTFS-TP1) start_stage=2 ;;
+		POSTFS-T) start_stage=3 ;;
+		POSTFS-TP2) start_stage=4 ;;
+		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
+	esac
+fi
 
 ##########################################################################################
 # PostFreesurferPipelineLongPrep.sh processing
 ##########################################################################################
 #process timepoints
 job_list=()
-for TP in ${Timepoints[@]}; do
-    echo "Running ppFS-long for timepoint: $TP"
-    job=$($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
-        --subject-long="$Subject" --path="$StudyFolder" \
-        --template="$LongitudinalTemplate"         \
-        --timepoints="$TP"                         \
-        --template_processing=0                    \
-        --t1template="$T1wTemplate"                \
-        --t1templatebrain="$T1wTemplateBrain"      \
-        --t1template2mm="$T1wTemplate2mm"          \
-        --t2template="$T2wTemplate"                \
-        --t2templatebrain="$T2wTemplateBrain"      \
-        --t2template2mm="$T2wTemplate2mm"          \
-        --templatemask="$TemplateMask"             \
-        --template2mmmask="$Template2mmMask"       \
-        --fnirtconfig="$FNIRTConfig"               \
-        --freesurferlabels="$FreeSurferLabels"     \
-    )
-    echo "submitted timepoint job $job"
-    job_list+=("$job")
-done
-jl="${job_list[@]}"
-#Process template and finalize timepoints. This must wait until all timepoints are finished.
-echo "Running ppFS-long for template $Template"
-template_job=$($queuing_command -j ${jl// /,} ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
-    --subject-long="$Subject"                       \
-    --path="$StudyFolder"                      \
-	--template="$LongitudinalTemplate"         \
-    --timepoints="$Timepoint_list"             \
-    --template_processing=1                    \
-    --t1template="$T1wTemplate"                \
-    --t1templatebrain="$T1wTemplateBrain"      \
-    --t1template2mm="$T1wTemplate2mm"          \
-    --t2template="$T2wTemplate"                \
-    --t2templatebrain="$T2wTemplateBrain"      \
-    --t2template2mm="$T2wTemplate2mm"          \
-    --templatemask="$TemplateMask"             \
-    --template2mmmask="$Template2mmMask"       \
-    --fnirtconfig="$FNIRTConfig"               \
-)
-echo "submitted template job $job"
-echo "Template processing job $template_job will wait for timepoint jobs $jl"
+
+if (( start_stage==0 )); then 
+	for TP in ${Timepoints[@]}; do
+	    echo "Running ppFS-long for timepoint: $TP"
+	    cmd=($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+		--subject="$Subject" --path="$StudyFolder" \
+		--template="$LongitudinalTemplate"         \
+		--timepoints="$TP"                         \
+		--template_processing=0                    \
+		--t1template="$T1wTemplate"                \
+		--t1templatebrain="$T1wTemplateBrain"      \
+		--t1template2mm="$T1wTemplate2mm"          \
+		--t2template="$T2wTemplate"                \
+		--t2templatebrain="$T2wTemplateBrain"      \
+		--t2template2mm="$T2wTemplate2mm"          \
+		--templatemask="$TemplateMask"             \
+		--template2mmmask="$Template2mmMask"       \
+		--fnirtconfig="$FNIRTConfig"               \
+		--freesurferlabels="$FreeSurferLabels"     \
+	    )
+	    echo launching: ${cmd[*]}
+	    job=$(${cmd[@]})
+	    echo "submitted timepoint job $job"
+	    job_list+=("$job")
+	done
+	jl="${job_list[@]}"
+fi	
+
+wait_for_jobs_option=""
+if [ -n "$job_list" ]; then wait_for_jobs_option="-j ${jl// /,}"; fi
+
+template_job=""
+if (( start_stage <= 1 )); then 
+	#Process template and finalize timepoints. This must wait until all timepoints are finished.
+	echo "Running ppFS-long for template $Template"
+	cmd=($queuing_command $wait_for_jobs_option ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+	    --subject="$Subject"                       \
+	    --path="$StudyFolder"                      \
+		--template="$LongitudinalTemplate"         \
+	    --timepoints="$Timepoint_list"             \
+	    --template_processing=1                    \
+	    --t1template="$T1wTemplate"                \
+	    --t1templatebrain="$T1wTemplateBrain"      \
+	    --t1template2mm="$T1wTemplate2mm"          \
+	    --t2template="$T2wTemplate"                \
+	    --t2templatebrain="$T2wTemplateBrain"      \
+	    --t2template2mm="$T2wTemplate2mm"          \
+	    --templatemask="$TemplateMask"             \
+	    --template2mmmask="$Template2mmMask"       \
+	    --fnirtconfig="$FNIRTConfig"               \
+	    --freesurferlabels="$FreeSurferLabels"	 \
+	)
+	echo launching: ${cmd[*]}
+	template_job=$(${cmd[@]})
+	echo "submitted template job $job"
+	echo "Template processing job $template_job will wait for timepoint jobs, if any: $jl"
+fi
+wait_for_jobs_option=""
+if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
 
 ##########################################################################################
 # PostFreesurferPipeline.sh processing
 ##########################################################################################
-echo "PostFS Timepoint processing, stage 1"
 job_list=()
-for Timepoint in ${Timepoints[@]}; do
-	#process each timepoint
-	job=$($queuing_command -j $template_job "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-	    --study-folder="$StudyFolder"                   \ 
-        --subject-long="$Subject"                            \
-        --longitudinal-mode="TIMEPOINT_STAGE1"          \
-        --longitudinal-template="$LongitudinalTemplate" \
-        --session="$Timepoint"           \
-        --freesurferlabels="$FreeSurferLabels"          \
-        --surfatlasdir="$SurfaceAtlasDIR"               \
-        --grayordinatesres="$GrayordinatesResolutions"  \
-        --grayordinatesdir="$GrayordinatesSpaceDIR"     \
-        --hiresmesh="$HighResMesh"                      \
-        --lowresmesh="$LowResMeshes"                    \
-        --subcortgraylabels="$SubcorticalGrayLabels"    \
-        --refmyelinmaps="$ReferenceMyelinMaps"          \
-        --regname="$RegName"
-    )
-	job_list+=("$job")
-done
-jl=$(IFS=','; echo "${job_list[*]}")
-echo "Launched stage 1 timepoint jobs: $jl (waiting for the prep template job $template_job)"
+if (( start_stage <=2 )); then 
+	echo "PostFS Timepoint processing, stage 1"
+
+	for Timepoint in ${Timepoints[@]}; do
+		#process each timepoint
+		cmd=($queuing_command $wait_for_jobs_option "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+		    --study-folder="$StudyFolder"               \ 
+		--subject-long="$Subject"                       \
+		--longitudinal-mode="TIMEPOINT_STAGE1"          \
+		--longitudinal-template="$LongitudinalTemplate" \
+		--session="$Timepoint"           		  \
+		--freesurferlabels="$FreeSurferLabels"          \
+		--surfatlasdir="$SurfaceAtlasDIR"               \
+		--grayordinatesres="$GrayordinatesResolutions"  \
+		--grayordinatesdir="$GrayordinatesSpaceDIR"     \
+		--hiresmesh="$HighResMesh"                      \
+		--lowresmesh="$LowResMeshes"                    \
+		--subcortgraylabels="$SubcorticalGrayLabels"    \
+		--refmyelinmaps="$ReferenceMyelinMaps"          \
+		--regname="$RegName"
+		)
+	    	echo "launching: ${cmd[*]}"
+	    	job=$(${cmd[@]})
+	    	echo "launched, job number: $job"
+		job_list+=("$job")
+	done
+	jl=$(IFS=','; echo "${job_list[*]}")
+	echo "Launched stage 1 timepoint jobs: $jl (waiting for the prep template job, if any: $template_job)"
+fi
+
+wait_for_jobs_option=""
+template_job=""
+if [ -n "$job_list" ]; then wait_for_jobs_option="-j $jl"; fi
 
 #process template. Must finish before timepoints are processed if MSMSulc is run.
-echo "PostFS longitudinal template processing"
-template_job=$($queuing_command -j $jl "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-	--study-folder="$StudyFolder"                   \ 
-    --subject-long="$Subject"                            \
-    --longitudinal-mode="TEMPLATE"                  \
-    --longitudinal-template="$LongitudinalTemplate" \
-    --longitudinal-timepoint-list="$Timepoint_list" \
-    --freesurferlabels="$FreeSurferLabels"          \
-    --surfatlasdir="$SurfaceAtlasDIR"               \
-    --grayordinatesres="$GrayordinatesResolutions"  \
-    --grayordinatesdir="$GrayordinatesSpaceDIR"     \
-    --hiresmesh="$HighResMesh"                      \
-    --lowresmesh="$LowResMeshes"                    \
-    --subcortgraylabels="$SubcorticalGrayLabels"    \
-    --refmyelinmaps="$ReferenceMyelinMaps"          \
-    --regname="$RegName"
-)
-
-echo "Launched template job $template_job"
-echo "Template job $template_job will wait for Stage 1 timepoint jobs: $jl" 
-
+if (( start_stage <=3 )); then 
+	echo "PostFS longitudinal template processing"
+	cmd=($queuing_command $wait_for_jobs_option "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+		--study-folder="$StudyFolder"               \ 
+	    --subject-long="$Subject"                       \
+	    --session="${Timepoints[0]}"		      \ 
+	    --longitudinal-mode="TEMPLATE"                  \
+	    --longitudinal-template="$LongitudinalTemplate" \
+	    --longitudinal-timepoint-list="$Timepoint_list" \
+	    --freesurferlabels="$FreeSurferLabels"          \
+	    --surfatlasdir="$SurfaceAtlasDIR"               \
+	    --grayordinatesres="$GrayordinatesResolutions"  \
+	    --grayordinatesdir="$GrayordinatesSpaceDIR"     \
+	    --hiresmesh="$HighResMesh"                      \
+	    --lowresmesh="$LowResMeshes"                    \
+	    --subcortgraylabels="$SubcorticalGrayLabels"    \
+	    --refmyelinmaps="$ReferenceMyelinMaps"          \
+	    --regname="$RegName"
+	)
+	echo "launching: ${cmd[*]}"
+	template_job=$(${cmd[@]})
+	
+	echo "Launched template job $template_job"
+	echo "Template job $template_job will wait for Stage 1 timepoint jobs, if any: $jl" 
+fi
 job_list=()
-for Timepoint in ${Timepoints[@]}; do
-    #process each timepoint
-	job=$($queuing_command -j $template_job "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-	    --study-folder="$StudyFolder"                   \ 
-        --subject-long="$Subject"                            \
-        --longitudinal-mode="TIMEPOINT_STAGE2"          \
-        --longitudinal-template="$LongitudinalTemplate" \
-        --session="$Timepoint"                          \
-        --freesurferlabels="$FreeSurferLabels"          \
-        --surfatlasdir="$SurfaceAtlasDIR"               \
-        --grayordinatesres="$GrayordinatesResolutions"  \
-        --grayordinatesdir="$GrayordinatesSpaceDIR"     \
-        --hiresmesh="$HighResMesh"                      \
-        --lowresmesh="$LowResMeshes"                    \
-        --subcortgraylabels="$SubcorticalGrayLabels"    \
-        --refmyelinmaps="$ReferenceMyelinMaps"          \
-        --regname="$RegName"
-    )
-    job_list+=("$job")
-done
+wait_for_jobs_option=""
+if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
 
-echo "launched stage 2 timepoint jobs: ${job_list[@]}"
-echo "Stage 2 timepoint jobs (${job_list[*]}) will wait for the template job: $template_job"
+if (( start_stage <= 4 )); then 
+	for Timepoint in ${Timepoints[@]}; do
+	    #process each timepoint
+		cmd=($queuing_command $wait_for_jobs_option "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+		    --study-folder="$StudyFolder"               \ 
+		--subject-long="$Subject"                       \
+		--longitudinal-mode="TIMEPOINT_STAGE2"          \
+		--longitudinal-template="$LongitudinalTemplate" \
+		--session="$Timepoint"                          \
+		--freesurferlabels="$FreeSurferLabels"          \
+		--surfatlasdir="$SurfaceAtlasDIR"               \
+		--grayordinatesres="$GrayordinatesResolutions"  \
+		--grayordinatesdir="$GrayordinatesSpaceDIR"     \
+		--hiresmesh="$HighResMesh"                      \
+		--lowresmesh="$LowResMeshes"                    \
+		--subcortgraylabels="$SubcorticalGrayLabels"    \
+		--refmyelinmaps="$ReferenceMyelinMaps"          \
+		--regname="$RegName"
+	    )
+	    echo "launching: ${cmd[*]}"
+	    job=$(${cmd[@]})
+	    job_list+=("$job")
+	done
+
+	echo "launched stage 2 timepoint jobs: ${job_list[@]}"
+	echo "Stage 2 timepoint jobs (${job_list[*]}) will wait for the template job, if any: $template_job"
+fi
