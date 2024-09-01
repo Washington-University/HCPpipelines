@@ -70,8 +70,12 @@ case $parallel_mode in
 		if [ -z "$parallel_mode_param" ]; then parallel_mode_param=4; fi
 		queuing_command="custom_submit"
 		;;
+	NONE)
+		if [ -z "$parallel_mode_param" ]; then parallel_mode_param=""; fi
+		queuing_command=""
+		;;
 	*)	
-		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN"
+		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 		;;
 esac		
 start_stage=0
@@ -121,7 +125,9 @@ if (( start_stage==0 )); then
 fi	
 
 wait_for_jobs_option=""
-if [ -n "$job_list" ]; then wait_for_jobs_option="-j ${jl// /,}"; fi
+if [ "$parallel_mode" != "NONE" ]; then
+	if [ -n "$job_list" ]; then wait_for_jobs_option="-j ${jl// /,}"; fi
+fi
 
 template_job=""
 if (( start_stage <= 1 )); then 
@@ -150,7 +156,9 @@ if (( start_stage <= 1 )); then
 	echo "Template processing job $template_job will wait for timepoint jobs, if any: $jl"
 fi
 wait_for_jobs_option=""
-if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
+if [ "$parallel_mode" != "NONE" ]; then
+	if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
+fi
 
 ##########################################################################################
 # PostFreesurferPipeline.sh processing
@@ -188,7 +196,9 @@ fi
 
 wait_for_jobs_option=""
 template_job=""
-if [ -n "$job_list" ]; then wait_for_jobs_option="-j $jl"; fi
+if [ "$parallel_mode" != "NONE" ]; then
+	if [ -n "$job_list" ]; then wait_for_jobs_option="-j $jl"; fi
+fi
 
 #process template. Must finish before timepoints are processed if MSMSulc is run.
 if (( start_stage <=3 )); then 
@@ -218,7 +228,9 @@ if (( start_stage <=3 )); then
 fi
 job_list=()
 wait_for_jobs_option=""
-if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
+if [ "$parallel_mode" != "NONE" ]; then
+	if [ -n "$template_job" ]; then wait_for_jobs_option="-j $template_job"; fi
+fi
 
 if (( start_stage <= 4 )); then 
 	for Timepoint in ${Timepoints[@]}; do
