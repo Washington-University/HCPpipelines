@@ -160,7 +160,7 @@ function copyTemplateFiles {
 
 # The following are matched to actual strings in the TEMPLATE_structuralQC.scene file
 StudyFolderDummyStr="StudyFolder"
-SessionIDDummyStr="SessionID"
+SessionIDDummyStr="SubjectID"
 TemplatesFolderDummyStr="TemplatesFolder"
 
 # ----------------------------

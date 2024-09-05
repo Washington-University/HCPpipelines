@@ -73,10 +73,17 @@ echo "$@"
 QUEUE=""
 #QUEUE="hcp_priority.q"
 
+#parallel options
+parallel_mode=FSLSUB
+if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
+max_jobs=4
+
+#TEMPLATE stage must be run before TIMEPOINTS stage
+start_stage=TEMPLATE
+end_stage=TIMEPOINTS
+
 ########################################## INPUTS ########################################## 
-
 #Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline
-
 ######################################### DO WORK ##########################################
 
 for i in ${!Subjects[@]}; do
@@ -109,7 +116,13 @@ for i in ${!Subjects[@]}; do
     --subject="$Subject" \
     --path="$StudyFolder" \
     --sessions="$TPlist" \
-    --template-id="$LongitudinalTemplate")
+    $fslsub_queue_param \
+    --template-id="$LongitudinalTemplate" \
+    --parallel-mode="$parallel_mode" \
+    --max-jobs="$max_jobs" \
+    --start-stage="$start_stage" \
+    --end-stage="$end_stage" \
+    )
 
   #--extra-reconall-arg-base=-conf2hires Freesurfer reports this is unneeded.
   echo "Running command: ${cmd[*]}"
