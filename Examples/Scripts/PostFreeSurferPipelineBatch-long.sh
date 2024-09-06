@@ -95,14 +95,24 @@ RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (Fr
 #  installed versions of: FSL, Connectome Workbench (wb_command)
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
+#fslsub queue
+#QUEUE=short.q
+QUEUE=""
+
 # Log the originating call
 echo "$@"
 
 #parallel mode: FSLSUB, BUILTIN, NONE
 parallel_mode=FSLSUB
-#parameter: queue name (fslsub), none (NONE)
-parallel_mode_param=short.q
+if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
 
+#maximum number of concurrent jobs in BUILTIN mode
+max_jobs=4
+
+# Stages to run. Must be run in the following order:
+# 1. PREP-TP, 2.PREP-T, 3. POSTFS-TP1, 4. POSTFS-T, 5. POSTFS-TP2
+start_stage=PREP-TP
+end_stage=POSTFS-TP2
 
 #iterate over all subjects.
 for i in ${!Subjects[@]}; do
@@ -119,9 +129,9 @@ for i in ${!Subjects[@]}; do
     --subject="$Subject"                  \
     --template="$LongitudinalTemplate"    \
     --timepoints="$Timepoint_list"        \
-    --parallel-mode=$parallel_mode 	   \
-    --parallel-mode-param=$parallel_mode_param   \
-    --start-stage=POSTFS-T		   \
+    --parallel-mode=$parallel_mode 	      \
+    $fslsub_queue_param                   \
+    --start-stage=POSTFS-T		          \
     --t1template="$T1wTemplate"           \
     --t1templatebrain="$T1wTemplateBrain" \
     --t1template2mm="$T1wTemplate2mm"     \
@@ -139,9 +149,9 @@ for i in ${!Subjects[@]}; do
     --lowresmesh="$LowResMeshes"          \
     --subcortgraylabels="$SubcorticalGrayLabels"      \
     --refmyelinmaps="$ReferenceMyelinMaps"            \
-    --regname="$RegName")
+    --regname="$RegName" \    
+    )
 
     echo "Running $cmd"
     ${cmd[@]}
-
 done

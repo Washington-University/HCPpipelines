@@ -41,7 +41,7 @@ function par_runjobs()
     #check if there are any jobs added
     if (( ${#par_jobarray[@]} == 0 )); then 
         echo "WARNING: no parallel jobs added, nothing to run"
-        return 0
+        return $? #return code of the prevously run command - for compatibility with NONE mode
     fi
 
     local numpar=-1

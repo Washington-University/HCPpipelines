@@ -34,58 +34,6 @@
 #  Define Sources and pipe-dir
 # -----------------------------------------------------------------------------------
 
-set -eu
-
-pipedirguessed=0
-if [[ "${HCPPIPEDIR:-}" == "" ]]
-then
-    pipedirguessed=1
-    #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
-fi
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
-source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
-
-#description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
-
-# Show usage information
-opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
-opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
-opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
-opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
-opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
-
-#TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
-opts_AddOptional '--generate-template' 'generate_template' 'integer' 'Set to 0 to not generate template (assuming it is already generated) [1]' "1"
-opts_AddOptional '--generate-timepoints' 'generate_timepoints' 'integer' 'Set to 0 to not generate timepoints [1]' "1"
-opts_ParseArguments "$@"
-
-if ((pipedirguessed))
-then
-    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
-fi
-
-#display the parsed/default values
-opts_ShowValues
-${HCPPIPEDIR}/show_version
-
-#processing code goes here
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FREESURFER_HOME
-
-# Platform info
-log_Msg "Platform Information Follows: "
-uname -a
-
 # Configure custom tools
 # - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
 #   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
@@ -193,6 +141,99 @@ validate_freesurfer_version()
   fi
 }
 
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
+source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
+
+#description to use in usage - syntax of parameters is now explained automatically
+opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
+
+# Show usage information
+opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
+opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
+opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
+opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
+opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
+opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
+
+#parallel mode options.
+opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
+opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" ""
+opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode [4]." 4
+opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
+opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+${HCPPIPEDIR}/show_version
+
+#processing code goes here
+echo "parallel mode: $parallel_mode"
+case $parallel_mode in
+	FSLSUB)
+    if [ -n "$queue" ]; then 
+		  queuing_command="$FSLDIR/bin/fsl_sub -q $queue"
+    else
+      queuing_command="$FSLDIR/bin/fsl_sub"
+    fi
+		;;    
+	BUILTIN)
+		queuing_command="par_addjob"
+		max_jobs=$parallel_mode_param
+		;;
+	NONE)
+		queuing_command=""
+		;;
+	*)
+		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN, NONE"
+		;;
+esac
+
+start_stage=0
+if [ -n "$StartStage" ]; then	
+	case $StartStage in
+		TEMPLATE) start_stage=0 ;;
+		TIMEPOINTS) start_stage=1 ;;
+		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
+	esac
+fi
+end_stage=1
+if [ -n "$EndStage" ]; then	
+	case $EndStage in
+		TEMPLATE) end_stage=0 ;;
+		TIMEPOINTS) end_stage=1 ;;
+		*) log_Err_Abort "Unrecognized option for end-stage: $EndStage"
+	esac
+fi
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FREESURFER_HOME
+
+# Platform info
+log_Msg "Platform Information Follows: "
+uname -a
+
 # Configure the use of FreeSurfer v6 custom tools
 configure_custom_tools
 
@@ -235,6 +276,7 @@ log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 
 LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
 mkdir -p "${LongDIR}"
+
 for Session in ${Sessions} ; do
   Source="${StudyFolder}/${Session}/T1w/${Session}"
   Target="${LongDIR}/${Session}"
@@ -243,7 +285,7 @@ for Session in ${Sessions} ; do
 done
 
 
-if (( generate_template )); then 
+if (( start_stage < 1 )); then 
 
 	# ----------------------------------------------------------------------
 	log_Msg "Creating the base template: ${TemplateID}"
@@ -255,7 +297,7 @@ if (( generate_template )); then
 	  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
 	fi
 
-	recon_all_cmd="recon-all.v6.hires"
+	recon_all_cmd="$queuing_command recon-all.v6.hires"
 	recon_all_cmd+=" -sd ${LongDIR}"
 	recon_all_cmd+=" -base ${TemplateID}"
 	for Session in ${Sessions} ; do
@@ -267,32 +309,38 @@ if (( generate_template )); then
 	  recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
 	fi
 
-
 	#---------------------------------------------------------------------------------------
 	log_Msg "Running the recon-all to generate common template"
 	#---------------------------------------------------------------------------------------
 
-	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})  
+	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
 	recon_all_cmd+=" $extra_reconall_args_base "
 	echo "recon_all_cmd:"
 	echo ${recon_all_cmd}
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 
-	${recon_all_cmd}
-	return_code=$?
-	if [ "${return_code}" != "0" ]; then
+  if [ $PARALLEL_MODE == "FSLSUB" ]; then 
+    template_job=$(${recon_all_cmd[*]})
+    par_waitjobs_fslsub $template_job
+  else
+    ${recon_all_cmd[*]} 
+    par_runjobs 1         #In NONE mode, returns return code of the previous command
+  fi
+  return_code=$?
+
+	if (( return_code )); then
 	  log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 	fi
 fi
-if (( generate_timepoints )); then 
 
+if (( end_stage > 0 )); then 
 	# ----------------------------------------------------------------------
 	log_Msg "Running the longitudinal recon-all on each timepoint"
 	# ----------------------------------------------------------------------
-
+  job_list=()
 	for Session in ${Sessions} ; do
 	  log_Msg "Running longitudinal recon all for session: ${Session}"
-	  recon_all_cmd="recon-all.v6.hires"
+	  recon_all_cmd="$queuing_command recon-all.v6.hires"
 	  recon_all_cmd+=" -sd ${LongDIR}"
 	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
 	  
@@ -319,28 +367,40 @@ if (( generate_timepoints )); then
 	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	  echo ${recon_all_cmd}
 
-	  ${recon_all_cmd}
-	  return_code=$?
-	  if [ "${return_code}" != "0" ]; then
-	    log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-	  fi
-
-	  log_Msg "Organizing the folder structure for: ${Session}"
-	  # create the symlink
-	  TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
-	  mkdir -p "${TargetDIR}"
-	  ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
+    if [ $PARALLEL_MODE == "FSLSUB" ]; then 
+      job=$(${recon_all_cmd})
+      job_list+=$("$job")
+    else 
+      ${recon_all_cmd}
+      if [ $PARALLEL_MODE == NONE ] && (( $? )); then #in NONE mode, job is executed inside this sycle.
+        log_Err_Abort "one of timepoint jobs failed, exiting"; fi
+      fi
+    fi
 	done
+
+  #Now wait for all jobs (parallel modes only)
+  if [ $PARALLEL_MODE == "FSLSUB" ]; then 
+    par_waitjobs_fslsub ${job_list[@]}
+  else
+    par_runjobs $max_jobs    
+    if (( $? )); then log_Err_Abort "one of timepoint jobs failed, exiting"; fi
+  fi
 fi
 
 # ----------------------------------------------------------------------
-log_Msg "Cleaning up the folder structure"
+log_Msg "Organising and cleaning up the folder structure"
 # ----------------------------------------------------------------------
 for Session in ${Sessions} ; do
+  log_Msg "Organizing the folder structure for: ${Session}"
+  # create the symlink
+	TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
+	mkdir -p "${TargetDIR}"
+	ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
+
   # remove the symlink in the subject's folder
   rm -rf "${LongDIR}/${Session}"
 done
 
 # ----------------------------------------------------------------------
-log_Msg "Completing main functionality"
+log_Msg "Completed main functionality"
 # ----------------------------------------------------------------------
