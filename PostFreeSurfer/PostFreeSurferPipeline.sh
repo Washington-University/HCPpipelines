@@ -94,7 +94,7 @@ Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Te
 Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. " "NONE"
 
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
-opts_AddOptional '--longitudinal-timepoint-list' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list ',' separated, if LongitudinalMode==TEMPLATE"
+opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list ',' separated, if LongitudinalMode==TEMPLATE"
 
 opts_ParseArguments "$@"
 

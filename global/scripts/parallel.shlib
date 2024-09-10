@@ -31,6 +31,9 @@ then
     source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 fi
 
+
+
+
 function par_addjob()
 {
     par_addjob_stdin "$@" <<<""
@@ -159,6 +162,10 @@ function par_numlog()
 
 par_jobarray=()
 par_jobinputarray=()
+
+par_fslsub_joblist=()
+par_fslsub_job_waitlist=()
+
 function par_addjob_stdin()
 {
     local encodedargs=()
@@ -178,16 +185,67 @@ function par_addjob_stdin()
     par_jobinputarray+=("$jobinput")
 }
 
-#wait for jobs submitted with fslsub, to finish.
-function par_waitjobs_fslsub()
+#Add job to the current stage (FSLSUB, BUILTIN or NONE mode)
+#Inputs:
+#1. parallel mode
+#2. prallel job parameter (queue name for FSLSUB, must be 'NONE' for others) 
+#3. command with arguments
+function par_add_job_to_stage()
 {
-    local any_running=1 jobs="$@"
-    while (( any_running )); do
-        any_running=0
-        for job in $jobs; do
-            qstat -j "$job" &> /dev/null
-            if [ $? -eq 0 ]; then any_running=1; break; fi
-        done
-        sleep 10
-    done
+    local PARALLEL_MODE=$1
+    shift
+
+    #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
+    local fslsub_options param=$1
+    shift
+
+	local job submit_cmd cmd="$@"
+
+    if [ "$PARALLEL_MODE" == FSLSUB ]; then #current job is submitted, and added to fsl_job_list
+        fslsub_options=""
+        if [ "$param" != NONE ]; then 
+            fslsub_options="-q $param" 
+        fi
+        if [ -n "$fslsub_job_waitlist" ]; then fslsub_options="$fslsub_options -j $fslsub_job_waitlist"; fi
+		submit_cmd="$FSLDIR/bin/fsl_sub $fslsub_options ${cmd[@]}"
+		echo "launching: $submit_cmd"
+		job=$($submit_cmd); par_fslsub_job_list+=("$job")
+
+	elif [ "$PARALLEL_MODE" == BUILTIN ]; then 								#current job is added to the list of local parallel jobs
+		echo "adding parallel job: $cmd"
+		par_addjob $cmd        
+	else #NONE          													#current job is executed.
+		echo "launching (will wait to finish): $cmd"
+		${cmd}
+		if (( $? )); then log_Err_Abort "Job failed, exiting"; fi
+	fi
+}
+
+#Finalize the list of jobs at the current stage.
+#FSLSUB: update prerequisite job waitlist for the next stage; empty current stage job list
+#BUILTIN: wait until all jobs at the current stage complete, internally, also empty current job list
+#NONE: do nothing, execution was done in par_add_job_to_stage_multimode()
+
+#Inputs:
+#1. Mode name
+#2. max jobs (BUILTIN mode only)
+function par_finalize_stage()
+{
+	#global fslsub_job_list fslsub_job_waitlist
+    local PARALLEL_MODE=$1
+    shift    
+    local max_jobs=$1
+    if [ -z "$max_jobs" ]; then max_jobs=2; fi
+		
+	if ["$PARALLEL_MODE" == "FSLSUB" ]; then 		#update the fslsub_job_waitlist with the current job list.        
+		par_fslsub_job_waitlist=""
+		if [ -n "$par_fslsub_job_list" ]; then fslsub_job_waitlist="${fslsub_job_list[*]// /,}"; fi
+		par_fslsub_job_list=() 
+	elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then		#run local parallel jobs.
+		par_runjobs $max_jobs
+		if (( $? )); then 
+			log_Err_Abort "One of parallel jobs failed, exiting"
+		fi
+	fi												#nothing needs to be done for NONE mode.
+
 }

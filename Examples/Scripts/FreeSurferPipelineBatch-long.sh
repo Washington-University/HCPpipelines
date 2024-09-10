@@ -117,7 +117,7 @@ for i in ${!Subjects[@]}; do
     --path="$StudyFolder" \
     --sessions="$TPlist" \
     $fslsub_queue_param \
-    --template-id="$LongitudinalTemplate" \
+    --longitudinal-template="$LongitudinalTemplate" \
     --parallel-mode="$parallel_mode" \
     --max-jobs="$max_jobs" \
     --start-stage="$start_stage" \

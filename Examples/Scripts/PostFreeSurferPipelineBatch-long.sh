@@ -97,11 +97,21 @@ RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (Fr
 
 #fslsub queue
 #QUEUE=short.q
+#top level parallelization
 QUEUE=""
+if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+    echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh"
+    #NOTE: fsl_sub without -q runs locally and captures output in files
+    queuing_command=("$FSLDIR/bin/fsl_sub")
+else
+    echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/PostFreeSurferPipelineLongLauncher.sh"
+    queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+fi
 
 # Log the originating call
 echo "$@"
 
+#pipeline level parallelization
 #parallel mode: FSLSUB, BUILTIN, NONE
 parallel_mode=FSLSUB
 if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
@@ -124,11 +134,11 @@ for i in ${!Subjects[@]}; do
   echo Template: $LongitudinalTemplate
   echo Timepoints: $Timepoint_list
 
-  cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh \
+  cmd=($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh \
     --study-folder="$StudyFolder"         \
     --subject="$Subject"                  \
-    --template="$LongitudinalTemplate"    \
-    --timepoints="$Timepoint_list"        \
+    --longitudinal-template="$LongitudinalTemplate"    \
+    --sessions="$Timepoint_list"        \
     --parallel-mode=$parallel_mode 	      \
     $fslsub_queue_param                   \
     --start-stage=POSTFS-T		          \
@@ -151,7 +161,6 @@ for i in ${!Subjects[@]}; do
     --refmyelinmaps="$ReferenceMyelinMaps"            \
     --regname="$RegName" \    
     )
-
     echo "Running $cmd"
     ${cmd[@]}
 done

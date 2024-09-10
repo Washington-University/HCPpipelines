@@ -163,7 +163,7 @@ opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
-opts_AddMandatory '--template-id' 'TemplateID' 'template-id' "An @ symbol separated list of session IDs (required). Used to generate root template directory name."
+opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
 opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
@@ -187,23 +187,22 @@ ${HCPPIPEDIR}/show_version
 
 #processing code goes here
 echo "parallel mode: $parallel_mode"
+fslsub_queue=NONE
+max_jobs=2
+
 case $parallel_mode in
 	FSLSUB)
-    if [ -n "$queue" ]; then 
-		  queuing_command="$FSLDIR/bin/fsl_sub -q $queue"
-    else
-      queuing_command="$FSLDIR/bin/fsl_sub"
-    fi
-		;;    
+    if [ -n "$queue" ]; then fslsub_queue=$queue; fi	
+    ;;    
 	BUILTIN)
-		queuing_command="par_addjob"
-		max_jobs=$parallel_mode_param
-		;;
+		max_jobs=$max_jobs
+    if (( max_jobs < 1 )); then max_jobs=2; fi 
+    ;;
 	NONE)
-		queuing_command=""
-		;;
+    echo "parallel mode: NONE" 
+    ;;
 	*)
-		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN, NONE"
+		log_Err_Abort "Unknown parallel mode $PARALLEL_MODE. Plese specify one of FSLSUB, BUILTIN, NONE"
 		;;
 esac
 
@@ -319,25 +318,14 @@ if (( start_stage < 1 )); then
 	echo ${recon_all_cmd}
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 
-  if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-    template_job=$(${recon_all_cmd[*]})
-    par_waitjobs_fslsub $template_job
-  else
-    ${recon_all_cmd[*]} 
-    par_runjobs 1         #In NONE mode, returns return code of the previous command
-  fi
-  return_code=$?
-
-	if (( return_code )); then
-	  log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-	fi
+  par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${recon_all_cmd}
+  par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
 
 if (( end_stage > 0 )); then 
 	# ----------------------------------------------------------------------
 	log_Msg "Running the longitudinal recon-all on each timepoint"
 	# ----------------------------------------------------------------------
-  job_list=()
 	for Session in ${Sessions} ; do
 	  log_Msg "Running longitudinal recon all for session: ${Session}"
 	  recon_all_cmd="$queuing_command recon-all.v6.hires"
@@ -366,40 +354,12 @@ if (( end_stage > 0 )); then
 	  	  	  
 	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	  echo ${recon_all_cmd}
-
-    if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-      job=$(${recon_all_cmd})
-      job_list+=$("$job")
-    else 
-      ${recon_all_cmd}
-      if [ $PARALLEL_MODE == NONE ] && (( $? )); then #in NONE mode, job is executed inside this sycle.
-        log_Err_Abort "one of timepoint jobs failed, exiting"; fi
-      fi
-    fi
+    par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${recon_all_cmd}
 	done
 
-  #Now wait for all jobs (parallel modes only)
-  if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-    par_waitjobs_fslsub ${job_list[@]}
-  else
-    par_runjobs $max_jobs    
-    if (( $? )); then log_Err_Abort "one of timepoint jobs failed, exiting"; fi
-  fi
+  #Finalize jobs in this stage.
+  par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
-
-# ----------------------------------------------------------------------
-log_Msg "Organising and cleaning up the folder structure"
-# ----------------------------------------------------------------------
-for Session in ${Sessions} ; do
-  log_Msg "Organizing the folder structure for: ${Session}"
-  # create the symlink
-	TargetDIR="${StudyFolder}/${Session}.long.${TemplateID}/T1w"
-	mkdir -p "${TargetDIR}"
-	ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
-
-  # remove the symlink in the subject's folder
-  rm -rf "${LongDIR}/${Session}"
-done
 
 # ----------------------------------------------------------------------
 log_Msg "Completed main functionality"

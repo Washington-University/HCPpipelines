@@ -14,8 +14,8 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" 
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label"
-opts_AddMandatory '--template' 'LongitudinalTemplate' 'template ID' "longitudinal template label (matching the one used in FreeSurferPipeline-long)"
-opts_AddMandatory '--timepoints' 'Timepoint_list' 'list' 'comma separated list of timepoints/sessions (should match directory names)'
+opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label (matching the one used in FreeSurferPipeline-long)"
+opts_AddMandatory '--sessions' 'Timepoint_list' 'list' 'comma separated list of timepoints/sessions (should match directory names)'
 
 #parallel mode options
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
@@ -62,29 +62,17 @@ verbose_echo " "
 verbose_echo " Using environment setting ..."
 verbose_echo "          HCPPIPEDIR: ${HCPPIPEDIR}"
 verbose_echo " "
-
 IFS=, read -r -a Timepoints <<< "${Timepoint_list[i]}"
 
-echo "parallel mode: $parallel_mode"
+fslsub_queue=NONE
+max_jobs=1
 case $parallel_mode in
-	FSLSUB)
-		if [ -n "$queue" ]; then 
-		queuing_command="$FSLDIR/bin/fsl_sub -q $queue"
-		else
-			queuing_command="$FSLDIR/bin/fsl_sub"
-		fi		
-		;;
-	BUILTIN)
-		queuing_command="par_addjob"
-		max_jobs=$parallel_mode_param
-		;;
-	NONE)
-		queuing_command=""
-		;;
-	*)	
-		log_Err_Abort "Unknown parallel mode. Plese specify one of FSLSUB, BUILTIN, NONE"
-		;;
+	FSLSUB) fslsub_queue=$queue ;;
+	BUILTIN) if (( max_jobs<1 )); then max_jobs=2; fi ;;
+	NONE) echo "parallel mode is NONE" ;;
+	*) log_Err_Abort "Unknown parallel mode. Please specify one of FSLSUB, BUILTIN, NONE." ;;
 esac
+
 start_stage=0
 if [ -n "$StartStage" ]; then	
 	case $StartStage in
@@ -93,9 +81,10 @@ if [ -n "$StartStage" ]; then
 		POSTFS-TP1) start_stage=2 ;;
 		POSTFS-T) start_stage=3 ;;
 		POSTFS-TP2) start_stage=4 ;;
-		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
+		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage. Must be one of PREP-TP, PREP-T, POSTFS-TP1, POSTFS-T, POSTFS-TP2"
 	esac
 fi
+
 end_stage=4
 if [ -n "$EndStage" ]; then	
 	case $EndStage in
@@ -104,23 +93,42 @@ if [ -n "$EndStage" ]; then
 		POSTFS-TP1) end_stage=2 ;;
 		POSTFS-T) end_stage=3 ;;
 		POSTFS-TP2) end_stage=4 ;;
-		*) log_Err_Abort "Unrecognized option for end-stage: $EndStage"
+		*) log_Err_Abort "Unrecognized option for end-stage: $EndStage. Must be one of PREP-TP, PREP-T, POSTFS-TP1, POSTFS-T, POSTFS-TP2"
 	esac
 fi
+
+#########################################################################################
+# Organising and cleaning up the folder structure
+#########################################################################################
+# ----------------------------------------------------------------------
+log_Msg "Organising and cleaning up the folder structure"
+# ----------------------------------------------------------------------
+
+LongDIR="${StudyFolder}/${Subject}.long.${Longitudinaltemplate}/T1w"
+for TP in ${Timepoints[@]} ; do
+  log_Msg "Organizing the folder structure for: ${TP}"
+  # create the symlink
+	TargetDIR="${StudyFolder}/${Session}.long.${LongitudinalTemplate}/T1w"
+	mkdir -p "${TargetDIR}"
+	ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
+
+  # remove the symlink in the subject's folder
+  rm -rf "${LongDIR}/${Session}"
+done
 
 ##########################################################################################
 # PostFreesurferPipelineLongPrep.sh processing
 ##########################################################################################
 #process timepoints
 if (( start_stage==0 )); then 
-	job_list=()
 	echo "################# PREP-TP Stage processing ########################"
 	for TP in ${Timepoints[@]}; do
+		echo "################# PREP-TP Stage processing ########################"
 	    echo "Running ppFS-long for timepoint: $TP"
-	    cmd=($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+	    cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
 		--subject="$Subject" --path="$StudyFolder" \
-		--template="$LongitudinalTemplate"         \
-		--timepoints="$TP"                         \
+		--longitudinal-template="$LongitudinalTemplate"         \
+		--sessions="$TP"                         \
 		--template_processing=0                    \
 		--t1template="$T1wTemplate"                \
 		--t1templatebrain="$T1wTemplateBrain"      \
@@ -133,31 +141,19 @@ if (( start_stage==0 )); then
 		--fnirtconfig="$FNIRTConfig"               \
 		--freesurferlabels="$FreeSurferLabels"     \
 	    )
-	    echo launching: ${cmd[*]}
-		if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-				job=$(${cmd[@]}); job_list+=("$job")
-		else 
-			${cmd[@]}
-			if [ $PARALLEL_MODE == NONE ] && (( $? )); then log_Err_Abort "one of parallel jobs failed, exiting"; fi
-		fi
+		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
 	done
-	echo "waiting for all PREP-TP jobs to finish"
-	if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-		par_waitjobs_fslsub ${job_list[@]}
-	else 
-		par_runjobs $max_jobs
-		if (( $? )); then log_Err_Abort "one of parallel jobs failed, exiting"; fi
-	fi
+	par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
 
 if (( start_stage <= 1 )) && (( end_stage >= 1 )); then 
 	#Process template and finalize timepoints. This must wait until all timepoints are finished.
 	echo "################# PREP-T Stage processing ########################"
-	cmd=($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+	cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
 	    --subject="$Subject"                       \
 	    --path="$StudyFolder"                      \
-		--template="$LongitudinalTemplate"         \
-	    --timepoints="$Timepoint_list"             \
+		--longitudinal-template="$LongitudinalTemplate"         \
+	    --sessions="$Timepoint_list"             \
 	    --template_processing=1                    \
 	    --t1template="$T1wTemplate"                \
 	    --t1templatebrain="$T1wTemplateBrain"      \
@@ -170,18 +166,8 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
 	    --fnirtconfig="$FNIRTConfig"               \
 	    --freesurferlabels="$FreeSurferLabels"	 \
 	)
-
-	template_job=""
-	echo launching: ${cmd[*]}
-	echo "waiting for PREP-T job to finish"
-	if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-			template_job=$(${cmd[@]})
-			par_waitjobs_fslsub $template_job
-	else 
-		${cmd[@]}
-		par_runjobs $max_jobs
-		if (( $? )); then log_Err_Abort "PREP-T job failed, exiting"; fi
-	fi
+	par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
+	par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
 
 ##########################################################################################
@@ -193,7 +179,7 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
 	job_list=()
 	for Timepoint in ${Timepoints[@]}; do
 		#process each timepoint
-		cmd=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+		cmd=("$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 		--study-folder="$StudyFolder"               	\ 
 		--subject-long="$Subject"                       \
 		--longitudinal-mode="TIMEPOINT_STAGE1"          \
@@ -209,34 +195,22 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
 		--refmyelinmaps="$ReferenceMyelinMaps"          \
 		--regname="$RegName"
 		)
-	    echo "launching: ${cmd[*]}"
-		if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-				job=$(${cmd[@]}); job_list+=("$job")
-		else 
-			${cmd[@]}
-		fi
+		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}			
 	done
-
-	echo "waiting for all POSTFS-TP1 jobs to finish"
-	if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-		par_waitjobs_fslsub ${job_list[@]}
-	else
-		par_runjobs $max_jobs
-		if (( $? )); then log_Err_Abort "one of parallel jobs failed, exiting"; fi
-	fi
+	par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
 
 #process template. Must finish before timepoints are processed if MSMSulc is run.
 if (( start_stage <=3 )) && (( end_stage >=3 )); then 
 	template_job=""
 	echo "################# POSTFS-T Stage processing ########################"
-	cmd=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+	cmd=("$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 		--study-folder="$StudyFolder"               \ 
 	    --subject-long="$Subject"                       \
 	    --session="${Timepoints[0]}"		      \ 
 	    --longitudinal-mode="TEMPLATE"                  \
 	    --longitudinal-template="$LongitudinalTemplate" \
-	    --longitudinal-timepoint-list="$Timepoint_list" \
+	    --sessions="$Timepoint_list" \
 	    --freesurferlabels="$FreeSurferLabels"          \
 	    --surfatlasdir="$SurfaceAtlasDIR"               \
 	    --grayordinatesres="$GrayordinatesResolutions"  \
@@ -247,17 +221,8 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
 	    --refmyelinmaps="$ReferenceMyelinMaps"          \
 	    --regname="$RegName"
 	)
-	template_job=""
-	echo launching: ${cmd[*]}
-	echo "waiting for POSTFS-T job to finish"
-	if [ $PARALLEL_MODE == "FSLSUB" ]; then
-			template_job=$(${cmd[@]})
-			par_waitjobs_fslsub $template_job
-	else 
-		${cmd[@]}
-		par_runjobs $max_jobs
-		if (( $? )); then log_Err_Abort "POSTFS-T job failed, exiting"; fi
-	fi
+	par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
+	par_finalize_stage $PARALLEL_MODE $max_jobs	
 fi
 
 if (( start_stage <= 4 )) && (( end_stage >=4 )); then 
@@ -265,7 +230,7 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
 	echo "################# POSTFS-TP2 Stage processing ########################"
 	for Timepoint in ${Timepoints[@]}; do
 	    #process each timepoint
-		cmd=($queuing_command "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+		cmd=("$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
 		    --study-folder="$StudyFolder"               \
 		--subject-long="$Subject"                       \
 		--longitudinal-mode="TIMEPOINT_STAGE2"          \
@@ -281,18 +246,11 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
 		--refmyelinmaps="$ReferenceMyelinMaps"          \
 		--regname="$RegName"
 	    )
-	    echo launching: ${cmd[*]}
-		if [ $PARALLEL_MODE == "FSLSUB" ]; then 
-				job=$(${cmd[@]}); job_list+=("$job")
-		else 
-			${cmd[@]}
-		fi
+		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
 	done
-	echo "waiting for all jobs to finish for stage POSTFS-TP2"
-	if [ $PARALLEL_MODE == "FSLSUB" ]; then
-		par_waitjobs_fslsub ${job_list[@]}
-	else 
-		par_runjobs $max_jobs
-		if (( $? )); then log_Err_Abort "one of parallel jobs failed, exiting"; fi
-	fi
+	par_finalize_stage $PARALLEL_MODE $max_jobs
 fi
+
+# ----------------------------------------------------------------------
+log_Msg "Completed main functionality"
+# ----------------------------------------------------------------------

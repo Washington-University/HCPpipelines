@@ -94,8 +94,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins and templates" "--path"
 #The following options
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
-opts_AddMandatory '--template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
-opts_AddMandatory '--timepoints' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
+opts_AddMandatory '--longitudinal-template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
+opts_AddMandatory '--sessions' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
                     processing, specify current timepoint. For template processing, must specify all timepoints, ',' separated.\
                     Timepoint ID and Session are synonyms in HCP structural pipelines."
 opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
