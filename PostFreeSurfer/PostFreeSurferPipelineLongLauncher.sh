@@ -65,7 +65,7 @@ verbose_echo " "
 IFS=, read -r -a Timepoints <<< "${Timepoint_list[i]}"
 
 fslsub_queue=NONE
-max_jobs=1
+
 case $parallel_mode in
 	FSLSUB) fslsub_queue=$queue ;;
 	BUILTIN) if (( max_jobs<1 )); then max_jobs=2; fi ;;
@@ -140,10 +140,10 @@ if (( start_stage==0 )); then
 		--template2mmmask="$Template2mmMask"       \
 		--fnirtconfig="$FNIRTConfig"               \
 		--freesurferlabels="$FreeSurferLabels"     \
-	    )
-		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
+	    )	    
+	    par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[*]}
 	done
-	par_finalize_stage $PARALLEL_MODE $max_jobs
+	par_finalize_stage $parallel_mode $max_jobs
 fi
 
 if (( start_stage <= 1 )) && (( end_stage >= 1 )); then 
@@ -166,8 +166,8 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
 	    --fnirtconfig="$FNIRTConfig"               \
 	    --freesurferlabels="$FreeSurferLabels"	 \
 	)
-	par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
-	par_finalize_stage $PARALLEL_MODE $max_jobs
+	par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[*]}
+	par_finalize_stage $parallel_mode $max_jobs
 fi
 
 ##########################################################################################
@@ -195,9 +195,9 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
 		--refmyelinmaps="$ReferenceMyelinMaps"          \
 		--regname="$RegName"
 		)
-		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}			
+		par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[*]}			
 	done
-	par_finalize_stage $PARALLEL_MODE $max_jobs
+	par_finalize_stage $parallel_mode $max_jobs
 fi
 
 #process template. Must finish before timepoints are processed if MSMSulc is run.
@@ -221,8 +221,8 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
 	    --refmyelinmaps="$ReferenceMyelinMaps"          \
 	    --regname="$RegName"
 	)
-	par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
-	par_finalize_stage $PARALLEL_MODE $max_jobs	
+	par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[*]}
+	par_finalize_stage $parallel_mode $max_jobs	
 fi
 
 if (( start_stage <= 4 )) && (( end_stage >=4 )); then 
@@ -246,9 +246,9 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
 		--refmyelinmaps="$ReferenceMyelinMaps"          \
 		--regname="$RegName"
 	    )
-		par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${cmd[*]}
+		par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[*]}
 	done
-	par_finalize_stage $PARALLEL_MODE $max_jobs
+	par_finalize_stage $parallel_mode $max_jobs
 fi
 
 # ----------------------------------------------------------------------

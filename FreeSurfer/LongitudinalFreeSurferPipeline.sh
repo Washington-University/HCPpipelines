@@ -202,7 +202,7 @@ case $parallel_mode in
     echo "parallel mode: NONE" 
     ;;
 	*)
-		log_Err_Abort "Unknown parallel mode $PARALLEL_MODE. Plese specify one of FSLSUB, BUILTIN, NONE"
+		log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 		;;
 esac
 
@@ -296,7 +296,7 @@ if (( start_stage < 1 )); then
 	  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
 	fi
 
-	recon_all_cmd="$queuing_command recon-all.v6.hires"
+	recon_all_cmd="recon-all.v6.hires"
 	recon_all_cmd+=" -sd ${LongDIR}"
 	recon_all_cmd+=" -base ${TemplateID}"
 	for Session in ${Sessions} ; do
@@ -318,8 +318,8 @@ if (( start_stage < 1 )); then
 	echo ${recon_all_cmd}
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 
-  par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${recon_all_cmd}
-  par_finalize_stage $PARALLEL_MODE $max_jobs
+  par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
+  par_finalize_stage $parallel_mode $max_jobs
 fi
 
 if (( end_stage > 0 )); then 
@@ -328,7 +328,7 @@ if (( end_stage > 0 )); then
 	# ----------------------------------------------------------------------
 	for Session in ${Sessions} ; do
 	  log_Msg "Running longitudinal recon all for session: ${Session}"
-	  recon_all_cmd="$queuing_command recon-all.v6.hires"
+	  recon_all_cmd="recon-all.v6.hires"
 	  recon_all_cmd+=" -sd ${LongDIR}"
 	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
 	  
@@ -354,11 +354,11 @@ if (( end_stage > 0 )); then
 	  	  	  
 	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	  echo ${recon_all_cmd}
-    par_add_job_to_stage $PARALLEL_MODE $fslsub_queue ${recon_all_cmd}
+    par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
 	done
 
   #Finalize jobs in this stage.
-  par_finalize_stage $PARALLEL_MODE $max_jobs
+  par_finalize_stage $parallel_mode $max_jobs
 fi
 
 # ----------------------------------------------------------------------

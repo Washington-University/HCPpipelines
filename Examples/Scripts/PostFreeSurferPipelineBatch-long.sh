@@ -98,14 +98,17 @@ RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (Fr
 #fslsub queue
 #QUEUE=short.q
 #top level parallelization
-QUEUE=""
+QUEUE="long.q"
+
 if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
     echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh"
-    #NOTE: fsl_sub without -q runs locally and captures output in files
+#    #NOTE: fsl_sub without -q runs locally and captures output in files
     queuing_command=("$FSLDIR/bin/fsl_sub")
+     QUEUE=long.q
 else
     echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/PostFreeSurferPipelineLongLauncher.sh"
     queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    QUEUE=""    
 fi
 
 # Log the originating call
@@ -113,8 +116,8 @@ echo "$@"
 
 #pipeline level parallelization
 #parallel mode: FSLSUB, BUILTIN, NONE
-parallel_mode=FSLSUB
-if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
+parallel_mode=BUILTIN
+if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub-queue=$QUEUE"; fi
 
 #maximum number of concurrent jobs in BUILTIN mode
 max_jobs=4
@@ -140,8 +143,9 @@ for i in ${!Subjects[@]}; do
     --longitudinal-template="$LongitudinalTemplate"    \
     --sessions="$Timepoint_list"        \
     --parallel-mode=$parallel_mode 	      \
-    $fslsub_queue_param                   \
-    --start-stage=POSTFS-T		          \
+#    $fslsub_queue_param                   \
+    --start-stage=$start_stage		   \
+    --end-stage=$end_stage		\
     --t1template="$T1wTemplate"           \
     --t1templatebrain="$T1wTemplateBrain" \
     --t1template2mm="$T1wTemplate2mm"     \

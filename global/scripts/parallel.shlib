@@ -164,7 +164,7 @@ par_jobarray=()
 par_jobinputarray=()
 
 par_fslsub_joblist=()
-par_fslsub_job_waitlist=()
+par_fslsub_job_waitlist=""
 
 function par_addjob_stdin()
 {
@@ -192,7 +192,8 @@ function par_addjob_stdin()
 #3. command with arguments
 function par_add_job_to_stage()
 {
-    local PARALLEL_MODE=$1
+    local PARALLEL_MODE=$1    	
+    echo "parallel mode: $PARALLEL_MODE"
     shift
 
     #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
@@ -206,19 +207,20 @@ function par_add_job_to_stage()
         if [ "$param" != NONE ]; then 
             fslsub_options="-q $param" 
         fi
-        if [ -n "$fslsub_job_waitlist" ]; then fslsub_options="$fslsub_options -j $fslsub_job_waitlist"; fi
-		submit_cmd="$FSLDIR/bin/fsl_sub $fslsub_options ${cmd[@]}"
-		echo "launching: $submit_cmd"
-		job=$($submit_cmd); par_fslsub_job_list+=("$job")
+        if [ -n "$par_fslsub_job_waitlist" ]; then fslsub_options="$fslsub_options -j $par_fslsub_job_waitlist"; fi
+	submit_cmd="$FSLDIR/bin/fsl_sub $fslsub_options ${cmd[@]}"
+	echo "parallel launching: $submit_cmd"
+	job=$($submit_cmd); par_fslsub_job_list+=("$job")		
 
-	elif [ "$PARALLEL_MODE" == BUILTIN ]; then 								#current job is added to the list of local parallel jobs
+    elif [ "$PARALLEL_MODE" == BUILTIN ]; then 								#current job is added to the list of local parallel jobs
 		echo "adding parallel job: $cmd"
 		par_addjob $cmd        
-	else #NONE          													#current job is executed.
-		echo "launching (will wait to finish): $cmd"
-		${cmd}
+    else #NONE          													#current job is executed.
+		echo "launching, parallel mode=NONE, will wait to finish: $cmd"
+		${cmd} 1> ./"$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> ./"$par_global_scriptname.$$.$par_global_launch_count.e.log"
+		par_global_launch_count=$((par_global_launch_count + 1))
 		if (( $? )); then log_Err_Abort "Job failed, exiting"; fi
-	fi
+    fi
 }
 
 #Finalize the list of jobs at the current stage.
@@ -234,18 +236,25 @@ function par_finalize_stage()
 	#global fslsub_job_list fslsub_job_waitlist
     local PARALLEL_MODE=$1
     shift    
-    local max_jobs=$1
-    if [ -z "$max_jobs" ]; then max_jobs=2; fi
+    local temp max_jobs=$1
+    if [ -z "$max_jobs" ]; then max_jobs=1; fi
 		
-	if ["$PARALLEL_MODE" == "FSLSUB" ]; then 		#update the fslsub_job_waitlist with the current job list.        
+	if [ "$PARALLEL_MODE" == "FSLSUB" ]; then 		#update the fslsub_job_waitlist with the current job list.        
+		echo "updating fsl_sub job waitlist.."
 		par_fslsub_job_waitlist=""
-		if [ -n "$par_fslsub_job_list" ]; then fslsub_job_waitlist="${fslsub_job_list[*]// /,}"; fi
+		if [ -n "$par_fslsub_job_list" ]; then 
+			temp="${par_fslsub_job_list[*]}"
+			par_fslsub_job_waitlist="${temp// /,}"
+		fi
 		par_fslsub_job_list=() 
+		echod "updating job waitlist for fsl_sub done"
 	elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then		#run local parallel jobs.
+		echo "running parallel jobs for the current stage, total jobs: ${#par_jobarray[*]}, maximum parallel jobs: $max_jobs"
 		par_runjobs $max_jobs
 		if (( $? )); then 
 			log_Err_Abort "One of parallel jobs failed, exiting"
 		fi
+		echo "parallel jobs for the current stage done"
 	fi												#nothing needs to be done for NONE mode.
 
 }

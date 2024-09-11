@@ -74,7 +74,7 @@ QUEUE=""
 #QUEUE="hcp_priority.q"
 
 #parallel options
-parallel_mode=FSLSUB
+parallel_mode=BUILTIN
 if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
 max_jobs=4
 
