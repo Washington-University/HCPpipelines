@@ -247,9 +247,9 @@ function par_finalize_stage()
 			par_fslsub_job_waitlist="${temp// /,}"
 		fi
 		par_fslsub_job_list=() 
-		echod "updating job waitlist for fsl_sub done"
+		echo "updating job waitlist for fsl_sub done"
 	elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then		#run local parallel jobs.
-		echo "running parallel jobs for the current stage, total jobs: ${#par_jobarray[*]}, maximum parallel jobs: $max_jobs"
+		echo "running ${#par_jobarray[*]} jobs, maximum parallel jobs: $max_jobs"
 		par_runjobs $max_jobs
 		if (( $? )); then 
 			log_Err_Abort "One of parallel jobs failed, exiting"

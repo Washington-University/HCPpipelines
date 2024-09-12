@@ -43,14 +43,14 @@ done
 ##################################################################################################
 #Location of Subject folders (named by subjectID)
 StudyFolder="<MyStudyPath>"
-#list of subject labels, space separated
+#The list of subject labels, space separated
 Subjects=(HCA6002236 HCA6002237 HCA6002238)
 #The list of possible visits that each subject may have. Timepoint (visit) is expected to be named <Subject>_<Visit>.
-#Actual visits (timepoints) are determined based on existing directories that match the visit name pattern.
 PossibleVisits=(V1_MR V2_MR V3_MR V4_MR V5_MR V6_MR V7_MR V8_MR V9_MR V10_MR)
-#list of visits to exclude across all subjects
+#Actual visits (timepoints) are determined based on existing directories that match the visit name pattern <Subject>_<visit>.
+#Excluded timepoint directories
 ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
-#longitudinal template labels, one per each subject.
+#Longitudinal template labels, one per each subject.
 Templates=(HCA6002236_V1_V2 HCA6002237_V1_V2 HCA6002238_V1_V2)
 #EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
@@ -98,8 +98,14 @@ RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (Fr
 #fslsub queue
 #QUEUE=short.q
 #top level parallelization
+
 QUEUE="long.q"
 
+#pipeline level parallelization
+#parallel mode: FSLSUB, BUILTIN, NONE
+parallel_mode=FSLSUB
+
+if [ "$parallel_mode" != FSLSUB ]; then #fsl_sub does not allow nested submissions
 if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
     echo "About to locally run ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh"
 #    #NOTE: fsl_sub without -q runs locally and captures output in files
@@ -110,13 +116,13 @@ else
     queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
     QUEUE=""    
 fi
+else
+	queuing_command=""
+fi
 
 # Log the originating call
 echo "$@"
 
-#pipeline level parallelization
-#parallel mode: FSLSUB, BUILTIN, NONE
-parallel_mode=BUILTIN
 if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub-queue=$QUEUE"; fi
 
 #maximum number of concurrent jobs in BUILTIN mode

@@ -104,16 +104,16 @@ fi
 log_Msg "Organising and cleaning up the folder structure"
 # ----------------------------------------------------------------------
 
-LongDIR="${StudyFolder}/${Subject}.long.${Longitudinaltemplate}/T1w"
+LongDIR="${StudyFolder}/${Subject}.long.${LongitudinalTemplate}/T1w"
 for TP in ${Timepoints[@]} ; do
   log_Msg "Organizing the folder structure for: ${TP}"
   # create the symlink
-	TargetDIR="${StudyFolder}/${Session}.long.${LongitudinalTemplate}/T1w"
+	TargetDIR="${StudyFolder}/${TP}.long.${LongitudinalTemplate}/T1w"
 	mkdir -p "${TargetDIR}"
-	ln -sf "${LongDIR}/${Session}.long.${TemplateID}" "${TargetDIR}/${Session}.long.${TemplateID}"
+	ln -sf "${LongDIR}/${TP}.long.${LongitudinalTemplate}" "${TargetDIR}/${TP}.long.${LongitudinalTemplate}"
 
   # remove the symlink in the subject's folder
-  rm -rf "${LongDIR}/${Session}"
+  rm -rf "${LongDIR}/${TP}"
 done
 
 ##########################################################################################

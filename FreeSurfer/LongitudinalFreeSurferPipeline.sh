@@ -188,7 +188,6 @@ ${HCPPIPEDIR}/show_version
 #processing code goes here
 echo "parallel mode: $parallel_mode"
 fslsub_queue=NONE
-max_jobs=2
 
 case $parallel_mode in
 	FSLSUB)

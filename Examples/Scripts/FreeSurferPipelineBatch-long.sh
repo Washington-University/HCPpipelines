@@ -70,12 +70,12 @@ echo "$@"
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE=""
+QUEUE="long.q"
 #QUEUE="hcp_priority.q"
 
 #parallel options
 parallel_mode=BUILTIN
-if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub_queue=$QUEUE"; fi
+if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub-queue=$QUEUE"; fi
 max_jobs=4
 
 #TEMPLATE stage must be run before TIMEPOINTS stage
@@ -102,6 +102,7 @@ for i in ${!Subjects[@]}; do
   T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
+  if [ "$parallel_mode" != FSLSUB ]; then #fsl_sub does not allow nested submissions
   if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
       echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
       #NOTE: fsl_sub without -q runs locally and captures output in files
@@ -109,6 +110,9 @@ for i in ${!Subjects[@]}; do
   else
       echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
       queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+  fi
+  else
+  	queuing_command=""
   fi
 
   #DO NOT PUT timepoint-specific options here!!!
