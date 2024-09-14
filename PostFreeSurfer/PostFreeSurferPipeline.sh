@@ -73,17 +73,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-#help info for option gets printed like "--foo=<$3> - $4"
-
-#TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
 opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "--subject" #legacy --subject option
-opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<HCPpipelines>/global/templates/standard_mesh_atlases or equivalent"
-opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
-opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<HCPpipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
-opts_AddMandatory '--hiresmesh' 'HighResMesh' 'number' "usually '164', the standard mesh for T1w-resolution data data"
-opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the standard mesh for fMRI data"
+opts_AddOptional '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "path to find low resolution spheres, etc, default <pipelines>/global/templates/standard_mesh_atlases" "$HCPPIPEDIR/global/templates/standard_mesh_atlases"
+opts_AddOptional '--grayordinatesres' 'GrayordinatesResolution' 'number' "resolution of grayordinates to use, default 2" '2'
+opts_AddOptional '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
+opts_AddOptional '--hiresmesh' 'HighResMesh' 'number' "the standard mesh for T1w-resolution data data, default 164" '164'
+opts_AddOptional '--lowresmesh' 'LowResMeshes' 'number' "the standard mesh(es) to use for fMRI data, like 32@59"
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
 opts_AddMandatory '--freesurferlabels' 'FreeSurferLabels' 'file' "location of FreeSurferAllLut.txt"
 opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin map to use for bias correction"
@@ -128,6 +124,38 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+#internal scripts don't actually support multiple low res in one call, mostly because they are in different folders
+if [[ "$GrayordinatesSpaceDIR" == "" ]]
+then
+    case "$GrayordinatesResolution" in
+        (2)
+            GrayordinatesSpaceDIR="$HCPPIPEDIR"/global/templates/91282_Greyordinates
+            ;;
+        (1.60)
+            GrayordinatesSpaceDIR="$HCPPIPEDIR"/global/templates/170494_Greyordinates
+            ;;
+        (*)
+            log_Err_Abort "grayordinate resolution '$GrayordinatesResolution' not recognized as a standard resolution, please use '2', '1.60', or specify --grayordinatesdir manually"
+            ;;
+    esac
+fi
+
+#internal scripts do support lists for this LowResMeshes though...
+if [[ "$LowResMeshes" == "" ]]
+then
+    case "$GrayordinatesResolution" in
+        (2)
+            LowResMeshes=32
+            ;;
+        (1.60)
+            LowResMeshes=59
+            ;;
+        (*)
+            log_Err_Abort "grayordinate resolution '$GrayordinatesResolution' not recognized as a standard resolution, please use '2', '1.60', or specify --lowresmesh manually"
+            ;;
+    esac
+fi
 
 doProcessing=1
 doQC=1
@@ -306,7 +334,7 @@ if ((doProcessing)); then
     argList+=("$T1wImageBrainMask")         # ${17}
     argList+=("$FreeSurferLabels")          # ${18}
     argList+=("$GrayordinatesSpaceDIR")     # ${19}
-    argList+=("$GrayordinatesResolutions")  # ${20}
+    argList+=("$GrayordinatesResolution")   # ${20}
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
