@@ -1,5 +1,11 @@
 #!/bin/echo This script should not be run directly:
 
+#we want a "log error and abort" function, so use the shlib for that
+if [[ "$(type -t log_Err_Abort)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
 #call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason, including crash or interrupt)
 function tempfiles_add()
 {
@@ -86,7 +92,7 @@ function tempfiles_cleanup()
         then
             rm -f -- "${tempfiles_list[@]}" || true
         else
-            echo "WARNING: due to tempfiles_keep, the following temporary files were not deleted: ${tempfiles_list[*]}" 1>&2
+            log_Warn "due to tempfiles_keep, the following temporary files were not deleted: ${tempfiles_list[*]}" 1>&2
         fi
     fi
     #clear the current list regardless, for less surprising semantics
