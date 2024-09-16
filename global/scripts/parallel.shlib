@@ -44,7 +44,7 @@ function par_runjobs()
     #check if there are any jobs added
     if (( ${#par_jobarray[@]} == 0 )); then 
         echo "WARNING: no parallel jobs added, nothing to run"
-        return $? #return code of the prevously run command - for compatibility with NONE mode
+        return 0 
     fi
 
     local numpar=-1
@@ -208,10 +208,9 @@ function par_add_job_to_stage()
             fslsub_options="-q $param" 
         fi
         if [ -n "$par_fslsub_job_waitlist" ]; then fslsub_options="$fslsub_options -j $par_fslsub_job_waitlist"; fi
-	submit_cmd="$FSLDIR/bin/fsl_sub $fslsub_options ${cmd[@]}"
-	echo "parallel launching: $submit_cmd"
-	job=$($submit_cmd); par_fslsub_job_list+=("$job")		
-
+        submit_cmd="$FSLDIR/bin/fsl_sub $fslsub_options ${cmd[@]}"
+        echo "parallel launching: $submit_cmd"
+        job=$($submit_cmd); par_fslsub_job_list+=("$job")
     elif [ "$PARALLEL_MODE" == BUILTIN ]; then 								#current job is added to the list of local parallel jobs
 		echo "adding parallel job: $cmd"
 		par_addjob $cmd        

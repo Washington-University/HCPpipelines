@@ -172,5 +172,5 @@ for i in ${!Subjects[@]}; do
     --regname="$RegName" \    
     )
     echo "Running $cmd"
-    ${cmd[@]}
+    "${cmd[@]}"
 done

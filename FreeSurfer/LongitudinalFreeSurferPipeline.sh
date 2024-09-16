@@ -27,12 +27,68 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
+# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
 #
 #~ND~END~
 
 #  Define Sources and pipe-dir
 # -----------------------------------------------------------------------------------
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
+source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
+
+#description to use in usage - syntax of parameters is now explained automatically
+opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
+
+# Show usage information
+opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
+opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
+opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
+opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
+opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
+opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
+
+#parallel mode options.
+opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
+opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" ""
+opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode [4]." 4
+opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
+opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+${HCPPIPEDIR}/show_version
+
+# ------------------------------------------------------------------------------
+#  Verify required environment variables are set and log value
+# ------------------------------------------------------------------------------
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FREESURFER_HOME
+
+# Platform info
+log_Msg "Platform Information Follows: "
+uname -a
+
 
 # Configure custom tools
 # - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
@@ -141,49 +197,14 @@ validate_freesurfer_version()
   fi
 }
 
-set -eu
+# Configure the use of FreeSurfer v6 custom tools
+configure_custom_tools
 
-pipedirguessed=0
-if [[ "${HCPPIPEDIR:-}" == "" ]]
-then
-    pipedirguessed=1
-    #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
-fi
+# Show tool versions
+show_tool_versions
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"           # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
-source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
-source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
-
-#description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
-
-# Show usage information
-opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
-opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
-opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
-opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
-opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
-
-#parallel mode options.
-opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
-opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" ""
-opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode [4]." 4
-opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
-opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
-
-opts_ParseArguments "$@"
-
-if ((pipedirguessed))
-then
-    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
-fi
-
-#display the parsed/default values
-opts_ShowValues
-${HCPPIPEDIR}/show_version
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
 #processing code goes here
 echo "parallel mode: $parallel_mode"
@@ -208,7 +229,7 @@ esac
 start_stage=0
 if [ -n "$StartStage" ]; then	
 	case $StartStage in
-		TEMPLATE) start_stage=0 ;;
+    TEMPLATE) start_stage=0 ;;
 		TIMEPOINTS) start_stage=1 ;;
 		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
 	esac
@@ -221,25 +242,6 @@ if [ -n "$EndStage" ]; then
 		*) log_Err_Abort "Unrecognized option for end-stage: $EndStage"
 	esac
 fi
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FREESURFER_HOME
-
-# Platform info
-log_Msg "Platform Information Follows: "
-uname -a
-
-# Configure the use of FreeSurfer v6 custom tools
-configure_custom_tools
-
-# Show tool versions
-show_tool_versions
-
-# Validate version of FreeSurfer in use
-validate_freesurfer_version
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -253,6 +255,8 @@ log_Msg "SubjectID: ${SubjectID}"
 log_Msg "Sessions: ${Sessions}"
 log_Msg "TemplateID: ${TemplateID}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
+log_Msg "StartStage: $StartStage"
+log_Msg "EndStage: $EndStage"
 
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
@@ -286,33 +290,33 @@ done
 if (( start_stage < 1 )); then 
 
 	# ----------------------------------------------------------------------
-	log_Msg "Creating the base template: ${TemplateID}"
+  log_Msg "Creating the base template: ${TemplateID}"
 	# ----------------------------------------------------------------------
 	# backup template dir if it exists
-	if [ -d "${LongDIR}/${TemplateID}" ]; then
-	  TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
+  if [ -d "${LongDIR}/${TemplateID}" ]; then
+    TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
 	  log_Msg "Base template dir: ${LongDIR}/${TemplateID} already exists, backing up to ${LongDIR}/${TemplateID}.${TimeStamp}"
 	  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
 	fi
 
-	recon_all_cmd="recon-all.v6.hires"
-	recon_all_cmd+=" -sd ${LongDIR}"
+  recon_all_cmd="recon-all.v6.hires"
+  recon_all_cmd+=" -sd ${LongDIR}"
 	recon_all_cmd+=" -base ${TemplateID}"
 	for Session in ${Sessions} ; do
 	  recon_all_cmd+=" -tp ${Session}"
 	done
 	recon_all_cmd+=" -all"
 
-	if [ ! -z "${recon_all_seed}" ]; then
+  if [ ! -z "${recon_all_seed}" ]; then
 	  recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
-	fi
+  fi
 
 	#---------------------------------------------------------------------------------------
-	log_Msg "Running the recon-all to generate common template"
+  log_Msg "Running the recon-all to generate common template"
 	#---------------------------------------------------------------------------------------
 
 	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
-	recon_all_cmd+=" $extra_reconall_args_base "
+  recon_all_cmd+=" $extra_reconall_args_base "
 	echo "recon_all_cmd:"
 	echo ${recon_all_cmd}
 	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
@@ -323,7 +327,7 @@ fi
 
 if (( end_stage > 0 )); then 
 	# ----------------------------------------------------------------------
-	log_Msg "Running the longitudinal recon-all on each timepoint"
+  log_Msg "Running the longitudinal recon-all on each timepoint"
 	# ----------------------------------------------------------------------
 	for Session in ${Sessions} ; do
 	  log_Msg "Running longitudinal recon all for session: ${Session}"
@@ -331,31 +335,30 @@ if (( end_stage > 0 )); then
 	  recon_all_cmd+=" -sd ${LongDIR}"
 	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
 	  
-	  #recon_all_cmd+=(${extra_reconall_args_long[@]+"${extra_reconall_args_long[@]}"})
 	  recon_all_cmd+=" $extra_reconall_args_long "
 	  T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
 	  
 	  if [ -f "$T2w" ]; then 
 		  recon_all_cmd+=" -T2 $T2w"
 	  else
-	  	  log_Msg "WARNING: No T2-weighed image $T2w, T2-weighted processing will not run."
+	  	  log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
 	  fi
 	  	  
 	  T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
 	  emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
 	  
-	  if [ -f "$T1w" -a -f "$emregmask" ]; then 
-	  	recon_all_cmd+=" -emregmask $emregmask" #-i $T1w 
+	  if [ -f "$emregmask" ]; then 
+	  	recon_all_cmd+=" -emregmask $emregmask" 
 	  else
-	  	log_Msg "ERROR: one of required files missing ($T1w or $emregmask)"
+	  	log_Msg "Required $emregmask file is missing"
 	  	exit -1	  	
 	  fi
 	  	  	  
 	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 	  echo ${recon_all_cmd}
     par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
-	done
-
+  done
+  
   #Finalize jobs in this stage.
   par_finalize_stage $parallel_mode $max_jobs
 fi

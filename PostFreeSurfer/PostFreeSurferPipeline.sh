@@ -54,7 +54,6 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
-
 opts_AddMandatory '--subject-long' 'Subject' 'subject ID' "subject label, may be different from Session"
 opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "--subject" #legacy --subject option
 opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"

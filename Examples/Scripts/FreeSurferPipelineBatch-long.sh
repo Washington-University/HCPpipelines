@@ -75,7 +75,6 @@ QUEUE="long.q"
 
 #parallel options
 parallel_mode=BUILTIN
-if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub-queue=$QUEUE"; fi
 max_jobs=4
 
 #TEMPLATE stage must be run before TIMEPOINTS stage
@@ -112,7 +111,7 @@ for i in ${!Subjects[@]}; do
       queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
   fi
   else
-  	queuing_command=""
+  	queuing_command=()
   fi
 
   #DO NOT PUT timepoint-specific options here!!!
@@ -120,7 +119,7 @@ for i in ${!Subjects[@]}; do
     --subject="$Subject" \
     --path="$StudyFolder" \
     --sessions="$TPlist" \
-    $fslsub_queue_param \
+    --fslsub-queue="$QUEUE" \
     --longitudinal-template="$LongitudinalTemplate" \
     --parallel-mode="$parallel_mode" \
     --max-jobs="$max_jobs" \
@@ -130,7 +129,7 @@ for i in ${!Subjects[@]}; do
 
   #--extra-reconall-arg-base=-conf2hires Freesurfer reports this is unneeded.
   echo "Running command: ${cmd[*]}"
-  ${cmd[@]}
+  "${cmd[@]}"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
   # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/T1w/T2w_acpc_dc_restore.nii.gz -T2pial"

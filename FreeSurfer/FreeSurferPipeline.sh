@@ -75,7 +75,7 @@ then
                     changeargs=1
                 fi
                 ;;
-            (--existing-session)
+            (--existing-session|--existing-subject)
                 #same logic
                 if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
                 then
@@ -127,9 +127,9 @@ fi
 opts_SetScriptDescription "Runs the FreeSurfer HCP pipline on data processed by prefresurfer"
 
 # Show usage information
-opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session"
+opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
 
-opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "" "--subject-dir"
+opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "--subject-dir"
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
 
