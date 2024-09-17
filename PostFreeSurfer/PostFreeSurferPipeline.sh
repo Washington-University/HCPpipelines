@@ -70,6 +70,7 @@ opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflatio
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the subject's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
+opts_AddOptional '--metric-regression' 'MetricReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'B=BOTH'" 'B'
 
 opts_ParseArguments "$@"
 
@@ -281,6 +282,7 @@ if ((doProcessing)); then
     argList+=("$CorrectionSigma")
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
+    argList+=("$MetricReg")                                # ${41}
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 

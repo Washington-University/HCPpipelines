@@ -93,6 +93,7 @@ ReferenceMyelinMaps="${37}"
 CorrectionSigma="${38}"
 RegName="${39}"
 UseIndMean="${40}"
+MetricReg="${41}"
 
 log_Msg "RegName: ${RegName}"
 
@@ -171,8 +172,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Subject".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
 fi
 
-
 MapListFunc="corrThickness@shape"
+
 if [ "${T2wPresent}" = "YES" ] ; then
   MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
 fi
@@ -191,7 +192,9 @@ for Hemisphere in L R ; do
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
   fi
 
-  ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+  if [ "${MetricReg}" = "OLD" ] || [ "${MetricReg}" = "B" ]; then
+     ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".curvature.native.shape.gii
+  fi
 
   #Reduce memory usage by smoothing on downsampled mesh
   LowResMesh="${LowResMeshesArray[0]}"
@@ -216,6 +219,10 @@ for Hemisphere in L R ; do
     done
   done
 done
+
+if [ "${MetricReg}" = "NEW" ] || [ "${MetricReg}" = "B" ]; then
+  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regname="$RegName"
+fi
 
 LowResMeshList=""
 for LowResMesh in "${LowResMeshesArray[@]}" ; do
