@@ -173,7 +173,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 fi
 
 MapListFunc="corrThickness@shape"
-
 if [ "${T2wPresent}" = "YES" ] ; then
   MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
 fi
