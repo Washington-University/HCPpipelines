@@ -52,6 +52,7 @@ opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from t
 #old bias field
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'number' "multiply the input timeseries by some factor before processing"
+opts_AddOptional '--wf' 'WF' 'number' "number of Wishart Distributions for Wishart Filtering, set to zero to turn off (default)"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -188,21 +189,31 @@ case "$Method" in
         ;;
 esac
 
-OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+if [ "$WF" = "0" ] ; then
+  WF=""
+fi
+
+if [[ "$WF" != "" ]] ; then
+  WFstr="WF${WF}"
+else
+  WFstr=""
+fi
+
+OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
 OutputVolBeta=""
 if ((DoVol))
 then
     #no reason for it to have the mesh on the name, but that is what the old script said...
-    OutputVolBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputVolBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
 fi
 OutputZ=""
 OutputVolZ=""
 if ((DoZ))
 then
-    OutputZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}Z${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
     if ((DoVol))
     then
-        OutputVolZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}Z${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
 SpectraParams=""
@@ -259,6 +270,10 @@ fi
 if [[ "$ScaleFactor" != "" ]]
 then
     matlab_argarray+=("ScaleFactor" "$ScaleFactor")
+fi
+if [[ "$WF" != "" ]]
+then
+    matlab_argarray+=("WF" "$WF")
 fi
 if ((DoVol))
 then
