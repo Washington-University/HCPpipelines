@@ -93,7 +93,7 @@ then
 fi
 
 # Add the specified versions of some things to the front of $PATH, so we can stop using absolute paths everywhere
-export PATH="$CARET7DIR:$FSLDIR/bin:$PATH"
+export PATH="$CARET7DIR:$FSLDIR/share/fsl/bin:$PATH"
 
 # Source extra stuff that pipelines authors may need to edit, but users shouldn't ever need to
 # by separating them this way, a user can continue to use their previous setup file even if we
