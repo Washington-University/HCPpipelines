@@ -1,25 +1,4 @@
 #!/bin/bash
-function identify_timepoints
-{
-    local subject=$1
-    local tplist=""
-    local tp visit n
-
-    #build the list of timepoints (sessions)
-    n=0
-    for session in ${PossibleVisits[*]}; do
-        tp="${subject}_${session}"
-        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
-             if (( n==0 )); then 
-                    tplist="$tp"
-             else
-                    tplist="$tplist,$tp"
-             fi
-        fi
-        ((n++))
-    done
-    echo $tplist
-}
 
 get_usage_and_exit(){
     echo "usage: "
@@ -45,10 +24,11 @@ StudyFolder="/my/study/path"
 #The list of subject labels, space separated
 Subjects=(HCA6002236 HCA6002237 HCA6002238)
 #The list of possible visits (aka timepoints, sessions) that each subject may have. Timepoint directories should be named <Subject>_<Visit>.
-PossibleVisits=(V1_MR V2_MR V3_MR V4_MR V5_MR V6_MR V7_MR V8_MR V9_MR V10_MR)
+PossibleVisits=(V1_MR V2_MR V3_MR)
 #The list of possible visits that each subject may have. Timepoint (visit) is expected to be named <Subject>_<Visit>.
 #Actual visits (timepoints) are determined based on existing directories that match the visit name pattern.
-ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
+#ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
+ExcludeVisits=()
 #Longitudinal template labels, one per each subject.
 Templates=(HCA6002236_V1_V2 HCA6002237_V1_V2 HCA6002238_V1_V2)
 
@@ -75,11 +55,40 @@ QUEUE="long.q"
 
 #parallel options
 parallel_mode=BUILTIN
-max_jobs=4
+
+# This setting is for BUILTIN mode. Set to -1 to auto-detect the # of CPU cores on the node where each per-subject job is run.
+# Note that in case when multiple subject jobs are run on the same node and are submitted 
+# in parallel by e.g. fsl_sub, max_jobs should be set manually to not significantly exceed
+# (number of available cores)/(number of subjects) in the batch. 
+max_jobs=-1
+#max_jobs=4
 
 #TEMPLATE stage must be run before TIMEPOINTS stage
 start_stage=TEMPLATE
 end_stage=TIMEPOINTS
+
+#Processing goes here.
+function identify_timepoints
+{
+    local subject=$1
+    local tplist=""
+    local tp visit n
+
+    #build the list of timepoints (sessions)
+    n=0
+    for session in ${PossibleVisits[*]}; do
+        tp="${subject}_${session}"
+        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]+${ExcludeVisits[*]}} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+             if (( n==0 )); then 
+                    tplist="$tp"
+             else
+                    tplist="$tplist@$tp"
+             fi
+        fi
+        ((n++))
+    done
+    echo $tplist
+}
 
 ########################################## INPUTS ########################################## 
 #Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline
@@ -90,7 +99,7 @@ for i in ${!Subjects[@]}; do
   #Subject's time point list, @ separated.  
   TPlist=(`identify_timepoints $Subject`)
   #Array with timepoints
-  IFS=, read -ra Timepoints <<< "$TPlist"
+  IFS=@ read -ra Timepoints <<< "$TPlist"
   #Freesurfer longitudinal average template label
   LongitudinalTemplate=${Templates[i]}
 
@@ -102,20 +111,20 @@ for i in ${!Subjects[@]}; do
   T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
   if [ "$parallel_mode" != FSLSUB ]; then #fsl_sub does not allow nested submissions
-  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-      echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
-      #NOTE: fsl_sub without -q runs locally and captures output in files
-      queuing_command=("$FSLDIR/bin/fsl_sub")
+    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
+        #NOTE: fsl_sub without -q runs locally and captures output in files
+        queuing_command=("$FSLDIR/bin/fsl_sub")
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
   else
-      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/LongitudinalFreeSurferPipeline.sh"
-      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
-  fi
-  else
-  	queuing_command=()
+    queuing_command=()
   fi
 
   #DO NOT PUT timepoint-specific options here!!!
-  cmd=("${queuing_command[@]}" "$HCPPIPEDIR"/FreeSurfer/LongitudinalFreeSurferPipeline.sh \
+  cmd=(${queuing_command[@]+"${queuing_command[@]}"} "$HCPPIPEDIR"/FreeSurfer/LongitudinalFreeSurferPipeline.sh \
     --subject="$Subject" \
     --path="$StudyFolder" \
     --sessions="$TPlist" \

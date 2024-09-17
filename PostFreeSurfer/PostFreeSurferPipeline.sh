@@ -54,11 +54,10 @@ defaultSigma=$(echo "sqrt(200)" | bc -l)
 
 #TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
-opts_AddMandatory '--subject-long' 'Subject' 'subject ID' "subject label, may be different from Session"
 opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "--subject" #legacy --subject option
-opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<pipelines>/global/templates/standard_mesh_atlases or equivalent"
+opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<HCPpipelines>/global/templates/standard_mesh_atlases or equivalent"
 opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
-opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
+opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<HCPpipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
 opts_AddMandatory '--hiresmesh' 'HighResMesh' 'number' "usually '164', the standard mesh for T1w-resolution data data"
 opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the standard mesh for fMRI data"
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
@@ -72,6 +71,7 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleD
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 
+opts_AddOptional '--subject-long' 'Subject' 'subject ID' "subject label (used in longitudinal mode), may be different from Session"
 opts_AddOptional '--longitudinal-mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode
 Longitudinal modes:
 NONE: cross-sectional processing (default)
@@ -93,7 +93,7 @@ Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Te
 Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. " "NONE"
 
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
-opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list ',' separated, if LongitudinalMode==TEMPLATE"
+opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list @ separated, if LongitudinalMode==TEMPLATE"
 
 opts_ParseArguments "$@"
 
@@ -116,7 +116,7 @@ case "$QCMode" in
         ;;
     (only)
         doProcessing=0
-		log_Warn "Only generating structural QC scene and snapshots from existing data (no other processing)"
+        log_Warn "Only generating structural QC scene and snapshots from existing data (no other processing)"
         ;;
     (*)
         log_Err_Abort "unrecognized value '$QCMode' for --structural-qc, use 'yes', 'no', or 'only'"
@@ -347,7 +347,7 @@ if ((doProcessing)); then
 fi
 
 if ((doQC)); then
-	log_Msg "Generating structural QC scene and snapshots"
+  log_Msg "Generating structural QC scene and snapshots"
     "$PipelineScripts"/GenerateStructuralScenes.sh \
         --study-folder="$StudyFolder" \
         --session="$ExperimentRoot" \

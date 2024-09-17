@@ -21,7 +21,7 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
+# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
 
 
 function create_zero_warp
@@ -96,7 +96,7 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
 opts_AddMandatory '--longitudinal-template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
 opts_AddMandatory '--sessions' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
-                    processing, specify current timepoint. For template processing, must specify all timepoints, ',' separated.\
+                    processing, specify current timepoint. For template processing, must specify all timepoints, @ separated.\
                     Timepoint ID and Session are synonyms in HCP structural pipelines."
 opts_AddMandatory '--template_processing' 'TemplateProcessing' 'create template flag' "0 if TP processing; 1 if template processing (must be run after all TP's)"
 
@@ -127,8 +127,30 @@ T2wFolder="T2w" #Location of T2w images
 Modalities="T1w T2w"
 MNI_08mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
-IFS=',' read -r -a timepoints <<< "$Timepoints_cross"
+IFS='@' read -r -a timepoints <<< "$Timepoints_cross"
 Timepoint_cross=${timepoints[0]}
+
+
+#########################################################################################
+# Organizing and cleaning up the folder structure
+#########################################################################################
+if (( TemplateProcessing == 0 )); then 
+    # ----------------------------------------------------------------------
+    log_Msg "Organizing and cleaning up the folder structure"
+    # ----------------------------------------------------------------------
+
+    LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
+    for TP in ${timepoints[@]} ; do
+        log_Msg "Organizing the folder structure for: ${TP}"
+        # create the symlink
+        TargetDIR="${StudyFolder}/${TP}.long.${Template}/T1w"
+        mkdir -p "${TargetDIR}"
+        ln -sf "${LongDIR}/${TP}.long.${Template}" "${TargetDIR}/${TP}.long.${Template}"
+
+        # remove the symlink in the subject's folder
+        rm -rf "${LongDIR}/${TP}"
+    done
+fi
 
 ############################################################################################################
 # The next block computes the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (long_template).
@@ -151,19 +173,19 @@ if (( TemplateProcessing == 0 )); then #timepoint mode
     T2w_long=$T1w_dir_long/T2w_acpc_dc_restore.nii.gz
 
     #1. create resample transform from timepoints' T1w to 'norm' (equiv. to 'orig') space. This only applies reorient/resample, no actual registration
-    lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta	
+    lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta
 
     #2. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
     mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_template $T1w_dir_long/xfms/T1w_cross_to_template.lta
     #3. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta --outlta $T1w_dir_long/xfms/norm_to_T1w_cross.lta --invert
     #4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
-    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta	
+    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta
     #5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_cross --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
 else #Template mode
     :
-fi    
+fi
 #end block
 
 #################################################################################################################
@@ -385,7 +407,7 @@ if (( TemplateProcessing ==  1 )); then
     
     #finalize all TP's with template to MNI152 atlas transform    
     for tp in ${timepoints[@]}; do
-	log_Msg "Timepoint $tp: applying MNI152 atlas transform and brain mask"
+  log_Msg "Timepoint $tp: applying MNI152 atlas transform and brain mask"
         #These variables are redefined
         Timepoint_long=$tp.long.$Template
         AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear

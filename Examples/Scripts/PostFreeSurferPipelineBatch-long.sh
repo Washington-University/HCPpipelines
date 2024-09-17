@@ -1,35 +1,5 @@
 #!/bin/bash 
 
-function identify_timepoints
-{
-    local subject=$1
-    local tplist=""
-    local tp visit n
-
-    #build the list of timepoints
-    n=0
-    for visit in ${PossibleVisits[*]}; do
-        tp="${subject}_${visit}"
-        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
-             if (( n==0 )); then 
-                    tplist="$tp"
-             else
-                    tplist="$tplist,$tp"
-             fi
-        fi
-        ((n++))
-    done
-    echo $tplist
-}
-
-get_usage_and_exit(){
-    echo "usage: "
-    echo "PostFreeSurferPipelineBatch-long.sh [options]"
-    echo "options:"
-    echo "  --runlocal                      run locally [FALSE]"
-    exit -1
-}
-
 command_line_specified_run_local=FALSE
 while [ -n "$1" ]; do
     case "$1" in
@@ -46,14 +16,15 @@ StudyFolder="<MyStudyPath>"
 #The list of subject labels, space separated
 Subjects=(HCA6002236 HCA6002237 HCA6002238)
 #The list of possible visits that each subject may have. Timepoint (visit) is expected to be named <Subject>_<Visit>.
-PossibleVisits=(V1_MR V2_MR V3_MR V4_MR V5_MR V6_MR V7_MR V8_MR V9_MR V10_MR)
+PossibleVisits=(V1_MR V2_MR V3_MR)
 #Actual visits (timepoints) are determined based on existing directories that match the visit name pattern <Subject>_<visit>.
 #Excluded timepoint directories
-ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
+#ExcludeVisits=(HCA6002237_V1_MR HCA6002238_V1_MR)
+ExcludeVisits=()
 #Longitudinal template labels, one per each subject.
 Templates=(HCA6002236_V1_V2 HCA6002237_V1_V2 HCA6002238_V1_V2)
-#EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+#EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 source "$EnvironmentScript"
 
 ##################################################################################################
@@ -103,7 +74,7 @@ QUEUE="long.q"
 
 #pipeline level parallelization
 #parallel mode: FSLSUB, BUILTIN, NONE
-parallel_mode=FSLSUB
+parallel_mode=BUILTIN
 
 if [ "$parallel_mode" != FSLSUB ]; then #fsl_sub does not allow nested submissions
 if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
@@ -117,21 +88,43 @@ else
     QUEUE=""    
 fi
 else
-	queuing_command=""
+    queuing_command=""
 fi
 
-# Log the originating call
-echo "$@"
-
-if [ -z "QUEUE" ]; then fslsub_queue_param=""; else fslsub_queue_param="--fslsub-queue=$QUEUE"; fi
-
-#maximum number of concurrent jobs in BUILTIN mode
+# This setting is for BUILTIN mode. Set to -1 to auto-detect the # of CPU cores on the node where each per-subject job is run.
+# Note that in case when multiple subject jobs are run on the same node and are submitted 
+# in parallel by e.g. fsl_sub, max_jobs should be set manually to not significantly exceed
+# (number of available cores)/(number of subjects) in the batch. 
+max_jobs=-1
 max_jobs=4
 
 # Stages to run. Must be run in the following order:
 # 1. PREP-TP, 2.PREP-T, 3. POSTFS-TP1, 4. POSTFS-T, 5. POSTFS-TP2
 start_stage=PREP-TP
 end_stage=POSTFS-TP2
+
+
+function identify_timepoints
+{
+    local subject=$1
+    local tplist=""
+    local tp visit n
+
+    #build the list of timepoints
+    n=0
+    for visit in ${PossibleVisits[*]}; do
+        tp="${subject}_${visit}"
+        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]+${ExcludeVisits[*]}} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+             if (( n==0 )); then 
+                    tplist="$tp"
+             else
+                    tplist="$tplist@$tp"
+             fi
+        fi
+        ((n++))
+    done
+    echo $tplist
+}
 
 #iterate over all subjects.
 for i in ${!Subjects[@]}; do
@@ -143,33 +136,33 @@ for i in ${!Subjects[@]}; do
   echo Template: $LongitudinalTemplate
   echo Timepoints: $Timepoint_list
 
-  cmd=($queuing_command ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh \
-    --study-folder="$StudyFolder"         \
-    --subject="$Subject"                  \
-    --longitudinal-template="$LongitudinalTemplate"    \
-    --sessions="$Timepoint_list"        \
-    --parallel-mode=$parallel_mode 	      \
-#    $fslsub_queue_param                   \
-    --start-stage=$start_stage		   \
-    --end-stage=$end_stage		\
-    --t1template="$T1wTemplate"           \
-    --t1templatebrain="$T1wTemplateBrain" \
-    --t1template2mm="$T1wTemplate2mm"     \
-    --t2template="$T2wTemplate"           \
-    --t2templatebrain="$T2wTemplateBrain" \
-    --t2template2mm="$T2wTemplate2mm"     \
-    --templatemask="$TemplateMask"        \
-    --template2mmmask="$Template2mmMask"  \
-    --fnirtconfig="$FNIRTConfig"          \
-    --freesurferlabels="$FreeSurferLabels"\
-    --surfatlasdir="$SurfaceAtlasDIR"     \
-    --grayordinatesres="$GrayordinatesResolutions"    \
-    --grayordinatesdir="$GrayordinatesSpaceDIR"       \
-    --hiresmesh="$HighResMesh"            \
-    --lowresmesh="$LowResMeshes"          \
-    --subcortgraylabels="$SubcorticalGrayLabels"      \
-    --refmyelinmaps="$ReferenceMyelinMaps"            \
-    --regname="$RegName" \    
+  cmd=(${queuing_command[@]+"${queuing_command[@]}"} ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongLauncher.sh \
+    --study-folder="$StudyFolder"                       \
+    --subject="$Subject"                                \
+    --longitudinal-template="$LongitudinalTemplate"     \
+    --sessions="$Timepoint_list"                        \
+    --parallel-mode=$parallel_mode                      \
+    --fslsub-queue=$QUEUE                               \
+    --start-stage=$start_stage                          \
+    --end-stage=$end_stage                              \
+    --t1template="$T1wTemplate"                         \
+    --t1templatebrain="$T1wTemplateBrain"               \
+    --t1template2mm="$T1wTemplate2mm"                   \
+    --t2template="$T2wTemplate"                         \
+    --t2templatebrain="$T2wTemplateBrain"               \
+    --t2template2mm="$T2wTemplate2mm"                   \
+    --templatemask="$TemplateMask"                      \
+    --template2mmmask="$Template2mmMask"                \
+    --fnirtconfig="$FNIRTConfig"                        \
+    --freesurferlabels="$FreeSurferLabels"              \
+    --surfatlasdir="$SurfaceAtlasDIR"                   \
+    --grayordinatesres="$GrayordinatesResolutions"      \
+    --grayordinatesdir="$GrayordinatesSpaceDIR"         \
+    --hiresmesh="$HighResMesh"                          \
+    --lowresmesh="$LowResMeshes"                        \
+    --subcortgraylabels="$SubcorticalGrayLabels"        \
+    --refmyelinmaps="$ReferenceMyelinMaps"              \
+    --regname="$RegName"                                \    
     )
     echo "Running $cmd"
     "${cmd[@]}"

@@ -55,7 +55,7 @@ opts_SetScriptDescription "Runs the Longitudinal FreeSurfer HCP pipeline"
 # Show usage information
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used with --path input to create full path to root directory for all sessions"
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
-opts_AddMandatory '--sessions' 'Sessions' 'sessions' "Comma separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
+opts_AddMandatory '--sessions' 'Sessions' 'sessions' "@ separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
 opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
@@ -63,7 +63,7 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 #parallel mode options.
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
 opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" ""
-opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode [4]." 4
+opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
 
@@ -76,6 +76,9 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+# Show HCP pipelines version
+log_Msg "Showing HCP Pipelines version"
 ${HCPPIPEDIR}/show_version
 
 # ------------------------------------------------------------------------------
@@ -102,9 +105,9 @@ configure_custom_tools()
   local which_conf2hires
   local which_longmc
 
-	which_recon_all=$(which recon-all.v6.hires || true)
-	which_conf2hires=$(which conf2hires || true)
-	which_longmc=$(which longmc || true)
+  which_recon_all=$(which recon-all.v6.hires || true)
+  which_conf2hires=$(which conf2hires || true)
+  which_longmc=$(which longmc || true)
 
   if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
     export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
@@ -125,10 +128,6 @@ configure_custom_tools()
 # Show tool versions
 show_tool_versions()
 {
-  # Show HCP pipelines version
-  log_Msg "Showing HCP Pipelines version"
-  ${HCPPIPEDIR}/show_version
-
   # Show recon-all version
   log_Msg "Showing recon-all.v6.hires version"
   local which_recon_all=$(which recon-all.v6.hires)
@@ -209,38 +208,27 @@ validate_freesurfer_version
 #processing code goes here
 echo "parallel mode: $parallel_mode"
 fslsub_queue=NONE
-
-case $parallel_mode in
-	FSLSUB)
-    if [ -n "$queue" ]; then fslsub_queue=$queue; fi	
-    ;;    
-	BUILTIN)
-		max_jobs=$max_jobs
-    if (( max_jobs < 1 )); then max_jobs=2; fi 
-    ;;
-	NONE)
-    echo "parallel mode: NONE" 
-    ;;
-	*)
-		log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
-		;;
-esac
+if [ "$parallel_mode" == "FSLSUB" ]; then
+  if [ -n "$queue" ]; then fslsub_queue=$queue; fi
+elif [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ] then 
+  log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
+fi
 
 start_stage=0
-if [ -n "$StartStage" ]; then	
-	case $StartStage in
+if [ -n "$StartStage" ]; then  
+  case $StartStage in
     TEMPLATE) start_stage=0 ;;
-		TIMEPOINTS) start_stage=1 ;;
-		*) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
-	esac
+    TIMEPOINTS) start_stage=1 ;;
+    *) log_Err_Abort "Unrecognized option for start-stage: $StartStage"
+  esac
 fi
 end_stage=1
-if [ -n "$EndStage" ]; then	
-	case $EndStage in
-		TEMPLATE) end_stage=0 ;;
-		TIMEPOINTS) end_stage=1 ;;
-		*) log_Err_Abort "Unrecognized option for end-stage: $EndStage"
-	esac
+if [ -n "$EndStage" ]; then  
+  case $EndStage in
+    TEMPLATE) end_stage=0 ;;
+    TIMEPOINTS) end_stage=1 ;;
+    *) log_Err_Abort "Unrecognized option for end-stage: $EndStage"
+  esac
 fi
 
 # ----------------------------------------------------------------------
@@ -248,7 +236,7 @@ log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
-# Log values retrieved from positional parameters
+# Log values retrieved from command line options
 # ----------------------------------------------------------------------
 log_Msg "StudyFolder: ${StudyFolder}"
 log_Msg "SubjectID: ${SubjectID}"
@@ -261,7 +249,7 @@ log_Msg "EndStage: $EndStage"
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
 # ----------------------------------------------------------------------
-Sessions=`echo ${Sessions} | sed 's/,/ /g'`
+Sessions=`echo ${Sessions} | sed 's/@/ /g'`
 
 extra_reconall_args_base=""
 extra_reconall_args_long=""
@@ -279,83 +267,77 @@ log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
 mkdir -p "${LongDIR}"
 
-for Session in ${Sessions} ; do
-  Source="${StudyFolder}/${Session}/T1w/${Session}"
-  Target="${LongDIR}/${Session}"
-  log_Msg "Creating a link: ${Source} => ${Target}"
-  ln -sf ${Source} ${Target}
-done
-
-
 if (( start_stage < 1 )); then 
 
-	# ----------------------------------------------------------------------
+  #prepare session folder structure
+  for Session in ${Sessions} ; do
+    Source="${StudyFolder}/${Session}/T1w/${Session}"
+    Target="${LongDIR}/${Session}"
+    log_Msg "Creating a link: ${Source} => ${Target}"
+    ln -sf ${Source} ${Target}
+  done
+
+  # ----------------------------------------------------------------------
   log_Msg "Creating the base template: ${TemplateID}"
-	# ----------------------------------------------------------------------
-	# backup template dir if it exists
-  if [ -d "${LongDIR}/${TemplateID}" ]; then
-    TimeStamp=`date +%Y-%m-%d_%H.%M.%S.%6N`
-	  log_Msg "Base template dir: ${LongDIR}/${TemplateID} already exists, backing up to ${LongDIR}/${TemplateID}.${TimeStamp}"
-	  mv ${LongDIR}/${TemplateID} ${LongDIR}/${TemplateID}.${TimeStamp}
-	fi
+  # ----------------------------------------------------------------------
 
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
-	recon_all_cmd+=" -base ${TemplateID}"
-	for Session in ${Sessions} ; do
-	  recon_all_cmd+=" -tp ${Session}"
-	done
-	recon_all_cmd+=" -all"
+  recon_all_cmd+=" -base ${TemplateID}"
+  for Session in ${Sessions} ; do
+    recon_all_cmd+=" -tp ${Session}"
+  done
+  recon_all_cmd+=" -all"
 
   if [ ! -z "${recon_all_seed}" ]; then
-	  recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
+    recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
   fi
 
-	#---------------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------------
   log_Msg "Running the recon-all to generate common template"
-	#---------------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------------
 
-	#recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
+  #recon_all_cmd+=(${extra_reconall_args_base[@]+"${extra_reconall_args_base[@]}"})
   recon_all_cmd+=" $extra_reconall_args_base "
-	echo "recon_all_cmd:"
-	echo ${recon_all_cmd}
-	log_Msg "...recon_all_cmd: ${recon_all_cmd}"
+  echo "recon_all_cmd:"
+  echo ${recon_all_cmd}
+  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 
   par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
 if (( end_stage > 0 )); then 
-	# ----------------------------------------------------------------------
+  # ----------------------------------------------------------------------
   log_Msg "Running the longitudinal recon-all on each timepoint"
-	# ----------------------------------------------------------------------
-	for Session in ${Sessions} ; do
-	  log_Msg "Running longitudinal recon all for session: ${Session}"
-	  recon_all_cmd="recon-all.v6.hires"
-	  recon_all_cmd+=" -sd ${LongDIR}"
-	  recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
-	  
-	  recon_all_cmd+=" $extra_reconall_args_long "
-	  T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
-	  
-	  if [ -f "$T2w" ]; then 
-		  recon_all_cmd+=" -T2 $T2w"
-	  else
-	  	  log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
-	  fi
-	  	  
-	  T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
-	  emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
-	  
-	  if [ -f "$emregmask" ]; then 
-	  	recon_all_cmd+=" -emregmask $emregmask" 
-	  else
-	  	log_Msg "Required $emregmask file is missing"
-	  	exit -1	  	
-	  fi
-	  	  	  
-	  log_Msg "...recon_all_cmd: ${recon_all_cmd}"
-	  echo ${recon_all_cmd}
+  # ----------------------------------------------------------------------
+  for Session in ${Sessions} ; do
+    log_Msg "Running longitudinal recon all for session: ${Session}"
+    recon_all_cmd="recon-all.v6.hires"
+    recon_all_cmd+=" -sd ${LongDIR}"
+    recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
+    
+    recon_all_cmd+=" $extra_reconall_args_long "
+    T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
+    
+    if [ -f "$T2w" ]; then 
+      recon_all_cmd+=" -T2 $T2w"
+    else
+        log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
+    fi
+        
+    T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
+    emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
+    
+    if [ -f "$emregmask" ]; then 
+      recon_all_cmd+=" -emregmask $emregmask" 
+    else
+      log_Msg "Required $emregmask file is missing"
+      exit -1      
+    fi
+            
+    log_Msg "...recon_all_cmd: ${recon_all_cmd}"
+    echo ${recon_all_cmd}
     par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
   done
   

@@ -192,15 +192,14 @@ function par_addjob_stdin()
 #3. command with arguments
 function par_add_job_to_stage()
 {
-    local PARALLEL_MODE=$1    	
-    echo "parallel mode: $PARALLEL_MODE"
+    local PARALLEL_MODE=$1
     shift
 
     #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
     local fslsub_options param=$1
     shift
 
-	local job submit_cmd cmd="$@"
+	local job submit_cmd cmd=("$@")
 
     if [ "$PARALLEL_MODE" == FSLSUB ]; then #current job is submitted, and added to fsl_job_list
         fslsub_options=""
@@ -236,7 +235,7 @@ function par_finalize_stage()
     local PARALLEL_MODE=$1
     shift    
     local temp max_jobs=$1
-    if [ -z "$max_jobs" ]; then max_jobs=1; fi
+    if [ -z "$max_jobs" ]; then max_jobs=-1; fi
 		
 	if [ "$PARALLEL_MODE" == "FSLSUB" ]; then 		#update the fslsub_job_waitlist with the current job list.        
 		echo "updating fsl_sub job waitlist.."
