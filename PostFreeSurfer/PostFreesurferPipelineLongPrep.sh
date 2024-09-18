@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# # PreFreeSurferPipeline.sh
+# # PostFreeSurferPipelineLongPrep.sh
 #
 # ## Copyright Notice
 #
@@ -23,33 +23,16 @@
 #
 # See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
 
-
-function create_zero_warp
-{
-    local target_image=$1 warp_file=$2
-
-    # Step 1: Extract dimensions from the target image
-    local dim1=$(fslval $target_image dim1)
-    local dim2=$(fslval $target_image dim2)
-    local dim3=$(fslval $target_image dim3)
-    local pixdim1=$(fslval $target_image pixdim1)
-    local pixdim2=$(fslval $target_image pixdim2)
-    local pixdim3=$(fslval $target_image pixdim3)
-
-    local temp=`mktemp volXXX`.nii.gz
-
-    # Step 2: Create a zero-filled image with the same dimensions
-    fslmaths $target_image -mul 0 $temp
-
-    # Step 3: Merge it into a 4D file with three volumes (all zeros)
-    fslmerge -t $warp_file $temp $temp $temp
-
-    # Optional: Set the voxel dimensions correctly if needed
-    fslcreatehd $dim1 $dim2 $dim3 3 $pixdim1 $pixdim2 $pixdim3 1 0 0 0 16 $warp_file
-}
-
-
 set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
 
 # Requirements for this script
 #  installed versions of: FSL
@@ -58,41 +41,17 @@ set -eu
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@" # Check processing mode requirements
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
-log_Check_Env_Var HCPPIPEDIR_Global
-
+#pending resolution on T1w-only mode support by longitudinal scripts.
+#source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@" # Check processing mode requirements
 
 log_Msg "Platform Information Follows: "
 uname -a
 "$HCPPIPEDIR"/show_version
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: takes cross-sectional pre-Freesurfer output, as well as longitudinal FreeSurfer output folders.
-Creates volumes and transforms analogous to those produced by preFreesurferPipeline, but in longitudinal template space.
+opts_SetScriptDescription "takes cross-sectional PreFreesurfer output, as well as longitudinal FreeSurfer output folders.\
+Creates volumes and transforms analogous to those produced by PreFreeSurferPipeline, but in longitudinal template space"
 
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
-
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-#help info for option gets printed like "--foo=<$3> - $4"
-
-#TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--path' 'StudyFolder' 'path' "folder containing all timepoins and templates" "--path"
-#The following options
 opts_AddMandatory '--subject'   'Subject'   'subject ID' "Subject label. Note: this is distinct subject label. Use separate labels for template and timepoints"
 opts_AddMandatory '--longitudinal-template'  'Template'  'FS template ID' "Longitudinal template ID (same as Freesurfer long template ID)"
 opts_AddMandatory '--sessions' 'Timepoints_cross' 'FS timepoint ID(s)' "Freesurfer timepoint ID(s). For timepoint (session)\
@@ -113,10 +72,21 @@ opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Confi
 
 #needed to transform Freesurfer mask to MNI space.
 opts_AddMandatory '--freesurferlabels' 'FreeSurferLabels' 'file' "location of FreeSurferAllLut.txt"
+
+
 opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
 
 #display the parsed/default values
 opts_ShowValues
+
+log_Check_Env_Var HCPPIPEDIR
+log_Check_Env_Var FSLDIR
+log_Check_Env_Var HCPPIPEDIR_Global
 
 # Naming Conventions
 T1wImage="T1w"
@@ -124,8 +94,7 @@ T1wImageBrainMask="brainmask_fs"
 T1wFolder="T1w" #Location of T1w images
 T2wImage="T2w"
 T2wFolder="T2w" #Location of T2w images
-Modalities="T1w T2w"
-MNI_08mm_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
+MNI_hires_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 
 IFS='@' read -r -a timepoints <<< "$Timepoints_cross"
 Timepoint_cross=${timepoints[0]}
@@ -172,19 +141,17 @@ if (( TemplateProcessing == 0 )); then #timepoint mode
     T1w_long=$T1w_dir_long/T1w_acpc_dc_restore.nii.gz
     T2w_long=$T1w_dir_long/T2w_acpc_dc_restore.nii.gz
 
-    #1. create resample transform from timepoints' T1w to 'norm' (equiv. to 'orig') space. This only applies reorient/resample, no actual registration
+    #1. create resample transform from timepoints' T1w to 'norm' (equiv. to 'orig') space. This only applies reorient/resample, 
+    #no actual registration -- it is just a coordinate conversion between the HCP volume space and freesurfer's.
     lta_convert --inlta identity.nofile --src $T1w_cross --trg $Snorm.nii.gz --outlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta
-
-    #2. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
-    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_template $T1w_dir_long/xfms/T1w_cross_to_template.lta
-    #3. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
+    #2. Invert TP->norm transforms. Again, this is only reorient/resample, this isn't an actual registration transform.
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_norm.lta --outlta $T1w_dir_long/xfms/norm_to_T1w_cross.lta --invert
+    #3. concatnate previous transform with TP(orig)->template(orig) transform computed by FS.
+    mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_norm.lta $LTA_norm_to_template $T1w_dir_long/xfms/T1w_cross_to_template.lta
     #4. Combine TP->template and orig->TP transforms to get TP->TP(HCP template) transform.
     mri_concatenate_lta $T1w_dir_long/xfms/T1w_cross_to_template.lta $T1w_dir_long/xfms/norm_to_T1w_cross.lta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta
     #5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_cross --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
-else #Template mode
-    :
 fi
 #end block
 
@@ -194,17 +161,12 @@ fi
 
 if (( TemplateProcessing == 0 )); then 
     log_Msg "Timepoint $Timepoint_long: combining warps and resampling T1w_acpc_dc to longitudinal template space"
-    T1w_cross_gdc_warp=$T1w_dir_cross/xfms/${T1wImage}1_gdc_warp.nii.gz
-    if [ ! -f "$T1w_cross_gdc_warp" ]; then
-        log_Msg "NOT USING GRADIENT DISTORTION CORRECTION WARP"
-        create_zero_warp $T1w_dir_cross/${T1wImage}1_gdc.nii.gz $T1w_cross_gdc_warp
-    fi
 
     #first, create the warp transform.
-    convertwarp --premat="$T1w_dir_cross/xfms/acpc.mat" --ref=$MNI_08mm_template \
+    convertwarp --premat="$T1w_dir_cross/xfms/acpc.mat" --ref=$MNI_hires_template \
         --warp1=$T1w_dir_cross/xfms/T1w_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz
     #second, apply warp.
-    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_08mm_template \
+    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_hires_template \
         -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
 else 
     :
@@ -228,14 +190,14 @@ if (( TemplateProcessing == 0 )); then
     #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
     if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
         log_Msg "Timepoint $Timepoint_long: warping T2-weighted image to T2w_acpc_dc in longitudinal template space"
-        convertwarp --premat=$T2w_dir_cross/xfms/acpc.mat --ref=$MNI_08mm_template \
+        convertwarp --premat=$T2w_dir_cross/xfms/acpc.mat --ref=$MNI_hires_template \
             --warp1=$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T2w_dir_long/xfms/T2w2template.nii.gz
     else
         log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
         Use_T2w=0
     fi
     if (( Use_T2w )); then
-        applywarp --interp=spline -i $T2w_dir_cross/T2w.nii.gz -r $MNI_08mm_template \
+        applywarp --interp=spline -i $T2w_dir_cross/T2w.nii.gz -r $MNI_hires_template \
             -w $T2w_dir_long/xfms/T2w2template.nii.gz -o $T1w_dir_long/T2w_acpc_dc.nii.gz
     fi
 else 
@@ -271,7 +233,7 @@ else
 fi
 
 ##############################################################################################################
-# The next block runs gain field correction in the template space for the TXw images.
+# The next block runs bias field correction in the template space for the TXw images.
 
 
 # Applies warp field from the one computed for cross-sectional runs.
@@ -282,7 +244,7 @@ if (( TemplateProcessing == 0 )); then
 
     log_Msg "Timepoint $Timepoint_long: warping bias field to longitudinal template space"
     if [ -f "$BiasField_cross.nii.gz" ]; then
-        applywarp --interp=spline -i $BiasField_cross -r $MNI_08mm_template \
+        applywarp --interp=spline -i $BiasField_cross -r $MNI_hires_template \
             --premat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
 
     fi

@@ -7,7 +7,7 @@
 #
 # ## Copyright Notice
 #
-# Copyright (C) 2015-2023 The Human Connectome Project/Connectome Coordination Facility
+# Copyright (C) 2015-2024 The Human Connectome Project/Connectome Coordination Facility
 #
 # * Washington University in St. Louis
 # * Univeristy of Ljubljana
@@ -19,7 +19,7 @@
 # * Mikhail V. Milchenko, Department of Radiology, Washington University in St. Louis
 #
 
-# Version: v.0.1, 10/23/2023
+# Version: v.0.9, 09/18/2024
 
 # ## Product
 #
@@ -57,12 +57,12 @@ opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "@ separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
-opts_AddOptional '--use-T2w' 'UseT2w' 'UseT2w' "Set to 0 for no T2-weighted processing [1]" "1"
+opts_AddOptional '--use-T2w' 'UseT2wString' 'UseT2w' "Set to 0/false/no for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 #parallel mode options.
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
-opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" ""
+opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
@@ -205,12 +205,11 @@ show_tool_versions
 # Validate version of FreeSurfer in use
 validate_freesurfer_version
 
+UseT2w=$(opts_StringToBool "$Use_T2wString")
+
 #processing code goes here
 echo "parallel mode: $parallel_mode"
-fslsub_queue=NONE
-if [ "$parallel_mode" == "FSLSUB" ]; then
-  if [ -n "$queue" ]; then fslsub_queue=$queue; fi
-elif [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ] then 
+if [ "$parallel_mode" != "FSLSUB" -a "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ] then 
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 fi
 
@@ -234,17 +233,6 @@ fi
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
-
-# ----------------------------------------------------------------------
-# Log values retrieved from command line options
-# ----------------------------------------------------------------------
-log_Msg "StudyFolder: ${StudyFolder}"
-log_Msg "SubjectID: ${SubjectID}"
-log_Msg "Sessions: ${Sessions}"
-log_Msg "TemplateID: ${TemplateID}"
-log_Msg "recon_all_seed: ${recon_all_seed}"
-log_Msg "StartStage: $StartStage"
-log_Msg "EndStage: $EndStage"
 
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
@@ -303,7 +291,7 @@ if (( start_stage < 1 )); then
   echo ${recon_all_cmd}
   log_Msg "...recon_all_cmd: ${recon_all_cmd}"
 
-  par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
+  par_add_job_to_stage $parallel_mode "$fslsub_queue" ${recon_all_cmd}
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
@@ -338,7 +326,7 @@ if (( end_stage > 0 )); then
             
     log_Msg "...recon_all_cmd: ${recon_all_cmd}"
     echo ${recon_all_cmd}
-    par_add_job_to_stage $parallel_mode $fslsub_queue ${recon_all_cmd}
+    par_add_job_to_stage $parallel_mode "$fslsub_queue" ${recon_all_cmd}
   done
   
   #Finalize jobs in this stage.

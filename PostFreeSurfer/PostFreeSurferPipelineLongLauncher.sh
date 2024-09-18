@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# # PostFreeSurferPipelineLongLauncher.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2022-2024 The Human Connectome Project
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Mikhail Milchenko, Department of Radiology, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project][HCP] (HCP) Longitudinal Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
+
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
@@ -11,6 +33,8 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
+opts_SetScriptDescription "launches longitudinal post-Freesurfer processing."
+
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" 
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label"
 opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label (matching the one used in FreeSurferPipeline-long)"
@@ -18,7 +42,7 @@ opts_AddMandatory '--sessions' 'Timepoint_list' 'list' '@ separated list of time
 
 #parallel mode options
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
-opts_AddOptional '--fslsub-queue' 'queue' 'name' "FSLSUB queue name" "short.q"
+opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage [PREP-TP]. One of PREP-TP (PostFSPrepLong timepoint processing), PREP-T (PostFSPrepLong build template, skip timepoint processing), POSTFS-TP1 (PostFreeSurfer timepoint stage 1), POSTFS-T (PostFreesurfer template), POSTFS-TP2 (PostFreesurfer timepoint stage 2)" "PREP-T"
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage [POSTFS-TP2]. Options are the same as for --start-stage." "POSTFS-TP2"
@@ -60,10 +84,7 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
 
-fslsub_queue=NONE
-if [ "$parallel_mode" == "FSLSUB" ]; then
-  if [ -n "$queue" ]; then fslsub_queue=$queue; fi
-elif [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ] then 
+if [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" -a "$parallel_mode" != "FSLSUB" ] then
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 fi
 
@@ -118,7 +139,7 @@ if (( start_stage==0 )); then
     --fnirtconfig="$FNIRTConfig"                                          \
     --freesurferlabels="$FreeSurferLabels"                                \
       )      
-      par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[@]}
+      par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi
@@ -143,7 +164,7 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
       --fnirtconfig="$FNIRTConfig"                          \
       --freesurferlabels="$FreeSurferLabels"                \
   )
-  par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[@]}
+  par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
@@ -172,7 +193,7 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
     --refmyelinmaps="$ReferenceMyelinMaps"          \
     --regname="$RegName"
     )
-    par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[@]}      
+    par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}      
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi
@@ -198,7 +219,7 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
       --refmyelinmaps="$ReferenceMyelinMaps"          \
       --regname="$RegName"
   )
-  par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[@]}
+  par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
   par_finalize_stage $parallel_mode $max_jobs  
 fi
 
@@ -223,7 +244,7 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
     --refmyelinmaps="$ReferenceMyelinMaps"          \
     --regname="$RegName"
       )
-    par_add_job_to_stage $parallel_mode $fslsub_queue ${cmd[@]}
+    par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi

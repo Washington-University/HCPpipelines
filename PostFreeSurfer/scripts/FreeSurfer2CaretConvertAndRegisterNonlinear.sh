@@ -492,7 +492,6 @@ for Hemisphere in L R ; do
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
     fi
     
-    echo "111"
     #Ensure no zeros in atlas medial wall ROI
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} BARYCENTRIC "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -largest
     ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
@@ -600,8 +599,6 @@ if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
     log_Msg "Timepoint Stage 1 end"
     exit 0
 fi #Stage 1 longitudinal timepoint processing ends here.
-
-echo "222"
 
 STRINGII=""
 for LowResMesh in ${LowResMeshes} ; do

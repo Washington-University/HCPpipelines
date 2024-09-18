@@ -90,13 +90,13 @@ fi
 else
     queuing_command=""
 fi
-
 # This setting is for BUILTIN mode. Set to -1 to auto-detect the # of CPU cores on the node where each per-subject job is run.
 # Note that in case when multiple subject jobs are run on the same node and are submitted 
-# in parallel by e.g. fsl_sub, max_jobs should be set manually to not significantly exceed
-# (number of available cores)/(number of subjects) in the batch. 
+# in parallel by e.g. fsl_sub, it may be inefficient to have the 
+# (number of fsl_sub jobs running per node) * (BUILTIN parallelism) substantially exceed
+# the number of cores per node
 max_jobs=-1
-max_jobs=4
+#max_jobs=4
 
 # Stages to run. Must be run in the following order:
 # 1. PREP-TP, 2.PREP-T, 3. POSTFS-TP1, 4. POSTFS-T, 5. POSTFS-TP2

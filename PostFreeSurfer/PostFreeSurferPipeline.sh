@@ -1,5 +1,29 @@
 #!/bin/bash
 set -eu
+#
+# # PostFreeSurferPipeline.sh
+#
+# ## Copyright Notice
+#
+# Copyright (C) 2015-2024 The Human Connectome Project/Connectome Coordination Facility
+#
+# * Washington University in St. Louis
+# * University of Minnesota
+# * Oxford University
+#
+# ## Author(s)
+#
+# * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
+# * (longitudinal mode): Mikhail Milchenko, Department of Radiology, Washington University in St. Louis
+#
+# ## Product
+#
+# [Human Connectome Project](http://www.humanconnectome.org) (HCP) Pipelines
+#
+# ## License
+#
+# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
+#
 
 # Requirements for this script
 #  installed versions of: FSL

@@ -109,7 +109,6 @@ for Subject in $Subjlist ; do
         --regname="$RegName" \
         --use-ind-mean="$UseIndMean")
     
-    echo "Running command: ${job[*]}"
     "${job[@]}"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
