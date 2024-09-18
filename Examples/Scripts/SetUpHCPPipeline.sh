@@ -93,7 +93,7 @@ then
 fi
 
 # Add the specified versions of some things to the front of $PATH, so we can stop using absolute paths everywhere
-if [ -d "$FSLDIR/share/fsl/bin" ] ; then
+if [[ -d "$FSLDIR/share/fsl/bin" ]] ; then
     # For FSL 6.0.6 (release date: 22 Nov 2022) or later
     export PATH="$FSLDIR/share/fsl/bin:$PATH"
 else
@@ -101,6 +101,7 @@ else
     export PATH="$FSLDIR/bin:$PATH"
 fi
 export PATH="$CARET7DIR:$PATH"
+echo $PATH
 
 # Source extra stuff that pipelines authors may need to edit, but users shouldn't ever need to
 # by separating them this way, a user can continue to use their previous setup file even if we
