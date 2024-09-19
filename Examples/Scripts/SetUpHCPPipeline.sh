@@ -101,7 +101,6 @@ else
     export PATH="$FSLDIR/bin:$PATH"
 fi
 export PATH="$CARET7DIR:$PATH"
-echo $PATH
 
 # Source extra stuff that pipelines authors may need to edit, but users shouldn't ever need to
 # by separating them this way, a user can continue to use their previous setup file even if we
