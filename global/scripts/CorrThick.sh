@@ -75,9 +75,9 @@ for Hemisphere in $Hemi ; do
 	  if [[ "$Map" == MRcorrThickness || "$Map" == MRcorrThickness_intercept ]] ; then
 	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
 	  elif [[ "$Map" == MRcorrThickness_normcoeffs ]] ; then
-	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
+	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
 	  else
-	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 	  fi
 	  wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
 	  wb_command -metric-mask "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii
@@ -98,9 +98,9 @@ if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
 	    if [[ "$Map" == MRcorrThickness || "$Map" == MRcorrThickness_intercept ]] ; then
 	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
 	    elif [[ "$Map" == MRcorrThickness_normcoeffs ]] ; then
-	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
+	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
 	    else
-	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 	    fi
 	  done
 	done
