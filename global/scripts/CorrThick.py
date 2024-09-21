@@ -35,8 +35,8 @@ wb.wb_smooth(subjects_dir,subject,hemi,surface,mesh,smooth)
 wb.wb_rois(subjects_dir,subject,hemi,surface,mesh,number)
 rois,weights=roi.roi(subjects_dir,subject,hemi,surface,mesh,number)
 metric_regression.metric_regression(subjects_dir,subject,hemi,surface,mesh,rois,weights) 
-wb.wb_metric_resample_to_native(subjects_dir,subject,hemi,surface,mesh) 
-wb.wb_structure(subjects_dir,subject,hemi,surface,mesh,structure)
-wb.wb_set_map_names(subjects_dir,subject,hemi,surface,mesh)
+wb.wb_metric_resample_to_native(subjects_dir,subject,hemi,surface) 
+wb.wb_structure(subjects_dir,subject,hemi,surface,structure)
+wb.wb_set_map_names(subjects_dir,subject,hemi)
 
 

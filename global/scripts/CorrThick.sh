@@ -70,26 +70,42 @@ for Hemisphere in $Hemi ; do
 	  RegSphere=""$NativeFolder"/"$Subject"."$Hemisphere".sphere.MSMSulc.native.surf.gii"
 	else
 	  RegSphere=""$NativeFolder"/"$Subject"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii"
-	fi
-	
+	fi	
 	for Map in $MapListFunc ; do
+	  if [[ "$Map" == MRcorrThickness || "$Map" == MRcorrThickness_intercept ]] ; then
+	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+	  elif [[ "$Map" == MRcorrThickness_normcoeffs ]] ; then
+	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
+	  else
+	    wb_command -metric-palette "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	  fi
 	  wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+	  wb_command -metric-mask "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map"."$HighResMesh"k_fs_LR.shape.gii
 	  wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+	  wb_command -metric-mask "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.shape.gii
 	done
 done
 
 #Create CIFTI Files in Native, HighResMesh, and LowResMesh
 if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
-	for STRING in "$NativeFolder"@native "$NonlinearFolder"@"$HighResMesh"k_fs_LR "$NonlinearFolder/fsaverage_LR"$LowResMesh"k@"$LowResMesh"k_fs_LR" ; do
+	for STRING in "$NativeFolder"@native@roi "$NonlinearFolder"@"$HighResMesh"k_fs_LR@atlasroi "$NonlinearFolder/fsaverage_LR"$LowResMesh"k@"$LowResMesh"k_fs_LR@atlasroi" ; do
 	  Folder=`echo $STRING | cut -d "@" -f 1`
 	  Mesh=`echo $STRING | cut -d "@" -f 2`
+	  ROI=`echo $STRING | cut -d "@" -f 3`
 
 	  for Map in $MapListFunc ; do
-		wb_command -cifti-create-dense-scalar "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L."$Map"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R."$Map"."$Mesh".shape.gii
+		wb_command -cifti-create-dense-scalar "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -left-metric "$Folder"/"$Subject".L."$Map"."$Mesh".shape.gii -roi-left "$Folder"/"$Subject".L."$ROI"."$Mesh".shape.gii -right-metric "$Folder"/"$Subject".R."$Map"."$Mesh".shape.gii -roi-right "$Folder"/"$Subject".R."$ROI"."$Mesh".shape.gii
+	    if [[ "$Map" == MRcorrThickness || "$Map" == MRcorrThickness_intercept ]] ; then
+	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+	    elif [[ "$Map" == MRcorrThickness_normcoeffs ]] ; then
+	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false -normalization NORMALIZATION_ALL_MAP_DATA
+	    else
+	      wb_command -cifti-palette "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii MODE_AUTO_SCALE_PERCENTAGE "$Folder"/"$Subject"."$Map"."$Mesh".dscalar.nii -pos-percent 4 96 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+	    fi
 	  done
 	done
 fi
 
-#Remove preliminary directory and all its contents
+Remove preliminary directory and all its contents
 rm -rf "$NativeFolder"/CorrThick
 

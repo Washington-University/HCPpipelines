@@ -110,7 +110,7 @@ def wb_rois(subjects_dir,subject,hemi,surface,mesh,number):
     
     return
 
-def wb_metric_resample_to_native(subjects_dir,subject,hemi,surface,mesh):
+def wb_metric_resample_to_native(subjects_dir,subject,hemi,surface):
     
     input_names = ['curvs', 'intercept', 'coeffs', 'normcoeffs', 'corrthickness']
     
@@ -129,34 +129,34 @@ def wb_metric_resample_to_native(subjects_dir,subject,hemi,surface,mesh):
                                                o=output_file,insurf=input_surf,outsurf=output_surf)
         os.system(command)  
 
-def wb_set_map_names(subjects_dir,subject,hemi,surface,mesh): 
+def wb_set_map_names(subjects_dir,subject,hemi): 
     
-    input_file = '{sub}.{h}.MRcorrThickness_curvs.native.shape.gii'.format(sub=subject,h=hemi,s=surface)
+    input_file = '{sub}.{h}.MRcorrThickness_curvs.native.shape.gii'.format(sub=subject,h=hemi)
     input_file = os.path.join(subjects_dir, subject, 'MNINonLinear','Native', input_file)
     command = "wb_command -set-map-names {i} -map 1 MaxPrincipalCurv -map 2 MinPrincipalCurv -map 3 GaussianCurv -map 4 ShapeIndex -map 5 Curvedness".format(i=input_file)
     os.system(command)
     
-    input_file = '{sub}.{h}.MRcorrThickness_coeffs.native.shape.gii'.format(sub=subject,h=hemi,s=surface)
+    input_file = '{sub}.{h}.MRcorrThickness_coeffs.native.shape.gii'.format(sub=subject,h=hemi)
     input_file = os.path.join(subjects_dir, subject, 'MNINonLinear','Native', input_file)
     command = "wb_command -set-map-names {i} -map 1 MaxPrincipalCurv -map 2 MaxPrincipalCurv^2 -map 3 MinPrincipalCurv -map 4 MinPrincipalCurv^2 -map 5 GaussianCurv -map 6 GaussianCurv^2 -map 7 ShapeIndex -map 8 ShapeIndex^2 -map 9 Curvedness -map 10 Curvedness^2".format(i=input_file)
     os.system(command)
     
-    input_file = '{sub}.{h}.MRcorrThickness_normcoeffs.native.shape.gii'.format(sub=subject,h=hemi,s=surface)
+    input_file = '{sub}.{h}.MRcorrThickness_normcoeffs.native.shape.gii'.format(sub=subject,h=hemi)
     input_file = os.path.join(subjects_dir, subject, 'MNINonLinear','Native', input_file)
-    command = "wb_command -set-map-names {i} -map 1 MaxPrincipalCurv -map 2 MaxPrincipalCurv^2 -map 3 MinPrincipalCurv -map 4 MinPrincipalCurv^2 -map 5 GaussianCurv -map 6 GaussianCurv^2 -map 7 ShapeIndex -map 8 ShapeIndex^2 -map 9 Curvedness -map 10 Curvedness^2".format(i=input_file)
+    command = "wb_command -set-map-names {i} -map 1 NormMaxPrincipalCurv -map 2 NormMaxPrincipalCurv^2 -map 3 NormMinPrincipalCurv -map 4 NormMinPrincipalCurv^2 -map 5 NormGaussianCurv -map 6 NormGaussianCurv^2 -map 7 NormShapeIndex -map 8 NormShapeIndex^2 -map 9 NormCurvedness -map 10 NormCurvedness^2".format(i=input_file)
     os.system(command)
     
-    input_file = '{sub}.{h}.MRcorrThickness_intercept.native.shape.gii'.format(sub=subject,h=hemi,s=surface)
+    input_file = '{sub}.{h}.MRcorrThickness_intercept.native.shape.gii'.format(sub=subject,h=hemi)
     input_file = os.path.join(subjects_dir, subject, 'MNINonLinear','Native', input_file)
     command = "wb_command -set-map-names {i} -map 1 {sub}_MRcorrThickness_intercept".format(i=input_file,sub=subject)
     os.system(command)
     
-    input_file = '{sub}.{h}.MRcorrThickness.native.shape.gii'.format(sub=subject,h=hemi,s=surface)
+    input_file = '{sub}.{h}.MRcorrThickness.native.shape.gii'.format(sub=subject,h=hemi)
     input_file = os.path.join(subjects_dir, subject, 'MNINonLinear','Native', input_file)
     command = "wb_command -set-map-names {i} -map 1 {sub}_MRcorrThickness".format(i=input_file,sub=subject)
     os.system(command)
 
-def wb_structure(subjects_dir,subject,hemi,surface,mesh,structure):
+def wb_structure(subjects_dir,subject,hemi,surface,structure):
     
     curvs = ['H', 'K', 'k1', 'k2', 'C', 'SI']
 
@@ -176,39 +176,3 @@ def wb_structure(subjects_dir,subject,hemi,surface,mesh,structure):
         os.system(command)
     
     return
-
-def wb_cifti(subjects_dir,subject,surface,mesh): 
-    
-    output_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.{s}.{m}.resample.corrected.thickness.dscalar.nii'.format(s=surface,sub=subject,m=mesh))
-    left_file = os.path.join(subjects_dir,subject, 'surf', '{sub}.L.{s}.{m}.resample.corrected.thickness.shape.gii'.format(sub=subject,s=surface,m=mesh))
-    right_file = os.path.join(subjects_dir,subject, 'surf', '{sub}.R.{s}.{m}.resample.corrected.thickness.shape.gii'.format(sub=subject,s=surface,m=mesh))
-    command = "wb_command -cifti-create-dense-scalar {o} -left-metric {l} -right-metric {r}".format(l=left_file,r=right_file,o=output_file)
-    os.system(command)    
-    
-    output_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.{s}.corrected.thickness.native.dscalar.nii'.format(s=surface,sub=subject))
-    left_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.L.{s}.corrected.thickness.native.shape.gii'.format(sub=subject,s=surface))
-    right_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.R.{s}.corrected.thickness.native.shape.gii'.format(sub=subject,s=surface))
-    command = "wb_command -cifti-create-dense-scalar {o} -left-metric {l} -right-metric {r}".format(l=left_file,r=right_file,o=output_file)
-    os.system(command)  
-    
-    output_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.thickness.{m}.resample.dscalar.nii'.format(sub=subject,m=mesh))
-    left_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.L.thickness.{m}.resample.shape.gii'.format(sub=subject,m=mesh))
-    right_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.R.thickness.{m}.resample.shape.gii'.format(sub=subject,m=mesh))
-    command = "wb_command -cifti-create-dense-scalar {o} -left-metric {l} -right-metric {r}".format(l=left_file,r=right_file,o=output_file)
-    os.system(command)  
-    
-    curvs = ['H', 'K', 'k1', 'k2', 'C', 'SI']
-    
-    for curv in curvs:
-        output_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.{s}.{c}.curv.dscalar.nii'.format(sub=subject,s=surface,c=curv))
-        left_file = os.path.join(subjects_dir, subject,'surf', '{sub}.L.{s}.{c}.shape.gii'.format(sub=subject,s=surface,c=curv))
-        right_file = os.path.join(subjects_dir,subject, 'surf', '{sub}.R.{s}.{c}.shape.gii'.format(sub=subject,s=surface,c=curv))
-        command = "wb_command -cifti-create-dense-scalar {o} -left-metric {l} -right-metric {r}".format(l=left_file,r=right_file,o=output_file)
-        os.system(command)
-        output_file = os.path.join(subjects_dir, subject, 'surf', '{sub}.{s}.{c}.curv.smooth.dscalar.nii'.format(sub=subject,s=surface,c=curv))
-        left_file = os.path.join(subjects_dir, subject,'surf', '{sub}.L.{s}.{c}.smooth.shape.gii'.format(sub=subject,s=surface,c=curv))
-        right_file = os.path.join(subjects_dir,subject, 'surf', '{sub}.R.{s}.{c}.smooth.shape.gii'.format(sub=subject,s=surface,c=curv))
-        command = "wb_command -cifti-create-dense-scalar {o} -left-metric {l} -right-metric {r}".format(l=left_file,r=right_file,o=output_file)
-        os.system(command)
-        
-    return 
