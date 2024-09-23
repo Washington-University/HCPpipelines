@@ -187,7 +187,7 @@ function par_addjob_stdin()
 
 #Add job to the current stage (FSLSUB, BUILTIN or NONE mode)
 #Inputs:
-#1. parallel mode
+#1. parallel modein
 #2. queue name for FSLSUB (local submit if empty)
 #3. command with arguments
 function par_add_job_to_stage()
@@ -196,13 +196,12 @@ function par_add_job_to_stage()
     shift
 
     #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
-    local fslsub_options fslsub_queue=$1
+    local fslsub_queue=$1
     shift
 
     local job submit_cmd cmd=("$@")
 
-    if [ "$PARALLEL_MODE" == "FSLSUB" ]; then #current job is submitted, and added to fsl_job_list
-        fslsub_options=""
+    if [ "$PARALLEL_MODE" == "FSLSUB" ]; then #current job is submitted, and added to fsl_job_list        
         submit_cmd=(fsl_sub)
         if [[ -n "$fslsub_queue" ]]; then 
             submit_cmd+=(-q "$fslsub_queue")
@@ -214,10 +213,10 @@ function par_add_job_to_stage()
         job=$("${submit_cmd[@]}")
         par_fslsub_job_list+=("$job")
     elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then          #current job is added to the list of local parallel jobs        
-        par_addjob $cmd        
+        par_addjob "${cmd[@]}"
     else #NONE                                          #current job is executed.
         echo "launching, parallel mode=NONE, will wait to finish: ${cmd[*]}"
-        ${cmd} 1> ./"$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> ./"$par_global_scriptname.$$.$par_global_launch_count.e.log"
+        "${cmd[@]}" 1> ./"$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> ./"$par_global_scriptname.$$.$par_global_launch_count.e.log"
         par_global_launch_count=$((par_global_launch_count + 1))        
     fi
 }
@@ -244,8 +243,7 @@ function par_finalize_stage()
             temp="${par_fslsub_job_list[*]}"
             par_fslsub_job_waitlist="${temp// /,}"
         fi
-        par_fslsub_job_list=() 
-        echo "updating job waitlist for fsl_sub done"
+        par_fslsub_job_list=()
     elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then        #run local parallel jobs.
         echo "running ${#par_jobarray[*]} jobs, maximum parallel jobs: $max_jobs"
         par_runjobs $max_jobs

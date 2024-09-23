@@ -139,10 +139,12 @@ if (( start_stage==0 )); then
     --fnirtconfig="$FNIRTConfig"                                          \
     --freesurferlabels="$FreeSurferLabels"                                \
       )      
-      par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
+      par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi
+
+if ((end_stage < 1)); then exit 0; fi
 
 if (( start_stage <= 1 )) && (( end_stage >= 1 )); then 
   #Process template and finalize timepoints. This must wait until all timepoints are finished.
@@ -150,7 +152,7 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
   cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
       --subject="$Subject"                                  \
       --path="$StudyFolder"                                 \
-    --longitudinal-template="$LongitudinalTemplate"         \
+      --longitudinal-template="$LongitudinalTemplate"       \
       --sessions="$Timepoint_list"                          \
       --template_processing=1                               \
       --t1template="$T1wTemplate"                           \
@@ -164,7 +166,7 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
       --fnirtconfig="$FNIRTConfig"                          \
       --freesurferlabels="$FreeSurferLabels"                \
   )
-  par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
+  par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
@@ -193,7 +195,7 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
     --refmyelinmaps="$ReferenceMyelinMaps"          \
     --regname="$RegName"
     )
-    par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}      
+    par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi
@@ -219,7 +221,7 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
       --refmyelinmaps="$ReferenceMyelinMaps"          \
       --regname="$RegName"
   )
-  par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
+  par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   par_finalize_stage $parallel_mode $max_jobs  
 fi
 
@@ -244,7 +246,7 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
     --refmyelinmaps="$ReferenceMyelinMaps"          \
     --regname="$RegName"
       )
-    par_add_job_to_stage $parallel_mode "$fslsub_queue" ${cmd[@]}
+    par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   done
   par_finalize_stage $parallel_mode $max_jobs
 fi

@@ -162,11 +162,21 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 
 #ExperimentRoot points to actual experiment directory
 case "$LongitudinalMode" in
-    NONE)       ExperimentRoot=$Session; IsLongitudinal=0 ;;
+    NONE)       
+        ExperimentRoot=$Session
+        IsLongitudinal=0
+        ;;
     TIMEPOINT_STAGE1|TIMEPOINT_STAGE2) 
-                ExperimentRoot="$Session".long."$LongitudinalTemplate"; IsLongitudinal=1 ;;
-    TEMPLATE)   ExperimentRoot="$Subject".long."$LongitudinalTemplate"; IsLongitudinal=1 ;;
-    *)          log_Err_Abort "unrecognized value for --longitudinal mode: $LongitudinalMode" ;;
+        ExperimentRoot="$Session".long."$LongitudinalTemplate"
+        IsLongitudinal=1 
+        ;;
+    TEMPLATE)
+        ExperimentRoot="$Subject".long."$LongitudinalTemplate"
+        IsLongitudinal=1 
+        ;;
+    *)  
+        log_Err_Abort "unrecognized value for --longitudinal mode: $LongitudinalMode" 
+        ;;
 esac
 
 echo ExperimentRoot: $ExperimentRoot

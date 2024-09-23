@@ -177,8 +177,6 @@ done
 #To prevent the code inside the if clause to be executed repeatedly when TIMEPOINT_STAGE2 mode is on
 if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
 
-    echo "000"
-
     # Find c_ras offset between FreeSurfer surface and volume and generate matrix to transform surfaces
     # -- Corrected code using native mri_info --cras function to build the needed variables
     MatrixXYZ=`mri_info --cras ${FreeSurferFolder}/mri/brain.finalsurfs.mgz`
@@ -456,38 +454,38 @@ for Hemisphere in L R ; do
             
     #If desired, run MSMSulc folding-based registration to FS_LR initialized with FS affine
     if [ ${RegName} == "MSMSulc" ] ; then
-            mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-            if [ "$LongitudinalMode" == "NONE" ]; then
-                cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-                $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-            elif [ "$LongitudinalMode" == "TEMPLATE" ]; then            
-                #average surfaces from different timepoints
-                average_cmd_args=()
-                for timepoint in $LongitudinalTimepoints; do
-                    experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                    average_cmd_args+=("-surf" "$experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
+        mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
+        if [ "$LongitudinalMode" == "NONE" ]; then
+            cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
+        elif [ "$LongitudinalMode" == "TEMPLATE" ]; then            
+            #average surfaces from different timepoints
+            average_cmd_args=()
+            for timepoint in $LongitudinalTimepoints; do
+                experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
+                average_cmd_args+=("-surf" "$experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
+            done
+            ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
+            #fix the averaged surface to convert it into sphere
+            ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
+            
+            #run MSMSulc.sh on average surface
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
+            
+            #copy the registration result to each timepoint
+            for timepoint in $LongitudinalTimepoints; do
+                experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
+                cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
+                
+                #copy the output of MSMSulc to each of the timepoint native folders
+                for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.long.${LongitudinalTemplate}.*${RegName}.*; do
+                    file_base=`basename $file`
+                    new_file=${file_base/${Subject}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
+                    cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
                 done
-                ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
-                #fix the averaged surface to convert it into sphere
-                ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
-                
-                #run MSMSulc.sh on average surface
-                $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-                
-                #copy the registration result to each timepoint
-                for timepoint in $LongitudinalTimepoints; do
-                    experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                    cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
-                    
-                    #copy the output of MSMSulc to each of the timepoint native folders
-                    for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.long.${LongitudinalTemplate}.*${RegName}.*; do
-                        file_base=`basename $file`
-                        new_file=${file_base/${Subject}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
-                        cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
-                    done
-                done                
-            fi
-            RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere."$RegName".native.surf.gii"
+            done                
+        fi
+        RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere."$RegName".native.surf.gii"
     else
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
     fi

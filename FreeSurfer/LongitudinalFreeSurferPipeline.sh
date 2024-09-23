@@ -57,7 +57,7 @@ opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required)  Used
 opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (required)  Used with --subject input to create full path to root directory for all outputs generated as path/subject)"
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "@ separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
-opts_AddOptional '--use-T2w' 'UseT2wString' 'UseT2w' "Set to 0/false/no for no T2-weighted processing [1]" "1"
+opts_AddOptional '--use-T2w' 'UseT2wString' 'boolean' "Set to 0/false/no for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 #parallel mode options.
@@ -205,7 +205,7 @@ show_tool_versions
 # Validate version of FreeSurfer in use
 validate_freesurfer_version
 
-UseT2w=$(opts_StringToBool "$Use_T2wString")
+UseT2w=$(opts_StringToBool "$UseT2wString")
 
 #processing code goes here
 echo "parallel mode: $parallel_mode"

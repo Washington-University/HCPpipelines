@@ -1,13 +1,5 @@
 #!/bin/bash
 
-get_usage_and_exit(){
-    echo "usage: "
-    echo "FreeSurferPipelineBatch-long.sh [options]"
-    echo "options:"
-    echo "  --runlocal                      run locally [FALSE]"
-    exit -1
-}
-
 command_line_specified_run_local=FALSE
 while [ -n "$1" ]; do
     case "$1" in
