@@ -1,11 +1,12 @@
-function PseudoTransmit_OptimizeSmoothing(OriginalMyelin, ScaledPseudoTransmit, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, ThreshLower, ThreshUpper, SmoothLower, SmoothUpper, L_ROI, R_ROI, Output, OutlierSmoothing, Dilation, GroupUncorrectedMyelin, MyelinTemplate)
+function PseudoTransmit_OptimizeSmoothing(OriginalMyelin, ScaledPseudoTransmit, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, ThreshLower, ThreshUpper, SmoothLower, SmoothUpper, L_ROI, R_ROI, OutlierSmoothing, Dilation, GroupUncorrectedMyelin, MyelinTemplate, OutputTextFile)
 
-    if isdeployed()
-        ThreshLower = str2double(ThreshLower);
-        ThreshUpper = str2double(ThreshUpper);
-        SmoothLower = str2double(SmoothLower);
-        SmoothUpper = str2double(SmoothUpper);
-    end
+    %to unify the argument list specification between compiled and interpreted, take all arguments as strings
+    ThreshLower = str2double(ThreshLower);
+    ThreshUpper = str2double(ThreshUpper);
+    SmoothLower = str2double(SmoothLower);
+    SmoothUpper = str2double(SmoothUpper);
+    OutlierSmoothing = str2double(OutlierSmoothing);
+    Dilation = str2double(Dilation);
 
     MyelinMap = cifti_read(OriginalMyelin); %Load Myelin
     [leftdata leftroi] = cifti_struct_dense_extract_surface_data(MyelinMap, 'CORTEX_LEFT');
@@ -61,7 +62,7 @@ function PseudoTransmit_OptimizeSmoothing(OriginalMyelin, ScaledPseudoTransmit, 
     end
     
     Flag = 1; %probably unused
-    dlmwrite(Output, [bestthresh bestsmooth bestcorrectionfac bestslope bestval Flag], ',');
+    dlmwrite(OutputTextFile, [bestthresh bestsmooth bestcorrectionfac bestslope bestval Flag], ',');
 end
 
 function ciftiout = mapvoltosurf(filename, ciftitemplate, LeftPial, LeftMidthick, LeftWhite, LeftVolROI, RightPial, RightMidthick, RightWhite, RightVolROI, dilatedist)

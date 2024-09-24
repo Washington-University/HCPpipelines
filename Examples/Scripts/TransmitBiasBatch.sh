@@ -17,7 +17,7 @@ GroupName="HCP_S1200"
 partialname=Partial
 #partialname="$GroupName"
 #set this to a text file that has the scanner transmit voltages for all subjects in the provided list, in order
-VoltagesFile=
+VoltagesFile="$StudyFolder"/"$GroupName"/Scripts/Voltages.txt
 GradientDistortionCoeffs=
 RegName=MSMAll
 LowResMesh=32
@@ -25,7 +25,8 @@ grayordRes=2
 transmitRes="$grayordRes"
 MyelinMappingFWHM=5
 oldMyelinMapping=FALSE
-MatlabMode=1
+#0 for compiled, 1 for interpreted, 2 for octave
+MatlabMode=0
 
 #transmit field acquisition details
 #mode must be AFI, B1Tx, or PseudoTransmit

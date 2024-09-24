@@ -24,11 +24,10 @@ opts_AddMandatory '--target-flip-angle' 'TargetFlipAngle' 'number' "the target f
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'number' "resolution for cifti mesh, like 32"
 opts_AddMandatory '--voltages' 'VoltagesFile' 'file' "text file of scanner calibrated transmit voltages for each subject"
-#TODO: implement compiled
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -57,7 +56,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -109,7 +107,7 @@ MyelinVolCorrOutFile="${GroupAtlasFolder}/${TransmitGroupName}.T1wDividedByT2w_G
 fitParamsFile="${GroupAtlasFolder}/${TransmitGroupName}.AFI_groupfit.txt"
 AvgIndCorrMyelin="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.MyelinMap_IndCorr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
 IndCorrMyelinAll="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.MyelinMap_IndCorr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
-SAFI="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+rAFI="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
 
 tempfiles_create AFImerge_XXXXXX.nii.gz afimergetemp
 tempfiles_add "$afimergetemp"_2.nii.gz "$afimergetemp"_3.nii.gz "$afimergetemp"_4.nii.gz
@@ -126,7 +124,7 @@ volmergeavg "MNINonLinear/AFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.AFI_Atlas.nii.gz" &
 
 ciftimergeavgsubj "MNINonLinear/fsaverage_LR${LowResMesh}k" "rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
-    "$SAFI" \
+    "$rAFI" \
     "${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" &
 
 volmergeavg "MNINonLinear/rAFI_Atlas.nii.gz" \
@@ -166,32 +164,41 @@ RegressedMyelinOutFile="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${Transmi
 tempfiles_create transmit_goodvoltages_XXXXXX.txt GoodVoltagesFile
 (IFS=$'\n'; echo "${GoodVoltagesArray[*]}") > "$GoodVoltagesFile"
 
+argvarlist=(AvgIndCorrMyelin AvgIndCorrMyelinAsymmOut \
+    IndCorrMyelinAll GoodVoltagesFile rAFI StatsFile CSFStatsFile \
+    RegressedMyelinOutFile CovariatesOut)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_AFI_GroupAverageCorrectedMaps/run_AFI_GroupAverageCorrectedMaps.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
-        mlcode="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
             
-            %avoid 4KB line length problem by using variables for filenames
-            AvgIndCorrMyelin = '$AvgIndCorrMyelin';
-            AvgIndCorrMyelinAsymmOut = '$AvgIndCorrMyelinAsymmOut';
-            IndCorrMyelinAll = '$IndCorrMyelinAll';
-            GoodVoltagesFile = '$GoodVoltagesFile';
-            SAFI = '$SAFI';
-            StatsFile = '$StatsFile';
-            CSFStatsFile = '$CSFStatsFile';
-            CovariatesOut = '$CovariatesOut';
-            RegressedMyelinOutFile = '$RegressedMyelinOutFile';
-            
-            AFI_GroupAverageCorrectedMaps(AvgIndCorrMyelin, AvgIndCorrMyelinAsymmOut, IndCorrMyelinAll, GoodVoltagesFile, SAFI, StatsFile, CSFStatsFile, RegressedMyelinOutFile, CovariatesOut);"
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="AFI_GroupAverageCorrectedMaps(${matlabargs});"
         
-        echo "running matlab code: $mlcode"
-        "${matlab_interpreter[@]}" <<<"$mlcode"
+        echo "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac

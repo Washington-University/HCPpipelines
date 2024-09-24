@@ -1,10 +1,10 @@
-function AFI_GroupAverageCorrectedMaps(AvgIndCorrMyelinFile, AvgIndCorrMyelinAsymmOutFile, IndCorrMyelinAllFile, GoodVoltagesFile, SAFIFile, AFIStatsFile, CSFStatsFile, RegressedMyelinOutFile, CovariatesOutFile)
+function AFI_GroupAverageCorrectedMaps(AvgIndCorrMyelinFile, AvgIndCorrMyelinAsymmOutFile, IndCorrMyelinAllFile, GoodVoltagesFile, rAFIFile, AFIStatsFile, CSFStatsFile, RegressedMyelinOutFile, CovariatesOutFile)
     AvgICorrMyelinMap = cifti_read(AvgIndCorrMyelinFile);
     surfasymmnorm(AvgICorrMyelinMap, AvgIndCorrMyelinAsymmOutFile, 'Average Individual-corrected Myelin Asymmetry');
     clear AvgICorrMyelinMap;
     
     FWHM = load(AFIStatsFile);
-    SAFI = cifti_read(SAFIFile);
+    rAFI = cifti_read(rAFIFile);
     CSFRegressors = load(CSFStatsFile);
     
     IndCorrAllMyelinMaps = cifti_read(IndCorrMyelinAllFile); %Partial.All.MyelinMap_IndCorr
@@ -19,7 +19,7 @@ function AFI_GroupAverageCorrectedMaps(AvgIndCorrMyelinFile, AvgIndCorrMyelinAsy
     [~, maxind] = max(Corr);
     
     %save regressors
-    regressors = [GoodVoltages mean(SAFI.cdata)' FWHM(:, 3) FWHM(:, 2) FWHM(:, 1) CSFRegressors(:, maxind)];
+    regressors = [GoodVoltages mean(rAFI.cdata)' FWHM(:, 3) FWHM(:, 2) FWHM(:, 1) CSFRegressors(:, maxind)];
     dlmwrite(CovariatesOutFile, regressors, ',');
     
     %generate regressed myelin

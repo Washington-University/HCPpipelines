@@ -28,11 +28,10 @@ opts_AddOptional '--all-myelin-out' 'myelinall' 'file' "output cifti file for co
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh"
 opts_AddMandatory '--grayordinates-res' 'lowvolres' 'number' "resolution of grayordinates to use"
-#TODO: implement compiled
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -63,7 +62,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -154,30 +152,42 @@ wb_command -volume-math "180 / PI * acos(($TRtwo / $TRone * frametwo / frameone 
     -var frameone "${GroupAtlasFolder}/${TransmitGroupName}.AFI_orig1.nii.gz" \
     -var frametwo "${GroupAtlasFolder}/${TransmitGroupName}.AFI_orig2.nii.gz"
 
+argvarlist=(myelinavg MyelinAsymmOutFile \
+    AvgFlipFile TargetFlipAngle FlipAsymmOutFile \
+    MyelinCorrOutFile MyelinCorrAsymOutFile \
+    fitParamsOutFile)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_AFI_GroupAverage/run_AFI_GroupAverage.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
-        mlcode="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
             
-            %avoid 4KB line length problem by using variables for filenames
-            AvgMyelinFile = '$myelinavg';
-            MyelinAsymmOutFile = '$MyelinAsymmOutFile';
-            AvgFlipFile = '$AvgFlipFile';
-            FlipAsymmOutFile = '$FlipAsymmOutFile';
-            MyelinCorrOutFile = '$MyelinCorrOutFile';
-            MyelinCorrAsymOutFile = '$MyelinCorrAsymOutFile';
-            fitParamsOutFile = '$fitParamsOutFile';
-            
-            AFI_GroupAverage(AvgMyelinFile, MyelinAsymmOutFile, AvgFlipFile, ${TargetFlipAngle}, FlipAsymmOutFile, MyelinCorrOutFile, MyelinCorrAsymOutFile, fitParamsOutFile);"
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="AFI_GroupAverage(${matlabargs});"
         
-        echo "running matlab code: $mlcode"
-        "${matlab_interpreter[@]}" <<<"$mlcode"
+        echo "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac

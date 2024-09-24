@@ -25,11 +25,10 @@ opts_AddMandatory '--grayordinates-res' 'grayordRes' 'string' "resolution used i
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#TODO: implement compiled
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -49,7 +48,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -89,7 +87,7 @@ SmoothLower=10
 SmoothUpper=60
 L_ROI="$T1wFolder"/ROIs/L_TransmitBias_ROI."$transmitRes".nii.gz
 R_ROI="$T1wFolder"/ROIs/R_TransmitBias_ROI."$transmitRes".nii.gz
-Output="$T1wFolder"/PseudoTransmit_stats.txt
+OutputTextFile="$T1wFolder"/PseudoTransmit_stats.txt
 OutlierSmoothing=10
 Dilation=25
 
@@ -105,44 +103,59 @@ tempfiles_create TransmitBias_scaledpseudotransmit_XXXXXX.nii.gz scaledpt
 
 wb_command -volume-math "Raw / $PseudoTransmitReferenceValue" "$scaledpt" -var Raw "$RawPseudoTransmit"
 
-#NOTE: reference value is the only dependency of the final individual correction on the group scripts
-matlabcode="
-addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-addpath('$HCPCIFTIRWDIR');
-addpath('$HCPPIPEDIR/global/matlab');
-addpath('$this_script_dir');
-"
-
-for var in SubjectMyelin RawPseudoTransmit LeftWhite LeftMidthick LeftPial RightWhite RightMidthick RightPial L_ROI R_ROI GroupUncorrectedMyelin ReferenceTemplate
+for var in SubjectMyelin scaledpt LeftPial LeftMidthick LeftWhite RightPial RightMidthick RightWhite L_ROI R_ROI GroupUncorrectedMyelin ReferenceTemplate
 do
     newvar="$var"Tmp
     tempfiles_copy "${!var}" "$newvar"
-    #WARNING: the newline before the closing quote is important here to avoid long lines, which matlab 2022b still chokes on in stdin (4KB per line max)
-    matlabcode+="$var = '${!newvar}';
-"
 done
-matlabcode+="Output = '$Output';
-ScaledPseudoTransmit = '$scaledpt';
-"
 
-#previously called SmoothPseudoTransmit
-matlabcode+="PseudoTransmit_OptimizeSmoothing(SubjectMyelin, ScaledPseudoTransmit, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, ${ThreshLower}, ${ThreshUpper}, ${SmoothLower}, ${SmoothUpper}, L_ROI, R_ROI, Output, ${OutlierSmoothing}, ${Dilation}, GroupUncorrectedMyelin, ReferenceTemplate);"
+argvarlist=(SubjectMyelinTmp scaledptTmp \
+    LeftPialTmp LeftMidthickTmp LeftWhiteTmp \
+    RightPialTmp RightMidthickTmp RightWhiteTmp \
+    ThreshLower ThreshUpper SmoothLower SmoothUpper \
+    L_ROITmp R_ROITmp \
+    OutlierSmoothing Dilation \
+    GroupUncorrectedMyelinTmp ReferenceTemplateTmp OutputTextFile)
 
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_PseudoTransmit_OptimizeSmoothing/run_PseudoTransmit_OptimizeSmoothing.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
+            
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="PseudoTransmit_OptimizeSmoothing(${matlabargs});"
+        
         echo "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac
 
-PseudoTransmitThreshold=$(cat "$Output" | cut -d "," -f 1)
-Smooth=$(cat "$Output" | cut -d "," -f 2)
-SmoothingCorrection=$(cat "$Output" | cut -d "," -f 3)
-Slope=$(cat "$Output" | cut -d "," -f 4)
+PseudoTransmitThreshold=$(cat "$OutputTextFile" | cut -d "," -f 1)
+Smooth=$(cat "$OutputTextFile" | cut -d "," -f 2)
+SmoothingCorrection=$(cat "$OutputTextFile" | cut -d "," -f 3)
+Slope=$(cat "$OutputTextFile" | cut -d "," -f 4)
 
 #this code matches part of what goes on inside PseudoTransmitOptimizeSmoothing.m
 #probably wouldn't be enough code saved here by making matlab create the file, though

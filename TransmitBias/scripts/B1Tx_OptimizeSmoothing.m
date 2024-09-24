@@ -1,8 +1,7 @@
 function B1Tx_OptimizeSmoothing(MyelinFile, B1TxFile, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, SmoothLower, SmoothUpper, LeftVolROI, RightVolROI, GroupCorrected, Output)
-    if isdeployed()
-        SmoothLower = str2double(SmoothLower);
-        SmoothUpper = str2double(SmoothUpper);
-    end
+
+    SmoothLower = str2double(SmoothLower);
+    SmoothUpper = str2double(SmoothUpper);
 
     MyelinMap = cifti_read(MyelinFile);
     [leftdata leftroi] = cifti_struct_dense_extract_surface_data(MyelinMap, 'CORTEX_LEFT');

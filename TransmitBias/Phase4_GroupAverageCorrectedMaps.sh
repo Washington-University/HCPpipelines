@@ -36,11 +36,10 @@ opts_AddOptional '--average-myelin' 'myelinCiftiAvg' 'file' "cifti file of group
 #general
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#TODO: implement compiled
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 

@@ -1,11 +1,11 @@
 function AFI_OptimizeSmoothing(MyelinInput, AFIVolume, TRone, TRtwo, TargFlipAngle, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, SmoothLower, SmoothUpper, LeftVolROI, RightVolROI, GroupCorrected, Output)
-    if isdeployed()
-        TRone = str2double(TRone);
-        TRtwo = str2double(TRtwo);
-        TargFlipAngle = str2double(TargFlipAngle);
-        SmoothLower = str2double(SmoothLower);
-        SmoothUpper = str2double(SmoothUpper);
-    end
+    
+    %take all numbers as strings, for unified compiled/interpreted handling
+    TRone = str2double(TRone);
+    TRtwo = str2double(TRtwo);
+    TargFlipAngle = str2double(TargFlipAngle);
+    SmoothLower = str2double(SmoothLower);
+    SmoothUpper = str2double(SmoothUpper);
     
     MyelinMaps = cifti_read(MyelinInput);
     leftdata = cifti_struct_dense_extract_surface_data(MyelinMaps, 'CORTEX_LEFT');

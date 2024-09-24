@@ -25,11 +25,10 @@ opts_AddOptional '--all-myelin-out' 'myelinCiftiAll' 'file' "output cifti file f
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
 opts_AddOptional '--grayordinates-res' 'lowvolres' 'number' "resolution of grayordinates to use, default '2'" '2'
-#TODO: implement compiled
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -49,7 +48,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -120,23 +118,39 @@ fi
 
 wait
 
+avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+
+argvarlist=(myelinCiftiAvg avgPTFieldFile ReferenceValOutFile)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_PseudoTransmit_GroupAverage/run_PseudoTransmit_GroupAverage.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
+        matlabargs=""
         matlabcode="
         addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
         addpath('$HCPCIFTIRWDIR');
         addpath('$HCPPIPEDIR/global/matlab');
         addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
+            
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
 
-        myelinRCFile = '$myelinCiftiAvg';
-        avgPTFieldFile = '$StudyFolder/$GroupAverageName/MNINonLinear/fsaverage_LR${LowResMesh}k/$GroupAverageName.PseudoTransmitField_Raw$RegString.${LowResMesh}k_fs_LR.dscalar.nii';
-        ReferenceValOutFile = '$ReferenceValOutFile';
-
-        PseudoTransmit_GroupAverage(myelinRCFile, avgPTFieldFile, ReferenceValOutFile);"
-
+        matlabcode+="PseudoTransmit_GroupAverage(${matlabargs});"
+        
         echo "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo

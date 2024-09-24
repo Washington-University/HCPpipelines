@@ -21,10 +21,10 @@ opts_AddMandatory '--average-myelin' 'myelinCiftiAvg' 'file' "cifti file of grou
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'number' "resolution for cifti mesh, like 32"
 opts_AddMandatory '--voltages' 'VoltagesFile' 'file' "text file of scanner calibrated transmit voltages for each subject"
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -53,7 +53,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -122,36 +121,56 @@ volmergeavg MNINonLinear/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz \
 
 wait
 
-#figure notes
+myelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgPTFieldAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+GCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+GCorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgICorrMyelinFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+ICorrMyelinAllFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgICorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+PTStatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_stats.txt
+rPTNormFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+CSFStatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_CSFStats.txt
+RegCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr_Reg"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+CovariatesOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/Covariates.csv
+
+argvarlist=(myelinCiftiAvg myelinAsymmOutFile \
+    avgPTFieldFile AvgPTFieldAsymmOutFile \
+    GCorrMyelinOutFile GCorrMyelinAsymmOutFile \
+    AvgICorrMyelinFile AvgICorrMyelinAsymmOutFile \
+    ICorrMyelinAllFile VoltagesFile PTStatsFile rPTNormFile CSFStatsFile \
+    RegCorrMyelinOutFile CovariatesOutFile)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_PseudoTransmit_GroupAverageCorrectedMaps/run_PseudoTransmit_GroupAverageCorrectedMaps.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
+        matlabargs=""
         matlabcode="
         addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
         addpath('$HCPCIFTIRWDIR');
         addpath('$HCPPIPEDIR/global/matlab');
         addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
+            
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
 
-        myelinRCFile = '$myelinCiftiAvg';
-        myelinAsymmOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.MyelinMap_LRDIFF${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        avgPTFieldFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.PseudoTransmitField_Raw${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        AvgPTFieldAsymmOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.PseudoTransmitField_Raw_LRDIFF${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        GCorrMyelinOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.MyelinMap_GroupTFCorr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        GCorrMyelinAsymmOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.MyelinMap_GroupTFCorr_LRDIFF${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        AvgICorrMyelinFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.MyelinMap_IndPseudoCorr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        ICorrMyelinAllFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.All.MyelinMap_IndPseudoCorr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        AvgICorrMyelinAsymmOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.MyelinMap_IndPseudoCorr_LRDIFF${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        VoltagesFile = '$VoltagesFile';
-        PTStatsFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/PseudoTransmit_stats.txt';
-        rPTNormFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.All.rPseudoTransmitField_Norm${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        CSFStatsFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/PseudoTransmit_CSFStats.txt';
-        RegCorrMyelinOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${GroupAverageName}.All.MyelinMap_IndPseudoCorr_Reg${RegString}.${LowResMesh}k_fs_LR.dscalar.nii';
-        CovariatesOutFile = '${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/Covariates.csv';
-
-        PseudoTransmit_GroupAverageCorrectedMaps(myelinRCFile, myelinAsymmOutFile, avgPTFieldFile, AvgPTFieldAsymmOutFile, GCorrMyelinOutFile, GCorrMyelinAsymmOutFile, AvgICorrMyelinFile, AvgICorrMyelinAsymmOutFile, ICorrMyelinAllFile, VoltagesFile, PTStatsFile, rPTNormFile, CSFStatsFile, RegCorrMyelinOutFile, CovariatesOutFile);"
-
+        matlabcode+="PseudoTransmit_GroupAverageCorrectedMaps(${matlabargs});"
+        
         echo "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo

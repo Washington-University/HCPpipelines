@@ -25,10 +25,10 @@ opts_AddOptional '--all-myelin-out' 'myelinCiftiAll' 'file' "output cifti file f
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
 opts_AddOptional '--grayordinates-res' 'lowvolres' 'number' "resolution of grayordinates to use, default '2'" '2'
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -59,7 +59,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -134,30 +133,43 @@ myelinCorrOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$
 myelinCorrAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_GroupCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 fitParamsOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_groupfit.txt
 
-#B1Tx notes.m
+#this sets the function args for both compiled and interactive matlab/octave
+argvarlist=(myelinCiftiAvg myelinAsymmOutFile \
+    phaseCiftiAvg phaseAsymmOutFile \
+    myelinCorrOutFile myelinCorrAsymmOutFile \
+    fitParamsOutFile)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_B1Tx_GroupAverage/run_B1Tx_GroupAverage.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
-        mlcode="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
             
-            AvgMyelinFile = '$myelinCiftiAvg';
-            myelinAsymmOutFile = '$myelinAsymmOutFile';
-            phaseCiftiAvg = '$phaseCiftiAvg';
-            phaseAsymmOutFile = '$phaseAsymmOutFile';
-            myelinCorrOutFile = '$myelinCorrOutFile';
-            myelinCorrAsymmOutFile = '$myelinCorrAsymmOutFile';
-            fitParamsOutFile = '$fitParamsOutFile';
-            
-            B1Tx_GroupAverage(AvgMyelinFile, myelinAsymmOutFile, phaseCiftiAvg, phaseAsymmOutFile, myelinCorrOutFile, myelinCorrAsymmOutFile, fitParamsOutFile);"
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="B1Tx_GroupAverage(${matlabargs});"
         
-        echo "running matlab code: $mlcode"
-        "${matlab_interpreter[@]}" <<<"$mlcode"
+        echo "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac

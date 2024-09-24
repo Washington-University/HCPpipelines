@@ -1,7 +1,7 @@
 function AFI_GroupAverage(myelinFile, myelinAsymmOutFile, AFIFile, AFITargAngle, AFIAsymmOutFile, myelinCorrOutFile, myelinCorrAsymmOutFile, fitParamsOutFile)
-    if isdeployed()
-        AFITargAngle = str2double(AFITargAngle);
-    end
+    
+    %take numbers as strings, for unified compiled/interpreted handling
+    AFITargAngle = str2double(AFITargAngle);
     %Figure GROUP_MYELIN_AND_AFI
     
     %Orig Myelin, with receive corr if applicable

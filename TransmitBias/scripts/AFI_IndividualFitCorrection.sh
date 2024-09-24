@@ -26,10 +26,10 @@ opts_AddMandatory '--grayordinates-res' 'grayordRes' 'number' "resolution used i
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -58,7 +58,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -89,47 +88,63 @@ then
 fi
 
 AFIVolume="$T1wFolder"/AFI_orig."$grayordRes".nii.gz
+LeftPial="${T1wDownSampleFolder}/${Subject}.L.pial${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+LeftMidthick="${T1wDownSampleFolder}/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+LeftWhite="${T1wDownSampleFolder}/${Subject}.L.white${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+RightPial="${T1wDownSampleFolder}/${Subject}.R.pial${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+RightMidthick="${T1wDownSampleFolder}/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+RightWhite="${T1wDownSampleFolder}/${Subject}.R.white${RegString}.${LowResMesh}k_fs_LR.surf.gii"
 SmoothLower="10"
 SmoothUpper="100"
 LeftVolROI="$T1wFolder"/ROIs/L_TransmitBias_ROI."$grayordRes".nii.gz
 RightVolROI="$T1wFolder"/ROIs/R_TransmitBias_ROI."$grayordRes".nii.gz
-Output="$T1wFolder"/AFI_stats.txt
+OutputTextFile="$T1wFolder"/AFI_stats.txt
+
+argvarlist=(SubjectMyelin AFIVolume \
+    TRone TRtwo TargFlipAngle \
+    LeftPial LeftMidthick LeftWhite \
+    RightPial RightMidthick RightWhite \
+    SmoothLower SmoothUpper \
+    LeftVolROI RightVolROI GroupCorrected OutputTextFile)
 
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_AFI_OptimizeSmoothing/run_AFI_OptimizeSmoothing.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
-        mlcode="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
             
-            SubjectMyelin = '$SubjectMyelin';
-            AFIVolume = '$AFIVolume';
-            LeftPial = '${T1wDownSampleFolder}/${Subject}.L.pial${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            LeftMidthick = '${T1wDownSampleFolder}/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            LeftWhite = '${T1wDownSampleFolder}/${Subject}.L.white${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            RightPial = '${T1wDownSampleFolder}/${Subject}.R.pial${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            RightMidthick = '${T1wDownSampleFolder}/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            RightWhite = '${T1wDownSampleFolder}/${Subject}.R.white${RegString}.${LowResMesh}k_fs_LR.surf.gii';
-            LeftVolROI = '$LeftVolROI';
-            RightVolROI = '$RightVolROI';
-            GroupCorrected = '$GroupCorrected';
-            Output = '$Output';
-            
-            AFI_OptimizeSmoothing(SubjectMyelin, AFIVolume, ${TRone}, ${TRtwo}, ${TargFlipAngle}, LeftPial, LeftMidthick, LeftWhite, RightPial, RightMidthick, RightWhite, ${SmoothLower}, ${SmoothUpper}, LeftVolROI, RightVolROI, GroupCorrected, Output);"
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="AFI_OptimizeSmoothing(${matlabargs});"
         
-        echo "running matlab code: $mlcode"
-        "${matlab_interpreter[@]}" <<<"$mlcode"
+        echo "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac
 
-Smooth=$(cat "$Output" | cut -d "," -f 1)
-VolTwoCorrFac=$(cat "$Output" | cut -d "," -f 2)
-Slope=$(cat "$Output" | cut -d "," -f 3)
+Smooth=$(cat "$OutputTextFile" | cut -d "," -f 1)
+VolTwoCorrFac=$(cat "$OutputTextFile" | cut -d "," -f 2)
+Slope=$(cat "$OutputTextFile" | cut -d "," -f 3)
 
 tempfiles_create smoothtemp_XXXXXX smoothtemp
 tempfiles_add "$smoothtemp".L_rAFI.nii.gz "$smoothtemp".R_rAFI.nii.gz "$smoothtemp".H_rAFI.nii.gz "$smoothtemp".rAFI_1.nii.gz "$smoothtemp".rAFI_2.nii.gz

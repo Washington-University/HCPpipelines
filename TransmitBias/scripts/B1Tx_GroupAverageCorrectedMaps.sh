@@ -22,10 +22,10 @@ opts_AddMandatory '--transmit-group-name' 'TransmitGroupName' 'name' "name for t
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
 opts_AddMandatory '--voltages' 'VoltageFile' 'file' "text file of scanner calibrated transmit voltages for each subject"
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -54,7 +54,6 @@ case "$MatlabMode" in
         then
             log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
         fi
-        log_Err_Abort "compiled matlab not implemented"
         ;;
     (1)
         matlab_interpreter=(matlab -nodisplay -nosplash)
@@ -142,31 +141,41 @@ RegressedMyelinOutFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverag
 tempfiles_create transmit_goodvoltages_XXXXXX.txt GoodVoltagesFile
 (IFS=$'\n'; echo "${GoodVoltageArray[*]}") > "$GoodVoltagesFile"
 
+argvarlist=(IndCorrMyelinAvgFile IndCorrMyelinAsymmOutFile \
+    IndCorrAllMyelinFile GoodVoltagesFile SB1TxFile StatsFile CSFStatsFile \
+    RegressedMyelinOutFile CovariatesOutFile)
+
 case "$MatlabMode" in
     (0)
-        log_Err_Abort "compiled matlab not yet implemented"
+        arglist=()
+        for var in "${argvarlist[@]}"
+        do
+            arglist+=("${!var}")
+        done
+        "$this_script_dir"/Compiled_B1Tx_GroupAverageCorrectedMaps/run_B1Tx_GroupAverageCorrectedMaps.sh "$MATLAB_COMPILER_RUNTIME" "${arglist[@]}"
         ;;
     (1 | 2)
-        mlcode="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
+        matlabargs=""
+        matlabcode="
+        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
+        addpath('$this_script_dir');
+        "
+        for var in "${argvarlist[@]}"
+        do
+            #NOTE: the newline before the closing quote is important, to avoid the 4KB stdin line limit
+            matlabcode+="$var = '${!var}';
+            "
             
-            IndCorrMyelinAvgFile = '$IndCorrMyelinAvgFile';
-            IndCorrMyelinAsymmOutFile = '$IndCorrMyelinAsymmOutFile';
-            IndCorrAllMyelinFile = '$IndCorrAllMyelinFile';
-            GoodVoltagesFile = '$GoodVoltagesFile';
-            SB1TxFile = '$SB1TxFile';
-            StatsFile = '$StatsFile';
-            CSFStatsFile = '$CSFStatsFile';
-            CovariatesOutFile = '$CovariatesOutFile';
-            RegressedMyelinOutFile = '$RegressedMyelinOutFile';
-            
-            B1Tx_GroupAverageCorrectedMaps(IndCorrMyelinAvgFile, IndCorrMyelinAsymmOutFile, IndCorrAllMyelinFile, GoodVoltagesFile, SB1TxFile, StatsFile, CSFStatsFile, RegressedMyelinOutFile, CovariatesOutFile);"
+            if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
+            matlabargs+="'$var'"
+        done
+
+        matlabcode+="B1Tx_GroupAverageCorrectedMaps(${matlabargs});"
         
-        echo "running matlab code: $mlcode"
-        "${matlab_interpreter[@]}" <<<"$mlcode"
+        echo "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
         echo
         ;;
 esac
