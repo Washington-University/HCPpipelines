@@ -209,7 +209,7 @@ UseT2w=$(opts_StringToBool "$UseT2wString")
 
 #processing code goes here
 echo "parallel mode: $parallel_mode"
-if [ "$parallel_mode" != "FSLSUB" -a "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ] then 
+if [ "$parallel_mode" != "FSLSUB" -a "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ]; then 
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 fi
 
