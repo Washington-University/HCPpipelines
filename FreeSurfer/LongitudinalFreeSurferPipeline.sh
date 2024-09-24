@@ -58,7 +58,7 @@ opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to subject's data folder (
 opts_AddMandatory '--sessions' 'Sessions' 'sessions' "@ separated list of session (timepoint, visit) IDs (required). Also used to generate full path to each longitudinal session directory"
 opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
 opts_AddOptional '--use-T2w' 'UseT2wString' 'boolean' "Set to 0/false/no for no T2-weighted processing [1]" "1"
-opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
+opts_AddOptional '--seed' 'recon_all_seed' "Seed" "recon-all seed value"
 
 #parallel mode options.
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'

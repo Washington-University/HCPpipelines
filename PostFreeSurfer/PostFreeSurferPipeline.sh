@@ -170,7 +170,8 @@ case "$LongitudinalMode" in
         ExperimentRoot="$Session".long."$LongitudinalTemplate"
         IsLongitudinal=1 
         ;;
-    TEMPLATE)
+    TEMPLATE) 
+        #Use subject, not session, for the root
         ExperimentRoot="$Subject".long."$LongitudinalTemplate"
         IsLongitudinal=1 
         ;;

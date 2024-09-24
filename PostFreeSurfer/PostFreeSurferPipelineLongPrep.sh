@@ -95,17 +95,18 @@ T1wImageBrainMask="brainmask_fs"
 MNI_hires_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 TemplateProcessing=$(opts_StringToBool "$TemplateProcessing")
 
-
 if [[ "$Timepoints_string" =~ "@" ]]; then 
-    if (( TemplateProcessing )); then    
-            log_Err_Abort "More than one timepoint is specified in template mode, please check calling script."
+    if (( TimepointProcessing )); then
+            log_Err_Abort "More than one timepoint is specified in timepoint mode, please check calling script."
     fi
     IFS='@' read -r -a timepoints <<< "$Timepoints_string"
+    #Timepoint_cross in template mode must point to the first specified timepoint.
     Timepoint_cross=${timepoints[0]}
 else
-    if (( ! TemplateProcessing )); then
+    if (( ! TimepointProcessing )); then
         log_Err_Abort "At least two timepoints must be specified in timepoint processing mode, please check calling script."
     fi
+    #Timepoint_cross in timepoint mode must point to the current timepoint.
     Timepoint_cross=$timepoints
 fi
 
@@ -136,10 +137,10 @@ Timepoint_long=$Timepoint_cross.long.$Template
 T1w_dir_cross=$StudyFolder/$Timepoint_cross/T1w
 T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
 T1w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
-LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cross}_to_${Template}.lta
 
 if (( TemplateProcessing == 0 )); then #timepoint mode
 
+    LTA_norm_to_template=$T1w_dir_template/$Template/mri/transforms/${Timepoint_cross}_to_${Template}.lta
     log_Msg "Timepoint processing: computing the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (longitudinal template)"
     mkdir -p $T1w_dir_long/xfms
     #Snorm=$T1w_dir_long/$Timepoint_long/mri/norm
@@ -162,6 +163,7 @@ if (( TemplateProcessing == 0 )); then #timepoint mode
     #5. convert the final TP_T1w->TP_T1w(HCP template) LTA transform to .mat(FSL).
     lta_convert --inlta $T1w_dir_long/xfms/T1w_cross_to_T1w_long.lta --src $T1w_cross --trg $T1w_cross --outfsl $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat
 fi
+#nothing to do in template mode for this block.
 #end block
 
 #################################################################################################################
@@ -178,19 +180,25 @@ if (( TemplateProcessing == 0 )); then
     applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_hires_template \
         -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
 fi
+#nothing to do in template mode for this block.
 #end block
 
+# Detect if T2w is used - all modes. 
+# $T1w_dir_cross points to the first timepoint (template mode) or current timepoint (timepoint mode)
+if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
+    Use_T2w=1
+else
+    log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
+    Use_T2w=0
+fi
 
 ##############################################################################################################
 # The next block creates the warp from T2w to template space, including readout distortion correction, and applies it
 
-T2w_dir_cross=$StudyFolder/$Timepoint_cross/T2w
-T2w_dir_long=$StudyFolder/$Timepoint_long/T2w
-T2w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
-Use_T2w=1
-
 if (( TemplateProcessing == 0 )); then 
 
+    T2w_dir_cross=$StudyFolder/$Timepoint_cross/T2w
+    T2w_dir_long=$StudyFolder/$Timepoint_long/T2w
     mkdir -p $T2w_dir_long/xfms
 
     #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
@@ -207,16 +215,18 @@ if (( TemplateProcessing == 0 )); then
             -w $T2w_dir_long/xfms/T2w2template.nii.gz -o $T1w_dir_long/T2w_acpc_dc.nii.gz
     fi
 fi
+#Nothing to do in template mode.
 #end block
 
 ############################################################################################################
 # The next block creates original brain masks from wmparc.mgz. The final brain mask will be computed later.
 # Convert FreeSurfer Volumes
-FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
-FreeSurferFolder_Template="$T1w_dir_template/$Template"
+
 T1wImageBrainMask_orig="$T1wImageBrainMask"_orig
 
 if (( TemplateProcessing == 0 )); then 
+    
+    FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
     log_Msg "Timepoint $Timepoint_long: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"T1w_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
@@ -227,6 +237,8 @@ if (( TemplateProcessing == 0 )); then
     fslmaths "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz -bin "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/"$T1wImageBrainMask_orig"_1mm.nii.gz -r "$T1w_dir_long"/T1w_acpc_dc.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/"$T1wImageBrainMask_orig".nii.gz
 else 
+    #template mode
+    FreeSurferFolder_Template="$T1w_dir_template/$Template"
     log_Msg "Template $Template: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_Template"/mri/wmparc.mgz "$T1w_dir_template"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_template"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"T1w_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_template"/wmparc.nii.gz
@@ -237,22 +249,18 @@ else
 fi
 
 ##############################################################################################################
-# The next block runs bias field correction in the template space for the TXw images.
-
-
-# Applies warp field from the one computed for cross-sectional runs.
-BiasField_cross="$T1w_dir_cross/BiasField_acpc_dc"
-BiasField_long="$T1w_dir_long/BiasField_acpc_dc"
+# The next block applies warp field from the one computed for cross-sectional runs.
 
 if (( TemplateProcessing == 0 )); then 
-
+    BiasField_cross="$T1w_dir_cross/BiasField_acpc_dc"
+    BiasField_long="$T1w_dir_long/BiasField_acpc_dc"
     log_Msg "Timepoint $Timepoint_long: warping bias field to longitudinal template space"
     if [ -f "$BiasField_cross.nii.gz" ]; then
         applywarp --interp=spline -i $BiasField_cross -r $MNI_hires_template \
             --premat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat -o $BiasField_long
-
     fi
 fi
+#nothing to do in template mode
 #end block
 
 #################################################################################################
