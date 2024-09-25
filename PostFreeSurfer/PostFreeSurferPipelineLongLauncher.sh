@@ -115,7 +115,7 @@ fi
 if ((end_stage < 1)); then exit 0; fi
 
 ##########################################################################################
-# PostFreesurferPipelineLongPrep.sh processing
+# PostFreeSurferPipelineLongPrep.sh processing
 ##########################################################################################
 #process timepoints
 if (( start_stage==0 )); then 
@@ -123,7 +123,7 @@ if (( start_stage==0 )); then
   for TP in ${Timepoints[@]}; do
     echo "################# PREP-TP Stage processing ########################"
       echo "Running ppFS-long for timepoint: $TP"
-      cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+      cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongPrep.sh \
     --subject="$Subject" --path="$StudyFolder"                            \
     --longitudinal-template="$LongitudinalTemplate"                       \
     --sessions="$TP"                                                      \
@@ -149,7 +149,7 @@ if ((end_stage < 1)); then exit 0; fi
 if (( start_stage <= 1 )) && (( end_stage >= 1 )); then 
   #Process template and finalize timepoints. This must wait until all timepoints are finished.
   echo "################# PREP-T Stage processing ########################"
-  cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreesurferPipelineLongPrep.sh \
+  cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongPrep.sh \
       --subject="$Subject"                                  \
       --path="$StudyFolder"                                 \
       --longitudinal-template="$LongitudinalTemplate"       \

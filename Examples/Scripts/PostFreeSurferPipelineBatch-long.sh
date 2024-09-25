@@ -28,7 +28,7 @@ EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeli
 source "$EnvironmentScript"
 
 ##################################################################################################
-# Input variables used by PostFreesurferPipelineLongPrep
+# Input variables used by PostFreeSurferPipelineLongPrep
 ##################################################################################################
 # Hires T1w MNI template
 T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_0.8mm.nii.gz"
