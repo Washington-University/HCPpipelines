@@ -84,7 +84,7 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
 
-if [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" -a "$parallel_mode" != "FSLSUB" ] then
+if [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" -a "$parallel_mode" != "FSLSUB" ]; then
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 fi
 
