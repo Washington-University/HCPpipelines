@@ -110,7 +110,7 @@ Timepoint (Session) label may be arbitrary but conventionally, should contain su
 HCA6002236 there are two timepoints, thay may be labeled HCA6002236_V1 and HCA6002236_V2. 
 For crossectional (initial) processing, these are supplied to PreFreesurferPipeline. 
 For the FreesurferPipeline-long, these are also supplied as timepoint labels, as well as chosen template label, e.g. HCA6002236_V1_V2. 
-Then the same are supplied to PostFreesurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
+Then the same are supplied to PostFreeSurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
 internally, longitudinal timepoint directories will be named as: <Session>.long.<Template>
 Longitudinal template directory is named <Subject>.long.<Template>. 
 Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Template>/T1w/<Session>.long.<Temlate>. 

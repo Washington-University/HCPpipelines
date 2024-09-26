@@ -139,7 +139,7 @@ ${CARET7DIR}/wb_command -volume-palette $Jacobian MODE_AUTO_SCALE -interpolate t
 # To detect this situation, and prevent FreeSurferPipeline from running after PostFreeSurferPipeline,
 # FreeSurferPipeline errors out if the one-step warpfield created here ($OutputOrigT1wToT1w) already exists.]
 
-if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality is included in PostFreesurferPipelineLongPrep.sh
+if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality is included in PostFreeSurferPipelineLongPrep.sh
 	convertwarp --relout --rel --ref="$T1wImageBrainMask" --premat="$InitialT1wTransform" --warp1="$dcT1wTransform" --out="$OutputOrigT1wToT1w"
 	applywarp --rel --interp=spline -i "$OrginalT1wImage" -r "$T1wImageBrainMask" -w "$OutputOrigT1wToT1w" -o "$OutputT1wImage"
 	fslmaths "$OutputT1wImage" -abs "$OutputT1wImage" -odt float
