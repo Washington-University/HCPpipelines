@@ -107,7 +107,7 @@ else
         log_Err_Abort "At least two timepoints must be specified in template processing mode, please check calling script."
     fi
     #Timepoint_cross in timepoint mode must point to the current timepoint.
-    Timepoint_cross=$timepoints
+    Timepoint_cross=$Timepoints_string
 fi
 
 #########################################################################################
