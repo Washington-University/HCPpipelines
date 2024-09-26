@@ -96,15 +96,15 @@ MNI_hires_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 TemplateProcessing=$(opts_StringToBool "$TemplateProcessing")
 
 if [[ "$Timepoints_string" =~ "@" ]]; then 
-    if (( TimepointProcessing )); then
+    if (( ! TemplateProcessing )); then
             log_Err_Abort "More than one timepoint is specified in timepoint mode, please check calling script."
     fi
     IFS='@' read -r -a timepoints <<< "$Timepoints_string"
     #Timepoint_cross in template mode must point to the first specified timepoint.
     Timepoint_cross=${timepoints[0]}
 else
-    if (( ! TimepointProcessing )); then
-        log_Err_Abort "At least two timepoints must be specified in timepoint processing mode, please check calling script."
+    if (( TemplateProcessing )); then
+        log_Err_Abort "At least two timepoints must be specified in template processing mode, please check calling script."
     fi
     #Timepoint_cross in timepoint mode must point to the current timepoint.
     Timepoint_cross=$timepoints
