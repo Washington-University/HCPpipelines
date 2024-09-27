@@ -13,16 +13,17 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 #description of script/command
-opts_SetScriptDescription "Run curvature corrected thickness python script and save curvatures, regression coefficients, and curvature-corrected thickness"
+opts_SetScriptDescription "Run curvature-corrected cortical thickness python script and save curvatures, regression coefficients, and curvature-corrected thickness"
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
-opts_AddMandatory '--regname' 'RegName' 'my reg' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' use MSMSulc as default"
-opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for regression calculation, L=Left, R=Right, default 'L R' or B=Both" "B"
+opts_AddOptional '--regnamestr' 'RegNamesStr' 'my reg str' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' default MSMSulc" "MSMSulc"
+opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for regression calculation, L=Left, R=Right, or B=Both, default 'B'" "B"
 opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression calculation, white or midthickness, default midthickness" "midthickness"
-opts_AddOptional '--patch-size' 'PatchSize' 'patch size' "provide patch size for regression, default 6" "6"
-opts_AddOptional '--surf-smooth' 'SurfSmooth' 'surf smooth' "provide surface smoothing fwhm, default 2.14" "2.14"
-opts_AddOptional '--metric-smooth' 'MetricSmooth' 'metric smooth' "provide metric smoothing fwhm, default 2.52" "2.52"
+opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
+opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
+opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
+opts_AddOptional '--resample-only' 'ResampleOnly' 'YES or NO' "whether or not to generate the curvature-corrected cortical thickness data, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
 opts_ParseArguments "$@"
 
@@ -48,24 +49,26 @@ then
 	Hemi="L R"
 fi
 
-RegNames=`echo "$RegName" | sed s/"@"/" "/g`
+RegNames=`echo "$RegNamesStr" | sed s/"@"/" "/g`
 
 LowResMesh="32"
 HighResMesh="164"
 MapListFunc="MRcorrThickness MRcorrThickness_intercept MRcorrThickness_normcoeffs MRcorrThickness_curvs MRcorrThickness_coeffs"
 
 #Generate MRcorrThickness in Native Space
-for Hemisphere in $Hemi ; do
-	if [[ "$Hemisphere" == "L" ]] ; then
-		Structure="CORTEX_LEFT"
-	elif [[ "$Hemisphere" == "R" ]] ; then
-		Structure="CORTEX_RIGHT"
-	fi
-		(
-			cd "$HCPPIPEDIR"/global/scripts/
-			python CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth"
-		)
-done	
+if [[ "$ResampleOnly" == "NO" ]]; then
+	for Hemisphere in $Hemi ; do
+		if [[ "$Hemisphere" == "L" ]] ; then
+			Structure="CORTEX_LEFT"
+		elif [[ "$Hemisphere" == "R" ]] ; then
+			Structure="CORTEX_RIGHT"
+		fi
+			(
+				cd "$HCPPIPEDIR"/global/scripts/
+				python CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth"
+			)
+	done	
+fi
 
 #Set the Color Palette(s) and Resample to HighResMesh and LowResMesh
 for Hemisphere in $Hemi ; do
@@ -86,7 +89,7 @@ for Hemisphere in $Hemi ; do
 		if [[ "$RegName" == "MSMSulc" ]] ; then
 			RegString=""
 		else
-			RegString="_"$RegName""
+			RegString="_$RegName"
 		fi
 		for Map in $MapListFunc ; do
 			wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map""$RegString"."$HighResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
@@ -103,12 +106,12 @@ if [[ "$Hemi" == *L* && "$Hemi" == *R* ]] ; then
 		Folder=`echo $STRING | cut -d "@" -f 1`
 		Mesh=`echo $STRING | cut -d "@" -f 2`
 		ROI=`echo $STRING | cut -d "@" -f 3`
-	  
+		
 		for RegName in $RegNames ; do
-			if [[ "$RegName" == "MSMSulc" || "$Folder" == "$NativeFolder" ]] ; then
+	  		if [[ "$RegName" == "MSMSulc" || "$Folder" == "$NativeFolder" ]] ; then
 				RegString=""
 			else
-				RegString="_"$RegName""
+				RegString="_$RegName"
 			fi
 	
 			for Map in $MapListFunc ; do

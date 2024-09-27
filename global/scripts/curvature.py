@@ -3,7 +3,14 @@
 """
 Created on Thu Sep  5 14:07:38 2024
 
-@author: brainmappers
+This script was originally developed as part of Nagehan Demirci's Ph.D. thesis under the copyright CC-BY-NC-SA-4.0 at the University of Notre Dame in the CoMMaND lab under the supervision of Maria Holland. If you use this script in your work, please give proper attribution and citation:
+ 
+Demirci, N., & Holland, M. A. (2022). Cortical thickness systematically varies with curvature and depth in healthy human brains. Human Brain Mapping, 43(6), 2064–2084. https://doi.org/10.1002/hbm.25776
+
+Author(s): 
+Nagehan Demirci, Department of Radiology, Washington University in St. Louis
+Maria Holland, Department of Aerospace and Mechanical Engineering, University of Notre Dame
+
 """
 import numpy as np
 import os
