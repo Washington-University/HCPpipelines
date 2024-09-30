@@ -220,7 +220,7 @@ for Hemisphere in L R ; do
 done
 
 if [ "${MetricReg}" = "NEW" ] || [ "${MetricReg}" = "BOTH" ]; then
-  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regnamestr="$RegName"
+  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regnames="$RegName"
 fi
 
 LowResMeshList=""

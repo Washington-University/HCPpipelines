@@ -17,7 +17,7 @@ opts_SetScriptDescription "Run curvature-corrected cortical thickness python scr
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
-opts_AddOptional '--regnamestr' 'RegNamesStr' 'my reg str' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' default MSMSulc" "MSMSulc"
+opts_AddOptional '--regnames' 'RegNamesStr' 'my reg str' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' default MSMSulc" "MSMSulc"
 opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for regression calculation, L=Left, R=Right, or B=Both, default 'B'" "B"
 opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression calculation, white or midthickness, default midthickness" "midthickness"
 opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
