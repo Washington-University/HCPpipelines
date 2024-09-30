@@ -240,7 +240,7 @@ function par_finalize_stage()
     local PARALLEL_MODE=$1
     if [ "$PARALLEL_MODE" != "FSLSUB" -a "$PARALLEL_MODE" != "BUILTIN" -a "$PARALLEL_MODE" != "NONE" ]; then 
         echo "Unknown parallel mode: $PARALLEL_MODE, cannot continue"
-        return 1
+        exit 1
     fi
     shift
     local temp max_jobs=$1

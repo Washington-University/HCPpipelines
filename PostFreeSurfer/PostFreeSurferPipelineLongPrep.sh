@@ -100,7 +100,7 @@ if [[ "$Timepoints_string" =~ "@" ]]; then
             log_Err_Abort "More than one timepoint is specified in timepoint mode, please check calling script."
     fi
     IFS='@' read -r -a timepoints <<< "$Timepoints_string"
-    #Timepoint_cross in template mode must point to the first specified timepoint.
+    #Timepoint_cross in template mode must point to the first specified timepoint, used to detect if T2w images are available.
     Timepoint_cross=${timepoints[0]}
 else
     if (( TemplateProcessing )); then
