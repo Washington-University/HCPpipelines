@@ -69,6 +69,7 @@ opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the stan
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
 opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin map to use for bias correction"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
+opts_AddOptional '--logdir' 'LogDir' 'string' "directory where logs will be written (default: current directory)" ""
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -83,6 +84,15 @@ log_Check_Env_Var FSLDIR
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
+
+if [ -n "$LogDir" ]; then 
+  mkdir -p "$LogDir"
+  if [ -d "$LogDir" ]; then 
+    par_set_log_dir "$LogDir"
+  else 
+    log_Err_Abort "Directory specified for logs $LogDir does not exist and cannot be created."
+  fi
+fi
 
 if [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" -a "$parallel_mode" != "FSLSUB" ]; then
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"

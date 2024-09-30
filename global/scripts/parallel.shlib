@@ -31,9 +31,6 @@ then
     source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 fi
 
-
-
-
 function par_addjob()
 {
     par_addjob_stdin "$@" <<<""
@@ -71,7 +68,7 @@ function par_runjobs()
     wait
     local -a jobpids=()
     #track which jobs errored
-    local badjobslog="./$par_global_scriptname.errjobs$$.$par_global_launch_count.log"
+    local badjobslog="$par_logfile_dir/$par_global_scriptname.errjobs$$.$par_global_launch_count.log"
     rm -f -- "$badjobslog"
     local i
     for ((i = 0; i < ${#par_jobarray[@]}; ++i))
@@ -105,7 +102,7 @@ function par_runjobs()
             fi
             
             tempfiles_cleanup
-        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "./$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
         #save all the job pids, why not
         jobpids[$i]="$!"
         par_global_launch_count=$((par_global_launch_count + 1))
@@ -166,6 +163,14 @@ par_jobinputarray=()
 par_fslsub_joblist=()
 par_fslsub_job_waitlist=""
 
+par_logfile_dir="."
+
+#Set directory where all log files are written. Default is '.'
+function par_set_log_dir()
+{
+    par_logfile_dir="$1"
+}
+
 function par_addjob_stdin()
 {
     local encodedargs=()
@@ -216,8 +221,8 @@ function par_add_job_to_stage()
         par_addjob "${cmd[@]}"
     else #NONE                                          #current job is executed.
         echo "launching, parallel mode=NONE, will wait to finish: ${cmd[*]}"
-        "${cmd[@]}" 1> ./"$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> ./"$par_global_scriptname.$$.$par_global_launch_count.e.log"
-        par_global_launch_count=$((par_global_launch_count + 1))        
+        "${cmd[@]}" 1> "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log"
+        par_global_launch_count=$((par_global_launch_count + 1))
     fi
 }
 

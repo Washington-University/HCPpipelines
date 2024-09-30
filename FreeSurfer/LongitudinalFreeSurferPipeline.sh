@@ -66,12 +66,22 @@ opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of TEMPLATE, TIMEPOINTS [TEMPLATE]." 'TEMPLATE'
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
+opts_AddOptional '--logdir' 'LogDir' 'string' "directory where logs will be written (default: current directory)" ""
 
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+if [ -n "$LogDir" ]; then 
+  mkdir -p "$LogDir"
+  if [ -d "$LogDir" ]; then 
+    par_set_log_dir "$LogDir"
+  else 
+    log_Err_Abort "Directory specified for logs $LogDir does not exist and cannot be created."
+  fi
 fi
 
 #display the parsed/default values
@@ -91,6 +101,7 @@ log_Check_Env_Var FREESURFER_HOME
 # Platform info
 log_Msg "Platform Information Follows: "
 uname -a
+
 
 
 # Configure custom tools
