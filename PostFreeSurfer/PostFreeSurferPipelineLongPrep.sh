@@ -203,9 +203,18 @@ if (( TemplateProcessing == 0 )); then
 
     #This uses combined transform from T1w to T2w, whish is always generated. Should replace the if statements below.
     if [ -f "$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz" ]; then
+
+        #Freesurfer BBR refinement after T2w_cross->T1w_cross transform
+        T2w_on_T1w_to_T1w_cross_BBR=$T1w_dir_cross/$Timepoint_cross/mri/transforms/T2wtoT1w.mat
+        if [ ! -f "$T2w_on_T1w_to_T1w_cross_BBR" ]; then 
+            log_Err_Abort "FreeSurfer BBR refinement T2w->T1w transform not found, cannot continue."
+        fi
+        #concat BBR refinement T2w_on_T1w_cross->T2w_on_T1w_cross (refined)->T1w_long
+        T2w_on_T1w_BBR_to_T1w_long=$T1w_dir_long/xfms/T2w_on_T1w_cross_BBR_to_T1w_long.mat
+        convert_xfm -omat $T2w_on_T1w_BBR_to_T1w_long -concat $T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat $T2w_on_T1w_to_T1w_cross_BBR
         log_Msg "Timepoint $Timepoint_long: warping T2-weighted image to T2w_acpc_dc in longitudinal template space"
         convertwarp --premat=$T2w_dir_cross/xfms/acpc.mat --ref=$MNI_hires_template \
-            --warp1=$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T2w_dir_long/xfms/T2w2template.nii.gz
+            --warp1=$T1w_dir_cross/xfms/T2w_reg_dc.nii.gz --postmat=$T2w_on_T1w_BBR_to_T1w_long --out=$T2w_dir_long/xfms/T2w2template.nii.gz
     else
         log_Msg "T2w->T1w TRANSFORM NOT FOUND, T2w IMAGE WILL NOT BE USED"
         Use_T2w=0
