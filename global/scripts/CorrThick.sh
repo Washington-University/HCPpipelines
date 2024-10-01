@@ -23,7 +23,7 @@ opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression ca
 opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
 opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
 opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
-opts_AddOptional '--no-computation' 'NoCompute' 'YES or NO' "whether or not to compute the curvature-corrected cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
+opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
 opts_ParseArguments "$@"
 
@@ -36,7 +36,7 @@ fi
 opts_ShowValues
 
 #sanity check boolean strings and convert to 1 and 0
-NoC=$(opts_StringToBool "$NoCompute")
+SkC=$(opts_StringToBool "$SkipCompute")
 
 #set paths
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
@@ -59,7 +59,7 @@ HighResMesh="164"
 MapListFunc="MRcorrThickness MRcorrThickness_intercept MRcorrThickness_normcoeffs MRcorrThickness_curvs MRcorrThickness_coeffs"
 
 #Generate MRcorrThickness in Native Space
-if ((! NoC)); then
+if ((! SkC)); then
 	for Hemisphere in $Hemi ; do
 		if [[ "$Hemisphere" == "L" ]] ; then
 			Structure="CORTEX_LEFT"
