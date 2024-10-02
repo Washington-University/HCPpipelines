@@ -701,7 +701,7 @@ case ${MatlabRunMode} in
 		# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
 		# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
 		# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
-		if [ -z "${FSL_FIX_MCR}" ]; then
+		if [ -z "${FSL_FIX_MCR:-}" ]; then
 			debug_disable_trap
 			set +u
 			source ${FSL_FIXDIR}/settings.sh
@@ -709,7 +709,7 @@ case ${MatlabRunMode} in
 			debug_enable_trap
 			export FSL_FIX_WBC="${Caret7_Command}"
 			# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
-			if [ -z "${FSL_FIX_MCR}" ]; then
+			if [ -z "${FSL_FIX_MCR:-}" ]; then
 				log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
 			fi
 		fi
