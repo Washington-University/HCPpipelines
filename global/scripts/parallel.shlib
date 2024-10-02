@@ -198,8 +198,12 @@ function par_addjob_stdin()
 function par_add_job_to_stage()
 {
     local PARALLEL_MODE=$1
+    if [ "$PARALLEL_MODE" != "FSLSUB" -a "$PARALLEL_MODE" != "BUILTIN" -a "$PARALLEL_MODE" != "NONE" ]; then 
+        echo "Unknown parallel mode: $PARALLEL_MODE, cannot continue"
+        exit 1
+    fi
+    
     shift
-
     #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
     local fslsub_queue=$1
     shift
@@ -214,7 +218,7 @@ function par_add_job_to_stage()
         if [[ -n "$par_fslsub_job_waitlist" ]]; then
             submit_cmd+=(-j "$par_fslsub_job_waitlist")
         fi
-        submit_cmd+=("${cmd[@]}")        
+        submit_cmd+=("${cmd[@]}")
         job=$("${submit_cmd[@]}")
         par_fslsub_job_list+=("$job")
     elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then          #current job is added to the list of local parallel jobs        
