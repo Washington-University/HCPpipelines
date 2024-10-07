@@ -1,4 +1,4 @@
-function run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
+function sR = run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % run_icasso(Dim,concatfmri,concatfmrihp,ConcatFolder,vis,nICA,maxIter)
 % This function performs icasso decomposition for hcp_fix_multi_run.sh
 % It creates outputs in the style of MELODIC, so that FIX can be run
@@ -76,7 +76,7 @@ if isempty(which('niftiread'))
 else
   readNIFTI = @(fName) niftiread(fName);
   infoNIFTI = @(fName) niftiinfo(fName);
-  writeNIFTI = @(img,fName,hdr) niftiwrite(img,fName,hdr);
+  writeNIFTI = @(img,fName,hdr) niftiwrite(img,fName,hdr,'Compressed',true);
 end
 
 %% parse paths
@@ -96,15 +96,27 @@ brainMask = logical(readNIFTI(brainMaskFile));
 volDim = size(vnts);
 [vnts,mtxDim] = maskAndSpatiallyFlatten(vnts,brainMask);
 
+%% Wishart filter
+% nWF = 1;
+% icaDimOut = icaDim(vnts,-1,1,-1,nWF);
+% vnts = double(icaDimOut.data);
+
+%% remove mean image and check for voxels with constant values
+% vntsT = vnts';
+% vntsT = vntsT - mean(vntsT);
+% if any(all(vntsT == vntsT(1,:)))
+%   error('some voxels have constant value!')
+% end
+
 %% run icasso
 % note: icasso fixes the randomization seed with rng('default')
-vntsT = vnts';
-[iq,A,~,~,~] = ...
+sR = cell(numel(nICA),1);
+[iq,A,~,~,sR{1}] = ...
   icasso('both',vntsT,nICA(1),'approach','symm','g','pow3',...
   'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
 if strcmp(vis,'basic'); printFigs(outDir,1);end
 for iC = 2:numel(nICA)
-  [iq,A,~,~,~] = ...
+  [iq,A,~,~,sR{iC}] = ...
     icasso('bootstrap',vntsT,nICA(iC),'approach','symm','g','pow3','initGuess',A,...
     'lastEig',Dim,'numOfIC',Dim,'maxNumIterations',maxIter,'vis',vis); 
   if strcmp(vis,'basic'); printFigs(outDir,iC);end
@@ -119,7 +131,8 @@ totVariance = sum(pcaD(end-Dim+1:end))./sum(pcaD);
   % proportion of total variance explained by first <Dim> components
 clear vntsT
 S_final = S_final';
-
+% combineMultiLevelIcassoFigs
+% keyboard
 %% set component sign and sort by variance explained
 % set sign
 maxSfinal = max(S_final);
@@ -195,7 +208,7 @@ fprintf(fid,'%i: Signal\n',1:size(S_final,2));fclose(fid);
 
 %% Mixture modeling
 fprintf('performing melodic mixture modeling ...\n')
-mixtureModel([outDir '/melodic_IC.nii.gz']);% overwrites in-place without saving full report
+mixtureModel([outDir '/melodic_IC.nii.gz'],[outDir '/melodic_IC.nii.gz']);% overwrites in-place without saving full report
 
 %% Helper subfunctions
 function printFigs(outD,lvl)
@@ -213,7 +226,6 @@ function printFigs(outD,lvl)
   close all;
 end
 
-end
 function [mtx,mtxDim] = maskAndSpatiallyFlatten(img,msk)
   % reshapes 4d img into 2d matrix where the first 3 dims are put into the 1st dim
   % second arg msk is 3d logical volume

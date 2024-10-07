@@ -132,7 +132,7 @@ opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set 
 
 opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
 
-opts_AddOptional '--icasso-vis' 'icassso_vis' 'basic or off' "Save icasso figures (default) or do not" 'basic'
+opts_AddOptional '--icasso-vis' 'icasso_vis' 'basic or off' "Save icasso figures (default) or do not" 'basic'
 
 opts_AddOptional '--icasso-nICA' 'icasso_nICA' '100' "Number of ICA repetitions per icasso repetition, @ delimited string (default = 100)" 'basic'
 
@@ -834,7 +834,7 @@ elif [[ $ICAmethod == ICASSO ]]; then
 	## ---------------------------------------------------------------------------
 	
 	log_Msg "Running icasso ..."
-	matlab_code="${ML_PATHS} run_icasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${icassso_vis}','${icasso_nICA}');exit"
+	matlab_code="${ML_PATHS} run_icasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${icasso_vis}','${icasso_nICA}');exit"
 	log_Msg "Run interpreted MATLAB/Octave with code..."
 	log_Msg ${matlab_code}
 	
