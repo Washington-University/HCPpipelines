@@ -44,7 +44,7 @@ opts_AddMandatory '--sessions' 'Timepoint_list' 'list' '@ separated list of time
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
 opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
-opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage [PREP-TP]. One of PREP-TP (PostFSPrepLong timepoint processing), PREP-T (PostFSPrepLong build template, skip timepoint processing), POSTFS-TP1 (PostFreeSurfer timepoint stage 1), POSTFS-T (PostFreesurfer template), POSTFS-TP2 (PostFreesurfer timepoint stage 2)" "PREP-T"
+opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage [PREP-TP]. One of PREP-TP (PostFSPrepLong timepoint processing), PREP-T (PostFSPrepLong build template, skip timepoint processing), POSTFS-TP1 (PostFreeSurfer timepoint stage 1), POSTFS-T (PostFreesurfer template), POSTFS-TP2 (PostFreesurfer timepoint stage 2)" "PREP-TP"
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage [POSTFS-TP2]. Options are the same as for --start-stage." "POSTFS-TP2"
 
 
