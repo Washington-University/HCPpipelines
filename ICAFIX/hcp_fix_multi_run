@@ -650,11 +650,9 @@ log_Msg "Making concatenated folder: ${ConcatFolder}"
 if [ ! -e ${ConcatFolder} ] ; then  
 	mkdir ${ConcatFolder} 
 else
-  # /bin/rm -r ${ConcatFolder} 
-	find ${ConcatFolder}  -type f ! -name '.nfs*' -delete # bypass nfs Device or resource busy error
-  find ${ConcatFolder}  -type d -empty -delete 
+  /bin/rm -r ${ConcatFolder} 
 	log_Warn "Previous ${ConcatFolder} directory removed"
-	mkdir ${ConcatFolder}
+	mkdir -${ConcatFolder}
 fi
 
 ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
