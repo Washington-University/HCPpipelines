@@ -53,7 +53,7 @@ opts_AddOptional '--ojacobian' 'JacobianOutput' 'image' "output Jacobian image (
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'path' "topup config file"
 
-opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Whether to apply the jacobian of the gradient non-linearity distortion correction Irrelevant if --gdcoeffs=NONE (Has nothing to do with the jacobian of the TOPUP warp field)"
+opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Whether to apply the jacobian of the gradient non-linearity distortion correction.  Irrelevant if --gdcoeffs=NONE (Has nothing to do with the jacobian of the TOPUP warp field)"
 
 opts_ParseArguments "$@"
 
