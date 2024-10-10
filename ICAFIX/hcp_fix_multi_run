@@ -3,7 +3,7 @@
 #   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time
 #   (useful for cleaning shorter runs)
 #
-#   Requires FIX version 1.067 or later and FSL 6.0 melodic version
+#   Requires FIX version 1.067 or later or pyfix version 0.9.0 or later and FSL 6.0 melodic version
 #
 #   Stephen Smith and Matthew F. Glasser
 #
@@ -136,10 +136,6 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
 opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
-
-opts_AddOptional '--icasso-vis' 'icasso_vis' 'basic or off' "Save icasso figures (default) or do not" 'basic'
-
-opts_AddOptional '--icasso-nICA' 'icasso_nICA' 'number' "Number of ICA repetitions per icasso repetition, @ delimited string (default = 100)" '100'
 
 opts_ParseArguments "$@"
 
@@ -290,14 +286,13 @@ determine_old_or_new_fsl()
 
 callInterpreted() {
   if [[ $FSL_FIX_MATLAB_MODE == "1" ]]; then
-      log_Msg "matlab -nodisplay -r ${1}"
-      matlab -nodisplay -r "${1}; exit";echo "exiting matlab."
+      log_Msg "matlab -batch ${1}"
+      matlab -batch "${1}";echo "exiting matlab."
     elif [[ $FSL_FIX_MATLAB_MODE == "2" ]]; then
-      log_Msg "octave --no-gui --eval ${1}"
-      matlab -nodisplay -r "${1}; exit";echo "exiting octave."
+      log_Msg "octave-cli --q --no-window-system ${1}"
+      octave-cli --q --no-window-system "${1}; exit";echo "exiting octave."
   fi
 }
-
 
 demeanMovementRegressors() {
 	In=${1}
@@ -387,9 +382,6 @@ case "$ICAmethod" in
 		log_Err_Abort "--ica-method=${ICAmethod} must be MELODIC or ICASSO"
 		;;
 esac
-if [[ ${FSL_FIX_MATLAB_MODE} == 0 ]] && [[ ${ICAmethod} == ICASSO ]];then
-	log_Err_Abort "--ica-method=ICASSO is not yet implemented for compiled matlab."
-fi
 
 ## ---------------------------------------------------------------------------
 ## Report parameters
@@ -516,11 +508,11 @@ for fmri in "${fmris[@]}" ; do
 				log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 			fi
 
-			# CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-			# matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "$CSUBDIR" -f functionhighpassandvariancenormalize "$tr" "$hp" "$fmri" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
-			# log_Msg "Run compiled MATLAB with command..."
-			# log_Msg "${matlab_cmd[*]}"
-			# "${matlab_cmd[@]}"
+			compiledScript=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
+			matlab_cmd=("${compiledScript}" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
+			log_Msg "Run compiled MATLAB with command..."
+			log_Msg "${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
 			;;
 		
 		1 | 2)
@@ -537,7 +529,6 @@ for fmri in "${fmris[@]}" ; do
 	esac
 
 	log_Msg "Dims: $(cat ${fmri}_dims.txt)"
-	
 
 	# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
 	fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -Tmean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
@@ -652,7 +643,7 @@ if [ ! -e ${ConcatFolder} ] ; then
 else
   /bin/rm -r ${ConcatFolder} 
 	log_Warn "Previous ${ConcatFolder} directory removed"
-	mkdir -${ConcatFolder}
+	mkdir ${ConcatFolder}
 fi
 
 ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
@@ -776,7 +767,8 @@ case ${FSL_FIX_MATLAB_MODE} in
 		;;
 esac
 
-Dim=$(cat ${concatfmrihp}_dims.txt)
+# Dim=$(cat ${concatfmrihp}_dims.txt)
+Dim=3 #deleteme
 
 log_Msg "Dim: ${Dim}"
 
@@ -815,8 +807,7 @@ if [[ $ICAmethod == MELODIC ]]; then
 	# Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
 	# Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
 	# Added "-m ${concatfmri}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
-	# melodic_cmd=("${MELODIC}" -i "${concatfmrihp}_vnts" -o "${concatfmrihp}.ica/filtered_func_data.ica" --nobet --report --Oall --tr="${tr}" --vn --dim="${Dim}" -m "${concatfmri}_brain_mask")
-  melodic_cmd=("${MELODIC}" -i "${concatfmrihp}_vnts" -o "${concatfmrihp}.ica/filtered_func_data.ica" --nobet --report --Oall --tr="${tr}" --vn --dim="3" -m "${concatfmri}_brain_mask") # toDelete
+	melodic_cmd=("${MELODIC}" -i "${concatfmrihp}_vnts" -o "${concatfmrihp}.ica/filtered_func_data.ica" --nobet --report --Oall --tr="${tr}" --vn --dim="${Dim}" -m "${concatfmri}_brain_mask")
 
 	if [ ! -z "${log_debugOn}" ] ; then
 		melodic_cmd+=(--verbose --debug)
@@ -850,8 +841,8 @@ elif [[ $ICAmethod == ICASSO ]]; then
 	## Run icasso on concatenated file
 	## ---------------------------------------------------------------------------
 	
-	log_Msg "Running icasso ..."
-	matlab_code="${ML_PATHS} run_icasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${icasso_vis}','${icasso_nICA}')"
+	log_Msg "Running melodic with icasso consensus clustering..."
+	matlab_code="${ML_PATHS} melodicicasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${tr}')"
 	log_Msg "Run interpreted MATLAB/Octave with code..."
   callInterpreted "${matlab_code}"
 
