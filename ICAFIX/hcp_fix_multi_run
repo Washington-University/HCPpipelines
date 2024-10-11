@@ -767,8 +767,7 @@ case ${FSL_FIX_MATLAB_MODE} in
 		;;
 esac
 
-# Dim=$(cat ${concatfmrihp}_dims.txt)
-Dim=3 #deleteme
+Dim=$(cat ${concatfmrihp}_dims.txt)
 
 log_Msg "Dim: ${Dim}"
 
