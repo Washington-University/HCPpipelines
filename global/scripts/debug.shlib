@@ -28,11 +28,19 @@ debug_on_error()
         local me=$(basename "$0")
         local startreport=""
         local endreport=""
-        local command=$(eval echo $(debug_first $2))
+        #instead of trying to detect things that would make eval do bad things, manually detect and replace simple variable expansion via string patterns
+        local expandedcmd=$(debug_fake_eval_echo "$2")
+        local command="'"$(debug_first $expandedcmd)"'"
+        #for subshells, say something smarter than "'(' command failed"
+        if [[ "$command" == "'('" ]]
+        then
+            #say "subshell command failed", without quotes around subshell
+            command=subshell
+        fi
 
         # --- output a regular HCP error log
 
-        log_Err "'$command' command failed with return code: $3"
+        log_Err "$command command failed with return code: $3"
 
         # --- are we printing in color
 
@@ -49,13 +57,7 @@ debug_on_error()
             echo "         script: $me"
             echo "stopped at line: $1"
             echo "           call: $2"
-            #blacklist subshell syntax (`foo` and $(foo), but $((foo)) is fine) and redirection, which can make eval run a command, write to a file, hang, etc
-            #eval is documented as treating the arguments as a "single command", which limits the type of trouble it can get into (newline, semicolon, pipe, and boolean operators don't seem to be an issue)
-            #while it is tempting to whitelist /dev/null redirection, it breaks the eval anyway, and would be challenging to fix properly
-            if ! [[ "$2" =~ (\`|\$\([^\(]|>|<) ]]
-            then
-                echo "  expanded call: $(eval echo "$2")"
-            fi
+            echo "  expanded call: $expandedcmd"
             echo "       hostname: $(hostname)"
             echo "      exit code: $3"
             echo -e "---------------------------------------------------${endreport}"
@@ -69,7 +71,7 @@ debug_on_error()
             if [[ "$-" == *i* ]]; then
                 (
                     echo
-                    echo -n "execution paused due to error, press enter to continue or ctrl+c to halt ..."
+                    echo -n "execution paused due to error, press enter to continue or ctrl+c to halt..."
                 ) 1>&2
                 read
             else
@@ -81,6 +83,69 @@ debug_on_error()
             fi
         fi
     fi
+}
+
+function debug_fake_eval_echo()
+{
+    #manually parse and replace simple variable expressions, so we don't have to blacklist everything that breaks eval
+    #for our usage, the only input is the entire command as a string, so if someone forgets to use quotes, put it all back into one string
+    local origcmd="$*"
+    #split at $ character
+    local -a dollararray
+    #quirk: <<<"" adds a newline to the end, and read -d '' with unusual IFS keeps it on the last element
+    #we want to reach "end of file", so ignore the exit status of read -d ''
+    IFS='$' read -r -d '' -a dollararray <<<"$origcmd" || true
+    #copy stuff before the first $ verbatim
+    local returnval="${dollararray[0]}"
+    for ((i = 1; i < ${#dollararray[@]}; ++i))
+    do
+        local tempstr="${dollararray[i]}"
+        local brace=0
+        if [[ "$tempstr" == \{* ]]
+        then
+            #add the braces back to the code if the "variable name" is bogus
+            brace=1
+            #another open brace should be rare (we can leave it unexpanded), so just find the first closing brace, let the "variable defined" test sort out the rest
+            #NOTE: this leaves a { in the varname temporarily
+            local varname=${tempstr%%\}*}
+            local remainder=${tempstr:${#varname}}
+            #and strip the closing brace from the remainder
+            remainder=${remainder#\}}
+            #now that we have the remainder separated, clean up the {
+            varname=${varname#\{}
+        else
+            #emulate "$11" being interpreted as "${1}1"
+            if [[ "$tempstr" =~ ^[0-9] ]]
+            then
+                #take the first character
+                local varname=${tempstr:0:1}
+                local remainder=${tempstr:1}
+            else
+                local varname=$(echo "$tempstr" | sed 's/\([a-zA-Z_][a-zA-Z0-9_]*\).*$/\1/')
+                local remainder=${tempstr:${#varname}}
+            fi
+        fi
+        #old mac bash doesn't have test -v, so use an indirect variable construct
+        #but it doesn't like when the name is invalid, so we have to manually check that
+        #$1, etc have changed since the context of the command, so DON'T expand them
+        #the "+1" returns 1 if the variable is set, and empty string if it is unset
+        if [[ "$varname" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ && "${!varname+1}" != "" ]]
+        then
+            #success, substitute in the value
+            returnval+="${!varname}$remainder"
+        else
+            #failure, put the $ and "variable name" back
+            if ((brace))
+            then
+                returnval+="\${$varname}$remainder"
+            else
+                returnval+="\$$varname$remainder"
+            fi
+        fi
+    done
+    #quirk: use the extra newline from read -d '' <<<"", rather than having echo add one
+    #bash strips multiple newlines from $() anyway, so generally doesn't matter
+    echo -n "$returnval"
 }
 
 function debug_first()
