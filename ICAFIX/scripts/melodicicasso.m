@@ -1,5 +1,5 @@
-function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nICA,bootMode,vis,seedOffset,nThreads)
-% sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nICA,bootMode,vis,seedOffset,maxIter)
+function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nThreads,nICA,bootMode,vis,seedOffset)
+% sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nThreads,nICA,bootMode,vis,seedOffset)
 % This function performs runs melodic ICA decomposition (without mixture modeling) many times
 % with different seeds using the undocumenterd --seed option.It then clusters the results 
 % with icasso (https://doi.org/10.1109/NNSP.2003.1318025),then uses the consensus decomposition 
@@ -17,24 +17,24 @@ function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nICA,boo
 %   tr           : Repetition time
 %
 % Optional Inputs:
-%   nICA    : Number of melodic repetitions per icasso clustering, @ delimited string, (default = '100') 
-%             The number of icasso clustering repetitions is equal to the
-%             the number delimiters + 1. e.g. '100@100' will perform
-%             2 rounds of icasso with 100 melodic runs in each. 
-%   bootMode: Whether to randomize the inital conditions only, perfrom
-%             bootstrapping, or both in the first level of icasso.
-%             Subsequent levels are always bootstrapped. 'randinit' (default), 'boot' or 'both'
-%   vis     : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
-%   seedOffset: for bootMode = 'randinit' or 'both', the seed is set to the iteration number, seedOffset
-%               is added to this, which is useful for running melodicicasso multiple times with different initial 
-%               conditions, it is recomended that if nonzero, seedOffest is greater than nICA of the 
-%               first level (default = '0')
-%   nThreads : Number of workers for parpool, (default = <total number of physical cores>) 
-%              If pool is already running a new one is not created. if
-%              nThreads = 1, serial loop used instead. 
+%   nThreads   : Number of workers for parpool, (default = min(5,<total number of physical cores>)) 
+%                If pool is already running a new one is not created. if
+%                nThreads = 1, serial loop used instead. 
+%   nICA       : Number of melodic repetitions per icasso clustering, @ delimited string, (default = '100') 
+%                The number of icasso clustering repetitions is equal to the
+%                the number delimiters + 1. e.g. '100@100' will perform
+%                2 rounds of icasso with 100 melodic runs in each. 
+%   bootMode   : Whether to randomize the inital conditions only, perfrom
+%                bootstrapping, or both in the first level of icasso.
+%                Subsequent levels are always bootstrapped. 'randinit' (default), 'boot' or 'both'
+%   vis        : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
+%   seedOffset : for bootMode = 'randinit' or 'both', the seed is set to the iteration number, seedOffset
+%                is added to this, which is useful for running melodicicasso multiple times with different initial 
+%                conditions, it is recomended that if nonzero, seedOffest is greater than nICA of the 
+%                first level (default = '0')
 %
 % Outputs:
-%   sR:Diagnostic infomation
+%   sR: Diagnostic infomation
 
 
 % Dependencies:
@@ -78,7 +78,7 @@ else
   seedOffset=str2double(seedOffset);
 end
 if nargin < 10 || isempty(nThreads) 
-  nThreads = feature('numcores');
+  nThreads = min(5,feature('numcores'));
 else
   nThreads = str2double(nThreads);
 end
@@ -129,31 +129,39 @@ for iL = 1:nL
   nSteps = zeros(nI,1);
 %   tmpDir = tempname;
   tmpDir = [outDir '/tmp_melodics'];
+  if exist(tmpDir,'dir');rmdir(tmpDir,'s');end
   mkdir(tmpDir);
   [A,W] = deal(cell(1,nI));
-  if strcmp(bootMode,'randinit')
-    bootIdx = repmat((1:N)',[1 nI]);fprintf('Running with randinit only (no bootstrapping)\n'); % no bootstrapping
+  bootIdx = round(rand(N,nI).*N + 0.5);
+  if iL == 1 && strcmp(bootMode,'randinit')
+    bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
+    X = single(vnts);
+    X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
+    writeNIFTI(X,bootFile,hdr);
+    fprintf('Running with randinit only (no bootstrapping)\n'); % no bootstrapping
   else
-    bootIdx = round(rand(N,nI).*N + 0.5);fprintf('Running with bootstrapping\n'); % prepare bootstraps (resampling with replacement)
+    fprintf('Running with bootstrapping\n'); % prepare bootstraps (resampling with replacement)
   end
 
   % run parfor over melodics
   if nThreads > 1
     if isempty(gcp('nocreate'));parpool(nThreads);end
-    fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,feature('numcores'))
+    fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,nThreads)
     parfor iI = 1:nI
       meloDir = sprintf('%s/%i',tmpDir,iI);
       mkdir(meloDir);
-      bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
-      X = zeros(mtxDim,'single');
-      X(brainMask,:) = single(vnts(bootIdx(:,iI),:));% consider cell array of vnts instead of broadcast variable
-      X = reshape(X,imSz);% unmaskAndSpatiallyInflate subfunction unavailable in parfor
-      try % writeNIFTI anon. function unavailable in parfor so use try catch instead
-        niftiwrite(X,bootFile,hdr,'Compressed',true);
-      catch
-        save_avw(X,bootFile,'f',hdr.PixelDimensions)
+      bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
+      if ~strcmp(bootMode,'randinit')
+        bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
+        X = zeros(mtxDim,'single');
+        X(brainMask,:) = single(vnts(bootIdx(:,iI),:));% consider cell array of vnts instead of broadcast variable
+        X = reshape(X,imSz);% unmaskAndSpatiallyInflate subfunction unavailable in parfor
+        try % writeNIFTI anon. function unavailable in parfor so use try catch instead
+          niftiwrite(X,bootFile,hdr,'Compressed',true);
+        catch
+          save_avw(X,bootFile,'f',hdr.PixelDimensions)
+        end
       end
-  
       if iL == 1
         if strcmp(bootMode,'boot')
           seed = 1;% use the same initialization for each run
@@ -183,11 +191,15 @@ for iL = 1:nL
     fprintf('Level %i: runing %i melodics as single threaded serial loop with %i cores:\n',iL,nI)
     for iI = 1:nI
       meloDir = sprintf('%s/%i',tmpDir,iI);
+      if exist(meloDir,'dir');rmdir(meloDir,'s');end
       mkdir(meloDir);
-      bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
-      X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
-      writeNIFTI(X,bootFile,hdr)
-  
+      bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
+      if ~strcmp(bootMode,'randinit')
+        bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
+        X = single(vnts(bootIdx(:,iI),:));
+        X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
+        writeNIFTI(X,bootFile,hdr);
+      end
       if iL == 1
         if strcmp(bootMode,'boot')
           seed = 1;% use the same initialization for each run
@@ -246,6 +258,7 @@ for iL = 1:nL
   sR(iL).nSteps = nSteps;
   
   rmdir(tmpDir,'s');% clean up temp files
+  if ~strcmp(bootMode,'randinit');delete(bootFile);end
 
   %% run icasso clustering
   sR(nL).cluster = [];
@@ -269,7 +282,7 @@ for iL = 1:nL
 
   % save icasso's A as a paradigm file to be used as initalization for next level or final melodic
   init_ica = [outDir '/icasso_A.mat'];
-  dlmwrite(init_ica, A, '\t');
+  dlmwrite(init_ica, A, '\t'); %#ok<DLMWT> 
   [~,~] = system(sprintf('Text2Vest %s %s',init_ica,init_ica),'-echo');
 end %for iL
 
@@ -281,7 +294,7 @@ fprintf('performing melodic with icasso warmstart ...\n')
 cmd = sprintf(...
   'melodic -i %s -o %s --Oall --nobet --report --tr="%s" --vn --dim="%i" -m "%s" --init_ica="%s" -v --debug',...
   vntsFile,outDir,tr,Dim,brainMaskFile,init_ica);
-[stat,out] = system(cmd,'-echo');
+[stat,out] = system(cmd,'-echo'); %#ok<*ASGLU> 
 if ~stat
   fprintf('melodic with icasso warmstart completed...\n')
 else
