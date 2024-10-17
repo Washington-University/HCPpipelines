@@ -234,8 +234,7 @@ fi
 T1wImageBrainMask_orig="$T1wImageBrainMask"_orig
 
 if (( TemplateProcessing == 0 )); then 
-    
-    FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
+    FreeSurferFolder_TP_long="$StudyFolder/$Subject.long.$Template/T1w/$Timepoint_long"
     log_Msg "Timepoint $Timepoint_long: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"T1w_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
