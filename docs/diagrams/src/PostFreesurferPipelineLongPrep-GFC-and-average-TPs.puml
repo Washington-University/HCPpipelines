@@ -1,0 +1,40 @@
+@startuml
+group Generating gain field and brain mask for template and timepoints
+group Longitudinal TP processing (for each timepoint)
+split
+-[hidden]->
+    split
+        -[hidden]->
+        #palegreen:$T1w_dir_cross/Biasfield_acpc_dc;        
+    split again
+        -[hidden]->
+        #palegreen:$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat;
+    end split
+    :applywarp: Resample cross-sectional bias field 
+    to longitudinal template _acpc_dc image space;
+split again
+-[hidden]->
+    #palegreen: ${T1w_dir_long}/T1w_acpc_dc
+    ${T1w_dir_long}/brainmask_fs_orig;
+end split
+    :fslmaths: Threshold at 0 and divide by gain 
+    field in longitudinal template space;
+    #pink: T1w_dir_long/T1w_acpc_dc_restore;
+end group
+group Template processing
+    split
+        :Average _restore images;
+        #pink: $T1w_dir_template/T1w_acpc_dc_restore;
+        detach        
+    split again 
+        :Average unrestore images;
+        #pink:$T1w_dir_template/T1w_acpc_dc;
+        detach
+    split again
+        :Apply Logical OR to brain mask images;
+        #pink: $T1w_dir_template/brainmask_fs;        
+        detach
+    end split        
+end group
+end group
+@enduml

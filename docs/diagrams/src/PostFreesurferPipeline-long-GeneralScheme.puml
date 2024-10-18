@@ -1,0 +1,41 @@
+@startuml PrePostFreesurferPipeline-long general scheme
+|p| Longitudinal TP
+|t| Template
+
+|p|
+-[hidden]->
+group Timepoint processing Stage 1
+:Run FreeSurfer2CaretConvertAndRegisterNonlinear;
+#palegreen: MNI152/Native/MSMSulc
+/{L|R}.sphere.rot.native.surf.gii;
+note
+generate surfaces 
+then stop
+end note
+stop
+end group
+|t|
+group Template processing
+:Run FreeSurfer2CaretConvertAndRegisterNonlinear
+until MSMSulc registration code;
+:Average MNI152/Native/MSMSulc
+/{L|R}.sphere.rot.native.surf.gii
+across timepoints;
+#palegreen: MNI152/Native/MSMSulc
+/{L|R}.sphere_rot_average.surf.gii;
+:run MSMSulc.sh;
+:Rename and copy MSMSulc 
+registation to each timepoint's
+MNI152/Native folder;
+:Run the rest of 
+FreeSurfer2CaretConvertAndRegisterNonlinear;
+:Run the rest of PostFreeSurfer pipeline;
+end group
+|p|
+group Timepoint processing Stage 2
+:Run the rest of 
+FreeSurfer2CaretConvertAndRegisterNonlinear
+following MSMSulc registration;
+:Run the rest of PostFreeSurfer pipeline;
+end group
+@enduml

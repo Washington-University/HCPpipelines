@@ -1,0 +1,68 @@
+@startuml PrePostFreesurferPipeline-long general scheme
+
+|c| Cross-sectional TP
+|p| Longitudinal TP
+|t| Template (run once)
+
+|c|
+split
+-[hidden]->
+#palegreen:T1w, T1w_acpc_dc,
+(optional)T2w, T2w_acpc_dc;
+split again
+|t|
+-[hidden]->
+#palegreen:Longitudinal FS transforms 
+to common template;
+end split
+|p|
+:Compute transform from T1w_acpc_dc (cross) 
+to T1w_acpc_dc (long_template);
+group T1w2acpc_dc_template.puml
+:Resample T1w from native to the longitudinal acpc_dc 
+template space, using cross-sectional readout 
+distortion correction warp;
+end group
+group T2w2acpc_dc_template.puml
+:(optional) Create the warp from T2w to template space, 
+including readout distortion correction, 
+and resample T2w to template space;
+end group
+group Create brain mask
+-[hidden]->
+:Warp wmparc.mgz to template space (T1w);
+|t|
+-[hidden]->
+:Warp wmparc.mgz to template space (T1w);
+end group
+group GFC.puml
+|c|
+-[hidden]->
+#lightgreen:Gain field in T1w_acpc_dc space;
+|p|
+:Resample the gain field to template space;
+:Create (taking absolute value, dividing by 
+gain field and applying brain mask)
+{T1w,T2w}_acpc_dc_restore, 
+{T1w,T2w}_acpc_dc_restore_brain;
+end group
+|t|
+group Create average template
+:Create average template 
+T1w_acpc_dc_restore
+from all timepoints;
+:(optional) create average 
+template T2w_acpc_dc_restore 
+from all timepoints;
+end group
+|p|
+group MNI.Nonlinear.puml
+:Run atlas registration from longitudinal
+template to MNI152 (FLIRT and FNIRT);
+|p|
+:Copy {T1w,T2w}->MNI space transforms,
+warp {T1w,T2w}_acpc_dc_restore to MNI space
+to create {T1w,T2w}_restore, {T1w,T2w}_restore_brain 
+in MNINonLinear/;
+end group
+@enduml

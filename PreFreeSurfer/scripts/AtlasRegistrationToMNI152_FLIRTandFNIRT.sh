@@ -91,7 +91,7 @@ verbose_echo " "
 verbose_red_echo " ===> Running Atlas Registration to MNI152"
 verbose_echo " "
 
-mkdir -p $WD
+mkdir -p $WD/xfms
 
 # Record the input options in a log file
 echo "$0 $@" >> $WD/xfms/log.txt

@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -95,8 +95,7 @@ for Subject in $Subjlist ; do
         echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
         queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
     fi
-
-    "${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
+    job=("${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
         --study-folder="$StudyFolder" \
         --subject="$Subject" \
         --surfatlasdir="$SurfaceAtlasDIR" \
@@ -108,7 +107,9 @@ for Subject in $Subjlist ; do
         --freesurferlabels="$FreeSurferLabels" \
         --refmyelinmaps="$ReferenceMyelinMaps" \
         --regname="$RegName" \
-        --use-ind-mean="$UseIndMean"
+        --use-ind-mean="$UseIndMean")
+    
+    "${job[@]}"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
