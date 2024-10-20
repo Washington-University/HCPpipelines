@@ -94,6 +94,7 @@ log_Check_Env_Var HCPPIPEDIR_Global
 T1wImageBrainMask="brainmask_fs"
 MNI_hires_template="$HCPPIPEDIR/global/templates/MNI152_T1_0.8mm.nii.gz"
 TemplateProcessing=$(opts_StringToBool "$TemplateProcessing")
+echo "Timepoints_string: $Timepoints_string"
 
 if [[ "$Timepoints_string" =~ "@" ]]; then 
     if (( ! TemplateProcessing )); then
@@ -102,33 +103,42 @@ if [[ "$Timepoints_string" =~ "@" ]]; then
     IFS='@' read -r -a timepoints <<< "$Timepoints_string"
     #Timepoint_cross in template mode must point to the first specified timepoint, used to detect if T2w images are available.
     Timepoint_cross=${timepoints[0]}
+    echo "timepoints: ${timepoints[@]}"
+    echo "timepoints[0]: ${timepoints[0]}"
 else
     if (( TemplateProcessing )); then
         log_Err_Abort "At least two timepoints must be specified in template processing mode, please check calling script."
     fi
     #Timepoint_cross in timepoint mode must point to the current timepoint.
     Timepoint_cross=$Timepoints_string
+    echo "Timepoint_cross: $Timepoint_cross"
 fi
 
 #########################################################################################
 # Organizing and cleaning up the folder structure
 #########################################################################################
 if (( ! TemplateProcessing )); then 
-    # ----------------------------------------------------------------------
-    log_Msg "Organizing and cleaning up the folder structure"
-    # ----------------------------------------------------------------------
 
     LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
-    for TP in ${timepoints[@]} ; do
-        log_Msg "Organizing the folder structure for: ${TP}"
-        # create the symlink
-        TargetDIR="${StudyFolder}/${TP}.long.${Template}/T1w"
-        mkdir -p "${TargetDIR}"
-        ln -sf "${LongDIR}/${TP}.long.${Template}" "${TargetDIR}/${TP}.long.${Template}"
 
-        # remove the symlink in the subject's folder
-        rm -rf "${LongDIR}/${TP}"
-    done
+    log_Msg "Organizing the folder structure for: ${Timepoint_cross}"
+    # create the symlink
+    TargetDIR="${StudyFolder}/${Timepoint_cross}.long.${Template}/T1w"
+    mkdir -p "${TargetDIR}"
+    
+    tp_folder_fslong="${LongDIR}/${Timepoint_cross}.long.${Template}"
+    if [ ! -d "$tp_folder_fslong" ]; then
+    	log_Err_Abort "Folder $tp_folder_fslong does not exist, was longitudinal FreeSurfer run?"
+    fi
+    
+    tp_folder_hcp="${TargetDIR}/${Timepoint_cross}.long.${Template}"    
+    ln -sf "$tp_folder_fslong" "$tp_folder_hcp"
+    if [ ! -d "$tp_folder_hcp" ]; then
+    	log_Err_Abort "Could not create required symlink from $tp_folder_fslong to $tp_folder_hcp"
+    fi
+
+    # remove the symlink in the subject's folder
+    rm -rf "${LongDIR}/${Timepoint_cross}"
 fi
 
 ############################################################################################################
