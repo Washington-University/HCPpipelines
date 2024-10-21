@@ -53,8 +53,7 @@ function multiEchoCombine(tscPath,TE,refPath,sctPath,T2starMethod,weightMethod,f
 % Created 2024-03-19
 % Burke Rosen 
 
-
-%% handle inputs, set defaults
+%% handle inputs, set defaults, and load data
 if ~exist(tscPath,'file')
   error('%s does not exist!',tscPath)
 end
@@ -95,28 +94,11 @@ if nargin < 9 || isempty(nonlinAlgo)
   nonlinAlgo = 'Levenberg-Marquardt'; 
 end
 
-%% set nifti IO functions
-% use imaging processing toolbox utilities, or if those are not available, use FSL utilities 
-function out = out2(fun);[~,out] = fun();end
-function out = out3(fun);[~,~,out] = fun();end
-if isempty(which('niftiread'))
-  if isempty(which('read_avw'))
-    error('neither niftiread nor read_avw on matlab path!')
-  end
-  infoNIFTI = @(fName) struct('ImageSize',out2(@() read_avw(fName))','PixelDimensions',out3(@() read_avw(fName))');
-  readNIFTI = @(fName) read_avw(fName);
-  writeNIFTI = @(img,fName,hdr) save_avw(img,fName,'f',hdr.PixelDimensions);
-else
-  readNIFTI = @(fName) niftiread(fName);
-  infoNIFTI = @(fName) niftiinfo(fName);
-  writeNIFTI = @(img,fName,hdr) niftiwrite(img,fName,hdr,'Compression',true);
-end
-
-%% load data
-I = readNIFTI(tscPath);
-hdr = infoNIFTI(tscPath);
+% load data
+I = niftiread(tscPath);
+hdr = niftiinfo(tscPath);
 if ~isempty(sctPath)
-  S = readNIFTI(sctPath);
+  S = niftiread(sctPath);
 end
 
 % get dims
@@ -136,7 +118,7 @@ if nargin < 3 || isempty(refPath)
     Y(:,:,:,iE) = mean(I(:,:,:,(1:framePerEcho)+framePerEcho*(iE-1)),4);
   end
 else
-  Y = readNIFTI(refPath);
+  Y = niftiread(refPath);
 end
 
 %% Create time matrix
@@ -283,8 +265,8 @@ hdr3d.ImageSize = hdr3d.ImageSize(1:3);
 hdr3d.PixelDimensions = hdr3d.PixelDimensions(1:3);
 T2starPath = strrep(tscPath,'.nii.gz','_T2star');
 S0Path = strrep(tscPath,'.nii.gz','_S0');
-writeNIFTI(T2star,T2starPath,hdr3d)
-writeNIFTI(S0,S0Path,hdr3d)
+niftiwrite(T2star,T2starPath,hdr3d,'Compressed',true)
+niftiwrite(S0,S0Path,hdr3d,'Compressed',true)
 
 %% Extrapolate voxels with negative T2* from T2* and S0
 % and voxels with all echoes below noisefloor, if fitNoiseFloor
@@ -292,7 +274,7 @@ writeNIFTI(S0,S0Path,hdr3d)
 badVoxel = single(T2star < 0);
 if ~isempty(find(badVoxel,1))% any(x,'all') syntax isn't present in 2017b
   bvPath = tempname;
-  writeNIFTI(badVoxel,bvPath,hdr3d)
+  niftiwrite(badVoxel,bvPath,hdr3d,'Compressed',true)
   cmd = sprintf(...
     'wb_command -volume-dilate %s.nii.gz 5 WEIGHTED %s.nii.gz -bad-voxel-roi %s.nii.gz',...-grad-extrapolate
     T2starPath,T2starPath,bvPath);
@@ -301,7 +283,7 @@ if ~isempty(find(badVoxel,1))% any(x,'all') syntax isn't present in 2017b
     'wb_command -volume-dilate %s.nii.gz 5 WEIGHTED %s.nii.gz -bad-voxel-roi %s.nii.gz',...-grad-extrapolate
     S0Path,S0Path,bvPath);
   [~,~] = unix(cmd);
-  T2star = readNIFTI(T2starPath);
+  T2star = niftiread(T2starPath);
   delete([bvPath '.nii.gz'])
 end
 clear S0;
@@ -325,7 +307,7 @@ end
 hdrW = hdr;
 hdrW.ImageSize(4) = nE;
 WeightsPath = strrep(tscPath,'.nii.gz','_EchoWeights');
-writeNIFTI(W,WeightsPath,hdrW)
+niftiwrite(W,WeightsPath,hdrW,'Compressed',true)
 
 %% apply weights and export results
 if ~isempty(sctPath)
@@ -335,7 +317,7 @@ if ~isempty(sctPath)
 
   % save combined Scout / SBref
   hdr.ImageSize(4) = framePerEcho;
-  writeNIFTI(S,strrep(sctPath,'.nii.gz','_CombEchoes'),hdr3d)
+  niftiwrite(S,strrep(sctPath,'.nii.gz','_CombEchoes'),hdr3d,'Compressed',true)
 end
 
 % apply to timeseries
@@ -345,6 +327,6 @@ I(isnan(I)) = 0;
 
 % save combined timeseries
 hdr.ImageSize(4) = framePerEcho;
-writeNIFTI(I,strrep(tscPath,'.nii.gz','_CombEchoes'),hdr)
+niftiwrite(I,strrep(tscPath,'.nii.gz','_CombEchoes'),hdr,'Compressed',true)
 
 end % EOF
