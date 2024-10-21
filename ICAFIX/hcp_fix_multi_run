@@ -408,7 +408,7 @@ log_Msg "PWD: $DIR"
 # to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
 # The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
 # AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
-ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab/icasso122'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 ## ---------------------------------------------------------------------------
 ## Preparation (highpass) on the individual runs
@@ -997,6 +997,11 @@ log_Msg "Done running fix"
 ## ---------------------------------------------------------------------------
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
+
+# pyfix doesn't create .fix file with noise component indices, so create it from the melview file
+if [[ ! "${FSL_FIXDIR}/convert_fix_model" ]];then
+	grep -h Noise "$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
+fi
 
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
 if [ "$?" -ne "0" ]; then
