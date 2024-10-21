@@ -404,12 +404,12 @@ if (( TemplateProcessing ==  1 )); then
         T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
         Timepoint_brain_mask_acpc_dc="$T1w_dir_long"/"$T1wImageBrainMask".nii.gz
         Timepoint_brain_mask_MNI="${AtlasSpaceFolder_timepoint}"/"$T1wImageBrainMask".nii.gz
-        mkdir -p $AtlasSpaceFolder_timepoint/xfms
-        
-        #copy altas transforms to the timepoint directory.
-        cp ${AtlasSpaceFolder_template}/$WARP ${AtlasSpaceFolder_timepoint}/$WARP
-        cp ${AtlasSpaceFolder_template}/$INVWARP ${AtlasSpaceFolder_timepoint}/$INVWARP
-        cp ${AtlasSpaceFolder_template}/$WARP_JACOBIANS ${AtlasSpaceFolder_timepoint}/$WARP_JACOBIANS
+
+        #link altas transforms to the timepoint directory.
+        if [ -d "$AtlasSpaceFolder_timepoint/xfms" ]; then 
+            rm -rf "$AtlasSpaceFolder_timepoint/xfms"
+        fi                
+        ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/xfms"
 
         #one mask for all timepoints.
         cp ${AtlasSpaceFolder_template}/"$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
