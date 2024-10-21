@@ -1000,7 +1000,9 @@ log_Msg "Done running fix"
 
 # pyfix doesn't create .fix file with noise component indices, so create it from the melview file
 if [[ ! "${FSL_FIXDIR}/convert_fix_model" ]];then
-	grep -h Noise "$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
+	melview=$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)
+	grep -h Noise "${melview}" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
+	sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy
 fi
 
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
