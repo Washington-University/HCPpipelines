@@ -3,7 +3,7 @@
 #   hcp_fix_multi_run - wrapper script for FIX, for HCP pipelines to clean multiple fMRI runs at a time
 #   (useful for cleaning shorter runs)
 #
-#   Requires FIX version 1.067 or later and FSL 6.0 melodic version
+#   Requires FIX version 1.067 or later or pyfix version 0.9.0 or later and FSL 6.0 melodic version
 #
 #   Stephen Smith and Matthew F. Glasser
 #
@@ -28,6 +28,11 @@
 #   1) Improvements to script readability and consistency
 #   2) Addition of a polynomial detrend option
 #   3) Addition of FIX threshold as optional parameter
+#
+#   Changes by Burke Rosen
+#   1) Optionally use icasso to perform multiple melodic runs for IC estimation and use the consensus estimate for mixture modeling 
+#      (Followed by FIX as usual)
+#   2) Optionally use pyfix instead of legacy fix
 
 #############################################################
 set -eu
@@ -103,9 +108,13 @@ opts_AddMandatory '--concat-fmri-name' 'ConcatName' 'run1_to_3' "Name (including
 
 opts_AddOptional '--motion-regression' 'doMotionRegression' 'TRUE or FALSE' "Controls whether to regress motion parameters as part of the cleaning, default FALSE" 'FALSE'
 
-opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData' 'Specify a custom training file, defaults to "HCP_Style_Single_Multirun_Dedrift.RData"' ''
+opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfix_model, or a pyfix built-in model without extension' 'Specify a custom training file, defaults to "HCP_Style_Single_Multirun_Dedrift.RData"' ''
 
 opts_AddOptional '--fix-threshold' 'FixThresh' 'number' 'Threshold setting in FIX that controls the sensitivity/specificity tradeoff, default = 10' '10'
+
+opts_AddOptional '--matlab-mode' 'FSL_FIX_MATLAB_MODE' 'O or 1 or 2' "compiled matlab (0), interpreted matlab (1, default), or interpreted octave (2). Overwritten by legacy fix settings.sh" '1'
+
+opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix" "${HCPPIPEDIR}/global/templates/MNI152_T1_1mm_brain.nii.gz"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 'If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning, default = FALSE
 (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts)
@@ -125,6 +134,8 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
+
+opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
 
 opts_ParseArguments "$@"
 
@@ -166,7 +177,7 @@ log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
 log_Check_Env_Var HCPCIFTIRWDIR
 
-log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+log_debugOn="true" # Set to any non-empty string (e.g., "true") to turn on debugging related output
 			   # Set to empty string to disable debugging related output
 
 #mac readlink doesn't have -f
@@ -176,14 +187,16 @@ then
 else
 	this_script_dir=$(dirname "$0")
 fi
-
-# All fix settings are held in the settings.sh file - edit this file to suit your setup
+  
+# All legacy fix settings are held in the settings.sh file - edit this file to suit your setup
 # Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
-debug_disable_trap
-set +u
-source "${FSL_FIXDIR}/settings.sh"
-set -u
-debug_enable_trap
+if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
+  debug_disable_trap
+  set +u
+  source "${FSL_FIXDIR}/settings.sh"
+  set -u
+  debug_enable_trap
+fi
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
@@ -271,6 +284,16 @@ determine_old_or_new_fsl()
 	echo ${old_or_new}
 }
 
+callInterpreted() {
+  if [[ $FSL_FIX_MATLAB_MODE == "1" ]]; then
+      log_Msg "matlab -batch ${1}"
+      matlab -batch "${1}";echo "exiting matlab."
+    elif [[ $FSL_FIX_MATLAB_MODE == "2" ]]; then
+      log_Msg "octave-cli --q --no-window-system ${1}"
+      octave-cli --q --no-window-system "${1}; exit";echo "exiting octave."
+  fi
+}
+
 demeanMovementRegressors() {
 	In=${1}
 	log_Debug_Msg "demeanMovementRegressors: In: ${In}"
@@ -287,20 +310,20 @@ demeanMovementRegressors() {
 	AllOut=""
 	c=1
 	while (( c <= nCols )) ; do
-		ColIn=`cat ${In} | sed 's/  */ /g' | sed 's/^ //g' | cut -d " " -f ${c}`
+		ColIn=$(cat ${In} | sed 's/  */ /g' | sed 's/^ //g' | cut -d " " -f ${c})
 		bcstring=$(echo "$ColIn" | tr '\n' '+' | sed 's/\+*$//g')
 		valsum=$(echo "$bcstring" | bc -l)
 		valmean=$(echo "$valsum / $nRows" | bc -l)
 		ColOut=""
 		r=1
 		while (( r <= nRows )) ; do
-			val=`echo "${ColIn}" | head -${r} | tail -1`
-			newval=`echo "${val} - ${valmean}" | bc -l`
-			ColOut=`echo ${ColOut} $(printf "%10.6f" $newval)`
+			val=$(echo "${ColIn}" | head -${r} | tail -1)
+			newval=$(echo "${val} - ${valmean}" | bc -l)
+			ColOut=$(echo ${ColOut} $(printf "%10.6f" $newval))
 			r=$((r+1))
 		done
-		ColOut=`echo ${ColOut} | tr ' ' '\n'`
-		AllOut=`paste <(echo "${AllOut}") <(echo "${ColOut}")`
+		ColOut=$(echo ${ColOut} | tr ' ' '\n')
+		AllOut=$(paste <(echo "${AllOut}") <(echo "${ColOut}"))
 		c=$((c+1))
 	done
 	echo "${AllOut}" > ${Out}
@@ -352,6 +375,14 @@ then
 	log_Err_Abort "--fallback-threshold is not allowed when --vol-wisharts=1 is used"
 fi
 
+case "$ICAmethod" in
+	(MELODIC|ICASSO)
+		;;
+	(*)
+		log_Err_Abort "--ica-method=${ICAmethod} must be MELODIC or ICASSO"
+		;;
+esac
+
 ## ---------------------------------------------------------------------------
 ## Report parameters
 ## ---------------------------------------------------------------------------
@@ -366,7 +397,7 @@ then
 	log_Warn "--icadim-mode='fewtimepoints' is being used with multiple wisharts, multiple wishart fitting is not expected to work well when the data has few timepoints"
 fi
 
-DIR=`pwd`
+DIR=$(pwd)
 log_Msg "PWD: $DIR"
 
 # For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
@@ -377,7 +408,7 @@ log_Msg "PWD: $DIR"
 # to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
 # The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
 # AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
-ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab/icasso122'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 ## ---------------------------------------------------------------------------
 ## Preparation (highpass) on the individual runs
@@ -420,11 +451,11 @@ for fmri in "${fmris[@]}" ; do
 	MovementNIFTIMergeARRAY+=("${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf")
 	MovementNIFTIhpMergeARRAY+=("${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp")
 	
-	cd `dirname $fmri`
+	cd $(dirname $fmri)
 	log_Debug_Msg "pwd: "$(pwd)
-	fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
-	fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
-	if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
+	fmri=$(basename $fmri)  # After this, $fmri no longer includes the leading directory components
+	fmri=$($FSLDIR/bin/imglob $fmri)  # After this, $fmri will no longer have an extension (if there was one initially)
+	if [ $($FSLDIR/bin/imtest $fmri) != 1 ]; then
 		log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 	fi
 
@@ -451,7 +482,7 @@ for fmri in "${fmris[@]}" ; do
 	
 	## "1st pass" VN on the individual runs; high-pass gets done here as well
 	#fslval puts a space on the end of its number, remove it...
-	tr=`$FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' '`  #No checking currently that TR is same across runs
+	tr=$($FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' ')  #No checking currently that TR is same across runs
 	log_Msg "tr: ${tr}"  
 	log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
@@ -477,8 +508,8 @@ for fmri in "${fmris[@]}" ; do
 				log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 			fi
 
-			CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-			matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "$CSUBDIR" -f functionhighpassandvariancenormalize "$tr" "$hp" "$fmri" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
+			compiledScript=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
+			matlab_cmd=("${compiledScript}" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
 			log_Msg "Run compiled MATLAB with command..."
 			log_Msg "${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
@@ -489,8 +520,7 @@ for fmri in "${fmris[@]}" ; do
 			# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 			matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 			log_Msg "Run interpreted MATLAB/Octave with command..."
-			log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_code}"
-			${FSL_FIXDIR}/call_matlab.sh -r "${matlab_code}"   # Note: the semicolons within ${matlab_code} need to be protected with quotation marks
+      callInterpreted "${matlab_code}"
 			;;
 		*)
 			# Unsupported MATLAB run mode
@@ -510,7 +540,6 @@ for fmri in "${fmris[@]}" ; do
 	log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 
 done  ### END LOOP (for fmri in $fmris; do)
-
 
 #note: this test a string comparison, not a math comparison
 if [[ "$RewishartThresh" != "0" ]]
@@ -540,10 +569,10 @@ then
 			#rerun with 1 wishart
 			fmri="${fmriarray[$i]}"
 			#fmri is modified by basename and some other stuff, tr is derived from file...
-			cd `dirname $fmri`
+			cd $(dirname $fmri)
 			log_Debug_Msg "pwd: "$(pwd)
-			fmri=`basename $fmri`  # After this, $fmri no longer includes the leading directory components
-			fmri=`$FSLDIR/bin/imglob $fmri`  # After this, $fmri will no longer have an extension (if there was one initially)
+			fmri=$(basename $fmri)  # After this, $fmri no longer includes the leading directory components
+			fmri=$($FSLDIR/bin/imglob $fmri)  # After this, $fmri will no longer have an extension (if there was one initially)
 
 			#log the fact that we are rerunning this one
 			log_Msg "rerunning functionhighpassandvariancenormalize on outlier run $fmri"
@@ -551,11 +580,11 @@ then
 			#TSC: assume _mean and _demean haven't been overwritten or deleted?
 			
 			## "1st pass" VN on the individual runs; high-pass gets done here as well
-			tr=`$FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' '`  #No checking currently that TR is same across runs
+			tr=$($FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' ')  #No checking currently that TR is same across runs
 			log_Msg "tr: ${tr}"  
 			log_Msg "processing FMRI file ${fmri} with highpass ${hp}"
 
-			if [ `$FSLDIR/bin/imtest $fmri` != 1 ]; then
+			if [ $($FSLDIR/bin/imtest $fmri) != 1 ]; then
 				log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 			fi
 
@@ -568,20 +597,19 @@ then
 						log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
 					fi
 
-					CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-					#call_matlab.sh does pass empty string properly, as does run_<whatever>.sh generated by mcc r2017b (literal ' or " would be trouble, but should be rare)
-					matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "${CSUBDIR}" -f functionhighpassandvariancenormalize "${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "" 1 "$ciftiwisharts" "$icadimmode")
-					log_Msg "Run compiled MATLAB with command..."
-					log_Msg "${matlab_cmd[*]}"
-					"${matlab_cmd[@]}"
+					# CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
+					# #call_matlab.sh does pass empty string properly, as does run_<whatever>.sh generated by mcc r2017b (literal ' or " would be trouble, but should be rare)
+					# matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "${CSUBDIR}" -f functionhighpassandvariancenormalize "${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "" 1 "$ciftiwisharts" "$icadimmode")
+					# log_Msg "Run compiled MATLAB with command..."
+					# log_Msg "${matlab_cmd[*]}"
+					# "${matlab_cmd[@]}"
 					;;
 				1 | 2)
 					# Use interpreted MATLAB or Octave
 					# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 					matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', 1, ${ciftiwisharts}, '${icadimmode}');"
 					log_Msg "Run interpreted MATLAB/Octave with command..."
-					log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_code}"
-					${FSL_FIXDIR}/call_matlab.sh -r "${matlab_code}"   # Note: the semicolon within ${matlab_code} needs to be protected with quotation marks
+		      callInterpreted "${matlab_code}"
 					;;
 				*)
 					# Unsupported MATLAB run mode
@@ -608,12 +636,12 @@ fi
 ## ---------------------------------------------------------------------------
 
 #Make Concatenated Folder
-ConcatFolder=`dirname ${ConcatName}`
+ConcatFolder=$(dirname ${ConcatName})
 log_Msg "Making concatenated folder: ${ConcatFolder}"
 if [ ! -e ${ConcatFolder} ] ; then  
 	mkdir ${ConcatFolder} 
 else
-	/bin/rm -r ${ConcatFolder}
+  /bin/rm -r ${ConcatFolder} 
 	log_Warn "Previous ${ConcatFolder} directory removed"
 	mkdir ${ConcatFolder}
 fi
@@ -689,13 +717,13 @@ if ((ConcatOnly)); then
 fi
 
 ## ---------------------------------------------------------------------------
-## Prepare for melodic on concatenated file
+## Prepare for melodic/icasso on concatenated file
 ## ---------------------------------------------------------------------------
 
 # concatfmri is intensity normalized and has no overall mean.
 # It is also not variance normalized (the mean VN map *across runs* was "restored" above).
 # But is detrended and within run demeaned and variance normalized for both volume and CIFTI
-concatfmri=`basename ${ConcatNameNoExt}`  # Directory path is now removed
+concatfmri=$(basename ${ConcatNameNoExt})  # Directory path is now removed
 concatfmrihp=${concatfmri}_hp${hp}
 
 #MPH: Need to be in original directory here, for the ${MovementNIFTI*ARRAY[@]} variables to work
@@ -719,11 +747,11 @@ AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on th
 case ${FSL_FIX_MATLAB_MODE} in
 	0)
 		# Use compiled Matlab
-		CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-		matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "$CSUBDIR" -f functionhighpassandvariancenormalize "$tr" "$AlreadyHP" "$concatfmrihp" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
-		log_Msg "Run compiled MATLAB with command..."
-		log_Msg "${matlab_cmd[*]}"
-		"${matlab_cmd[@]}"
+		# CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
+		# matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "$CSUBDIR" -f functionhighpassandvariancenormalize "$tr" "$AlreadyHP" "$concatfmrihp" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
+		# log_Msg "Run compiled MATLAB with command..."
+		# log_Msg "${matlab_cmd[*]}"
+		# "${matlab_cmd[@]}"
 		;;
 		
 	1 | 2)
@@ -731,8 +759,7 @@ case ${FSL_FIX_MATLAB_MODE} in
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 		matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 		log_Msg "Run interpreted MATLAB/Octave with code..."
-		log_Msg "${FSL_FIXDIR}/call_matlab.sh -r ${matlab_code}"
-		${FSL_FIXDIR}/call_matlab.sh -r "${matlab_code}"   # Note: the semicolons within ${matlab_code} need to be protected with quotation marks
+    callInterpreted "${matlab_code}"
 		;;
 	*)
 		# Unsupported MATLAB run mode
@@ -740,79 +767,92 @@ case ${FSL_FIX_MATLAB_MODE} in
 		;;
 esac
 
-Dim=`cat ${concatfmrihp}_dims.txt`
+Dim=$(cat ${concatfmrihp}_dims.txt)
 
 log_Msg "Dim: ${Dim}"
 
-## ---------------------------------------------------------------------------
-## Run melodic on concatenated file
-## ---------------------------------------------------------------------------
+if [[ $ICAmethod == MELODIC ]]; then
+	## ---------------------------------------------------------------------------
+	## Run melodic on concatenated file
+	## ---------------------------------------------------------------------------
 
-log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
-if [ ! -z "${log_debugOn}" ] ; then
-	ls -lRa ${concatfmrihp}.ica
-fi
+	log_Debug_Msg "About to run melodic: Contents of ${concatfmrihp}.ica follow"
+	if [ ! -z "${log_debugOn}" ] ; then
+		ls -lRa ${concatfmrihp}.ica
+	fi
 
-#grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
-#we need to do "if which ..." because the script currently uses ERR trap
-if which melodic &> /dev/null
-then
-	MELODIC=$(which melodic 2> /dev/null)
-else
-	#if it isn't even in $PATH, fall back on FSLDIR
-	MELODIC="${FSLDIR}/bin/melodic"
-fi
+	#grab melodic from $PATH by default, don't hardcode it with respect to $FSLDIR
+	#we need to do "if which ..." because the script currently uses ERR trap
+	if which melodic &> /dev/null
+	then
+		MELODIC=$(which melodic 2> /dev/null)
+	else
+		#if it isn't even in $PATH, fall back on FSLDIR
+		MELODIC="${FSLDIR}/bin/melodic"
+	fi
 
-log_Msg "Running MELODIC located at: $MELODIC"
-log_Debug_Msg "Beginning of melodic version log, help, and checksum"
-if [ ! -z "${log_debugOn}" ] ; then
-	log_Debug_Msg "$MELODIC --version"
-	$MELODIC --version
-	log_Debug_Msg "$MELODIC --help"
-	$MELODIC --help
-	log_Debug_Msg "md5sum $MELODIC"
-	md5sum $MELODIC
-fi
-log_Debug_Msg "End of melodic version log, help, and checksum"
+	log_Msg "Running MELODIC located at: $MELODIC"
+	log_Debug_Msg "Beginning of melodic version log, help, and checksum"
+	if [ ! -z "${log_debugOn}" ] ; then
+		log_Debug_Msg "$MELODIC --version"
+		$MELODIC --version
+		log_Debug_Msg "$MELODIC --help"
+		$MELODIC --help
+		log_Debug_Msg "md5sum $MELODIC"
+		md5sum $MELODIC
+	fi
+	log_Debug_Msg "End of melodic version log, help, and checksum"
 
-# Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
-# Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
-# Added "-m ${concatfmri}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
-melodic_cmd=("${MELODIC}" -i "${concatfmrihp}_vnts" -o "${concatfmrihp}.ica/filtered_func_data.ica" --nobet --report --Oall --tr="${tr}" --vn --dim="${Dim}" -m "${concatfmri}_brain_mask")
-if [ ! -z "${log_debugOn}" ] ; then
-	melodic_cmd+=(--verbose --debug)
-fi
+	# Use the Wishart-based dim estimate instead of the melodic-based estimate (--dim=${Dim})
+	# Also turn off melodic VN and feed in the input that has already been VN'ed instead (--vn flag, which turns OFF melodic's vn)
+	# Added "-m ${concatfmri}_brain_mask" to avoid memory issue - Takuya Hayahsi July 2018
+	melodic_cmd=("${MELODIC}" -i "${concatfmrihp}_vnts" -o "${concatfmrihp}.ica/filtered_func_data.ica" --nobet --report --Oall --tr="${tr}" --vn --dim="${Dim}" -m "${concatfmri}_brain_mask")
 
-#keep the existing handling code for melodic errors?
-debug_disable_trap
+	if [ ! -z "${log_debugOn}" ] ; then
+		melodic_cmd+=(--verbose --debug)
+	fi
 
-log_Msg "melodic_cmd: ${melodic_cmd[*]}"
-"${melodic_cmd[@]}"
-return_code=$?
-log_Msg "melodic has been run: return_code = ${return_code}"
-log_Debug_Msg "melodic has been run: Contents of ${concatfmrihp}.ica follow"
-if [ ! -z "${log_debugOn}" ] ; then
-	ls -lRa ${concatfmrihp}.ica
-fi
+	#keep the existing handling code for melodic errors?
+	debug_disable_trap
 
-if [ "${return_code}" -ne "0" ] ; then
-	log_Err_Abort "melodic has returned a non-zero code"
-fi
+	log_Msg "melodic_cmd: ${melodic_cmd[*]}"
+	"${melodic_cmd[@]}"
+	return_code=$?
+	log_Msg "melodic has been run: return_code = ${return_code}"
+	log_Debug_Msg "melodic has been run: Contents of ${concatfmrihp}.ica follow"
+	if [ ! -z "${log_debugOn}" ] ; then
+		ls -lRa ${concatfmrihp}.ica
+	fi
 
-debug_enable_trap
+	if [ "${return_code}" -ne "0" ] ; then
+		log_Err_Abort "melodic has returned a non-zero code"
+	fi
 
-# At this point (following melodic), ${concatfmrihp}_vnts is no longer necessary
+	debug_enable_trap
+
+	# Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
+	# (these may only get created in the context of MIGP)
+	$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/alldat
+	$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/concat_data
+
+elif [[ $ICAmethod == ICASSO ]]; then
+	## ---------------------------------------------------------------------------
+	## Run icasso on concatenated file
+	## ---------------------------------------------------------------------------
+	
+	log_Msg "Running melodic with icasso consensus clustering..."
+	matlab_code="${ML_PATHS} melodicicasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${tr}')"
+	log_Msg "Run interpreted MATLAB/Octave with code..."
+  callInterpreted "${matlab_code}"
+
+fi # if ICAmethod == MELODIC
+
+# At this point (following melodic or icasso), ${concatfmrihp}_vnts is no longer necessary
 $FSLDIR/bin/imrm ${concatfmrihp}_vnts
-
-# Delete some time series, resulting from the '--Oall' option in melodic, that aren't needed
-# (these may only get created in the context of MIGP)
-$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/alldat
-$FSLDIR/bin/imrm ${concatfmrihp}.ica/filtered_func_data.ica/concat_data
-
+	
 ## ---------------------------------------------------------------------------
 ## Housekeeping related to files expected for FIX
 ## ---------------------------------------------------------------------------
-
 cd "${concatfmrihp}.ica"
 
 # This is the concated volume time series from the 1st pass VN, with requested
@@ -829,7 +869,7 @@ fi
 
 # Other necessary files (N.B. Movement regressors already prep'ed above)
 $FSLDIR/bin/imln filtered_func_data.ica/mask mask
-if [ `$FSLDIR/bin/imtest ../${concatfmri}_SBRef` = 1 ] ; then
+if [ $($FSLDIR/bin/imtest ../${concatfmri}_SBRef) = 1 ] ; then
 	$FSLDIR/bin/imln ../${concatfmri}_SBRef mean_func
 else
 	$FSLDIR/bin/imln filtered_func_data.ica/mean mean_func
@@ -838,90 +878,132 @@ fi
 mkdir -p reg
 cd reg
 
-i_am_at=`pwd`
+i_am_at=$(pwd)
 log_Debug_Msg "current folder ${i_am_at}"
 
 $FSLDIR/bin/imln ../../../../T1w_restore_brain highres
 $FSLDIR/bin/imln ../../../../wmparc wmparc
 $FSLDIR/bin/imln ../mean_func example_func
 $FSLDIR/bin/makerot --theta=0 > highres2example_func.mat
-if [ `$FSLDIR/bin/imtest ../../../../T2w` = 1 ] ; then
+if [ $($FSLDIR/bin/imtest ../../../../T2w) = 1 ] ; then
 	$FSLDIR/bin/fslmaths ../../../../T1w -div ../../../../T2w veins -odt float
 	$FSLDIR/bin/flirt -in ../../../../brainmask_fs -ref veins -out veinbrainmask -applyxfm
 	$FSLDIR/bin/fslmaths veinbrainmask -bin veinbrainmask
-	$FSLDIR/bin/fslmaths veins -div `$FSLDIR/bin/fslstats veins -k veinbrainmask -P 50` -mul 2.18 -thr 10 -min 50 -div 50 veins
+	$FSLDIR/bin/fslmaths veins -div $($FSLDIR/bin/fslstats veins -k veinbrainmask -P 50) -mul 2.18 -thr 10 -min 50 -div 50 veins
 	$FSLDIR/bin/flirt -in veins -ref example_func -applyxfm -init highres2example_func.mat -out veins_exf
 	$FSLDIR/bin/fslmaths veins_exf -mas example_func veins_exf
 fi
-
-# Return to ${ConcatFolder}
-# Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
 cd ../..
 
 ## ---------------------------------------------------------------------------
 ## Actually run FIX
 ## ---------------------------------------------------------------------------
 
-log_Msg "Running FIX"
+if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
+	log_Msg "Running FIX"
+	# Changes to handle user specified training data file
+	if [[ "${TrainingData}" != "" ]]; then
+		# User has specified a training data file
+		
+		# add .RData suffix if not already there
+		if [[ "${TrainingData}" != *.RData ]]; then 
+			TrainingData=${TrainingData}.RData
+		fi
+		
+		# if the specified TrainingData is not a full path to an existing file,
+		# assume that the user is specifying the name of a file in the training_files folder in FSL_FIXDIR
+		if [ ! -f "${TrainingData}" ]; then 
+			TrainingData=${FSL_FIXDIR}/training_files/${TrainingData}
+		fi
+		
+		# finally, if the TrainingData file is not found, report an error and get out of here
+		if [[ ! -f "${TrainingData}" ]]; then
+			log_Err_Abort "FIX training data not found: ${TrainingData}"
+		fi
+	else
+		# User has not specified a training data file
+		log_Msg "training data file not specified"
+		TrainingData="${FSL_FIXDIR}"/training_files/HCP_Style_Single_Multirun_Dedrift.RData
+		if [[ ! -f "$TrainingData" ]]; then
+			log_Err_Abort "default training file '$TrainingData' not found, please update your fix installation"
+		fi
+	fi
 
-# Changes to handle user specified training data file
-if [[ "${TrainingData}" != "" ]]; then
-	# User has specified a training data file
-	
-	# add .RData suffix if not already there
-	if [[ "${TrainingData}" != *.RData ]]; then 
-		TrainingData=${TrainingData}.RData
-	fi
-	
-	# if the specified TrainingData is not a full path to an existing file,
-	# assume that the user is specifying the name of a file in the training_files folder in FSL_FIXDIR
-	if [ ! -f "${TrainingData}" ]; then 
-		TrainingData=${FSL_FIXDIR}/training_files/${TrainingData}
-	fi
-	
-	# finally, if the TrainingData file is not found, report an error and get out of here
-	if [[ ! -f "${TrainingData}" ]]; then
-		log_Err_Abort "FIX training data not found: ${TrainingData}"
-	fi
-else
-	# User has not specified a training data file
-	log_Msg "training data file not specified"
-	TrainingData="${FSL_FIXDIR}"/training_files/HCP_Style_Single_Multirun_Dedrift.RData
-	if [[ ! -f "$TrainingData" ]]; then
-		log_Err_Abort "default training file '$TrainingData' not found, please update your fix installation"
-	fi
-fi
+	## MPH: The 'fix' script itself will continue to log to its own custom files
+	## Alert user to where those are
+	log_Msg "Check ${concatfmrihp}.ica/fix/logMatlab.txt for log output from feature extraction"
+	log_Msg "Check ${concatfmrihp}.ica/.fix_2b_predict.log for log output from component classification"
+	log_Msg "Check ${concatfmrihp}.ica/.fix.log for log output from cleanup stage"
 
-log_Msg "using training data file: ${TrainingData}"
+	else
+
+	log_Msg "Running pyFIX"
+
+  # Get concatenated Movement_Regressors_demean.txt into the format expected by pyfix
+  if [ -f Movement_Regressors_demean.txt ] ; then
+    log_Debug_Msg "About to create ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par file"
+    cat Movement_Regressors_demean.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par
+  else
+    log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
+  fi
+
+  # copy template brain for creation of vein masks
+  $FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
+
+	# Handle user specified training data file
+	if [[ "${TrainingData}" != "" ]]; then
+		# User has specified a training data file
+		
+		# if training data is in legacy RData format, and not a built-in model, convert it
+    builtInModels="@HCP25_hp2000@HCP7T_hp2000@HCP_Style_Single_Multirun_Dedrift@NHP_HCP_Macaque@NHP_HCP_MacaqueCyno@Standard@UKBiobank@WhII_MB6@WhII_Standard@"
+		if [[ "${TrainingData}" == *.RData ]]; then 
+      TrainingData=${TrainingData%.RData}
+      if [[ ! ${builtInModels} == *"@${TrainingData}@"* ]]; then 
+        ${FSL_FIXDIR}/convert_fix_model ${TrainingData}.RData ${TrainingData}.pyfix_model
+        TrainingData=${TrainingData}.pyfix_model
+      fi
+		fi
+	else
+		# User has not specified a training data file
+		log_Msg "training data file not specified, setting to HCP_Style_Single_Multirun_Dedrift"
+		TrainingData=HCP_Style_Single_Multirun_Dedrift
+	fi
+
+  # Alert user to log file location
+	log_Msg "pyfix log at ${ConcatFolder}/pyfix.log"
+fi #if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]]
 
 # set up fix command
 # use array for whitespace safety, even if the rest of the script isn't
 if ((doMotionRegression)); then
-	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
+  fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 else
-	#-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-	# Update (11/8/2019): No longer true as of FIX 1.06.12, but since filtering of the CIFTI in MR-FIX occurs in
-	# functionhighpassandvariancenormalize it doesn't matter, so we leave the code unchanged so that we don't
-	# need to add a FIX version dependency to the script
-	fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
+  #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
+  # Update (11/8/2019): No longer true as of FIX 1.06.12, but since filtering of the CIFTI in MR-FIX occurs in
+  # functionhighpassandvariancenormalize it doesn't matter, so we leave the code unchanged so that we don't
+  # need to add a FIX version dependency to the script
+  fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 fi
+
+log_Msg "using training data file: ${TrainingData}"
 log_Msg "fix_cmd: ${fix_cmd[*]}"
-## MPH: The 'fix' script itself will continue to log to its own custom files
-## Alert user to where those are
-log_Msg "Check ${concatfmrihp}.ica/fix/logMatlab.txt for log output from feature extraction"
-log_Msg "Check ${concatfmrihp}.ica/.fix_2b_predict.log for log output from component classification"
-log_Msg "Check ${concatfmrihp}.ica/.fix.log for log output from cleanup stage"
 "${fix_cmd[@]}"
 return_code=$?
 if [ "${return_code}" -ne "0" ]; then
-	log_Err_Abort "return_code from fix_cmd: ${return_code}"
+  log_Err_Abort "return_code from fix_cmd: ${return_code}"
 fi
-	
-log_Msg "Done running FIX"
+log_Msg "Done running fix"	
 
 ## ---------------------------------------------------------------------------
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
+
+# pyfix doesn't create .fix file with noise component indices, so create it from the melview file
+if [[ ! "${FSL_FIXDIR}/convert_fix_model" ]];then
+	melview=$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)
+	grep -h Noise "${melview}" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
+	sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy
+fi
 
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
 if [ "$?" -ne "0" ]; then
@@ -935,7 +1017,7 @@ fi
 
 # The variance normalization ("_vn") outputs of fix (fix_3_clean) require use of fix1.067 or later
 # So check whether those files exist before moving/renaming them
-if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
+if [ $($FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean_vn) = 1 ]; then
 	$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_clean_vn
 fi
 if [ -f ${concatfmrihp}.ica/Atlas_clean_vn.dscalar.nii ]; then
@@ -984,8 +1066,8 @@ log_Msg "Splitting cifti and nifti back into individual runs"
 Start="1"
 for fmri in "${fmris[@]}" ; do
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
-	NumTPS=`${Caret7_Command} -file-information ${fmriNoExt}_Atlas.dtseries.nii -no-map-info -only-number-of-maps`
-	Stop=`echo "${NumTPS} + ${Start} -1" | bc -l`
+	NumTPS=$(${Caret7_Command} -file-information ${fmriNoExt}_Atlas.dtseries.nii -no-map-info -only-number-of-maps)
+	Stop=$(echo "${NumTPS} + ${Start} -1" | bc -l)
 	log_Msg "${fmriNoExt}: Start=${Start} Stop=${Stop}"
 	
 	cifti_out=${fmriNoExt}_Atlas_hp${hp}_clean.dtseries.nii
@@ -1017,7 +1099,7 @@ for fmri in "${fmris[@]}" ; do
 		echo "$(tail -n ${nVols} ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt)" > ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt
 	fi
 
-	Start=`echo "${Start} + ${NumTPS}" | bc -l`
+	Start=$(echo "${Start} + ${NumTPS}" | bc -l)
 done
 
 cd "${DIR}"
