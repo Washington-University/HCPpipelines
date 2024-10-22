@@ -145,7 +145,8 @@ case "$MatlabMode" in
         matlabcode="
             addpath('$HCPPIPEDIR/global/matlab/icaDim');
             addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$HCPPIPEDIR/tICA/scripts/icasso122');
+            addpath('$HCPPIPEDIR/global/matlab/icasso122');
+            addpath('$HCPPIPEDIR/global/matlab');
             addpath('$HCPPIPEDIR/tICA/scripts/FastICA_25');
             addpath('$HCPPIPEDIR/tICA/scripts');
             addpath('$HCPCIFTIRWDIR');
