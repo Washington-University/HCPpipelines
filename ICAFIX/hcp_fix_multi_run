@@ -177,7 +177,7 @@ log_Check_Env_Var FSLDIR
 log_Check_Env_Var FSL_FIXDIR
 log_Check_Env_Var HCPCIFTIRWDIR
 
-log_debugOn="true" # Set to any non-empty string (e.g., "true") to turn on debugging related output
+log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
 			   # Set to empty string to disable debugging related output
 
 #mac readlink doesn't have -f
