@@ -434,7 +434,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
           TXwTemplate=${T2wTemplate}
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
-      OutputTXwImageSTRING=""
+      OutputTXwImageARRAY=()
 
       # skip modality if no image
 
@@ -464,7 +464,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             --in=${wdir}/${TXwImage}${i} \
             --out=${TXwFolder}/${TXwImage}${i}_gdc \
             --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
 
@@ -474,20 +474,29 @@ if [ "$CustomBrain" = "NONE" ] ; then
         i=1
         for Image in $TXwInputImages ; do
           ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
 
       fi
 
       # Average Like (Same Modality) Scans
+      OutputTXwImageSTRING=$(IFS=@; echo "${OutputTXwImageARRAY[*]}")
 
       if [ `echo $TXwInputImages | wc -w` -gt 1 ] ; then
         log_Msg "Averaging ${TXw} Images"
         log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
         mkdir -p ${TXwFolder}/Average${TXw}Images
         log_Msg "PERFORMING SIMPLE AVERAGING"
-        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh \
+            --output="${TXwFolder}/${TXwImage}" \
+            --standard-image="${TXwTemplate}" \
+            --standard-mask="${TemplateMask}" \
+            --crop=no \
+            --working-dir="${TXwFolder}/Average${TXw}Images" \
+            --cleanup=no \
+            --brain-size="$BrainSize" \
+            --image-list="$OutputTXwImageSTRING"
       else
         log_Msg "Not Averaging ${TXw} Images"
         log_Msg "ONLY ONE IMAGE FOUND: COPYING"
