@@ -112,7 +112,7 @@ opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfi
 
 opts_AddOptional '--fix-threshold' 'FixThresh' 'number' 'Threshold setting in FIX that controls the sensitivity/specificity tradeoff, default = 10' '10'
 
-opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix" "${HCPPIPEDIR}/global/templates/MNI152_T1_1mm_brain.nii.gz"
+opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix for creating vein masks. Should have same resolution as subject structural data." "${HCPPIPEDIR}/global/templates/MNI152_T1_0.7mm_brain.nii.gz"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 'If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning, default = FALSE
 (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts)
