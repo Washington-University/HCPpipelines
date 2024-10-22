@@ -496,14 +496,6 @@ for fmri in "${fmris[@]}" ; do
 	#	/bin/rm .fix.functionhighpassandvariancenormalize.log
 	#fi
 
-	## We will use the call_matlab.sh script available in ${FSL_FIXDIR}.
-	## But the arguments need to be customized depending on the matlab mode, because:
-	## (1) the -r argument does not support the use of compiled matlab, but is needed for interpreted matlab/octave
-	## to allow addition of 'addpath' as a command, so that functionhighpassandvariancenormalize.m can be found within matlab/octave.
-	## (2) for compiled matlab, we need to use the -c and -b flags to specify the location of the MCR and the compiled binary.
-	## (We cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
-	## specific script that is not part of the FIX distribution).
-
 	case ${MatlabMode} in
 		0)
 			compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
