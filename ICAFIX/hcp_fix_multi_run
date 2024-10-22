@@ -112,8 +112,6 @@ opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfi
 
 opts_AddOptional '--fix-threshold' 'FixThresh' 'number' 'Threshold setting in FIX that controls the sensitivity/specificity tradeoff, default = 10' '10'
 
-opts_AddOptional '--matlab-mode' 'FSL_FIX_MATLAB_MODE' 'O or 1 or 2' "compiled matlab (0), interpreted matlab (1, default), or interpreted octave (2). Overwritten by legacy fix settings.sh" '1'
-
 opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix" "${HCPPIPEDIR}/global/templates/MNI152_T1_1mm_brain.nii.gz"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 'If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning, default = FALSE
@@ -136,6 +134,8 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
 opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
+
+opts_AddOptional '--matlab-mode' 'MatlabMode' 'O or 1 or 2' "for Pipelines code, use compiled matlab (0, default), interpreted matlab (1), or interpreted octave (2)." '0'
 
 opts_ParseArguments "$@"
 
@@ -197,6 +197,21 @@ if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
   set -u
   debug_enable_trap
 fi
+
+case "$MatlabMode" in
+    (0)
+        log_Check_Env_Var MATLAB_COMPILER_RUNTIME
+        ;;
+    (1)
+        matlab_interpreter=(matlab -nodisplay -nosplash)
+        ;;
+    (2)
+        matlab_interpreter=(octave-cli -q --no-window-system)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
+        ;;
+esac
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
@@ -282,16 +297,6 @@ determine_old_or_new_fsl()
 	fi
 
 	echo ${old_or_new}
-}
-
-callInterpreted() {
-  if [[ $FSL_FIX_MATLAB_MODE == "1" ]]; then
-      log_Msg "matlab -batch ${1}"
-      matlab -batch "${1}";echo "exiting matlab."
-    elif [[ $FSL_FIX_MATLAB_MODE == "2" ]]; then
-      log_Msg "octave-cli --q --no-window-system ${1}"
-      octave-cli --q --no-window-system "${1}; exit";echo "exiting octave."
-  fi
 }
 
 demeanMovementRegressors() {
@@ -499,32 +504,22 @@ for fmri in "${fmris[@]}" ; do
 	## (We cannot use the defaults in ${FSL_FIXDIR}/settings.sh here, since functionhighpassandvariancenormalize.m is an HCP
 	## specific script that is not part of the FIX distribution).
 
-	case ${FSL_FIX_MATLAB_MODE} in
+	case ${MatlabMode} in
 		0)
-			# Use compiled Matlab
-			if [ -z "${MATLAB_COMPILER_RUNTIME:-}" ]; then
-				log_Err_Abort "To use MATLAB run mode: ${FSL_FIX_MATLAB_MODE}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-			else
-				log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-			fi
-
-			compiledScript=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
+			compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
 			matlab_cmd=("${compiledScript}" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$hp" "$fmri" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
 			log_Msg "Run compiled MATLAB with command..."
 			log_Msg "${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
 			;;
-		
 		1 | 2)
 			# Use interpreted MATLAB or Octave
 			# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 			matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 			log_Msg "Run interpreted MATLAB/Octave with command..."
-      callInterpreted "${matlab_code}"
-			;;
-		*)
-			# Unsupported MATLAB run mode
-			log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+			log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+			"${matlab_interpreter[@]}" <<<"${matlab_code}"
+			echo
 			;;
 	esac
 
@@ -588,18 +583,10 @@ then
 				log_Err_Abort "Invalid 4D_FMRI input file specified: ${fmri}"
 			fi
 
-			case ${FSL_FIX_MATLAB_MODE} in
+			case ${MatlabMode} in
 				0)
-					# Use compiled Matlab
-					if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-						log_Err_Abort "To use MATLAB run mode: ${FSL_FIX_MATLAB_MODE}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-					else
-						log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-					fi
-
-					CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-					#call_matlab.sh does pass empty string properly, as does run_<whatever>.sh generated by mcc r2017b (literal ' or " would be trouble, but should be rare)
-					matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "${CSUBDIR}" -f functionhighpassandvariancenormalize "${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "" 1 "$ciftiwisharts" "$icadimmode")
+					compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
+					matlab_cmd=("$compiledScript" "${MATLAB_COMPILER_RUNTIME}" "${tr}" "${hp}" "${fmri}" "${Caret7_Command}" "" 1 "$ciftiwisharts" "$icadimmode")
 					log_Msg "Run compiled MATLAB with command..."
 					log_Msg "${matlab_cmd[*]}"
 					"${matlab_cmd[@]}"
@@ -609,11 +596,9 @@ then
 					# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 					matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', 1, ${ciftiwisharts}, '${icadimmode}');"
 					log_Msg "Run interpreted MATLAB/Octave with command..."
-		      callInterpreted "${matlab_code}"
-					;;
-				*)
-					# Unsupported MATLAB run mode
-					log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+					log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+					"${matlab_interpreter[@]}" <<<"${matlab_code}"
+					echo
 					;;
 			esac
 
@@ -638,13 +623,12 @@ fi
 #Make Concatenated Folder
 ConcatFolder=$(dirname ${ConcatName})
 log_Msg "Making concatenated folder: ${ConcatFolder}"
-if [ ! -e ${ConcatFolder} ] ; then  
-	mkdir ${ConcatFolder} 
-else
-  /bin/rm -r ${ConcatFolder} 
+if [[ -d "$ConcatFolder" ]]
+then
 	log_Warn "Previous ${ConcatFolder} directory removed"
-	mkdir ${ConcatFolder}
 fi
+rm -rf "$ConcatFolder"
+mkdir -p "$ConcatFolder"
 
 ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
 
@@ -654,9 +638,9 @@ ${Caret7_Command} -volume-merge "${ConcatNameNoExt}_demean.nii.gz" "${NIFTIvolMe
 #fslmerge -tr "${ConcatNameNoExt}_hp${hp}_vnts" "${NIFTIvolhpVNMergeARRAY[@]}" $tr
 ${Caret7_Command} -volume-merge "${ConcatNameNoExt}_hp${hp}_vnts.nii.gz" "${NIFTIvolhpVNMergeARRAY[@]}"
 
-fslmerge -t  "${ConcatNameNoExt}_SBRef" "${SBRefVolARRAY[@]}"
-fslmerge -t  "${ConcatNameNoExt}_mean" "${MeanVolARRAY[@]}"
-fslmerge -t  "${ConcatNameNoExt}_hp${hp}_vn" "${VNVolARRAY[@]}"
+fslmerge -t "${ConcatNameNoExt}_SBRef" "${SBRefVolARRAY[@]}"
+fslmerge -t "${ConcatNameNoExt}_mean" "${MeanVolARRAY[@]}"
+fslmerge -t "${ConcatNameNoExt}_hp${hp}_vn" "${VNVolARRAY[@]}"
 # Average across runs
 fslmaths "${ConcatNameNoExt}_SBRef" -Tmean "${ConcatNameNoExt}_SBRef"
 fslmaths "${ConcatNameNoExt}_mean" -Tmean "${ConcatNameNoExt}_mean"  # "Grand" mean across runs
@@ -744,11 +728,11 @@ cd ${ConcatFolder}
 
 AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
-case ${FSL_FIX_MATLAB_MODE} in
+case ${MatlabMode} in
 	0)
-		Use compiled Matlab
-		CSUBDIR=${HCPPIPEDIR}/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize
-		matlab_cmd=("${FSL_FIXDIR}/call_matlab.sh" -c "${MATLAB_COMPILER_RUNTIME}" -b "$CSUBDIR" -f functionhighpassandvariancenormalize "$tr" "$AlreadyHP" "$concatfmrihp" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
+		#Use compiled Matlab
+		compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_functionhighpassandvariancenormalize/run_functionhighpassandvariancenormalize.sh
+		matlab_cmd=("$compiledScript" "${MATLAB_COMPILER_RUNTIME}" "$tr" "$AlreadyHP" "$concatfmrihp" "${Caret7_Command}" "" "$volwisharts" "$ciftiwisharts" "$icadimmode")
 		log_Msg "Run compiled MATLAB with command..."
 		log_Msg "${matlab_cmd[*]}"
 		"${matlab_cmd[@]}"
@@ -758,12 +742,9 @@ case ${FSL_FIX_MATLAB_MODE} in
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 		matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
-		log_Msg "Run interpreted MATLAB/Octave with code..."
-    callInterpreted "${matlab_code}"
-		;;
-	*)
-		# Unsupported MATLAB run mode
-		log_Err_Abort "Unsupported MATLAB run mode value (FSL_FIX_MATLAB_MODE) in $FSL_FIXDIR/settings.sh: ${FSL_FIX_MATLAB_MODE}"
+		log_Msg "running interpreted matlab/octave code: $matlab_code"
+		"${matlab_interpreter[@]}" <<<"$matlab_code"
+		echo
 		;;
 esac
 
@@ -841,10 +822,20 @@ elif [[ $ICAmethod == ICASSO ]]; then
 	## ---------------------------------------------------------------------------
 	
 	log_Msg "Running melodic with icasso consensus clustering..."
-	matlab_code="${ML_PATHS} melodicicasso('${Dim}','${concatfmri}','${concatfmrihp}','${ConcatFolder}','${tr}')"
-	log_Msg "Run interpreted MATLAB/Octave with code..."
-  callInterpreted "${matlab_code}"
-
+	case "$MatlabMode" in
+		(0)
+			compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_melodicicasso/run_melodicicasso.sh
+			matlab_cmd=("$compiledScript" "$MATLAB_COMPILER_RUNTIME" "$Dim" "$concatfmri" "$concatfmrihp" "$ConcatFolder" "$tr")
+			log_Msg "running compiled matlab: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
+			;;
+		(1|2)
+			matlab_code="${ML_PATHS} melodicicasso('${Dim}', '${concatfmri}', '${concatfmrihp}', '${ConcatFolder}', '${tr}')"
+			log_Msg "running interpreted matlab/octave code: $matlab_code"
+			"${matlab_interpreter[@]}" <<<"$matlab_code"
+			echo
+			;;
+	esac
 fi # if ICAmethod == MELODIC
 
 # At this point (following melodic or icasso), ${concatfmrihp}_vnts is no longer necessary
@@ -939,16 +930,16 @@ if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
 
 	log_Msg "Running pyFIX"
 
-  # Get concatenated Movement_Regressors_demean.txt into the format expected by pyfix
-  if [ -f Movement_Regressors_demean.txt ] ; then
-    log_Debug_Msg "About to create ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par file"
-    cat Movement_Regressors_demean.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par
-  else
-    log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
-  fi
+	# Get concatenated Movement_Regressors_demean.txt into the format expected by pyfix
+	if [ -f Movement_Regressors_demean.txt ] ; then
+		log_Debug_Msg "About to create ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par file"
+		cat Movement_Regressors_demean.txt | awk '{ print $4 " " $5 " " $6 " " $1 " " $2 " " $3}' > ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf.par
+	else
+		log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
+	fi
 
-  # copy template brain for creation of vein masks
-  $FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
+	# copy template brain for creation of vein masks
+	$FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
 
 	# Handle user specified training data file
 	if [[ "${TrainingData}" != "" ]]; then
@@ -957,11 +948,11 @@ if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
 		# if training data is in legacy RData format, and not a built-in model, convert it
     builtInModels="@HCP25_hp2000@HCP7T_hp2000@HCP_Style_Single_Multirun_Dedrift@NHP_HCP_Macaque@NHP_HCP_MacaqueCyno@Standard@UKBiobank@WhII_MB6@WhII_Standard@"
 		if [[ "${TrainingData}" == *.RData ]]; then 
-      TrainingData=${TrainingData%.RData}
-      if [[ ! ${builtInModels} == *"@${TrainingData}@"* ]]; then 
-        ${FSL_FIXDIR}/convert_fix_model ${TrainingData}.RData ${TrainingData}.pyfix_model
-        TrainingData=${TrainingData}.pyfix_model
-      fi
+			TrainingData=${TrainingData%.RData}
+			if [[ ! ${builtInModels} == *"@${TrainingData}@"* ]]; then 
+				${FSL_FIXDIR}/convert_fix_model ${TrainingData}.RData ${TrainingData}.pyfix_model
+				TrainingData=${TrainingData}.pyfix_model
+			fi
 		fi
 	else
 		# User has not specified a training data file
