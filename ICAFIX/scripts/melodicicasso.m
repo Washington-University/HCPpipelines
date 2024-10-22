@@ -254,7 +254,7 @@ for iL = 1:nL
   end %if iL == 1
 
   % populate level-specific sR
-  sR(iL).index = [repmat(1:nI,1,Dim);repelem(1:Dim,nI)]';
+  sR(iL).index = [repmat(1:nI,1,Dim);repelem(1:Dim,nI)]';% avoid combvec for compiled matlab
   sR(iL).A = A;
   sR(iL).W = W;
   sR(iL).nSteps = nSteps;
