@@ -144,10 +144,12 @@ for iL = 1:nL
   end
 
   % run parfor over melodics
-  if nThreads > 1
-    if isempty(gcp('nocreate'));parpool(nThreads);end
+  %TSC: parpool/parfor blows up the 2017b compiled size to 220MB, disabling for now
+  if false && nThreads > 1
+    %if isempty(gcp('nocreate'));parpool(nThreads);end
     fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,nThreads)
-    parfor iI = 1:nI
+    %parfor iI = 1:nI
+    for iI = 1:nI
       meloDir = sprintf('%s/%i',tmpDir,iI);
       mkdir(meloDir);
       bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
@@ -252,7 +254,13 @@ for iL = 1:nL
   end %if iL == 1
 
   % populate level-specific sR
-  sR(iL).index = sortrows(combvec(1:nI,1:Dim)');
+  %TSC: combvec also blows up the compiled size to 220MB (?!?)
+  %sR(iL).index = sortrows(combvec(1:nI,1:Dim)');
+  sR(iL).index = zeros(nI * Dim, 2);
+  for i = 1:nI
+    sR(iL).index(((i - 1) * Dim + 1):(i * Dim), 1) = i;
+    sR(iL).index(((i - 1) * Dim + 1):(i * Dim), 2) = 1:Dim;
+  end
   sR(iL).A = A;
   sR(iL).W = W;
   sR(iL).nSteps = nSteps;
