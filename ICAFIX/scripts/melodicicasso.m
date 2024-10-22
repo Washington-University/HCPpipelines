@@ -254,13 +254,7 @@ for iL = 1:nL
   end %if iL == 1
 
   % populate level-specific sR
-  %TSC: combvec also blows up the compiled size to 220MB (?!?)
-  %sR(iL).index = sortrows(combvec(1:nI,1:Dim)');
-  sR(iL).index = zeros(nI * Dim, 2);
-  for i = 1:nI
-    sR(iL).index(((i - 1) * Dim + 1):(i * Dim), 1) = i;
-    sR(iL).index(((i - 1) * Dim + 1):(i * Dim), 2) = 1:Dim;
-  end
+  sR(iL).index = [repmat(1:nI,1,Dim);repelem(1:Dim,nI)]';
   sR(iL).A = A;
   sR(iL).W = W;
   sR(iL).nSteps = nSteps;
