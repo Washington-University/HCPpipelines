@@ -22,7 +22,7 @@ fi
 ## Edit this section: set up other environment variables
 export MSMBINDIR="${HOME}/pipeline_tools/MSM"
 export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
-export FSL_FIXDIR=/usr/local/fix
+# export FSL_FIXDIR=/usr/local/fix # only needed for legacy fix
 # If a suitable version of wb_command is on your $PATH, CARET7DIR can be blank
 export CARET7DIR=
 export HCPCIFTIRWDIR="$HCPPIPEDIR"/global/matlab/cifti-matlab

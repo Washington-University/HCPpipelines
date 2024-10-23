@@ -108,11 +108,13 @@ opts_AddMandatory '--concat-fmri-name' 'ConcatName' 'run1_to_3' "Name (including
 
 opts_AddOptional '--motion-regression' 'doMotionRegression' 'TRUE or FALSE' "Controls whether to regress motion parameters as part of the cleaning, default FALSE" 'FALSE'
 
+opt_AddOptional  '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "If TRUE and $FSL_FIXDIR is set and contains fix, uses this fix, otherwise uses $FSL_DIR/bin/fix (i.e. pyfix)" "TRUE"
+
 opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfix_model, or a pyfix built-in model without extension' 'Specify a custom training file, defaults to "HCP_Style_Single_Multirun_Dedrift.RData"' ''
 
 opts_AddOptional '--fix-threshold' 'FixThresh' 'number' 'Threshold setting in FIX that controls the sensitivity/specificity tradeoff, default = 10' '10'
 
-opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix for creating vein masks. Should have same resolution as subject structural data." "${HCPPIPEDIR}/global/templates/MNI152_T1_0.7mm_brain.nii.gz"
+opts_AddOptional '--T1wTemplateBrain' 'T1wTemplateBrain' 'somefile.nii.gz' "path to T1w template brain, used by pyfix for creating masks." ""
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 'If TRUE, deletes both the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning, default = FALSE
 (The concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts)
@@ -188,14 +190,31 @@ else
 	this_script_dir=$(dirname "$0")
 fi
   
+# determine if legacy fix or pyfix will be used
+legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
+if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/fix/convert_fix_model ]];then
+	legacyFix=1
+	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
+	else
+	if [[ ! -f ${FSL_FIXDIR}/fix/convert_fix_model ]];then
+		FSL_FIXDIR=${FSL_DIR}/bin
+	fi
+	log_Msg "Using pyfix from ${FSL_FIXDIR}"
+	legacyFix=0
+fi
+
 # All legacy fix settings are held in the settings.sh file - edit this file to suit your setup
 # Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
-if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
+if ((legacyFix));then
   debug_disable_trap
   set +u
   source "${FSL_FIXDIR}/settings.sh"
   set -u
   debug_enable_trap
+
+	# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
+	log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
+	log_Msg "FIX version: $(cat ${FSL_FIXDIR}/fixversion )"
 fi
 
 case "$MatlabMode" in
@@ -225,15 +244,6 @@ ${CARET7DIR}/wb_command -version
 log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
-
-# Show specific FIX version, if available
-if [ -f ${FSL_FIXDIR}/fixversion ]; then
-	fixversion=$(cat ${FSL_FIXDIR}/fixversion )
-	log_Msg "FIX version: $fixversion"
-fi
-
-# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
-log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 
 # Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
 Caret7_Command="${CARET7DIR}/wb_command"
@@ -882,7 +892,7 @@ cd ../..
 ## Actually run FIX
 ## ---------------------------------------------------------------------------
 
-if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
+if ((legacyFix));then
 	log_Msg "Running FIX"
 	# Changes to handle user specified training data file
 	if [[ "${TrainingData}" != "" ]]; then
@@ -930,8 +940,10 @@ if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 	fi
 
-	# copy template brain for creation of vein masks
-	$FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
+	# copy template brain for creation of masks
+	if [[ ${T1wTemplateBrain} ]]; then
+		$FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
+	fi
 
 	# Handle user specified training data file
 	if [[ "${TrainingData}" != "" ]]; then
@@ -954,7 +966,7 @@ if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]];then
 
   # Alert user to log file location
 	log_Msg "pyfix log at ${ConcatFolder}/pyfix.log"
-fi #if [[ ! -e "${FSL_FIXDIR}/convert_fix_model" ]]
+fi #if ((legacyFix));then
 
 # set up fix command
 # use array for whitespace safety, even if the rest of the script isn't
@@ -981,11 +993,13 @@ log_Msg "Done running fix"
 ## Rename some files (relative to the default names coded in fix_3_clean)
 ## ---------------------------------------------------------------------------
 
+# create wb_annsub.csv version of fix classifications
+melview=$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)
+sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy
+
 # pyfix doesn't create .fix file with noise component indices, so create it from the melview file
-if [[ ! "${FSL_FIXDIR}/convert_fix_model" ]];then
-	melview=$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)
+if ! ((legacyFix));then
 	grep -h Noise "${melview}" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
-	sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy
 fi
 
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
