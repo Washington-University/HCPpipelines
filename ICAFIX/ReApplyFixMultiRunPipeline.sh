@@ -61,6 +61,8 @@ opts_AddOptional '--reg-name' 'RegName' 'surface registration name' "use NONE fo
 
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "low resolution mesh identifier, default ${G_DEFAULT_LOW_RES_MESH}" "${G_DEFAULT_LOW_RES_MESH}"
 
+opt_AddOptional  '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "If TRUE and $FSL_FIXDIR is set and contains fix, uses this fix, otherwise uses $FSL_DIR/bin/fix (i.e. pyfix)" "TRUE"
+
 opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to 1
 0 = Use compiled MATLAB
 1 = Use interpreted MATLAB
@@ -176,6 +178,19 @@ have_hand_reclassification()
 	[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 }
 
+# determine if legacy fix or pyfix will be used
+legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
+if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
+	legacyFix=1
+	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
+	else
+	if [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
+		FSL_FIXDIR=${FSL_DIR}/bin
+	fi
+	log_Msg "Using pyfix from ${FSL_FIXDIR}"
+	legacyFix=0
+fi
+
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
@@ -186,7 +201,6 @@ have_hand_reclassification()
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var FSL_FIXDIR
 
 # Show tool versions
 log_Msg "Showing HCP Pipelines version"
@@ -317,6 +331,9 @@ then
 	then
 		DoVol=1
 	fi
+fi
+if ! ((legacyFix)) &&  ! ((doVol));then
+	log_Err_Abort "Reapply fix to surface only and not volume not yet supported by pyfix, enable legacy fix and set FSL_FIXDIR."
 fi
 # WARNING: fix_3_clean doesn't actually do anything different based on the value of DoVol (its 5th argument).
 # Rather, if a 5th argument is present, fix_3_clean does NOT apply cleanup to the volume, *regardless* of whether
@@ -493,16 +510,18 @@ if (( regenConcatHP )); then
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
 				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(
-					#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
-					debug_disable_trap
-					set +u
-					source "${FSL_FIXDIR}/settings.sh"
-					set -u
-					debug_enable_trap
-					export FSL_FIX_WBC="${Caret7_Command}"
-					"${interpreter[@]}" <<<"${matlab_code}"
-				)
+				if ((legacyFix));then
+					(
+						#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
+						debug_disable_trap
+						set +u
+						source "${FSL_FIXDIR}/settings.sh"
+						set -u
+						debug_enable_trap
+						export FSL_FIX_WBC="${Caret7_Command}"
+						"${interpreter[@]}" <<<"${matlab_code}"
+					)
+				fi
 				;;
 
 			*)
@@ -678,94 +697,106 @@ export FSL_FIX_WBC="${Caret7_Command}"
 # sourcing settings.sh below, we explicitly set FSL_FIX_WBC back to value of ${Caret7_Command}.
 # (This may only be relevant for interpreted matlab/octave modes).
 
-log_Msg "Running fix_3_clean"
-
 AlreadyHP="-1"
 
-case ${MatlabRunMode} in
+if ((legacyFix));then
+	log_Msg "Running fix_3_clean"
+	case ${MatlabRunMode} in
 
-	# See important WARNING above regarding why ${DoVol} is NOT included as an argument when DoVol=1 !!
-	
-	0)
-		# Use Compiled Matlab
-
-		matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
-
-		# Do NOT enclose string variables inside an additional single quote because all
-		# variables are already passed into the compiled binary as strings
-		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
-		if (( ! DoVol )); then
-			matlab_function_arguments+=("${DoVol}")
-		fi
+		# See important WARNING above regarding why ${DoVol} is NOT included as an argument when DoVol=1 !!
 		
-		# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
-		# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
-		# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
-		if [ -z "${FSL_FIX_MCR:-}" ]; then
-			debug_disable_trap
-			set +u
-			source ${FSL_FIXDIR}/settings.sh
-			set -u
-			debug_enable_trap
-			export FSL_FIX_WBC="${Caret7_Command}"
-			# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
-			if [ -z "${FSL_FIX_MCR:-}" ]; then
-				log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+		0)
+			# Use Compiled Matlab
+
+			matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
+
+			# Do NOT enclose string variables inside an additional single quote because all
+			# variables are already passed into the compiled binary as strings
+			matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
+			if (( ! DoVol )); then
+				matlab_function_arguments+=("${DoVol}")
 			fi
-		fi
-		log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
-						
-		matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
+			
+			# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
+			# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
+			# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
+			if [ -z "${FSL_FIX_MCR}" ]; then
+				debug_disable_trap
+				set +u
+				source ${FSL_FIXDIR}/settings.sh
+				set -u
+				debug_enable_trap
+				export FSL_FIX_WBC="${Caret7_Command}"
+				# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
+				if [ -z "${FSL_FIX_MCR}" ]; then
+					log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
+				fi
+			fi
+			log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
+							
+			matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
 
-		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
-		# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
-		#matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
-		#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
-		#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
-		log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
-		"${matlab_cmd[@]}"
-		;;
-	
-	1 | 2)
-		# Use interpreted MATLAB or Octave
-		if [[ ${MatlabRunMode} == "1" ]]; then
-			interpreter=(matlab -nojvm -nodisplay -nosplash)
-		else
-			interpreter=(octave-cli -q --no-window-system)
-		fi
-
-		if (( DoVol )); then
-			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
-		else
-			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
-		fi
+			# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
+			# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
+			#matlab_logfile=".reapplyfixmultirun.${concatfmri}${RegString}.fix_3_clean.matlab.log"
+			#log_Msg "Run MATLAB command: ${matlab_cmd[*]} >> ${matlab_logfile} 2>&1"
+			#"${matlab_cmd[@]}" >> "${matlab_logfile}" 2>&1
+			log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
+			"${matlab_cmd[@]}"
+			;;
 		
-		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-		log_Msg "${matlab_cmd}"
-		
-		# Use bash redirection ("here-string") to pass multiple commands into matlab
-		# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
-		# get interpreted as separating different bash shell commands)
-		(
-			#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
-			debug_disable_trap
-			set +u
-			source "${FSL_FIXDIR}/settings.sh"
-			set -u
-			debug_enable_trap
-			export FSL_FIX_WBC="${Caret7_Command}"
-			"${interpreter[@]}" <<<"${matlab_cmd}"
-		)
-		;;
+		1 | 2)
+			# Use interpreted MATLAB or Octave
+			if [[ ${MatlabRunMode} == "1" ]]; then
+				interpreter=(matlab -nojvm -nodisplay -nosplash)
+			else
+				interpreter=(octave-cli -q --no-window-system)
+			fi
 
-	*)
-		# Unsupported MATLAB run mode
-		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
-		;;
-esac
+			if (( DoVol )); then
+				matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
+			else
+				matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
+			fi
+			
+			log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
+			log_Msg "${matlab_cmd}"
+			
+			# Use bash redirection ("here-string") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
+			(
+				#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
+				debug_disable_trap
+				set +u
+				source "${FSL_FIXDIR}/settings.sh"
+				set -u
+				debug_enable_trap
+				export FSL_FIX_WBC="${Caret7_Command}"
+				"${interpreter[@]}" <<<"${matlab_cmd}"
+			)
+			;;
 
-log_Msg "Done running fix_3_clean"
+		*)
+			# Unsupported MATLAB run mode
+			log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+			;;
+	esac
 
+	log_Msg "Done running fix_3_clean"
+
+else
+	log_Msg "Running fix -a"
+	fix_cmd="${FSL_FIXDIR}/fix -a ${fixlist}"
+	if ((MotionRegression));then
+		fix_cmd="${fix_cmd} -m -h ${AlreadyHP}"
+	fi
+	if ((aggressive));then
+		fix_cmd="${fix_cmd} -A"
+	fi
+	${fix_cmd}
+	log_Msg "Done running fix -a"
+fi #if ((legacyFix));then
 # Return to ${ConcatFolder}
 # Do not use 'cd ${ConcatFolder}', because ${ConcatFolder} may not be an absolute path
 cd ..

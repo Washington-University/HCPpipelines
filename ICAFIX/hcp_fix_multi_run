@@ -192,11 +192,11 @@ fi
   
 # determine if legacy fix or pyfix will be used
 legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
-if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/fix/convert_fix_model ]];then
+if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
 	legacyFix=1
 	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
 	else
-	if [[ ! -f ${FSL_FIXDIR}/fix/convert_fix_model ]];then
+	if [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
 		FSL_FIXDIR=${FSL_DIR}/bin
 	fi
 	log_Msg "Using pyfix from ${FSL_FIXDIR}"
