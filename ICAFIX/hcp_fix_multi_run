@@ -176,7 +176,6 @@ source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib" "$@" # Functions for get
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var FSL_FIXDIR
 log_Check_Env_Var HCPCIFTIRWDIR
 
 log_debugOn="" # Set to any non-empty string (e.g., "true") to turn on debugging related output
@@ -189,14 +188,14 @@ then
 else
 	this_script_dir=$(dirname "$0")
 fi
-  
+
 # determine if legacy fix or pyfix will be used
 legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
 if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
 	legacyFix=1
 	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
-	else
-	if [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
+else
+	if [[ "${FSL_FIXDIR:-}" == "" || ! -f "$FSL_FIXDIR"/convert_fix_model ]];then
 		FSL_FIXDIR=${FSL_DIR}/bin
 	fi
 	log_Msg "Using pyfix from ${FSL_FIXDIR}"
@@ -206,11 +205,11 @@ fi
 # All legacy fix settings are held in the settings.sh file - edit this file to suit your setup
 # Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
 if ((legacyFix));then
-  debug_disable_trap
-  set +u
-  source "${FSL_FIXDIR}/settings.sh"
-  set -u
-  debug_enable_trap
+	debug_disable_trap	
+	set +u
+	source "${FSL_FIXDIR}/settings.sh"
+	set -u
+	debug_enable_trap
 
 	# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 	log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
@@ -247,7 +246,7 @@ log_Msg "FSL version: ${fsl_ver}"
 
 # Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
 Caret7_Command="${CARET7DIR}/wb_command"
-FSL_FIX_WBC=${Caret7_Command}  # Used by fix_3_clean in interpreted matlab/octave mode
+FSL_FIX_WBC=${Caret7_Command}  # Used by legacy fix fix_3_clean in interpreted matlab/octave mode
 
 
 #############################################################
@@ -950,7 +949,7 @@ if ((legacyFix));then
 		# User has specified a training data file
 		
 		# if training data is in legacy RData format, and not a built-in model, convert it
-    builtInModels="@HCP25_hp2000@HCP7T_hp2000@HCP_Style_Single_Multirun_Dedrift@NHP_HCP_Macaque@NHP_HCP_MacaqueCyno@Standard@UKBiobank@WhII_MB6@WhII_Standard@"
+		builtInModels="@HCP25_hp2000@HCP7T_hp2000@HCP_Style_Single_Multirun_Dedrift@NHP_HCP_Macaque@NHP_HCP_MacaqueCyno@Standard@UKBiobank@WhII_MB6@WhII_Standard@"
 		if [[ "${TrainingData}" == *.RData ]]; then 
 			TrainingData=${TrainingData%.RData}
 			if [[ ! ${builtInModels} == *"@${TrainingData}@"* ]]; then 
@@ -964,43 +963,69 @@ if ((legacyFix));then
 		TrainingData=HCP_Style_Single_Multirun_Dedrift
 	fi
 
-  # Alert user to log file location
+	# Alert user to log file location
 	log_Msg "pyfix log at ${ConcatFolder}/pyfix.log"
 fi #if ((legacyFix));then
 
 # set up fix command
 # use array for whitespace safety, even if the rest of the script isn't
-if ((doMotionRegression)); then
-  fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
-else
-  #-h is actually a subargument to -m, and will cause problems if specified without (or even not directly following) -m
-  # Update (11/8/2019): No longer true as of FIX 1.06.12, but since filtering of the CIFTI in MR-FIX occurs in
-  # functionhighpassandvariancenormalize it doesn't matter, so we leave the code unchanged so that we don't
-  # need to add a FIX version dependency to the script
-  fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
-fi
+# if ((doMotionRegression)); then fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 
-log_Msg "using training data file: ${TrainingData}"
+# run fix feature selection
+fix_cmd=("${FSL_FIXDIR}/fix -f" "${concatfmrihp}.ica")
+log_Msg "running fix feature selection"
 log_Msg "fix_cmd: ${fix_cmd[*]}"
 "${fix_cmd[@]}"
 return_code=$?
 if [ "${return_code}" -ne "0" ]; then
-  log_Err_Abort "return_code from fix_cmd: ${return_code}"
+	log_Err_Abort "return_code from fix_cmd: ${return_code}"
 fi
-log_Msg "Done running fix"	
 
-## ---------------------------------------------------------------------------
-## Rename some files (relative to the default names coded in fix_3_clean)
-## ---------------------------------------------------------------------------
+# run fix classification 
+fix_cmd=("${FSL_FIXDIR}/fix -c" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
+log_Msg "running fix classification using training data file: ${TrainingData}"
+log_Msg "fix_cmd: ${fix_cmd[*]}"
+"${fix_cmd[@]}"
+return_code=$?
+if [ "${return_code}" -ne "0" ]; then
+	log_Err_Abort "return_code from fix_cmd: ${return_code}"
+fi
+
+# run pipelines version of fix cleanup
 
 # create wb_annsub.csv version of fix classifications
 melview=$(ls ${concatfmrihp}.ica/*_thr${FixThresh}.txt)
-sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy
+sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench formatted copy for scene files
 
 # pyfix doesn't create .fix file with noise component indices, so create it from the melview file
 if ! ((legacyFix));then
 	grep -h Noise "${melview}" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
 fi
+
+case ${MatlabMode} in
+	0)
+		compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh
+		matlab_cmd=("${compiledScript}" "${MATLAB_COMPILER_RUNTIME}" "${concatfmrihp}.ica/.fix" "0" "${doMotionRegression}" "${hp}" "${Caret7_Command}")
+		log_Msg "Run compiled MATLAB with command..."
+		log_Msg "${matlab_cmd[*]}"
+		"${matlab_cmd[@]}"
+		;;
+	1 | 2)
+		# Use interpreted MATLAB or Octave
+		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
+		matlab_code="${ML_PATHS} fix_3_clean(${concatfmrihp}.ica/.fix, 0,${doMotionRegression}, '${hp}', '${Caret7_Command}');"
+		log_Msg "Run interpreted MATLAB/Octave with command..."
+		log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+		"${matlab_interpreter[@]}" <<<"${matlab_code}"
+		echo
+		;;
+esac
+
+log_Msg "Done running fix"	
+
+## ---------------------------------------------------------------------------
+## Rename some files (relative to the default names coded in fix_3_clean)
+## ---------------------------------------------------------------------------
 
 $FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean ${concatfmrihp}_clean
 if [ "$?" -ne "0" ]; then
@@ -1039,11 +1064,11 @@ fi
 
 # Convert sICA+FIX cleaned movement regressors to text
 if [ -f ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
-  fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o Movement_Regressors_hp${hp}_clean.txt --showall
-  # Strip header lines included as part of '--showall' flag
-  nVols=$($FSLDIR/bin/fslnvols ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz)
-  # Execute tail in a subshell, so we can successfully overwrite file with same name
-  echo "$(tail -n ${nVols} Movement_Regressors_hp${hp}_clean.txt)" > Movement_Regressors_hp${hp}_clean.txt
+	fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o Movement_Regressors_hp${hp}_clean.txt --showall
+	# Strip header lines included as part of '--showall' flag
+	nVols=$($FSLDIR/bin/fslnvols ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz)
+	# Execute tail in a subshell, so we can successfully overwrite file with same name
+	echo "$(tail -n ${nVols} Movement_Regressors_hp${hp}_clean.txt)" > Movement_Regressors_hp${hp}_clean.txt
 fi
 
 ## ---------------------------------------------------------------------------
@@ -1085,7 +1110,7 @@ for fmri in "${fmris[@]}" ; do
 	${Caret7_Command} -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 	fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 
-  # Convert sICA+FIX cleaned movement regressors to text
+	# Convert sICA+FIX cleaned movement regressors to text
 	if [ -f ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
 		${Caret7_Command} -volume-merge ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -volume ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
 		fmriDir=$(dirname $fmri)
