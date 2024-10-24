@@ -927,8 +927,7 @@ if ((legacyFix));then
 	log_Msg "Check ${concatfmrihp}.ica/.fix_2b_predict.log for log output from component classification"
 	log_Msg "Check ${concatfmrihp}.ica/.fix.log for log output from cleanup stage"
 
-	else
-
+else
 	log_Msg "Running pyFIX"
 
 	# Get concatenated Movement_Regressors_demean.txt into the format expected by pyfix
