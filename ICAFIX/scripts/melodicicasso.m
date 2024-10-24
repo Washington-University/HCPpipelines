@@ -252,7 +252,7 @@ for iL = 1:nL
   end %if iL == 1
 
   % populate level-specific sR
-  sR(iL).index = sortrows(combvec(1:nI,1:Dim)');%flip(combvec(1:Dim,1:nI)',2)
+  sR(iL).index = [repmat(1:Dim,1,nI);repelem(1:nI,Dim)]';
   sR(iL).A = A;
   sR(iL).W = W;
   sR(iL).nSteps = nSteps;
