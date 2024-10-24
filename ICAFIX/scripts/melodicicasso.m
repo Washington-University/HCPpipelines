@@ -82,6 +82,10 @@ if nargin < 10 || isempty(nThreads)
 else
   nThreads = str2double(nThreads);
 end
+if isdeployed && nThreads > 1
+  nThreads = 1;
+  warning('nThreads set to 1 when runing in compiled mode.')
+end
 
 %% check IO dependencies
 % use imaging processing toolbox utilities, or if those are not available use FSL utilities 
