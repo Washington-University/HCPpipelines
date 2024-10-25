@@ -234,7 +234,7 @@ fi
 
 case ${MatlabRunMode} in
 	0)
-		if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
+		if [ -z "${MATLAB_COMPILER_RUNTIME:-}" ]; then
 			log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
 		else
 			log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
@@ -642,7 +642,7 @@ case ${MatlabRunMode} in
 	0)
 		# Use Compiled Matlab
 
-		matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh" # this needs to be changed
+		matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
@@ -651,7 +651,7 @@ case ${MatlabRunMode} in
 			matlab_function_arguments+=("${DoVol}")
 		fi
 							
-		matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
+		matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 		# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
