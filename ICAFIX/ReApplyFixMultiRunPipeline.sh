@@ -650,7 +650,7 @@ case ${MatlabRunMode} in
 		if (( ! DoVol )); then
 			matlab_function_arguments+=("${DoVol}")
 		fi
-							
+		
 		matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -671,7 +671,7 @@ case ${MatlabRunMode} in
 		fi
 
 		matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
-				
+		
 		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 		log_Msg "${matlab_cmd}"
 		
