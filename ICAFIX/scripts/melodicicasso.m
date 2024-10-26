@@ -4,8 +4,8 @@ function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nThreads
 % with different seeds using the undocumenterd --seed option.It then clusters the results 
 % with icasso (https://doi.org/10.1109/NNSP.2003.1318025),then uses the consensus decomposition 
 % to warmstart a final melodic (with mixture modeling) using the undocumented --init_ica option.
-% By default melodics are performed in parallel in a parfor loop.Interation outputs are saved to 
-% temporary files which are then deleted. 
+% By default melodics are performed in parallel. Interation outputs are saved to temporary files which 
+% are then deleted. 
 % 
 % All of this function's inputs are strings
 %
@@ -17,9 +17,7 @@ function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nThreads
 %   tr           : Repetition time
 %
 % Optional Inputs:
-%   nThreads   : Number of workers for parpool, (default = min(5,<total number of physical cores>)) 
-%                If pool is already running a new one is not created. if
-%                nThreads = 1, serial loop used instead. 
+%   nThreads   : Number of melodics to execute in parallel, (default = <total number of physical cores>) 
 %   nICA       : Number of melodic repetitions per icasso clustering, @ delimited string, (default = '100') 
 %                The number of icasso clustering repetitions is equal to the
 %                the number delimiters + 1. e.g. '100@100' will perform
@@ -53,38 +51,34 @@ if nargin < 5 || any(cellfun(@isempty,{Dim,concatfmri,concatfmrihp,ConcatFolder}
   error('Dim, concatfmri, concatfmrihp, ConcatFolder, and tr are required!')
 end
 Dim = str2double(Dim);
-if nargin < 6 || isempty(nICA) 
+if nargin < 6 || isempty(nThreads) 
+  nThreads = -1;
+else
+  nThreads = str2double(nThreads);
+end
+if nargin < 7 || isempty(nICA) 
   nICA = 100;
 else
   nICA = cellfun(@str2double,regexp(nICA,'@','split'));
 end
-if nargin < 7 || isempty(bootMode) 
+if nargin < 8 || isempty(bootMode) 
   bootMode = 'randinit';
 end
 if ~ismember(bootMode,{'randinit','boot','both'})
   warning('vis must be ''basic'' or ''off'', reverting to ''basic''')
   vis = 'basic';
 end
-if nargin < 8 || isempty(vis) 
+if nargin < 9 || isempty(vis) 
   vis = 'basic';
 end
 if ~ismember(vis,{'basic','off'})
   warning('vis must be ''basic'' or ''off'', reverting to ''basic''')
   vis = 'basic';
 end
-if nargin < 9 || isempty(seedOffset) 
+if nargin < 10 || isempty(seedOffset) 
   seedOffset = 0;
 else
   seedOffset=str2double(seedOffset);
-end
-if nargin < 10 || isempty(nThreads) 
-  nThreads = min(5,feature('numcores'));
-else
-  nThreads = str2double(nThreads);
-end
-if isdeployed && nThreads > 1
-  nThreads = 1;
-  warning('nThreads set to 1 when runing in compiled mode.')
 end
 
 %% check IO dependencies
@@ -147,89 +141,54 @@ for iL = 1:nL
     fprintf('Running with bootstrapping\n'); % prepare bootstraps (resampling with replacement)
   end
 
-  % run parfor over melodics
-  if nThreads > 1
-    if isempty(gcp('nocreate'));parpool(nThreads);end
-    fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,nThreads)
-    parfor iI = 1:nI
-      meloDir = sprintf('%s/%i',tmpDir,iI);
-      mkdir(meloDir);
-      bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
-      if ~strcmp(bootMode,'randinit')
-        bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
-        X = zeros(mtxDim,'single');
-        X(brainMask,:) = single(vnts(bootIdx(:,iI),:));% consider cell array of vnts instead of broadcast variable
-        X = reshape(X,imSz);% unmaskAndSpatiallyInflate subfunction unavailable in parfor
-        try % writeNIFTI anon. function unavailable in parfor so use try catch instead
-          niftiwrite(X,bootFile,hdr,'Compressed',true);
-        catch
-          save_avw(X,bootFile,'f',hdr.PixelDimensions)
-        end
-      end
-      if iL == 1
-        if strcmp(bootMode,'boot')
-          seed = 1;% use the same initialization for each run
-        else
-          seed = iI + seedOffset;
-        end
-        cmd = sprintf(...
-          'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --seed="%i" -m %s -v --debug',...
-            bootFile,meloDir,Dim,seed,brainMaskFile);
+  % create melodic directories and build parallel melodic command
+  allCmds = sprintf('. "%s/../../global/scripts/parallel.shlib"',fileparts(mfilename('fullpath')));
+  allCmds = sprintf('%s;cd "%s"',allCmds,tmpDir);% for logs
+  fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,nThreads)
+  for iI = 1:nI 
+    meloDir = sprintf('%s/%i',tmpDir,iI);
+    mkdir(meloDir);
+    if ~strcmp(bootMode,'randinit')
+      bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
+      X = zeros(mtxDim,'single');
+      X(brainMask,:) = single(vnts(bootIdx(:,iI),:));
+      X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
+      writeNIFTI(X,bootFile,hdr);
+    end
+    if iL == 1
+      if strcmp(bootMode,'boot')
+        seed = 1;% use the same initialization for each run
       else
-        cmd = sprintf(...
-          'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --init_ica="%s" -m %s -v --debug',...
-            bootFile,meloDir,Dim,init_ica,brainMaskFile);
+        seed = iI + seedOffset;
       end
-      
-      tic;[stat,out] = system(cmd);
-      nSteps(iI) = cellfun(@str2num,(regexp(fileread([meloDir '/log.txt']),'(?<=after)(.*?)(?=steps)','match')));
-      if ~stat
-        fprintf('finished melodic %.3i/%.3i with %.3i steps. ',iI,nI,nSteps(iI));toc
-      else
-        error(' melodic %.3i/%.3i failed!\n\n%s',iI,nI,out)
-      end
-      A{iI} = load([meloDir '/melodic_mix'],'-ascii');
-      W{iI} = pinv(A{iI});
-    end %parfor iI 
-  else
-    fprintf('Level %i: runing %i melodics as single threaded serial loop with %i cores:\n',iL,nI)
-    for iI = 1:nI
-      meloDir = sprintf('%s/%i',tmpDir,iI);
-      if exist(meloDir,'dir');rmdir(meloDir,'s');end
-      mkdir(meloDir);
-      bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
-      if ~strcmp(bootMode,'randinit')
-        bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
-        X = single(vnts(bootIdx(:,iI),:));
-        X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
-        writeNIFTI(X,bootFile,hdr);
-      end
-      if iL == 1
-        if strcmp(bootMode,'boot')
-          seed = 1;% use the same initialization for each run
-        else
-          seed = iI + seedOffset;
-        end
-        cmd = sprintf(...
-          'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --seed="%i" -m %s -v --debug',...
-            bootFile,meloDir,Dim,seed,brainMaskFile);
-      else
-        cmd = sprintf(...
-          'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --init_ica="%s" -m %s -v --debug',...
-            bootFile,meloDir,Dim,init_ica,brainMaskFile);
-      end
-      
-      tic;[stat,out] = system(cmd);
-      nSteps(iI) = cellfun(@str2num,(regexp(fileread([meloDir '/log.txt']),'(?<=after)(.*?)(?=steps)','match')));
-      if ~stat
-        fprintf('finished melodic %.3i/%.3i with %.3i steps. ',iI,nI,nSteps(iI));toc
-      else
-        error(' melodic %.3i/%.3i failed!\n\n%s',iI,nI,out)
-      end
-      A{iI} = load([meloDir '/melodic_mix'],'-ascii');
-      W{iI} = pinv(A{iI});
-    end % for iI 
-  end
+      cmd = sprintf(...
+        'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --seed="%i" -m %s -v --debug',...
+          bootFile,meloDir,Dim,seed,brainMaskFile);
+    else
+      cmd = sprintf(...
+        'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --init_ica="%s" -m %s -v --debug',...
+          bootFile,meloDir,Dim,init_ica,brainMaskFile);
+    end
+    allCmds = sprintf('%s;par_addjob %s',allCmds,cmd);
+  end %for iI
+
+  % run melodics in parallel
+  allCmds = sprintf('%s;par_runjobs %i',allCmds,nThreads);
+  [stat,out] = system(allCmds);
+  if stat;error('melodic runs did not complete successfully.');end
+
+  % load all melodic ouputs
+  for iI = 1:nI 
+    meloDir = sprintf('%s/%i',tmpDir,iI);
+    nSteps(iI) = cellfun(@str2num,regexp(fileread([meloDir '/log.txt']),'(?<=after)(.*?)(?=steps)','match'));
+    if ~stat
+      fprintf('finished melodic %.3i/%.3i with %.3i steps.\n',iI,nI,nSteps(iI));
+    else
+      error(' melodic %.3i/%.3i failed!\n\n%s',iI,nI,out)
+    end
+    A{iI} = load([meloDir '/melodic_mix'],'-ascii');
+    W{iI} = pinv(A{iI});
+  end %for iI
 
   fprintf('level %i: %3.1f steps on average\n',iL,mean(nSteps));
   if iL == 1
@@ -256,7 +215,7 @@ for iL = 1:nL
   end %if iL == 1
 
   % populate level-specific sR
-  sR(iL).index = [repmat(1:Dim,1,nI);repelem(1:nI,Dim)]';
+  sR(iL).index = [repelem(1:nI,Dim);repmat(1:Dim,1,nI)]';
   sR(iL).A = A;
   sR(iL).W = W;
   sR(iL).nSteps = nSteps;

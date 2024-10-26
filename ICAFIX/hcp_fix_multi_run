@@ -108,7 +108,7 @@ opts_AddMandatory '--concat-fmri-name' 'ConcatName' 'run1_to_3' "Name (including
 
 opts_AddOptional '--motion-regression' 'doMotionRegression' 'TRUE or FALSE' "Controls whether to regress motion parameters as part of the cleaning, default FALSE" 'FALSE'
 
-opt_AddOptional  '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "If TRUE and $FSL_FIXDIR is set and contains fix, uses this fix, otherwise uses $FSL_DIR/bin/fix (i.e. pyfix)" "TRUE"
+opts_AddOptional '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "If TRUE and FSL_FIXDIR is set and contains fix, uses this fix, otherwise uses FSL_DIR/bin/fix (i.e. pyfix)" 'TRUE'
 
 opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfix_model, or a pyfix built-in model without extension' 'Specify a custom training file, defaults to "HCP_Style_Single_Multirun_Dedrift.RData"' ''
 
@@ -136,6 +136,8 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) 
 opts_AddOptional '--concatenate-only' 'ConcatOnlyStr' 'TRUE or FALSE' "When set to TRUE the script stops after the concatination step. e.g., for use in experimental alternative multi-run denoising" 'FALSE'
 
 opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass MELODIC (default) or multi-pass ICASSO consensus method for ICA" 'MELODIC'
+
+opts_AddOptional '--parallel-limit' 'parLimit' 'integer' "set how many subjects to do in parallel (local, not cluster-distributed) during individual projection and cleanup, defaults to all detected physical cores" '-1'
 
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' 'O or 1 or 2' "for Pipelines code, use compiled matlab (0, default), interpreted matlab (1), or interpreted octave (2)." '0'
 
@@ -191,11 +193,11 @@ fi
 
 # determine if legacy fix or pyfix will be used
 legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
-if ((legacyFixEnabled)) && [[ -f ${FSL_FIXDIR}/fix ]] && [[ ! -f ${FSL_FIXDIR}/convert_fix_model ]];then
+if [[ (($legacyFixEnabled)) && -f "${FSL_FIXDIR:-}/fix"  && ! -f "${FSL_FIXDIR:-}/convert_fix_model" ]];then
 	legacyFix=1
 	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
 else
-	if [[ "${FSL_FIXDIR:-}" == "" || ! -f "$FSL_FIXDIR"/convert_fix_model ]];then
+	if [[ -z "${FSL_FIXDIR:-}" || ! -f "${FSL_FIXDIR:-}/convert_fix_model" ]];then
 		FSL_FIXDIR=${FSL_DIR}/bin
 	fi
 	log_Msg "Using pyfix from ${FSL_FIXDIR}"
@@ -826,12 +828,12 @@ elif [[ $ICAmethod == ICASSO ]]; then
 	case "$MatlabMode" in
 		(0)
 			compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_melodicicasso/run_melodicicasso.sh
-			matlab_cmd=("$compiledScript" "$MATLAB_COMPILER_RUNTIME" "$Dim" "$concatfmri" "$concatfmrihp" "$ConcatFolder" "$tr")
+			matlab_cmd=("$compiledScript" "$MATLAB_COMPILER_RUNTIME" "$Dim" "$concatfmri" "$concatfmrihp" "$ConcatFolder" "$tr" "$parLimit")
 			log_Msg "running compiled matlab: ${matlab_cmd[*]}"
 			"${matlab_cmd[@]}"
 			;;
 		(1|2)
-			matlab_code="${ML_PATHS} melodicicasso('${Dim}', '${concatfmri}', '${concatfmrihp}', '${ConcatFolder}', '${tr}')"
+			matlab_code="${ML_PATHS} melodicicasso('${Dim}', '${concatfmri}', '${concatfmrihp}', '${ConcatFolder}', '${tr}', '${parLimit}')"
 			log_Msg "running interpreted matlab/octave code: $matlab_code"
 			"${matlab_interpreter[@]}" <<<"$matlab_code"
 			echo
@@ -938,7 +940,7 @@ else
 		log_Err_Abort "Movement_Regressors.txt not retrieved properly." 
 	fi
 
-	# copy template brain for creation of masks
+	# if specified, copy template brain for creation of masks
 	if [[ ${T1wTemplateBrain} ]]; then
 		$FSLDIR/bin/imcp ${T1wTemplateBrain} ${concatfmrihp}.ica/reg/standard
 	fi
@@ -966,12 +968,11 @@ else
 	log_Msg "pyfix log at ${ConcatFolder}/pyfix.log"
 fi #if ((legacyFix));then
 
-# set up fix command
+# set up fix commands
 # use array for whitespace safety, even if the rest of the script isn't
-# if ((doMotionRegression)); then fix_cmd=("${FSL_FIXDIR}/fix" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}" -m -h "${AlreadyHP}")
 
 # run fix feature selection
-fix_cmd=("${FSL_FIXDIR}/fix -f" "${concatfmrihp}.ica")
+fix_cmd=("${FSL_FIXDIR}/fix" "-f" "${concatfmrihp}.ica")
 log_Msg "running fix feature selection"
 log_Msg "fix_cmd: ${fix_cmd[*]}"
 "${fix_cmd[@]}"
@@ -981,7 +982,7 @@ if [ "${return_code}" -ne "0" ]; then
 fi
 
 # run fix classification 
-fix_cmd=("${FSL_FIXDIR}/fix -c" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
+fix_cmd=("${FSL_FIXDIR}/fix" "-c" "${concatfmrihp}.ica" "${TrainingData}" "${FixThresh}")
 log_Msg "running fix classification using training data file: ${TrainingData}"
 log_Msg "fix_cmd: ${fix_cmd[*]}"
 "${fix_cmd[@]}"
@@ -1012,7 +1013,7 @@ case ${MatlabMode} in
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
-		matlab_code="${ML_PATHS} fix_3_clean(${concatfmrihp}.ica/.fix, 0,${doMotionRegression}, '${hp}', '${Caret7_Command}');"
+		matlab_code="${ML_PATHS} fix_3_clean('${concatfmrihp}.ica/.fix', 0,${doMotionRegression}, '${hp}', '${Caret7_Command}');"
 		log_Msg "Run interpreted MATLAB/Octave with command..."
 		log_Msg "${matlab_interpreter[*]} ${matlab_code}"
 		"${matlab_interpreter[@]}" <<<"${matlab_code}"

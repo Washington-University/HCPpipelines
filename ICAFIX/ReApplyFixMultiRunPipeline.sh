@@ -636,17 +636,14 @@ log_Msg "Running fix_3_clean"
 AlreadyHP="-1"
 
 case ${MatlabRunMode} in
-
-	# See important WARNING above regarding why ${DoVol} is NOT included as an argument when DoVol=1 !!
-	
 	0)
 		# Use Compiled Matlab
 
-		matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
+		matlab_exe="${$HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
-		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
+		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${Caret7_Command}" "${DoVol}")
 		if (( ! DoVol )); then
 			matlab_function_arguments+=("${DoVol}")
 		fi
@@ -675,6 +672,7 @@ case ${MatlabRunMode} in
 		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
 		log_Msg "${matlab_cmd}"
 		
+		;;
 	*)
 		# Unsupported MATLAB run mode
 		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
