@@ -22,6 +22,7 @@ opts_AddMandatory '--brain-mask' 'mask' 'file' "brain mask"
 opts_AddOptional '--seeds' 'seeds' 'seed@seed@seed...' "input seeds for the melodic runs"
 opts_AddOptional '--initializations' 'inits' 'file@file@file...' "initialization files for the melodic runs"
 opts_AddOptional '--log-dir' 'logDir' 'path' "folder to put logs into"
+opts_AddOptional '--num-parallel' 'numpar' "how many melodics to run in parallel, default to all physical cores" '-1'
 
 opts_ParseArguments "$@"
 
@@ -62,7 +63,7 @@ fi
 
 if [[ "$logDir" != "" ]]
 then
-    cd "$logDir"
+    par_set_log_dir "$logDir"
 fi
 
 for ((i = 0; i < ${#inputArray[@]}; ++i))
@@ -75,5 +76,5 @@ do
     fi
 done
 
-par_runjobs "$threads"
+par_runjobs "$numpar"
 
