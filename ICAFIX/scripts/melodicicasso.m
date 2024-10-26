@@ -141,40 +141,42 @@ for iL = 1:nL
     fprintf('Running with bootstrapping\n'); % prepare bootstraps (resampling with replacement)
   end
 
-  % create melodic directories and build parallel melodic command
-  allCmds = sprintf('. "%s/../../global/scripts/parallel.shlib"',fileparts(mfilename('fullpath')));
-  allCmds = sprintf('%s;cd "%s"',allCmds,tmpDir);% for logs
+  % create melodic directories and build parallel melodic information
   fprintf('Level %i: runing %i melodics in parallel with %i cores:\n',iL,nI,nThreads)
-  for iI = 1:nI 
-    meloDir = sprintf('%s/%i',tmpDir,iI);
+  inputs = cell(nI, 1);
+  outputs = inputs;
+  inits = inputs;
+  for iI = 1:nI
+    meloDir = [tmpDir '/' num2str(iI)];
     mkdir(meloDir);
     if ~strcmp(bootMode,'randinit')
-      bootFile = sprintf('%s/melodic_boot_vnts',meloDir);
-      X = zeros(mtxDim,'single');
-      X(brainMask,:) = single(vnts(bootIdx(:,iI),:));
-      X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
-      writeNIFTI(X,bootFile,hdr);
+      bootFile = [meloDir '/melodic_boot_vnts');
+      X = zeros(mtxDim, 'single');
+      X(brainMask, :) = single(vnts(bootIdx(:, iI), :));
+      X = unmaskAndSpatiallyInflate(X, imSz, brainMask, mtxDim);
+      writeNIFTI(X, bootFile, hdr);
     end
+    inputs{iI} = bootFile;
+    outputs{iI} = meloDir;
     if iL == 1
       if strcmp(bootMode,'boot')
         seed = 1;% use the same initialization for each run
       else
         seed = iI + seedOffset;
       end
-      cmd = sprintf(...
-        'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --seed="%i" -m %s -v --debug',...
-          bootFile,meloDir,Dim,seed,brainMaskFile);
+      inits{iI} = num2str(seed);
     else
-      cmd = sprintf(...
-        'melodic -i %s -o %s --nobet --vn --dim="%i" --no_mm --init_ica="%s" -m %s -v --debug',...
-          bootFile,meloDir,Dim,init_ica,brainMaskFile);
+      inits{iI} = init_ica;
     end
-    allCmds = sprintf('%s;par_addjob %s',allCmds,cmd);
   end %for iI
-
-  % run melodics in parallel
-  allCmds = sprintf('%s;par_runjobs %i',allCmds,nThreads);
-  [stat,out] = system(allCmds);
+  scriptcmd = ['bash -c ''"$HCPPIPEDIR"/ICAFIX/scripts/melodicHelper.sh --inputs=' strjoin(inputs, '@') ...
+    ' --outputs=' strjoin(outputs, '@') ' --dim=' str2num(Dim) ' --brain-mask=' brainMask ' --log-dir=' tmpDir];
+  if iL == 1
+    scriptcmd = [scriptcmd ' --seeds=' strjoin(inits, '@') ''''];
+  else
+    scriptcmd = [scriptcmd ' --initializations=' strjoin(inits, '@') ''''];
+  end
+  [stat, out] = system(scriptcmd);
   if stat;error('melodic runs did not complete successfully.');end
 
   % load all melodic ouputs
