@@ -150,7 +150,7 @@ for iL = 1:nL
     meloDir = [tmpDir '/' num2str(iI)];
     mkdir(meloDir);
     if ~strcmp(bootMode,'randinit')
-      bootFile = [meloDir '/melodic_boot_vnts');
+      bootFile = [meloDir '/melodic_boot_vnts'];
       X = zeros(mtxDim, 'single');
       X(brainMask, :) = single(vnts(bootIdx(:, iI), :));
       X = unmaskAndSpatiallyInflate(X, imSz, brainMask, mtxDim);
