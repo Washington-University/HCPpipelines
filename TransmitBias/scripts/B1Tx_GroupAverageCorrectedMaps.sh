@@ -169,7 +169,7 @@ case "$MatlabMode" in
             "
             
             if [[ "$matlabargs" != "" ]]; then matlabargs+=", "; fi
-            matlabargs+="'$var'"
+            matlabargs+="$var"
         done
 
         matlabcode+="B1Tx_GroupAverageCorrectedMaps(${matlabargs});"

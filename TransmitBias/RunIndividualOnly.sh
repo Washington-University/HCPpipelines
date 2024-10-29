@@ -64,10 +64,10 @@ opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myelin mapping was done using version 1.2.3 or earlier of wb_command, set this to true" 'false'
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '1'
+2 = Octave" '0'
 
 opts_ParseArguments "$@"
 
@@ -86,14 +86,7 @@ then
 fi
 
 case "$MatlabMode" in
-    (0)
-        if [[ "${MATLAB_COMPILER_RUNTIME:-}" == "" ]]
-        then
-            log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
-        fi
-        log_Err_Abort "compiled matlab not implemented"
-        ;;
-    (1|2)
+    (0|1|2)
         ;;
     (*)
         log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
@@ -115,7 +108,7 @@ case "$mode" in
         fi
         ;;
     (PseudoTransmit)
-        if [[ "$fMRINames" == "" || "$ReferenceTemplate" == "" || "$GroupUncorrectedMyelin" == "" || "$PseudoTransmitReferenceValue" == "" ]]
+        if [[ "$fMRINames" == "" || "$ReferenceTemplate" == "" || "$GroupUncorrectedMyelin" == "" || "$PseudoTransmitReferenceValueFile" == "" ]]
         then
             log_Err_Abort "$mode transmit correction mode requires --pt-fmri-names, --myelin-template, --group-uncorrected-myelin, and --pt-reference-value"
         fi
