@@ -873,6 +873,8 @@ T2wToT1wRegAndBiasCorrection () {
   else  # -- No T2w image
 
     log_Msg "Performing Bias Field Correction using T1w image only"
+    BiasFieldFastSmoothingSigma="20"
+    BiasFieldFastSmoothingSigma="--bfsigma=${BiasFieldFastSmoothingSigma}"
 
     ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
       --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
@@ -885,6 +887,7 @@ T2wToT1wRegAndBiasCorrection () {
 
   fi
 
+}
 
   # ------------------------------------------------------------------------------
   # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
