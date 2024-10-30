@@ -790,6 +790,10 @@ T2wToT1wRegAndBiasCorrection () {
         --echodiff=${TE} \
         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+        --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
+        --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
+        --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+        --echospacing=${DwellTime} \
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
         --t1sampspacing=${T1wSampleSpacing} \
@@ -803,7 +807,9 @@ T2wToT1wRegAndBiasCorrection () {
         --method=${AvgrdcSTRING} \
         --topupconfig=${TopupConfig} \
         --gdcoeffs=${GradientDistortionCoeffs} \
-        --usejacobian=${UseJacobian} 
+        --usejacobian=${UseJacobian} \
+        --truepatientposition=${TruePatientPosition} \
+        --scannerpatientposition=${ScannerPatientPosition}
 
       ;;
 
