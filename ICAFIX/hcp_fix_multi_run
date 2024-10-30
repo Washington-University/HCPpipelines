@@ -196,10 +196,6 @@ legacyFixEnabled=$(opts_StringToBool "$legacyFixEnabled")
 if ((legacyFixEnabled)) && [[ -f "${FSL_FIXDIR:-}/fix" && ! -f "${FSL_FIXDIR:-}/convert_fix_model" ]];then
 	legacyFix=1
 	log_Msg "Using legacy fix from ${FSL_FIXDIR}"
-	if [[ -f "$FSL_FIXDIR"/fixversion ]]; then
-		fixversion=$(cat "$FSL_FIXDIR"/fixversion )
-		log_Msg "FIX version: $fixversion"
-	fi
 else
 	if [[ -z "${FSL_FIXDIR:-}" || ! -f "${FSL_FIXDIR:-}/convert_fix_model" ]];then
 		FSL_FIXDIR=${FSL_DIR}/bin
@@ -219,7 +215,7 @@ if ((legacyFix));then
 
 	# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 	log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
-	log_Msg "FIX version: $(cat ${FSL_FIXDIR}/fixversion )"
+	log_Msg "FIX version: $(cat "$FSL_FIXDIR"/fixversion)"
 fi
 
 case "$MatlabMode" in
