@@ -475,33 +475,7 @@ if ["$Runmode" -lt 2 ]; then
           TXwFolder=${T1wFolder}
           TXwImage=${T1wImage}
           TXwTemplate=${T1wTemplate}
-	# Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
-	StrucRes=$(${FSLDIR}/bin/fslval $(echo ${T1wInputImages} | cut -d ' ' -f1) pixdim1 | awk '{printf "%0.2f", $1}')
-	RefRes=$(${FSLDIR}/bin/fslval ${T1wTemplate} pixdim1 | awk '{printf "%0.2f", $1}')
-	log_Msg "Resolution of structure: $StrucRes"
-	log_Msg "Resolution of T1wTemplate: $RefRes" 
-	if [ ! "$StrucRes" == "$RefRes" ] ; then
-	  	log_Msg "Calculating and saving T1w reference volume in ${AtlasSpaceFolder}"
-		${RUN} ${FSLDIR}/bin/flirt -in ${T1wTemplate} -ref ${T1wTemplate2mm} -applyisoxfm $StrucRes -o ${AtlasSpaceFolder}/T1wTemplate -interp sinc
-		${RUN} ${FSLDIR}/bin/flirt -in ${TemplateMask} -ref ${T1wTemplate2mm} -applyisoxfm $StrucRes -o ${AtlasSpaceFolder}/TemplateMask -interp nearestneighbour
-		${RUN} ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder}/T1wTemplate -mas ${AtlasSpaceFolder}/TemplateMask ${AtlasSpaceFolder}/T1wTemplateBrain
-	else
-	  	log_Msg "Copying T1w reference volume in ${AtlasSpaceFolder}"
-		${RUN} ${FSLDIR}/bin/imcp ${T1wTemplate} ${AtlasSpaceFolder}/T1wTemplate
-		${RUN} ${FSLDIR}/bin/imcp ${T1wTemplateBrain} ${AtlasSpaceFolder}/T1wTemplateBrain
-		${RUN} ${FSLDIR}/bin/imcp ${TemplateMask} ${AtlasSpaceFolder}/TemplateMask
-	fi
-	Contrast=T1w
-	TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
-	TXwTemplateBrain=${AtlasSpaceFolder}/T1wTemplateBrain
-	TXwTemplate2mm=${T1wTemplate2mm}
-	TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
-	echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
-	if [ ! "$StrucRes" == "$RefRes" ] ; then
-		echo "Resampled T1wTemplate: $TXwTemplate" >> ${AtlasSpaceFolder}/TemplateInfo.txt
-	fi
-	echo "T1wTemplate2mm: ${T1wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
-	echo "TemplateMask: ${TemplateMask}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
+          TXwTemplate2mm=${T1wTemplate2mm}
       else
           TXwInputImages="${T2wInputImages}"
           TXwFolder=${T2wFolder}
@@ -519,32 +493,12 @@ if ["$Runmode" -lt 2 ]; then
       else
         log_Msg "Processing Modality: $TXw"
       fi
-	TXwFolder=${T2wFolder}
-	TXwImage=${T2wImage}
-	# Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
-	if [ ! "$StrucRes" == "$RefRes" ] ; then
-	  	log_Msg "Calculating and saving T2w reference volume in ${AtlasSpaceFolder}"
-		${RUN} ${FSLDIR}/bin/flirt -in ${T2wTemplate} -ref ${T2wTemplate2mm} -applyisoxfm $StrucRes -o ${AtlasSpaceFolder}/T2wTemplate -interp sinc
-		${RUN} ${FSLDIR}/bin/fslmaths ${AtlasSpaceFolder}/T2wTemplate -mas ${AtlasSpaceFolder}/TemplateMask ${AtlasSpaceFolder}/T2wTemplateBrain
-	else
-	  	log_Msg "Copying T2w reference volume in ${AtlasSpaceFolder}"
-		${RUN} ${FSLDIR}/bin/imcp ${T2wTemplate} ${AtlasSpaceFolder}/T2wTemplate
-		${RUN} ${FSLDIR}/bin/imcp ${T2wTemplateBrain} ${AtlasSpaceFolder}/T2wTemplateBrain
-	fi
-	TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
-	TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
-	TXwTemplate2mm=${T2wTemplate2mm}
-	TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
-	echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
-	if [ ! "$StrucRes" == "$RefRes" ] ; then
-		echo "Resampled T2wTemplate: $TXwTemplate" >> ${AtlasSpaceFolder}/TemplateInfo.txt
-	fi
-	echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
-    fi
-    OutputTXwImageSTRING=""
-    OutputTXwBrainImageSTRING=""
 
+<<<<<<< HEAD
   #### Gradient nonlinearity correction  (for T1w and T2w) ####
+=======
+      # Perform Gradient Nonlinearity Correction
+>>>>>>> parent of f7a05b2 (feat: Add reference volume resampling for T1w and T2w images with differing resolutions)
 
       if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
         log_Msg "Performing Gradient Nonlinearity Correction"
