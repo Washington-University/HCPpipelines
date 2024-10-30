@@ -402,6 +402,49 @@ fi
 
 # log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS? 
 
+# default parameters
+SPECIES=`opts_DefaultOpt $SPECIES Human`
+RunMode=`opts_DefaultOpt $RunMode 1`
+TruePatientPosition=`opts_DefaultOpt $TruePatientPosition HFS`  
+ScannerPatientPosition=`opts_DefaultOpt $ScannerPatientPosition HFS` 
+betcenter=`opts_DefaultOpt $betcenter 45,55,39`        
+betradius=`opts_DefaultOpt $betradius 75` 
+betfraction=`opts_DefaultOpt $betfraction 0.3` 
+bettop2center=`opts_DefaultOpt $bettop2center 86` 
+BrainExtract=`opts_DefaultOpt $BrainExtract INVIVO` 
+
+if [ "$CustomBrain" = "ORIGMASK" ] ; then
+
+  RunMode=2
+
+  log_Msg "Skipping the step GradientNonlinearityAverage to ACPC Alignment applying custom mask in original space (<subject>/T1w/custom_mask.nii.gz). The custom mask is also used for brain extraction. This overrides the option of --runmode."
+  verbose_red_echo "---> Applying custom mask"
+
+  if [ "$(imtest ${T1wFolder}/custom_mask)" != 1 ] ; then
+       log_Err_Abort "ERROR: cannnot find ${T1wFolder}/custom_mask"
+  fi
+
+
+elif [[ "$CustomBrain" = "MASK" || "$CustomBrain" = "CUSTOM" ]] ; then
+
+  RunMode=5
+
+  if [ "$CustomBrain" = "MASK" ] ; then
+    log_Msg "Skipping all the steps to Atlas registration, applying custom mask in ACPC space (<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz). This overrides the option of --runmode."
+    verbose_red_echo "---> Applying custom mask"
+
+    if [ "$(imtest ${T1wFolder}/custom_acpc_dc_restore_mask" != 1 ] ; then
+         log_Err_Abort "ERROR: cannnot find ${T1wFolder}/custom_acpc_dc_restore_mask"
+    fi
+
+  # -- Then we are using existing images
+  else
+    log_Msg "Skipping all the steps preceding AtlasRegistration, using existing images instead. This overrides the option of --runmode."
+    verbose_red_echo "---> Using existing images"
+  fi
+
+fi  # --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
+
 # ------------------------------------------------------------------------------
 #  Do primary work
 # ------------------------------------------------------------------------------
