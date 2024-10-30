@@ -371,6 +371,7 @@ log_Msg "T2wInputImages: $T2wInputImages"
 # -- Are T2w images available
 
 if [ "${T2wInputImages}" = "NONE" ] ; then
+  T2wFolder="NONE"
   T2wFolder_T2wImageWithPath_acpc="NONE"
   T2wFolder_T2wImageWithPath_acpc_brain="NONE"
   T1wFolder_T2wImageWithPath_acpc_dc="NONE"
@@ -379,6 +380,10 @@ else
   T2wFolder_T2wImageWithPath_acpc_brain="${T2wFolder}/${T2wImage}_acpc_brain"
   T1wFolder_T2wImageWithPath_acpc_dc=${T1wFolder}/${T2wImage}_acpc_dc
 fi
+
+log_Msg "T1wFolder: $T1wFolder"
+log_Msg "T2wFolder: $T2wFolder"
+log_Msg "AtlasFolder: $AtlasSpaceFolder"
 
 if [ ! -e ${T1wFolder}/xfms ] ; then
   log_Msg "mkdir -p ${T1wFolder}/xfms/"
