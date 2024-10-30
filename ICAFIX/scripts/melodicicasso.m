@@ -170,7 +170,7 @@ for iL = 1:nL
     end
   end %for iI
   scriptcmd = ['bash -c ''"$HCPPIPEDIR"/ICAFIX/scripts/melodicHelper.sh --inputs=' strjoin(inputs, '@') ...
-    ' --outputs=' strjoin(outputs, '@') ' --dim=' num2str(Dim) ' --brain-mask=' brainMask ' --log-dir=' tmpDir ' --num-parallel=' num2str(nThreads)];
+    ' --outputs=' strjoin(outputs, '@') ' --dim=' num2str(Dim) ' --brain-mask=' brainMaskFile ' --log-dir=' tmpDir ' --num-parallel=' num2str(nThreads)];
   if iL == 1
     scriptcmd = [scriptcmd ' --seeds=' strjoin(inits, '@') ''''];
   else
