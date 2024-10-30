@@ -750,6 +750,7 @@ done
   # End of looping over modalities (T1w and T2w)
 }
 
+T2wToT1wRegAndBiasCorrection () {
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
@@ -759,6 +760,7 @@ done
     ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
       log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
+  if [ ! $T2wFolder = NONE ] ; then
       wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
       if [ -d ${wdir} ] ; then
         # DO NOT change the following line to "rm -r ${wdir}" because the
@@ -767,6 +769,12 @@ done
         rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
       fi
 
+   if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then 	 # added T2w as a phase zero volume - TH Jan 2023
+        SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
+   fi
+  else
+   wdir=${T1wFolder}/T2wToT1wDistortionCorrectAndReg
+  fi
       log_Msg "mkdir -p ${wdir}"
       mkdir -p ${wdir}
 
