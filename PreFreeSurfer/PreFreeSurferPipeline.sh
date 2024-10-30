@@ -631,16 +631,65 @@ if [ "$CustomBrain" = "NONE" ] ; then
       fi
 
       # ACPC align T1w or T2w image to specified MNI Template to create native volume space
-      log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
-      log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
-      mkdir -p ${TXwFolder}/ACPCAlignment
-      ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
-        --workingdir=${TXwFolder}/ACPCAlignment \
-        --in=${TXwFolder}/${TXwImage} \
-        --ref=${TXwTemplate} \
-        --out=${TXwFolder}/${TXwImage}_acpc \
-        --omat=${TXwFolder}/xfms/acpc.mat \
-        --brainsize=${BrainSize}
+
+ACPCAlignment () {
+
+for TXw in ${Modalities} ; do
+    # set up appropriate input variables
+    if [ $TXw = T1w ] ; then
+	TXwInputImages="${T1wInputImages}"
+	TXwFolder=${T1wFolder}
+	TXwImage=${T1wImage}
+	TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
+	TXwTemplateBrain=${AtlasSpaceFolder}/T1wTemplateBrain
+	TXwTemplate2mm=${T1wTemplate2mm}
+	TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
+	Contrast=T1w
+
+    elif [[ $TXw = T2w && $T2wFolder != NONE ]] ; then
+	TXwInputImages="${T2wInputImages}"
+	TXwFolder=${T2wFolder}
+	TXwImage=${T2wImage}
+	TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
+	TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
+	TXwTemplate2mm=${T2wTemplate2mm}
+	TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
+	Contrast=$T2wType
+
+    fi
+
+#### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
+
+    if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
+        log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
+        CustomMask="${TXwFolder}/custom_mask"
+    fi
+
+    if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
+
+      	mkdir -p ${TXwFolder}/ACPCAlignment  # TH modified 2016-2023
+       ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
+	--workingdir=${TXwFolder}/ACPCAlignment \
+	--in=${TXwFolder}/${TXwImage} \
+	--ref=${TXwTemplate} \
+	--refbrain=${TXwTemplateBrain} \
+	--out=${TXwFolder}/${TXwImage}_acpc \
+	--omat=${TXwFolder}/xfms/acpc.mat \
+	--brainsize=${BrainSize} \
+	--brainextract=${BrainExtract} \
+	--betfraction=${betfraction} \
+	--bettop2center=${bettop2center} \
+       --betradius=${betradius} \
+       --betbiasfieldcor=${betbiasfieldcor} \
+    	--contrast=$Contrast \
+	--ref2mm=${TXwTemplate2mm} \
+	--ref2mmmask=${Template2mmMask} \
+	--betspecieslabel=$betspecieslabel \
+       --custommask=${CustomMask} 
+    fi
+done
+
+}
 
       # Brain Extraction(FNIRT-based Masking)
       log_Msg "Performing Brain Extraction using FNIRT-based Masking"
