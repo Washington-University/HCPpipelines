@@ -905,7 +905,7 @@ T2wToT1wRegAndBiasCorrection () {
   # Just implement inline, rather than writing a separate script
   # Added 2/19/2019
   # ------------------------------------------------------------------------------
-
+AtlasRegistration () {
   log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
 
   # T1w
@@ -983,9 +983,9 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --t2=${T1wFolder_T2wImageWithPath_acpc_dc} \
   --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
   --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-  --ref=${T1wTemplate} \
-  --refbrain=${T1wTemplateBrain} \
-  --refmask=${TemplateMask} \
+  --ref=${AtlasSpaceFolder}/T1wTemplate \
+  --refbrain=${AtlasSpaceFolder}/T1wTemplateBrain \
+  --refmask=${AtlasSpaceFolder}/TemplateMask \
   --ref2mm=${T1wTemplate2mm} \
   --ref2mmmask=${Template2mmMask} \
   --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
@@ -996,7 +996,24 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --ot2=${AtlasSpaceFolder}/${T2wImage} \
   --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
   --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-  --fnirtconfig=${FNIRTConfig} 
-
+  --fnirtconfig=${FNIRTConfig} \
+  --brainextract=${BrainExtract}
 log_Msg "Completed!"
+}
+
+main () {
+if   [ "$RunMode" = "1" ] ; then
+	SetTemplateGradientNonlinearityAverage; ACPCAlignment; BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
+elif [ "$RunMode" = "2" ] ; then
+	                                        ACPCAlignment; BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
+elif [ "$RunMode" = "3" ] ; then
+	                                                       BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
+elif [ "$RunMode" = "4" ] ; then
+	                                                                       T2wToT1wRegAndBiasCorrection; AtlasRegistration
+elif [ "$RunMode" = "5" ] ; then
+	                                                                                                     AtlasRegistration
+fi
+}
+main
+#### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
