@@ -692,23 +692,63 @@ done
 }
 
       # Brain Extraction(FNIRT-based Masking)
-      log_Msg "Performing Brain Extraction using FNIRT-based Masking"
-      log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
-      mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
-      ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
-        --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
-        --in=${TXwFolder}/${TXwImage}_acpc \
-        --ref=${TXwTemplate} \
-        --refmask=${TemplateMask} \
-        --ref2mm=${TXwTemplate2mm} \
-        --ref2mmmask=${Template2mmMask} \
-        --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
-        --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
-        --fnirtconfig=${FNIRTConfig}
 
-  done
+BrainExtracion () {
+
+for TXw in ${Modalities} ; do
+    # set up appropriate input variables
+    if [ $TXw = T1w ] ; then
+	TXwInputImages="${T1wInputImages}"
+	TXwFolder=${T1wFolder}
+	TXwImage=${T1wImage}
+	TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
+	TXwTemplateBrain=${AtlasSpaceFolder}/T1wTemplateBrain
+	TXwTemplate2mm=${T1wTemplate2mm}
+	TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
+	Contrast=T1w
+    else
+	TXwInputImages="${T2wInputImages}"
+	TXwFolder=${T2wFolder}
+	TXwImage=${T2wImage}
+	TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
+	TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
+	TXwTemplate2mm=${T2wTemplate2mm}
+	TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
+	Contrast=$T2wType
+    fi
+
+#### Brain Extraction (FNIRT-based Masking) ####
+
+  if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
+
+    if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
+        log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
+    fi
+
+    log_Msg "Brain extract with FNIRT" 
+    mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
+    ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
+	--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
+	--in=${TXwFolder}/${TXwImage}_acpc \
+	--ref=${TXwTemplate} \
+	--refmask=${AtlasSpaceFolder}/TemplateMask \
+	--ref2mm=${TXwTemplate2mm} \
+	--ref2mmmask=${Template2mmMask} \
+	--outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
+	--outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
+	--fnirtconfig=${FNIRTConfig} \
+       --betcenter=${betcenter} \
+       --betradius=${betradius} \
+	--betfraction=${betfraction} \
+	--initdof=$InitDof \
+       --betbiasfieldcor=${betbiasfieldcor} \
+	--brainextract=${BrainExtract} \
+       --betspecieslabel=${betspecieslabel} 
+  fi 
+done 
 
   # End of looping over modalities (T1w and T2w)
+}
 
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
