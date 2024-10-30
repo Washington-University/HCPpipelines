@@ -362,9 +362,11 @@ log_Msg "T2wFolder: $T2wFolder"
 log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
 
 # Unpack List of Images
-T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g'`
-T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
+T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g' | sed -e  's/^[ \t]*//'`
+T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g' | sed -e  's/^[ \t]*//'`
 
+log_Msg "T1wInputImages: $T1wInputImages"
+log_Msg "T2wInputImages: $T2wInputImages"
 
 # -- Are T2w images available
 
