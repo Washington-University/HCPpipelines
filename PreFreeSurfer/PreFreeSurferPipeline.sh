@@ -218,7 +218,11 @@ opts_AddOptional '--echodiff' 'TE' 'delta_TE' "Delta TE in ms for field map or '
 
 opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a negative phase encoding direction (LR in  HCP data), set to 'NONE' if not using Spin  Echo Field Maps"
 
+opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a second negative phase encoding direction (e.g., AP ), set to "NONE" if not using Spin  Echo Field Maps"
+
 opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a positive phase encoding direction (RL in  HCP data), set to 'NONE' if not using Spin  Echo Field Maps" 
+
+opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a second positive phase encoding direction (e.g., PA), set to "NONE" if not using Spin  Echo Field Maps" 
 
 opts_AddMandatory '--seechospacing' 'SEEchoSpacing' 'seconds' "Effective Echo Spacing of Spin Echo Field Map,  (in seconds) or 'NONE' if not used"
 
