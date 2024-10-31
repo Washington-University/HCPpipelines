@@ -41,7 +41,6 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib" "$@"        # Functions for getting FSL version
 source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@"
 
-#description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "ReApplyFix Pipeline for MultiRun ICA+FIX"
 
 #WARNING: this "default" is also used to special case whether filenames have ".<num>k" added to their regstring
@@ -61,11 +60,6 @@ opts_AddOptional '--reg-name' 'RegName' 'surface registration name' "use NONE fo
 
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "low resolution mesh identifier, default ${G_DEFAULT_LOW_RES_MESH}" "${G_DEFAULT_LOW_RES_MESH}"
 
-opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to 1
-0 = Use compiled MATLAB
-1 = Use interpreted MATLAB
-2 = Use interpreted Octave" "1"
-
 opts_AddOptional '--motion-regression' 'MotionRegression' 'TRUE or FALSE' "default FALSE" "FALSE"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' "whether to delete the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning (the concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts), default FALSE" "FALSE"
@@ -81,6 +75,11 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
 opts_AddOptional '--clean-substring' 'CleanSubstring' 'string' "the clean mode substring, can be 'clean' as sICA+FIX cleaned,'clean_rclean' as sICA+FIX cleaned and reclean, default to 'clean'" "clean"
+
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+0 = Use compiled MATLAB
+1 = Use interpreted MATLAB
+2 = Use interpreted Octave" "1"
 
 opts_ParseArguments "$@"
 
@@ -232,24 +231,19 @@ then  #Logic of this script does not support negative hp values
 	log_Err_Abort "--high-pass value must not be negative"
 fi
 
-case ${MatlabRunMode} in
-	0)
-		if [ -z "${MATLAB_COMPILER_RUNTIME:-}" ]; then
-			log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-		else
-			log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-		fi
+case "$MatlabMode" in
+	(0)
+		log_Check_Env_Var MATLAB_COMPILER_RUNTIME
 		;;
-	1)
-		log_Msg "MATLAB Run Mode: ${MatlabRunMode} - Use interpreted MATLAB"
+	(1)
+		matlab_interpreter=(matlab -nodisplay -nosplash)
 		;;
-	2)
-		log_Msg "MATLAB Run Mode: ${MatlabRunMode} - Use interpreted Octave"
+	(2)
+		matlab_interpreter=(octave-cli -q --no-window-system)
 		;;
-	*)
-		log_Err "MATLAB Run Mode value must be 0, 1, or 2"
-		error_count=$(( error_count + 1 ))
-		;;
+	(*)
+		log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
+	;;
 esac
 
 MotionRegression=$(opts_StringToBool "$MotionRegression")
@@ -430,7 +424,7 @@ if (( regenConcatHP )); then
 		then
 
 			log_Msg "processing FMRI file $fmri with highpass $hp"
-			case ${MatlabRunMode} in
+			case ${MatlabMode} in
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
@@ -453,23 +447,21 @@ if (( regenConcatHP )); then
 
 			1 | 2)
 				# Use interpreted MATLAB or Octave
-				if [[ ${MatlabRunMode} == "1" ]]; then
-					interpreter=(matlab -nojvm -nodisplay -nosplash)
-				else
-					interpreter=(octave-cli -q --no-window-system)
-				fi
-				
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 				
-				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with code..."
+				log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 				log_Msg "${matlab_code}"
-
+				# Use bash redirection ("here-string") to pass multiple commands into matlab
+				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+				# get interpreted as separating different bash shell commands)
+				"${matlab_interpreter[@]}" <<<"${matlab_code}"
+				echo #matlab output doesn't include a newline, so add one
 				;;
 
 			*)
 				# Unsupported MATLAB run mode
-				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabMode}"
 				;;
 			
 			esac
@@ -635,7 +627,7 @@ log_Msg "Running fix_3_clean"
 
 AlreadyHP="-1"
 
-case ${MatlabRunMode} in
+case ${MatlabMode} in
 	0)
 		# Use Compiled Matlab
 
@@ -644,9 +636,6 @@ case ${MatlabRunMode} in
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
 		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${Caret7_Command}" "${DoVol}")
-		if (( ! DoVol )); then
-			matlab_function_arguments+=("${DoVol}")
-		fi
 		
 		matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
@@ -661,21 +650,16 @@ case ${MatlabRunMode} in
 	
 	1 | 2)
 		# Use interpreted MATLAB or Octave
-		if [[ ${MatlabRunMode} == "1" ]]; then
-			interpreter=(matlab -nojvm -nodisplay -nosplash)
-		else
-			interpreter=(octave-cli -q --no-window-system)
-		fi
 
-		matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
+		matlab_code="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
 		
-		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-		log_Msg "${matlab_cmd}"
-		
+		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
+		log_Msg "${matlab_code}"
+		"${matlab_interpreter[@]}" <<<"${matlab_code}"
 		;;
 	*)
 		# Unsupported MATLAB run mode
-		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabMode}"
 		;;
 esac
 

@@ -86,11 +86,8 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@"
 
-#description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "Apply FIX cleaning to a concatenated set of input files"
 
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-#help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--fmri-names' 'fmrilist' 'run1@run2@run3...' "List of the individual fMRI runs to concatenate, joined with '@' symbol (not spaces)
 Relative paths (from launching directory) are allowed, .nii.gz extensions are optional
 All runs are assumed to have the same repetition time (TR)"
@@ -213,6 +210,10 @@ if ((legacyFix));then
 	set -u
 	debug_enable_trap
 
+	# Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
+	Caret7_Command="${CARET7DIR}/wb_command"
+	FSL_FIX_WBC=${Caret7_Command}  # Our version of fix_3_clean doesn't use an environment variable for this anymore, but since settings.sh sets it, might as well correct it just in case
+
 	# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
 	log_Msg "FSL_FIX_MATLAB_MODE: ${FSL_FIX_MATLAB_MODE}"
 	log_Msg "FIX version: $(cat "$FSL_FIXDIR"/fixversion)"
@@ -245,11 +246,6 @@ ${CARET7DIR}/wb_command -version
 log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
-
-# Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
-Caret7_Command="${CARET7DIR}/wb_command"
-FSL_FIX_WBC=${Caret7_Command}  # Used by legacy fix fix_3_clean in interpreted matlab/octave mode
-
 
 #############################################################
 
@@ -418,10 +414,6 @@ log_Msg "PWD: $DIR"
 
 # For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 # normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
-# Note that the call_matlab.sh script itself adds ${FSL_FIXDIR} (all the fix-related functions)
-# and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path.
-# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} (defined in ${FSL_FIXDIR}/settings.sh)
-# to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
 # The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
 # AND since 'addpath' *prepends* to the matlab path, the version in HCPCIFTIRWDIR will therefore take precedence.
 ML_PATHS="addpath('${HCPPIPEDIR}/global/fsl/etc/matlab'); addpath('${HCPCIFTIRWDIR}'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab/icasso122'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
@@ -519,8 +511,11 @@ for fmri in "${fmris[@]}" ; do
 			# Use interpreted MATLAB or Octave
 			# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 			matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
-			log_Msg "Run interpreted MATLAB/Octave with command..."
-			log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+			log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
+			log_Msg "${matlab_code}"
+			# Use bash redirection ("here-string") to pass multiple commands into matlab
+			# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
+			# get interpreted as separating different bash shell commands)
 			"${matlab_interpreter[@]}" <<<"${matlab_code}"
 			echo
 			;;
@@ -598,8 +593,8 @@ then
 					# Use interpreted MATLAB or Octave
 					# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 					matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '', 1, ${ciftiwisharts}, '${icadimmode}');"
-					log_Msg "Run interpreted MATLAB/Octave with command..."
-					log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+					log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
+					log_Msg "${matlab_code}"
 					"${matlab_interpreter[@]}" <<<"${matlab_code}"
 					echo
 					;;
@@ -727,7 +722,6 @@ cd ${ConcatFolder}
 ## This is solely so that we can apply our own variance normalization as part of the spatial ICA, 
 ## rather than using the VN algorithm internal to melodic
 ## (The resulting ${concatfmrihp}_vnts time series is NOT the one that gets cleaned by FIX).
-## See comments above about regarding the use of call_matlab here.
 
 AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 
@@ -745,7 +739,8 @@ case ${MatlabMode} in
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 		matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, ${AlreadyHP}, '${concatfmrihp}', '${Caret7_Command}', '', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
-		log_Msg "running interpreted matlab/octave code: $matlab_code"
+		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
+		log_Msg "${matlab_code}"
 		"${matlab_interpreter[@]}" <<<"$matlab_code"
 		echo
 		;;
@@ -834,7 +829,7 @@ elif [[ $ICAmethod == ICASSO ]]; then
 			;;
 		(1|2)
 			matlab_code="${ML_PATHS} melodicicasso('${Dim}', '${concatfmri}', '${concatfmrihp}', '${ConcatFolder}', '${tr}', '${parLimit}')"
-			log_Msg "running interpreted matlab/octave code: $matlab_code"
+			log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 			"${matlab_interpreter[@]}" <<<"$matlab_code"
 			echo
 			;;
@@ -1014,8 +1009,7 @@ case ${MatlabMode} in
 		# Use interpreted MATLAB or Octave
 		# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 		matlab_code="${ML_PATHS} fix_3_clean('${concatfmrihp}.ica/.fix', 0,${doMotionRegression}, '${hp}', '${Caret7_Command}');"
-		log_Msg "Run interpreted MATLAB/Octave with command..."
-		log_Msg "${matlab_interpreter[*]} ${matlab_code}"
+		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 		"${matlab_interpreter[@]}" <<<"${matlab_code}"
 		echo
 		;;
