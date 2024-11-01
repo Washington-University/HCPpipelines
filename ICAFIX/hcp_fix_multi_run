@@ -105,7 +105,7 @@ opts_AddMandatory '--concat-fmri-name' 'ConcatName' 'run1_to_3' "Name (including
 
 opts_AddOptional '--motion-regression' 'doMotionRegression' 'TRUE or FALSE' "Controls whether to regress motion parameters as part of the cleaning, default FALSE" 'FALSE'
 
-opts_AddOptional '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "If TRUE and FSL_FIXDIR is set and contains fix, uses this fix, otherwise uses FSL_DIR/bin/fix (i.e. pyfix)" 'TRUE'
+opts_AddOptional '--enable-legacy-fix' 'legacyFixEnabled' 'TRUE or FALSE' "Look in FSL_FIXDIR to try to run legacy fix, if not found, use pyfix instead.  Default TRUE." 'TRUE'
 
 opts_AddOptional '--training-file' 'TrainingData' 'somefile.RData, somefile.pyfix_model, or a pyfix built-in model without extension' 'Specify a custom training file, defaults to "HCP_Style_Single_Multirun_Dedrift.RData"' ''
 
@@ -201,6 +201,8 @@ else
 	legacyFix=0
 fi
 
+Caret7_Command="${CARET7DIR}/wb_command"
+
 # All legacy fix settings are held in the settings.sh file - edit this file to suit your setup
 # Default settings file that comes with fix isn't "ERR"/-u clean, so disable temporarily
 if ((legacyFix));then
@@ -211,7 +213,6 @@ if ((legacyFix));then
 	debug_enable_trap
 
 	# Override the version of FSL_FIX_WBC in settings.sh with that specified by CARET7DIR
-	Caret7_Command="${CARET7DIR}/wb_command"
 	FSL_FIX_WBC=${Caret7_Command}  # Our version of fix_3_clean doesn't use an environment variable for this anymore, but since settings.sh sets it, might as well correct it just in case
 
 	# Log FSL_FIX_MATLAB_MODE (from the settings.sh file)
