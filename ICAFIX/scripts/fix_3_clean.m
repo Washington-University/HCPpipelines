@@ -25,6 +25,10 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
       hp = str2double(hp);
   end
   
+  %% %%  read set of bad components
+  %TSC: do this before the cd() - somehow interpreted matlab allowed it after, but compiled didn't, and 'which' said not found in interpreted, so I have no idea what it previously loaded while testing...
+  DDremove=load(fixlist);
+  
   %% %% setup the following variables for your site
   curDir = pwd;
   if ~isempty(fileparts(fixlist));cd(fileparts(fixlist));end
@@ -54,9 +58,6 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   fprintf('domot = %d\n',domot)
   fprintf('hp = %f\n',hp)
   fprintf('DOvol = %d\n',DOvol)
-  
-  %% %%  read set of bad components
-  DDremove=load(fixlist);
   
   %% %%  find TR of data
   [~,TR]=call_fsl('fslval filtered_func_data pixdim4'); 
