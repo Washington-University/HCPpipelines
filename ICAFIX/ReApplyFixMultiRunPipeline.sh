@@ -41,7 +41,6 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib" "$@"        # Functions for getting FSL version
 source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@"
 
-#description to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "ReApplyFix Pipeline for MultiRun ICA+FIX"
 
 #WARNING: this "default" is also used to special case whether filenames have ".<num>k" added to their regstring
@@ -61,11 +60,6 @@ opts_AddOptional '--reg-name' 'RegName' 'surface registration name' "use NONE fo
 
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "low resolution mesh identifier, default ${G_DEFAULT_LOW_RES_MESH}" "${G_DEFAULT_LOW_RES_MESH}"
 
-opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to 1
-0 = Use compiled MATLAB
-1 = Use interpreted MATLAB
-2 = Use interpreted Octave" "1"
-
 opts_AddOptional '--motion-regression' 'MotionRegression' 'TRUE or FALSE' "default FALSE" "FALSE"
 
 opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' "whether to delete the concatenated high-pass filtered and non-filtered timeseries files that are prerequisites to FIX cleaning (the concatenated, hpXX_clean timeseries files are preserved for use in downstream scripts), default FALSE" "FALSE"
@@ -81,6 +75,11 @@ opts_AddConfigOptional '--icadim-mode' 'icadimmode' 'icadimmode' '"default" or "
 opts_AddOptional '--processing-mode' 'ProcessingMode' '"HCPStyleData" (default) or "LegacyStyleData"' "controls whether --icadim-mode=fewtimepoints is allowed" 'HCPStyleData'
 
 opts_AddOptional '--clean-substring' 'CleanSubstring' 'string' "the clean mode substring, can be 'clean' as sICA+FIX cleaned,'clean_rclean' as sICA+FIX cleaned and reclean, default to 'clean'" "clean"
+
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
+0 = Use compiled MATLAB
+1 = Use interpreted MATLAB
+2 = Use interpreted Octave" "1"
 
 opts_ParseArguments "$@"
 
@@ -186,7 +185,6 @@ have_hand_reclassification()
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var FSL_FIXDIR
 
 # Show tool versions
 log_Msg "Showing HCP Pipelines version"
@@ -198,12 +196,6 @@ log_Msg "Showing Connectome Workbench (wb_command) version"
 log_Msg "Showing FSL version"
 fsl_version_get fsl_ver
 log_Msg "FSL version: ${fsl_ver}"
-
-# Show specific FIX version, if available
-if [ -f ${FSL_FIXDIR}/fixversion ]; then
-	fixversion=$(cat ${FSL_FIXDIR}/fixversion )
-	log_Msg "FIX version: $fixversion"
-fi
 
 old_or_new_version=$(determine_old_or_new_fsl ${fsl_ver})
 if [ "${old_or_new_version}" == "OLD" ] ; then
@@ -239,24 +231,19 @@ then  #Logic of this script does not support negative hp values
 	log_Err_Abort "--high-pass value must not be negative"
 fi
 
-case ${MatlabRunMode} in
-	0)
-		if [ -z "${MATLAB_COMPILER_RUNTIME}" ]; then
-			log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the MATLAB_COMPILER_RUNTIME environment variable must be set"
-		else
-			log_Msg "MATLAB_COMPILER_RUNTIME: ${MATLAB_COMPILER_RUNTIME}"
-		fi
+case "$MatlabMode" in
+	(0)
+		log_Check_Env_Var MATLAB_COMPILER_RUNTIME
 		;;
-	1)
-		log_Msg "MATLAB Run Mode: ${MatlabRunMode} - Use interpreted MATLAB"
+	(1)
+		matlab_interpreter=(matlab -nodisplay -nosplash)
 		;;
-	2)
-		log_Msg "MATLAB Run Mode: ${MatlabRunMode} - Use interpreted Octave"
+	(2)
+		matlab_interpreter=(octave-cli -q --no-window-system)
 		;;
-	*)
-		log_Err "MATLAB Run Mode value must be 0, 1, or 2"
-		error_count=$(( error_count + 1 ))
-		;;
+	(*)
+		log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
+	;;
 esac
 
 MotionRegression=$(opts_StringToBool "$MotionRegression")
@@ -285,16 +272,9 @@ fi
 
 # For INTERPRETED MODES, make sure that matlab/octave has access to the functions it needs.
 # normalise.m (needed by functionhighpassandvariancenormalize.m) is in '${HCPPIPEDIR}/global/matlab'
-# Since we are NOT using the ${FSL_FIXDIR}/call_matlab.sh script to invoke matlab (unlike 'hcp_fix_multi_run')
-# we need to explicitly add ${FSL_FIXDIR} (all the fix-related functions)
 # and ${FSL_MATLAB_PATH} (e.g., read_avw.m, save_avw.m) to the matlab path as well.
-# Several additional necessary environment variables (e.g., ${FSL_FIX_CIFTIRW} and ${FSL_FIX_WBC})
-# are set in ${FSL_FIXDIR}/settings.sh, which is sourced below for interpreted modes.
-# Note that fix_3_clean.m *appends* ${FSL_FIX_CIFTIRW} to the matlab path (i.e., the ciftiopen.m, ciftisave.m functions).
-# The pipelines CIFTI I/O functions have been moved to a subdirectory, and the SetUp... script selects what to use with HCPCIFTIRWDIR.
-# AND since 'addpath' *prepends* to the matlab path, the versions in HCPCIFTIRWDIR will therefore take precedence over the fix settings file.
 export FSL_MATLAB_PATH="${FSLDIR}/etc/matlab"
-ML_PATHS="addpath('${FSL_FIXDIR}'); addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
+ML_PATHS="addpath('${FSL_MATLAB_PATH}'); addpath('$HCPCIFTIRWDIR'); addpath('${HCPPIPEDIR}/global/matlab/icaDim'); addpath('${HCPPIPEDIR}/global/matlab'); addpath('${this_script_dir}/scripts');"
 
 # Some defaults
 aggressive=0
@@ -318,16 +298,6 @@ then
 		DoVol=1
 	fi
 fi
-# WARNING: fix_3_clean doesn't actually do anything different based on the value of DoVol (its 5th argument).
-# Rather, if a 5th argument is present, fix_3_clean does NOT apply cleanup to the volume, *regardless* of whether
-# that 5th argument is 0 or 1 (or even a non-sensical string such as 'foo').
-# It is for that reason that the code below needs to use separate calls to fix_3_clean, with and without DoVol
-# as an argument, rather than simply passing in the value of DoVol as set within this script.
-# Not sure if/when this non-intuitive behavior of fix_3_clean will change, but this is accurate as of fix1.067
-# UPDATE (11/8/2019): As of FIX 1.06.12, fix_3_clean interprets its 5th argument ("DoVol") in the usual boolean
-# manner. However, since we already had a work-around to this problem, we will leave the code unchanged so that
-# we don't need to add a FIX version dependency to the script.
-
 log_Msg "Use fixlist=$fixlist"
 
 fmris=${fMRINames//@/ } # replaces the @ that combines the filenames with a space
@@ -454,7 +424,7 @@ if (( regenConcatHP )); then
 		then
 
 			log_Msg "processing FMRI file $fmri with highpass $hp"
-			case ${MatlabRunMode} in
+			case ${MatlabMode} in
 			0)
 				# Use Compiled Matlab
 				matlab_exe="${HCPPIPEDIR}"
@@ -477,37 +447,21 @@ if (( regenConcatHP )); then
 
 			1 | 2)
 				# Use interpreted MATLAB or Octave
-				if [[ ${MatlabRunMode} == "1" ]]; then
-					interpreter=(matlab -nojvm -nodisplay -nosplash)
-				else
-					interpreter=(octave-cli -q --no-window-system)
-				fi
-				
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
 				
-				log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with code..."
+				log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 				log_Msg "${matlab_code}"
-
 				# Use bash redirection ("here-string") to pass multiple commands into matlab
 				# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
 				# get interpreted as separating different bash shell commands)
-				# See note below about why we export FSL_FIX_WBC after sourcing FSL_FIXDIR/settings.sh
-				(
-					#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
-					debug_disable_trap
-					set +u
-					source "${FSL_FIXDIR}/settings.sh"
-					set -u
-					debug_enable_trap
-					export FSL_FIX_WBC="${Caret7_Command}"
-					"${interpreter[@]}" <<<"${matlab_code}"
-				)
+				"${matlab_interpreter[@]}" <<<"${matlab_code}"
+				echo #matlab output doesn't include a newline, so add one
 				;;
 
 			*)
 				# Unsupported MATLAB run mode
-				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabMode}"
 				;;
 			
 			esac
@@ -669,53 +623,21 @@ fi
 # (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
 # could be worked around).
 
-export FSL_FIX_WBC="${Caret7_Command}"
-# WARNING: fix_3_clean uses the environment variable FSL_FIX_WBC, but most previous
-# versions of FSL_FIXDIR/settings.sh (v1.067 and earlier) have a hard-coded value for
-# FSL_FIX_WBC, and don't check whether it is already defined in the environment.
-# Thus, when settings.sh file gets sourced, there is a possibility that the version of
-# wb_command is no longer the same as that specified by ${Caret7_Command}.  So, after
-# sourcing settings.sh below, we explicitly set FSL_FIX_WBC back to value of ${Caret7_Command}.
-# (This may only be relevant for interpreted matlab/octave modes).
-
 log_Msg "Running fix_3_clean"
 
 AlreadyHP="-1"
 
-case ${MatlabRunMode} in
-
-	# See important WARNING above regarding why ${DoVol} is NOT included as an argument when DoVol=1 !!
-	
+case ${MatlabMode} in
 	0)
 		# Use Compiled Matlab
 
-		matlab_exe="${FSL_FIXDIR}/compiled/$(uname -s)/$(uname -m)/run_fix_3_clean.sh"
+		matlab_exe="${HCPPIPEDIR}/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh"
 
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
-		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}")
-		if (( ! DoVol )); then
-			matlab_function_arguments+=("${DoVol}")
-		fi
+		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${Caret7_Command}" "${DoVol}")
 		
-		# fix_3_clean is part of the FIX distribution, which was compiled under its own (separate) MCR.
-		# If ${FSL_FIX_MCR} is already defined in the environment, use that for the MCR location.
-		# If not, the appropriate MCR version for use with fix_3_clean should be set in $FSL_FIXDIR/settings.sh.
-		if [ -z "${FSL_FIX_MCR:-}" ]; then
-			debug_disable_trap
-			set +u
-			source ${FSL_FIXDIR}/settings.sh
-			set -u
-			debug_enable_trap
-			export FSL_FIX_WBC="${Caret7_Command}"
-			# If FSL_FIX_MCR is still not defined after sourcing settings.sh, we have a problem
-			if [ -z "${FSL_FIX_MCR:-}" ]; then
-				log_Err_Abort "To use MATLAB run mode: ${MatlabRunMode}, the FSL_FIX_MCR environment variable must be set"
-			fi
-		fi
-		log_Msg "FSL_FIX_MCR: ${FSL_FIX_MCR}"
-						
-		matlab_cmd=("${matlab_exe}" "${FSL_FIX_MCR}" "${matlab_function_arguments[@]}")
+		matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
 		# MPH: Going to let Compiled MATLAB use the existing stdout and stderr, rather than creating a separate log file
@@ -728,39 +650,16 @@ case ${MatlabRunMode} in
 	
 	1 | 2)
 		# Use interpreted MATLAB or Octave
-		if [[ ${MatlabRunMode} == "1" ]]; then
-			interpreter=(matlab -nojvm -nodisplay -nosplash)
-		else
-			interpreter=(octave-cli -q --no-window-system)
-		fi
 
-		if (( DoVol )); then
-			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP});"
-		else
-			matlab_cmd="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},${DoVol});"
-		fi
+		matlab_code="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
 		
-		log_Msg "Run interpreted MATLAB/Octave (${interpreter[@]}) with command..."
-		log_Msg "${matlab_cmd}"
-		
-		# Use bash redirection ("here-string") to pass multiple commands into matlab
-		# (Necessary to protect the semicolons that separate matlab commands, which would otherwise
-		# get interpreted as separating different bash shell commands)
-		(
-			#fix's default settings.sh isn't safe to unbound variables or exit codes, so disable everything before sourcing
-			debug_disable_trap
-			set +u
-			source "${FSL_FIXDIR}/settings.sh"
-			set -u
-			debug_enable_trap
-			export FSL_FIX_WBC="${Caret7_Command}"
-			"${interpreter[@]}" <<<"${matlab_cmd}"
-		)
+		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
+		log_Msg "${matlab_code}"
+		"${matlab_interpreter[@]}" <<<"${matlab_code}"
 		;;
-
 	*)
 		# Unsupported MATLAB run mode
-		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabRunMode}"
+		log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabMode}"
 		;;
 esac
 
