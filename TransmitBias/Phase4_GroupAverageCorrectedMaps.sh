@@ -15,6 +15,7 @@ opts_SetScriptDescription "average final transmit field files"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject-list' 'SubjectSTR' 'subject1@subject2...' "list of subjects separated by @"
+opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddMandatory '--mode' 'mode' 'string' "what type of transmit bias correction to apply, options and required inputs are:
 AFI - actual flip angle sequence with two different echo times, requires --afi-tr-one, --afi-tr-two, --afi-angle, and --transmit-group-name
 
@@ -34,7 +35,6 @@ opts_AddOptional '--afi-angle' 'AFIangle' 'number' "target flip angle of AFI seq
 opts_AddOptional '--average-myelin' 'myelinCiftiAvg' 'file' "cifti file of group average of uncorrected myelin"
 
 #general
-opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 0 = compiled MATLAB

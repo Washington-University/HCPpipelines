@@ -53,7 +53,7 @@ opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version 
 opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
 
 #generic other settings
-opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file"
+opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
 #could be optional?
 #MFG: stay mandatory
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
