@@ -88,7 +88,6 @@ compile_functionhighpassandvariancenormalize()
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
 		-I "${HCPPIPEDIR}/global/matlab" \
-		-I "${HCPPIPEDIR}/global/matlab/icasso122" \
 		-I "${HCPPIPEDIR}/global/matlab/icaDim" \
 		-I "${HCPCIFTIRWDIR}" \
 		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
@@ -142,6 +141,8 @@ compile_melodicicasso()
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
 		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
 		-I "${HCPPIPEDIR}/global/matlab" \
+		-a "$HCPPIPEDIR/global/matlab/icasso122/sim2dis.m" \
+		-a "$HCPPIPEDIR/global/matlab/icasso122/sqrtsim2dis.m" \
 		-I "${HCPPIPEDIR}/global/matlab/icasso122" \
 		-I "${HCPPIPEDIR}/global/matlab/icaDim" \
 		-I "${HCPCIFTIRWDIR}" \
