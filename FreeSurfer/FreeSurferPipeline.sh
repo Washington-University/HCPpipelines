@@ -124,7 +124,7 @@ then
 fi
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "Runs the FreeSurfer HCP pipline on data processed by prefresurfer"
+opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by prefreesurfer"
 
 # Show usage information
 opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
