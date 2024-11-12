@@ -96,7 +96,7 @@ esac
 #check for missing parameters before launching anything
 case "$mode" in
     (AFI)
-        if [[ "$AFIImage" == "" || "$AFITRone" == "" || "$AFITRtwo" == "" || "$AFIangle" == "" || "$GroupCorrected" == "" ]]
+        if [[ "$AFIImage" == "" || "$AFITRone" == "" || "$AFITRtwo" == "" || "$AFITargFlipAngle" == "" || "$GroupCorrected" == "" ]]
         then
             log_Err_Abort "$mode transmit correction mode requires --afi-image, --afi-tr-one, --afi-tr-two, --afi-angle, and --group-corrected-myelin"
         fi
