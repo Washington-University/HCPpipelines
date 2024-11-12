@@ -102,7 +102,7 @@ case "$mode" in
         fi
         ;;
     (B1Tx)
-        if [[ "$B1TxMag" == "" || "$B1TxPhase" == "" || "$b1txdiv" == "" || "$GroupCorrected" == "" ]]
+        if [[ "$B1TxMag" == "" || "$B1TxPhase" == "" || "$B1TxDiv" == "" || "$GroupCorrected" == "" ]]
         then
             log_Err_Abort "$mode transmit correction mode requires --b1tx-magnitude, --b1tx-phase, --b1tx-phase-divisor, and --group-corrected-myelin"
         fi
