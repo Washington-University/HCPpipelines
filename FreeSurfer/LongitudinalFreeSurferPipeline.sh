@@ -102,53 +102,19 @@ log_Check_Env_Var FREESURFER_HOME
 log_Msg "Platform Information Follows: "
 uname -a
 
-
-
-# Configure custom tools
-# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
-#   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
-#   are found on the PATH. If all such custom scripts are found, then we do nothing here.
-#   If any one of them is not found on the PATH, then we change the PATH so that the
-#   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
-configure_custom_tools()
-{
-  local which_recon_all
-  local which_conf2hires
-  local which_longmc
-
-  which_recon_all=$(which recon-all.v6.hires || true)
-  which_conf2hires=$(which conf2hires || true)
-  which_longmc=$(which longmc || true)
-
-  if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
-    export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
-    log_Warn "We were not able to locate one of the following required tools:"
-    log_Warn "recon-all.v6.hires, conf2hires, or longmc"
-    log_Warn ""
-    log_Warn "To be able to run this script using the standard versions of these tools,"
-    log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
-    log_Warn ""
-    log_Warn "If you intended to use some other version of these tools, please configure"
-    log_Warn "your PATH before invoking this script, such that the tools you intended to"
-    log_Warn "use can be found on the PATH."
-    log_Warn ""
-    log_Warn "PATH set to: ${PATH}"
-  fi
-}
-
 # Show tool versions
 show_tool_versions()
 {
   # Show recon-all version
-  log_Msg "Showing recon-all.v6.hires version"
-  local which_recon_all=$(which recon-all.v6.hires)
+  log_Msg "Showing recon-all version"
+  local which_recon_all=$(which recon-all)
   log_Msg ${which_recon_all}
-  recon-all.v6.hires -version
+  recon-all -version
   
   # Show tkregister version
-  log_Msg "Showing tkregister version"
-  which tkregister
-  tkregister -version
+  log_Msg "Showing tkregister2 version"
+  which tkregister2
+  tkregister2 -version
 
   # Show mri_concatenate_lta version
   log_Msg "Showing mri_concatenate_lta version"
@@ -206,9 +172,6 @@ validate_freesurfer_version()
     log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
   fi
 }
-
-# Configure the use of FreeSurfer v6 custom tools
-configure_custom_tools
 
 # Show tool versions
 show_tool_versions
@@ -280,7 +243,7 @@ if (( start_stage < 1 )); then
   log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
 
-  recon_all_cmd="recon-all.v6.hires"
+  recon_all_cmd="recon-all"
   recon_all_cmd+=" -sd ${LongDIR}"
   recon_all_cmd+=" -base ${TemplateID}"
   for Session in ${Sessions} ; do
@@ -312,7 +275,7 @@ if (( end_stage > 0 )); then
   # ----------------------------------------------------------------------
   for Session in ${Sessions} ; do
     log_Msg "Running longitudinal recon all for session: ${Session}"
-    recon_all_cmd="recon-all.v6.hires"
+    recon_all_cmd="recon-all"
     recon_all_cmd+=" -sd ${LongDIR}"
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
     
