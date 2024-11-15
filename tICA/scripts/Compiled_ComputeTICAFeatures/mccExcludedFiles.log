@@ -1,2 +1,3 @@
-The List of Excluded Files
-Excluded files	 Exclusion Message ID	 Reason For Exclusion	 Exclusion Rule
+Excluded Files
+Excluded Files	 Exclusion Message ID	 Reason For Exclusion	 Exclusion Rule
+/home/brainmappers/matlab2022b/toolbox/matlab/codetools/export.m	MATLAB:depfun:req:ExcludedBy	The file or function has been excluded from packaging for the "MCR" target environment according to the "Compiler" license.  Either remove the file or function from your code, or use the MATLAB function "isdeployed" to ensure the function is not invoked in the deployed component.	
