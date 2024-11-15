@@ -19,14 +19,14 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-#description to use in usage - syntax of parameters is now explained automatically
+#description of this script to use in usage - syntax of parameters is now explained automatically
 opts_SetScriptDescription "does stuff"
 
 #NOTE: config-enabled parameters (opts_AddConfigOptional) need an extra parameter after the variable name, to set the config entry name
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
 opts_AddOptional '--foo' 'myfoo' 'my foo' "give me a value, and i'll store it in myfoo, otherwise i will set it to defaultfoo" 'defaultfoo' '--oldoptionname' '--evenoldername'
 opts_AddOptional '--bar' 'mybar' 'your bar' "an optional parameter, when there is no argument after the desription it defaults to empty string, and this description is really long, but opts_ShowArguments (called by the usage functionality associated with opts_SetScriptDescription, or usable in a legacy usage() function) automatically splits lines at spaces, or hyphenates if there aren't enough spaces"
 

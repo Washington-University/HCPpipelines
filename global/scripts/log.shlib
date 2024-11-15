@@ -170,8 +170,18 @@ log_full_command_shown=0
 log_Err_Abort()
 {
 	log_Err "$*"
-	log_Msg "ABORTING"
-	exit 1
+	#check for interactive shell, if so, don't exit it
+	if [[ "$-" == *i* ]]
+	then
+		(
+			echo
+			echo -n "execution paused due to error, press enter to continue or ctrl+c to halt..."
+		) 1>&2
+		read
+	else
+		log_Msg "ABORTING"
+		exit 1
+	fi
 }
 
 log_Err()
