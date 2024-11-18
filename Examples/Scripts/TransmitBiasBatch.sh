@@ -6,7 +6,6 @@ queue="long.q"
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 #data location
-#DISCUSS: should this be "sessions"?  other batch scripts use subjects, but...
 subjects=(123456 654321)
 StudyFolder="${HOME}/projects/YA_HCP_Final"
 GroupName="HCP_S1200"
@@ -49,9 +48,9 @@ ptbbrthresh=0.5
 #set this to an already transmit-corrected group average myelin map
 ReferenceTemplate=
 
-#ALSO, edit the input filenames inside the first loop below
+#IMPORTANT: also edit the input file variables inside the first loop below
 
-#probably shouldn't edit this stuff
+#don't edit this section
 if [[ "$RegName" == "" || "$RegName" == "MSMSulc" ]]
 then
     RegStr=""
@@ -61,7 +60,6 @@ fi
 GMWMtemplate="$StudyFolder"/"$GroupName"/MNINonLinear/GMWMTemplate.nii.gz
 GroupCorrected="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap_GroupCorr"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
 GroupUncorrectedMyelin="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
-#DISCUSS: not sure if external users need to generate this
 AllSubjUncorrected="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".All.MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
 PTRefValFile="$StudyFolder"/"$GroupName"/PT_refval.txt
 
@@ -70,6 +68,7 @@ source "$EnvironmentScript"
 phase1jobids=()
 for subject in "${subjects[@]}"
 do
+    #EDIT THESE SETTINGS
     #AFI-specific per-subject filenames
     AFIImage=
     
@@ -88,6 +87,8 @@ do
     rawT1wPSN=
     rawT1wNoPSN=
 
+    #don't edit the rest of this script
+    
     phase1jobids+=($(fsl_sub -q "$queue" "$HCPPIPEDIR"/TransmitBias/Phase1_IndividualAlign.sh \
         --study-folder="$StudyFolder" \
         --subject="$subject" \
