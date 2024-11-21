@@ -170,7 +170,7 @@ main() {
 	DeleteIntermediates=FALSE
 
 	#for multi-run only, 0=compiled, 1=interpreted, 2=octave
- 	MatlabMode=0
+	MatlabMode=1
 	
 	#MR FIX config support for non-HCP settings
 	config=""
