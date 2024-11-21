@@ -471,7 +471,6 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
-log_Msg "high_myelin: ${high_myelin}"
 
 if ((! existing_session)); then
 
