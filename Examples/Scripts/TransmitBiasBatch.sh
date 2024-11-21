@@ -25,7 +25,7 @@ transmitRes="$grayordRes"
 MyelinMappingFWHM=5
 oldMyelinMapping=FALSE
 #0 for compiled, 1 for interpreted, 2 for octave
-MatlabMode=0
+MatlabMode=1
 
 #transmit field acquisition details
 #mode must be AFI, B1Tx, or PseudoTransmit

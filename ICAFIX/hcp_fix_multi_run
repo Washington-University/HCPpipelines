@@ -136,7 +136,7 @@ opts_AddOptional '--ica-method' 'ICAmethod' 'MELODIC or ICASSO' "Use single-pass
 
 opts_AddOptional '--parallel-limit' 'parLimit' 'integer' "set how many melodic commands to run in parallel (local, not cluster-distributed) during individual projection and cleanup, defaults to all detected physical cores" '-1'
 
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' 'O or 1 or 2' "for Pipelines code, use compiled matlab (0, default), interpreted matlab (1), or interpreted octave (2)." '0'
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' 'O or 1 or 2' "for Pipelines code, use compiled matlab (0), interpreted matlab (1), or interpreted octave (2).  Defaults to 1." '1'
 
 opts_ParseArguments "$@"
 

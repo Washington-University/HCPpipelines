@@ -64,10 +64,10 @@ opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myelin mapping was done using version 1.2.3 or earlier of wb_command, set this to true" 'false'
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" '0'
+2 = Octave" '1'
 
 opts_ParseArguments "$@"
 
