@@ -632,7 +632,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
       # ACPC align T1w or T2w image to specified MNI Template to create native volume space
 
-ACPCAlignment () {
+
 
 for TXw in ${Modalities} ; do
     # set up appropriate input variables
@@ -689,11 +689,10 @@ for TXw in ${Modalities} ; do
     fi
 done
 
-}
+
 
       # Brain Extraction(FNIRT-based Masking)
 
-BrainExtracion () {
 
 for TXw in ${Modalities} ; do
     # set up appropriate input variables
@@ -748,9 +747,7 @@ for TXw in ${Modalities} ; do
 done 
 
   # End of looping over modalities (T1w and T2w)
-}
 
-T2wToT1wRegAndBiasCorrection () {
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
@@ -887,7 +884,7 @@ T2wToT1wRegAndBiasCorrection () {
 
   fi
 
-}
+
 
   # ------------------------------------------------------------------------------
   # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
@@ -905,7 +902,6 @@ T2wToT1wRegAndBiasCorrection () {
   # Just implement inline, rather than writing a separate script
   # Added 2/19/2019
   # ------------------------------------------------------------------------------
-AtlasRegistration () {
   log_Msg "Creating one-step resampled version of {T1w,T2w}_acpc_dc outputs"
 
   # T1w
@@ -999,21 +995,8 @@ ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --fnirtconfig=${FNIRTConfig} \
   --brainextract=${BrainExtract}
 log_Msg "Completed!"
-}
 
-main () {
-if   [ "$RunMode" = "1" ] ; then
-	SetTemplateGradientNonlinearityAverage; ACPCAlignment; BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
-elif [ "$RunMode" = "2" ] ; then
-	                                        ACPCAlignment; BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
-elif [ "$RunMode" = "3" ] ; then
-	                                                       BrainExtracion; T2wToT1wRegAndBiasCorrection; AtlasRegistration
-elif [ "$RunMode" = "4" ] ; then
-	                                                                       T2wToT1wRegAndBiasCorrection; AtlasRegistration
-elif [ "$RunMode" = "5" ] ; then
-	                                                                                                     AtlasRegistration
-fi
-}
-main
+
+
 #### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
