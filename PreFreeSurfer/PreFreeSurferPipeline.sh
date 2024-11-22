@@ -274,6 +274,17 @@ opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreF
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls_whether_the_HCP_acquisition_and_processing_guidelines_should_be_treated_as_requirements.__LegacyStyleData' "'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image. " "HCPStyleData"
 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use jacobian modulation when correcting spin echo fieldmaps for gradient distortion" "True" # NOT IN THE ORIGNAL SCRIPT
+
+# NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
+opts_AddOptional '--runmode' 'RunMode' 'int' "Run mode (default: 1)" "1"
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (default: HFS)" "HFS"
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position (default: HFS)" "HFS"
+opts_AddOptional '--betcenter' 'betcenter' 'string' "Center coordinates for BET (default: 45,55,39)" "45,55,39"
+opts_AddOptional '--betradius' 'betradius' 'int' "Radius for BET (default: 75)" "75"
+opts_AddOptional '--betfraction' 'betfraction' 'float' "Fraction for BET (default: 0.3)" "0.3"
+opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to center for BET (default: 86)" "86"
+opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
 # ------------------------------------------------------------------------------
 #  Parse Arugments
 # ------------------------------------------------------------------------------
@@ -401,17 +412,6 @@ if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
 fi
 
 # log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS? 
-
-# default parameters
-SPECIES=`opts_DefaultOpt $SPECIES Human`
-RunMode=`opts_DefaultOpt $RunMode 1`
-TruePatientPosition=`opts_DefaultOpt $TruePatientPosition HFS`  
-ScannerPatientPosition=`opts_DefaultOpt $ScannerPatientPosition HFS` 
-betcenter=`opts_DefaultOpt $betcenter 45,55,39`        
-betradius=`opts_DefaultOpt $betradius 75` 
-betfraction=`opts_DefaultOpt $betfraction 0.3` 
-bettop2center=`opts_DefaultOpt $bettop2center 86` 
-BrainExtract=`opts_DefaultOpt $BrainExtract INVIVO` 
 
 if [ "$CustomBrain" = "ORIGMASK" ] ; then
 
