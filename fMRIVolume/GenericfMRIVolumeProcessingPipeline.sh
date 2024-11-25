@@ -46,9 +46,9 @@ NONE_METHOD_OPT="NONE"
 # --------------------------------------------------------------------------------
 opts_SetScriptDescription "Run fMRIVolume processing"
 
-opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all subject" "--path"
+opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all sessions" "--path"
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--session' 'Session' 'Session ID' "--subject"
 
 opts_AddMandatory '--fmritcs' 'fMRITimeSeries' 'file' 'input fMRI time series (NIFTI)'
 
@@ -148,6 +148,14 @@ Note that mask is used in IntensityNormalization.sh, so the mask type affects th
 opts_AddOptional '--fmriref' 'fMRIReference' 'folder' "Specifies whether to use another (already processed) fMRI run as a reference for processing. (i.e., --fmriname from the run to be used as *reference*). The specified run will be used as a reference for motion correction and its distortion correction and atlas (MNI152) registration will be copied over and used. The reference fMRI has to have been fully processed using the fMRIVolume pipeline, so that a distortion correction and atlas (MNI152) registration solution for the reference fMRI already exists. The reference fMRI must have been acquired using the same imaging parameters (e.g., phase encoding polarity and echo spacing), or it can not serve as a valid reference. (NO checking is performed to verify this). WARNING: This option excludes the use of the --fmriscout option, as the scout from the specified reference fMRI run is used instead. Please run with --processing-mode-info flag for additional information on the issues related to the use of --fmriref." "NONE" 
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specifies whether to compute and apply a nonlinear transform to align the inputfMRI to the reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed using 'fnirt' following the motion correction using the mean motion corrected fMRI image." "linear"
+
+#TODO add binary option processing from optlib
+opts_AddOptional '--output-native' 'binary' 'output in native T1w_acpc_dc space' "Flag to output in native T1w space [no by default]" "0"
+
+#longitudinal options
+opts_addOptional '--is-longitudinal' 'IsLongitudinal' 'binary' "Specifies whether this is run on a longitudinal timepoint" "0"
+opts_addOptional '--longitudinal-session' 'LongitudinalSession' 'folder' "Specifies longitudinal session name. If specified, \
+the parameter specified in --session should point to the corresponding cross-sectional session."
 
 # opts_AddOptional '--printcom' 'RUN' 'print-command' "DO NOT USE THIS! IT IS NOT IMPLEMENTED!"
 # Disable RUN
@@ -428,6 +436,13 @@ then
     log_Err_Abort "the --usejacobian option must be 'true' or 'false'"
 fi
 
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
+if (( IsLongitudinal )); then
+    if [ ! -d "$LongitudinalSession" ]; then
+        log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
+    fi
+fi
 
 if [[ "$RUN" != "" ]]
 then
@@ -466,12 +481,12 @@ OutputfMRI2StandardTransform="${NameOffMRI}2standard"
 Standard2OutputfMRITransform="standard2${NameOffMRI}"
 QAImage="T1wMulEPI"
 JacobianOut="Jacobian"
-SubjectFolder="$Path"/"$Subject"
+SessionFolder="$Path"/"$Session"
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
-sebasedBiasFieldMNI="$SubjectFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
+sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
 
-fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
+fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
 # Set UseBiasFieldMNI variable, and error check BiasCorrection variable
 # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
@@ -562,11 +577,11 @@ else
 
   # set reference and check if external reference (if one is specified) exists 
 
-  fMRIReferencePath="$Path"/"$Subject"/"$fMRIReference"
+  fMRIReferencePath="$Path"/"$Session"/"$fMRIReference"
   log_Msg "Using reference image from ${fMRIReferencePath}"
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
   fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_gdc_mask
-  ReferenceResultsFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"/"$ResultsFolder"/"$fMRIReference"
+  ReferenceResultsFolder="$Path"/"$Session"/"$AtlasSpaceFolder"/"$ResultsFolder"/"$fMRIReference"
 
   if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
     log_Err_Abort "Specified fMRI reference (--fmriref=${fMRIReference}) is the same as the current fMRI (--fmriname=${NameOffMRI})!"
@@ -626,8 +641,8 @@ fi
 
 ########################################## DO WORK ########################################## 
 
-T1wFolder="$Path"/"$Subject"/"$T1wFolder"
-AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
+T1wFolder="$Path"/"$Session"/"$T1wFolder"
+AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
@@ -834,7 +849,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --biasfield=${T1wFolder}/${BiasField} \
         --oregim=${fMRIFolder}/${RegOutput} \
         --freesurferfolder=${T1wFolder} \
-        --freesurfersubjectid=${Subject} \
+        --freesurfersubjectid=${Session} \
         --gdcoeffs=${GradientDistortionCoeffs} \
         --qaimage=${fMRIFolder}/${QAImage} \
         --method=${DistortionCorrection} \
@@ -842,7 +857,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --ojacobian=${fMRIFolder}/${JacobianOut} \
         --dof=${dof} \
         --fmriname=${NameOffMRI} \
-        --subjectfolder=${SubjectFolder} \
+        --subjectfolder=${SessionFolder} \
         --biascorrection=${BiasCorrection} \
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool}
