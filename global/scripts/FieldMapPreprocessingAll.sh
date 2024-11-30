@@ -35,6 +35,7 @@ fi
 # Load function libraries
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"          # FSL-version checks functions
 
 opts_SetScriptDescription "Script for generating a fieldmap suitable for FSL from a dual-echo Gradient Echo field map acquisition, and also do gradient non-linearity distortion correction of these"
@@ -63,7 +64,7 @@ opts_AddOptional '--fmapcombined' 'GEB0InputName' 'image (Hz and magnitude)' "GE
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image (radians or Hz)' "phase image in radians for Siemens/Philips fieldmap and in Hertz for GE HealthCare fieldmap"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "Siemens/Philips/GE HealthCare fieldmap magnitude image; multiple volumes (i.e., magnitude images from both echoes) are allowed"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "Siemens/Philips/GE HealthCare fieldmap magnitude image; multiple volumes (i.e., magnitude images from both echoes) are allowed, multiple files must be separated with @"
 
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir' "."
 
@@ -162,6 +163,21 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 
+function tmeanInputs()
+{
+    input="$1"
+    output="$2"
+    if [[ "$input" == *@*]]
+    then
+        IFS=@ read -a filesarray <<<"$input"
+        tempfiles_create FieldMap_inputMerge_XXXXXX.nii.gz mergeTemp
+        "$FSLDIR"/bin/fslmerge -t "$mergeTemp" "${filesarray[@]}"
+        "$FSLDIR"/bin/fslmaths "$mergeTemp" -Tmean "$output"
+    else
+        "$FSLDIR"/bin/fslmaths "$input" -Tmean "$output"
+    fi
+}
+
 case $DistortionCorrection in
 
     $SIEMENS_METHOD_OPT)
@@ -170,7 +186,7 @@ case $DistortionCorrection in
         # -- Siemens Gradient Echo Field Maps --
         # --------------------------------------
 
-        ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+        tmeanInputs "$MagnitudeInputName" "$WD"/Magnitude.nii.gz
         ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
         ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/Phase
         ${FSLDIR}/bin/fsl_prepare_fieldmap SIEMENS ${WD}/Phase ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
@@ -195,8 +211,8 @@ case $DistortionCorrection in
         # --------------------------------------------
         # -- GE HealthCare Gradient Echo Field Maps --
         # -------------------------------------------- 
-        	
-        ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude #normally only one volume 
+        
+        tmeanInputs "$MagnitudeInputName" "$WD"/Magnitude.nii.gz
         ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
         ${FSLDIR}/bin/imcp ${PhaseInputName} ${WD}/FieldMapHertz
         ${FSLDIR}/bin/fsl_prepare_fieldmap GEHC_FIELDMAPHZ ${WD}/FieldMapHertz ${WD}/Magnitude_brain ${WD}/FieldMap ${DeltaTE}
@@ -208,7 +224,7 @@ case $DistortionCorrection in
         # -- Philips Gradient Echo Field Maps --
         # --------------------------------------
 
-        ${FSLDIR}/bin/fslmaths ${MagnitudeInputName} -Tmean ${WD}/Magnitude
+        tmeanInputs "$MagnitudeInputName" "$WD"/Magnitude.nii.gz
         # Brain extract the magnitude image
         ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m
         ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_brain -ero ${WD}/Magnitude_brain_ero

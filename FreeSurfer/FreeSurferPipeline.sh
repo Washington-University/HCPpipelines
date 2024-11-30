@@ -24,7 +24,7 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
+# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
 #
 #~ND~END~
 
@@ -75,14 +75,14 @@ then
                     changeargs=1
                 fi
                 ;;
-            (--existing-subject)
+            (--existing-session|--existing-subject)
                 #same logic
                 if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
                 then
-                    newargs+=(--existing-subject "${origargs[i + 1]}")
+                    newargs+=(--existing-session "${origargs[i + 1]}")
                     i=$((i + 1))
                 else
-                    newargs+=(--existing-subject=TRUE)
+                    newargs+=(--existing-session=TRUE)
                     changeargs=1
                 fi
                 ;;
@@ -124,29 +124,29 @@ then
 fi
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "Runs the FreeSurfer HCP pipline on data processed by prefresurfer"
+opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by prefreesurfer"
 
 # Show usage information
-opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/subject"
+opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
 
-opts_AddOptional '--subjectDIR' 'SubjectDIR' 'subject' 'path to subject directory required, unless --existing-subject is set' "" "--subject-dir"
+opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "--subject-dir"
 
-opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-subject is set' "" "--t1"
+opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
 
-opts_AddOptional '--t1w-brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask required, unless --existing-subject is set' "" "--t1brain"
+opts_AddOptional '--t1w-brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask required, unless --existing-session is set' "" "--t1brain"
 
-opts_AddOptional '--t2w-image' 'T2wImage' "T2" "path to T2w image required, unless --existing-subject is set" "" "--t2"
+opts_AddOptional '--t2w-image' 'T2wImage' "T2" "path to T2w image required, unless --existing-session is set" "" "--t2"
 
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--existing-subject' 'existing_subjectString' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE"
+opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/session.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
-opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
+opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-session flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
 
-opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-subject --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
+opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
@@ -168,7 +168,7 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 
 #parse booleans
 flair=$(opts_StringToBool "$flairString")
-existing_subject=$(opts_StringToBool "$existing_subjectString")
+existing_session=$(opts_StringToBool "$existing_sessionString")
 conf2hires=$(opts_StringToBool "$conf2hiresString")
 
 #deal with NONE convention
@@ -182,19 +182,19 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
-#check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
+#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
-if ((! existing_subject))
+if ((! existing_session))
 then
     if [[ "${T1wImage}" = "" ]]
     then
-        log_Err_Abort "--t1 not set and '--existing-subject' not used"
+        log_Err_Abort "--t1 not set and '--existing-session' not used"
     fi
     if [[ "${T1wImageBrain}" = "" ]]
     then
-        log_Err_Abort "--t1brain not set and '--existing-subject' not used"
+        log_Err_Abort "--t1brain not set and '--existing-session' not used"
     fi
 
     if [[ "${T2wImage}" = "" ]]
@@ -484,36 +484,36 @@ log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 log_Msg "Retrieve positional parameters"
 # ----------------------------------------------------------------------
-SubjectDIR="${SubjectDIR}"
-SubjectID="${SubjectID}"
-T1wImage="${T1wImage}"       # Irrelevant if '--existing-subject' flag is set
-T1wImageBrain="${T1wImageBrain}"  # Irrelevant if '--existing-subject' flag is set
-T2wImage="${T2wImage}"       # Irrelevant if '--existing-subject' flag is set
+SessionDIR="${SessionDIR}"
+SessionID="${SessionID}"
+T1wImage="${T1wImage}"       # Irrelevant if '--existing-session' flag is set
+T1wImageBrain="${T1wImageBrain}"  # Irrelevant if '--existing-session' flag is set
+T2wImage="${T2wImage}"       # Irrelevant if '--existing-session' flag is set
 recon_all_seed="${recon_all_seed}"
 
 
 # ----------------------------------------------------------------------
 # Log values retrieved from positional parameters
 # ----------------------------------------------------------------------
-log_Msg "SubjectDIR: ${SubjectDIR}"
-log_Msg "SubjectID: ${SubjectID}"
+log_Msg "SessionDIR: ${SessionDIR}"
+log_Msg "SessionID: ${SessionID}"
 log_Msg "T1wImage: ${T1wImage}"
 log_Msg "T1wImageBrain: ${T1wImageBrain}"
 log_Msg "T2wImage: ${T2wImage}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
 log_Msg "flair: ${flair}"
-log_Msg "existing_subject: ${existing_subject}"
+log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
 
-if ((! existing_subject)); then
+if ((! existing_session)); then
 
-    # If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
+    # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
     # certain files need to be reverted to their PreFreeSurfer output versions
-    if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
-        log_Err "The --existing-subject flag was not invoked AND PostFreeSurfer has already been run."
-        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <subj>/T1w/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
-        log_Err_Abort "If this is the goal, delete ${SubjectDIR}/${SubjectID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
+    if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
+        log_Err "The --existing-session flag was not invoked AND PostFreeSurfer has already been run."
+        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/T1w/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
+        log_Err_Abort "If this is the goal, delete ${SessionDIR}/${SessionID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
     fi
 
     # ----------------------------------------------------------------------
@@ -533,8 +533,8 @@ fi
 log_Msg "Call custom recon-all: recon-all.v6.hires"
 # ----------------------------------------------------------------------
 
-recon_all_cmd=(recon-all.v6.hires -subjid "$SubjectID" -sd "$SubjectDIR")
-if ((! existing_subject)); then  # input volumes only necessary first time through
+recon_all_cmd=(recon-all.v6.hires -subjid "$SessionID" -sd "$SessionDIR")
+if ((! existing_session)); then  # input volumes only necessary first time through
     recon_all_cmd+=(-all -i "$zero_threshold_T1wImage" -emregmask "$T1wImageBrain")
     if [ "${T2wImage}" != "" ]; then
         if ((flair)); then
@@ -576,7 +576,7 @@ if [ "${return_code}" != "0" ]; then
     log_Err_Abort "recon-all command failed with return_code: ${return_code}"
 fi
 
-if ((! existing_subject)); then
+if ((! existing_session)); then
     # ----------------------------------------------------------------------
     log_Msg "Clean up file: ${zero_threshold_T1wImage}"
     # ----------------------------------------------------------------------
@@ -588,14 +588,14 @@ if ((! existing_subject)); then
 
 fi
 
-## MPH: Portions of the following are unnecesary in the case of ${existing_subject} = "TRUE"
+## MPH: Portions of the following are unnecesary in the case of ${existing_session} = "TRUE"
 ## but rather than identify what is and isn't strictly necessary (which itself may interact
 ## with the specific stages run in recon-all), we'll simply run it all to be safe that all
 ## files created following recon-all are appropriately updated
 # ----------------------------------------------------------------------
 log_Msg "Creating eye.dat"
 # ----------------------------------------------------------------------
-mridir=${SubjectDIR}/${SubjectID}/mri
+mridir=${SessionDIR}/${SessionID}/mri
 
 transformsdir=${mridir}/transforms
 mkdir -p ${transformsdir}
@@ -603,7 +603,7 @@ mkdir -p ${transformsdir}
 eye_dat_file=${transformsdir}/eye.dat
 
 log_Msg "...This creates ${eye_dat_file}"
-echo "${SubjectID}" > ${eye_dat_file}
+echo "${SessionID}" > ${eye_dat_file}
 echo "1" >> ${eye_dat_file}
 echo "1" >> ${eye_dat_file}
 echo "1" >> ${eye_dat_file}
@@ -634,7 +634,7 @@ if [[ "${T2wImage}" != "" ]]; then
     tkregister_cmd+=" --noedit"
     tkregister_cmd+=" --reg deleteme.dat"
     tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
-    tkregister_cmd+=" --s ${SubjectID}"
+    tkregister_cmd+=" --s ${SessionID}"
 
     log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
     log_Msg "......tkregister_cmd: ${tkregister_cmd}"
@@ -689,7 +689,7 @@ log_Msg "Creating white surface files in rawavg space"
 
 pushd ${mridir}
 
-export SUBJECTS_DIR="$SubjectDIR"
+export SUBJECTS_DIR="$SessionDIR"
 
 reg=$mridir/transforms/orig2rawavg.dat
 # generate registration between conformed and hires based on headers
@@ -699,13 +699,13 @@ reg=$mridir/transforms/orig2rawavg.dat
 tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 
 #The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
-mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
+mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
 return_code=$?
 if [ "${return_code}" != "0" ]; then
     log_Err_Abort "mri_surf2surf command for left hemisphere failed with return_code: ${return_code}"
 fi
 
-mri_surf2surf --s ${SubjectID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi rh
+mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi rh
 return_code=$?
 if [ "${return_code}" != "0" ]; then
     log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"

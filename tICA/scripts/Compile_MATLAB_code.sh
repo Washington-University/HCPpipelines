@@ -24,30 +24,30 @@ compile_function GroupSICA \
     -I "$HCPCIFTIRWDIR" \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
-    -I "$scriptdir/icasso122" \
-    -a "$scriptdir/icasso122/sim2dis.m" \
-    -a "$scriptdir/icasso122/sqrtsim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sim2dis.m" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sqrtsim2dis.m" \
+    -I "$HCPPIPEDIR/global/matlab/icasso122" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 
 compile_function ConcatGroupSICA \
     -I "$HCPCIFTIRWDIR" \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
-    -I "$scriptdir/icasso122" \
-    -a "$scriptdir/icasso122/sim2dis.m" \
-    -a "$scriptdir/icasso122/sqrtsim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sim2dis.m" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sqrtsim2dis.m" \
+    -I "$HCPPIPEDIR/global/matlab/icasso122" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 
 compile_function ComputeGroupTICA \
     -I "$HCPCIFTIRWDIR" \
     -I "$scriptdir" \
     -I "$scriptdir/FastICA_25" \
-    -I "$scriptdir/icasso122" \
-    -a "$scriptdir/icasso122/sim2dis.m" \
-    -a "$scriptdir/icasso122/sqrtsim2dis.m" \
     -I "$HCPPIPEDIR/global/matlab" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sim2dis.m" \
+    -a "$HCPPIPEDIR/global/matlab/icasso122/sqrtsim2dis.m" \
+    -I "$HCPPIPEDIR/global/matlab/icasso122" \
     -I "$HCPPIPEDIR/global/matlab/nets_spectra" \
     -I "$HCPPIPEDIR/global/matlab/icaDim"
 

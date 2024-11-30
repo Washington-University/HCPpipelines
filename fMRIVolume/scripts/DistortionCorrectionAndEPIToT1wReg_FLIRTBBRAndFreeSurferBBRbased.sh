@@ -113,7 +113,7 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
 opts_AddOptional '--subjectfolder' 'SubjectFolder' 'path' "subject processing folder"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "field map magnitude image"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "field map magnitude images (@-separated)"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 

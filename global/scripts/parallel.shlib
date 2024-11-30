@@ -38,6 +38,13 @@ function par_addjob()
 
 function par_runjobs()
 {
+    #check if there are any jobs added
+    if ((${#par_jobarray[@]} == 0))
+    then 
+        echo "WARNING: no parallel jobs added, nothing to run"
+        return 0 
+    fi
+    #avoid calling par_numphys if we have an argument, because it can produce a warning
     local numpar=-1
     #treat empty string as default
     if (($# >= 1)) && [[ "$1" != "" ]]
@@ -62,7 +69,7 @@ function par_runjobs()
     wait
     local -a jobpids=()
     #track which jobs errored
-    local badjobslog="./$par_global_scriptname.errjobs$$.$par_global_launch_count.log"
+    local badjobslog="$par_logfile_dir/$par_global_scriptname.errjobs$$.$par_global_launch_count.log"
     rm -f -- "$badjobslog"
     local i
     for ((i = 0; i < ${#par_jobarray[@]}; ++i))
@@ -86,7 +93,7 @@ function par_runjobs()
             fi
         fi
         (
-            tempfiles_par_shell_reset
+            tempfiles_subshell_reset
             
             #WARNING: using a pipe puts the command in a different subshell, which breaks tempfiles, so all input/output redirect/pipe stuff is done on the outside of this subshell
             if ! "${cmdargs[@]}"
@@ -96,7 +103,7 @@ function par_runjobs()
             fi
             
             tempfiles_cleanup
-        ) <<<"${par_jobinputarray[i]}" 2>&1 > "./$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "./$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
         #save all the job pids, why not
         jobpids[$i]="$!"
         par_global_launch_count=$((par_global_launch_count + 1))
@@ -153,6 +160,18 @@ function par_numlog()
 
 par_jobarray=()
 par_jobinputarray=()
+
+par_fslsub_joblist=()
+par_fslsub_job_waitlist=""
+
+par_logfile_dir="."
+
+#Set directory where all log files are written. Default is '.'
+function par_set_log_dir()
+{
+    par_logfile_dir="$1"
+}
+
 function par_addjob_stdin()
 {
     local encodedargs=()
@@ -172,3 +191,79 @@ function par_addjob_stdin()
     par_jobinputarray+=("$jobinput")
 }
 
+#Add job to the current stage (FSLSUB, BUILTIN or NONE mode)
+#Inputs:
+#1. parallel modein
+#2. queue name for FSLSUB (local submit if empty)
+#3. command with arguments
+function par_add_job_to_stage()
+{
+    local PARALLEL_MODE=$1
+    if [ "$PARALLEL_MODE" != "FSLSUB" -a "$PARALLEL_MODE" != "BUILTIN" -a "$PARALLEL_MODE" != "NONE" ]; then 
+        echo "Unknown parallel mode: $PARALLEL_MODE, cannot continue"
+        exit 1
+    fi
+    
+    shift
+    #FSLSUB queue name for FSLSUB mode, should be 'NONE' for other modes.
+    local fslsub_queue=$1
+    shift
+
+    local job submit_cmd cmd=("$@")
+
+    if [ "$PARALLEL_MODE" == "FSLSUB" ]; then #current job is submitted, and added to fsl_job_list        
+        submit_cmd=(fsl_sub)
+        if [[ -n "$fslsub_queue" ]]; then 
+            submit_cmd+=(-q "$fslsub_queue")
+        fi
+        if [[ -n "$par_fslsub_job_waitlist" ]]; then
+            submit_cmd+=(-j "$par_fslsub_job_waitlist")
+        fi
+        submit_cmd+=("${cmd[@]}")
+        job=$("${submit_cmd[@]}")
+        par_fslsub_job_list+=("$job")
+    elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then          #current job is added to the list of local parallel jobs        
+        par_addjob "${cmd[@]}"
+    else #NONE                                          #current job is executed.
+        echo "launching, parallel mode=NONE, will wait to finish: ${cmd[*]}"
+        "${cmd[@]}" 1> "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log" 2> "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log"
+        par_global_launch_count=$((par_global_launch_count + 1))
+    fi
+}
+
+#Finalize the list of jobs at the current stage.
+#FSLSUB: update prerequisite job waitlist for the next stage; empty current stage job list
+#BUILTIN: wait until all jobs at the current stage complete, internally, also empty current job list
+#NONE: do nothing, execution was done in par_add_job_to_stage_multimode()
+
+#Inputs:
+#1. Mode name
+#2. max jobs (BUILTIN mode only)
+function par_finalize_stage()
+{
+    #global fslsub_job_list fslsub_job_waitlist
+    local PARALLEL_MODE=$1
+    if [ "$PARALLEL_MODE" != "FSLSUB" -a "$PARALLEL_MODE" != "BUILTIN" -a "$PARALLEL_MODE" != "NONE" ]; then 
+        echo "Unknown parallel mode: $PARALLEL_MODE, cannot continue"
+        exit 1
+    fi
+    shift
+    local temp max_jobs=$1
+    if [ -z "$max_jobs" ]; then max_jobs=-1; fi
+
+    if [ "$PARALLEL_MODE" == "FSLSUB" ]; then           #update the fslsub_job_waitlist with the current job list.
+        par_fslsub_job_waitlist=""
+        if [ -n "$par_fslsub_job_list" ]; then 
+            temp="${par_fslsub_job_list[*]}"
+            par_fslsub_job_waitlist="${temp// /,}"
+        fi
+        par_fslsub_job_list=()
+    elif [ "$PARALLEL_MODE" == "BUILTIN" ]; then        #run local parallel jobs.
+        echo "running ${#par_jobarray[*]} jobs, maximum parallel jobs: $max_jobs"
+        par_runjobs $max_jobs
+        if (( $? )); then 
+            log_Err_Abort "One of parallel jobs failed, exiting"
+        fi
+        echo "parallel jobs for the current stage done"
+    fi                                                  #nothing needs to be done for NONE mode.
+}

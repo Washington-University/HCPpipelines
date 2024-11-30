@@ -21,8 +21,8 @@ fi
 
 ## Edit this section: set up other environment variables
 export MSMBINDIR="${HOME}/pipeline_tools/MSM"
-export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
-export FSL_FIXDIR=/usr/local/fix
+export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2022b
+# export FSL_FIXDIR=/usr/local/fix # only needed for legacy fix
 # If a suitable version of wb_command is on your $PATH, CARET7DIR can be blank
 export CARET7DIR=
 export HCPCIFTIRWDIR="$HCPPIPEDIR"/global/matlab/cifti-matlab
@@ -93,7 +93,14 @@ then
 fi
 
 # Add the specified versions of some things to the front of $PATH, so we can stop using absolute paths everywhere
-export PATH="$CARET7DIR:$FSLDIR/bin:$PATH"
+if [[ -d "$FSLDIR/share/fsl/bin" ]] ; then
+    # For FSL 6.0.6 (release date: 22 Nov 2022) or later
+    export PATH="$FSLDIR/share/fsl/bin:$PATH"
+else
+    # For older versions of FSL
+    export PATH="$FSLDIR/bin:$PATH"
+fi
+export PATH="$CARET7DIR:$PATH"
 
 # Source extra stuff that pipelines authors may need to edit, but users shouldn't ever need to
 # by separating them this way, a user can continue to use their previous setup file even if we

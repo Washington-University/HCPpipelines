@@ -89,11 +89,11 @@ get_options() {
 
 	# MPH: Allow FixDir to be empty at this point, so users can take advantage of the FSL_FIXDIR setting
 	# already in their EnvironmentScript
-#    if [ -z ${FixDir} ]
-#    then
-#        echo "ERROR: FixDir not specified"
-#        exit 1
-#    fi
+#	if [ -z ${FixDir} ]
+#	then
+#		echo "ERROR: FixDir not specified"
+#		exit 1
+#	fi
 
 	if [ -z ${RunLocal} ]
 	then
@@ -153,6 +153,9 @@ main() {
 	# set whether or not to regress motion parameters (24 regressors)
 	# out of the data as part of FIX (TRUE or FALSE)
 	domot=FALSE
+
+	# set the ICA Method (MELODIC or ICASSO)
+	ICAmethod=MELODIC
 	
 	# set the training data used in multi-run fix mode
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
@@ -165,6 +168,9 @@ main() {
 	
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
 	DeleteIntermediates=FALSE
+
+	#for multi-run only, 0=compiled, 1=interpreted, 2=octave
+	MatlabMode=1
 	
 	#MR FIX config support for non-HCP settings
 	config=""
@@ -205,17 +211,17 @@ main() {
 			done
 
 		else
-        	#need arrays to sanity check number of concat groups
-        	IFS=' @' read -a concatarray <<< "${ConcatNames}"
-        	IFS=% read -a fmriarray <<< "${fMRINames}"
-        	
-        	if ((${#concatarray[@]} != ${#fmriarray[@]})); then
-        	    echo "ERROR: number of names in ConcatNames does not match number of fMRINames groups"
-        	    exit 1
-        	fi
+			#need arrays to sanity check number of concat groups
+			IFS=' @' read -a concatarray <<< "${ConcatNames}"
+			IFS=% read -a fmriarray <<< "${fMRINames}"
+			
+			if ((${#concatarray[@]} != ${#fmriarray[@]})); then
+				echo "ERROR: number of names in ConcatNames does not match number of fMRINames groups"
+				exit 1
+			fi
 
-		    for ((i = 0; i < ${#concatarray[@]}; ++i))
-		    do
+			for ((i = 0; i < ${#concatarray[@]}; ++i))
+			do
 				ConcatName="${concatarray[$i]}"
 				fMRINamesGroup="${fmriarray[$i]}"
 				# multi-run FIX
@@ -233,7 +239,13 @@ main() {
 
 				echo "  InputFile: ${InputFile}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" --fmri-names="${InputFile}" --high-pass=${bandpass} --concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} --training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} --delete-intermediates="${DeleteIntermediates}" --config="$config" --processing-mode="$processingmode")
+				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix_multi_run" \
+					--fmri-names="${InputFile}" --high-pass=${bandpass} \
+					--concat-fmri-name="${ConcatFileName}" --motion-regression=${domot} \
+					--training-file="${MRTrainingData}" --fix-threshold=${FixThreshold} \
+					--delete-intermediates="${DeleteIntermediates}" --config="$config" \
+					--processing-mode="$processingmode" --ica-method="$ICAmethod" \
+					--matlab-run-mode="$MatlabMode")
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done

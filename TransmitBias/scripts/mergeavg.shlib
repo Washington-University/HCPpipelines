@@ -1,0 +1,85 @@
+#!/bin/echo This script should not be run directly:
+
+function avg_setSubjects()
+{
+    avg_GoodSubjArray=("$@")
+}
+
+#initialize to empty subjects list
+avg_setSubjects
+
+function avg_setStudyFolder()
+{
+    avg_StudyFolder="$1"
+}
+
+#deal with /100307/MNINonLinear/fsaverage_LR32k/100307.whatever filenames
+function ciftimergeavgsubj()
+{
+    local folder="$1"
+    local namepart="$2"
+    local outputmerge="$3"
+    local outputavg="$4"
+    shift 4
+    #additional args get added per-file
+    local args=()
+    local Subject
+    for Subject in "${avg_GoodSubjArray[@]}"
+    do
+        args+=(-cifti "$avg_StudyFolder/$Subject/$folder/$Subject.$namepart" "$@")
+    done
+    wb_command -cifti-merge "$outputmerge" "${args[@]}" -cifti-read-memory
+    wb_command -cifti-reduce "$outputmerge" MEAN "$outputavg"
+}
+
+function ciftimergeavgsubjnooutliers()
+{
+    local folder="$1"
+    local namepart="$2"
+    local outputmerge="$3"
+    local outputavg="$4"
+    shift 4
+    #additional args get added per-file to the merge
+    local args=()
+    local Subject
+    for Subject in "${avg_GoodSubjArray[@]}"
+    do
+        args+=(-cifti "$avg_StudyFolder/$Subject/$folder/$Subject.$namepart" "$@")
+    done
+    wb_command -cifti-merge "$outputmerge" "${args[@]}" -cifti-read-memory
+    wb_command -cifti-reduce "$outputmerge" MEAN "$outputavg" -exclude-outliers 2 2
+}
+
+function volmergeavg()
+{
+    local input="$1"
+    local outputmerge="$2"
+    local outputavg="$3"
+    shift 3
+    #additional args get added per-file
+    local args=()
+    for Subject in "${avg_GoodSubjArray[@]}"
+    do
+        args+=(-volume "$avg_StudyFolder/$Subject/$input" "$@")
+    done
+    wb_command -volume-merge "$outputmerge" "${args[@]}"
+    wb_command -volume-reduce "$outputmerge" MEAN "$outputavg"
+}
+
+#cifti files seem to all have subject ID in name, so this one doesn't appear to be useful
+#function ciftimergeavg()
+#{
+#    local input="$1"
+#    local outputmerge="$2"
+#    local outputavg="$3"
+#    shift 3
+#    #additional args get added per-file
+#    local args=()
+#    for Subject in "${GoodSubjArray[@]}"
+#    do
+#        args+=(-cifti "$StudyFolder/$Subject/$input" "$@")
+#    done
+#    wb_command -cifti-merge "$output" "${args[@]}" -cifti-read-memory
+#    wb_command -cifti-reduce "$outputmerge" MEAN "$outputavg"
+#}
+
