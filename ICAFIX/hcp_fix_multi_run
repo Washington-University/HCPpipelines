@@ -38,7 +38,7 @@
 #   Changes by Grega Repovš
 #
 #   1) Introduce --reuse-existing-ica option to skip melodic and proceed with FIX on previously computed ICA solution
-#   2) Introduce --fix-backup option to backup an existing FIX solutiuon in case of using --reuse-existing-ica option
+#   2) Introduce --fix-backup option to backup an existing FIX solution in case of using --reuse-existing-ica option
 
 #############################################################
 set -eu
@@ -146,7 +146,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' 'O or 1 or 2' "for Pipelines c
 
 opts_AddOptional '--reuse-existing-ica' 'ReuseExistingICAStr' 'TRUE or FALSE' 'If TRUE, it skips running ICA using melodic and proceeds directly with running FIX. A previous ICA solution has to exist!' 'FALSE'
 
-opts_AddOptional '--fix-backup' 'FIXBackup' 'empty or the name of a backup folder' 'If not empty, previous FIX solution is backed up to the provided folder in case that --reuse-existing-ica was set to TRUE.' ''
+opts_AddOptional '--fix-backup' 'FIXBackup' 'empty or the name of a backup folder' 'If not empty, previous FIX solution is backed up to the specified folder in case that --reuse-existing-ica was set to TRUE.' ''
 
 opts_ParseArguments "$@"
 
