@@ -167,7 +167,7 @@ existing_session=$(opts_StringToBool "$existing_sessionString")
 conf2hires=$(opts_StringToBool "$conf2hiresString")
 gpu=$(opts_StringToBool "$gpuString")
 
-# FS8 things
+# required by FS8
 export FS_ALLOW_DEEP=1
 
 #deal with NONE convention
@@ -181,7 +181,7 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
-#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
+#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -233,7 +233,7 @@ show_tool_versions()
     local which_recon_all=$(which recon-all || true)
     log_Msg ${which_recon_all}
     recon-all -version
-    
+
     # Show tkregister version
     log_Msg "Showing tkregister2 version"
     which tkregister2
@@ -259,7 +259,7 @@ validate_freesurfer_version()
     if [ -z "${FREESURFER_HOME}" ]; then
         log_Err_Abort "FREESURFER_HOME must be set"
     fi
-    
+
     freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
 
     if [ -f "${freesurfer_version_file}" ]; then
@@ -517,7 +517,7 @@ if ((! existing_session)); then  # input volumes only necessary first time throu
 fi
 
 # By default, refine pial surfaces using T2 (if T2w image provided).
-# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
+# If for some other reason the -T2pial flag needs to be excluded from recon-all,
 # this can be accomplished using --extra-reconall-arg=-noT2pial
 if [ "${T2wImage}" != "" ]; then
     if ((flair)); then
@@ -670,11 +670,11 @@ export SUBJECTS_DIR="$SessionDIR"
 reg=$mridir/transforms/orig2rawavg.dat
 # generate registration between conformed and hires based on headers
 # Note that the convention of tkregister2 is that the resulting $reg is the registration
-# matrix that maps from the "--targ" space into the "--mov" space. 
+# matrix that maps from the "--targ" space into the "--mov" space.
 
 tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 
-#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
+#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.
 mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
 return_code=$?
 if [ "${return_code}" != "0" ]; then
