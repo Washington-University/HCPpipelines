@@ -127,10 +127,10 @@ log_Msg "InflateExtraScale: ${InflateExtraScale}"
 #NONE, TIMEPOINT_STAGE1, TIMEPOINT_STAGE2, or TEMPLATE
 LongitudinalMode="${24}"
 
-#Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data. 
+#Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
 #In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
 #In long TEMPLATE mode, $Session=$ExperimentRoot, defined as <LongSubjectLabel>.long.<LongTemplate>
-#In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform 
+#In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform
 #surface averaging for MSMSulc.
 
 #Actual subject label which is part of longitudinal timepoint and template experiment roots, see comment above.
@@ -203,7 +203,7 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
     done
 
     #The following processing is done in PrePostFreesurfer-long pipeline in the case of longitudinal pipelines.
-    if [ "$LongitudinalMode" == "NONE" ]; then 
+    if [ "$LongitudinalMode" == "NONE" ]; then
         #Create FreeSurfer Brain Mask
         fslmaths "$T1wFolder"/wmparc_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
         ${CARET7DIR}/wb_command -volume-fill-holes "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
@@ -241,7 +241,7 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
         ${CARET7DIR}/wb_command -volume-label-import "$AtlasSpaceFolder"/ROIs/wmparc."$GrayordinatesResolution".nii.gz ${SubcorticalGrayLabels} "$AtlasSpaceFolder"/ROIs/ROIs."$GrayordinatesResolution".nii.gz -discard-others
         [ "${T2wImage}" != "NONE" ] && applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage"."$GrayordinatesResolution".nii.gz
         applywarp --interp=spline -i "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz -r "$AtlasSpaceFolder"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz -o "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage"."$GrayordinatesResolution".nii.gz
-        
+
         ### Report on subcortical segmentation (missing voxels and overlap with Atlas)
 
         # Generate brain mask at appropriate resolution
@@ -337,60 +337,60 @@ for Hemisphere in L R ; do
     i=1
     if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then #the following code is skipped in TIMEPOINT_STAGE2.
         for Surface in white pial ; do
-        Type=$(echo "$Types" | cut -d " " -f $i)
-        Secondary=$(echo "$Type" | cut -d "@" -f 2)
-        Type=$(echo "$Type" | cut -d "@" -f 1)
-        if [ ! $Secondary = $Type ] ; then
-            Secondary=$(echo " -surface-secondary-type ""$Secondary")
-        else
-            Secondary=""
-        fi
-        mris_convert "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
-        ${CARET7DIR}/wb_command -set-structure "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii ${Structure} -surface-type $Type$Secondary
-        ${CARET7DIR}/wb_command -surface-apply-affine "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii "$FreeSurferFolder"/mri/c_ras.mat "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
-        ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
-        ${CARET7DIR}/wb_command -surface-apply-warpfield "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii "$InverseAtlasTransform".nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii -fnirt "$AtlasTransform".nii.gz
-        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
-        i=$(( i+1 ))
-        done
+            Type=$(echo "$Types" | cut -d " " -f $i)
+            Secondary=$(echo "$Type" | cut -d "@" -f 2)
+            Type=$(echo "$Type" | cut -d "@" -f 1)
+            if [ ! $Secondary = $Type ] ; then
+                Secondary=$(echo " -surface-secondary-type ""$Secondary")
+            else
+                Secondary=""
+            fi
+            mris_convert "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
+            ${CARET7DIR}/wb_command -set-structure "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii ${Structure} -surface-type $Type$Secondary
+            ${CARET7DIR}/wb_command -surface-apply-affine "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii "$FreeSurferFolder"/mri/c_ras.mat "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
+            ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
+            ${CARET7DIR}/wb_command -surface-apply-warpfield "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii "$InverseAtlasTransform".nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii -fnirt "$AtlasTransform".nii.gz
+            ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
+            i=$(( i+1 ))
+            done
 
-        #Create midthickness by averaging white and pial surfaces and use it to make inflated surfacess
-        for Folder in "$T1wFolder" "$AtlasSpaceFolder" ; do
-        ${CARET7DIR}/wb_command -surface-average "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii -surf "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".white.native.surf.gii -surf "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".pial.native.surf.gii
-        ${CARET7DIR}/wb_command -set-structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii ${Structure} -surface-type ANATOMICAL -surface-secondary-type MIDTHICKNESS
-        ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii
+            #Create midthickness by averaging white and pial surfaces and use it to make inflated surfacess
+            for Folder in "$T1wFolder" "$AtlasSpaceFolder" ; do
+            ${CARET7DIR}/wb_command -surface-average "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii -surf "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".white.native.surf.gii -surf "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".pial.native.surf.gii
+            ${CARET7DIR}/wb_command -set-structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii ${Structure} -surface-type ANATOMICAL -surface-secondary-type MIDTHICKNESS
+            ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii
 
-        #get number of vertices from native file
-        NativeVerts=$(${CARET7DIR}/wb_command -file-information "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii | grep 'Number of Vertices:' | cut -f2 -d: | tr -d '[:space:]')
+            #get number of vertices from native file
+            NativeVerts=$(${CARET7DIR}/wb_command -file-information "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii | grep 'Number of Vertices:' | cut -f2 -d: | tr -d '[:space:]')
 
-        #HCP fsaverage_LR32k used -iterations-scale 0.75. Compute new param value for native mesh density
-        NativeInflationScale=$(echo "scale=4; $InflateExtraScale * 0.75 * $NativeVerts / 32492" | bc -l)
+            #HCP fsaverage_LR32k used -iterations-scale 0.75. Compute new param value for native mesh density
+            NativeInflationScale=$(echo "scale=4; $InflateExtraScale * 0.75 * $NativeVerts / 32492" | bc -l)
 
-        ${CARET7DIR}/wb_command -surface-generate-inflated "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".inflated.native.surf.gii "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".very_inflated.native.surf.gii -iterations-scale $NativeInflationScale
-        ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".inflated.native.surf.gii
-        ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".very_inflated.native.surf.gii
+            ${CARET7DIR}/wb_command -surface-generate-inflated "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".inflated.native.surf.gii "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".very_inflated.native.surf.gii -iterations-scale $NativeInflationScale
+            ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".inflated.native.surf.gii
+            ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".very_inflated.native.surf.gii
         done
 
         #Convert original and registered spherical surfaces and add them to the nonlinear spec file
         for Surface in sphere.reg sphere ; do
-        mris_convert "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
-        ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii ${Structure} -surface-type SPHERICAL
-        done
-        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.surf.gii
+            mris_convert "$FreeSurferFolder"/surf/"$hemisphere"h."$Surface" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
+            ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii ${Structure} -surface-type SPHERICAL
+            done
+            ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.surf.gii
 
-        #Add more files to the spec file and convert other FreeSurfer surface data to metric/GIFTI including sulc, curv, and thickness.
-        for Map in sulc@sulc@Sulc thickness@thickness@Thickness curv@curvature@Curvature ; do
-        fsname=$(echo $Map | cut -d "@" -f 1)
-        wbname=$(echo $Map | cut -d "@" -f 2)
-        mapname=$(echo $Map | cut -d "@" -f 3)
-        mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
-        if [[ -e "${AtlasSpaceFolder}/${NativeFolder}/${hemisphere}h.${Subject}.${Hemisphere}.${wbname}.native.shape.gii" ]]; then
-            mv "$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h".$Subject"."$Hemisphere"."$wbname".native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$wbname".native.shape.gii
-        fi
-        ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
-        ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
-        ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
-        ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
+            #Add more files to the spec file and convert other FreeSurfer surface data to metric/GIFTI including sulc, curv, and thickness.
+            for Map in sulc@sulc@Sulc thickness@thickness@Thickness curv@curvature@Curvature ; do
+            fsname=$(echo $Map | cut -d "@" -f 1)
+            wbname=$(echo $Map | cut -d "@" -f 2)
+            mapname=$(echo $Map | cut -d "@" -f 3)
+            mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            if [[ -e "${AtlasSpaceFolder}/${NativeFolder}/${hemisphere}h.${Session}.${Hemisphere}.${wbname}.native.shape.gii" ]]; then
+                mv "$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h".$Session"."$Hemisphere"."$wbname".native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            fi
+            ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
+            ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
+            ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
         done
         #Thickness specific operations
         ${CARET7DIR}/wb_command -metric-math "abs(thickness)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii -var thickness "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii
@@ -452,16 +452,16 @@ for Hemisphere in L R ; do
 
         rm -f "$AtlasSpaceFolder"/"$NativeFolder"/${Hemisphere}.sphere_rot.surf.gii rotate.${Hemisphere}.mat
     fi #end TIMEPOINT_STAGE2 condition
-    
+
     if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then continue; fi #Stage 1 timepoint processing loop ends here.
-            
+
     #If desired, run MSMSulc folding-based registration to FS_LR initialized with FS affine
     if [ ${RegName} == "MSMSulc" ] ; then
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         if [ "$LongitudinalMode" == "NONE" ]; then
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
             $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-        elif [ "$LongitudinalMode" == "TEMPLATE" ]; then            
+        elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
             #average surfaces from different timepoints
             average_cmd_args=()
             for timepoint in $LongitudinalTimepoints; do
@@ -471,28 +471,28 @@ for Hemisphere in L R ; do
             ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
             #fix the averaged surface to convert it into sphere
             ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
-            
+
             #run MSMSulc.sh on average surface
             $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-            
+
             #copy the registration result to each timepoint
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
                 cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
-                
+
                 #copy the output of MSMSulc to each of the timepoint native folders
                 for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Subject}.long.${LongitudinalTemplate}.*${RegName}.*; do
                     file_base=`basename $file`
                     new_file=${file_base/${Subject}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
                     cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
                 done
-            done                
+            done
         fi
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere."$RegName".native.surf.gii"
     else
         RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
     fi
-    
+
     #Ensure no zeros in atlas medial wall ROI
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} BARYCENTRIC "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -largest
     ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
@@ -596,7 +596,7 @@ for Hemisphere in L R ; do
 done
 
 
-if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then 
+if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
     log_Msg "Timepoint Stage 1 end"
     exit 0
 fi #Stage 1 longitudinal timepoint processing ends here.
