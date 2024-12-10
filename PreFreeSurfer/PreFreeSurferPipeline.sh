@@ -466,6 +466,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
   Modalities="T1w T2w"
 
+if ["$Runmode" -lt 2 ]; then
   for TXw in ${Modalities} ; do
 
       # set up appropriate input variables
@@ -543,7 +544,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
     OutputTXwImageSTRING=""
     OutputTXwBrainImageSTRING=""
 
-#### Gradient nonlinearity correction  (for T1w and T2w) ####
+  #### Gradient nonlinearity correction  (for T1w and T2w) ####
 
       if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
         log_Msg "Performing Gradient Nonlinearity Correction"
@@ -633,8 +634,11 @@ if [ "$CustomBrain" = "NONE" ] ; then
       # ACPC align T1w or T2w image to specified MNI Template to create native volume space
 
 
+fi
 
-for TXw in ${Modalities} ; do
+if ["$Runmode" -lt 3 ]; then
+
+  for TXw in ${Modalities} ; do
     # set up appropriate input variables
     if [ $TXw = T1w ] ; then
 	TXwInputImages="${T1wInputImages}"
@@ -658,7 +662,7 @@ for TXw in ${Modalities} ; do
 
     fi
 
-#### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
+  #### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
 
     if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
         log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
@@ -689,12 +693,14 @@ for TXw in ${Modalities} ; do
     fi
 done
 
+fi
 
+if ["$Runmode" -lt 4 ]; then
 
       # Brain Extraction(FNIRT-based Masking)
 
 
-for TXw in ${Modalities} ; do
+  for TXw in ${Modalities} ; do
     # set up appropriate input variables
     if [ $TXw = T1w ] ; then
 	TXwInputImages="${T1wInputImages}"
@@ -716,7 +722,7 @@ for TXw in ${Modalities} ; do
 	Contrast=$T2wType
     fi
 
-#### Brain Extraction (FNIRT-based Masking) ####
+  #### Brain Extraction (FNIRT-based Masking) ####
 
   if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
 
@@ -744,13 +750,15 @@ for TXw in ${Modalities} ; do
 	--brainextract=${BrainExtract} \
        --betspecieslabel=${betspecieslabel} 
   fi 
-done 
+  done 
 
   # End of looping over modalities (T1w and T2w)
+fi
 
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
+if ["$Runmode" -lt 5 ]; then
 
   case $AvgrdcSTRING in
 
@@ -883,8 +891,9 @@ done
       ${BiasFieldSmoothingSigma}
 
   fi
+fi
 
-
+if ["$Runmode" -lt 6 ]; then
 
   # ------------------------------------------------------------------------------
   # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
@@ -998,5 +1007,6 @@ log_Msg "Completed!"
 
 
 
+fi
 #### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
