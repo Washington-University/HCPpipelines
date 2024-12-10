@@ -433,7 +433,7 @@ elif [[ "$CustomBrain" = "MASK" || "$CustomBrain" = "CUSTOM" ]] ; then
     log_Msg "Skipping all the steps to Atlas registration, applying custom mask in ACPC space (<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz). This overrides the option of --runmode."
     verbose_red_echo "---> Applying custom mask"
 
-    if [ "$(imtest ${T1wFolder}/custom_acpc_dc_restore_mask" != 1 ] ; then
+    if [ "$(imtest ${T1wFolder}/custom_acpc_dc_restore_mask)" != 1 ] ; then
          log_Err_Abort "ERROR: cannnot find ${T1wFolder}/custom_acpc_dc_restore_mask"
     fi
 
