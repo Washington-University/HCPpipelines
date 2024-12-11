@@ -29,7 +29,7 @@ opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of d
 opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
-opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
+opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--reclassify-as-signal-file' 'ReclassifyAsSignalFile' 'file name' "the file name for the output ReclassifyAsSignal file"
 opts_AddMandatory '--reclassify-as-noise-file' 'ReclassifyAsNoiseFile' 'file name' "the file name for the output ReclassifyAsNoise file"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
