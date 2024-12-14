@@ -86,7 +86,7 @@ elif [ ${Type} = 'cifti' ] ; then
 fi
 }
 
-Structures="dentate hipp"
+Structures="dentate hipp" #TODO: Put both hipp and dentate in the same CIFTI files
 Surfaces="inner@PIAL midthickness@MIDTHICKNESS outer@GRAY_WHITE" #TODO: Need inner and outer secondary types
 Scalars="curvature@GRAY@Curvature gyrification@GRAY@Gyrification surfarea@VIDEEN@SurfaceArea thickness@VIDEEN@Thickness myelin@VIDEEN@MyelinMap"
 Labels="atlas-multihist7_subfields@HippocampalSubfields"
@@ -155,7 +155,11 @@ for Structure in $Structures ; do
         ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${HemiStructure}
         PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${Color} metric ${CARET7DIR}/wb_command
         ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii -map 1 "${Subject}_${Name}"
-        cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+        if [ $Scalar = "surfarea" ] ; then
+          ${CARET7DIR}/wb_command -surface-vertex-areas ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+        else
+          cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+        fi
       fi
     done
     
@@ -178,6 +182,7 @@ for Structure in $Structures ; do
     fi
   done
   
+  #TODO: Put both hipp and dentate in the same CIFTI files, end structure loop above this comment
   #CIFTI Scalars
   for Scalar in $Scalars ; do
     Name=`echo $Scalar | cut -d "@" -f 3`
@@ -189,7 +194,14 @@ for Structure in $Structures ; do
       PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Color} cifti ${CARET7DIR}/wb_command
       ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
       ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-      cp ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+      if [ $Scalar = "surfarea" ] ; then
+        ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -left-metric ${AtlasHippUnfoldFolder}/${Subject}.L.${Structure}_${Scalar}.${Mesh}.shape.gii -right-metric ${AtlasHippUnfoldFolder}/${Subject}.R.${Structure}_${Scalar}.${Mesh}.shape.gii
+        MATLABHACK ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Left} ${Right} > /dev/null 2>&1 #TODO: Replace hack with just recreating the CIFTIs
+        PALETTE ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Color} cifti ${CARET7DIR}/wb_command
+        ${CARET7DIR}/wb_command -set-map-names ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
+      else
+        cp ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+      fi
       ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
     fi
   done
@@ -223,7 +235,7 @@ ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}
 ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T1w_restore.nii.gz
 ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T2w_restore.nii.gz
 
-#TODO: How to combine hippocampal and cerebral cortex?  Put in same spec files
+#TODO: How to combine hippocampal and cerebral cortex?  Merge spec files using merge wb_command
 
 if [ ${Flag} = "On" ] ; then
   Modality="T1wT2w"
