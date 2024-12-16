@@ -5,7 +5,7 @@
 # This allows to delete/overwrite symlinks under target without affecting source.
 # 
 # Example Call
-#  symlink_filewise
+#  symlink_filewise "$source_dir" "$target_dir"
 #
 symlink_filewise() {
     local src=$1
