@@ -64,11 +64,18 @@ opts_AddMandatory '--oscout' 'ScoutOutput' 'image' "output transformed + distort
 opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + distortion corrected Jacobian image"
 
 #Optional Args 
+opts_AddOptional '--t1-native' 'T1wImageNative' 'image' "native T1w_acpc_dc image. Must be present to resample to the native space" "NONE"
+opts_AddOptional '--biasfield-native' 'BiasFieldNative' 'image' "imput biasfield image in native acpc_dc space. Must be present to resample to the native space" "NONE"
+opts_AddOptional '--freesurferbrainmask-native' 'FreeSurferBrainMaskNative' 'image' "input Freesurfer brain mask in native acpc_dc space. Must be present to resample to the native space" "NONE"
+
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
 opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampeling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
+
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Signal longitudinal mode" "0"
+opts_AddOptoinal '--native-to-template-xfm' 'NativeToTemplateXfm' 'mat file' '.mat transform from acpc_dc to longitudinal acpc_dc template space. Must be present if --is-longitudinal is set' "NONE"
 
 opts_ParseArguments "$@"
 
@@ -115,6 +122,19 @@ case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
         ;;
 esac
 
+OutInNativeSpace=0
+if [ -f "$T1wImageNative.nii.gz" -a -f "$BiasFieldNative.nii.gz" -a -f "$FreeSurferBrainMaskNative.nii.gz" ]; then 
+  OutInNativeSpace=1
+  log_Msg "Output to native space enabled"
+else
+  log_Msg "Output to native space disabled because one of values supplied to --t1-native, --biasfield-native, --freesurferbrainmask-native do not point to a valid file."
+fi
+
+IsLongitudinal=$(opts_StringToBool $IsLongitudinal)
+if [ "$IsLongitudinal" == 1 -a ! -f "$NativeToTemplateXfm" ]; then
+  log_Err_Abort "--native-to-template-xfm must point to a valid file if --is-longitudinal is set."
+fi
+
 # --- Report arguments
 
 verbose_echo "  "
@@ -142,11 +162,17 @@ verbose_echo "             --oscout: ${ScoutOutput}"
 verbose_echo "          --ojacobian: ${JacobianOut}"
 verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
 verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
+verbose_echo "    --is-longitudinal: ${IsLongitudinal}"
+verbose_echo "--native-to-template-xfm: $NativeToTemplateXfm"
+verbose_echo "          --t1-native: ${T1wImageNative}"
+verbose_echo "   --biasfield-native: ${BiasFieldNative}"
+verbose_echo "--freesruferbrainmask-native: $FreeSurferBrainMaskNative"
 verbose_echo " "
 
-BiasFieldFile=`basename "$BiasField"`
-T1wImageFile=`basename $T1wImage`
-FreeSurferBrainMaskFile=`basename "$FreeSurferBrainMask"`
+BiasFieldFile=$(basename "$BiasField")
+T1wImageFile=$(basename $T1wImage)
+T1wImageFileNative=$(basename $T1wImageNative)
+FreeSurferBrainMaskFile=$(basename "$FreeSurferBrainMask")
 
 echo " "
 echo " START: OneStepResampling"
@@ -155,16 +181,16 @@ mkdir -p $WD
 
 # Record the input options in a log file
 echo "$0 $@" >> $WD/log.txt
-echo "PWD = `pwd`" >> $WD/log.txt
-echo "date: `date`" >> $WD/log.txt
+echo "PWD = $(pwd)" >> $WD/log.txt
+echo "date: $(date)" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 
 ########################################## DO WORK ##########################################
 
 #Save TR for later
-TR_vol=`${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1`
-NumFrames=`${FSLDIR}/bin/fslval ${InputfMRI} dim4`
+TR_vol=$(${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1)
+NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 
 # Create fMRI resolution standard space files for T1w image, wmparc, and brain mask
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
@@ -178,6 +204,7 @@ else
   ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
   ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
 fi
+
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}
 
 # Create brain masks in this space from the FreeSurfer output (changing resolution)
@@ -187,14 +214,23 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${BiasField} -r ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 
+if (( OutInNativeSpace )); then
+  # nothing yet, just make sure that 
+  # T1wImageNative, BiasFieldNative and FreeSurferBrainMaskNative exist
+  a=a
+fi
+
 # Downsample warpfield (fMRI to standard) to increase speed
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision
 
 # Create a combined warp if nonlinear registration to reference is used
 if [ "$fMRIReferenceReg" == "nonlinear" ]; then
   # Note that the name of the post motion correction warp is hard-coded in MotionCorrection.sh
-  ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${MotionMatrixFolder}/postmc2fmriref_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postmc2struct_warp
-  ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/postmc2struct_warp --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
+  if (( IsLongitudinal )); then 
+  else 
+    ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${MotionMatrixFolder}/postmc2fmriref_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postmc2struct_warp
+    ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/postmc2struct_warp --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
+  fi
 else
   ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 fi
@@ -226,7 +262,7 @@ then
     
     for ((k=0; k < $NumFrames; k++))
     do
-        vnum=`${FSLDIR}/bin/zeropad $k 4`
+        vnum=$(${FSLDIR}/bin/zeropad $k 4)
         
         #use unquoted $() to change whitespace to spaces
         echo $(cat "$MotionMatrixFolder/${MotionMatrixPrefix}$vnum") >> "$affseries"
@@ -267,7 +303,7 @@ else
     FrameMergeSTRING=""
     FrameMergeSTRINGII=""
     for ((k=0; k < $NumFrames; k++)); do
-      vnum=`${FSLDIR}/bin/zeropad $k 4`
+      vnum=$(${FSLDIR}/bin/zeropad $k 4)
 
       # Add stuff for estimating RMS motion
       rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt

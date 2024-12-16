@@ -33,7 +33,11 @@ opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for t
 
 opts_AddMandatory '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name"
 
+opts_AddMandatory '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data'
+
 opts_AddOptional '--echoTE' 'echoTE' '@ delimited list of numbers' "TE for each echo (unused for single echo)" "0"
+
+opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
 
 opts_ParseArguments "$@"
 
@@ -107,7 +111,7 @@ fMRIFolderLong="$Path"/"SessionLong"/"NameOffMRI"
 
 T1wFolderCross="$Path"/"$SessionCross"/"$T1wFolder"
 AtlasSpaceFolderCross="$Path"/"$SessionCross"/"$AtlasSpaceFolder"
-ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
+ResultsFolderCross="$AtlasSpaceFolderCross"/"$ResultsFolder"/"$NameOffMRI"
 
 T1wFolderLong="$Path"/"$SessionLong"/"$T1wFolder"
 AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolder"
@@ -138,14 +142,72 @@ if [[ $nEcho -gt 1 ]] ; then
     mkdir -p "$EchoDirLong"
 fi
 
+#Split echos
+if [[ ${nEcho} -gt 1 ]]; then
+    log_Msg "Splitting echo(s)"
+    tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
+    for iEcho in $(seq 0 $((nEcho-1))) ; do
+        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
+        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
+        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
+        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
+    done
+else
+    tcsEchoesOrig[0]="${OrigTCSName}"
+    sctEchoesOrig[0]="${OrigScoutName}"
+    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
+    sctEchoesGdc[0]="${ScoutName}_gdc"
+fi
+
+
 #Scout reference: done, nothing to do
 #Distortion correction: reorientation, nothing to do
 #Gradient distortion correction of fMRI: nothing to do
 #split echos: nothing to do
 #motion correction: nothing to do
 #EPI distortion correction and EPI to T1w Registration: 
+#the safe thing to do here at this point, is not to copy any transforms or transformed images that will not be in T1w average template space.
+
+#Individual files may be added/created later on.
+
+#One Step Resampling
+#This has to be redone for each longitudinal timepoint.
+log_Msg "One Step Resampling"
+log_Msg "mkdir -p ${fMRIFolderLong}/OneStepResampling"
+
+#this is created downstream.
+#mkdir -p "${fMRIFolderLong}/OneStepResampling"
+tscArgs="";sctArgs="";
+
+for iEcho in $(seq 0 $((nEcho-1))) ; do
+    ${RUN} ${PipelineScripts}/OneStepResampling.sh \
+        --workingdir=${fMRIFolderLong}/OneStepResampling \
+        --infmri="${fMRIFolderCross}/${tcsEchoesOrig[iEcho]}.nii.gz" \
+        --t1="${AtlasSpaceFolderCross}/${T1wAtlasName}" \
+        --fmriresout="${FinalfMRIResolution}" \
+        --fmrifolder="${fMRIFolderLong}" \
+        --fmri2structin="${T1wFolder}/xfms/${fMRI2strOutputTransform}" \
+        --struct2std="${AtlasSpaceFolderLong}/xfms/${AtlasTransform}" \
+        --owarp="${AtlasSpaceFolderLong}/xfms/${OutputfMRI2StandardTransform}" \
+        --oiwarp="${AtlasSpaceFolderLong}/xfms/${Standard2OutputfMRITransform}" \
+        --motionmatdir="${fMRIFolderLong}/${MotionMatrixFolder}" \
+        --motionmatprefix=${MotionMatrixPrefix} \
+        --ofmri="${fMRIFolderLong}/${tcsEchoesOrig[iEcho]}_nonlin" \
+        --freesurferbrainmask="${AtlasSpaceFolderLong}/${FreeSurferBrainMask}" \
+        --biasfield="${AtlasSpaceFolderLong}/${BiasFieldMNI}" \
+        --gdfield="${fMRIFolderLong}/${NameOffMRI}_gdc_warp" \
+        --scoutin="${fMRIFolderLong}/${sctEchoesOrig[iEcho]}" \
+        --scoutgdcin="${fMRIFolderLong}/${sctEchoesGdc[iEcho]}" \
+        --oscout="${fMRIFolderLong}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin" \
+        --ojacobian="${fMRIFolderLong}/${JacobianOut}_MNI.${FinalfMRIResolution}" \
+        --fmrirefpath="NONE" \
+        --wb-resample=${useWbResample}
+# In long mode, this should not need to be specified, but rather resolved downstream
+#        --fmrirefreg=${fMRIReferenceReg} 
+
+    tscArgs="$tscArgs -volume ${fMRIFolderLong}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
+    sctArgs="$sctArgs -volume ${fMRIFolderLong}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
+done
 
 #output to T1w/xfms/"${NameOffMRI}2str".nii.gz?
 #Do we want that placed there? If yes, it needs to be updated with template transform. If no, it shouldn't be there.
-
-
