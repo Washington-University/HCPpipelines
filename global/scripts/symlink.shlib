@@ -1,0 +1,27 @@
+#
+# Author: Mikhail Milchenko, mmilchenko@wustl.edu
+# Recursively re-create directory structure under source in target. 
+# Then, create symbolic link for each file under input directory in target, preserving sudirectory path.
+# This allows to delete/overwrite symlinks under target without affecting source.
+# 
+# Example Call
+#  symlink_filewise
+#
+symlink_filewise() {
+    local src=$1
+    local targ=$1
+
+    #in the first pass, create all subdirectories.
+    find $src -type d -exec /bin/bash -c \
+        'shopt -s nullglob; [ "$(find "$1" -mindepth 1 -type d | head -n 1)" ] || echo "$1"' _ {} \; | \
+        while read -r dir; do  
+            targpath=$targ${dir#$src}
+            echo $targpath
+            mkdir -p $targpath
+        done
+    #in the second pass, create symlinks to files.
+    find $src -type f | while read -r file; do
+        echo ln -sfr $file $targ${file#$src}
+        ln -sfr $file $targ${file#$src}
+    done
+}
