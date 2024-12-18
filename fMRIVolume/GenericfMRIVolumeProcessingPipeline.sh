@@ -447,7 +447,7 @@ if (( IsLongitudinal )); then
     if [ ! -f "$T1wCross2LongXfm" ]; then 
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi 
-    if [ "$fMRIReference" != "NONE" ]; then
+    if [ -n "$fMRIReference" ] && [ "$fMRIReference" != "NONE" ]; then
         log_Err_Abort "fMRI reference is not supported in longitudinal mode."
     fi
 fi
