@@ -9,19 +9,22 @@
 #
 symlink_filewise() {
     local src=$1
-    local targ=$1
+    local targ=$2
+	
+	if [ ! -d "$src" ]; then return -1; fi
 
     #in the first pass, create all subdirectories.
-    find $src -type d -exec /bin/bash -c \
-        'shopt -s nullglob; [ "$(find "$1" -mindepth 1 -type d | head -n 1)" ] || echo "$1"' _ {} \; | \
-        while read -r dir; do  
+    find $src -type d -exec /bin/bash -c 'shopt -s nullglob; [ "$(find "$1" -mindepth 1 -type d | head -n 1)" ] || echo "$1"' _ {} \; | while read -r dir; do  
             targpath=$targ${dir#$src}
-            echo $targpath
+            #echo $targpath
             mkdir -p $targpath
+			if (( $? )); then return -1; fi
         done
+		
     #in the second pass, create symlinks to files.
     find $src -type f | while read -r file; do
-        echo ln -sfr $file $targ${file#$src}
+        #echo ln -sfr $file $targ${file#$src}
         ln -sfr $file $targ${file#$src}
+		if (( $? )); then return -1; fi
     done
 }

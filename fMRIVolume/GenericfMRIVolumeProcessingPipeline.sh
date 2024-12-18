@@ -155,7 +155,7 @@ opts_AddOptional '--output-native' 'binary' 'output in native T1w_acpc_dc space'
 
 #longitudinal options
 opts_addOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Specifies whether this is run on a longitudinal timepoint" "0"
-opts_addOptional '--longitudinal-session' 'LongitudinalSession' 'folder' "Specifies longitudinal session name. If specified, \
+opts_addOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified, \
 the parameter specified in --session should point to the corresponding cross-sectional session."
 
 # opts_AddOptional '--printcom' 'RUN' 'print-command' "DO NOT USE THIS! IT IS NOT IMPLEMENTED!"
@@ -440,12 +440,12 @@ fi
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 T1wCross2LongXfm="NONE"
 if (( IsLongitudinal )); then
-    if [ ! -d "$LongitudinalSession" ]; then
+    if [ ! -d "$SessionLong" ]; then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
-    T1wCross2LongXfm=$LongitudinalSession/t1w/xfms/T1w_cross_to_T1w_long.mat
+    T1wCross2LongXfm=$Path/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
     if [ ! -f "$T1wCross2LongXfm" ]; then 
-        log_Err_Abort "Longitudinal session $LongitudinalSession: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
+        log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi 
     if [ "$fMRIReference" != "NONE" ]; then
         log_Err_Abort "fMRI reference is not supported in longitudinal mode."
@@ -490,7 +490,7 @@ Standard2OutputfMRITransform="standard2${NameOffMRI}"
 QAImage="T1wMulEPI"
 JacobianOut="Jacobian"
 SessionFolder="$Path"/"$Session"
-SessionFolderLong="$Path"/"$LongitudinalSession"
+SessionFolderLong="$Path"/"$SessionLong"
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
 sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
@@ -656,14 +656,18 @@ fi
 #3. After that, proceed as before.
  
 
-T1wFolder="$Path"/"$Session"/"$T1wFolder"
+T1wFolderCross="$Path"/"$Session"/"$T1wFolder"
 T1wFolderLong="$Path"/"$SessionLong"/"$T1wFolder"
+T1wFolder=$T1wFolderCross
 
-AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolder"
+
+AtlasSpaceFolderCross="$Path"/"$Session"/"$AtlasSpaceFolder"
 AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolder"
+AtlasSpaceFolder=$AtlasSpaceFolderCross
 
-ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
+ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
+ResultsFolder=$ResultsFolderCross
 
 #FIXME: TSC: below code is multi-echo without longitudinal, needs editing
 mkdir -p ${T1wFolder}/Results/${NameOffMRI}
@@ -979,7 +983,7 @@ if (( IsLongitudinal )); then
     fMRIFolder="$fMRIFolderLong"
     SessionFolder="$SessionFolderLong"
     T1wFolder="$T1wFolderLong"
-    Session="$LongitudinalSession"
+    Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
 fi
@@ -1023,7 +1027,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --ojacobian=${fMRIFolder}/${JacobianOut} \
         --dof=${dof} \
         --fmriname=${NameOffMRI} \
-        --subjectfolder=${SessionFolder} \
+        --sessionfolder=${SessionFolder} \
         --biascorrection=${BiasCorrection} \
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool} \
