@@ -58,17 +58,6 @@ else
   Flag="Off"
 fi
 
-#TODO: Replace hack with just recreating the CIFTIs
-function MATLABHACK {
-File=${1}
-Left=${2}
-Right=${3}
-matlab -nojvm -nodisplay -nosplash <<M_PROG
-addpath('${HCPPIPEDIR}/HippUnfoldHCP/scripts'); HippUnfoldMatlabHack('${File}','${Left}','${Right}');
-M_PROG
-echo "addpath('${HCPPIPEDIR}/HippUnfoldHCP/scripts'); HippUnfoldMatlabHack('${File}','${Left}','${Right}');"
-}
-
 function PALETTE {
 File=${1}
 Color=${2}
@@ -86,7 +75,7 @@ elif [ ${Type} = 'cifti' ] ; then
 fi
 }
 
-Structures="dentate hipp" #TODO: Put both hipp and dentate in the same CIFTI files
+Structures="dentate hipp"
 Surfaces="inner@PIAL midthickness@MIDTHICKNESS outer@GRAY_WHITE" #TODO: Need inner and outer secondary types
 Scalars="curvature@GRAY@Curvature gyrification@GRAY@Gyrification surfarea@VIDEEN@SurfaceArea thickness@VIDEEN@Thickness myelin@VIDEEN@MyelinMap"
 Labels="atlas-multihist7_subfields@HippocampalSubfields"
@@ -100,13 +89,10 @@ for Structure in $Structures ; do
       ${CARET7DIR}/wb_command -surface-to-surface-3d-distance $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_inner.surf.gii $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_outer.surf.gii $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_thickness.shape.gii
     done
     #No dentate thickness if computed by HippUnfold
-    ${CARET7DIR}/wb_command -cifti-create-dense-scalar $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_thickness.dscalar.nii -left-metric $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-L_space-${Modality}_den-${Mesh}_label-${Structure}_thickness.shape.gii -right-metric $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-R_space-${Modality}_den-${Mesh}_label-${Structure}_thickness.shape.gii 
   elif [ ${Structure} = "hipp" ] ; then
     Left="HIPPOCAMPUS_LEFT"
     Right="HIPPOCAMPUS_RIGHT"
   fi
-  #No surface area CIFTI is made by HippUnfold
-  ${CARET7DIR}/wb_command -cifti-create-dense-scalar $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_surfarea.dscalar.nii -left-metric $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-L_space-${Modality}_den-${Mesh}_label-${Structure}_surfarea.shape.gii -right-metric $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-R_space-${Modality}_den-${Mesh}_label-${Structure}_surfarea.shape.gii 
   for Hemisphere in L R ; do
     if [ ${Hemisphere} = "L" ] ; then
       if [ ${Structure} = "dentate" ] ; then
@@ -126,23 +112,19 @@ for Structure in $Structures ; do
     for Surface in $Surfaces ; do
       SurfaceType=`echo $Surface | cut -d "@" -f 2`
       Surface=`echo $Surface | cut -d "@" -f 1`
-      if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Surface}.surf.gii ] ; then
-        cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Surface}.surf.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
-        ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${HemiStructure} -surface-type ANATOMICAL -surface-secondary-type ${SurfaceType}
-        ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
-        ${CARET7DIR}/wb_command -surface-apply-warpfield ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${AtlasFolder}/xfms/standard2acpc_dc.nii.gz ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii -fnirt ${AtlasFolder}/T1w_restore.nii.gz
-        ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
-      fi
+      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Surface}.surf.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
+      ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${HemiStructure} -surface-type ANATOMICAL -surface-secondary-type ${SurfaceType}
+      ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
+      ${CARET7DIR}/wb_command -surface-apply-warpfield ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${AtlasFolder}/xfms/standard2acpc_dc.nii.gz ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii -fnirt ${AtlasFolder}/T1w_restore.nii.gz
+      ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
     done
     
     #Flat Surfaces
-    if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Surface}.surf.gii ] ; then
-      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-unfold_den-${Mesh}_label-${Structure}_midthickness.surf.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
-      ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii ${HemiStructure} -surface-type FLAT
-      ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
-      cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
-      ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
-    fi
+    cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-unfold_den-${Mesh}_label-${Structure}_midthickness.surf.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
+    ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii ${HemiStructure} -surface-type FLAT
+    ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
+    cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
+    ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${HemiStructure} ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_flat.${Mesh}.surf.gii
     
     #GIFTI Metrics
     #Don't add GIFTI to Specs
@@ -150,16 +132,14 @@ for Structure in $Structures ; do
       Name=`echo $Scalar | cut -d "@" -f 3`
       Color=`echo $Scalar | cut -d "@" -f 2`
       Scalar=`echo $Scalar | cut -d "@" -f 1`
-      if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii ] ; then
-        cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
-        ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${HemiStructure}
-        PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${Color} metric ${CARET7DIR}/wb_command
-        ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii -map 1 "${Subject}_${Name}"
-        if [ $Scalar = "surfarea" ] ; then
-          ${CARET7DIR}/wb_command -surface-vertex-areas ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
-        else
-          cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-        fi
+      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+      ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${HemiStructure}
+      PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${Color} metric ${CARET7DIR}/wb_command
+      ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii -map 1 "${Subject}_${Name}"
+      if [ $Scalar = "surfarea" ] ; then
+        ${CARET7DIR}/wb_command -surface-vertex-areas ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+      else
+        cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
       fi
     done
     
@@ -168,57 +148,56 @@ for Structure in $Structures ; do
     for Label in $Labels ; do
       Name=`echo $Label | cut -d "@" -f 2`
       Label=`echo $Label | cut -d "@" -f 1`
-      if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Label}.label.gii ] ; then
-        cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Label}.label.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
-        ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${HemiStructure}
-        ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii -map 1 "${Subject}_${Name}"
-        cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+      if [ ${Structure} = "hipp" ] ; then
+        if [ ${Hemisphere} = "L" ] ; then
+          Expression="Var*1"
+        elif [ ${Hemisphere} = "R" ] ; then
+          Expression="Var + 8"
+        fi
+        ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Label}.label.gii
+        ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
+      elif [ ${Structure} = "dentate" ] ; then
+        if [ ${Hemisphere} = "L" ] ; then
+          Expression="Var*0+1*6"
+        elif [ ${Hemisphere} = "R" ] ; then
+          Expression="Var*0+1*6 + 8"
+        fi      
+        ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii
+        ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
       fi
+      ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${HemiStructure}
+      ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii -map 1 "${Subject}_${Name}"
+      cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
     done
     
     #NIFTI Hemispheric Labels
-    if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_desc-subfields_atlas-multihist7_dseg.nii.gz ] ; then
-      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_desc-subfields_atlas-multihist7_dseg.nii.gz ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.HippocampalSubfields.nii.gz
-    fi
+    cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_desc-subfields_atlas-multihist7_dseg.nii.gz ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.HippocampalSubfields.nii.gz
   done
+done
   
-  #TODO: Put both hipp and dentate in the same CIFTI files, end structure loop above this comment
-  #CIFTI Scalars
-  for Scalar in $Scalars ; do
-    Name=`echo $Scalar | cut -d "@" -f 3`
-    Color=`echo $Scalar | cut -d "@" -f 2`
-    Scalar=`echo $Scalar | cut -d "@" -f 1`
-    if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.dscalar.nii ] ; then
-      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.dscalar.nii ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii
-      MATLABHACK ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Left} ${Right} > /dev/null 2>&1 #TODO: Replace hack with just recreating the CIFTIs
-      PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Color} cifti ${CARET7DIR}/wb_command
-      ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
-      ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-      if [ $Scalar = "surfarea" ] ; then
-        ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -left-metric ${AtlasHippUnfoldFolder}/${Subject}.L.${Structure}_${Scalar}.${Mesh}.shape.gii -right-metric ${AtlasHippUnfoldFolder}/${Subject}.R.${Structure}_${Scalar}.${Mesh}.shape.gii
-        MATLABHACK ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Left} ${Right} > /dev/null 2>&1 #TODO: Replace hack with just recreating the CIFTIs
-        PALETTE ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${Color} cifti ${CARET7DIR}/wb_command
-        ${CARET7DIR}/wb_command -set-map-names ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
-      else
-        cp ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-      fi
-      ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-    fi
-  done
+#CIFTI Scalars
+for Scalar in $Scalars ; do
+  Name=`echo $Scalar | cut -d "@" -f 3`
+  Color=`echo $Scalar | cut -d "@" -f 2`
+  Scalar=`echo $Scalar | cut -d "@" -f 1`
+  ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -metric HIPPOCAMPUS_LEFT ${PhysicalHippUnfoldFolder}/${Subject}.L.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_RIGHT ${PhysicalHippUnfoldFolder}/${Subject}.R.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${PhysicalHippUnfoldFolder}/${Subject}.L.dentate_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${PhysicalHippUnfoldFolder}/${Subject}.R.dentate_${Scalar}.${Mesh}.shape.gii
+  PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii ${Color} cifti ${CARET7DIR}/wb_command
+  ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
+  ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+  cp ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+  ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+done
+
   
-  #CIFTI Labels
-  for Label in $Labels ; do
-    Name=`echo $Label | cut -d "@" -f 2`
-    Label=`echo $Label | cut -d "@" -f 1`
-    if [ -e $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_${Label}.dlabel.nii ] ; then
-      cp $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-${Structure}_${Label}.dlabel.nii ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii
-      MATLABHACK ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii ${Left} ${Right} > /dev/null 2>&1 #TODO: Replace hack with just recreating the CIFTIs
-      ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii -map 1 "${Subject}_${Name}"
-      ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-      cp ${PhysicalHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-      ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasHippUnfoldFolder}/${Subject}.${Structure}_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
-    fi
-  done
+#CIFTI Labels
+for Label in $Labels ; do 
+  Name=`echo $Label | cut -d "@" -f 2`
+  Label=`echo $Label | cut -d "@" -f 1` 
+  ${CARET7DIR}/wb_command -cifti-create-label ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii -label HIPPOCAMPUS_LEFT ${PhysicalHippUnfoldFolder}/${Subject}.L.hipp_${Label}.${Mesh}.label.gii -label HIPPOCAMPUS_RIGHT ${PhysicalHippUnfoldFolder}/${Subject}.R.hipp_${Label}.${Mesh}.label.gii -label HIPPOCAMPUS_DENTATE_LEFT ${PhysicalHippUnfoldFolder}/${Subject}.L.dentate_${Label}.${Mesh}.label.gii -label HIPPOCAMPUS_DENTATE_RIGHT ${PhysicalHippUnfoldFolder}/${Subject}.R.dentate_${Label}.${Mesh}.label.gii
+  ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii -map 1 "${Subject}_${Name}"
+  ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+  cp ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
+  ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Label}.${Mesh}.dlabel.nii #TODO: mv to have maps in AtlasFolder like Cerebral Cortex?
 done
 
 #NIFTI Label Volumes
@@ -296,7 +275,7 @@ log_Msg "PostHippUnfold pipeline completed successfully for subject: $Subject"
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}den-${Mesh}_label-dentate_surfaces.spec
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-hipp_surfaces.spec
 
-#CIFTIScalars
+#CIFTIScalars (recreated by the script)
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-dentate_curvature.dscalar.nii
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-dentate_gyrification.dscalar.nii
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-dentate_myelin.dscalar.nii
@@ -308,7 +287,7 @@ log_Msg "PostHippUnfold pipeline completed successfully for subject: $Subject"
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-hipp_surfarea.dscalar.nii #Not created by default
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-hipp_thickness.dscalar.nii
 
-#CIFTILabels
+#CIFTILabels (recreated by the script)
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_space-${Modality}_den-${Mesh}_label-hipp_atlas-multihist7_subfields.dlabel.nii
 
 #VolumeLabels
