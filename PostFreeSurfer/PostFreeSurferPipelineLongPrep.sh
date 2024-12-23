@@ -420,6 +420,10 @@ if (( TemplateProcessing ==  1 )); then
         ${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc -mas "$Timepoint_brain_mask_acpc_dc" $T1w_dir_long/T1w_acpc_dc_brain
         ${FSLDIR}/bin/fslmaths $T1w_dir_long/T1w_acpc_dc_restore -mas "$Timepoint_brain_mask_acpc_dc" $T1w_dir_long/T1w_acpc_dc_restore_brain
 
+        # Bias field in MNI space.
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/BiasField_acpc_dc -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
+            -o ${AtlasSpaceFolder_timepoint}/BiasField
+
         # T1w set of warped outputs (brain/whole-head + restored/orig)
         verbose_echo " --> Generarting T1w set of warped outputs"
 
