@@ -74,8 +74,6 @@ opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 
-opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Signal longitudinal mode" "0"
-opts_AddOptoinal '--native-to-template-xfm' 'NativeToTemplateXfm' 'mat file' '.mat transform from acpc_dc to longitudinal acpc_dc template space. Must be present if --is-longitudinal is set' "NONE"
 
 opts_ParseArguments "$@"
 
@@ -130,11 +128,6 @@ else
   log_Msg "Output to native space disabled because one of values supplied to --t1-native, --biasfield-native, --freesurferbrainmask-native do not point to a valid file."
 fi
 
-IsLongitudinal=$(opts_StringToBool $IsLongitudinal)
-if [ "$IsLongitudinal" == 1 -a ! -f "$NativeToTemplateXfm" ]; then
-  log_Err_Abort "--native-to-template-xfm must point to a valid file if --is-longitudinal is set."
-fi
-
 # --- Report arguments
 
 verbose_echo "  "
@@ -162,8 +155,6 @@ verbose_echo "             --oscout: ${ScoutOutput}"
 verbose_echo "          --ojacobian: ${JacobianOut}"
 verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
 verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
-verbose_echo "    --is-longitudinal: ${IsLongitudinal}"
-verbose_echo "--native-to-template-xfm: $NativeToTemplateXfm"
 verbose_echo "          --t1-native: ${T1wImageNative}"
 verbose_echo "   --biasfield-native: ${BiasFieldNative}"
 verbose_echo "--freesruferbrainmask-native: $FreeSurferBrainMaskNative"
@@ -226,11 +217,8 @@ fi
 # Create a combined warp if nonlinear registration to reference is used
 if [ "$fMRIReferenceReg" == "nonlinear" ]; then
   # Note that the name of the post motion correction warp is hard-coded in MotionCorrection.sh
-  if (( IsLongitudinal )); then 
-  else 
     ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${MotionMatrixFolder}/postmc2fmriref_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postmc2struct_warp
     ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/postmc2struct_warp --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
-  fi
 else
   ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 fi
