@@ -883,7 +883,7 @@ if [ $fMRIReference = "NONE" ] ; then
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
 
-    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \	
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
         --t1=${T1wFolder}/${T1wImage} \
