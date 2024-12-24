@@ -42,6 +42,7 @@
 
 #############################################################
 set -eu
+shopt -s nullglob
 
 #newopts supports "-h", so look for a single - even though virtually everything uses --
 if (($# > 0)) && [[ "$1" != -* ]]
@@ -898,7 +899,7 @@ else
         fi
 
         # Zip and back up previous scene files
-        for SceneFile in $(ls *.scene); do
+        for SceneFile in *.scene; do
             wb_command -zip-scene-file "${SceneFile}" "${SceneFile}" "${FIXBackupFolder}/${SceneFile}.zip" -skip-missing
             log_Msg "Created zip archive of ${SceneFile} in ${FIXBackupFolder}."
         done
