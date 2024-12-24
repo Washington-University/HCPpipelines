@@ -167,7 +167,7 @@ function tmeanInputs()
 {
     input="$1"
     output="$2"
-    if [[ "$input" == *@*]]
+    if [[ "$input" == *@* ]]
     then
         IFS=@ read -a filesarray <<<"$input"
         tempfiles_create FieldMap_inputMerge_XXXXXX.nii.gz mergeTemp
