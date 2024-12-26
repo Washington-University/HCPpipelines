@@ -10,7 +10,7 @@
 symlink_filewise() {
     local src=$1
     local targ=$2
-	
+
 	if [ ! -d "$src" ]; then return -1; fi
 
     #in the first pass, create all subdirectories.
@@ -18,13 +18,17 @@ symlink_filewise() {
             targpath=$targ${dir#$src}
             #echo $targpath
             mkdir -p $targpath
-			if (( $? )); then return -1; fi
+			if (( $? )); then
+				return -1; 
+			fi
         done
-		
-    #in the second pass, create symlinks to files.
-    find $src -type f | while read -r file; do
+	
+    #in the second pass, create symlinks to files.	
+    find $src -type f -o -type l | while read -r file; do
         #echo ln -sfr $file $targ${file#$src}
         ln -sfr $file $targ${file#$src}
-		if (( $? )); then return -1; fi
+		if (( $? )); then
+			return -1; 
+		fi
     done
 }
