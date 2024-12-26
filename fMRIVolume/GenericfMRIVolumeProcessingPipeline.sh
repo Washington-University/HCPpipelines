@@ -150,14 +150,13 @@ opts_AddOptional '--fmriref' 'fMRIReference' 'folder' "Specifies whether to use 
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specifies whether to compute and apply a nonlinear transform to align the inputfMRI to the reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed using 'fnirt' following the motion correction using the mean motion corrected fMRI image." "linear"
 
-#TODO add binary option processing from optlib
-opts_AddOptional '--output-native' 'binary' 'output in native T1w_acpc_dc space' "Flag to output in native T1w space [no by default]" "0"
+opts_AddOptional '--output-native' 'OutputNative' 'binary' "Flag to output in native T1w space [no by default]" "0"
 
 #longitudinal options
-opts_addOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Specifies whether this is run on a longitudinal timepoint" "0"
-opts_addOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified, \
-the parameter specified in --session should point to the corresponding cross-sectional session."
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Specifies whether this is run on a longitudinal timepoint" "0"
+opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
+#TODO add binary option processing from optlib
 # opts_AddOptional '--printcom' 'RUN' 'print-command' "DO NOT USE THIS! IT IS NOT IMPLEMENTED!"
 # Disable RUN
 RUN=""
@@ -439,8 +438,9 @@ fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 T1wCross2LongXfm="NONE"
+
 if (( IsLongitudinal )); then
-    if [ ! -d "$SessionLong" ]; then
+    if [ ! -d "$Path/$SessionLong" ]; then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
     T1wCross2LongXfm=$Path/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
@@ -683,6 +683,9 @@ else
     #symlink_filewise "$ResultsFolder" "$ResultsFolderLong"
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
     symlink_filewise "$fMRIFolder" "$fMRIFolderLong"
+	if (( $? )); then
+		log_Err_Abort "Linking cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
+	fi
 fi
 
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
@@ -877,13 +880,13 @@ DCFolder=${fMRIFolder}/${DCFolderName}
 if [ $fMRIReference = "NONE" ] ; then
     log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
-    if [ -e ${DCFolder} ] ; then
+    if [ -e ${DCFolder} -a ${IsLongitudinal} == "0" ] ; then
        ${RUN} rm -r ${DCFolder}
     fi
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
-
-    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \	
+	#debug: use dcreg2t1.sh
+	cmd=(${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
         --t1=${T1wFolder}/${T1wImage} \
@@ -914,7 +917,9 @@ if [ $fMRIReference = "NONE" ] ; then
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
-        --t1w-cross2long-xfm="$T1wCross2LongXfm"
+        --t1w-cross2long-xfm="$T1wCross2LongXfm")
+	echo "${cmd[@]}" #debug
+	"${cmd[@]}"
 
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
@@ -941,7 +946,7 @@ log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 mkdir -p ${fMRIFolder}/OneStepResampling
 tscArgs="";sctArgs="";
 for iEcho in $(seq 0 $((nEcho-1))) ; do
-    ${RUN} ${PipelineScripts}/OneStepResampling.sh \
+    cmd=(${RUN} ${PipelineScripts}/OneStepResampling.sh \
         --workingdir=${fMRIFolder}/OneStepResampling \
         --infmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" \
         --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
@@ -963,7 +968,10 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
-        --wb-resample=${useWbResample}
+        --wb-resample=${useWbResample})
+	echo "${cmd[@]}" #debug
+	"${cmd[@]}"
+	
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
 done
@@ -1009,7 +1017,7 @@ then
             ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_pseudo_transmit_raw.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_pseudo_transmit_raw.nii.gz
             ${FSLDIR}/bin/applywarp --interp=trilinear -i ${DCFolder}/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field.nii.gz -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -o ${ResultsFolder}/${NameOffMRI}_pseudo_transmit_field.nii.gz
             ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_pseudo_transmit_field.nii.gz -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_pseudo_transmit_field.nii.gz
-        else #not triggered in Longitudinal mode
+        else #never triggered in Longitudinal mode
             #as these have been already computed, we can copy them from the reference fMRI
             ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/${fMRIReference}_sebased_bias.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_bias.nii.gz
             ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/${fMRIReference}_sebased_reference.nii.gz ${ResultsFolder}/${NameOffMRI}_sebased_reference.nii.gz
@@ -1034,7 +1042,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --fmrimask=${fMRIMask}
 
 
-if [[ ${nEcho} -gt 1 ]]; then
+if [[ ${nEcho} -gt 1 ]]; then #not supported/not triggered in Longitudinal mode
     log_Msg "Creating echoMeans"
     # Calculate echoMeans of intensity normalized result
     tcsEchoes=(); tcsEchoesMu=();args=""

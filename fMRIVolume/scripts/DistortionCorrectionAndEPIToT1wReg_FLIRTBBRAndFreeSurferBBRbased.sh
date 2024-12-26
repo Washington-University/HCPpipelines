@@ -111,7 +111,7 @@ opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'number' "'positiv
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
-opts_AddOptional '--sessionfolder' 'SessionFolder' 'path' "subject processing folder"
+opts_AddOptional '--sessionfolder' 'SessionFolder' 'path' "session processing folder"
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'field_map' "field map magnitude image"
 
@@ -233,6 +233,16 @@ fi
 
 log_Msg "START"
 
+#ScoutExtension must initialize for both cross-sectional and longitudinal modes.
+
+case $DistortionCorrection in
+	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} ) ScoutExtension="_undistorted" 
+	;;
+	${NONE_METHOD_OPT}) ScoutExtension="_nosdc" 
+	;;
+esac
+
+
 if (( ! IsLongitudinal )); then 
 
     mkdir -p $WD
@@ -352,7 +362,7 @@ if (( ! IsLongitudinal )); then
             fi
 
             cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
-            ScoutExtension="_undistorted"
+            #ScoutExtension="_undistorted" this is now initialized before case switch to accomodate longitudinal mode
 
             # Test if Magnitude Brain and T1w Brain Are Similar in Size, if not, assume Magnitude Brain Extraction
             # Failed and Must Be Retried After Removing Bias Field
@@ -418,7 +428,7 @@ if (( ! IsLongitudinal )); then
                 --topupconfig=${TopupConfig} \
                 --usejacobian=${UseJacobian}
 
-            ScoutExtension="_undistorted"
+            #ScoutExtension="_undistorted" this is now initialized before case switch to accomodate longitudinal mode
 
             #If NHP, brain extract scout for registration
             if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
@@ -494,7 +504,7 @@ if (( ! IsLongitudinal )); then
                 mkdir -p "$WD/ComputeSpinEchoBiasField"
                 "${HCPPIPEDIR_fMRIVol}/ComputeSpinEchoBiasField.sh" \
                     --workingdir="$WD/ComputeSpinEchoBiasField" \
-                    --subjectfolder="$SubjectFolder" \
+                    --subjectfolder="$SessionFolder" \
                     --fmriname="$NameOffMRI" \
                     --corticallut="$HCPPIPEDIR/global/config/FreeSurferCorticalLabelTableLut.txt" \
                     --subcorticallut="$HCPPIPEDIR/global/config/FreeSurferSubcorticalLabelTableLut.txt" \
@@ -511,7 +521,7 @@ if (( ! IsLongitudinal )); then
 
                 log_Msg "---> No distortion correction"
 
-                ScoutExtension="_nosdc"
+                #ScoutExtension="_nosdc" #this is now initialized before case switch to accomodate longitudinal mode
 
                 log_Msg "---> Copy Scout image"
                 ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
@@ -644,6 +654,7 @@ if (( ! IsLongitudinal )); then
     ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/EPItoT1w.dat --mov ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/fMRI2str_refinement.mat
     fi
 else # IsLongitudinal=1
+
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat
     cp ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
 fi
@@ -687,7 +698,7 @@ then
         #TODO: correctly point to longitudinal output
         "${HCPPIPEDIR_fMRIVol}/ComputeSpinEchoBiasField.sh" \
             --workingdir="$WD/ComputeSpinEchoBiasField" \
-            --subjectfolder="$SubjectFolder" \
+            --subjectfolder="$SessionFolder" \
             --fmriname="$NameOffMRI" \
             --corticallut="$HCPPIPEDIR/global/config/FreeSurferCorticalLabelTableLut.txt" \
             --subcorticallut="$HCPPIPEDIR/global/config/FreeSurferSubcorticalLabelTableLut.txt" \
@@ -703,9 +714,12 @@ then
             ${FSLDIR}/bin/fslmaths ${WD}/${File} -div "$UseBiasField" ${WD}/${File}_unbias
 
             #don't need the T1w versions
-            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SubjectFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
+            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
         
+		#required in longitudinal mode
+		mkdir -p "$SessionFolder/T1w/Results/$NameOffMRI"
+		
         #copy recieve field, pseudo transmit field, and dropouts, etc to results dir
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_dropouts"
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
@@ -725,7 +739,7 @@ then
                 ${FSLDIR}/bin/imcp ${WD}/${File} ${WD}/${File}_unbias
             fi
             #don't need the T1w versions
-            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SubjectFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
+            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
     fi
 fi
