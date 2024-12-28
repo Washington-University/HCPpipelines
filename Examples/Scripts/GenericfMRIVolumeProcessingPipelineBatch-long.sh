@@ -2,10 +2,10 @@
 
 StudyFolder="<MyStudyFolder>"
 #The list of subject labels, space separated
-Subjects=(MySubject)
+Subjects=(HCA6002236)
 PossibleVisits=(V1_MR V2_MR V3_MR)
 ExcludeVisits=()
-Templates=(MySubject_V1_V2_V3)
+Templates=(HCA6002236_V1_V2_V3)
 
 EnvironmentScript="<hcp-pipelines-folder>/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
@@ -106,32 +106,6 @@ function identify_timepoints
     echo $tplist
 }
 
-symlink_filewise() {
-    local src=$1
-    local targ=$2
-
-	if [ ! -d "$src" ]; then return -1; fi
-
-    #in the first pass, create all subdirectories.
-    find $src -type d -exec /bin/bash -c 'shopt -s nullglob; [ "$(find "$1" -mindepth 1 -type d | head -n 1)" ] || echo "$1"' _ {} \; | while read -r dir; do  
-            targpath=$targ${dir#$src}
-            #echo $targpath
-            mkdir -p $targpath
-			if (( $? )); then
-				return -1; 
-			fi
-        done
-	
-    #in the second pass, create symlinks to files.	
-    find $src -type f -o -type l | while read -r file; do
-        #echo ln -sfr $file $targ${file#$src}
-        ln -sfr $file $targ${file#$src}
-		if (( $? )); then
-			return -1; 
-		fi
-    done
-}
-
 SCRIPT_NAME=$(basename "$0")
 echo $SCRIPT_NAME
 
@@ -158,10 +132,9 @@ for i in "${!Subjects[@]}"; do
 		echo "${SCRIPT_NAME}: Processing Timepoint: ${TimepointCross}"
 		TimepointLong=${TimepointCross}.long.${TemplateLong}
 		
-		#symlink unprocessed data to longitudinal session.
-		echo symlink_filewise "${StudyFolder}/${TimepointCross}/unprocessed" "${StudyFolder}/${TimepointLong}/unprocessed"
-		symlink_filewise "${StudyFolder}/${TimepointCross}/unprocessed" "${StudyFolder}/${TimepointLong}/unprocessed"
-
+		#symlink unprocessed data to the longitudinal session.
+		echo ln -sfr "${StudyFolder}/${TimepointCross}/unprocessed" "${StudyFolder}/${TimepointLong}/unprocessed"
+		
 		if (( $? )); then 
 			echo "ERROR: linking fMRI raw data to longitudinal session failed."
 			exit -1

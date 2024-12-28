@@ -29,7 +29,6 @@ source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 source "${HCPPIPEDIR}/global/scripts/fsl_version.shlib"          # Functions for getting FSL version
-source "${HCPPIPEDIR}/global/scripts/symlink.shlib" "$@"
 g_matlab_default_mode=1
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
@@ -650,12 +649,6 @@ fi
 
 ########################################## DO WORK ########################################## 
 
-#TODO: 
-#1. relative soft symlinks from every file in cross dirs to long dirs.
-#2. For longitudinal model, bypass until DistortionCorr..BBRbased.sh
-#3. After that, proceed as before.
- 
-
 T1wFolderCross="$Path"/"$Session"/"$T1wFolder"
 T1wFolderLong="$Path"/"$SessionLong"/"$T1wFolder"
 T1wFolder=$T1wFolderCross
@@ -680,11 +673,14 @@ else
         log_Err_Abort "Multi-echo fMRI is not supported in longitudinal mode."
     fi
     #copy directory structure and create symbolic link per each file under source. 
-    #symlink_filewise "$ResultsFolder" "$ResultsFolderLong"
+    cp -rf "$ResultsFolder" "$ResultsFolderLong"
+    if (( $? )); then
+        log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
+    fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    symlink_filewise "$fMRIFolder" "$fMRIFolderLong"
+    cp -rf "$fMRIFolder" "$fMRIFolderLong" 1
 	if (( $? )); then
-		log_Err_Abort "Linking cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
+		log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
 	fi
 fi
 
