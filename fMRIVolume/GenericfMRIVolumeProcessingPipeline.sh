@@ -796,7 +796,7 @@ else
         log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
     fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    cp -rf "$fMRIFolder" "$fMRIFolderLong" 1
+    cp -rf "$fMRIFolder" "$fMRIFolderLong"
 	if (( $? )); then
 		log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
 	fi
