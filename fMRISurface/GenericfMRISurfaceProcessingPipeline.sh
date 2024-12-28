@@ -34,9 +34,9 @@ source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check process
 
 opts_SetScriptDescription "Run fMRISurface processing"
 
-opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all subject" "--path"
+opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all session" "--path"
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--session' 'Session' 'session ID' "--subject"
 
 opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for the output'
 
@@ -105,7 +105,7 @@ esac
 
 if [ "${RegName}" = "FS" ] ; then
     log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
-    log_Warn "         HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
+    log_Warn "         HCP Pipelines as it results in poorer cross-session functional and cortical areal "
     log_Warn "         alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
     log_Warn "         dramatically higher surface distortion (both isotropic and anisotropic). These things"
     log_Warn "         occur because FreeSurfer's registration has too little regularization of folding patterns"
@@ -126,8 +126,8 @@ DownSampleFolder="fsaverage_LR${LowResMesh}k"
 ROIFolder="ROIs"
 OutputAtlasDenseTimeseries="${NameOffMRI}_Atlas"
 
-AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
-T1wFolder="$Path"/"$Subject"/"$T1wFolder"
+AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolder"
+T1wFolder="$Path"/"$Session"/"$T1wFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
 
@@ -142,11 +142,11 @@ if ((doProcessing)); then
     log_Msg "Make fMRI Ribbon"
     log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
     mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}" "${doGoodVoxels}"
+    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Session" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}" "${doGoodVoxels}"
 
     #Surface Smoothing
     log_Msg "Surface Smoothing"
-    "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
+    "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Session" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
 
     #Subcortical Processing
     log_Msg "Subcortical Processing"
@@ -154,14 +154,14 @@ if ((doProcessing)); then
 
     #Generation of Dense Timeseries
     log_Msg "Generation of Dense Timeseries"
-    "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
+    "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Session" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 fi
 
 if ((doQC)); then
     log_Msg "Generating fMRI QC scene and snapshots"
     "$PipelineScripts"/GenerateFMRIScenes.sh \
         --study-folder="$Path" \
-        --subject="$Subject" \
+        --session="$Session" \
         --fmriname="$NameOffMRI" \
         --output-folder="$ResultsFolder/fMRIQC"
 fi
