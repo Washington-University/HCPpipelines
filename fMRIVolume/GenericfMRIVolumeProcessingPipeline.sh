@@ -662,7 +662,6 @@ ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolder=$ResultsFolderCross
 
-#FIXME: TSC: below code is multi-echo without longitudinal, needs editing
 if (( ! IsLongitudinal )); then 
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
     if [ ! -e "$fMRIFolder" ] ; then
@@ -670,9 +669,6 @@ if (( ! IsLongitudinal )); then
         mkdir "$fMRIFolder"
     fi
 else
-    if (( nEcho > 1 )); then 
-        log_Err_Abort "Multi-echo fMRI is not supported in longitudinal mode."
-    fi
     #copy directory structure and create symbolic link per each file under source. 
     cp -rf "$ResultsFolder" "$ResultsFolderLong"
     if (( $? )); then
@@ -814,8 +810,8 @@ if (( ! IsLongitudinal )); then
     fi
 fi # if (( ! IsLongitudinal ))
 
-#Split echos. Multi-echo is not supported in longitudinal mode.
-if [[ ${nEcho} -gt 1 && "${IsLongitudinal}" -ne 1 ]]; then
+#Split echos. 
+if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
     tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
     for iEcho in $(seq 0 $((nEcho-1))) ; do
@@ -1039,7 +1035,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --fmrimask=${fMRIMask}
 
 
-if [[ ${nEcho} -gt 1 ]]; then #not supported/not triggered in Longitudinal mode
+if [[ ${nEcho} -gt 1 ]]; then 
     log_Msg "Creating echoMeans"
     # Calculate echoMeans of intensity normalized result
     tcsEchoes=(); tcsEchoesMu=();args=""
