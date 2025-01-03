@@ -76,7 +76,7 @@ fi
 }
 
 Structures="dentate hipp"
-Surfaces="inner@PIAL midthickness@MIDTHICKNESS outer@GRAY_WHITE" #TODO: Need inner and outer secondary types
+Surfaces="inner@INNER midthickness@MIDTHICKNESS outer@OUTER"
 Scalars="curvature@GRAY@Curvature gyrification@GRAY@Gyrification surfarea@VIDEEN@SurfaceArea thickness@VIDEEN@Thickness myelin@VIDEEN@MyelinMap"
 Labels="atlas-multihist7_subfields@HippocampalSubfields"
 
@@ -85,10 +85,9 @@ for Structure in $Structures ; do
     Left="HIPPOCAMPUS_DENTATE_LEFT"
     Right="HIPPOCAMPUS_DENTATE_RIGHT"
     for Hemisphere in L R ; do 
-      #No dentate thickness if computed by HippUnfold
+      #No dentate thickness is computed by HippUnfold
       ${CARET7DIR}/wb_command -surface-to-surface-3d-distance $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_inner.surf.gii $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_outer.surf.gii $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_thickness.shape.gii
     done
-    #No dentate thickness if computed by HippUnfold
   elif [ ${Structure} = "hipp" ] ; then
     Left="HIPPOCAMPUS_LEFT"
     Right="HIPPOCAMPUS_RIGHT"
@@ -214,7 +213,13 @@ ${CARET7DIR}/wb_command -add-to-spec-file ${PhysicalHippUnfoldFolder}/${Subject}
 ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T1w_restore.nii.gz
 ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T2w_restore.nii.gz
 
-#TODO: How to combine hippocampal and cerebral cortex?  Merge spec files using merge wb_command
+#TODO: Merge Native Meshes, anything with 0pt5mm meshes?
+if [ $Mesh = "2mm" ] ; then
+  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/T1w/fsaverage_LR32k/100307.MSMAll.32k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
+  ${CARET7DIR}/wb_command -spec-file-merge ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.MSMAll.32k_fs_LR.wb.spec ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
+elif [ $Mesh = "1mm" ] ; then
+  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/100307.MSMAll.164k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec #TODO: Don't Hardcode Cortex
+fi
 
 if [ ${Flag} = "On" ] ; then
   Modality="T1wT2w"
