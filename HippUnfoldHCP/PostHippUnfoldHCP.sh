@@ -215,10 +215,10 @@ ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${
 
 #TODO: Merge Native Meshes, anything with 0pt5mm meshes?
 if [ $Mesh = "2mm" ] ; then
-  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/T1w/fsaverage_LR32k/100307.MSMAll.32k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
-  ${CARET7DIR}/wb_command -spec-file-merge ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.MSMAll.32k_fs_LR.wb.spec ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
+  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${T1wFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
+  ${CARET7DIR}/wb_command -spec-file-merge ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${AtlasFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
 elif [ $Mesh = "1mm" ] ; then
-  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec /media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/100307.MSMAll.164k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec #TODO: Don't Hardcode Cortex
+  ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec #TODO: Don't Hardcode Cortex
 fi
 
 if [ ${Flag} = "On" ] ; then
