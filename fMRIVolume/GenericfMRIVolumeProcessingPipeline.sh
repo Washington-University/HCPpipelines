@@ -149,10 +149,10 @@ opts_AddOptional '--fmriref' 'fMRIReference' 'folder' "Specifies whether to use 
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specifies whether to compute and apply a nonlinear transform to align the inputfMRI to the reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed using 'fnirt' following the motion correction using the mean motion corrected fMRI image." "linear"
 
-opts_AddOptional '--output-native' 'OutputNative' 'binary' "Flag to output in native T1w space [no by default]" "0"
+#opts_AddOptional '--output-native' 'OutputNative' 'binary' "Flag to output in native T1w space [no by default]" "0"
 
 #longitudinal options
-opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'flag' "Specifies whether this is run on a longitudinal timepoint" "0"
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE/FALSE' "Specifies whether this is run on a longitudinal timepoint" "0"
 opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
 #TODO add binary option processing from optlib
@@ -670,13 +670,13 @@ if (( ! IsLongitudinal )); then
     fi
 else
     #copy directory structure and create symbolic link per each file under source. 
-    cp -rf "$ResultsFolder" "$ResultsFolderLong"
-    if (( $? )); then
+    if ! cp -rf "$ResultsFolder" "$ResultsFolderLong"
+    then
         log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
     fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    cp -rf "$fMRIFolder" "$fMRIFolderLong"
-	if (( $? )); then
+    if ! cp -rf "$fMRIFolder" "$fMRIFolderLong"
+	then
 		log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
 	fi
 fi

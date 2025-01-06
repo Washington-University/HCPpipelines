@@ -32,7 +32,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all Sessions"
-opts_AddMandatory '--session' 'Session' 'Session ID' "Session"
+opts_AddMandatory '--session' 'Session' 'Session ID' "Session" "--subject"
 opts_AddMandatory '--fmriname' 'fMRIName' 'fMRI run name' ""
 opts_AddMandatory '--output-folder' 'OutputSceneFolder' 'path' "output location for QC scene and snapshots"
 
