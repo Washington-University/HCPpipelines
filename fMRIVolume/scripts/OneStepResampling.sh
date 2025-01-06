@@ -64,9 +64,9 @@ opts_AddMandatory '--oscout' 'ScoutOutput' 'image' "output transformed + distort
 opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + distortion corrected Jacobian image"
 
 #Optional Args 
-opts_AddOptional '--t1-native' 'T1wImageNative' 'image' "native T1w_acpc_dc image. Must be present to resample to the native space" "NONE"
-opts_AddOptional '--biasfield-native' 'BiasFieldNative' 'image' "imput biasfield image in native acpc_dc space. Must be present to resample to the native space" "NONE"
-opts_AddOptional '--freesurferbrainmask-native' 'FreeSurferBrainMaskNative' 'image' "input Freesurfer brain mask in native acpc_dc space. Must be present to resample to the native space" "NONE"
+#opts_AddOptional '--t1-native' 'T1wImageNative' 'image' "native T1w_acpc_dc image. Must be present to resample to the native space" "NONE"
+#opts_AddOptional '--biasfield-native' 'BiasFieldNative' 'image' "imput biasfield image in native acpc_dc space. Must be present to resample to the native space" "NONE"
+#opts_AddOptional '--freesurferbrainmask-native' 'FreeSurferBrainMaskNative' 'image' "input Freesurfer brain mask in native acpc_dc space. Must be present to resample to the native space" "NONE"
 
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
@@ -120,13 +120,13 @@ case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
         ;;
 esac
 
-OutInNativeSpace=0
-if [ -f "$T1wImageNative.nii.gz" -a -f "$BiasFieldNative.nii.gz" -a -f "$FreeSurferBrainMaskNative.nii.gz" ]; then 
-  OutInNativeSpace=1
-  log_Msg "Output to native space enabled"
-else
-  log_Msg "Output to native space disabled because one of values supplied to --t1-native, --biasfield-native, --freesurferbrainmask-native do not point to a valid file."
-fi
+#OutInNativeSpace=0
+#if [ -f "$T1wImageNative.nii.gz" -a -f "$BiasFieldNative.nii.gz" -a -f "$FreeSurferBrainMaskNative.nii.gz" ]; then 
+#  OutInNativeSpace=1
+#  log_Msg "Output to native space enabled"
+#else
+#  log_Msg "Output to native space disabled because one of values supplied to --t1-native, --biasfield-native, --freesurferbrainmask-native do not point to a valid file."
+#fi
 
 # --- Report arguments
 
@@ -155,14 +155,14 @@ verbose_echo "             --oscout: ${ScoutOutput}"
 verbose_echo "          --ojacobian: ${JacobianOut}"
 verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
 verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
-verbose_echo "          --t1-native: ${T1wImageNative}"
-verbose_echo "   --biasfield-native: ${BiasFieldNative}"
-verbose_echo "--freesruferbrainmask-native: $FreeSurferBrainMaskNative"
+#verbose_echo "          --t1-native: ${T1wImageNative}"
+#verbose_echo "   --biasfield-native: ${BiasFieldNative}"
+#verbose_echo "--freesruferbrainmask-native: $FreeSurferBrainMaskNative"
 verbose_echo " "
 
 BiasFieldFile=$(basename "$BiasField")
 T1wImageFile=$(basename $T1wImage)
-T1wImageFileNative=$(basename $T1wImageNative)
+#T1wImageFileNative=$(basename $T1wImageNative)
 FreeSurferBrainMaskFile=$(basename "$FreeSurferBrainMask")
 
 echo " "
@@ -205,11 +205,10 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${BiasField} -r ${WD}/${FreeSurferBrainMaskFile}.${FinalfMRIResolution}.nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${WD}/${BiasFieldFile}.${FinalfMRIResolution}
 
-if (( OutInNativeSpace )); then
+#if (( OutInNativeSpace )); then
   # nothing yet, just make sure that 
   # T1wImageNative, BiasFieldNative and FreeSurferBrainMaskNative exist
-  a=a
-fi
+#fi
 
 # Downsample warpfield (fMRI to standard) to increase speed
 #   NB: warpfield resolution is 10mm, so 1mm to fMRIres downsample loses no precision

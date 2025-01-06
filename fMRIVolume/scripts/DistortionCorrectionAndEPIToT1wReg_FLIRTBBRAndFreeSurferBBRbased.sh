@@ -674,7 +674,6 @@ then
     #we need them before the final bias field computation
 
     # Set up reference image
-    #TODO: point to longitudinal
     ReferenceImage=${SessionFolder}/T1w/T1w_acpc_dc.nii.gz
 
     Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
@@ -682,10 +681,8 @@ then
     do
         if ((UseJacobian))
         then
-            #TODO: correctly point to longitudinal output image
             ${FSLDIR}/bin/applywarp --interp=spline -i "${WD}/FieldMap/${File}_jac" -r ${ReferenceImage} --premat=${WD}/fMRI2str.mat -o ${WD}/${File}
         else
-            #TODO: correctly point to longitudinal output
             ${FSLDIR}/bin/applywarp --interp=spline -i "${WD}/FieldMap/${File}" -r ${ReferenceImage} --premat=${WD}/fMRI2str.mat -o ${WD}/${File}
         fi
     done
@@ -695,7 +692,6 @@ then
         #final bias field computation
 
         #run bias field computation script, go ahead and reuse the same working dir as previous run
-        #TODO: correctly point to longitudinal output
         "${HCPPIPEDIR_fMRIVol}/ComputeSpinEchoBiasField.sh" \
             --workingdir="$WD/ComputeSpinEchoBiasField" \
             --subjectfolder="$SessionFolder" \
@@ -710,7 +706,6 @@ then
         for File in ${Files}
         do
             #we need to apply the new bias field to them for output
-            #TODO: correctly point to longitudinal output
             ${FSLDIR}/bin/fslmaths ${WD}/${File} -div "$UseBiasField" ${WD}/${File}_unbias
 
             #don't need the T1w versions
