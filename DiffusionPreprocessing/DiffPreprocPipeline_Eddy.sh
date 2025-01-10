@@ -157,9 +157,9 @@ opts_AddOptional '--rms' 'rmsString' 'Boolean' "Write root-mean-squared movement
 
 opts_AddOptional '--ff' 'ff_val' 'Number' "Ff-value to be passed to the eddy binary. See eddy documentation at http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/EDDY/UsersGuide#A--ff for further information. Note: This option has no effect if the GPU-enabled version of eddy is not used."
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
   
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddMandatory '--session' 'Session' 'session ID' "subject"
 
 opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion" 
 
@@ -212,7 +212,7 @@ log_Check_Env_Var FSLDIR
 HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 
 # Establish output directory paths
-outdir=${StudyFolder}/${Subject}/${DWIName}
+outdir=${StudyFolder}/${Session}/${DWIName}
 
 run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddy.sh
     --nvoxhp="$nvoxhp"

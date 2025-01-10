@@ -59,14 +59,14 @@
 # Output path specifiers
 #
 # * <code>${StudyFolder}</code> is an input parameter
-# * <code>${Subject}</code> is an input parameter
+# * <code>${Session}</code> is an input parameter
 #
 # Main output directories
 #
-# * <code>DiffFolder=${StudyFolder}/${Subject}/Diffusion</code>
-# * <code>T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion</code>
+# * <code>DiffFolder=${StudyFolder}/${Session}/Diffusion</code>
+# * <code>T1wDiffFolder=${StudyFolder}/${Session}/T1w/Diffusion</code>
 #
-# All outputs are within the directory: <code>${StudyFolder}/${Subject}</code>
+# All outputs are within the directory: <code>${StudyFolder}/${Session}</code>
 #
 # The full list of output directories are the following
 #
@@ -78,7 +78,7 @@
 # * <code>$T1wDiffFolder</code>
 #
 # Also assumes that T1 preprocessing has been carried out with results in
-# <code>${StudyFolder}/${Subject}/T1w</code>
+# <code>${StudyFolder}/${Session}/T1w</code>
 #
 # <!-- References -->
 #
@@ -174,9 +174,9 @@ DEFAULT_DEGREES_OF_FREEDOM=6
 # Perform the steps of the HCP Diffusion Preprocessing Pipeline
 opts_SetScriptDescription "Perform the steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddMandatory '--session' 'Session' 'session ID' "subject"
 
 opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
@@ -346,7 +346,7 @@ validate_scripts "$@"
 log_Msg "Invoking Pre-Eddy Steps"
 pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
     "--path=${StudyFolder}"
-    "--subject=${Subject}"
+    "--session=${Session}"
     "--dwiname=${DWIName}"
     "--PEdir=${PEdir}"
     "--posData=${PosInputImages}"
@@ -364,7 +364,7 @@ log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
 log_Msg "Invoking Eddy Step"
 eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
     --path="$StudyFolder"
-    --subject="$Subject"
+    --session="$Session"
     --dwiname="$DWIName"
     --printcom="$runcmd"
     --gpu="$gpu"
@@ -380,7 +380,7 @@ log_Msg "eddy_cmd: ${eddy_cmd[*]}"
 log_Msg "Invoking Post-Eddy Steps"
 post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
     "--path=${StudyFolder}"
-    "--subject=${Subject}"
+    "--session=${Session}"
     "--dwiname=${DWIName}"
     "--gdcoeffs=${GdCoeffs}"
     "--dof=${DegreesOfFreedom}"
