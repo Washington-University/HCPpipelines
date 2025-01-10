@@ -119,9 +119,9 @@ DEFAULT_B0_MAX_BVAL=50
 
 opts_SetScriptDescription "Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddMandatory '--session' 'Session' 'session ID' "subject"
 
 opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
@@ -231,8 +231,8 @@ MissingFileFlag="EMPTY" # String used in the input arguments to indicate that a 
 b0dist=45               # Minimum distance in volumes between b0s considered for preprocessing
 
 # Establish output directory paths
-outdir=${StudyFolder}/${Subject}/${DWIName}
-outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
+outdir=${StudyFolder}/${Session}/${DWIName}
+outdirT1w=${StudyFolder}/${Session}/T1w/${DWIName}
 
 # Delete any existing output sub-directories
 if [ -d ${outdir} ]; then
