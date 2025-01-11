@@ -157,9 +157,9 @@ for Structure in $Structures ; do
         ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
       elif [ ${Structure} = "dentate" ] ; then
         if [ ${Hemisphere} = "L" ] ; then
-          Expression="Var*0+1*6"
+          Expression="6"
         elif [ ${Hemisphere} = "R" ] ; then
-          Expression="Var*0+1*6 + 8"
+          Expression="6 + 8"
         fi      
         ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $HippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Modality}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii
         ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
