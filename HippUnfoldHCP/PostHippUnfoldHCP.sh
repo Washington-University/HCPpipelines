@@ -149,7 +149,7 @@ for Structure in $Structures ; do
       Label=`echo $Label | cut -d "@" -f 1`
       if [ ${Structure} = "hipp" ] ; then
         if [ ${Hemisphere} = "L" ] ; then
-          Expression="Var*1"
+          Expression="Var"
         elif [ ${Hemisphere} = "R" ] ; then
           Expression="Var + 8"
         fi
