@@ -607,7 +607,11 @@ ${FSLDIR}/bin/fslmaths ${WD}/SBRef_dc -mul ${WD}/Jacobian ${WD}/SBRef_dc_jac
 # Calculate Equivalent Field Map
 ${FSLDIR}/bin/fslmaths ${WD}/TopupField -mul 6.283 ${WD}/TopupField
 ${FSLDIR}/bin/fslmaths ${WD}/Magnitudes -Tmean ${WD}/Magnitude
-${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+if [ "$species" = 0 ]  ; then 
+  ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
+else
+  ${GlobalScripts}/bet4animal ${WD}/Magnitude.nii.gz ${WD}/Magnitude_brain.nii.gz -m -z $species #Brain extract the magnitude image
+fi
 
 # copy images to specified outputs
 # explicitly include .nii.gz suffix on outputs here, to avoid any ambiguity between files
