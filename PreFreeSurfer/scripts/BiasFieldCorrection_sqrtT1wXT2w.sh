@@ -25,6 +25,7 @@ Usage: ${script_name}
   --oT1brain=<output corrected T1 brain>
   --oT2im=<output corrected T2 image>
   --oT2brain=<output corrected T2 brain>
+  [--bfsigma=<num>] : biasfield sigma (default=5)
 
 EOF
 }
