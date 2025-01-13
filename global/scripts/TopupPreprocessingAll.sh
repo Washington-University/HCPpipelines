@@ -159,6 +159,18 @@ function StringToBool()
 }
 UseJacobian=$(StringToBool "$UseJacobian")
 
+if [[ "$SPECIES" =~ Human || "$SPECIES" = "" ]] ; then
+  species=0
+elif [[ "$SPECIES" =~ Chimp ]] ; then
+  species=1
+elif [[ "$SPECIES" =~ Macaque ]] ; then
+  species=2
+elif [[ "$SPECIES" =~ Marmoset ]] ; then
+  species=3
+elif [[ "$SPECIES" =~ NightMonkey ]] ; then
+  species=4
+fi
+
 GlobalScripts=${HCPPIPEDIR_Global}
 
 # default parameters #Breaks when --owarp becomes optional
