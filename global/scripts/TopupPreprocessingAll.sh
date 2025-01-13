@@ -46,13 +46,21 @@ Usage() {
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
   echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
   echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
+  echo "            --scoutinbrain=<scout input brain image: should be corrected for gradient non-linear distortions>"
+  echo "            [--phasezero=<T2w assumed to be the negligible readout time, should be corrected for gradient non-linear distortions>]"
+  echo "            [--phaseazerobrainmask=<T2w brainmask>]"
+  echo "            [--phaseone2=<first set of SE EPI images of 2nd phase dir: assumed to be the 'negative' PE direction>"
+  echo "            [--phasetwo2=<second set of SE EPI images of 2nd phase dir: assumed to be the 'positive' PE direction>"
   echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
   echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
   echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
   echo "            [--ofmap=<output scaled topup field map image>]"
   echo "            [--ojacobian=<output Jacobian image> (of the TOPUP warp field)]"
+  echo "            [--scannerpatientposition=<HFS (default), HFP>]"
+  echo "            [--truepatientposition=<HFS (default), HFSx, FFSx>]"
   echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
   echo "            [--topupconfig=<topup config file>]"
+  echo "            [--initworldmat=<world matrix moving func to structure space>"
   echo "            --usejacobian=<\"true\" or \"false\">"
   echo "                 Whether to apply the jacobian of the gradient non-linearity distortion correction"
   echo "                 Irrelevant if --gdcoeffs=NONE"
@@ -117,6 +125,15 @@ JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
 TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
 UseJacobian=`getopt1 "--usejacobian" $@`
+PhaseEncodeZero=`getopt1 "--phasezero" $@` # TH - use T2w
+PhaseEncodeOne2=`getopt1 "--phaseone2" $@` # TH - use additional phase
+PhaseEncodeTwo2=`getopt1 "--phasetwo2" $@` # TH - use additional phase
+ScoutInputBrainName=`getopt1 "--scoutinbrain" $@`  # 
+
+ScannerPatientPosition=`getopt1 "--scannerpatientposition" $@` # TH - scanner's patient position (e.g., HFS, HFP)
+TruePatientPosition=`getopt1 "--truepatientposition" $@` # TH - true patient position (e.g., HFS, HFSx, FFSx)
+InitWorldMat=`getopt1 "--initworldmat" $@` # TH - init rigid-body transformation matrix in world format moving func to structure space, scanned on different days/sessions.
+SpinEchoPhaseEncodeZeroFSBrainmask=`getopt1 "--phasezerobrainmask" $@`
 
 if [[ -n $HCPPIPEDEBUG ]]
 then
