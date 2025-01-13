@@ -153,6 +153,7 @@ TE=`getopt1 "--echodiff" $@`
 SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  
 SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  
 SEEchoSpacing=`getopt1 "--seechospacing" $@` 
+DwellTime=`getopt1 "--echospacing" $@` 
 SEUnwarpDir=`getopt1 "--seunwarpdir" $@`  
 T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  
 T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  
@@ -166,6 +167,11 @@ DistortionCorrection=`getopt1 "--method" $@`
 TopupConfig=`getopt1 "--topupconfig" $@`  
 GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  
 UseJacobian=`getopt1 "--usejacobian" $@`
+TruePatientPosition=`getopt1 "--truepatientposition" $@`  # HFS (head-first-spine), HFSx (head-first-sphinx) - TH 2023
+ScannerPatientPosition=`getopt1 "--scannerpatientposition" $@` # HFS, HFP, FFS or FFP
+SpinEchoPhaseEncodeNegative2=`getopt1 "--SEPhaseNeg2" $@`  
+SpinEchoPhaseEncodePositive2=`getopt1 "--SEPhasePos2" $@`  
+SpinEchoPhaseEncodeZero=`getopt1 "--SEPhaseZero" $@`  
 
 # default parameters
 WD=`defaultopt $WD .`
@@ -320,8 +326,12 @@ case $DistortionCorrection in
             --workingdir=${WD}/FieldMap \
             --phaseone=${SpinEchoPhaseEncodeNegative} \
             --phasetwo=${SpinEchoPhaseEncodePositive} \
+            --phaseone2=${SpinEchoPhaseEncodeNegative2} \
+            --phasetwo2=${SpinEchoPhaseEncodePositive2} \
+            --phasezero=${SpinEchoPhaseEncodeZero}  \
             --scoutin=${ScoutInputName} \
-            --echospacing=${SEEchoSpacing} \
+            --echospacing=${DwellTime} \
+           --echospacing=${SEEchoSpacing} \
             --unwarpdir=${SEUnwarpDir} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
@@ -329,7 +339,9 @@ case $DistortionCorrection in
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
             --topupconfig=${TopupConfig} \
-            --usejacobian=${UseJacobian}
+            --usejacobian=${UseJacobian}  \
+            --truepatientposition="$TruePatientPosition" \
+            --scannerpatientposition="$ScannerPatientPosition"
 
         ;;
 
