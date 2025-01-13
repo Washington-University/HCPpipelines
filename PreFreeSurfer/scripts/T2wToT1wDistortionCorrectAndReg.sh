@@ -392,13 +392,54 @@ for TXw in $Modalities ; do
 
         ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warped${TXw}
-            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          if [[ ! $SPECIES =~ Marmoset ]] ; then
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage}.nii.gz -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+          else
+            ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/Fieldmap2${TXw}.mat ${WD}/Magnitude.nii.gz ${WD}/../../${TXw}/${TXw}.nii.gz
+            ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}_init.mat -concat ${WD}/../../${TXw}/xfms/acpc.mat ${WD}/Fieldmap2${TXw}.mat
+            ${FSLDIR}/bin/flirt -in  ${WD}/Magnitude_warped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}_init.mat -interp spline -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat -finesearch 2
+            ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -concat ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat  ${WD}/Fieldmap2${TXwImageBasename}_init.mat
+            rm -f ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat                        
+          fi
             ;;
 
         ${SPIN_ECHO_METHOD_OPT})
+          if [[ ! $SPECIES =~ Marmoset ]] ; then
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warped${TXw}
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-            ;;
+          else  # Marmoset data does not work well for BET-based brain extraction, thus start from the head image and scanner coordinates
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warped${TXw}
+            # Register fieldmap to ACPC space assuming that head is not much moving during scans between SEfield and structure
+            ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/Fieldmap2${TXw}.mat ${WD}/Magnitude.nii.gz ${WD}/../../${TXw}/${TXw}.nii.gz
+            ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}_init.mat -concat ${WD}/../../${TXw}/xfms/acpc.mat ${WD}/Fieldmap2${TXw}.mat
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}_init.mat -interp spline -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init
+
+            # Brain extract fieldmap assuming that head is not much moving during scans between SEField and structure
+            ${FSLDIR}/bin/fslmaths ${TXwImageBrain} -bin -dilM -dilM -dilM ${WD}/${TXw}_acpc_brain_mask_dil
+            ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init -mas ${WD}/${TXw}_acpc_brain_mask_dil ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init_brain
+
+            # Register fieldmap magnitude (head) to structure
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_TMP1 -omat ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat -nosearch
+
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat $Cost | head -1 | cut -f1 -d' ' >  ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_cost.txt
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_cost.txt
+            # Register fieldmap magnitude (brain) to structure
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_TMP2 -omat ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat -nosearch $Cost $Schedule
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_cost.txt
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_cost.txt
+            # Find smaller mincost registration matrix between those for brain and head and use it to concat matrices
+            MinCost=($(cat ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_cost.txt))
+            if [[ $(echo "${MinCost[1]} < ${MinCost[3]}" | bc ) == 1 ]] ; then
+               MinMat=${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat
+            else
+               MinMat=${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat
+            fi
+            ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -concat ${MinMat}  ${WD}/Fieldmap2${TXwImageBasename}_init.mat
+            # Resampling with the concat matrix
+            ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -interp spline -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}
+          fi
+           ;;
 
         *)
             log_Err "Unable to apply readout distortion correction"
