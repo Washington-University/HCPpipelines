@@ -484,12 +484,30 @@ else
   verbose_echo ""
   verbose_red_echo " ---> Running T2w to T1w registration"
 
+  ### Create tentative biasfield corrected image to improve T2w-to-T1w registration - TH Jan 2021
+  mkdir -p ${WD}/T2w2T1w
+  PipelineScripts=${HCPPIPEDIR_PreFS}
+  if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+  	BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+  fi
+  ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
+    --workingdir=${WD}/T2w2T1w/BiasFieldCorrection_sqrtT1wXT2w \
+    --T1im=${WD}/${T1wImageBasename} \
+    --T1brain=${WD}/${T1wImageBrainBasename} \
+    --T2im=${WD}/${T2wImageBasename} \
+    --obias=${WD}/T2w2T1w/BiasField_acpc \
+    --oT1im=${WD}/${T1wImageBasename}_restore \
+    --oT1brain=${WD}/${T1wImageBasename}_restore_brain \
+    --oT2im=${WD}/${T2wImageBasename}_restore \
+    --oT2brain=${WD}/${T2wImageBasename}_restore_brain \
+    ${BiasFieldSmoothingSigma}
+
   ### Now do T2w to T1w registration
   mkdir -p ${WD}/T2w2T1w
 
   # Main registration: between corrected T2w and corrected T1w
   verbose_echo "      ... Corrected T2w to T1w"
-  ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
+  ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBasename}_restore_brain --t1=${WD}/${T1wImageBasename}_restore --t1brain=${WD}/${T1wImageBasename}_restore_brain --out=${WD}/T2w2T1w/T2w_reg  
 
   # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
   verbose_echo "      ... Making a warpfield from original"
@@ -502,7 +520,7 @@ else
 
   # QA image
   verbose_echo "      ... Creating QA image"
-  ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
+  ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${WD}/${T1wImageBasename}_restore -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
 
   # Copy files to specified destinations
   verbose_echo "      ... Copying files"
