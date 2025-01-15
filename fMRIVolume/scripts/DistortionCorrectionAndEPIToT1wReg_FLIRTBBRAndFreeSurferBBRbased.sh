@@ -362,7 +362,6 @@ if (( ! IsLongitudinal )); then
             fi
 
             cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
-            #ScoutExtension="_undistorted" this is now initialized before case switch to accomodate longitudinal mode
 
             # Test if Magnitude Brain and T1w Brain Are Similar in Size, if not, assume Magnitude Brain Extraction
             # Failed and Must Be Retried After Removing Bias Field
@@ -427,8 +426,7 @@ if (( ! IsLongitudinal )); then
                 --gdcoeffs=${GradientDistortionCoeffs} \
                 --topupconfig=${TopupConfig} \
                 --usejacobian=${UseJacobian}
-
-            #ScoutExtension="_undistorted" this is now initialized before case switch to accomodate longitudinal mode
+            
 
             #If NHP, brain extract scout for registration
             if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
@@ -469,10 +467,7 @@ if (( ! IsLongitudinal )); then
             else
             log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
             fi
-
-            #copy the initial registration into the final affine's filename, as it is pretty good
-            #we need something to get between the spaces to compute an initial bias field
-
+			
             # generate combined warpfields and spline interpolated images + apply bias field correction
             log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
             ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp

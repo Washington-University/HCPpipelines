@@ -105,7 +105,7 @@ esac
 
 if [ "${RegName}" = "FS" ] ; then
     log_Warn "WARNING: FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
-    log_Warn "         HCP Pipelines as it results in poorer cross-session functional and cortical areal "
+    log_Warn "         HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
     log_Warn "         alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
     log_Warn "         dramatically higher surface distortion (both isotropic and anisotropic). These things"
     log_Warn "         occur because FreeSurfer's registration has too little regularization of folding patterns"

@@ -48,7 +48,7 @@ opts_SetScriptDescription "Run fMRIVolume processing"
 
 opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all sessions" "--path"
 
-opts_AddMandatory '--session' 'Session' 'Session ID' "--subject"
+opts_AddMandatory '--session' 'Session' 'Session ID' "" "--subject"
 
 opts_AddMandatory '--fmritcs' 'fMRITimeSeries' 'file' 'input fMRI time series (NIFTI)'
 
@@ -148,8 +148,6 @@ Note that mask is used in IntensityNormalization.sh, so the mask type affects th
 opts_AddOptional '--fmriref' 'fMRIReference' 'folder' "Specifies whether to use another (already processed) fMRI run as a reference for processing. (i.e., --fmriname from the run to be used as *reference*). The specified run will be used as a reference for motion correction and its distortion correction and atlas (MNI152) registration will be copied over and used. The reference fMRI has to have been fully processed using the fMRIVolume pipeline, so that a distortion correction and atlas (MNI152) registration solution for the reference fMRI already exists. The reference fMRI must have been acquired using the same imaging parameters (e.g., phase encoding polarity and echo spacing), or it can not serve as a valid reference. (NO checking is performed to verify this). WARNING: This option excludes the use of the --fmriscout option, as the scout from the specified reference fMRI run is used instead. Please run with --processing-mode-info flag for additional information on the issues related to the use of --fmriref." "NONE"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specifies whether to compute and apply a nonlinear transform to align the inputfMRI to the reference fMRI, if one is specified using --fmriref. The nonlinear transform is computed using 'fnirt' following the motion correction using the mean motion corrected fMRI image." "linear"
-
-#opts_AddOptional '--output-native' 'OutputNative' 'binary' "Flag to output in native T1w space [no by default]" "0"
 
 #longitudinal options
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE/FALSE' "Specifies whether this is run on a longitudinal timepoint" "0"
@@ -447,7 +445,7 @@ if (( IsLongitudinal )); then
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi 
     if [ -n "$fMRIReference" ] && [ "$fMRIReference" != "NONE" ]; then
-        log_Err_Abort "fMRI reference is not supported in longitudinal mode."
+        log_Warn "fmri reference is used during the initial cross-sectional run on a timepoint, but irrelevant (and therefore the argument is ignored) during the subsequent longitudinal call on the same timepoint."
     fi
 fi
 
@@ -718,7 +716,7 @@ if (( ! IsLongitudinal )); then
 
         for simage in SBRef_nonlin SBRef_nonlin_norm
         do
-            ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_${simage}" ${fMRIFolder}/"${NameOffMRI}_${simage}"
+        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_${simage}" ${fMRIFolder}/"${NameOffMRI}_orig_${simage}"
         done
 
         mkdir -p ${ResultsFolder}
@@ -819,14 +817,16 @@ if [[ ${nEcho} -gt 1 ]]; then
         tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
         sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
         sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
-        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
-            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-        wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
-            -subvolume "$(( iEcho + 1 ))"
-        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
-            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-        wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
-            -subvolume "$(( iEcho + 1 ))"
+		if (( ! IsLongitudinal )); then 
+			wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
+				-subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+			wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
+				-subvolume "$(( iEcho + 1 ))"
+			wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
+				-subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+			wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
+				-subvolume "$(( iEcho + 1 ))"
+		fi
     done
 else
     tcsEchoesOrig[0]="${OrigTCSName}"
@@ -878,8 +878,8 @@ if [ $fMRIReference = "NONE" ] ; then
     fi
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
-	#debug: use dcreg2t1.sh
-	cmd=(${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+	
+	${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
         --t1=${T1wFolder}/${T1wImage} \
@@ -910,10 +910,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
-        --t1w-cross2long-xfm="$T1wCross2LongXfm")
-	echo "${cmd[@]}" #debug
-	"${cmd[@]}"
-
+        --t1w-cross2long-xfm="$T1wCross2LongXfm"
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -d ${DCFolder} ] ; then
@@ -939,7 +936,7 @@ log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 mkdir -p ${fMRIFolder}/OneStepResampling
 tscArgs="";sctArgs="";
 for iEcho in $(seq 0 $((nEcho-1))) ; do
-    cmd=(${RUN} ${PipelineScripts}/OneStepResampling.sh \
+    ${RUN} ${PipelineScripts}/OneStepResampling.sh \
         --workingdir=${fMRIFolder}/OneStepResampling \
         --infmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" \
         --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
@@ -961,9 +958,7 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
-        --wb-resample=${useWbResample})
-	echo "${cmd[@]}" #debug
-	"${cmd[@]}"
+        --wb-resample=${useWbResample}
 	
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
