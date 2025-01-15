@@ -36,7 +36,7 @@ opts_SetScriptDescription "Run fMRISurface processing"
 
 opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all session" "--path"
 
-opts_AddMandatory '--session' 'Session' 'session ID' "--subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" '--subject'
 
 opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for the output'
 
