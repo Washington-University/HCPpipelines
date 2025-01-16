@@ -176,7 +176,7 @@ opts_SetScriptDescription "Perform the steps of the HCP Diffusion Preprocessing 
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--session' 'Session' 'session ID' "subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "subject"
 
 opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
@@ -222,6 +222,9 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
 Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE/FALSE' "Specifies whether this is run on a longitudinal timepoint" "0"
+opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
 opts_ParseArguments "$@"
 
@@ -307,6 +310,19 @@ if ((SelectBestB0)); then
     fi
 fi
 
+#parse longitudinal arguments
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+T1wCross2LongXfm=""
+
+if (( IsLongitudinal )); then
+    if [ ! -d "$Path/$SessionLong" ]; then
+        log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
+    fi
+    T1wCross2LongXfm=$Path/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
+    if [ ! -f "$T1wCross2LongXfm" ]; then 
+        log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
+    fi
+fi
 
 #
 # Function Description
@@ -343,39 +359,46 @@ validate_scripts() {
 # Validate scripts
 validate_scripts "$@"
 
-log_Msg "Invoking Pre-Eddy Steps"
-pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
-    "--path=${StudyFolder}"
-    "--session=${Session}"
-    "--dwiname=${DWIName}"
-    "--PEdir=${PEdir}"
-    "--posData=${PosInputImages}"
-    "--negData=${NegInputImages}"
-    "--echospacing=${echospacingmilli}"
-    "--b0maxbval=${b0maxbval}"
-    "--topup-config-file=${TopupConfig}"
-    "--printcom=${runcmd}"
-    "--select-best-b0=${SelectBestB0}"
-    "--ensure-even-slices=${EnsureEvenSlices}")
+if (( ! IsLongitudinal )); then 
+    log_Msg "Invoking Pre-Eddy Steps"
+    pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
+        "--path=${StudyFolder}"
+        "--session=${Session}"
+        "--dwiname=${DWIName}"
+        "--PEdir=${PEdir}"
+        "--posData=${PosInputImages}"
+        "--negData=${NegInputImages}"
+        "--echospacing=${echospacingmilli}"
+        "--b0maxbval=${b0maxbval}"
+        "--topup-config-file=${TopupConfig}"
+        "--printcom=${runcmd}"
+        "--select-best-b0=${SelectBestB0}"
+        "--ensure-even-slices=${EnsureEvenSlices}")
 
-log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
-"${pre_eddy_cmd[@]}"
+    log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
+    "${pre_eddy_cmd[@]}"
 
-log_Msg "Invoking Eddy Step"
-eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
-    --path="$StudyFolder"
-    --session="$Session"
-    --dwiname="$DWIName"
-    --printcom="$runcmd"
-    --gpu="$gpu"
-    --cuda-version="$cuda_version")
-for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
-do
-    eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
-done
+    log_Msg "Invoking Eddy Step"
+    eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
+        --path="$StudyFolder"
+        --session="$Session"
+        --dwiname="$DWIName"
+        --printcom="$runcmd"
+        --gpu="$gpu"
+        --cuda-version="$cuda_version")
+    for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
+    do
+        eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+    done
 
-log_Msg "eddy_cmd: ${eddy_cmd[*]}"
-"${eddy_cmd[@]}"
+    log_Msg "eddy_cmd: ${eddy_cmd[*]}"
+    "${eddy_cmd[@]}"
+else #copy cross-sectional output to longitudinal session
+    cp -rf "$StudyFolder/$Session/Diffusion" "$StudyFolder/$SessionLong/Diffusion"
+    cp -rf "$StudyFolder/$Session/T1w/Diffusion" "$StudyFolder/$SessionLong/T1w/Diffusion"
+fi
+
+if (( IsLongitudinal )); then Session="$SessionLong"; fi
 
 log_Msg "Invoking Post-Eddy Steps"
 post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
@@ -386,7 +409,8 @@ post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEdd
     "--dof=${DegreesOfFreedom}"
     "--combine-data-flag=${CombineDataFlag}"
     "--printcom=${runcmd}"
-    "--select-best-b0=${SelectBestB0}")
+    "--select-best-b0=${SelectBestB0}"
+    "--t1w_cross2long_xfm=${T1wCross2LongXfm}")
 
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
