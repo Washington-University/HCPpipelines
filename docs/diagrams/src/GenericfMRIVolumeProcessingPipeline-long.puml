@@ -1,0 +1,41 @@
+@startuml GenericfMRIProcessingPipeline_long
+|c| Cross-sectional TP
+|l| Longitudinal TP
+
+|c|
+split
+-[hidden]->
+split
+-[hidden]->
+#palegreen:Spin echo field map (AP/PA or LR/RL),
+Original timeseries,
+SBRef image;
+:(optional)
+Gradient distortion 
+correction;
+split
+:TOPUP:
+Convert field map
+into EPI correction
+warp field;
+split again
+:Motion correction
+of all frames in 
+SBRef;
+end split
+:EPI distortion correction;
+split again
+-[hidden]->
+#palegreen:T1w;
+end split
+:SBRef to T1w FLIRT/BBR registration;
+|l|
+split again
+-[hidden]->
+#palegreen:T1w_cross to
+T1w_template transform;
+end split
+:One step resampling;
+:Intensity normalization
+and Brain Masking;
+@enduml
