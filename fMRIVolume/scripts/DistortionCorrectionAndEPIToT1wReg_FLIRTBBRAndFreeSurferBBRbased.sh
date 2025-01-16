@@ -236,9 +236,11 @@ log_Msg "START"
 #ScoutExtension must initialize for both cross-sectional and longitudinal modes.
 
 case $DistortionCorrection in
-	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} ) ScoutExtension="_undistorted" 
+	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} )
+		ScoutExtension="_undistorted" 
 	;;
-	${NONE_METHOD_OPT}) ScoutExtension="_nosdc" 
+	${NONE_METHOD_OPT})
+		ScoutExtension="_nosdc" 
 	;;
 esac
 
