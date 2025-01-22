@@ -517,9 +517,6 @@ if (( ! IsLongitudinal )); then
                 # NOTE: To work with later code a uniform Jacobian is created.
 
                 log_Msg "---> No distortion correction"
-
-                #ScoutExtension="_nosdc" #this is now initialized before case switch to accomodate longitudinal mode
-
                 log_Msg "---> Copy Scout image"
                 ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
                 

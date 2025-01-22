@@ -144,9 +144,6 @@ verbose_echo "             --oscout: ${ScoutOutput}"
 verbose_echo "          --ojacobian: ${JacobianOut}"
 verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
 verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
-#verbose_echo "          --t1-native: ${T1wImageNative}"
-#verbose_echo "   --biasfield-native: ${BiasFieldNative}"
-#verbose_echo "--freesruferbrainmask-native: $FreeSurferBrainMaskNative"
 verbose_echo " "
 
 BiasFieldFile=$(basename "$BiasField")
