@@ -176,7 +176,7 @@ opts_SetScriptDescription "Perform the steps of the HCP Diffusion Preprocessing 
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--session' 'Session' 'session ID' "" "subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
 opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
@@ -315,10 +315,10 @@ IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 T1wCross2LongXfm=""
 
 if (( IsLongitudinal )); then
-    if [ ! -d "$Path/$SessionLong" ]; then
+    if [ ! -d "$StudyFolder/$SessionLong" ]; then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
-    T1wCross2LongXfm=$Path/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
+    T1wCross2LongXfm=$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
     if [ ! -f "$T1wCross2LongXfm" ]; then 
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi
@@ -412,7 +412,7 @@ post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEdd
     "--combine-data-flag=${CombineDataFlag}"
     "--printcom=${runcmd}"
     "--select-best-b0=${SelectBestB0}"
-    "--t1w_cross2long_xfm=${T1wCross2LongXfm}")
+    "--t1w-cross2long-xfm=${T1wCross2LongXfm}")
 
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"

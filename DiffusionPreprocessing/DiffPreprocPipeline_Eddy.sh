@@ -159,7 +159,7 @@ opts_AddOptional '--ff' 'ff_val' 'Number' "Ff-value to be passed to the eddy bin
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
   
-opts_AddMandatory '--session' 'Session' 'session ID' "subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
 opts_AddOptional '--dwiname' 'DWIName' 'String' "Name to give DWI output directories. Defaults to Diffusion" "Diffusion" 
 

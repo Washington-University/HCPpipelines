@@ -122,7 +122,7 @@ opts_SetScriptDescription "Perform the Post-Eddy steps of the HCP Diffusion Prep
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--session' 'Session' 'session ID' "subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
 

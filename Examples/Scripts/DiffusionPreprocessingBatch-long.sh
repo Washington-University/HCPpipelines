@@ -1,12 +1,12 @@
 #!/bin/bash 
 
-StudyFolder="my_study_folder" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjects=(HCA6002236) #list of subject IDs
 PossibleVisits=(V1_MR V2_MR V3_MR)
 ExcludeVisits=()
 Templates=(HCA6002236_V1_V2_V3)
 
-EnvironmentScript="<hcp pipelines install dir>/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
 #  installed versions of: FSL, FreeSurfer, Connectome Workbench (wb_command), gradunwarp (HCP version)
@@ -39,6 +39,9 @@ function identify_timepoints
     done
     echo $tplist
 }
+
+
+
 
 #Assume that submission nodes have OPENMP enabled (needed for eddy - at least 8 cores suggested for HCP data)
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
@@ -142,10 +145,12 @@ for i in "${!Subjects[@]}"; do
 
 	    "${queuing_command[@]}" "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline.sh \
 		  --posData="${PosData}" --negData="${NegData}" \
-		  --path="${StudyFolder}" --session="${TimepointLong}" \
+		  --path="${StudyFolder}" --session="${TimepointCross}" \
 		  --echospacing-seconds="${EchoSpacingSec}" --PEdir="${PEdir}" \
 		  --gdcoeffs="${Gdcoeffs}" \
 		  --gpu=FALSE  \
-		  --printcom="$PRINTCOM"  
+		  --is-longitudinal=TRUE \
+		  --longitudinal-session="$TimepointLong" \
+  		  --printcom="$PRINTCOM"		  
 	done
 done

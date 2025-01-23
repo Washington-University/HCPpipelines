@@ -121,7 +121,7 @@ opts_SetScriptDescription "Perform the Pre-Eddy steps of the HCP Diffusion Prepr
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--session' 'Session' 'session ID' "subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
 opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
