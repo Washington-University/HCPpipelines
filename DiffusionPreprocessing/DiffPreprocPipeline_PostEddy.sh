@@ -140,6 +140,9 @@ Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
+#If set, longitudinal mode is triggered.
+opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. If set, longitudinal mode is triggered." ""
+
 
 opts_ParseArguments "$@"
 
@@ -206,13 +209,20 @@ if [ ! ${GdCoeffs} = "NONE" ]; then
 	GdFlag=1
 fi
 
+IsLongitudinal=0
+if [ -n "$T1wCross2LongXfm" ]; then
+    IsLongitudinal=1
+fi
+
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 select_flag="0"
 if ((SelectBestB0)); then
 	select_flag="1"
 fi
-${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+if (( ! IsLongitudinal )); then 
+    ${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+fi
 
 # Establish variables that follow naming conventions
 T1wFolder="${StudyFolder}/${Session}/T1w" #Location of T1w images
@@ -242,7 +252,8 @@ ${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
 	--QAimage="${QAImage}" \
 	--dof="${DegreesOfFreedom}" \
 	--gdflag=${GdFlag} \
-	--diffresol=${DiffRes}
+	--diffresol=${DiffRes} \
+    --t1w-cross2long-xfm="$T1wCross2LongXfm"
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"

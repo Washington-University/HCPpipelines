@@ -394,10 +394,12 @@ if (( ! IsLongitudinal )); then
     log_Msg "eddy_cmd: ${eddy_cmd[*]}"
     "${eddy_cmd[@]}"
 else #copy cross-sectional output to longitudinal session
+    log_Msg "Longitudinal mode, copying cross-sectional output of Pre-Eddy and Eddy steps to longitudinal session"
     cp -rf "$StudyFolder/$Session/Diffusion" "$StudyFolder/$SessionLong/Diffusion"
     cp -rf "$StudyFolder/$Session/T1w/Diffusion" "$StudyFolder/$SessionLong/T1w/Diffusion"
 fi
 
+#PostEddy step must be run on longitudinal session rather than copied from cross-sectional.
 if (( IsLongitudinal )); then Session="$SessionLong"; fi
 
 log_Msg "Invoking Post-Eddy Steps"

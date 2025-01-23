@@ -36,7 +36,7 @@ InputBrainMask=$(getopt1 "--brainmask" "$@")          # "$9" #Freesurfer Brain M
 GdcorrectionFlag=$(getopt1 "--gdflag" "$@")           # "$10"#Flag for gradient nonlinearity correction (0/1 for Off/On)
 DiffRes=$(getopt1 "--diffresol" "$@")                 # "$11"#Diffusion resolution in mm (assume isotropic)
 dof=$(getopt1 "--dof" "$@")                           # Degrees of freedom for registration to T1w (defaults to 6)
-T1wCross2LongXfm=$(getopt1 "--t1w_cross2long_xfm" "$@") # Additional transform for the longitudinal processing.
+T1wCross2LongXfm=$(getopt1 "--t1w-cross2long-xfm" "$@") # Additional transform for the longitudinal processing.
 
 
 # Output Variables
@@ -71,10 +71,12 @@ if (( ! IsLongitudinal )); then
 	# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
 	${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
 	${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
+else
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str_long.mat -concat "$T1wCross2LongXfm" "$WorkingDirectory"/diff2str.mat	
+	cp "$WorkingDirectory"/diff2str_long.mat "$WorkingDirectory"/diff2str.mat
 fi
-
-${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
-${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage".nii.gz --premat="$WorkingDirectory"/diff2str.mat -o "$WorkingDirectory"/"$regimg"2T1w
 ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore
