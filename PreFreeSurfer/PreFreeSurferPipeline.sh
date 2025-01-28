@@ -748,7 +748,6 @@ if ["$Runmode" -lt 5 ]; then
         --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
         --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
         --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
-        --echospacing=${DwellTime} \
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
         --t1sampspacing=${T1wSampleSpacing} \

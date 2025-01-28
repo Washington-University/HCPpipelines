@@ -153,7 +153,6 @@ TE=`getopt1 "--echodiff" $@`
 SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  
 SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  
 SEEchoSpacing=`getopt1 "--seechospacing" $@` 
-DwellTime=`getopt1 "--echospacing" $@` 
 SEUnwarpDir=`getopt1 "--seunwarpdir" $@`  
 T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  
 T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  
@@ -330,8 +329,7 @@ case $DistortionCorrection in
             --phasetwo2=${SpinEchoPhaseEncodePositive2} \
             --phasezero=${SpinEchoPhaseEncodeZero}  \
             --scoutin=${ScoutInputName} \
-            --echospacing=${DwellTime} \
-           --echospacing=${SEEchoSpacing} \
+            --seechospacing=${SEEchoSpacing} \
             --unwarpdir=${SEUnwarpDir} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
