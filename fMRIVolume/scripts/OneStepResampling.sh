@@ -148,7 +148,6 @@ verbose_echo " "
 
 BiasFieldFile=$(basename "$BiasField")
 T1wImageFile=$(basename $T1wImage)
-#T1wImageFileNative=$(basename $T1wImageNative)
 FreeSurferBrainMaskFile=$(basename "$FreeSurferBrainMask")
 
 echo " "

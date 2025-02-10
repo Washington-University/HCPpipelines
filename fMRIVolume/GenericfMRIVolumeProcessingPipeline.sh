@@ -674,9 +674,9 @@ else
     fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
     if ! cp -rf "$fMRIFolder" "$fMRIFolderLong"
-	then
-		log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
-	fi
+    then
+        log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
+    fi
 fi
 
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
@@ -817,16 +817,16 @@ if [[ ${nEcho} -gt 1 ]]; then
         tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
         sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
         sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
-		if (( ! IsLongitudinal )); then 
-			wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
-				-subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-			wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
-				-subvolume "$(( iEcho + 1 ))"
-			wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
-				-subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-			wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
-				-subvolume "$(( iEcho + 1 ))"
-		fi
+        if (( ! IsLongitudinal )); then 
+            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
+                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+            wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
+                -subvolume "$(( iEcho + 1 ))"
+            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
+                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+            wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
+                -subvolume "$(( iEcho + 1 ))"
+        fi
     done
 else
     tcsEchoesOrig[0]="${OrigTCSName}"
@@ -878,8 +878,8 @@ if [ $fMRIReference = "NONE" ] ; then
     fi
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
-	
-	${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+    
+    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
         --t1=${T1wFolder}/${T1wImage} \
@@ -959,7 +959,7 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
         --wb-resample=${useWbResample}
-	
+    
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
 done
