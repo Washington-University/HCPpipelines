@@ -668,6 +668,7 @@ if (( ! IsLongitudinal )); then
     fi
 else
     #copy directory structure and create symbolic link per each file under source. 
+	mkdir -p "$ResultsFolderLong"
     if ! cp -rf "$ResultsFolder" "$ResultsFolderLong"
     then
         log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
