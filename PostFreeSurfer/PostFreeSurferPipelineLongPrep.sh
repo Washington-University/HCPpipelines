@@ -408,8 +408,9 @@ if (( TemplateProcessing ==  1 )); then
         #link altas transforms to the timepoint directory.
         if [ -d "$AtlasSpaceFolder_timepoint/xfms" ]; then 
             rm -rf "$AtlasSpaceFolder_timepoint/xfms"
-        fi                
-        ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/xfms"
+        fi
+        mkdir -p ${AtlasSpaceFolder_timepoint}
+        ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
 
         #one mask for all timepoints.
         cp ${AtlasSpaceFolder_template}/"$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
