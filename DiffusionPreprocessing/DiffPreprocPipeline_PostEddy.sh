@@ -238,21 +238,21 @@ DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
 ${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-	--t1folder="${T1wFolder}" \
-	--session="${Session}" \
-	--workingdir="${outdir}/reg" \
-	--datadiffdir="${outdir}/data" \
-	--t1="${T1wImage}" \
-	--t1restore="${T1wRestoreImage}" \
-	--t1restorebrain="${T1wRestoreImageBrain}" \
-	--biasfield="${BiasField}" \
-	--brainmask="${FreeSurferBrainMask}" \
-	--datadiffT1wdir="${outdirT1w}" \
-	--regoutput="${RegOutput}" \
-	--QAimage="${QAImage}" \
-	--dof="${DegreesOfFreedom}" \
-	--gdflag=${GdFlag} \
-	--diffresol=${DiffRes} \
+    --t1folder="${T1wFolder}" \
+    --session="${Session}" \
+    --workingdir="${outdir}/reg" \
+    --datadiffdir="${outdir}/data" \
+    --t1="${T1wImage}" \
+    --t1restore="${T1wRestoreImage}" \
+    --t1restorebrain="${T1wRestoreImageBrain}" \
+    --biasfield="${BiasField}" \
+    --brainmask="${FreeSurferBrainMask}" \
+    --datadiffT1wdir="${outdirT1w}" \
+    --regoutput="${RegOutput}" \
+    --QAimage="${QAImage}" \
+    --dof="${DegreesOfFreedom}" \
+    --gdflag=${GdFlag} \
+    --diffresol=${DiffRes} \
     --t1w-cross2long-xfm="$T1wCross2LongXfm"
 
 to_location="${outdirT1w}/eddylogs"
