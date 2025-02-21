@@ -401,7 +401,6 @@ if (( TemplateProcessing ==  1 )); then
         #These variables are redefined
         Timepoint_long=$tp.long.$Template
         AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
-        mkdir -p $AtlasSpaceFolder_timepoint
         T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
         Timepoint_brain_mask_acpc_dc="$T1w_dir_long"/"$T1wImageBrainMask".nii.gz
         Timepoint_brain_mask_MNI="${AtlasSpaceFolder_timepoint}"/"$T1wImageBrainMask".nii.gz
@@ -410,11 +409,11 @@ if (( TemplateProcessing ==  1 )); then
         if [ -d "$AtlasSpaceFolder_timepoint/xfms" ]; then
             rm -rf "$AtlasSpaceFolder_timepoint/xfms"
         fi
-        mkdir -p ${AtlasSpaceFolder_timepoint}
+        mkdir -p "${AtlasSpaceFolder_timepoint}"
         ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
 
         #one mask for all timepoints.
-        cp ${AtlasSpaceFolder_template}/"$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
+        cp "${AtlasSpaceFolder_template}/$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
         cp "${T1w_dir_template}/$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_acpc_dc"
 
         #mask the acpc_dc space images.
