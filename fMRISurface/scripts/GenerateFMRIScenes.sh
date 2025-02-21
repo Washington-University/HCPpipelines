@@ -31,8 +31,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all Sessions"
+opts_AddMandatory '--session' 'Session' 'Session ID' "Session" "--subject"
 opts_AddMandatory '--fmriname' 'fMRIName' 'fMRI run name' ""
 opts_AddMandatory '--output-folder' 'OutputSceneFolder' 'path' "output location for QC scene and snapshots"
 
@@ -74,7 +74,7 @@ OutputSceneFolder=$(cd "$OutputSceneFolder"; pwd)
 
 # The following are matched to actual strings in the TEMPLATE_fMRIQC.scene file
 StudyFolderDummyStr="STUDYDIR"
-SubjectIDDummyStr="SESSION"
+SessionIDDummyStr="SESSION"
 fMRINameDummyStr="FMRINAME"
 
 # ----------------------------
@@ -93,10 +93,10 @@ if ((verbose)); then
 fi
 
 # Replace dummy strings in the template scenes to generate
-# a scene file appropriate for each subject and fMRI run
-sceneFile="${Subject}_${fMRIName}.fMRIQC.wb_scene"  # No path (file name only)
+# a scene file appropriate for each Session and fMRI run
+sceneFile="${Session}_${fMRIName}.fMRIQC.wb_scene"  # No path (file name only)
 sed -e "s|${StudyFolderDummyStr}|${relPathToStudy}|g" \
-    -e "s|${SubjectIDDummyStr}|${Subject}|g" \
+    -e "s|${SessionIDDummyStr}|${Session}|g" \
     -e "s|${fMRINameDummyStr}|${fMRIName}|g" \
     "$TemplatesFolder"/TEMPLATE_fMRIQC.scene > "$OutputSceneFolder/$sceneFile"
 

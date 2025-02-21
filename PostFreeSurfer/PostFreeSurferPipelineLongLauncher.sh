@@ -35,7 +35,7 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
 opts_SetScriptDescription "launches longitudinal post-Freesurfer processing."
 
-opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" 
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject label"
 opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label (matching the one used in FreeSurferPipeline-long)"
 opts_AddMandatory '--sessions' 'Timepoint_list' 'list' '@ separated list of timepoints/sessions (should match directory names)'
@@ -85,11 +85,11 @@ log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
 IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
 
-if [ -n "$LogDir" ]; then 
+if [ -n "$LogDir" ]; then
   mkdir -p "$LogDir"
-  if [ -d "$LogDir" ]; then 
+  if [ -d "$LogDir" ]; then
     par_set_log_dir "$LogDir"
-  else 
+  else
     log_Err_Abort "Directory specified for logs $LogDir does not exist and cannot be created."
   fi
 fi
@@ -99,7 +99,7 @@ if [ "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" -a "$parallel_m
 fi
 
 start_stage=0
-if [ -n "$StartStage" ]; then  
+if [ -n "$StartStage" ]; then
   case $StartStage in
     PREP-TP) start_stage=0 ;;
     PREP-T) start_stage=1 ;;
@@ -111,7 +111,7 @@ if [ -n "$StartStage" ]; then
 fi
 
 end_stage=4
-if [ -n "$EndStage" ]; then  
+if [ -n "$EndStage" ]; then
   case $EndStage in
     PREP-TP) end_stage=0 ;;
     PREP-T) end_stage=1 ;;
@@ -128,7 +128,7 @@ if ((end_stage < 1)); then exit 0; fi
 # PostFreeSurferPipelineLongPrep.sh processing
 ##########################################################################################
 #process timepoints
-if (( start_stage==0 )); then 
+if (( start_stage==0 )); then
   echo "################# PREP-TP Stage processing ########################"
   for TP in ${Timepoints[@]}; do
     echo "################# PREP-TP Stage processing ########################"
@@ -148,7 +148,7 @@ if (( start_stage==0 )); then
     --template2mmmask="$Template2mmMask"                                  \
     --fnirtconfig="$FNIRTConfig"                                          \
     --freesurferlabels="$FreeSurferLabels"                                \
-      )      
+      )
       par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   done
   par_finalize_stage $parallel_mode $max_jobs
@@ -156,7 +156,7 @@ fi
 
 if ((end_stage < 1)); then exit 0; fi
 
-if (( start_stage <= 1 )) && (( end_stage >= 1 )); then 
+if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
   #Process template and finalize timepoints. This must wait until all timepoints are finished.
   echo "################# PREP-T Stage processing ########################"
   cmd=(${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipelineLongPrep.sh \
@@ -184,7 +184,7 @@ fi
 # PostFreesurferPipeline.sh processing
 ##########################################################################################
 
-if (( start_stage <=2 )) && (( end_stage >= 2 )); then 
+if (( start_stage <=2 )) && (( end_stage >= 2 )); then
   echo "################# POSTFS-TP1 Stage processing ########################"
   job_list=()
   for Timepoint in ${Timepoints[@]}; do
@@ -211,7 +211,7 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
 fi
 
 #process template. Must finish before timepoints are processed if MSMSulc is run.
-if (( start_stage <=3 )) && (( end_stage >=3 )); then 
+if (( start_stage <=3 )) && (( end_stage >=3 )); then
   template_job=""
   echo "################# POSTFS-T Stage processing ########################"
   cmd=("$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
@@ -232,10 +232,10 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
       --regname="$RegName"
   )
   par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
-  par_finalize_stage $parallel_mode $max_jobs  
+  par_finalize_stage $parallel_mode $max_jobs
 fi
 
-if (( start_stage <= 4 )) && (( end_stage >=4 )); then 
+if (( start_stage <= 4 )) && (( end_stage >=4 )); then
   job_list=()
   echo "################# POSTFS-TP2 Stage processing ########################"
   for Timepoint in ${Timepoints[@]}; do
