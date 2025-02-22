@@ -24,10 +24,10 @@ defaultopt() {
 ################################################## OPTION PARSING #####################################################
 # Input Variables
 
-FreeSurferSubjectFolder=$(getopt1 "--t1folder" "$@")  # "$1" #${StudyFolder}/${Subject}/T1w
-FreeSurferSubjectID=$(getopt1 "--subject" "$@")       # "$2" #Subject ID
-WorkingDirectory=$(getopt1 "--workingdir" "$@")       # "$3" #Path to registration working dir, e.g. ${StudyFolder}/${Subject}/Diffusion/reg
-DataDirectory=$(getopt1 "--datadiffdir" "$@")         # "$4" #Path to diffusion space diffusion data, e.g. ${StudyFolder}/${Subject}/Diffusion/data
+FreeSurferSubjectFolder=$(getopt1 "--t1folder" "$@")  # "$1" #${StudyFolder}/${Session}/T1w
+FreeSurferSubjectID=$(getopt1 "--session" "$@")       # "$2" #Session ID
+WorkingDirectory=$(getopt1 "--workingdir" "$@")       # "$3" #Path to registration working dir, e.g. ${StudyFolder}/${Session}/Diffusion/reg
+DataDirectory=$(getopt1 "--datadiffdir" "$@")         # "$4" #Path to diffusion space diffusion data, e.g. ${StudyFolder}/${Session}/Diffusion/data
 T1wImage=$(getopt1 "--t1" "$@")                       # "$5" #T1w_acpc_dc image
 T1wRestoreImage=$(getopt1 "--t1restore" "$@")         # "$6" #T1w_acpc_dc_restore image
 T1wBrainImage=$(getopt1 "--t1restorebrain" "$@")      # "$7" #T1w_acpc_dc_restore_brain image
@@ -36,6 +36,8 @@ InputBrainMask=$(getopt1 "--brainmask" "$@")          # "$9" #Freesurfer Brain M
 GdcorrectionFlag=$(getopt1 "--gdflag" "$@")           # "$10"#Flag for gradient nonlinearity correction (0/1 for Off/On)
 DiffRes=$(getopt1 "--diffresol" "$@")                 # "$11"#Diffusion resolution in mm (assume isotropic)
 dof=$(getopt1 "--dof" "$@")                           # Degrees of freedom for registration to T1w (defaults to 6)
+T1wCross2LongXfm=$(getopt1 "--t1w-cross2long-xfm" "$@") # Additional transform for the longitudinal processing.
+
 
 # Output Variables
 T1wOutputDirectory=$(getopt1 "--datadiffT1wdir" "$@") # "$12" #Path to T1w space diffusion data (for producing output)
@@ -45,29 +47,36 @@ QAImage=$(getopt1 "--QAimage" "$@")                   # "$14" #Temporary file fo
 # Set default option values
 dof=$(defaultopt $dof 6)
 
+IsLongitudinal=0
+if [ -n "$T1wCross2LongXfm" ]; then IsLongitudinal=1; fi
+
 # Paths for scripts etc (uses variables defined in SetUpHCPPipeline.sh)
 GlobalScripts=${HCPPIPEDIR_Global}
 
 T1wBrainImageFile=$(basename $T1wBrainImage)
 regimg="nodif"
 
-${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
+if (( ! IsLongitudinal )); then 
+	${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
 
-#b0 FLIRT BBR and bbregister to T1w
-${GlobalScripts}/epi_reg_dof --dof=${dof} --epi="$DataDirectory"/"$regimg" --t1="$T1wImage" --t1brain="$WorkingDirectory"/"$T1wBrainImageFile" --out="$WorkingDirectory"/"$regimg"2T1w_initII
+	#b0 FLIRT BBR and bbregister to T1w
+	${GlobalScripts}/epi_reg_dof --dof=${dof} --epi="$DataDirectory"/"$regimg" --t1="$T1wImage" --t1brain="$WorkingDirectory"/"$T1wBrainImageFile" --out="$WorkingDirectory"/"$regimg"2T1w_initII
 
-${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
-${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
-${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
+	${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII_init.mat -o "$WorkingDirectory"/"$regimg"2T1w_init.nii.gz
+	${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
+	${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
 
-SUBJECTS_DIR="$FreeSurferSubjectFolder"
-export SUBJECTS_DIR
-# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
-${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
-${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
-
-${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
-${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
+	SUBJECTS_DIR="$FreeSurferSubjectFolder"
+	export SUBJECTS_DIR
+	# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
+	${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
+	${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
+else
+	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str_long.mat -concat "$T1wCross2LongXfm" "$WorkingDirectory"/diff2str.mat	
+	cp "$WorkingDirectory"/diff2str_long.mat "$WorkingDirectory"/diff2str.mat
+fi
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage".nii.gz --premat="$WorkingDirectory"/diff2str.mat -o "$WorkingDirectory"/"$regimg"2T1w
 ${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore
