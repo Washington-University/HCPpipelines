@@ -810,9 +810,9 @@ if (( ! IsLongitudinal )); then
 fi # if (( ! IsLongitudinal ))
 
 #Split echos. 
+tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
 if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
-    tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
     for iEcho in $(seq 0 $((nEcho-1))) ; do
         tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
         tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
@@ -865,6 +865,7 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
+    EchoDir="${fMRIFolder}/MultiEcho"
 fi
 
 #EPI Distortion Correction and EPI to T1w Registration
@@ -1113,22 +1114,22 @@ ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
 # clean up split echo(s)
-if [[ $nEcho -gt 1 ]]; then
-    for iEcho in $(seq 0 $((nEcho-1))) ; do
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
+#if [[ $nEcho -gt 1 ]]; then
+#    for iEcho in $(seq 0 $((nEcho-1))) ; do
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
 
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
-    done
-    ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
-    ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
-fi
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+#    done
+#    ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+#    ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
+#fi
 
 log_Msg "Completed!"
 
