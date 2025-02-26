@@ -727,7 +727,11 @@ if (( ! IsLongitudinal )); then
         if [ $fMRIScout = "NONE" ] ; then
             ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
         else
-            ${FSLDIR}/bin/imcp "$fMRIScout" "$fMRIFolder"/"$OrigScoutName"
+            # If provided Scout is multi-volume, extract the first volume, but generate a warning
+            if (( $(${FSLDIR}/bin/fslnvols "$fMRIScout") > 1 )) ; then
+                log_Warn "Provided fMRI Scout (--fmriscout=${fMRIScout}) is multi-volume. Extracting just the first volume for use going forward."
+            fi
+            ${FSLDIR}/bin/fslroi "$fMRIScout" "$fMRIFolder"/"$OrigScoutName" 0 1
         fi
     fi
 
