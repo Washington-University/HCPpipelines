@@ -769,8 +769,8 @@ for fmriname in $fmris ; do
 	done
 	
 	if (( DoVol )); then
-		volume_out=${fmriNoExt}_hp${hp}_clean.nii.gz
-		"${Caret7_Command}" -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
+		volume_out=${fmriNoExt}_hp${hp}_${CleanSubstring}.nii.gz
+		"${Caret7_Command}" -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_${CleanSubstring}.nii.gz -subvolume ${Start} -up-to ${Stop}
 		fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
 	fi
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
