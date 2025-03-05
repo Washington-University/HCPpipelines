@@ -667,12 +667,8 @@ if (( ! IsLongitudinal )); then
         mkdir "$fMRIFolder"
     fi
 else
-    #copy directory structure and create symbolic link per each file under source. 
+    #copy directory structure. 
 	mkdir -p "$ResultsFolderLong"
-    if ! cp -rf "$ResultsFolder" "$ResultsFolderLong"
-    then
-        log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
-    fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
     if ! cp -rf "$fMRIFolder" "$fMRIFolderLong"
     then
@@ -680,14 +676,18 @@ else
     fi
 fi
 
+
+if [[ $nEcho -gt 1 ]] ; then
+    log_Msg "$nEcho TE's supplied, running in multi-echo mode"
+    NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
+    FramesPerEcho=$((NumFrames / nEcho))
+fi
+
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
 if (( ! IsLongitudinal )); then 
     ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 
     if [[ $nEcho -gt 1 ]] ; then
-        log_Msg "$nEcho TE's supplied, running in multi-echo mode"
-        NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
-        FramesPerEcho=$((NumFrames / nEcho))
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
     fi
@@ -857,7 +857,6 @@ fi
 # point to the longitudinal session.
 # Note that FreeSurferSubjectID is not used in longitudinal mode and doesn't point to the correct longitudinal freesurfer folder.
 
-
 if (( IsLongitudinal )); then
     fMRIFolder="$fMRIFolderLong"
     SessionFolder="$SessionFolderLong"
@@ -865,7 +864,11 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
-    EchoDir="${fMRIFolder}/MultiEcho"
+	
+    if [[ $nEcho -gt 1 ]] ; then
+        EchoDir="${fMRIFolder}/MultiEcho"
+        mkdir -p "$EchoDir"
+    fi	
 fi
 
 #EPI Distortion Correction and EPI to T1w Registration
@@ -1113,23 +1116,28 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
-# clean up split echo(s)
-#if [[ $nEcho -gt 1 ]]; then
-#    for iEcho in $(seq 0 $((nEcho-1))) ; do
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
+#In Cross-sectional mode, if the code below is executed, running in longitudinal mode on the same 
+#timepoint will fail, because in longitudinal mode these intermediate files are copied over and re-used.
 
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+if (( IsLongitudinal )); then 
+	#clean up split echo(s)
+	if [[ $nEcho -gt 1 ]]; then
+	   for iEcho in $(seq 0 $((nEcho-1))) ; do
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
-#        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
-#    done
-#    ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
-#    ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
-#fi
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+	   done
+	   ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+	   ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
+	fi
+fi
 
 log_Msg "Completed!"
 
