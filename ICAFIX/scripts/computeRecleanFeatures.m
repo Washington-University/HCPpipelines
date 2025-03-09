@@ -50,7 +50,8 @@ for j=1:length(fMRINames)
         end
         probability=prob_file.data(1:size(sICA,2),:);
         Stats=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats']);
-        FeaturesFile=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']);
+        FeaturesFileTable=readtable([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv'], 'ReadVariableNames', false); % never read the header; pyfix has features.csv w/ header but legacy fix doesn't
+        FeaturesFile=table2array(FeaturesFileTable); % convert table object to a matrix
         Powerspectra=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix']);
 
         % derive TR
