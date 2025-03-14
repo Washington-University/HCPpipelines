@@ -494,11 +494,7 @@ if ["$Runmode" -lt 2 ]; then
         log_Msg "Processing Modality: $TXw"
       fi
 
-<<<<<<< HEAD
-  #### Gradient nonlinearity correction  (for T1w and T2w) ####
-=======
       # Perform Gradient Nonlinearity Correction
->>>>>>> parent of f7a05b2 (feat: Add reference volume resampling for T1w and T2w images with differing resolutions)
 
       if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
         log_Msg "Performing Gradient Nonlinearity Correction"
