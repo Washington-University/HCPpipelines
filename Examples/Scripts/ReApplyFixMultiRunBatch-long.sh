@@ -156,13 +156,13 @@ main() {
 	#ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"
 
 	# set highpass
-	highpass=2000
+	highpass=0
 	
 	#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 	#DO NOT include "-q " at the beginning
 	#default to no queue, implying run local
 	#QUEUE=""
-	QUEUE="short.q"
+	QUEUE="hcp_priority.q"
 
 	# regression mode
 	RegName="NONE"
