@@ -9,6 +9,7 @@ DEFAULT_RUN_LOCAL="FALSE"
 DEFAULT_POSSIBLE_VISITS="V1_MR V2_MR V3_MR"
 DEFAULT_TEMPLATE_LIST="HCA6002236_V1_V2_V3"
 
+ExcludeVisits=()
 #
 # Function Description
 #	Get the command line options for this script
