@@ -191,9 +191,9 @@ function copy_to_longitudinal()
 	S="$StudyFolder/$SessionCross/MNINonLinear/Results/$ConcatName"
 	T="$StudyFolder/$SessionLong/MNINonLinear/Results/$ConcatName"
 	local file files_to_copy="Movement_Regressors_demean.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt"
-	mkdir -p $T
+	mkdir -p "$T"
 	for file in $files_to_copy; do
-		cp $S/$file $T/
+		cp "$S"/"$file" "$T"/
 	done
 	
 	local ICADir="$S/${ConcatName}_hp$HighPass.ica"
