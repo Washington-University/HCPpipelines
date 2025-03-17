@@ -227,8 +227,8 @@ function copy_to_longitudinal()
 	for fmri in $fMRINames; do		
 		S="$StudyFolder/$SessionCross/MNINonLinear/Results/$fmri"
 		T="$StudyFolder/$SessionLong/MNINonLinear/Results/$fmri"
-		mkdir -p $T/${fmri}_hp$HighPass.ica/mc
-		cp $S/${fmri}_hp$HighPass.ica/mc/prefiltered_func_data_mcf.par $T/${fmri}_hp$HighPass.ica/mc/		
+		mkdir -p "$T"/"$fmri"_hp"$HighPass".ica/mc
+		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
 	done	
 }
 
