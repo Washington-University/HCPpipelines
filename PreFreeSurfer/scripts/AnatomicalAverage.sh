@@ -1,59 +1,25 @@
 #!/bin/bash 
-
-# ------------------------------------------------------------------------------
-#  Usage Description Function
-# ------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
+set -e
 
 Usage() {
-	cat <<EOF
-
-Usage: ${script_name} [options] <image1> ... <imageN>
-
-Compulsory arguments
-  -o <name>        : output basename
-Optional arguments
-  -s <image>       : standard image (e.g. MNI152_T1_2mm)
-  -m <image>       : standard brain mask (e.g. MNI152_T1_2mm_brain_mask_dil)
-  -n               : do not crop images
-  -w <dir>         : local, temporary working directory (to be cleaned up - i.e. deleted)
-  --noclean        : do not run the cleanup
-  -v               : verbose output
-  -h               : display this help message
-
-e.g.:  ${script_name} -n -o output_name im1 im2
-
-Note that N>=2 (i.e., there must be at least two images in the list)
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
+    echo ""
+    echo "Usage: `basename $0` [options] <image1> ... <imageN>"
+    echo ""
+    echo "Compulsory arguments"
+    echo "  -o <name>        : output basename"
+    echo "Optional arguments"
+    echo "  -s <image>       : standard image (e.g. MNI152_T1_2mm)"
+    echo "  -m <image>       : standard brain mask (e.g. MNI152_T1_2mm_brain_mask_dil)"
+    echo "  -n               : do not crop images"
+    echo "  -w <dir>         : local, temporary working directory (to be cleaned up - i.e. deleted)"
+    echo "  --noclean        : do not run the cleanup"
+    echo "  -v               : verbose output"
+    echo "  -h               : display this help message"
+    echo ""
+    echo "e.g.:  `basename $0` -n -o output_name  im1 im2"
+    echo "       Note that N>=2 (i.e. there must be at least two images in the list)"
     exit 1
-fi
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var FSLDIR
-
-################################################ SUPPORT FUNCTIONS ##################################################
+}
 
 get_arg2() {
     if [ X$2 = X ] ; then
@@ -73,6 +39,7 @@ cleanup=yes
 StandardImage=$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz
 StandardMask=$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz
 
+if [ $# -eq 0 ] ; then Usage; exit 0; fi
 while [ $# -ge 1 ] ; do
     iarg=$1
     case "$iarg"
@@ -118,12 +85,15 @@ done
 
 
 if [ X$output = X ] ; then
-  log_Err_Abort "The compulsory argument -o MUST be used"
+  echo "The compulsory argument -o MUST be used"
+  exit 1;
 fi
 
 if [ `echo $imagelist | wc -w` -lt 2 ] ; then
   Usage;
-  log_Err_Abort "Must specify at least two images to average"
+  echo " "
+  echo "Must specify at least two images to average"
+  exit 1;
 fi
 
 # setup working directory
@@ -133,7 +103,8 @@ if [ X$wdir = X ] ; then
 fi
 if [ ! -d $wdir ] ; then
     if [ -f $wdir ] ; then 
-		log_Err_Abort "A file already exists with the name $wdir - cannot use this as the working directory"
+	echo "A file already exists with the name $wdir - cannot use this as the working directory"
+	exit 1;
     fi
     mkdir $wdir
 fi
@@ -147,9 +118,7 @@ for fn in $imagelist ; do
     newimlist="$newimlist $wdir/$bnm"
 done
 
-if [ $verbose = yes ] ; then
-	log_Msg "Images: $imagelist  Output: $output"
-fi
+if [ $verbose = yes ] ; then echo "Images: $imagelist  Output: $output"; fi
 
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
@@ -165,15 +134,15 @@ im1=`echo $newimlist | awk '{ print $1 }'`;
 for im2 in $newimlist ; do
     if [ $im2 != $im1 ] ; then
         # register version of two images (whole heads still)
-		$FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
-		
+	$FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
+
         # transform std space brain mask
-		$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
-		
+	$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
+
         # re-register using the brain mask as a weighting image
-		$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
+	$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
     else
-		cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
+	cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
     fi
 done
 
