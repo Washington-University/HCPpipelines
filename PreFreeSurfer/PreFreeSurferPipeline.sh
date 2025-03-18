@@ -462,7 +462,7 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 # NOTE: We skip all the way to AtlasRegistration (last step) if using a custom 
 # brain mask or custom structural images ($CustomBrain={MASK|CUSTOM})
 
-if [ "$CustomBrain" = "NONE" && "$Runmode" -lt 2 ] ; then
+if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
 
   Modalities="T1w T2w"
 
@@ -588,7 +588,7 @@ if [ "$CustomBrain" = "NONE" && "$Runmode" -lt 2 ] ; then
 fi
 
 # ACPC align T1w or T2w image to specified MNI Template to create native volume space
-if [ "$Runmode" -lt 3 ]; then
+if [ "$RunMode" -lt 3 ]; then
 
   for TXw in ${Modalities} ; do
     # set up appropriate input variables
@@ -646,7 +646,7 @@ if [ "$Runmode" -lt 3 ]; then
 
 fi
 # Brain Extraction(FNIRT-based Masking)
-if [ "$Runmode" -lt 4 ]; then
+if [ "$RunMode" -lt 4 ]; then
 
 
 
@@ -706,10 +706,10 @@ fi
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
-if ["$Runmode" -lt 5 ]; then
-
+if [ "$RunMode" -lt 5 ]; then
+  SpinEchoPhaseEncodeZero=""
   case $AvgrdcSTRING in
-
+  
     ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
       log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
@@ -840,7 +840,7 @@ if ["$Runmode" -lt 5 ]; then
   fi
 fi
 
-if ["$Runmode" -lt 6 ]; then
+if [ "$RunMode" -lt 6 ]; then
 
   # ------------------------------------------------------------------------------
   # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
@@ -954,6 +954,6 @@ log_Msg "Completed!"
 
 
 
-fi
+
 #### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
