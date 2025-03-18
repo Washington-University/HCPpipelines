@@ -462,11 +462,10 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 # NOTE: We skip all the way to AtlasRegistration (last step) if using a custom 
 # brain mask or custom structural images ($CustomBrain={MASK|CUSTOM})
 
-if [ "$CustomBrain" = "NONE" ] ; then
+if [ "$CustomBrain" = "NONE" && "$Runmode" -lt 2 ] ; then
 
   Modalities="T1w T2w"
 
-if ["$Runmode" -lt 2 ]; then
   for TXw in ${Modalities} ; do
 
       # set up appropriate input variables
@@ -476,6 +475,7 @@ if ["$Runmode" -lt 2 ]; then
           TXwImage=${T1wImage}
           TXwTemplate=${T1wTemplate}
           TXwTemplate2mm=${T1wTemplate2mm}
+          Contrast=T1w
       else
           TXwInputImages="${T2wInputImages}"
           TXwFolder=${T2wFolder}
@@ -483,8 +483,9 @@ if ["$Runmode" -lt 2 ]; then
           TXwTemplate=${T2wTemplate}
          	TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
           TXwTemplate2mm=${T2wTemplate2mm}
+        	Contrast=$T2wType
       fi
-      OutputTXwImageSTRING=""
+      OutputTXwImageARRAY=()  
 
       # skip modality if no image
 
@@ -561,7 +562,7 @@ if ["$Runmode" -lt 2 ]; then
              else
  	        ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
              fi
-	      OutputTXwBrainImageSTRING="${OutputTXwBrainImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc_brain "
+	      #OutputTXwBrainImageSTRING="${OutputTXwBrainImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc_brain "
 	    fi
           i=$(($i+1))
         done
