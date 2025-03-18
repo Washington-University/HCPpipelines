@@ -168,6 +168,12 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
+# parameter initialization
+InitDof="${InitDof:=""}"
+TXwTemplateBrain="${TXwTemplateBrain:=""}"
+OutputTXwImageSTRING="${OutputTXwImageSTRING:=""}"
+CustomMask="${CustomMask:=""}"
+betbiasfieldcor="${betbiasfieldcor:=""}"
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
@@ -276,6 +282,7 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls
 opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use jacobian modulation when correcting spin echo fieldmaps for gradient distortion" "True" # NOT IN THE ORIGNAL SCRIPT
 
 # NHP options
+opts_AddOptional '--t2wtype' 'T2wType' 'string' "T2w or FLAIR" "T2w"
 opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
 opts_AddOptional '--runmode' 'RunMode' 'int' "Run mode (default: 1)" "1"
 opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (default: HFS)" "HFS"
@@ -285,6 +292,7 @@ opts_AddOptional '--betradius' 'betradius' 'int' "Radius for BET (default: 75)" 
 opts_AddOptional '--betfraction' 'betfraction' 'float' "Fraction for BET (default: 0.3)" "0.3"
 opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to center for BET (default: 86)" "86"
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
+opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'string' "default: " ""
 # ------------------------------------------------------------------------------
 #  Parse Arugments
 # ------------------------------------------------------------------------------
