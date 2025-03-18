@@ -44,7 +44,7 @@ Usage() {
   echo "            --phaseone=<first set of SE EPI images: assumed to be the 'negative' PE direction>"
   echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
   echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
-  echo "            --echospacing=<effective echo spacing of EPI, in seconds>"
+  echo "            --seechospacing=<effective echo spacing of EPI, in seconds>"
   echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
   echo "            --scoutinbrain=<scout input brain image: should be corrected for gradient non-linear distortions>"
   echo "            [--phasezero=<T2w assumed to be the negligible readout time, should be corrected for gradient non-linear distortions>]"
@@ -115,7 +115,7 @@ WD=`getopt1 "--workingdir" $@`  # "$1"
 PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT ASSUMES PhaseOne is the 'negative' direction when setting up the acqparams.txt file for TOPUP
 PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT ASSUMES PhaseTwo is the 'positive' direction when setting up the acqparams.txt file for TOPUP
 ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
-EchoSpacing=`getopt1 "--echospacing" $@`  # "$5"
+EchoSpacing=`getopt1 "--seechospacing" $@`  # "$5"
 UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
 DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
 DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
