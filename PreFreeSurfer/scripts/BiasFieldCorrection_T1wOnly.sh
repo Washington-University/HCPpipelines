@@ -18,10 +18,12 @@ ${script_name}: Tool for bias field correction based on T1w image only
 Usage: ${script_name}
   --workingdir=<working directory> 
   --T1im=<input T1 image> 
+  [--T1brain=<input T1 image>]  # useful for NHP brain and avoild bet in fsl_anat
   [--oT1im=<output T1 image>] 
   [--oT1brain=<output T1 brain>] 
   [--bfsigma=<input T1 image>]
-
+  [--strongbias=<TRUE or NONE (default)>]
+  
 EOF
 }
 
@@ -88,6 +90,13 @@ oBias=`getopt1 "--obias" $@`
 oT1wImage=`getopt1 "--oT1im" $@`  
 oT1wBrain=`getopt1 "--oT1brain" $@`  
 BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`
+StrongBias=`getopt1 "--strongbias" $@`
+if [[ $StrongBias = TRUE ]] ; then
+	StrongBiasFlag="--strongbias"
+else
+	StrongBias=NONE
+	StrongBiasFlag=""
+fi
 
 # A default value of 20 for bias smoothing sigma is the recommended default by FSL 
 BiasFieldSmoothingSigma=`defaultopt $BiasFieldSmoothingSigma 20` 
@@ -99,6 +108,7 @@ verbose_echo "  "
 verbose_red_echo " ===> Running T1w Bias Field Correction"
 verbose_echo " "
 
+log_Msg " StrongBias: $StrongBias"
 mkdir -p $WDir
 
 # Record the input options in a log file
@@ -111,7 +121,13 @@ echo " " >> $WDir/log.txt
 
 # Compute T1w Bias Normalization using fsl_anat function
 
-${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup
+if [ $(${FSLDIR}/bin/imtest $T1wBrain) = 0 ] ; then
+	${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+else
+	fslmaths $T1wBrain -abs ${T1wBrain}_abs # TH - avoid error of Fast if the input has negative values (e.g. due to spline interpolation)
+	${FSLDIR}/bin/fsl_anat -i ${T1wBrain}_abs -o $WD --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+	fslmaths $T1wImage -div ${WDir}/T1_fast_bias.nii.gz ${WDir}/T1_biascorr
+fi
 
 # Use existing brain mask if one is provided
 
