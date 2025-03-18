@@ -475,7 +475,6 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
           TXwImage=${T1wImage}
           TXwTemplate=${T1wTemplate}
           TXwTemplate2mm=${T1wTemplate2mm}
-          Contrast=T1w
       else
           TXwInputImages="${T2wInputImages}"
           TXwFolder=${T2wFolder}
@@ -483,7 +482,6 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
           TXwTemplate=${T2wTemplate}
          	TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
           TXwTemplate2mm=${T2wTemplate2mm}
-        	Contrast=$T2wType
       fi
       OutputTXwImageARRAY=()  
 
@@ -600,7 +598,6 @@ if [ "$RunMode" -lt 3 ]; then
       TXwTemplateBrain="$AtlasSpaceFolder"/"$T1wTemplateBrain"
       TXwTemplate2mm=${T1wTemplate2mm}
       #TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
-      Contrast=T1w
 
     elif [[ $TXw = T2w && $T2wFolder != NONE ]] ; then
       TXwInputImages="${T2wInputImages}"
@@ -610,7 +607,6 @@ if [ "$RunMode" -lt 3 ]; then
       TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
       TXwTemplate2mm=${T2wTemplate2mm}
       #TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
-      Contrast=$T2wType
 
     fi
 
@@ -636,7 +632,6 @@ if [ "$RunMode" -lt 3 ]; then
         --bettop2center=${bettop2center} \
         --betradius=${betradius} \
         --betbiasfieldcor=${betbiasfieldcor} \
-      	--contrast=$Contrast \
         --ref2mm=${TXwTemplate2mm} \
         --ref2mmmask=${Template2mmMask} \
         --betspecieslabel=$betspecieslabel \
@@ -659,7 +654,6 @@ if [ "$RunMode" -lt 4 ]; then
 	    TXwTemplate="$AtlasSpaceFolder"/"$T1wTemplate"	
 	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T1wTemplateBrain"
 	    TXwTemplate2mm=${T1wTemplate2mm}
-	    Contrast=T1w
     else
 	    TXwInputImages="${T2wInputImages}"
 	    TXwFolder=${T2wFolder}
@@ -667,7 +661,6 @@ if [ "$RunMode" -lt 4 ]; then
 	    TXwTemplate="$AtlasSpaceFolder"/"$T2wTemplate"	
 	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
 	    TXwTemplate2mm=${T2wTemplate2mm}
-	    Contrast=$T2wType
     fi
 
   #### Brain Extraction (FNIRT-based Masking) ####
