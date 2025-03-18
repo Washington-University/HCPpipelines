@@ -596,6 +596,8 @@ fi
 # ACPC align T1w or T2w image to specified MNI Template to create native volume space
 if [ "$RunMode" -lt 3 ]; then
 
+  Modalities="T1w T2w"
+
   for TXw in ${Modalities} ; do
     # set up appropriate input variables
     if [ $TXw = T1w ] ; then
@@ -651,7 +653,7 @@ fi
 # Brain Extraction(FNIRT-based Masking)
 if [ "$RunMode" -lt 4 ]; then
 
-
+  Modalities="T1w T2w"
 
   for TXw in ${Modalities} ; do
     # set up appropriate input variables
