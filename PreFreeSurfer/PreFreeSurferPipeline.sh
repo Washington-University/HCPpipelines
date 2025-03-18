@@ -645,32 +645,29 @@ if [ "$Runmode" -lt 3 ]; then
   done
 
 fi
+# Brain Extraction(FNIRT-based Masking)
+if [ "$Runmode" -lt 4 ]; then
 
-if ["$Runmode" -lt 4 ]; then
-
-      # Brain Extraction(FNIRT-based Masking)
 
 
   for TXw in ${Modalities} ; do
     # set up appropriate input variables
     if [ $TXw = T1w ] ; then
-	TXwInputImages="${T1wInputImages}"
-	TXwFolder=${T1wFolder}
-	TXwImage=${T1wImage}
-	TXwTemplate="$AtlasSpaceFolder"/"$T1wTemplate"	
-	TXwTemplateBrain="$AtlasSpaceFolder/"$T1wTemplateBrain"
-	TXwTemplate2mm=${T1wTemplate2mm}
-	TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
-	Contrast=T1w
+	    TXwInputImages="${T1wInputImages}"
+	    TXwFolder=${T1wFolder}
+	    TXwImage=${T1wImage}
+	    TXwTemplate="$AtlasSpaceFolder"/"$T1wTemplate"	
+	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T1wTemplateBrain"
+	    TXwTemplate2mm=${T1wTemplate2mm}
+	    Contrast=T1w
     else
-	TXwInputImages="${T2wInputImages}"
-	TXwFolder=${T2wFolder}
-	TXwImage=${T2wImage}
-	TXwTemplate="$AtlasSpaceFolder"/"$T2wTemplate"	
-	TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
-	TXwTemplate2mm=${T2wTemplate2mm}
-	TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
-	Contrast=$T2wType
+	    TXwInputImages="${T2wInputImages}"
+	    TXwFolder=${T2wFolder}
+	    TXwImage=${T2wImage}
+	    TXwTemplate="$AtlasSpaceFolder"/"$T2wTemplate"	
+	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
+	    TXwTemplate2mm=${T2wTemplate2mm}
+	    Contrast=$T2wType
     fi
 
   #### Brain Extraction (FNIRT-based Masking) ####
@@ -680,7 +677,7 @@ if ["$Runmode" -lt 4 ]; then
     if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
         log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
     fi
-
+ 
     log_Msg "Brain extract with FNIRT" 
     mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
     ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
