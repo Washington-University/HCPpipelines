@@ -488,7 +488,7 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
           TXwFolder=${T2wFolder}
           TXwImage=${T2wImage}
           TXwTemplate=${T2wTemplate}
-         	TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
+         	TXwTemplateBrain=${T2wTemplateBrain}
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
       OutputTXwImageARRAY=()  
@@ -602,8 +602,8 @@ if [ "$RunMode" -lt 3 ]; then
       TXwInputImages="${T1wInputImages}"
       TXwFolder=${T1wFolder}
       TXwImage=${T1wImage}
-      TXwTemplate="$AtlasSpaceFolder"/"$T1wTemplate"
-      TXwTemplateBrain="$AtlasSpaceFolder"/"$T1wTemplateBrain"
+      TXwTemplate=${T1wTemplate}
+      TXwTemplateBrain=${T1wTemplateBrain}
       TXwTemplate2mm=${T1wTemplate2mm}
       #TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
 
@@ -611,8 +611,8 @@ if [ "$RunMode" -lt 3 ]; then
       TXwInputImages="${T2wInputImages}"
       TXwFolder=${T2wFolder}
       TXwImage=${T2wImage}
-      TXwTemplate="$AtlasSpaceFolder"/"$T2wTemplate"	
-      TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
+      TXwTemplate=${T2wTemplate}	
+      TXwTemplateBrain=${T2wTemplateBrain}
       TXwTemplate2mm=${T2wTemplate2mm}
       #TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
 
@@ -659,15 +659,15 @@ if [ "$RunMode" -lt 4 ]; then
 	    TXwInputImages="${T1wInputImages}"
 	    TXwFolder=${T1wFolder}
 	    TXwImage=${T1wImage}
-	    TXwTemplate="$AtlasSpaceFolder"/"$T1wTemplate"	
-	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T1wTemplateBrain"
+      TXwTemplate=${T1wTemplate}
+	    TXwTemplateBrain=${T1wTemplateBrain}
 	    TXwTemplate2mm=${T1wTemplate2mm}
     else
 	    TXwInputImages="${T2wInputImages}"
 	    TXwFolder=${T2wFolder}
 	    TXwImage=${T2wImage}
-	    TXwTemplate="$AtlasSpaceFolder"/"$T2wTemplate"	
-	    TXwTemplateBrain="$AtlasSpaceFolder"/"$T2wTemplateBrain"
+	    TXwTemplate=${T2wTemplate}
+ 	    TXwTemplateBrain=${T2wTemplateBrain}
 	    TXwTemplate2mm=${T2wTemplate2mm}
     fi
 
