@@ -49,7 +49,7 @@ G_DEFAULT_LOW_RES_MESH=32
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all sessions" '--path'
 
-opts_AddMandatory '--session' 'SessionCross' 'session ID' "(e.g. 100610)" "--subject"
+opts_AddMandatory '--session' 'SessionCross' 'session ID' "(e.g. 100610_V1)" "--subject"
 
 opts_AddMandatory '--fmri-names' 'fMRINames' 'fMRI names' "an '@' symbol separated list of fMRI scan names (no whitespace, e.g. rfMRI_REST1_LR@rfMRI_REST1_RL).  Do not include path, nifti extension, or the 'hp' string.  All runs are assumed to have the same repetition time (TR)."
 
@@ -185,7 +185,13 @@ have_hand_reclassification()
 # ------------------------------------------------------------------------------
 function copy_to_longitudinal()
 {
-	local StudyFolder="$1" SessionCross="$2" SessionLong="$3" fMRINames="$4" ConcatName="$5" HighPass="$6"
+	local StudyFolder="$1"
+	local SessionCross="$2" 
+	local SessionLong="$3" 
+	local fMRINames="$4" 
+	local ConcatName="$5" 
+	local HighPass="$6"
+
 	local fmri S T
 	#copy for concatentated run
 	S="$StudyFolder/$SessionCross/MNINonLinear/Results/$ConcatName"
@@ -193,42 +199,42 @@ function copy_to_longitudinal()
 	local file files_to_copy="Movement_Regressors_demean.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt"
 	mkdir -p "$T"
 	for file in $files_to_copy; do
-		cp "$S"/"$file" "$T"/
+		cp -p "$S"/"$file" "$T"/
 	done
 	
 	local ICADir="$S/${ConcatName}_hp$HighPass.ica"
 	local ICADirLong="$T/${ConcatName}_hp$HighPass.ica"
 	mkdir -p "$ICADirLong"				
 	if [ -f "$ICADir/HandNoise.txt" ]; then 
-		cp $ICADir/HandNoise.txt $ICADirLong/
+		cp -p "$ICADir/HandNoise.txt" "$ICADirLong"/
 	fi
-	files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv hand_labels_noise.txt HandNoise.txt \
-	HandSignal.txt Noise.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt Signal.txt .fix"
+	files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv \
+		hand_labels_noise.txt HandNoise.txt HandSignal.txt Noise.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt Signal.txt .fix"
 	for file in $files_to_copy; do
-		cp $ICADir/$file $ICADirLong/
+		cp -p "$ICADir"/"$file" "$ICADirLong"/
 	done 
 	
-	mkdir -p $ICADirLong/mc
-	cp $ICADir/mc/prefiltered_func_data_mcf_conf.nii.gz $ICADirLong/mc/
-	cp $ICADir/mc/prefiltered_func_data_mcf_conf_hp.nii.gz $ICADirLong/mc/
-	cp $ICADir/mc/prefiltered_func_data_mcf.par $ICADirLong/mc/
+	mkdir -p "$ICADirLong/mc"
+	cp -p "$ICADir/mc/prefiltered_func_data_mcf_conf.nii.gz" "$ICADirLong"/mc/
+	cp -p "$ICADir/mc/prefiltered_func_data_mcf_conf_hp.nii.gz" "$ICADirLong"/mc/
+	cp -p "$ICADir/mc/prefiltered_func_data_mcf.par" "$ICADirLong"/mc/
 	
-	mkdir -p $ICADirLong/fix/
-	cp $ICADir/fix/features.csv $ICADirLong/fix/
+	mkdir -p "$ICADirLong"/fix/
+	cp -p "$ICADir"/fix/features.csv "$ICADirLong"/fix/
 	
 	files_to_copy="eigenvalues_percent ICAVolumeSpace.txt melodic_FTmix melodic_FTmix.sdseries.nii \
-	melodic_ICstats melodic_mix melodic_mix.sdseries.nii melodic_Tmodes melodic_unmix"
-	mkdir -p $ICADirLong/filtered_func_data.ica
+		melodic_ICstats melodic_mix melodic_mix.sdseries.nii melodic_Tmodes melodic_unmix"
+	mkdir -p "$ICADirLong"/filtered_func_data.ica
 	for file in $files_to_copy; do
-		cp $ICADir/filtered_func_data.ica/$file $ICADirLong/filtered_func_data.ica/
+		cp -p "$ICADir"/filtered_func_data.ica/"$file" "$ICADirLong"/filtered_func_data.ica/
 	done	
 	
 	#copy for individual fMRI runs
-	for fmri in $fMRINames; do		
+	for fmri in $fMRINames; do
 		S="$StudyFolder/$SessionCross/MNINonLinear/Results/$fmri"
 		T="$StudyFolder/$SessionLong/MNINonLinear/Results/$fmri"
 		mkdir -p "$T"/"$fmri"_hp"$HighPass".ica/mc
-		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
+		cp -p "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
 	done	
 }
 

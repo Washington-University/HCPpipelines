@@ -1,13 +1,23 @@
 #!/bin/bash
 #set -xv
 
+
+# Naming assumptions
+# This script assumes that:
+# 1. The cross-sectional session dirs are named <Subject>_<PossibleVisit>, 
+# 2. Longitudinal session dirs are named <Subject>_<Possible_Visit>.long.<Template>,
+# 3. Both longitudinal and cross-sectional sessions exist in the study folder.
+
 # Global default values
 DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
-DEFAULT_SUBJECT_LIST="HCA6002236"
+DEFAULT_SUBJECT_LIST="HCA6002236 HCA6002237"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
+
 DEFAULT_POSSIBLE_VISITS="V1_MR V2_MR V3_MR"
-DEFAULT_TEMPLATE_LIST="HCA6002236_V1_V2_V3"
+
+# The template list should include labels for the longitudinal template of each subject, similar to those used in longitudinal FreeSurfer.
+DEFAULT_TEMPLATE_LIST="HCA6002236_V1_V2_V3 HCA6002237_V1_V2_V3"
 
 ExcludeVisits=()
 #
@@ -15,12 +25,12 @@ ExcludeVisits=()
 #	Get the command line options for this script
 #
 # Global Output Variables
-#	${StudyFolder}			- Path to folder containing all subjects data in subdirectories named 
-#							  for the subject id
-#	${Subjlist}				- Space delimited list of subject IDs
-#	${EnvironmentScript}	- Script to source to setup pipeline environment
-#	${RunLocal}				- Indication whether to run this processing "locally" i.e. not submit
-#							  the processing to a cluster or grid
+#	${StudyFolder}			-	Path to folder containing all subjects data in subdirectories named 
+#								for the subject id
+#	${Subjlist}				-	Space delimited list of subject IDs
+#	${EnvironmentScript}	-	Script to source to setup pipeline environment
+#	${RunLocal}				-	Indication whether to run this processing "locally" i.e. not submit
+#								the processing to a cluster or grid
 #
 get_options() {
 	local scriptName=$(basename ${0})
@@ -107,7 +117,7 @@ get_options() {
 
 # Function description
 #
-# For the given subject, identify_timepoins creates a string listing @ separated visits/timepoints to process
+# For the given subject, identify_timepoints creates a string listing @ separated visits/timepoints to process
 # Uses StudyFolder, ExcludeVisits, PossibleVisits global variables as input.
 # Subject must be supplied as the first argument. 
 
