@@ -22,15 +22,15 @@ DEFAULT_TEMPLATE_LIST="HCA6002236_V1_V2_V3 HCA6002237_V1_V2_V3"
 ExcludeVisits=()
 #
 # Function Description
-#	Get the command line options for this script
+#   Get the command line options for this script
 #
 # Global Output Variables
-#	${StudyFolder}			-	Path to folder containing all subjects data in subdirectories named 
-#								for the subject id
-#	${Subjlist}				-	Space delimited list of subject IDs
-#	${EnvironmentScript}	-	Script to source to setup pipeline environment
-#	${RunLocal}				-	Indication whether to run this processing "locally" i.e. not submit
-#								the processing to a cluster or grid
+#   ${StudyFolder}           - Path to folder containing all subjects data in subdirectories named 
+#                              for the subject id
+#   ${Subjlist}              - Space delimited list of subject IDs
+#   ${EnvironmentScript}     - Script to source to setup pipeline environment
+#   ${RunLocal}              - Indication whether to run this processing "locally" i.e. not submit
+#                              the processing to a cluster or grid
 #
 get_options() {
 	local scriptName=$(basename ${0})
