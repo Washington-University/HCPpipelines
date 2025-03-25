@@ -1120,23 +1120,23 @@ ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the 
 #timepoint will fail, because in longitudinal mode these intermediate files are copied over and re-used.
 
 if (( IsLongitudinal )); then 
-	#clean up split echo(s)
-	if [[ $nEcho -gt 1 ]]; then
-	   for iEcho in $(seq 0 $((nEcho-1))) ; do
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
+    #clean up split echo(s)
+    if [[ $nEcho -gt 1 ]]; then
+       for iEcho in $(seq 0 $((nEcho-1))) ; do
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
 
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
-		   ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
-	   done
-	   ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
-	   ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
-	fi
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+       done
+       ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+       ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
+    fi
 fi
 
 log_Msg "Completed!"
