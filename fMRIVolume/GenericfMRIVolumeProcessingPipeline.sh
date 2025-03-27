@@ -1122,7 +1122,8 @@ ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the 
 #clean up split echo(s)
 if [[ $nEcho -gt 1 ]]; then
 	for iEcho in $(seq 0 $((nEcho-1))) ; do	
-		# In Cross-sectional mode, if the code below is executed, running in longitudinal mode on the same timepoint will fail, because in longitudinal mode these intermediate files are copied over and re-used.
+		# In Cross-sectional mode, if the code below is executed, running in longitudinal mode on the same timepoint will fail, 
+		# because in longitudinal mode these intermediate files are copied over and re-used.
 		# For this reason, --extra-multiecho-cleanup must be set to FALSE for cross-sectional if longitudinal processing is expected.
 		if (( IsLongitudinal || ExtraMultiEchoCleanup )); then
 			${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
