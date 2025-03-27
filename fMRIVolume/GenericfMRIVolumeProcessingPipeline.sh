@@ -152,6 +152,7 @@ opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specif
 #longitudinal options
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE/FALSE' "Specifies whether this is run on a longitudinal timepoint" "0"
 opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
+opts_AddOptional '--extra-multiecho-cleanup' 'ExtraMultiEchoCleanup' 'TRUE/FALSE' "Only affects multi-echo processing. Set to FALSE to keep the intermediate files only needed for subsequent longitudinal processing [TRUE]" "TRUE"
 
 #TODO add binary option processing from optlib
 # opts_AddOptional '--printcom' 'RUN' 'print-command' "DO NOT USE THIS! IT IS NOT IMPLEMENTED!"
@@ -434,6 +435,8 @@ then
 fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+ExtraMultiEchoCleanup=$(opts_StringToBool "$ExtraMultiEchoCleanup")
+
 T1wCross2LongXfm="NONE"
 
 if (( IsLongitudinal )); then
@@ -1116,28 +1119,26 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
-#In Cross-sectional mode, if the code below is executed, running in longitudinal mode on the same 
-#timepoint will fail, because in longitudinal mode these intermediate files are copied over and re-used.
+#clean up split echo(s)
+if [[ $nEcho -gt 1 ]]; then
+	for iEcho in $(seq 0 $((nEcho-1))) ; do	
+		# In Cross-sectional mode, if the code below is executed, running in longitudinal mode on the same timepoint will fail, because in longitudinal mode these intermediate files are copied over and re-used.
+		# For this reason, --extra-multiecho-cleanup must be set to FALSE for cross-sectional if longitudinal processing is expected.
+		if (( IsLongitudinal || ExtraMultiEchoCleanup )); then
+			${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+			${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+			${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+		fi
+		
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-if (( IsLongitudinal )); then 
-    #clean up split echo(s)
-    if [[ $nEcho -gt 1 ]]; then
-       for iEcho in $(seq 0 $((nEcho-1))) ; do
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
-
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
-
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
-           ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
-       done
-       ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
-       ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
-    fi
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"		
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+	done
+	${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+	${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
 fi
 
 log_Msg "Completed!"
-
