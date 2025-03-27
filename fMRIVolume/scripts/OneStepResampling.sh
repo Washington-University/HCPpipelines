@@ -67,7 +67,7 @@ opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + dist
 
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
-opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampeling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
+opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb command to do volume resampeling instead of applywarp, default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 
@@ -105,17 +105,7 @@ log_Check_Env_Var FSLDIR
 #with wb_command -volume-resample, the warpfields and per-frame motion affines do not need to be combined in advance,
 #and the timeseries can be resampled without splitting into one-frame files, resulting in much less file IO
 
-case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
-    (yes | true | 1)
-        useWbResample=1
-        ;;
-    (no | false | 0)
-        useWbResample=0
-        ;;
-    (*)
-        log_Err_Abort "unrecognized boolean '$useWbResample', please use yes/no, true/false, or 1/0"
-        ;;
-esac
+useWbResample=$(opts_StringToBool "$useWbResampleStr")
 
 # --- Report arguments
 
@@ -249,6 +239,7 @@ then
              -affine-series "$affseries" -flirt "$InputfMRI" "$InputfMRI"
              -warp "$OutputTransform".nii.gz -fnirt "$InputfMRI")
     
+    #force int32 to improve compressibility (applywarp uses the input datatype, workbench defaults to float32, but storing the interpolated float values increases the .gz file size compared to the input) - BOLD data should be noise-dominated and scanners generally output int types, so this should generally be fine
     wb_command -volume-resample "$InputfMRI" "$WD/$T1wImageFile.$FinalfMRIResolution".nii.gz CUBIC "$OutputfMRI".nii.gz "${xfmargs[@]}" -nifti-output-datatype INT32
     
     #resample all-ones volume series with enclosing voxel to determine FOV coverage
