@@ -67,7 +67,7 @@ opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + dist
 
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
-opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb command to do volume resampeling instead of applywarp, default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
+opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb_command to do volume timeseries resampling instead of applywarp (wb_command supports -affine-series, which avoids needing to separate the frames of the input), default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 

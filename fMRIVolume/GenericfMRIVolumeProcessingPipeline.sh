@@ -122,7 +122,7 @@ opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE OR FALSE' "Controls whether
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
-opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampling instead of applywarp, default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
+opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb_command to do volume timeseries resampling instead of applywarp (wb_command supports -affine-series, which avoids needing to separate the frames of the input), default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
 
 opts_AddOptional '--echoTE' 'echoTE' '@ delimited list of numbers' "TE for each echo (unused for single echo)" "0"
 
