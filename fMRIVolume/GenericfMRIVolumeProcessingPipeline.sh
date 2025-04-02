@@ -661,6 +661,16 @@ ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolder=$ResultsFolderCross
 
+function cp_link
+{
+    local src="$1" dst="$2"
+    if [ -L "$src" ]; then 
+        cp -a $src $dst 
+    else
+        ln -sf $src $dst
+    fi
+}
+
 if (( ! IsLongitudinal )); then 
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
     if [ ! -e "$fMRIFolder" ] ; then
@@ -668,15 +678,22 @@ if (( ! IsLongitudinal )); then
         mkdir "$fMRIFolder"
     fi
 else
-    #copy directory structure. 
+    #copy directory structure.
 	mkdir -p "$ResultsFolderLong"
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    if ! cp -rf "$fMRIFolder" "$fMRIFolderLong"
-    then
-        log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
-    fi
+    for fd in "$fMRIFolder"/*; do
+        fname="$(basename "$fd")"
+        #to save space, create or copy link to the original fMRI series
+        if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then 
+            cp_link "$fd" "$fMRIFolderLong/$fname"
+        #skip _nonlin fMRI series which is re-generated in longitudinal OneStepResample
+        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" ]; then 
+            continue
+        else
+            cp -r -a "$fd" "$fMRIFolderLong/"
+        fi
+    done
 fi
-
 
 if [[ $nEcho -gt 1 ]] ; then
     log_Msg "$nEcho TE's supplied, running in multi-echo mode"
