@@ -434,6 +434,7 @@ then
 fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
 T1wCross2LongXfm="NONE"
 
 if (( IsLongitudinal )); then
@@ -441,9 +442,9 @@ if (( IsLongitudinal )); then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
     T1wCross2LongXfm=$Path/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
-    if [ ! -f "$T1wCross2LongXfm" ]; then 
+    if [ ! -f "$T1wCross2LongXfm" ]; then
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
-    fi 
+    fi
     if [ -n "$fMRIReference" ] && [ "$fMRIReference" != "NONE" ]; then
         log_Warn "fmri reference is used during the initial cross-sectional run on a timepoint, but irrelevant (and therefore the argument is ignored) during the subsequent longitudinal call on the same timepoint."
     fi
@@ -660,34 +661,51 @@ ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolder=$ResultsFolderCross
 
-if (( ! IsLongitudinal )); then 
+function cp_link
+{
+    local src="$1" dst="$2"
+    if [ -L "$src" ]; then
+        cp -a $src $dst
+    else
+        ln -sf $src $dst
+    fi
+}
+
+if (( ! IsLongitudinal )); then
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
     if [ ! -e "$fMRIFolder" ] ; then
         log_Msg "mkdir ${fMRIFolder}"
         mkdir "$fMRIFolder"
     fi
+
+    ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 else
-    #copy directory structure and create symbolic link per each file under source. 
+    #copy directory structure.
 	mkdir -p "$ResultsFolderLong"
-    if ! cp -rf "$ResultsFolder" "$ResultsFolderLong"
-    then
-        log_Err_Abort "Copying cross-sectional output $ResultsFolder to longitudinal session folder $ResultsFolderLong failed."
-    fi
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    if ! cp -rf "$fMRIFolder" "$fMRIFolderLong"
-    then
-        log_Err_Abort "Copying cross-sectional output $fMRIFolder to longitudinal session folder $fMRIFolderLong failed."
-    fi
+    for fd in "$fMRIFolder"/*; do
+        fname="$(basename "$fd")"
+        #to save space, create or copy link to the original fMRI series
+        if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
+            cp_link "$fd" "$fMRIFolderLong/$fname"
+        #skip _nonlin fMRI series which is re-generated in longitudinal OneStepResample
+        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" ]; then
+            continue
+        else
+            cp -r -a "$fd" "$fMRIFolderLong/"
+        fi
+    done
+fi
+
+if [[ $nEcho -gt 1 ]] ; then
+    log_Msg "$nEcho TE's supplied, running in multi-echo mode"
+    NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
+    FramesPerEcho=$((NumFrames / nEcho))
 fi
 
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
-if (( ! IsLongitudinal )); then 
-    ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
-
+if (( ! IsLongitudinal )); then
     if [[ $nEcho -gt 1 ]] ; then
-        log_Msg "$nEcho TE's supplied, running in multi-echo mode"
-        NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
-        FramesPerEcho=$((NumFrames / nEcho))
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
     fi
@@ -709,7 +727,6 @@ if (( ! IsLongitudinal )); then
     fi
 
     # --- Copy over scout (own or reference if specified), create fake if none exists
-
     if [ "$fMRIReference" != "NONE" ]; then
         # --- copy over existing scout images
         log_Msg "Copying Scout from Reference fMRI"
@@ -722,7 +739,7 @@ if (( ! IsLongitudinal )); then
 
         mkdir -p ${ResultsFolder}
         ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/"${fMRIReference}_SBRef" ${ResultsFolder}/"${NameOffMRI}_SBRef"
-    else    
+    else
         # --- Create fake "Scout" if it doesn't exist
         if [ $fMRIScout = "NONE" ] ; then
             ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
@@ -752,7 +769,7 @@ if (( ! IsLongitudinal )); then
             "$yorient" != "Posterior-to-Anterior" || \
             "$zorient" != "Inferior-to-Superior" ]] ; then
             reorient=TRUE
-        else 
+        else
             reorient=FALSE
         fi
 
@@ -772,7 +789,6 @@ if (( ! IsLongitudinal )); then
             fi
         fi
     fi
-
 
     #Gradient Distortion Correction of fMRI
     log_Msg "Gradient Distortion Correction of fMRI"
@@ -813,25 +829,23 @@ if (( ! IsLongitudinal )); then
     fi
 fi # if (( ! IsLongitudinal ))
 
-#Split echos. 
+#Split echos.
+tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
 if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
-    tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
     for iEcho in $(seq 0 $((nEcho-1))) ; do
         tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
         tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
         sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
         sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
-        if (( ! IsLongitudinal )); then 
-            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
-                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-            wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
-                -subvolume "$(( iEcho + 1 ))"
-            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
-                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-            wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
-                -subvolume "$(( iEcho + 1 ))"
-        fi
+        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
+            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+        wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
+            -subvolume "$(( iEcho + 1 ))"
+        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
+            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+        wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
+            -subvolume "$(( iEcho + 1 ))"
     done
 else
     tcsEchoesOrig[0]="${OrigTCSName}"
@@ -840,7 +854,7 @@ else
     sctEchoesGdc[0]="${ScoutName}_gdc"
 fi
 
-if (( ! IsLongitudinal )); then 
+if (( ! IsLongitudinal )); then
     log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
     mkdir -p "$fMRIFolder"/MotionCorrection
 
@@ -856,11 +870,10 @@ if (( ! IsLongitudinal )); then
         "$fMRIReferenceReg"
 fi
 
-# In longitudinal mode, the rest of this script re-runs the same code as in cross-sectional. 
-# For that to function correctly, we need all relevant directories to 
+# In longitudinal mode, the rest of this script re-runs the same code as in cross-sectional.
+# For that to function correctly, we need all relevant directories to
 # point to the longitudinal session.
 # Note that FreeSurferSubjectID is not used in longitudinal mode and doesn't point to the correct longitudinal freesurfer folder.
-
 
 if (( IsLongitudinal )); then
     fMRIFolder="$fMRIFolderLong"
@@ -869,6 +882,11 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
+
+    if [[ $nEcho -gt 1 ]] ; then
+        EchoDir="${fMRIFolder}/MultiEcho"
+        mkdir -p "$EchoDir"
+    fi
 fi
 
 #EPI Distortion Correction and EPI to T1w Registration
@@ -883,7 +901,7 @@ if [ $fMRIReference = "NONE" ] ; then
     fi
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
-    
+
     ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
@@ -964,7 +982,7 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
         --wb-resample=${useWbResample}
-    
+
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
 done
@@ -1035,7 +1053,7 @@ ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --fmrimask=${fMRIMask}
 
 
-if [[ ${nEcho} -gt 1 ]]; then 
+if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Creating echoMeans"
     # Calculate echoMeans of intensity normalized result
     tcsEchoes=(); tcsEchoesMu=();args=""
@@ -1116,23 +1134,22 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
-# clean up split echo(s)
+#clean up split echo(s)
 if [[ $nEcho -gt 1 ]]; then
-    for iEcho in $(seq 0 $((nEcho-1))) ; do
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
+	for iEcho in $(seq 0 $((nEcho-1))) ; do
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
 
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
-        ${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
-    done
-    ${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
-    ${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
+	done
+	${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
+	${FSLDIR}/bin/imrm "${tcsEchoesMu[@]}"
 fi
 
 log_Msg "Completed!"
-
