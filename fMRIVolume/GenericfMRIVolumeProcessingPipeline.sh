@@ -677,6 +677,8 @@ if (( ! IsLongitudinal )); then
         log_Msg "mkdir ${fMRIFolder}"
         mkdir "$fMRIFolder"
     fi
+
+    ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 else
     #copy directory structure.
 	mkdir -p "$ResultsFolderLong"
@@ -703,8 +705,6 @@ fi
 
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
 if (( ! IsLongitudinal )); then
-    ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
-
     if [[ $nEcho -gt 1 ]] ; then
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
