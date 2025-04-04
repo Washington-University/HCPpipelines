@@ -409,6 +409,18 @@ if ((doProcessing)); then
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
+    #copy template medial wall ROI's created at the previous step to all timepoints
+    if [ "$LongitudinalMode" == "TEMPLATE" ]; then
+        IFS=@ read -p -a Sessions <<<$SessionList
+        NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
+        for tp in ${Sessions[@]}; do
+            NativeFolderTP="$tp.long.$LongitudinalTemplate"
+            for Hemisphere in L R; do
+                cp -p "$StudyFolder/$NativeFolderTemplate/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" "$StudyFolder/$NativeFolderTP/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+            done
+        done
+    fi
+
 if ((doQC)); then
   log_Msg "Generating structural QC scene and snapshots"
     "$PipelineScripts"/GenerateStructuralScenes.sh \
@@ -421,4 +433,3 @@ verbose_green_echo "---> Finished ${log_ToolName}"
 verbose_echo " "
 
 log_Msg "Completed!"
-
