@@ -18,6 +18,7 @@ set -eu
 #
 # * Matthew F. Glasser, Department of Anatomy and Neurobiology, Washington University in St. Louis
 # * Timothy B. Brown, Neuroinformatics Research Group, Washington University in St. Louis
+# * Mikhail Milchenko (longitudinal fix), Computational Imaging Center, Washington University in St. Louis
 #
 # ## Product
 #
@@ -50,12 +51,12 @@ opts_SetScriptDescription "implements MSM-All Registration Pipeline"
 #mandatory
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects" '--path'
-opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
+opts_AddMandatory '--session' 'Session' '100206' "one session ID" "--subject"
 opts_AddMandatory '--fmri-names-list' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of single-run fmri run names separated by @s"
 opts_AddMandatory '--multirun-fix-names' 'mrfixNames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of multi-run fmri run names separated by @s"
 opts_AddMandatory '--multirun-fix-concat-name' 'mrfixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--multirun-fix-names-to-use' 'mrfixNamesToUse' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "MRfix run names to use, @-separated list, choose which runs should be used as resting state data"
-opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single subject scan"
+opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single session scan"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
@@ -94,6 +95,14 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
+
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal mode" "FALSE"
+opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal mode" ""
+opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longitudinal timepoints" ""
+opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
+opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt]' "fmri_list.txt"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -120,7 +129,7 @@ log_Msg "Starting main functionality"
 # MSMAll config file
 if [[ "$RegConfPath" != /* ]]
 then
-	RegConfPath="${MSMCONFIGDIR}/${RegConfPath}"
+    RegConfPath="${MSMCONFIGDIR}/${RegConfPath}"
 fi
 log_Msg "RegConfPath: ${RegConfPath}"
 # MSMAll templates defaults
@@ -138,75 +147,168 @@ log_File_Must_Exist "${TopographyTarget}"
 output_proc_string="_vn" #To VN only to indicate that we did not revert the bias field before computing VN
 log_Msg "output_proc_string: ${output_proc_string}"
 
-expected_concatenated_output_dir="${StudyFolder}/${Subject}/MNINonLinear/Results/${OutputfMRIName}"
-expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
-before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
-if [[ "$fMRINames" == "" ]]
-then
-	log_Msg "Running MSM on Multi-run FIX timeseries"
-	runSplits=()
-	runIndices=()
-	curTimepoints=0
-	#convention: one before the first index of the run
-	runSplits[0]="$curTimepoints"
-	IFS='@' read -a mrNamesArray <<< "${mrfixNames}"
-	IFS='@' read -a mrNamesUseArray <<< "${mrfixNamesToUse}"
-	#sanity check for identical names
-	for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
-	do
-		for ((index2 = 0; index2 < ${#mrNamesArray[@]}; ++index2))
-		do
-			if ((index != index2)) && [[ "${mrNamesArray[$index]}" == "${mrNamesArray[$index2]}" ]]
-			then
-				log_Err_Abort "MR fix names list contains '${mrNamesArray[$index]}' more than once"
-			fi
-		done
-	done
-	#calculate the timepoints where the concatenated switches runs, find which runs are used
-	for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
-	do
-		fmriName="${mrNamesArray[$index]}"
-		NumTPS=`${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Subject}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps`
-		curTimepoints=$((curTimepoints + NumTPS))
-		runSplits[$((index + 1))]="$curTimepoints"
-		for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
-		do
-			if [[ "${mrNamesUseArray[$index2]}" == "${mrNamesArray[$index]}" ]]
-			then
-				runIndices[$index2]="$index"
-			fi
-		done
-	done
-	#check that we found all requested runs, build the merge command
-	mergeArgs=()
-	for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
-	do
-		#element may be unset
-		runIndex="${runIndices[$index2]+"${runIndices[$index2]}"}"
-		if [[ "$runIndex" == "" ]]
-		then
-			log_Err_Abort "requested run '${mrNamesUseArray[$index2]}' not found in list of MR fix runs"
-		fi
-		mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
-	done
-	mkdir -p "${expected_concatenated_output_dir}"
-	${CARET7DIR}/wb_command -cifti-merge "${before_vn_output_file}" -cifti "${StudyFolder}/${Subject}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean.dtseries.nii" "${mergeArgs[@]}"
-	${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Subject}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
-	rm -f -- "${before_vn_output_file}"
-else
-	log_Msg "Running MSM on full timeseries"
+if (( IsLongitudinal ));  then 
+    
+    if [ -z "$SubjectLong" -o -z "$Sessions" -o -z "TemplateLong" -o -z "${mrfixNamesToUse}" -o -z "$mrfixConcatName" ]; then 
+        log_Err_Abort "--subject-long, --sessions-long, --template-long are mandatory in longitudinal mode"
+    fi            
+    if [ "$OutputRegName" != "MSMAll_InitalReg" ]; then 
+        log_Err_Abort "Currently, only MSM_All_InitialReg is supported as output reg name in longitudinal mode"
+    fi
+    
+    IFS=@ read -r -a SessionsLong <<< "${Sessions}"
+    IFS=@ read -r -a PossibleRuns <<< "${mrfixNamesToUse}"    
+    
+    ResultsTemplateDir=$StudyFolder/$SubjectLong.long.$TemplateLong/MNINonLinear/Results
+    
+    expected_concatenated_output_dir="$ResultsTemplateDir/${OutputfMRIName}"
+    expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
+    before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
 
-	"${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
-		--path="${StudyFolder}" \
-		--subject="${Subject}" \
-		--fmri-names-list="${fMRINames}" \
-		--output-fmri-name="${OutputfMRIName}" \
-		--fmri-proc-string="${fMRIProcSTRING}" \
-		--output-proc-string="${output_proc_string}" \
-		--start-frame="${StartFrame}" \
-		--end-frame="${EndFrame}"
-fi
+    mkdir -p $ResultsTemplateDir
+    TemplateRunsStr=""
+    TimepointsStr=""
+    fMRIRunsStr=""
+    ConcatNamesStr=""
+
+    # First, resolve the list of longitudinal fMRI runs and make configuration file    
+    # Also, build the average myelin map command.    
+    TemplateSession=$SubjectLong.long.$TemplateLong
+    NativeMyelinMap="MyelinMap.native.dscalar.nii"
+    average_cmd="${CARET7DIR}/wb_command -cifti-average \
+        $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap"
+        
+    for tp in ${SessionsLong[@]}; do
+        SessionLong=$tp.long.$TemplateLong
+        average_cmd="$average_cmd -cifti $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap"
+            
+        echo "searching $SessionLong for eligible fMRI runs"
+        if [ ! -d "$StudyFolder/$SessionLong/MNINonLinear/Results" ]; then 
+            log_Err_Abort "ICAFix output does not exist for longitudinal session $SessionLong in $StudyFolder"
+        fi    
+        ResultsTPLongDir=$StudyFolder/$SessionLong/MNINonLinear/Results
+        for fmriName in ${PossibleRuns[@]}; do
+            if [ -d "$ResultsTPLongDir/$fmriName" ]; then            
+                TemplateRun=${tp}_${fmriName}
+                echo "found $TemplateRun, copying"
+                mkdir -p $ResultsTemplateDir/$TemplateRun
+                #DEBUG - uncomment for release
+                #cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
+                pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null
+                for fd in ${fmriName}_* ${fmriName}.*; do
+                    [ -e "$fd" ] || continue
+                    mv "$fd" "${fd//$fmriName/$TemplateRun}"
+                done
+                popd &> /dev/null            
+                TemplateRunsStr="${TemplateRunsStr}@$TemplateRun"
+                TimepointsStr="${TimepointsStr}@$tp"
+                fMRIRunsStr="${fMRIRunsStr}@$fmriName"
+                ConcatNamesStr="${ConcatNamesStr}@$mrfixConcatName"
+            fi
+        done        
+    done
+    conf_file="$ResultsTemplateDir/$OutConfig"
+    echo "${TemplateRunsStr/#@/}" > "$conf_file"
+    echo "${TimepointsStr/#@/}" >> "$conf_file"
+    echo "${fMRIRunsStr/#@/}" >> "$conf_file"
+    echo "${ConcatNamesStr/#@/}" >> "$conf_file"
+        
+    # average myelin maps from all timepoints.    
+    ${average_cmd}
+        
+    # variance normalize and concatenate individual runs
+    # of all timepoints in template folder
+        
+    "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
+        --path="${StudyFolder}" \
+        --subject="$SubjectLong.long.$TemplateLong" \
+        --fmri-names-list="${TemplateRunsStr/#@/}" \
+        --output-fmri-name="${OutputfMRIName}" \
+        --fmri-proc-string="${fMRIProcSTRING}" \
+        --output-proc-string="${output_proc_string}" \
+        --start-frame="${StartFrame}" \
+        --end-frame="${EndFrame}" \
+        --is-longitudinal="TRUE" \
+        --fmri-config-long="$OutConfig" \
+        --template-long="$TemplateLong" \
+        --subject-long="$SubjectLong"            
+    Session=$TemplateSession    
+    # log_Msg "Running MSM on longitudinal timepoints"
+    
+else #cross-sectional run
+    expected_concatenated_output_dir="${StudyFolder}/${Session}/MNINonLinear/Results/${OutputfMRIName}"
+    expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
+    before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
+    
+    if [[ "$fMRINames" == "" ]]
+    then
+        log_Msg "Running MSM on Multi-run FIX timeseries"
+        runSplits=()
+        runIndices=()
+        curTimepoints=0
+        #convention: one before the first index of the run
+        runSplits[0]="$curTimepoints"
+        IFS='@' read -a mrNamesArray <<< "${mrfixNames}"
+        IFS='@' read -a mrNamesUseArray <<< "${mrfixNamesToUse}"
+        #sanity check for identical names
+        for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
+        do
+            for ((index2 = 0; index2 < ${#mrNamesArray[@]}; ++index2))
+            do
+                if ((index != index2)) && [[ "${mrNamesArray[$index]}" == "${mrNamesArray[$index2]}" ]]
+                then
+                    log_Err_Abort "MR fix names list contains '${mrNamesArray[$index]}' more than once"
+                fi
+            done
+        done
+        #calculate the timepoints where the concatenated switches runs, find which runs are used
+        for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
+        do
+            fmriName="${mrNamesArray[$index]}"
+            NumTPS=`${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Session}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps`
+            curTimepoints=$((curTimepoints + NumTPS))
+            runSplits[$((index + 1))]="$curTimepoints"
+            for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
+            do
+                if [[ "${mrNamesUseArray[$index2]}" == "${mrNamesArray[$index]}" ]]
+                then
+                    runIndices[$index2]="$index"
+                fi
+            done
+        done
+        #check that we found all requested runs, build the merge command
+        mergeArgs=()
+        for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
+        do
+            #element may be unset
+            runIndex="${runIndices[$index2]+"${runIndices[$index2]}"}"
+            if [[ "$runIndex" == "" ]]
+            then
+                log_Err_Abort "requested run '${mrNamesUseArray[$index2]}' not found in list of MR fix runs"
+            fi
+            mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
+        done
+        mkdir -p "${expected_concatenated_output_dir}"
+        ${CARET7DIR}/wb_command -cifti-merge "${before_vn_output_file}" -cifti "${StudyFolder}/${Session}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean.dtseries.nii" "${mergeArgs[@]}"
+        ${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Session}/MNINonLinear/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
+        rm -f -- "${before_vn_output_file}"
+    else
+        log_Msg "Running MSM on full timeseries"
+
+        "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
+            --path="${StudyFolder}" \
+            --subject="${Session}" \
+            --fmri-names-list="${fMRINames}" \
+            --output-fmri-name="${OutputfMRIName}" \
+            --fmri-proc-string="${fMRIProcSTRING}" \
+            --output-proc-string="${output_proc_string}" \
+            --start-frame="${StartFrame}" \
+            --end-frame="${EndFrame}"
+    fi
+fi #cross-sectional mode
+
 log_File_Must_Exist "${expected_concatenated_output_file}"
 
 # fMRIProcSTRING now should reflect the name expected by registrations done below
@@ -216,31 +318,43 @@ log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
 # run MSMAll
 "${HCPPIPEDIR}"/MSMAll/scripts/"${ModuleName}" \
-	--path="${StudyFolder}" \
-	--subject="${Subject}" \
-	--high-res-mesh="${HighResMesh}" \
-	--low-res-mesh="${LowResMesh}" \
-	--output-fmri-name="${OutputfMRIName}" \
-	--fmri-proc-string="${fMRIProcSTRING}" \
-	--input-pca-registration-name="${InputRegName}" \
-	--input-registration-name="${InputRegName}" \
-	--registration-name-stem="${OutputRegName}" \
-	--rsn-target-file="${RSNTemplates}" \
-	--rsn-cost-weights="${RSNWeights}" \
-	--myelin-target-file="${MyelinTarget}" \
-	--topography-roi-file="${TopographyROIs}" \
-	--topography-target-file="${TopographyTarget}" \
-	--iterations="${IterationModes}" \
-	--method="${Method}" \
-	--use-migp="${UseMIGP}" \
-	--ica-dim="${ICAdim}" \
-	--regression-params="${LowsICADims}" \
-	--vn="${VN}" \
-	--rerun="${ReRunIfExists}" \
-	--reg-conf="${RegConfPath}" \
-	--reg-conf-vars="${RegConfOverrideVars}" \
-	--msm-all-templates="${MSMAllTemplates}" \
-	--use-ind-mean="${UseIndMean}" \
-	--matlab-run-mode="${MatlabRunMode}"
-	
+    --path="${StudyFolder}" \
+    --session="${Session}" \
+    --high-res-mesh="${HighResMesh}" \
+    --low-res-mesh="${LowResMesh}" \
+    --output-fmri-name="${OutputfMRIName}" \
+    --fmri-proc-string="${fMRIProcSTRING}" \
+    --input-pca-registration-name="${InputRegName}" \
+    --input-registration-name="${InputRegName}" \
+    --registration-name-stem="${OutputRegName}" \
+    --rsn-target-file="${RSNTemplates}" \
+    --rsn-cost-weights="${RSNWeights}" \
+    --myelin-target-file="${MyelinTarget}" \
+    --topography-roi-file="${TopographyROIs}" \
+    --topography-target-file="${TopographyTarget}" \
+    --iterations="${IterationModes}" \
+    --method="${Method}" \
+    --use-migp="${UseMIGP}" \
+    --ica-dim="${ICAdim}" \
+    --regression-params="${LowsICADims}" \
+    --vn="${VN}" \
+    --rerun="${ReRunIfExists}" \
+    --reg-conf="${RegConfPath}" \
+    --reg-conf-vars="${RegConfOverrideVars}" \
+    --msm-all-templates="${MSMAllTemplates}" \
+    --use-ind-mean="${UseIndMean}" \
+    --matlab-run-mode="${MatlabRunMode}"
+
+#copy the registration result sphere from template back to timepoints.    
+if (( IsLongitudinal )); then
+    
+    for tp in ${SessionsLong[@]}; do
+        cp $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.SphericalDistortion.native.dscalar.nii \
+            $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.SphericalDistortion.native.dscalar.nii
+        for Hemisphere in L R; do
+            SessionLong=$tp.long.$TemplateLong
+            cp $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$Hemisphere.sphere.${OutputRegName}_2_d40_WRN.native.surf.gii $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$Hemisphere.sphere.${OutputRegName}_2_d40_WRN.native.surf.gii
+        done
+    done
+fi
 log_Msg "Completing main functionality"
