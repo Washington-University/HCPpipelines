@@ -661,16 +661,6 @@ ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolder=$ResultsFolderCross
 
-function cp_link
-{
-    local src="$1" dst="$2"
-    if [ -L "$src" ]; then
-        cp -a $src $dst
-    else
-        ln -sf $src $dst
-    fi
-}
-
 if (( ! IsLongitudinal )); then
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
     if [ ! -e "$fMRIFolder" ] ; then
@@ -685,14 +675,11 @@ else
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
     for fd in "$fMRIFolder"/*; do
         fname="$(basename "$fd")"
-        #to save space, create or copy link to the original fMRI series
+        #create link to the original fMRI series
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
-            cp_link "$fd" "$fMRIFolderLong/$fname"
-        #skip _nonlin fMRI series which is re-generated in longitudinal OneStepResample
-        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" ]; then
-            continue
+            ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
         else
-            cp -r -a "$fd" "$fMRIFolderLong/"
+            cp -r -p "$fd" "$fMRIFolderLong/"
         fi
     done
 fi
