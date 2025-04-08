@@ -1112,6 +1112,13 @@ ${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS_mean.txt ${ResultsFolder}
 #Basic Cleanup
 ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 
+# remove the link to the original time series in longitudinal session
+# to avoid potential storage issue as
+# symlinks tend to become hard copies over time.
+if (( IsLongitudinal )); then 
+    rm ${fMRIFolder}/"$OrigTCSName".nii.gz
+fi
+
 #Econ
 #${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
 ${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
