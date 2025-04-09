@@ -671,7 +671,7 @@ if (( ! IsLongitudinal )); then
     ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
 else
     #copy directory structure.
-	mkdir -p "$ResultsFolderLong"
+    mkdir -p "$ResultsFolderLong"
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
     for fd in "$fMRIFolder"/*; do
         fname="$(basename "$fd")"
@@ -880,7 +880,7 @@ if [ $fMRIReference = "NONE" ] ; then
     log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
     if [ -e ${DCFolder} -a ${IsLongitudinal} == "0" ] ; then
-       ${RUN} rm -r ${DCFolder}
+        ${RUN} rm -r ${DCFolder}
     fi
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
