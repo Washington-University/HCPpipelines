@@ -679,8 +679,11 @@ else
         #create link to the original fMRI series
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
             ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
+        #skip large files that will be generated
+        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then 
+        	continue
         else
-            cp -r -p "$fd" "$fMRIFolderLong/"
+            cp -r --preserve=timestamps "$fd" "$fMRIFolderLong/"
         fi
     done
 fi
@@ -1117,7 +1120,7 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 # to avoid potential storage issue as
 # symlinks tend to become hard copies over time.
 if (( IsLongitudinal )); then 
-    rm ${fMRIFolder}/"$OrigTCSName".nii.gz
+    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz 
 fi
 
 #Econ
