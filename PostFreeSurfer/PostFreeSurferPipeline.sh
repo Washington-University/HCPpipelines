@@ -342,7 +342,7 @@ if ((doProcessing)); then
     argList+=("$Subject")                   # ${25} #Actual subject label, not session label.
     argList+=("$LongitudinalTemplate")      # ${26}
     argList+=("$SessionList")  # ${27}
-
+    
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
@@ -360,6 +360,7 @@ if ((doProcessing)); then
     argList+=("$AtlasSpaceT1wImage")        # ${6}
     argList+=("$T1wRestoreImage")           # ${7}  Called T1wImage in CreateRibbon.sh
     argList+=("$FreeSurferLabels")          # ${8}
+    
     "$PipelineScripts"/CreateRibbon.sh "${argList[@]}"
 
     log_Msg "Myelin Mapping"
@@ -406,17 +407,21 @@ if ((doProcessing)); then
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
     argList+=("$IsLongitudinal")
+    
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
     #copy template medial wall ROI's created at the previous step to all timepoints
     if [ "$LongitudinalMode" == "TEMPLATE" ]; then
-        IFS=@ read -p -a Sessions <<<$SessionList
+        IFS=@ read -r -a Sessions <<< "$SessionList"
         NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
         for tp in ${Sessions[@]}; do
             NativeFolderTP="$tp.long.$LongitudinalTemplate"
+            mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
             for Hemisphere in L R; do
-                cp -p "$StudyFolder/$NativeFolderTemplate/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" "$StudyFolder/$NativeFolderTP/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+                cp --preserve=timestamps \
+                "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+                "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
             done
         done
     fi
