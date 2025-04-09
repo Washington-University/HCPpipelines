@@ -673,6 +673,7 @@ else
     #copy directory structure.
     mkdir -p "$ResultsFolderLong"
     fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
+    mkdir -p "$fMRIFolderLong"
     for fd in "$fMRIFolder"/*; do
         fname="$(basename "$fd")"
         #create link to the original fMRI series
