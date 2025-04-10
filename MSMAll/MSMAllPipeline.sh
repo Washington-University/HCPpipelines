@@ -194,8 +194,7 @@ if (( IsLongitudinal ));  then
                 TemplateRun=${tp}_${fmriName}
                 echo "found $TemplateRun, copying"
                 mkdir -p $ResultsTemplateDir/$TemplateRun
-                #DEBUG - uncomment for release
-                #cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
+                cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
                 pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null
                 for fd in ${fmriName}_* ${fmriName}.*; do
                     [ -e "$fd" ] || continue
