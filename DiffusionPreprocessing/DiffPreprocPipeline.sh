@@ -178,7 +178,7 @@ opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 
 opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
-opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
+opts_AddMandatory '--PEdir' 'PEdir' '1 or 2' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
 
 opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "An @ symbol separated list of data with 'positive' phase  encoding direction; e.g., data_RL1@data_RL2@...data_RLn, or data_PA1@data_PA2@...data_PAn"
 
