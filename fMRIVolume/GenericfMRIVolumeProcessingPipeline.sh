@@ -491,7 +491,8 @@ SessionFolder="$Path"/"$Session"
 SessionFolderLong="$Path"/"$SessionLong"
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
-sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias.nii.gz"
+#this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
+sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
 
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
