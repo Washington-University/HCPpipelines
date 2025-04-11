@@ -60,6 +60,8 @@ log_Msg "Starting Single Session Scan Concatenation using the selected frame ran
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
+# Return value for key, given arrays of keys and values.
+# Used to decode longitudinal fMRI configuration.
 function val4key()
 {
     local -n keys=$1
@@ -80,6 +82,7 @@ if (( IsLongitudinal )); then
     if [ -z "$TemplateLong" ]; then 
         log_Err_Abort "Longitudinal template ID cannot be empty"
     fi
+    #Read longitudinal run names from the configuration file.
     conf="${StudyFolder}/$SubjectLong.long.$TemplateLong/MNINonLinear/Results/$fMRIConfigLong"
     IFS='@' read -ra TemplateRuns < <(sed -n '1p' "$conf")
     IFS='@' read -ra Timepoints < <(sed -n '2p' "$conf")
@@ -198,6 +201,7 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
     
     # vn file
     OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+    # resolve longitudinal fMRI and concat names for the given $fMRIName
     if (( IsLongitudinal )); then 
         Timepoint=$(val4key TemplateRuns Timepoints $fMRIName)
         ConcatNameTimepoint=$(val4key TemplateRuns ConcatNamesCross $fMRIName)

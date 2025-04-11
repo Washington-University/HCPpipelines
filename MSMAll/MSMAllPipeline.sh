@@ -173,15 +173,15 @@ if (( IsLongitudinal ));  then
     fMRIRunsStr=""
     ConcatNamesStr=""
 
-    # First, resolve the list of longitudinal fMRI runs and make configuration file    
-    # Also, build the average myelin map command.    
-    TemplateSession=$SubjectLong.long.$TemplateLong
-    NativeMyelinMap="MyelinMap.native.dscalar.nii"
+    # First, resolve the list of longitudinal fMRI runs and make configuration file
+    TemplateSession=$SubjectLong.long.$TemplateLong             #template directory name
+    NativeMyelinMap="MyelinMap.native.dscalar.nii"    
+    # Build the average myelin map command.
     average_cmd="${CARET7DIR}/wb_command -cifti-average \
         $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap"
         
     for tp in ${SessionsLong[@]}; do
-        SessionLong=$tp.long.$TemplateLong
+        SessionLong=$tp.long.$TemplateLong                      #longitudinal session directory name
         average_cmd="$average_cmd -cifti $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap"
             
         echo "searching $SessionLong for eligible fMRI runs"
@@ -189,13 +189,19 @@ if (( IsLongitudinal ));  then
             log_Err_Abort "ICAFix output does not exist for longitudinal session $SessionLong in $StudyFolder"
         fi    
         ResultsTPLongDir=$StudyFolder/$SessionLong/MNINonLinear/Results
+        # iterate over possible fMRI runs and build a list of found runs for this timepoint.
+        # Found runs are copied to template directory and all relevant files/dirs are renamed 
+        # for the run to be unique within subject.
+        # template-based fMRI naming pattern, assuming original run <fMRIRun> label is: <Session>_<fMRIRun>, 
+        # where <Session> is longitudinal session label. It is expected to be named <Subject>_<Visit_ID>.
         for fmriName in ${PossibleRuns[@]}; do
             if [ -d "$ResultsTPLongDir/$fmriName" ]; then            
                 TemplateRun=${tp}_${fmriName}
                 echo "found $TemplateRun, copying"
                 mkdir -p $ResultsTemplateDir/$TemplateRun
+                #bulk copy
                 cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
-                pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null
+                pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null                
                 for fd in ${fmriName}_* ${fmriName}.*; do
                     [ -e "$fd" ] || continue
                     mv "$fd" "${fd//$fmriName/$TemplateRun}"
@@ -206,20 +212,24 @@ if (( IsLongitudinal ));  then
                 fMRIRunsStr="${fMRIRunsStr}@$fmriName"
                 ConcatNamesStr="${ConcatNamesStr}@$mrfixConcatName"
             fi
-        done        
+        done
     done
+    # Arrays with template fMRI names, matching timepoint labels, original run labels, 
+    # and per-timepoint concatenated fMRI names are stored in a configuration file under 
+    # MNINonLinear/Results/. Multiple configuration files may be used for the same 
+    # subject with different fMRI combinations or longitudinal templates.
     conf_file="$ResultsTemplateDir/$OutConfig"
     echo "${TemplateRunsStr/#@/}" > "$conf_file"
     echo "${TimepointsStr/#@/}" >> "$conf_file"
     echo "${fMRIRunsStr/#@/}" >> "$conf_file"
     echo "${ConcatNamesStr/#@/}" >> "$conf_file"
-        
-    # average myelin maps from all timepoints.    
+
+    # average myelin maps from all timepoints.
     ${average_cmd}
-        
+
     # variance normalize and concatenate individual runs
-    # of all timepoints in template folder
-        
+    # of all timepoints in template folder. 
+    # This script reads the $conf_file.
     "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
         --path="${StudyFolder}" \
         --subject="$SubjectLong.long.$TemplateLong" \
