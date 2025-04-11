@@ -411,7 +411,15 @@ if ((doProcessing)); then
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
-    #copy template medial wall ROI's created at the previous step to all timepoints
+    # Longitudinal mode only:
+    # copy template medial wall ROI's created at the previous step to all timepoints.
+    # This works as follows: 
+    # 1. in the TIMEPOINT_STAGE1, the ROI creation is skipped, and ribbon and myelin map creation is not done
+    # 2. in the TEMPLATE stage, the ROI's and myelin maps for the template are created
+    # 3. then, the code below is executed to copy the template ROI's to the timepoints 
+    # 4. TIMEPOINT_STAGE2 is executed (only post-MSMSulc surface creation code is executed in FreeSurfer2CaretConvertAndRegisterNonlinear.sh), 
+    # surfaces and myelin maps are created using the template ROI's.
+    
     if [ "$LongitudinalMode" == "TEMPLATE" ]; then
         IFS=@ read -r -a Sessions <<< "$SessionList"
         NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
@@ -419,8 +427,7 @@ fi
             NativeFolderTP="$tp.long.$LongitudinalTemplate"
             mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
             for Hemisphere in L R; do
-                cp --preserve=timestamps \
-                "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+                cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
                 "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
             done
         done
