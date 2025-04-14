@@ -342,7 +342,7 @@ if ((doProcessing)); then
     argList+=("$Subject")                   # ${25} #Actual subject label, not session label.
     argList+=("$LongitudinalTemplate")      # ${26}
     argList+=("$SessionList")  # ${27}
-
+    
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
@@ -360,6 +360,7 @@ if ((doProcessing)); then
     argList+=("$AtlasSpaceT1wImage")        # ${6}
     argList+=("$T1wRestoreImage")           # ${7}  Called T1wImage in CreateRibbon.sh
     argList+=("$FreeSurferLabels")          # ${8}
+    
     "$PipelineScripts"/CreateRibbon.sh "${argList[@]}"
 
     log_Msg "Myelin Mapping"
@@ -406,8 +407,31 @@ if ((doProcessing)); then
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
     argList+=("$IsLongitudinal")
+    
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
+
+    # Longitudinal mode only:
+    # copy template medial wall ROI's created at the previous step to all timepoints.
+    # This works as follows: 
+    # 1. in the TIMEPOINT_STAGE1, the ROI creation is skipped, and ribbon and myelin map creation is not done
+    # 2. in the TEMPLATE stage, the ROI's and myelin maps for the template are created
+    # 3. then, the code below is executed to copy the template ROI's to the timepoints 
+    # 4. TIMEPOINT_STAGE2 is executed (only post-MSMSulc surface creation code is executed in FreeSurfer2CaretConvertAndRegisterNonlinear.sh), 
+    # surfaces and myelin maps are created using the template ROI's.
+    
+    if [ "$LongitudinalMode" == "TEMPLATE" ]; then
+        IFS=@ read -r -a Sessions <<< "$SessionList"
+        NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
+        for tp in ${Sessions[@]}; do
+            NativeFolderTP="$tp.long.$LongitudinalTemplate"
+            mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
+            for Hemisphere in L R; do
+                cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+                "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+            done
+        done
+    fi
 
 if ((doQC)); then
   log_Msg "Generating structural QC scene and snapshots"
@@ -421,4 +445,3 @@ verbose_green_echo "---> Finished ${log_ToolName}"
 verbose_echo " "
 
 log_Msg "Completed!"
-
