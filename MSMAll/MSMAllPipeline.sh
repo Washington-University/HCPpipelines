@@ -102,7 +102,7 @@ opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal
 opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longitudinal timepoints" ""
 opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
 opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt]' "fmri_list.txt"
-
+opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_2_d40_WRN"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -151,7 +151,7 @@ IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
 if (( IsLongitudinal ));  then 
     
-    if [[ -z "$SubjectLong" || -z "$Sessions" || -z "TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then 
+    if [[ -z "$SubjectLong" || -z "$Sessions" || -z "$TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then 
         log_Err_Abort "--subject-long, --sessions-long, --template-long are mandatory in longitudinal mode"
     fi
     
@@ -177,7 +177,7 @@ if (( IsLongitudinal ));  then
     average_cmd="${CARET7DIR}/wb_command -cifti-average \
         $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap"
         
-    for tp in ${SessionsLong[@]}; do
+    for tp in "${SessionsLong[@]}"; do
         SessionLong=$tp.long.$TemplateLong                      #longitudinal session directory name
         average_cmd="$average_cmd -cifti $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap"
             
@@ -191,7 +191,7 @@ if (( IsLongitudinal ));  then
         # for the run to be unique within subject.
         # template-based fMRI naming pattern, assuming original run <fMRIRun> label is: <Session>_<fMRIRun>, 
         # where <Session> is longitudinal session label. It is expected to be named <Subject>_<Visit_ID>.
-        for fmriName in ${PossibleRuns[@]}; do
+        for fmriName in "${PossibleRuns[@]}"; do
             if [ -d "$ResultsTPLongDir/$fmriName" ]; then            
                 TemplateRun=${tp}_${fmriName}
                 echo "found $TemplateRun, copying"
@@ -273,7 +273,7 @@ else #cross-sectional run
         for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
         do
             fmriName="${mrNamesArray[$index]}"
-            NumTPS=`${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Session}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps`
+            NumTPS=$(${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Session}/MNINonLinear/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps)
             curTimepoints=$((curTimepoints + NumTPS))
             runSplits[$((index + 1))]="$curTimepoints"
             for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
@@ -353,13 +353,10 @@ log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
 #copy the registration result sphere from template back to timepoints.    
 if (( IsLongitudinal )); then
-    
-    for tp in ${SessionsLong[@]}; do
-        cp $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.SphericalDistortion.native.dscalar.nii \
-            $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.SphericalDistortion.native.dscalar.nii
+    for tp in "${SessionsLong[@]}"; do
         for Hemisphere in L R; do
             SessionLong=$tp.long.$TemplateLong
-            cp $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$Hemisphere.sphere.${OutputRegName}_2_d40_WRN.native.surf.gii $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$Hemisphere.sphere.${OutputRegName}_2_d40_WRN.native.surf.gii
+            cp "$StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii" "$StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii"
         done
     done
 fi
