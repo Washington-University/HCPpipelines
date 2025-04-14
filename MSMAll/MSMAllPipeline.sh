@@ -153,9 +153,6 @@ if (( IsLongitudinal ));  then
     
     if [[ -z "$SubjectLong" || -z "$Sessions" || -z "TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then 
         log_Err_Abort "--subject-long, --sessions-long, --template-long are mandatory in longitudinal mode"
-    fi            
-    if [ "$OutputRegName" != "MSMAll_InitalReg" ]; then 
-        log_Err_Abort "Currently, only MSMAll_InitialReg is supported as output reg name in longitudinal mode"
     fi
     
     IFS=@ read -r -a SessionsLong <<< "${Sessions}"
