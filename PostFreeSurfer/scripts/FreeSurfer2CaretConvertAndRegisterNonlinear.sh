@@ -499,7 +499,7 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} BARYCENTRIC "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -largest
     
     # for longitudinal runs, medial wall ROIs are only created in template mode, and then copied over to timepoints in PostFreeSurferPipeline.sh
-    if [ "$LongitudinalMode" == "NONE" -o "$LongitudinalMode" == "TEMPLATE" ]; then 
+    if [[ "$LongitudinalMode" == "NONE" || "$LongitudinalMode" == "TEMPLATE" ]]; then 
 	    ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
     fi
 
