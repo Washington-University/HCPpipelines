@@ -151,7 +151,7 @@ IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
 if (( IsLongitudinal ));  then 
     
-    if [ -z "$SubjectLong" -o -z "$Sessions" -o -z "TemplateLong" -o -z "${mrfixNamesToUse}" -o -z "$mrfixConcatName" ]; then 
+    if [[ -z "$SubjectLong" || -z "$Sessions" || -z "TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then 
         log_Err_Abort "--subject-long, --sessions-long, --template-long are mandatory in longitudinal mode"
     fi            
     if [ "$OutputRegName" != "MSMAll_InitalReg" ]; then 
