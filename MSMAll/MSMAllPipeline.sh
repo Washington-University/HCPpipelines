@@ -218,10 +218,10 @@ if (( IsLongitudinal ));  then
     # MNINonLinear/Results/. Multiple configuration files may be used for the same 
     # subject with different fMRI combinations or longitudinal templates.
     conf_file="$ResultsTemplateDir/$OutConfig"
-    echo "${TemplateRunsStr/#@/}" > "$conf_file"
-    echo "${TimepointsStr/#@/}" >> "$conf_file"
-    echo "${fMRIRunsStr/#@/}" >> "$conf_file"
-    echo "${ConcatNamesStr/#@/}" >> "$conf_file"
+    echo "${TemplateRunsStr#@}" > "$conf_file"
+    echo "${TimepointsStr#@}" >> "$conf_file"
+    echo "${fMRIRunsStr#@}" >> "$conf_file"
+    echo "${ConcatNamesStr#@}" >> "$conf_file"
 
     # average myelin maps from all timepoints.
     "${average_cmd[@]}"
