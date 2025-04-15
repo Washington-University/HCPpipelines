@@ -174,12 +174,12 @@ if (( IsLongitudinal ));  then
     TemplateSession=$SubjectLong.long.$TemplateLong             #template directory name
     NativeMyelinMap="MyelinMap.native.dscalar.nii"    
     # Build the average myelin map command.
-    average_cmd="${CARET7DIR}/wb_command -cifti-average \
-        $StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap"
+    average_cmd=("${CARET7DIR}/wb_command" -cifti-average \
+        "$StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap")
         
     for tp in "${SessionsLong[@]}"; do
         SessionLong=$tp.long.$TemplateLong                      #longitudinal session directory name
-        average_cmd="$average_cmd -cifti $StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap"
+        average_cmd+=(-cifti "$StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap")
             
         echo "searching $SessionLong for eligible fMRI runs"
         if [ ! -d "$StudyFolder/$SessionLong/MNINonLinear/Results" ]; then 
@@ -195,7 +195,7 @@ if (( IsLongitudinal ));  then
             if [ -d "$ResultsTPLongDir/$fmriName" ]; then            
                 TemplateRun=${tp}_${fmriName}
                 echo "found $TemplateRun, copying"
-                mkdir -p $ResultsTemplateDir/$TemplateRun
+                mkdir -p "$ResultsTemplateDir/$TemplateRun"
                 #bulk copy
                 cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
                 pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null                
@@ -222,7 +222,7 @@ if (( IsLongitudinal ));  then
     echo "${ConcatNamesStr/#@/}" >> "$conf_file"
 
     # average myelin maps from all timepoints.
-    ${average_cmd}
+    "${average_cmd[@]}"
 
     # variance normalize and concatenate individual runs
     # of all timepoints in template folder. 
