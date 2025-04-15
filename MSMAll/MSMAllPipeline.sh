@@ -200,8 +200,10 @@ if (( IsLongitudinal ));  then
                 cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
                 pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null                
                 for fd in ${fmriName}_* ${fmriName}.*; do
-                    [ -e "$fd" ] || continue
-                    mv "$fd" "${fd//$fmriName/$TemplateRun}"
+                    if [[ -e "$fd" ]]
+                    then
+                        mv "$fd" "${fd//$fmriName/$TemplateRun}"
+                    fi
                 done
                 popd &> /dev/null            
                 TemplateRunsStr="${TemplateRunsStr}@$TemplateRun"
