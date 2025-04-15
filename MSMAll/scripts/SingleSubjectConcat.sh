@@ -28,7 +28,8 @@ opts_AddOptional '--start-frame' 'StartFrame' 'integer' "the starting frame to c
 opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose from each fMRI run (inclusive), defaults to '' which preserves the ending frame of every fMRI run from --fmri-names-list" ''
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal mode [FALSE]" "FALSE"
 opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal mode" ""
-opts_AddOptional '--fmri-config-long' 'fMRIConfigLong' 'file_name' "longitudinal runs configuration file [fmri_list.txt]" "fmri_list.txt"
+opts_AddOptional '--fmri-config-long' 'fMRIConfigLong' 'file_name' "longitudinal runs configuration file [fmri_list.txt].
+Only supply file name without path. The file is expected to be in [Longitudinal template folder]/MNINonLinear/Results" "fmri_list.txt"
 opts_AddOptional '--template-long' 'TemplateLong' 'template ID' "Longitudinal template ID" ""
 
 opts_ParseArguments "$@"

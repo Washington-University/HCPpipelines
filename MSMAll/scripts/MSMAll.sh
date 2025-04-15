@@ -54,10 +54,6 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
-opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'Longitudinal mode' "FALSE"
-opts_AddOptional '--longitudinal-sessions' 'SessionsLong' '@ separated list' 'List of @ separated longitudinal sessions' ""
-opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template label' 'Longitudinal template ID' ""
-opts_AddOptional '--longitudinal-subject' 'SubjectLong' 'Subject ID' 'Subject ID for longtitudinal sessions' ""
 
 
 opts_ParseArguments "$@"

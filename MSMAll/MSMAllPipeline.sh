@@ -101,7 +101,8 @@ opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudi
 opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal mode" ""
 opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longitudinal timepoints" ""
 opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
-opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt]' "fmri_list.txt"
+opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt].
+Specify file name only, without path. The file will be stored under [Session]/MNINonLinear/Results folder.' "fmri_list.txt"
 opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_2_d40_WRN"
 opts_ParseArguments "$@"
 
