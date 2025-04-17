@@ -62,7 +62,7 @@ get_batch_options "$@"
 
 #Location of Subject folders (named by subjectID)
 StudyFolder="${HOME}/data/Pipelines_ExampleData"
-EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline-long-msmall.sh" #Pipeline environment script
+EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 #list longitudinal template IDs, one per subject
 Templates=(HCA6002236_V1_V2_V3 HCA6002237_V1_V2_V3)

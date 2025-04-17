@@ -67,14 +67,14 @@ function identify_timepoints
 
 get_batch_options "$@"
 
-StudyFolder="<MyStudyPath>" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/data/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 #Space delimited list of subject IDs
 Subjlist=(HCA6002236 HCA6002237 HCA6002238) 
-EnvironmentScript="${HCPPIPEDIR}/Examples/Scripts/SetUpHCPPipeline.sh"
+EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh"
 #list of possible visits. Visit folder is expected to be named <Subject>_<Visit>
 PossibleVisits="V1_MR V2_MR V3_MR" 
 #Space delimited list of longitudinal template ID's, one per subject.
-Templates=(HCA6002236_V1_V2_V3 HCA6002237_V1_V2 HCA6002238_V1_V2_V3) 
+Templates=(HCA6002236_V1_V2_V3 HCA6002237_V1_V2 HCA6002238_V1_V2_V3)
 
 #Pipeline environment script
 
@@ -99,7 +99,8 @@ echo "$@"
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE="hcp_priority.q"
+QUEUE="short.q"
+#QUEUE="hcp_priority.q"
 
 ########################################## INPUTS ########################################## 
 
@@ -124,6 +125,8 @@ mrfixConcatName="fMRI_CONCAT_ALL"
 mrfixNamesToUse="rfMRI_REST1_AP@rfMRI_REST1_PA@rfMRI_REST2_AP@rfMRI_REST2_PA"
 # FIX output concat name for this new MSMAll run of MR FIX
 OutfMRIName="rfMRI_REST"
+# Reg name file used by DeDriftAndResample
+DeDriftRegName="MSMAll_InitalReg_2_d40_WRN"
 
 #Use HighPass = 2000 for single-run FIX data, HighPass = 0 for MR FIX data
 HighPass="0"
@@ -173,5 +176,7 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
         --is-longitudinal="TRUE" \
         --subject-long="$Subject" \
         --sessions-long="$Timepoints" \
-        --template-long="$TemplateLong"
+        --template-long="$TemplateLong" \
+	--dedrift-reg-name="$DeDriftRegName"
+
 done

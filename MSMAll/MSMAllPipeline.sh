@@ -103,7 +103,7 @@ opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longit
 opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
 opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt].
 Specify file name only, without path. The file will be stored under [Session]/MNINonLinear/Results folder.' "fmri_list.txt"
-opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_2_d40_WRN"
+opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_InitalReg_2_d40_WRN"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -230,7 +230,7 @@ if (( IsLongitudinal ));  then
     # variance normalize and concatenate individual runs
     # of all timepoints in template folder. 
     # This script reads the $conf_file.
-    "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
+    "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh
         --path="${StudyFolder}" \
         --subject="$SubjectLong.long.$TemplateLong" \
         --fmri-names-list="${TemplateRunsStr/#@/}" \
@@ -242,8 +242,8 @@ if (( IsLongitudinal ));  then
         --is-longitudinal="TRUE" \
         --fmri-config-long="$OutConfig" \
         --template-long="$TemplateLong" \
-        --subject-long="$SubjectLong"            
-    Session=$TemplateSession    
+        --subject-long="$SubjectLong"
+    Session=$TemplateSession
     # log_Msg "Running MSM on longitudinal timepoints"
     
 else #cross-sectional run
@@ -326,7 +326,7 @@ fMRIProcSTRING+="${output_proc_string}"
 log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
 # run MSMAll
-"${HCPPIPEDIR}"/MSMAll/scripts/"${ModuleName}" \
+"${HCPPIPEDIR}"/MSMAll/scripts/"${ModuleName}"
     --path="${StudyFolder}" \
     --session="${Session}" \
     --high-res-mesh="${HighResMesh}" \
@@ -354,12 +354,42 @@ log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
     --use-ind-mean="${UseIndMean}" \
     --matlab-run-mode="${MatlabRunMode}"
 
-#copy the registration result sphere from template back to timepoints.    
+# 1. copy the registration result sphere from template back to timepoints.
+# 2. generate some extra files for timepoints. Those files (as of 4/2025) are created by MSMAll.sh in cross-sectional mode.
 if (( IsLongitudinal )); then
     for tp in "${SessionsLong[@]}"; do
+        SessionLong=$tp.long.$TemplateLong
+        NativeFolderTP="$StudyFolder"/"$SessionLong"/MNINonLinear/Native
+        AtlasFolderTP="$StudyFolder"/"$SessionLong"/MNINonLinear
+        DownsampleFolderTP="$AtlasFolderTP/fsaverage_LR${LowResMesh}k"
+
         for Hemisphere in L R; do
-            SessionLong=$tp.long.$TemplateLong
+            # Copy the reg sphere
             cp "$StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii" "$StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii"
+
+            ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii
+            ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
+            
+            ${CARET7DIR}/wb_command -metric-math "ln(sphere / midthickness) / ln(2)" ${NativeFolderTP}/${SessionLong}.${Hemisphere}.SphericalDistortion.native.shape.gii -var midthickness ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii -var sphere ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
+            rm ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
+        done
+
+        # generate some extra files for time points. Those files (as of 4/2025) are created by MSMAll.sh in cross-sectional mode
+        ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii -left-metric ${NativeFolderTP}/${SessionLong}.L.SphericalDistortion.native.shape.gii -roi-left ${NativeFolderTP}/${SessionLong}.L.atlasroi.native.shape.gii -right-metric ${NativeFolderTP}/${SessionLong}.R.SphericalDistortion.native.shape.gii -roi-right ${NativeFolderTP}/${SessionLong}.R.atlasroi.native.shape.gii
+
+        ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii ROW ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii
+        ${CARET7DIR}/wb_command -set-map-name ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii 1 ${SessionLong}_SphericalDistortion
+        ${CARET7DIR}/wb_command -cifti-palette ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii MODE_USER_SCALE ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
+        rm ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii  
+
+        for Mesh in ${HighResMesh} ${LowResMesh} ; do
+            if [[ $Mesh == ${HighResMesh} ]] ; then
+                Folder=${AtlasFolderTP}
+            elif [[ $Mesh == ${LowResMesh} ]] ; then
+                Folder=${DownsampleFolderTP}
+            fi
+            Map=SphericalDistortion
+            ${CARET7DIR}/wb_command -cifti-resample ${NativeFolderTP}/${SessionLong}.${Map}.native.dscalar.nii COLUMN ${Folder}/${SessionLong}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${SessionLong}.${Map}_${DeDriftRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolderTP}/${SessionLong}.L.sphere.${DeDriftRegName}.native.surf.gii ${Folder}/${SessionLong}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolderTP}/${SessionLong}.L.midthickness.native.surf.gii ${Folder}/${SessionLong}.L.midthickness.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolderTP}/${SessionLong}.R.sphere.${DeDriftRegName}.native.surf.gii ${Folder}/${SessionLong}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolderTP}/${SessionLong}.R.midthickness.native.surf.gii ${Folder}/${SessionLong}.R.midthickness.${Mesh}k_fs_LR.surf.gii
         done
     done
 fi
