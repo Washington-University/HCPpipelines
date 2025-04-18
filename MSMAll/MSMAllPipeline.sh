@@ -232,7 +232,7 @@ if (( IsLongitudinal ));  then
     # variance normalize and concatenate individual rsFMRI runs
     # of all timepoints in template folder. 
     # This script reads the $conf_file.
-    "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh
+    "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
         --path="${StudyFolder}" \
         --subject="$SubjectLong.long.$TemplateLong" \
         --fmri-names-list="${TemplateRunsStr/#@/}" \
