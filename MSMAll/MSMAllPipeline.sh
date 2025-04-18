@@ -149,6 +149,8 @@ output_proc_string="_vn" #To VN only to indicate that we did not revert the bias
 log_Msg "output_proc_string: ${output_proc_string}"
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+NumIterations=$(echo "${Iterations}" | wc -w)
+DeDriftRegName=${OutputRegName}_${NumIterations}_d${ICAdim}_${Method}
 
 if (( IsLongitudinal ));  then 
     
@@ -227,7 +229,7 @@ if (( IsLongitudinal ));  then
     # average myelin maps from all timepoints.
     "${average_cmd[@]}"
 
-    # variance normalize and concatenate individual runs
+    # variance normalize and concatenate individual rsFMRI runs
     # of all timepoints in template folder. 
     # This script reads the $conf_file.
     "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh
@@ -326,7 +328,7 @@ fMRIProcSTRING+="${output_proc_string}"
 log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 
 # run MSMAll
-"${HCPPIPEDIR}"/MSMAll/scripts/"${ModuleName}"
+"${HCPPIPEDIR}"/MSMAll/scripts/"${ModuleName}" \
     --path="${StudyFolder}" \
     --session="${Session}" \
     --high-res-mesh="${HighResMesh}" \

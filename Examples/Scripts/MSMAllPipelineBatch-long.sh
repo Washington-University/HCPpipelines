@@ -125,8 +125,6 @@ mrfixConcatName="fMRI_CONCAT_ALL"
 mrfixNamesToUse="rfMRI_REST1_AP@rfMRI_REST1_PA@rfMRI_REST2_AP@rfMRI_REST2_PA"
 # FIX output concat name for this new MSMAll run of MR FIX
 OutfMRIName="rfMRI_REST"
-# Reg name file used by DeDriftAndResample
-DeDriftRegName="MSMAll_InitalReg_2_d40_WRN"
 
 #Use HighPass = 2000 for single-run FIX data, HighPass = 0 for MR FIX data
 HighPass="0"
@@ -134,7 +132,7 @@ HighPass="0"
 fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-RegName="MSMAll_InitalReg"
+RegName="MSMAll_InitialReg"
 HighResMesh="164"
 LowResMesh="32"
 InRegName="MSMSulc"
@@ -176,7 +174,6 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
         --is-longitudinal="TRUE" \
         --subject-long="$Subject" \
         --sessions-long="$Timepoints" \
-        --template-long="$TemplateLong" \
-	--dedrift-reg-name="$DeDriftRegName"
+        --template-long="$TemplateLong"
 
 done
