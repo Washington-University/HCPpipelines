@@ -26,7 +26,7 @@ opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to gi
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--input-pca-registration-name' 'InPCARegName' 'MSMAll' "the registration string corresponding to the input PCA files, e.g. 'MSMSulc'"
 opts_AddMandatory '--input-registration-name' 'InRegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMSulc'"
-opts_AddMandatory '--registration-name-stem' 'RegNameStem' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg'"
+opts_AddMandatory '--registration-name-stem' 'RegNameStem' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitialReg'"
 opts_AddMandatory '--rsn-target-file' 'RSNTargetFileOrig' 'string' "rsn template file, an absolute path"
 opts_AddMandatory '--rsn-cost-weights' 'RSNCostWeightsOrig' 'string' "rsn weights file, an absolute path"
 opts_AddMandatory '--myelin-target-file' 'MyelinTargetFile' 'string' "myelin map target, an absolute path"

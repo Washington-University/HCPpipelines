@@ -61,7 +61,7 @@ opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that w
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--msm-all-templates' 'MSMAllTemplates' 'path' "path to directory containing MSM All template files, e.g. 'YourFolder/global/templates/MSMAll'"
 opts_AddMandatory '--input-registration-name' 'InputRegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMSulc'"
-opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitalReg'"
+opts_AddMandatory '--output-registration-name' 'OutputRegName' 'MSMAll' "the registration string corresponding to the output files, e.g. 'MSMAll_InitialReg'"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), like '32' for 32k_fs_LR"
 opts_AddMandatory '--myelin-target-file' 'MyelinTarget' 'string' "myelin map target file, absolute folder, e.g. 'YourFolder/global/templates/MSMAll/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii'"
@@ -103,7 +103,7 @@ opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longit
 opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
 opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt].
 Specify file name only, without path. The file will be stored under [Session]/MNINonLinear/Results folder.' "fmri_list.txt"
-opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_InitalReg_2_d40_WRN"
+opts_AddOptional '--dedrift-reg-name' 'DeDriftRegName' 'MSMAll_2_d40_WRN' 'Name part for [Session].[L|R].sphere.[DeDriftRegName].native.surf.gii to be copied to timepoints, to be used in DeDriftAndResample' "MSMAll_InitialReg_2_d40_WRN"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))

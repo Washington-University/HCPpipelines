@@ -92,7 +92,7 @@ source "$EnvironmentScript"
 HighResMesh="164"
 LowResMesh="32"
 #Do not use RegName from MSMAllPipelineBatch.sh
-RegName="MSMAll_InitalReg_2_d40_WRN"
+RegName="MSMAll_InitialReg_2_d40_WRN"
 DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 ConcatRegName="MSMAll"
 #standard maps to resample
@@ -119,7 +119,7 @@ MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #Subjlist=(100307 101006) #List of subject IDs
 #HighResMesh="164"
 #LowResMesh="32"
-#RegName="MSMAll_InitalReg_2_d40_WRN"
+#RegName="MSMAll_InitialReg_2_d40_WRN"
 #DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 #ConcatRegName="MSMAll"
 #Maps=(sulc curvature corrThickness thickness)
