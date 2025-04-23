@@ -382,16 +382,6 @@ if (( IsLongitudinal )); then
         ${CARET7DIR}/wb_command -set-map-name ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii 1 ${SessionLong}_SphericalDistortion
         ${CARET7DIR}/wb_command -cifti-palette ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii MODE_USER_SCALE ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
         rm ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii  
-
-        for Mesh in ${HighResMesh} ${LowResMesh} ; do
-            if [[ $Mesh == ${HighResMesh} ]] ; then
-                Folder=${AtlasFolderTP}
-            elif [[ $Mesh == ${LowResMesh} ]] ; then
-                Folder=${DownsampleFolderTP}
-            fi
-            Map=SphericalDistortion
-            ${CARET7DIR}/wb_command -cifti-resample ${NativeFolderTP}/${SessionLong}.${Map}.native.dscalar.nii COLUMN ${Folder}/${SessionLong}.MyelinMap_BC.${Mesh}k_fs_LR.dscalar.nii COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL ${Folder}/${SessionLong}.${Map}_${DeDriftRegName}.${Mesh}k_fs_LR.dscalar.nii -surface-postdilate 30 -left-spheres ${NativeFolderTP}/${SessionLong}.L.sphere.${DeDriftRegName}.native.surf.gii ${Folder}/${SessionLong}.L.sphere.${Mesh}k_fs_LR.surf.gii -left-area-surfs ${NativeFolderTP}/${SessionLong}.L.midthickness.native.surf.gii ${Folder}/${SessionLong}.L.midthickness.${Mesh}k_fs_LR.surf.gii -right-spheres ${NativeFolderTP}/${SessionLong}.R.sphere.${DeDriftRegName}.native.surf.gii ${Folder}/${SessionLong}.R.sphere.${Mesh}k_fs_LR.surf.gii -right-area-surfs ${NativeFolderTP}/${SessionLong}.R.midthickness.native.surf.gii ${Folder}/${SessionLong}.R.midthickness.${Mesh}k_fs_LR.surf.gii
-        done
     done
 fi
 log_Msg "Completing main functionality"
