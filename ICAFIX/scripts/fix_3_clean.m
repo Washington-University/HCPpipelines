@@ -73,7 +73,9 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   %     path(path,CIFTI);
   %   end
     BO=ciftiopen('Atlas.dtseries.nii',WBC);
-    meanBO=mean(BO.cdata,2); 
+    if ~(isfloat(hp) && hp==-1)
+      meanBO=mean(BO.cdata,2); 
+    end
     if ~isempty(regexp(hp,'^pd\d+$','once')) % polynomial detrending
       BO.cdata=detrend(BO.cdata',str2double(hp(3:end)))';  BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
     else
