@@ -11,10 +11,12 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
 %
 % doVol = 1 (default) or 0 - When doVol == 0, do CIFTI processing only (do not process volumetric data)
 % 
-% hp determines what highpass filtering had been applied to the data (and so will get applied to the motion confound parameters)
-% hp=-1 no highpass
-% hp=0 linear trend removal
-% hp>0 the fullwidth (2*sigma) of the highpass, in seconds (not TRs)
+% hp (pass as string) determines what highpass filtering had been applied to the data (and so will get applied to the motion confound parameters)
+% ~isempty(regexp(hp,'^pd\d+$','once')): e.g., 'pd2' polynomial detrending of order \d+ (e.g., 2)
+% strcmp(hp,'-1'): no highpass
+% strcmp(hp,'0'): linear trend removal
+% str2double(hp)>0: the fullwidth (2*sigma) of the highpass, in seconds (not TRs)
+
 %
 % modified from fix_3_clean.m in fix1.06.15
 
@@ -22,7 +24,6 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   if (isdeployed)
       aggressive = str2double(aggressive);
       domot = str2double(domot);
-      hp = str2double(hp);
   end
   
   %% %%  read set of bad components
@@ -56,7 +57,7 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   %% %% report parameters
   fprintf('aggressive = %d\n',aggressive)
   fprintf('domot = %d\n',domot)
-  fprintf('hp = %f\n',hp)
+  fprintf('hp = %s\n',hp)
   fprintf('DOvol = %d\n',DOvol)
   
   %% %%  find TR of data
@@ -72,13 +73,18 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   %     path(path,CIFTI);
   %   end
     BO=ciftiopen('Atlas.dtseries.nii',WBC);
-    if hp==0
-      meanBO=mean(BO.cdata,2);
+    meanBO=mean(BO.cdata,2); 
+    if ~isempty(regexp(hp,'^pd\d+$','once')) % polynomial detrending
+      BO.cdata=detrend(BO.cdata',str2double(hp(3:end)))';  BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
+    else
+      hp = str2double(hp);
+    end
+    if isfloat(hp) && hp==0
       BO.cdata=detrend(BO.cdata')';  BO.cdata=BO.cdata+repmat(meanBO,1,size(BO.cdata,2));
     end
-    if hp>0
+    if isfloat(hp) && hp>0
       BOdimX=size(BO.cdata,1);  BOdimZnew=ceil(BOdimX/100);  BOdimT=size(BO.cdata,2);
-      meanBO=mean(BO.cdata,2);  BO.cdata=BO.cdata-repmat(meanBO,1,size(BO.cdata,2));
+      BO.cdata=BO.cdata-repmat(meanBO,1,size(BO.cdata,2));
       save_avw(reshape([BO.cdata ; zeros(100*BOdimZnew-BOdimX,BOdimT)],10,10,BOdimZnew,BOdimT),'Atlas','f',[1 1 1 TR]);
       BO.cdata = [];
       call_fsl(sprintf('fslmaths Atlas -bptf %f -1 Atlas',0.5*hp/TR));
@@ -227,10 +233,15 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
       %confounds=functionnormalise(confounds(:,std(confounds)>0.000001)); % remove empty columns
       confounds=functionnormalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
       confounds=functionnormalise([confounds confounds.*confounds]);
-      if hp==0
+      if ~isempty(regexp(hp,'^pd\d+$','once')) % polynomial detrending
+        confounds=detrend(confounds,str2double(hp(3:end)));
+      else
+        hp = str2double(hp);
+      end
+      if isfloat(hp) && hp==0
         confounds=detrend(confounds);
       end
-      if hp>0
+      if isfloat(hp) && hp>0
         save_avw(reshape(confounds',size(confounds,2),1,1,size(confounds,1)),'mc/prefiltered_func_data_mcf_conf','f',[1 1 1 TR]);
         call_fsl(sprintf('fslmaths mc/prefiltered_func_data_mcf_conf -bptf %f -1 mc/prefiltered_func_data_mcf_conf_hp',0.5*hp/TR));
         confounds=functionnormalise(reshape(read_avw('mc/prefiltered_func_data_mcf_conf_hp'),size(confounds,2),size(confounds,1))');
