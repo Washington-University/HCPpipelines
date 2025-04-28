@@ -160,8 +160,7 @@ for Modality in T1w T2w T1wT2w ; do
             elif [ ${Hemisphere} = "R" ] ; then
               Expression="Var + 8"
             fi
-            #TODO: Suppress commandline output of label to metric conversion
-            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Label}.label.gii
+            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Label}.label.gii |& grep -v NIFTI_INTENT_LABEL
             ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
           elif [ ${Structure} = "dentate" ] ; then
             if [ ${Hemisphere} = "L" ] ; then
@@ -169,8 +168,7 @@ for Modality in T1w T2w T1wT2w ; do
             elif [ ${Hemisphere} = "R" ] ; then
               Expression="6 + 8"
             fi
-            #TODO: Suppress commandline output of label to metric conversion
-            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii
+            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii |& grep -v NIFTI_INTENT_LABEL
             ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
           fi
           ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${HemiStructure}
