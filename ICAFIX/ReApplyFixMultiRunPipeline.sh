@@ -727,7 +727,7 @@ case ${MatlabMode} in
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 
-		matlab_code="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
+		matlab_code="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},'${AlreadyHP}','${Caret7_Command}',${DoVol});"
 		
 		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 		log_Msg "${matlab_code}"
