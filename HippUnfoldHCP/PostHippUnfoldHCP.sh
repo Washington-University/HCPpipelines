@@ -59,15 +59,15 @@ function PALETTE {
 }
 
 for Modality in T1w T2w T1wT2w ; do
-  for Mesh in 0p5mm 1mm 2mm ; do #TODO: Native meshes not yet available from HippUnfold: "Native" Folder Name "native" Mesh Name
+  for Mesh in native 512 2k 8k 18k ; do #Native:??? 512=2mm 2k=1mm, 8k=0.5mm 18k=0.3mm #Was: 0p5mm 1mm 2mm
 
-    PhysicalHippUnfoldFolderOut="$PhysicalHippUnfoldDIR"/"$Modality"_hippunfold
-    AtlasHippUnfoldolderOut="$AtlasHippUnfoldDIR"/"$Modality"_hippunfold
+    PhysicalHippUnfoldFolderOut="$PhysicalHippUnfoldDIR"/"$Modality"
+    AtlasHippUnfoldolderOut="$AtlasHippUnfoldDIR"/"$Modality"
 
     PhysicalHippUnfoldFolder="$PhysicalHippUnfoldFolderOut/$Mesh"
     AtlasHippUnfoldFolder="$AtlasHippUnfoldolderOut/$Mesh"
     
-    mkdir -p "$PhysicalHippUnfoldFolderOut" "$AtlasHippUnfoldFolder"
+    mkdir -p "$PhysicalHippUnfoldFolder" "$AtlasHippUnfoldFolder"
 
     log_Msg "Processing $Modality $Mesh"
     
@@ -75,7 +75,7 @@ for Modality in T1w T2w T1wT2w ; do
     Space="$Modality"
     if [[ "$Modality" == "T1wT2w" ]]
     then
-      Space="T1w"
+      Space="T2w"
     fi
 
     Structures="dentate hipp"
@@ -84,13 +84,17 @@ for Modality in T1w T2w T1wT2w ; do
     Labels="atlas-multihist7_subfields@HippocampalSubfields"
 
     for Structure in $Structures ; do
+      for Hemisphere in L R ; do
+        #surfacea no longer computed by HippUnfold
+        ${CARET7DIR}/wb_command -surface-vertex-areas $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_midthickness.surf.gii $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_surfarea.shape.gii
+      done
       if [ ${Structure} = "dentate" ] ; then
         Left="HIPPOCAMPUS_DENTATE_LEFT"
         Right="HIPPOCAMPUS_DENTATE_RIGHT"
-        for Hemisphere in L R ; do
-          #No dentate thickness is computed by HippUnfold
-          ${CARET7DIR}/wb_command -surface-to-surface-3d-distance $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_inner.surf.gii $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_outer.surf.gii $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_thickness.shape.gii
-        done
+        #for Hemisphere in L R ; do
+          #Already exists #Was: No dentate thickness is computed by HippUnfold
+          #${CARET7DIR}/wb_command -surface-to-surface-3d-distance $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_inner.surf.gii $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_outer.surf.gii $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_thickness.shape.gii
+        #done
       elif [ ${Structure} = "hipp" ] ; then
         Left="HIPPOCAMPUS_LEFT"
         Right="HIPPOCAMPUS_RIGHT"
@@ -134,7 +138,7 @@ for Modality in T1w T2w T1wT2w ; do
           Name=`echo $Scalar | cut -d "@" -f 3`
           Color=`echo $Scalar | cut -d "@" -f 2`
           Scalar=`echo $Scalar | cut -d "@" -f 1`
-          cp $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+          cp $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
           ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${HemiStructure}
           PALETTE ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${Color} metric ${CARET7DIR}/wb_command
           ${CARET7DIR}/wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii -map 1 "${Subject}_${Name}"
@@ -156,7 +160,8 @@ for Modality in T1w T2w T1wT2w ; do
             elif [ ${Hemisphere} = "R" ] ; then
               Expression="Var + 8"
             fi
-            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_${Label}.label.gii
+            #TODO: Suppress commandline output of label to metric conversion
+            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Label}.label.gii
             ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
           elif [ ${Structure} = "dentate" ] ; then
             if [ ${Hemisphere} = "L" ] ; then
@@ -164,7 +169,8 @@ for Modality in T1w T2w T1wT2w ; do
             elif [ ${Hemisphere} = "R" ] ; then
               Expression="6 + 8"
             fi
-            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii
+            #TODO: Suppress commandline output of label to metric conversion
+            ${CARET7DIR}/wb_command -metric-math "${Expression}" ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii -var Var $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_${Scalar}.shape.gii
             ${CARET7DIR}/wb_command -metric-label-import ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.shape.gii $HCPPIPEDIR/global/config/HippUnfoldLut.txt ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii
           fi
           ${CARET7DIR}/wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Label}.${Mesh}.label.gii ${HemiStructure}
@@ -173,7 +179,7 @@ for Modality in T1w T2w T1wT2w ; do
         done
         
         #NIFTI Hemispheric Labels
-        cp $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_desc-subfields_atlas-multihist7_dseg.nii.gz ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.HippocampalSubfields.nii.gz
+        cp $PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_label-hipp_desc-subfields_atlas-multihist7_dseg.nii.gz ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.HippocampalSubfields.nii.gz
       done
     done
     
@@ -216,11 +222,14 @@ for Modality in T1w T2w T1wT2w ; do
     ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T1w_restore.nii.gz
     ${CARET7DIR}/wb_command -add-to-spec-file ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec INVALID ${AtlasFolder}/T2w_restore.nii.gz
 
-    #TODO: Merge Native Meshes, anything with 0pt5mm meshes?
-    if [ $Mesh = "2mm" ] ; then
+    #TODO: Anything with 8k and 18k meshes?
+    if [ $Mesh = "native" ] ; then
+      ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${T1wFolder}/Native/${Subject}.native.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.native.wb_spec #TODO: Don't Hardcode Cortex
+      ${CARET7DIR}/wb_command -spec-file-merge ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${AtlasFolder}/Native/${Subject}.native.wb.spec ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.native.wb_spec #TODO: Don't Hardcode Cortex
+    elif [ $Mesh = "512" ] ; then
       ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${T1wFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
       ${CARET7DIR}/wb_command -spec-file-merge ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${AtlasFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec #TODO: Don't Hardcode Cortex
-    elif [ $Mesh = "1mm" ] ; then
+    elif [ $Mesh = "2k" ] ; then
       ${CARET7DIR}/wb_command -spec-file-merge ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec ${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec #TODO: Don't Hardcode Cortex
     fi
   done
@@ -230,6 +239,65 @@ log_Msg "PostHippUnfold pipeline completed successfully for subject: $Subject"
 
 
 #HippUnfold Outputs Used By HCP
+
+#Version 2.0.0
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat:
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_label-hipp_desc-subfields_atlas-multihist7_dseg.nii.gz
+
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_desc-preproc_T1w.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_desc-preproc_T2w.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-L_space-cropT1w_desc-preproc_T1w.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-L_space-cropT1w_label-hipp_desc-subfields_atlas-multihist7_dseg.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-R_space-cropT1w_desc-preproc_T1w.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_hemi-R_space-cropT1w_label-hipp_desc-subfields_atlas-multihist7_dseg.nii.gz
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/anat/sub-${Subject}_space-cropT1w_desc-subfields_atlas-multihist7_volumes.tsv
+
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti:
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-dentate_curvature.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-dentate_gyrification.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-dentate_myelin.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-dentate_surfarea.dscalar.nii #Not created by default
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-dentate_thickness.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_atlas-multihist7_subfields.dlabel.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_curvature.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_gyrification.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_myelin.dscalar.nii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_surfarea.dscalar.nii #Not created by default
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/cifti/sub-${Subject}_den-${Mesh}_label-hipp_thickness.dscalar.nii
+
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric:
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-dentate_curvature.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-dentate_gyrification.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-dentate_myelin.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-dentate_surfarea.shape.gii #Not created by default
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-dentate_thickness.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-hipp_atlas-multihist7_subfields.label.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-hipp_curvature.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-hipp_gyrification.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-hipp_myelin.shape.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}}_den-${Mesh}_label-hipp_surfarea.shape.gii #Not created by default
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-hipp_thickness.shape.gii
+
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_dir-AP_hemi-${Hemisphere}_den-${Mesh}_label-dentate_desc-laplace_coords.shape.gii
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_dir-AP_hemi-${Hemisphere}_den-${Mesh}_label-hipp_desc-laplace_coords.shape.gii
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_dir-PD_hemi-${Hemisphere}_den-${Mesh}_label-dentate_desc-laplace_coords.shape.gii
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/metric/sub-${Subject}_dir-PD_hemi-${Hemisphere}_den-${Mesh}_label-hipp_desc-laplace_coords.shape.gii
+
+#/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/T1w/HippUnfold/T1w/hippunfold/sub-100307/surf:
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-dentate_inner.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-dentate_midthickness.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-dentate_outer.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-hipp_inner.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-hipp_midthickness.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-hipp_outer.surf.gii
+
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-unfold_den-${Mesh}_label-dentate_midthickness.surf.gii
+#$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-unfold_den-${Mesh}_label-hipp_midthickness.surf.gii
+
+##$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_den-${Mesh}_surfaces.spec
+
+
+#OLD
 #Scalars
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-dentate_curvature.shape.gii
 #$PhysicalHippUnfoldFolderOut/hippunfold/sub-${Subject}/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-dentate_gyrification.shape.gii
