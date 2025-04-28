@@ -54,12 +54,12 @@ fi
 
 mkdir -p "$HippUnfoldT1wFolder" "$HippUnfoldT2wFolder" "$HippUnfoldT1wT2wFolder"
 
-cp "$T1wImage" "$HippUnfoldT1wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-cp "$T2wImage" "$HippUnfoldT1wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-cp "$T1wImage" "$HippUnfoldT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-cp "$T2wImage" "$HippUnfoldT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-cp "$T1wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-cp "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -s "$T1wImage" "$HippUnfoldT1wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -s "$T2wImage" "$HippUnfoldT1wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -s "$T1wImage" "$HippUnfoldT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -s "$T2wImage" "$HippUnfoldT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -s "$T1wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -s "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
 
 log_Msg "Created folder structure under $HippUnfoldDIR and copied T1w and T2w images"
 log_Msg "Starting HippUnfold pipeline for subject: $Subject"
