@@ -1063,6 +1063,7 @@ sed '1d;$d' ${melview} > ${melview//.txt/.wb_annsub.csv} # create workbench form
 # running stages separately doesn't create .fix file with noise component indices, so create it from the melview file
 grep -h Noise "${melview}" | cut -d',' -f1 | tr '\n' ' ' > ${concatfmrihp}.ica/.fix
 
+AlreadyHP="-1" #Don't run highpass on concatenated data (since hp was done on the individual runs)
 case ${MatlabMode} in
     0)
         compiledScript="$HCPPIPEDIR"/ICAFIX/scripts/Compiled_fix_3_clean/run_fix_3_clean.sh
