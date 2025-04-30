@@ -148,20 +148,20 @@ output_proc_string="_vn" #To VN only to indicate that we did not revert the bias
 log_Msg "output_proc_string: ${output_proc_string}"
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
-NumIterations=$(echo "${Iterations}" | wc -w)
+NumIterations=$(echo "${IterationModes}" | sed s/_/ /g | wc -w)
 DeDriftRegName=${OutputRegName}_${NumIterations}_d${ICAdim}_${Method}
 
-if (( IsLongitudinal ));  then 
-    
-    if [[ -z "$SubjectLong" || -z "$Sessions" || -z "$TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then 
+if (( IsLongitudinal ));  then
+
+    if [[ -z "$SubjectLong" || -z "$Sessions" || -z "$TemplateLong" || -z "${mrfixNamesToUse}" || -z "$mrfixConcatName" ]]; then
         log_Err_Abort "--subject-long, --sessions-long, --template-long are mandatory in longitudinal mode"
     fi
-    
+
     IFS=@ read -r -a SessionsLong <<< "${Sessions}"
-    IFS=@ read -r -a PossibleRuns <<< "${mrfixNamesToUse}"    
-    
+    IFS=@ read -r -a PossibleRuns <<< "${mrfixNamesToUse}"
+
     ResultsTemplateDir=$StudyFolder/$SubjectLong.long.$TemplateLong/MNINonLinear/Results
-    
+
     expected_concatenated_output_dir="$ResultsTemplateDir/${OutputfMRIName}"
     expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
     before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
@@ -174,40 +174,40 @@ if (( IsLongitudinal ));  then
 
     # First, resolve the list of longitudinal fMRI runs and make configuration file
     TemplateSession=$SubjectLong.long.$TemplateLong             #template directory name
-    NativeMyelinMap="MyelinMap.native.dscalar.nii"    
+    NativeMyelinMap="MyelinMap.native.dscalar.nii"
     # Build the average myelin map command.
     average_cmd=("${CARET7DIR}/wb_command" -cifti-average \
         "$StudyFolder/$TemplateSession/MNINonLinear/Native/$TemplateSession.$NativeMyelinMap")
-        
+
     for tp in "${SessionsLong[@]}"; do
         SessionLong=$tp.long.$TemplateLong                      #longitudinal session directory name
         average_cmd+=(-cifti "$StudyFolder/$SessionLong/MNINonLinear/Native/$SessionLong.$NativeMyelinMap")
-            
+
         echo "searching $SessionLong for eligible fMRI runs"
-        if [ ! -d "$StudyFolder/$SessionLong/MNINonLinear/Results" ]; then 
+        if [ ! -d "$StudyFolder/$SessionLong/MNINonLinear/Results" ]; then
             log_Err_Abort "ICAFix output does not exist for longitudinal session $SessionLong in $StudyFolder"
-        fi    
+        fi
         ResultsTPLongDir=$StudyFolder/$SessionLong/MNINonLinear/Results
         # iterate over possible fMRI runs and build a list of found runs for this timepoint.
-        # Found runs are copied to template directory and all relevant files/dirs are renamed 
+        # Found runs are copied to template directory and all relevant files/dirs are renamed
         # for the run to be unique within subject.
-        # template-based fMRI naming pattern, assuming original run <fMRIRun> label is: <Session>_<fMRIRun>, 
+        # template-based fMRI naming pattern, assuming original run <fMRIRun> label is: <Session>_<fMRIRun>,
         # where <Session> is longitudinal session label. It is expected to be named <Subject>_<Visit_ID>.
         for fmriName in "${PossibleRuns[@]}"; do
-            if [ -d "$ResultsTPLongDir/$fmriName" ]; then            
+            if [ -d "$ResultsTPLongDir/$fmriName" ]; then
                 TemplateRun=${tp}_${fmriName}
                 echo "found $TemplateRun, copying"
                 mkdir -p "$ResultsTemplateDir/$TemplateRun"
                 #bulk copy
                 cp -r "$ResultsTPLongDir/$fmriName"/* "$ResultsTemplateDir/$TemplateRun/"
-                pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null                
+                pushd "$ResultsTemplateDir/${TemplateRun}" &> /dev/null
                 for fd in ${fmriName}_* ${fmriName}.*; do
                     if [[ -e "$fd" ]]
                     then
                         mv "$fd" "${fd//$fmriName/$TemplateRun}"
                     fi
                 done
-                popd &> /dev/null            
+                popd &> /dev/null
                 TemplateRunsStr="${TemplateRunsStr}@$TemplateRun"
                 TimepointsStr="${TimepointsStr}@$tp"
                 fMRIRunsStr="${fMRIRunsStr}@$fmriName"
@@ -215,9 +215,9 @@ if (( IsLongitudinal ));  then
             fi
         done
     done
-    # Arrays with template fMRI names, matching timepoint labels, original run labels, 
-    # and per-timepoint concatenated fMRI names are stored in a configuration file under 
-    # MNINonLinear/Results/. Multiple configuration files may be used for the same 
+    # Arrays with template fMRI names, matching timepoint labels, original run labels,
+    # and per-timepoint concatenated fMRI names are stored in a configuration file under
+    # MNINonLinear/Results/. Multiple configuration files may be used for the same
     # subject with different fMRI combinations or longitudinal templates.
     conf_file="$ResultsTemplateDir/$OutConfig"
     echo "${TemplateRunsStr#@}" > "$conf_file"
@@ -229,7 +229,7 @@ if (( IsLongitudinal ));  then
     "${average_cmd[@]}"
 
     # variance normalize and concatenate individual rsFMRI runs
-    # of all timepoints in template folder. 
+    # of all timepoints in template folder.
     # This script reads the $conf_file.
     "${HCPPIPEDIR}"/MSMAll/scripts/SingleSubjectConcat.sh \
         --path="${StudyFolder}" \
@@ -246,12 +246,12 @@ if (( IsLongitudinal ));  then
         --subject-long="$SubjectLong"
     Session=$TemplateSession
     # log_Msg "Running MSM on longitudinal timepoints"
-    
+
 else #cross-sectional run
     expected_concatenated_output_dir="${StudyFolder}/${Session}/MNINonLinear/Results/${OutputfMRIName}"
     expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
     before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
-    
+
     if [[ "$fMRINames" == "" ]]
     then
         log_Msg "Running MSM on Multi-run FIX timeseries"
@@ -370,7 +370,7 @@ if (( IsLongitudinal )); then
 
             ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii
             ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
-            
+
             ${CARET7DIR}/wb_command -metric-math "ln(sphere / midthickness) / ln(2)" ${NativeFolderTP}/${SessionLong}.${Hemisphere}.SphericalDistortion.native.shape.gii -var midthickness ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii -var sphere ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
             rm ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii
         done
@@ -381,7 +381,7 @@ if (( IsLongitudinal )); then
         ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii ROW ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii
         ${CARET7DIR}/wb_command -set-map-name ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii 1 ${SessionLong}_SphericalDistortion
         ${CARET7DIR}/wb_command -cifti-palette ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii MODE_USER_SCALE ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
-        rm ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii  
+        rm ${NativeFolderTP}/${SessionLong}.SphericalDistortion.native.dtseries.nii
     done
 fi
 log_Msg "Completing main functionality"
