@@ -148,7 +148,7 @@ output_proc_string="_vn" #To VN only to indicate that we did not revert the bias
 log_Msg "output_proc_string: ${output_proc_string}"
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
-NumIterations=$(echo "${IterationModes}" | sed s/_/ /g | wc -w)
+NumIterations=$(echo "${IterationModes}" | sed 's/_/ /g' | wc -w)
 DeDriftRegName=${OutputRegName}_${NumIterations}_d${ICAdim}_${Method}
 
 if (( IsLongitudinal ));  then
