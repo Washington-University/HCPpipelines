@@ -204,6 +204,9 @@ if (( IsLongitudinal ));  then
                 for fd in ${fmriName}_* ${fmriName}.*; do
                     if [[ -e "$fd" ]]
                     then
+                        if [[ -e "${fd//$fmriName/$TemplateRun}" ]]; then
+                            rm -rf "${fd//$fmriName/$TemplateRun}"
+                        fi
                         mv "$fd" "${fd//$fmriName/$TemplateRun}"
                     fi
                 done
