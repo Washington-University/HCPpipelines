@@ -199,34 +199,34 @@ function copy_to_longitudinal()
 	local file files_to_copy="Movement_Regressors_demean.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt"
 	mkdir -p "$T"
 	for file in $files_to_copy; do
-		cp -p "$S"/"$file" "$T"/
+		cp "$S"/"$file" "$T"/
 	done
 	
 	local ICADir="$S/${ConcatName}_hp$HighPass.ica"
 	local ICADirLong="$T/${ConcatName}_hp$HighPass.ica"
 	mkdir -p "$ICADirLong"				
 	if [ -f "$ICADir/HandNoise.txt" ]; then 
-		cp -p "$ICADir/HandNoise.txt" "$ICADirLong"/
+		cp "$ICADir/HandNoise.txt" "$ICADirLong"/
 	fi
 	files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv \
 		hand_labels_noise.txt HandNoise.txt HandSignal.txt Noise.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt Signal.txt .fix"
 	for file in $files_to_copy; do
-		cp -p "$ICADir"/"$file" "$ICADirLong"/
+		cp "$ICADir"/"$file" "$ICADirLong"/
 	done 
 	
 	mkdir -p "$ICADirLong/mc"
-	cp -p "$ICADir/mc/prefiltered_func_data_mcf_conf.nii.gz" "$ICADirLong"/mc/
-	cp -p "$ICADir/mc/prefiltered_func_data_mcf_conf_hp.nii.gz" "$ICADirLong"/mc/
-	cp -p "$ICADir/mc/prefiltered_func_data_mcf.par" "$ICADirLong"/mc/
+	cp "$ICADir/mc/prefiltered_func_data_mcf_conf.nii.gz" "$ICADirLong"/mc/
+	cp "$ICADir/mc/prefiltered_func_data_mcf_conf_hp.nii.gz" "$ICADirLong"/mc/
+	cp "$ICADir/mc/prefiltered_func_data_mcf.par" "$ICADirLong"/mc/
 	
 	mkdir -p "$ICADirLong"/fix/
-	cp -p "$ICADir"/fix/features.csv "$ICADirLong"/fix/
+	cp "$ICADir"/fix/features.csv "$ICADirLong"/fix/
 	
 	files_to_copy="eigenvalues_percent ICAVolumeSpace.txt melodic_FTmix melodic_FTmix.sdseries.nii \
 		melodic_ICstats melodic_mix melodic_mix.sdseries.nii melodic_Tmodes melodic_unmix"
 	mkdir -p "$ICADirLong"/filtered_func_data.ica
 	for file in $files_to_copy; do
-		cp -p "$ICADir"/filtered_func_data.ica/"$file" "$ICADirLong"/filtered_func_data.ica/
+		cp "$ICADir"/filtered_func_data.ica/"$file" "$ICADirLong"/filtered_func_data.ica/
 	done	
 	
 	#copy for individual fMRI runs
@@ -234,7 +234,7 @@ function copy_to_longitudinal()
 		S="$StudyFolder/$SessionCross/MNINonLinear/Results/$fmri"
 		T="$StudyFolder/$SessionLong/MNINonLinear/Results/$fmri"
 		mkdir -p "$T"/"$fmri"_hp"$HighPass".ica/mc
-		cp -p "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
+		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
 	done	
 }
 

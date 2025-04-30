@@ -36,10 +36,40 @@ get_batch_options() {
         esac
     done
 }
+function identify_timepoints
+{
+    local subject=$1
+    local tplist=""
+    local tp visit n
+
+    #build the list of timepoints
+    n=0
+    for visit in ${PossibleVisits[*]}; do
+        tp="${subject}_${visit}"
+        if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]+${ExcludeVisits[*]}} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
+             if (( n==0 )); then 
+                    tplist="$tp"
+             else
+                    tplist="$tplist@$tp"
+             fi
+        fi
+        ((n++))
+    done
+    echo $tplist
+}
 
 get_batch_options "$@"
 
-EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+#Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/data/Pipelines_ExampleData"
+EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+#list longitudinal template IDs, one per subject
+Templates=(HCA6002236_V1_V2_V3 HCA6002237_V1_V2_V3)
+
+#list visit/timepoint ID, cross-sectional processsing timepoint folder name under $StudyFolder is expected to follow the pattern: <Subject>_<Visit_ID>
+PossibleVisits=(V1_MR V2_MR V3_MR)
+Subjlist=(HCA6002236 HCA6002237) #List of subject IDs
 
 #Set up pipeline environment variables and software
 source "$EnvironmentScript"
@@ -57,8 +87,7 @@ source "$EnvironmentScript"
 ######################################### DO WORK ##########################################
 
 #Example of how CCF Development was run
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/CCF_HCD_STG" #Location of Subject folders (named by subjectID)
-Subjlist=(HCD0001305_V1_MR HCD0008117_V1_MR) #List of subject IDs
+
 #Don't edit things between here and MRFixConcatNames unless you know what you are doing
 HighResMesh="164"
 LowResMesh="32"
@@ -70,11 +99,11 @@ ConcatRegName="MSMAll"
 Maps=(sulc curvature corrThickness thickness)
 MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames and MRFixNames must exactly match the way MR FIX was run on the subjects
-MRFixConcatNames=(fMRI_CONCAT_ALL)
+MRFixConcatNames="fMRI_CONCAT_ALL"
 #SPECIAL: if your data used two (or more) MR FIX runs (which is generally not recommended), specify them like this, with no whitespace before or after the %:
 #MRFixConcatNames=(concat12 concat34)
 #MRFixNames=(run1 run2%run3 run4)
-MRFixNames=(rfMRI_REST1_AP rfMRI_REST1_PA tfMRI_GUESSING_PA tfMRI_GUESSING_AP tfMRI_CARIT_PA tfMRI_CARIT_AP tfMRI_EMOTION_PA rfMRI_REST2_AP rfMRI_REST2_PA)
+MRFixNames="rfMRI_REST1_AP@rfMRI_REST1_PA@tfMRI_VISMOTOR_PA@tfMRI_CARIT_PA@tfMRI_FACENAME_PA@rfMRI_REST2_AP@rfMRI_REST2_PA"
 #fixNames are for if single-run ICA FIX was used (not recommended)
 fixNames=()
 #dontFixNames are for runs that didn't have any kind of ICA artifact removal run on them (very not recommended)
@@ -121,8 +150,8 @@ echo "$0" "$@"
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE=""
-#QUEUE="hcp_priority.q"
+#QUEUE=""
+QUEUE="short.q"
 
 Maps=$(IFS=@; echo "${Maps[*]}")
 MyelinMaps=$(IFS=@; echo "${MyelinMaps[*]}")
@@ -133,7 +162,9 @@ dontFixNames=$(IFS=@; echo "${dontFixNames[*]}")
 
 for Subject in "${Subjlist[@]}" ; do
     echo "    ${Subject}"
-
+    TemplateLong="${Templates[i]}"
+    Timepoint_list_cross_at_separated=$(identify_timepoints "$Subject")
+    IFS=@ read -r -a Timepoint_list_cross <<< "${Timepoint_list_cross_at_separated}"    
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
         echo "About to locally run ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
         queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
@@ -141,10 +172,34 @@ for Subject in "${Subjlist[@]}" ; do
         echo "About to use fsl_sub to queue ${HCPPIPEDIR}/DeDriftAndResample/DeDriftAndResamplePipeline.sh"
         queuing_command=("$FSLDIR"/bin/fsl_sub -q "$QUEUE")
     fi
-
+    
+    #process timepoints
+    for TimepointCross in "${Timepoint_list_cross[@]}"; do
+        TimepointLong=${TimepointCross}.long.${TemplateLong}
+        "${queuing_command[@]}" "$HCPPIPEDIR"/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
+            --path="$StudyFolder" \
+            --subject="$TimepointLong" \
+            --high-res-mesh="$HighResMesh" \
+            --low-res-meshes="$LowResMesh" \
+            --registration-name="$RegName" \
+            --dedrift-reg-files="$DeDriftRegFiles" \
+            --concat-reg-name="$ConcatRegName" \
+            --maps="$Maps" \
+            --myelin-maps="$MyelinMaps" \
+            --multirun-fix-concat-names="$MRFixConcatNames" \
+            --multirun-fix-names="$MRFixNames" \
+            --fix-names="$fixNames" \
+            --dont-fix-names="$dontFixNames" \
+            --smoothing-fwhm="$SmoothingFWHM" \
+            --high-pass="$HighPass" \
+            --matlab-run-mode="$MatlabMode" \
+            --motion-regression="$MotionRegression" \
+            --myelin-target-file="$MyelinTargetFile"
+    done
+    #process the template
     "${queuing_command[@]}" "$HCPPIPEDIR"/DeDriftAndResample/DeDriftAndResamplePipeline.sh \
         --path="$StudyFolder" \
-        --subject="$Subject" \
+        --subject="$Subject.long.$TemplateLong" \
         --high-res-mesh="$HighResMesh" \
         --low-res-meshes="$LowResMesh" \
         --registration-name="$RegName" \
@@ -152,14 +207,14 @@ for Subject in "${Subjlist[@]}" ; do
         --concat-reg-name="$ConcatRegName" \
         --maps="$Maps" \
         --myelin-maps="$MyelinMaps" \
-        --multirun-fix-concat-names="$MRFixConcatNames" \
-        --multirun-fix-names="$MRFixNames" \
-        --fix-names="$fixNames" \
+        --fix-names="" \
         --dont-fix-names="$dontFixNames" \
         --smoothing-fwhm="$SmoothingFWHM" \
         --high-pass="$HighPass" \
         --matlab-run-mode="$MatlabMode" \
         --motion-regression="$MotionRegression" \
         --myelin-target-file="$MyelinTargetFile"
+    
+    
 done
 

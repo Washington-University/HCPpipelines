@@ -22,7 +22,7 @@ function sR = melodicicasso(Dim,concatfmri,concatfmrihp,ConcatFolder,tr,nThreads
 %                The number of icasso clustering repetitions is equal to the
 %                the number delimiters + 1. e.g. '100@100' will perform
 %                2 rounds of icasso with 100 melodic runs in each. 
-%   bootMode   : Whether to randomize the inital conditions only, perfrom
+%   bootMode   : Whether to randomize the initial conditions only, perfrom
 %                bootstrapping, or both in the first level of icasso.
 %                Subsequent levels are always bootstrapped. 'randinit' (default), 'boot' or 'both'
 %   vis        : Whether to create and save icasso figures, see icasso.m 'basic' (default) or 'off'
@@ -245,7 +245,7 @@ for iL = 1:nL
   % save figures
   printFigs(outDir,iL)
 
-  % save icasso's A as a paradigm file to be used as initalization for next level or final melodic
+  % save icasso's A as a paradigm file to be used as initialization for next level or final melodic
   init_ica = [outDir '/icasso_A.mat'];
   dlmwrite(init_ica, A, '\t'); %#ok<DLMWT> 
   [~,~] = system(sprintf('Text2Vest %s %s',init_ica,init_ica),'-echo');
