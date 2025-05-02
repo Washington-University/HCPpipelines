@@ -126,7 +126,7 @@ MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames=()
 #MRFixNames=()
-#fixNames=(rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL)
+#fixNames=(rfMRI_REST1_RL rfMRI_REST1_LR rfMRI_REST2_LR rfMRI_REST2_RL)
 #dontFixNames=(tfMRI_EMOTION_LR tfMRI_EMOTION_RL tfMRI_GAMBLING_LR tfMRI_GAMBLING_RL tfMRI_LANGUAGE_LR tfMRI_LANGUAGE_RL tfMRI_MOTOR_LR tfMRI_MOTOR_RL tfMRI_RELATIONAL_LR tfMRI_RELATIONAL_RL tfMRI_SOCIAL_LR tfMRI_SOCIAL_RL tfMRI_WM_LR tfMRI_WM_RL)
 #SmoothingFWHM="2" #Should equal previous grayordinates smoothing (because we are resampling from unsmoothed native mesh timeseries)
 #HighPass="2000"
