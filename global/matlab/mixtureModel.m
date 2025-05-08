@@ -1,4 +1,4 @@
-function mixtureModel(inFile,outFile,wbcmd,melocmd)
+function mixtureModel(inFile,outFile,wbcmd,melocmd,wbshrtctscmd)
 % mixtureModel(inFile,outFile,wbcmd,melocmd)
 % Performs Gaussian mixture modeling on precomputed ICs
 % Wrapper arround melodic.Accepts nifti or cifti inputs. 
@@ -10,6 +10,7 @@ function mixtureModel(inFile,outFile,wbcmd,melocmd)
 % Optional Inputs
 %   wbcmd   : worbench command, defaults to 'wb_command' 
 %   melocmd : melodic command, defaults to 'melodic'
+%   wbshrtctscmd: worbench shortcuts command, defaults to 'wb_shortcuts' 
 %
 % See also: 
 % https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
@@ -30,9 +31,12 @@ if nargin < 2 || isempty(inFile) || isempty(outFile)
 end 
 if nargin < 3 || isempty(wbcmd); wbcmd = 'wb_command'; end 
 if nargin < 4 || isempty(melocmd); melocmd = 'melodic'; end 
+if nargin < 5 || isempty(wbshrtctscmd); wbshrtctscmd = 'wb_shortcuts'; end 
 [wbStat,~] = system(wbcmd);
+[wbshStat,~] = system(wbshrtctscmd);
 [meloStat,~] = system(['which ' melocmd]);
 if wbStat; error('workbench_command binary %s not on path',wbcmd);end
+if wbshStat; error('workbench_command binary %s not on path',wbshrtctscmd);end
 if meloStat; error('melodic command binary %s not on path',melocmd);end
 inFile0 = inFile;
 outFile0 = outFile;
@@ -62,11 +66,14 @@ if endsWith(outFile0,'dscalar.nii')
   end
   outFile = strrep(outFile0,'.dscalar.nii','');
   FSLOUTPUTTYPE = 'NIFTI_GZ';
+  ext = 'nii.gz';
 elseif endsWith(outFile0,'.nii') 
   outFile = strrep(outFile0,'.nii','');
   FSLOUTPUTTYPE = 'NIFTI';
+  ext = '.nii';
 elseif endsWith(outFile0,'.nii.gz') 
   FSLOUTPUTTYPE = 'NIFTI_GZ';
+  ext = 'nii.gz';
   outFile = strrep(outFile0,'.nii.gz','');
 else
   error('outFile is not a nifti or dscalar cifti?')
@@ -74,12 +81,19 @@ end
 
 %% run gaussian mixture modeling with melodic
 [stat(3),~] = system(sprintf('mkdir -p %s;echo "1" > %s/grot', tDir, tDir),'-echo');
-[stat(4),~] = system(sprintf(...
+[stat(4),stout] = system(sprintf(...
   '%s -i %s --ICs=%s --mix=%s/grot -o %s --Oall --report -v --mmthresh=0',... 
   melocmd,inFile, inFile, tDir, tDir),'-echo');
+% [stat(5),~] = system(sprintf(...
+%     'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
+%     FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0),'-echo');% assumes every output has one map
+if contains(stout,'2-sided null hypothesis test at 0.05') % use fslhd <tDir>/stats/thresh_zstat* | grep dim4 | head -1 > 1 instead?
+  warning('At least one component returned two z-score maps (alpha = 0.05 and 0.01)! Using first map only.')
+end
 [stat(5),~] = system(sprintf(...
-    'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
-    FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0),'-echo');
+    '%s -volume-concatenate -map 1 %s.%s $(ls %s/stats/thresh_zstat* | sort -V)',...
+    wbshrtctscmd,outFile,ext,tDir),'-echo');
+
 [stat(6),~] = system(['rm -r ' tDir],'-echo');% clean up temporary files
 
 %% convert output to cifti, if needed
