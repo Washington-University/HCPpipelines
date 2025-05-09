@@ -305,7 +305,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         Z(isnan(Z)) = 0;
         outTemplate.cdata = Z;
         ciftisavereset(outTemplate, optional.OutputZ, wbcommand);
-        mixtureModel(optional.OutputZ,optional.OutputZMM);
+        % mixtureModel(optional.OutputZ,optional.OutputZMM);
+        stat = system(sprintf('mixtureModel %s %s %s',optional.OutputZ,optional.OutputZMM),wbcommand);
     end
     
     %volume outputs
@@ -339,7 +340,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             Z(isnan(Z)) = 0;
             outVolTemplate.cdata = Z;
             ciftisavereset(outVolTemplate, optional.OutputVolZ, wbcommand);
-            mixtureModel(optional.OutputVolZ,optional.OutputVolZMM);
+            % mixtureModel(optional.OutputVolZ,optional.OutputVolZMM);
+            stat = system(sprintf('mixtureModel %s %s %s',optional.OutputZ,optional.OutputZMM),wbcommand);
         end
     end
 end
