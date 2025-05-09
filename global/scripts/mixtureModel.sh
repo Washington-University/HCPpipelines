@@ -105,7 +105,7 @@ mixtureModel() {
   $melocmd -i "$inFile" --ICs="$inFile" --mix="$tDir/grot" -o "$tDir" --Oall --report -v --mmthresh=0
 
   # check for multiple z-score maps
-  mapCounts=$(find "$tDir/stats/" -name 'thresh_zstat*' -exec sh -c 'fslval "$1" dim4' _ {} \;)
+  mapCounts=$(find "$tDir/stats/" -name 'thresh_zstat*' -exec bash -c 'fslval "$1" dim4' _ {} \;)
   maxCount=0
   for count in $mapCounts; do
     if (( count > maxCount )); then maxCount=$count; fi
