@@ -42,7 +42,7 @@ inFile0 = inFile;
 outFile0 = outFile;
 tDir = tempname;
 FSLOUTPUTTYPE0 = getenv('FSLOUTPUTTYPE');
-stat = zeros(9,1);
+stat = zeros(10,1);
 if endsWith(inFile0,'dscalar.nii')
   % convert to input cifti to nifti
   inFile = [tempname '.nii'];
@@ -87,23 +87,23 @@ end
 % [stat(5),~] = system(sprintf(...
 %     'FSLOUTPUTTYPE=%s;fslmerge -t %s $(ls %s/stats/thresh_zstat* | sort -V);FSLOUTPUTTYPE=%s;',...
 %     FSLOUTPUTTYPE, outFile, tDir ,FSLOUTPUTTYPE0),'-echo');% assumes every output has one map
-[~,mapCounts] = system(sprintf(...
-  'find "%s/stats/" -name "thresh_zstat*" -exec sh -c "fslhd \\"{}\\" | grep dim4 | head -1 | tail -c +5" sh {} \\;',tDir));
+[stat(5),mapCounts] = system(sprintf(...
+  "find %s/stats/ -name 'thresh_zstat*' -exec sh -c 'fslval $0 dim4' {} \\;",tDir));
 if max(str2num(mapCounts)) > 1 
   warning('At least one component returned two z-score maps (alpha = 0.05 and 0.01)! Using first map only.')
 end
-[stat(5),~] = system(sprintf(...
+[stat(6),~] = system(sprintf(...
     '%s -volume-concatenate -map 1 %s.%s $(ls %s/stats/thresh_zstat* | sort -V)',...
     wbshrtctscmd,outFile,ext,tDir),'-echo');
 
-[stat(6),~] = system(['rm -r ' tDir],'-echo');% clean up temporary files
+[stat(7),~] = system(['rm -r ' tDir],'-echo');% clean up temporary files
 
 %% convert output to cifti, if needed
 if endsWith(outFile0,'dscalar.nii')
-  [stat(7),~] = system(sprintf('%s -cifti-convert -from-nifti %s.nii.gz %s %s',wbcmd,outFile,inFile0,outFile0),'-echo');
-  [stat(8),~] = system(sprintf('imrm %s %s',inFile,outFile),'-echo');% clean up intermediate niftis
+  [stat(8),~] = system(sprintf('%s -cifti-convert -from-nifti %s.nii.gz %s %s',wbcmd,outFile,inFile0,outFile0),'-echo');
+  [stat(9),~] = system(sprintf('imrm %s %s',inFile,outFile),'-echo');% clean up intermediate niftis
 elseif endsWith(inFile0,'dscalar.nii')
-  [stat(9),~] = system(sprintf('imrm %s',inFile),'-echo');
+  [stat(10),~] = system(sprintf('imrm %s',inFile),'-echo');
 end
 if any(stat);error('system commands failed, see console output!');end
 end % EOF
