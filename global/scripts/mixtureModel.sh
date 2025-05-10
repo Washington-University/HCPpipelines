@@ -40,7 +40,6 @@ opts_ShowValues
 # ToDo:
 # Feed arbitrary melodic arguments.
 
-tDir
 tDir=$(mktemp -d)
 
 ciftiinput=0
@@ -105,6 +104,7 @@ do
         break
     fi
 done
+
 # concatenate volumes
 wb_shortcuts -volume-concatenate -map 1 "${outFile}" $(IFS=$'\n'; echo "${allfiles[*]}" | sort -V)
 
