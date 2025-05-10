@@ -72,10 +72,6 @@ case "$inFile0" in
 esac
 
 outFile="$outFile0"
-#we don't call other scripts, and this doesn't affect any parent processes, don't need to change it back
-export FSLOUTPUTTYPE="NIFTI"
-ext="nii"
-
 ciftioutput=0
 case "$outFile0" in
     (*.dscalar.nii)
@@ -84,13 +80,15 @@ case "$outFile0" in
         then
             log_Err_Abort "cifti output only supported for cifti input."
         fi
+        #we don't call other scripts, and this doesn't affect any parent processes, don't need to change it back
+        export FSLOUTPUTTYPE=NIFTI
         tempfiles_create mixtureModel_fakeniftiout_XXXXXX.nii outFile
         ;;
     (*.nii)
+        export FSLOUTPUTTYPE=NIFTI
         ;;
     (*.nii.gz)
-        FSLOUTPUTTYPE=NIFTI_GZ
-        ext="nii.gz"
+        export FSLOUTPUTTYPE=NIFTI_GZ
         ;;
     (*)
         log_Err_Abort "--output is not a nifti or dscalar cifti?"
@@ -114,7 +112,7 @@ do
     fi
 done
 # concatenate volumes
-wb_shortcuts -volume-concatenate -map 1 "${outFile}.${ext}" $(IFS=$'\n'; echo "${allfiles[*]}" | sort -V)
+wb_shortcuts -volume-concatenate -map 1 "${outFile}" $(IFS=$'\n'; echo "${allfiles[*]}" | sort -V)
 
 # clean up temporary files
 rm -r "$tDir"
@@ -122,6 +120,6 @@ rm -r "$tDir"
 # convert output to cifti, if needed
 if ((ciftioutput))
 then
-    wb_command -cifti-convert -from-nifti "${outFile}.nii.gz" "$inFile0" "$outFile0"
+    wb_command -cifti-convert -from-nifti "${outFile}" "$inFile0" "$outFile0"
 fi
 
