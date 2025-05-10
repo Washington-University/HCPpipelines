@@ -80,14 +80,9 @@ case "$outFile0" in
             log_Err_Abort "cifti output only supported for cifti input."
         fi
         #we don't call other scripts, and this doesn't affect any parent processes, don't need to change it back
-        export FSLOUTPUTTYPE=NIFTI
         tempfiles_create mixtureModel_fakeniftiout_XXXXXX.nii outFile
         ;;
-    (*.nii)
-        export FSLOUTPUTTYPE=NIFTI
-        ;;
-    (*.nii.gz)
-        export FSLOUTPUTTYPE=NIFTI_GZ
+    (*.nii | *.nii.gz)
         ;;
     (*)
         log_Err_Abort "--output is not a nifti or dscalar cifti?"
