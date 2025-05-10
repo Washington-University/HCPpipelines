@@ -48,8 +48,6 @@ mixtureModel() {
   local outFile0="$outFile"
   local tDir
   tDir=$(mktemp -d)
-  local FSLOUTPUTTYPE0="$FSLOUTPUTTYPE"
-  local stat=0
   local ext
 
   # convert input if needed
@@ -59,7 +57,6 @@ mixtureModel() {
     $wbcmd -cifti-convert -to-nifti "$inFile0" "$inFile" -smaller-dims
     # local dims
     dims=$($wbcmd -file-information "$inFile" | grep Dimensions | awk -F': ' '{print $2}')
-    # shellcheck disable=SC2206
     dims_arr=($dims)
     for i in "${!dims_arr[@]}"; do
       if [[ "${dims_arr[$i]}" == "1" && $i -lt 3 ]]; then
@@ -84,14 +81,11 @@ mixtureModel() {
       return 1
     fi
     outFile="${outFile0%.dscalar.nii}"
-    FSLOUTPUTTYPE="NIFTI_GZ"
     ext="nii.gz"
   elif [[ "$outFile0" == *.nii ]]; then
     outFile="${outFile0%.nii}"
-    FSLOUTPUTTYPE="NIFTI"
     ext=".nii"
   elif [[ "$outFile0" == *.nii.gz ]]; then
-    FSLOUTPUTTYPE="NIFTI_GZ"
     ext="nii.gz"
     outFile="${outFile0%.nii.gz}"
   else
@@ -128,8 +122,6 @@ mixtureModel() {
     imrm "$inFile"
   fi
 
-  # restore FSLOUTPUTTYPE if needed
-  export FSLOUTPUTTYPE="$FSLOUTPUTTYPE0"
 }
 # Call the function if the script is run directly
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
