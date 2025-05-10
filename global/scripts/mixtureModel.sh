@@ -1,17 +1,32 @@
-#!/usr/bin/env bash
-# mixtureModel <inFile> <outFile> [wbcmd] [melocmd] [wbshrtctscmd]
-# Performs Gaussian mixture modeling on precomputed ICs
-# Wrapper around melodic. Accepts nifti or cifti inputs.
-# Require Input:
-#   inFile  : file path to IC z-scores, file path including extension as string (accepts nifti or cifti files)
-#   outFile : file path to IC z-scores with Gaussian mixture modeling
-#              Can output nifti, nifti-gz, or cifti, depending on extension: .nii, .nii.gz, .dscalar.nii,
-#              Output format does not have to match input format, unless output is cifti.
-# Optional Inputs
-#   wbcmd   : workbench command, defaults to 'wb_command'
-#   melocmd : melodic command, defaults to 'melodic'
-#   wbshrtctscmd: workbench shortcuts command, defaults to 'wb_shortcuts'
-#
+#!/bin/bash
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
+
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+
+opts_SetScriptDescription "Performs Gaussian mixture modeling on precomputed ICs, as volume or dscalar"
+
+opts_AddMandatory '--input' 'inFile0' 'file' "input file name"
+opts_AddMandatory '--output' 'outFile0' 'file' "output filename"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
+
 # See also:
 # https://www.jiscmail.ac.uk/cgi-bin/webadmin?A2=fsl;6e85d498.1607
 # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/MELODIC#Using_melodic_for_just_doing_mixture-modelling
@@ -21,111 +36,92 @@
 # 2024-07-08
 # Dependencies: workbench, FSL
 # Written with workbench 2.0 and FSL 6.0.7.1
-# Refactored from matlab to bash 2025-05-19 by Copilot GPT-4.1
+# Refactored from matlab to bash 2025-05-09 by Copilot GPT-4.1 and TSC-1.0
 #
 # ToDo:
 # Feed arbitrary melodic arguments.
 
-mixtureModel() {
-  local inFile="$1"
-  local outFile="$2"
-  local wbcmd="${3:-wb_command}"
-  local melocmd="${4:-melodic}"
-  local wbshrtctscmd="${5:-wb_shortcuts}"
+tDir
+tDir=$(mktemp -d)
 
-  # handle inputs
-  if [[ -z "$inFile" || -z "$outFile" ]]; then
-    echo "inFile and outFile arguments are required!" >&2
-    return 1
-  fi
+ciftiinput=0
+inFile="$inFile0"
+# convert input if needed
+case "$inFile0" in
+    (*.dscalar.nii)
+        # convert input cifti to nifti
+        ciftiinput=1
+        #self-cleaning temporaries
+        tempfiles_create mixtureModel_fakenifti_XXXXXX.nii inFile
+        wb_command -cifti-convert -to-nifti "$inFile0" "$inFile" -smaller-dims
+        for ((i = 1; i <= 3; ++i))
+        do
+            thisdim=$(fslval "$inFile" dim$i)
+            if ((thisdim == 1))
+            then
+                log_Warn "singleton dimension in converted nifti, melodic may not interpret correctly!"
+                break
+            fi
+        done
+        ;;
+    (*.nii | *.nii.gz)
+        ;;
+    (*)
+        log_Err_Abort "--input is not a nifti or dscalar cifti?"
+        ;;
+esac
 
-  # check dependencies
-  command -v "$wbcmd" >/dev/null 2>&1 || { echo "workbench_command binary $wbcmd not on path" >&2; return 1; }
-  command -v "$wbshrtctscmd" >/dev/null 2>&1 || { echo "workbench_command binary $wbshrtctscmd not on path" >&2; return 1; }
-  command -v "$melocmd" >/dev/null 2>&1 || { echo "melodic command binary $melocmd not on path" >&2; return 1; }
+outFile="$outFile0"
+#we don't call other scripts, and this doesn't affect any parent processes, don't need to change it back
+export FSLOUTPUTTYPE="NIFTI"
+ext="nii"
 
-  local inFile0="$inFile"
-  local outFile0="$outFile"
-  local tDir
-  tDir=$(mktemp -d)
-  local ext
+ciftioutput=0
+case "$outFile0" in
+    (*.dscalar.nii)
+        ciftioutput=1
+        if ((! ciftiinput))
+        then
+            log_Err_Abort "cifti output only supported for cifti input."
+        fi
+        tempfiles_create mixtureModel_fakeniftiout_XXXXXX.nii outFile
+        ;;
+    (*.nii)
+        ;;
+    (*.nii.gz)
+        FSLOUTPUTTYPE=NIFTI_GZ
+        ext="nii.gz"
+        ;;
+    (*)
+        log_Err_Abort "--output is not a nifti or dscalar cifti?"
+        ;;
+esac
 
-  # convert input if needed
-  if [[ "$inFile0" == *dscalar.nii ]]; then
-    # convert input cifti to nifti
-    inFile="$(mktemp --suffix=.nii)"
-    $wbcmd -cifti-convert -to-nifti "$inFile0" "$inFile" -smaller-dims
-    # local dims
-    dims=$($wbcmd -file-information "$inFile" | grep Dimensions | awk -F': ' '{print $2}')
-    dims_arr=($dims)
-    for i in "${!dims_arr[@]}"; do
-      if [[ "${dims_arr[$i]}" == "1" && $i -lt 3 ]]; then
-        echo "warning: singleton dimension in converted nifti, melodic may not interpret correctly!" >&2
+# run gaussian mixture modeling with melodic
+mkdir -p "$tDir"
+echo "1" > "$tDir/grot"
+melodic -i "$inFile" --ICs="$inFile" --mix="$tDir/grot" -o "$tDir" --Oall --report -v --mmthresh=0
+
+# check for multiple z-score maps
+allfiles=("$tDir"/stats/thresh_zstat*)
+for file in "${allfiles[@]}"
+do
+    mapCount=$(fslval "$file" dim4 | tr -d ' ')
+    if ((mapCount > 1))
+    then
+        log_Warn "warning: At least one component returned two z-score maps (alpha = 0.05 and 0.01)! Using first map only."
         break
-      fi
-    done
-    inFile="${inFile%.nii}"
-  elif [[ "$inFile0" == *.nii ]]; then
-    inFile="${inFile0%.nii}"
-  elif [[ "$inFile0" == *.nii.gz ]]; then
-    inFile="${inFile0%.nii.gz}"
-  else
-    echo "inFile is not a nifti or dscalar cifti?" >&2
-    return 1
-  fi
-
-  # handle output extension
-  if [[ "$outFile0" == *dscalar.nii ]]; then
-    if [[ "$inFile0" != *dscalar.nii ]]; then
-      echo "cifti output only supported for cifti input." >&2
-      return 1
     fi
-    outFile="${outFile0%.dscalar.nii}"
-    ext="nii.gz"
-  elif [[ "$outFile0" == *.nii ]]; then
-    outFile="${outFile0%.nii}"
-    ext=".nii"
-  elif [[ "$outFile0" == *.nii.gz ]]; then
-    ext="nii.gz"
-    outFile="${outFile0%.nii.gz}"
-  else
-    echo "outFile is not a nifti or dscalar cifti?" >&2
-    return 1
-  fi
+done
+# concatenate volumes
+wb_shortcuts -volume-concatenate -map 1 "${outFile}.${ext}" $(IFS=$'\n'; echo "${allfiles[*]}" | sort -V)
 
-  # run gaussian mixture modeling with melodic
-  mkdir -p "$tDir"
-  echo "1" > "$tDir/grot"
-  $melocmd -i "$inFile" --ICs="$inFile" --mix="$tDir/grot" -o "$tDir" --Oall --report -v --mmthresh=0
+# clean up temporary files
+rm -r "$tDir"
 
-  # check for multiple z-score maps
-  mapCounts=$(find "$tDir/stats/" -name 'thresh_zstat*' -exec bash -c 'fslval "$1" dim4' _ {} \;)
-  maxCount=0
-  for count in $mapCounts; do
-    if (( count > maxCount )); then maxCount=$count; fi
-  done
-  if (( maxCount > 1 )); then
-    echo "warning: At least one component returned two z-score maps (alpha = 0.05 and 0.01)! Using first map only." >&2
-  fi
-
-  # concatenate volumes
-  $wbshrtctscmd -volume-concatenate -map 1 "${outFile}.${ext}" $(ls "$tDir"/stats/thresh_zstat* | sort -V)
-
-  # clean up temporary files
-  rm -r "$tDir"
-
-  # convert output to cifti, if needed
-  if [[ "$outFile0" == *dscalar.nii ]]; then
-    $wbcmd -cifti-convert -from-nifti "${outFile}.nii.gz" "$inFile0" "$outFile0"
-    imrm "$inFile" "$outFile"
-  elif [[ "$inFile0" == *dscalar.nii ]]; then
-    imrm "$inFile"
-  fi
-
-}
-# Call the function if the script is run directly
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  mixtureModel "$@"
+# convert output to cifti, if needed
+if ((ciftioutput))
+then
+    wb_command -cifti-convert -from-nifti "${outFile}.nii.gz" "$inFile0" "$outFile0"
 fi
-# Usage example:
-# mixtureModel input.dscalar.nii output.dscalar.nii
+

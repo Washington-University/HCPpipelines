@@ -306,7 +306,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         outTemplate.cdata = Z;
         ciftisavereset(outTemplate, optional.OutputZ, wbcommand);
         % mixtureModel(optional.OutputZ,optional.OutputZMM);
-        stat = system(sprintf('mixtureModel %s %s %s',optional.OutputZ,optional.OutputZMM),wbcommand);
+        if ~strcmp(optional.OutputZMM, '')
+            my_system(['''' getenv('HCPPIPEDIR') '''/global/scripts/mixtureModel.sh --input='''  optional.OutputZ ''' --output=''' optional.OutputZMM '''']);
+        end
     end
     
     %volume outputs
@@ -341,7 +343,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             outVolTemplate.cdata = Z;
             ciftisavereset(outVolTemplate, optional.OutputVolZ, wbcommand);
             % mixtureModel(optional.OutputVolZ,optional.OutputVolZMM);
-            stat = system(sprintf('mixtureModel %s %s %s',optional.OutputZ,optional.OutputZMM),wbcommand);
+            if ~strcmp(optional.OutputVolZMM, '')
+                my_system(['''' getenv('HCPPIPEDIR') '''/global/scripts/mixtureModel.sh --input='''  optional.OutputVolZ ''' --output=''' optional.OutputVolZMM '''']);
+            end
         end
     end
 end
