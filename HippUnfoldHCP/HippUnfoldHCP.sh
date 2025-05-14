@@ -31,7 +31,7 @@ T1wFolder="$StudyFolder/$Subject/T1w"       # input data
 
 if [ -z ${HippUnfoldDIR} ] ; then
   HippUnfoldDIR="${T1wFolder}/HippUnfold"
-fi 
+fi
 
 HippUnfoldT1wFolder="$HippUnfoldDIR/T1w/hippunfold"
 HippUnfoldT2wFolder="$HippUnfoldDIR/T2w/hippunfold"
@@ -54,25 +54,38 @@ fi
 
 mkdir -p "$HippUnfoldT1wFolder" "$HippUnfoldT2wFolder" "$HippUnfoldT1wT2wFolder"
 
-ln -s "$T1wImage" "$HippUnfoldT1wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -s "$T2wImage" "$HippUnfoldT1wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-ln -s "$T1wImage" "$HippUnfoldT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -s "$T2wImage" "$HippUnfoldT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-ln -s "$T1wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -s "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -sf "$T1wImage" "$HippUnfoldT1wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -sf "$T2wImage" "$HippUnfoldT1wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -sf "$T1wImage" "$HippUnfoldT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -sf "$T2wImage" "$HippUnfoldT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+ln -sf "$T1wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -sf "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
 
 log_Msg "Created folder structure under $HippUnfoldDIR and copied T1w and T2w images"
 log_Msg "Starting HippUnfold pipeline for subject: $Subject"
-  
 
 log_Msg "Running T1w HippUnfold for subject: $Subject"                                                                                                      #Seriously: don't put a $ here and don't capitalize S in subject...    #Seriously: don't put a $ here and don't capitalize S in subject...
-apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT1wFolder $HippUnfoldT1wFolder participant --modality T1w --path-T1w $HippUnfoldT1wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k
+if [ -z ${HIPPUNFOLDPATH} ] ; then
+  hippunfold $HippUnfoldT1wFolder $HippUnfoldT1wFolder participant --modality T1w --path-T1w $HippUnfoldT1wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k --use-conda
+else
+  apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT1wFolder $HippUnfoldT1wFolder participant --modality T1w --path-T1w $HippUnfoldT1wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k
+fi
 log_Msg "T1w HippUnfold completed."
+
 log_Msg "Running T2w HippUnfold for subject: $Subject"                                                                                                      #Seriously: don't put a $ here and don't capitalize S in subject...    #Seriously: don't put a $ here and don't capitalize S in subject...
-apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT2wFolder $HippUnfoldT2wFolder participant --modality T2w --path-T1w $HippUnfoldT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k
+if [ -z ${HIPPUNFOLDPATH} ] ; then
+  hippunfold $HippUnfoldT2wFolder $HippUnfoldT2wFolder participant --modality T2w --path-T1w $HippUnfoldT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k --use-conda
+else
+  apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT2wFolder $HippUnfoldT2wFolder participant --modality T2w --path-T1w $HippUnfoldT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k
+fi
 log_Msg "T2w HippUnfold completed."
+
 log_Msg "Running T1wT2w HippUnfold for subject: $Subject"                                                                                                            #Seriously: don't put a $ here and don't capitalize S in subject...       #Seriously: don't put a $ here and don't capitalize S in subject...
-apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT1wT2wFolder $HippUnfoldT1wT2wFolder participant --modality T2w --path-T1w $HippUnfoldT1wT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k --force-nnunet-model T1T2w
+if [ -z ${HIPPUNFOLDPATH} ] ; then
+  apptainer run --bind $StudyFolder -e $HIPPUNFOLDPATH $HippUnfoldT1wT2wFolder $HippUnfoldT1wT2wFolder participant --modality T2w --path-T1w $HippUnfoldT1wT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k --force-nnunet-model T1T2w
+else
+  hippunfold $HippUnfoldT1wT2wFolder $HippUnfoldT1wT2wFolder participant --modality T2w --path-T1w $HippUnfoldT1wT2wFolder/s_{subject}_T1w_acpc_dc_restore.nii.gz --path-T2w $HippUnfoldT1wT2wFolder/s_{subject}_T2w_acpc_dc_restore.nii.gz --cores all --force-output --generate_myelin_map --output-density native 512 2k 8k 18k --force-nnunet-model T1T2w --use-conda
+fi
 log_Msg "T1wT2w HippUnfold completed."
 
 log_Msg "HippUnfold pipeline completed successfully for subject: $Subject"
