@@ -129,17 +129,17 @@ determine_old_or_new_fsl()
 
 	fsl_primary_version="${fsl_version_array[0]}"
 	fsl_primary_version=${fsl_primary_version//[!0-9]/}
-	
+
 	fsl_secondary_version="${fsl_version_array[1]}"
 	fsl_secondary_version=${fsl_secondary_version//[!0-9]/}
-	
+
 	fsl_tertiary_version="${fsl_version_array[2]}"
 	fsl_tertiary_version=${fsl_tertiary_version//[!0-9]/}
 
-	# determine whether we are using "OLD" or "NEW" FSL 
+	# determine whether we are using "OLD" or "NEW" FSL
 	# 6.0.0 and below is "OLD"
 	# 6.0.1 and above is "NEW"
-	
+
 	if [[ $(( ${fsl_primary_version} )) -lt 6 ]] ; then
 		# e.g. 4.x.x, 5.x.x
 		old_or_new="OLD"
@@ -186,10 +186,10 @@ have_hand_reclassification()
 function copy_to_longitudinal()
 {
 	local StudyFolder="$1"
-	local SessionCross="$2" 
-	local SessionLong="$3" 
-	local fMRINames="$4" 
-	local ConcatName="$5" 
+	local SessionCross="$2"
+	local SessionLong="$3"
+	local fMRINames="$4"
+	local ConcatName="$5"
 	local HighPass="$6"
 
 	local fmri S T
@@ -201,41 +201,40 @@ function copy_to_longitudinal()
 	for file in $files_to_copy; do
 		cp "$S"/"$file" "$T"/
 	done
-	
+
 	local ICADir="$S/${ConcatName}_hp$HighPass.ica"
 	local ICADirLong="$T/${ConcatName}_hp$HighPass.ica"
-	mkdir -p "$ICADirLong"				
-	if [ -f "$ICADir/HandNoise.txt" ]; then 
-		cp "$ICADir/HandNoise.txt" "$ICADirLong"/
-	fi
+	mkdir -p "$ICADirLong"
 	files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv \
 		hand_labels_noise.txt HandNoise.txt HandSignal.txt Noise.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt Signal.txt .fix"
 	for file in $files_to_copy; do
-		cp "$ICADir"/"$file" "$ICADirLong"/
-	done 
-	
+		if [ -e "$ICADir/$file" ]; then
+			cp "$ICADir"/"$file" "$ICADirLong"/
+		fi
+	done
+
 	mkdir -p "$ICADirLong/mc"
 	cp "$ICADir/mc/prefiltered_func_data_mcf_conf.nii.gz" "$ICADirLong"/mc/
 	cp "$ICADir/mc/prefiltered_func_data_mcf_conf_hp.nii.gz" "$ICADirLong"/mc/
 	cp "$ICADir/mc/prefiltered_func_data_mcf.par" "$ICADirLong"/mc/
-	
+
 	mkdir -p "$ICADirLong"/fix/
 	cp "$ICADir"/fix/features.csv "$ICADirLong"/fix/
-	
+
 	files_to_copy="eigenvalues_percent ICAVolumeSpace.txt melodic_FTmix melodic_FTmix.sdseries.nii \
 		melodic_ICstats melodic_mix melodic_mix.sdseries.nii melodic_Tmodes melodic_unmix"
 	mkdir -p "$ICADirLong"/filtered_func_data.ica
 	for file in $files_to_copy; do
 		cp "$ICADir"/filtered_func_data.ica/"$file" "$ICADirLong"/filtered_func_data.ica/
-	done	
-	
+	done
+
 	#copy for individual fMRI runs
 	for fmri in $fMRINames; do
 		S="$StudyFolder/$SessionCross/MNINonLinear/Results/$fmri"
 		T="$StudyFolder/$SessionLong/MNINonLinear/Results/$fmri"
 		mkdir -p "$T"/"$fmri"_hp"$HighPass".ica/mc
-		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/		
-	done	
+		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/
+	done
 }
 
 # ------------------------------------------------------------------------------
@@ -313,7 +312,7 @@ MotionRegression=$(opts_StringToBool "$MotionRegression")
 DeleteIntermediates=$(opts_StringToBool "$DeleteIntermediates")
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
-if (( IsLongitudinal )) && ! [ -d "$StudyFolder/$SessionLong" ]; then 
+if (( IsLongitudinal )) && ! [ -d "$StudyFolder/$SessionLong" ]; then
 	log_Err_Abort "Longitudinal session directory $StudyFolder/$SessionLong does not exist"
 fi
 
@@ -352,11 +351,11 @@ DoVol=0
 fixlist=".fix"
 Session=$SessionCross
 
-if (( IsLongitudinal )); then 
+if (( IsLongitudinal )); then
 	DoVol=1
 	Session=$SessionLong
 	log_Msg "Copying ICAFIX output to longitudinal session"
-	copy_to_longitudinal "$StudyFolder" "$SessionCross" "$SessionLong" "${fMRINames//@/ }" "$ConcatName" "$HighPass"	
+	copy_to_longitudinal "$StudyFolder" "$SessionCross" "$SessionLong" "${fMRINames//@/ }" "$ConcatName" "$HighPass"
 fi
 
 # ConcatName is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
@@ -384,7 +383,7 @@ log_Msg "PWD : $DIR"
 
 ## MPH: Create a high level variable that checks whether the files necessary for fix_3_clean
 ## already exist (i.e., reapplying FIX cleanup following manual classification).
-## If so, we can skip all the following looping through individual runs and concatenation, 
+## If so, we can skip all the following looping through individual runs and concatenation,
 ## and resume at the "Housekeeping related to files expected for fix_3_clean" section
 
 ConcatNameNoExt=$($FSLDIR/bin/remove_ext $ConcatName)  # No extension, but still includes the directory path
@@ -418,7 +417,7 @@ if (( regenConcatHP )); then
 
 	#Loops over the runs and do highpass on each of them
 	log_Msg "Looping over files and doing highpass to each of them"
-	
+
 	NIFTIvolMergeArray=()
 	NIFTIvolhpVNMergeArray=()
 	SBRefVolArray=()
@@ -484,7 +483,7 @@ if (( regenConcatHP )); then
 		# the volume based on whether ${RegString} is empty. (Thus no explicit DoVol conditional
 		# in the following).
 		# If ${RegString} is empty, the movement regressors will also automatically get re-filtered.
-		
+
 		tr=`$FSLDIR/bin/fslval $fmri pixdim4 | tr -d ' '`  #No checking currently that TR is same across runs
 		log_Msg "tr: $tr"
 
@@ -525,7 +524,7 @@ if (( regenConcatHP )); then
 				# Use interpreted MATLAB or Octave
 				# ${hp} needs to be passed in as a string, to handle the hp=pd* case
 				matlab_code="${ML_PATHS} functionhighpassandvariancenormalize(${tr}, '${hp}', '${fmri}', '${Caret7_Command}', '${RegString}', ${volwisharts}, ${ciftiwisharts}, '${icadimmode}');"
-				
+
 				log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 				log_Msg "${matlab_code}"
 				# Use bash redirection ("here-string") to pass multiple commands into matlab
@@ -539,7 +538,7 @@ if (( regenConcatHP )); then
 				# Unsupported MATLAB run mode
 				log_Err_Abort "Unsupported MATLAB run mode value: ${MatlabMode}"
 				;;
-			
+
 			esac
 
 			# Demean the movement regressors (in the 'fake-NIFTI' format returned by functionhighpassandvariancenormalize)
@@ -551,7 +550,7 @@ if (( regenConcatHP )); then
 				fslmaths ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf -sub ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf
 				$FSLDIR/bin/imrm ${fmri}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_mean
 			fi
-			
+
 			log_Msg "Dims: $(cat ${fmri}_dims.txt)"
 
 		else
@@ -560,7 +559,7 @@ if (( regenConcatHP )); then
 		fi
 
 		cd ${DIR}  # Return to directory where script was launched
-		
+
 		log_Msg "Bottom of loop through fmris: fmri: ${fmri}"
 
 	done  ###END LOOP (for fmriname in $fmris; do)
@@ -604,7 +603,7 @@ if (( regenConcatHP )); then
 	else
 		log_Warn "${ConcatNameNoExt}_Atlas${RegString}_hp${hp}.dtseries.nii already exists. Using existing version"
 	fi
-	
+
 	# At this point the concatenated VN'ed time series (both volume and CIFTI, following the "1st pass" VN) can be deleted
 	# MPH: Conditional on DoVol not needed in the following, since at worst, we'll try removing a file that doesn't exist
 	log_Msg "Removing the concatenated VN'ed time series"
@@ -681,7 +680,7 @@ if [[ -f ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii ]] ; then
 
 	/bin/rm -f Atlas.dtseries.nii
 	$FSLDIR/bin/imln ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii Atlas.dtseries.nii
-	
+
 	log_Msg "START: Showing linked files"
 	ls -l ../${concatfmri}_Atlas${RegString}_hp${hp}.dtseries.nii
 	ls -l Atlas.dtseries.nii
@@ -696,7 +695,7 @@ fi
 
 # MPH: We need to invoke fix_3_clean directly, rather than through 'fix -a <options>' because
 # the latter does not provide access to the "DoVol" option within the former.
-# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that 
+# (Also, 'fix -a' is hard-coded to use '.fix' as the list of noise components, although that
 # could be worked around).
 
 log_Msg "Running fix_3_clean"
@@ -712,7 +711,7 @@ case ${MatlabMode} in
 		# Do NOT enclose string variables inside an additional single quote because all
 		# variables are already passed into the compiled binary as strings
 		matlab_function_arguments=("${fixlist}" "${aggressive}" "${MotionRegression}" "${AlreadyHP}" "${Caret7_Command}" "${DoVol}")
-		
+
 		matlab_cmd=("${matlab_exe}" "${MATLAB_COMPILER_RUNTIME}" "${matlab_function_arguments[@]}")
 
 		# redirect tokens must be parsed by bash before doing variable expansion, and thus can't be inside a variable
@@ -723,12 +722,12 @@ case ${MatlabMode} in
 		log_Msg "Run compiled MATLAB: ${matlab_cmd[*]}"
 		"${matlab_cmd[@]}"
 		;;
-	
+
 	1 | 2)
 		# Use interpreted MATLAB or Octave
 
 		matlab_code="${ML_PATHS} fix_3_clean('${fixlist}',${aggressive},${MotionRegression},${AlreadyHP},'${Caret7_Command}',${DoVol});"
-		
+
 		log_Msg "Run interpreted MATLAB/Octave (${matlab_interpreter[*]}) with code..."
 		log_Msg "${matlab_code}"
 		"${matlab_interpreter[@]}" <<<"${matlab_code}"
@@ -779,7 +778,7 @@ if (( DoVol )); then
 	if [ `$FSLDIR/bin/imtest ${concatfmrihp}.ica/filtered_func_data_clean_vn` = 1 ]; then
 		$FSLDIR/bin/immv ${concatfmrihp}.ica/filtered_func_data_clean_vn ${concatfmrihp}_${CleanSubstring}_vn
 	fi
-	
+
 	# Convert sICA+FIX cleaned movement regressors to text
 	if [ -f ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
 		fslmeants -i ${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -o Movement_Regressors_hp${hp}_clean.txt --showall
@@ -788,7 +787,7 @@ if (( DoVol )); then
 		# Execute tail in a subshell, so we can successfully overwrite file with same name
 		echo "$(tail -n ${nVols} Movement_Regressors_hp${hp}_clean.txt)" > Movement_Regressors_hp${hp}_clean.txt
 	fi
-	
+
 fi
 log_Msg "Done renaming files"
 
@@ -853,12 +852,12 @@ for fmriname in $fmris ; do
 		readme_fmri="${StudyFolder}/${Session}/MNINonLinear/Results/${readme_fmri_name}/${readme_fmri_name}"
 		echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	done
-	
+
 	if (( DoVol )); then
 		volume_out=${fmriNoExt}_hp${hp}_${CleanSubstring}.nii.gz
 		"${Caret7_Command}" -volume-merge ${volume_out} -volume ${ConcatFolder}/${concatfmrihp}_${CleanSubstring}.nii.gz -subvolume ${Start} -up-to ${Stop}
 		fslmaths ${volume_out} -div ${ConcatFolder}/${concatfmrihp}_vn -mul ${fmriNoExt}_hp${hp}_vn -add ${fmriNoExt}_mean ${volume_out}
-		
+
 		# Convert sICA+FIX cleaned movement regressors to text
 		if [ -f ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz ] ; then
 			${Caret7_Command} -volume-merge ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -volume ${ConcatFolder}/${concatfmrihp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz -subvolume ${Start} -up-to ${Stop}
@@ -868,7 +867,7 @@ for fmriname in $fmris ; do
 			nVols=$($FSLDIR/bin/fslnvols ${fmriNoExt}_hp${hp}.ica/mc/prefiltered_func_data_mcf_conf_hp_clean.nii.gz)
 			# Execute tail in a subshell, so we can successfully overwrite file with same name
 			echo "$(tail -n ${nVols} ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt)" > ${fmriDir}/Movement_Regressors_hp${hp}_clean.txt
-		fi		
+		fi
 	fi
 	Start=`echo "${Start} + ${NumTPS}" | bc -l`
 done
