@@ -97,6 +97,13 @@ opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether 
 opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --extract-fmri-out output after tICA cleanup"
 opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal processing mode" "FALSE"
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Base template label' 'Longitudinal base template label' ""
+opts_AddOptional '--longitudinal-subject' 'Subject' 'Subject label' 'Subject ID, required in longitudinal mode' ""
+opts_AddOptional '--longitudinal-extract-all' 'ExtractAllRunsLong' 'TRUE or FALSE' 'Extract all runs specified in --fmri-names, with
+output name matching --output-fmri-name' "FALSE"
+
 #general settings
 opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for rerunning with similar settings, or for reusing these results for future cleaning"
 opts_AddOptional '--starting-step' 'startStep' 'step' "what step to start processing at, one of:
@@ -107,9 +114,9 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
-opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal processing mode" "FALSE'
+
 opts_ParseArguments "$@"
-opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' "longitudinal template ID" ""
+
 
 if ((pipedirguessed))
 then
@@ -127,8 +134,17 @@ FixLegacyBias=$(opts_StringToBool "$FixLegacyBiasString")
 RecleanMode=$(opts_StringToBool "$RecleanModeString")
 migpResumeBool=$(opts_StringToBool "$migpResume")
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
-if [[ "$IsLongitudinal" == "1" && "$TemplateLong" == "" ]; then 
-    log_Err_Abort "--longitudinal-template is required in longitudinal mode."
+ExtractAllRunsLong=$(opts_StringToBool "$ExtractAllRunsLong")
+
+extractNameAllLong=""
+if [[ "$IsLongitudinal" == "1" ]] 
+    if [[ "$TemplateLong" == "" || "$Subject" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template and --longitudinal-subject are required in longitudinal mode."
+    fi
+    if [[ ExtractAllRunsLong == 1 ]]; then 
+        extractNameAllLong="$OutputfMRIName"
+    fi
+
 fi
 
 if ! [[ "$parLimit" == "-1" || "$parLimit" =~ [1-9][0-9]* ]]
@@ -674,8 +690,16 @@ then
 fi
 
 if (( IsLongitudinal )); then 
-    #Split and re-concatenate timepoints to produce longitudinal template output
+    #Split, demean, group variance normalize and re-concatenate timepoints to produce longitudinal template output
     "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
-        --study-folder="$StudyFolder" \
-        --session-list="$SesslistRaw"
+        --study-folder="$StudyFolder"       \
+        --subject="$Subject"                \
+        --session-list="$SesslistRaw"       \
+        --template-long="$TemplateLong"     \
+        --extract-fmri-name-list="$concatNamesToUse" \
+        --highpass="$HighPass"              \
+        --extract-fmri-out="$extractNameOut" \
+        --reg-name="$RegName"               \
+        --extract-fmri-out-all="extractNameAllLong" \
+        --fmri-names="$fMRINames"
 fi
