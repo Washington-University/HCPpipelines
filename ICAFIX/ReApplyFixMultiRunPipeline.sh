@@ -205,10 +205,20 @@ function copy_to_longitudinal()
 	local ICADir="$S/${ConcatName}_hp$HighPass.ica"
 	local ICADirLong="$T/${ConcatName}_hp$HighPass.ica"
 	mkdir -p "$ICADirLong"
-	files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv \
-		hand_labels_noise.txt HandNoise.txt HandSignal.txt Noise.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt Signal.txt .fix"
-	for file in $files_to_copy; do
-		if [ -e "$ICADir/$file" ]; then
+	# copy mandatory files
+	mandatory_files_to_copy="fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.wb_annsub.csv \
+	.fix Noise.txt Signal.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt"
+	for file in $mandatory_files_to_copy; do
+		if [ -f "$ICADir/$file" ]; then
+			cp "$ICADir"/"$file" "$ICADirLong"/
+		else
+			log_Err_Abort "$file not found in $ICADir, a successfully completed MR+FIX and PostFix run is required before running this script"
+		fi
+	done
+	# copy optional files
+	optional_files_to_copy="hand_labels_noise.txt HandNoise.txt HandSignal.txt"
+	for file in $optional_files_to_copy; do
+		if [ -f "$ICADir/$file" ]; then
 			cp "$ICADir"/"$file" "$ICADirLong"/
 		fi
 	done
