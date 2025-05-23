@@ -40,7 +40,7 @@ opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string 
 opts_AddConfigMandatory '--num-wishart' 'numWisharts' 'numWisharts' 'integer' "how many wisharts to use in icaDim" #FIXME - We will need to think about how to help users set this.  Ideally it is established by running a null model, but that is timeconsuming. Valid values for humans have been WF5 or WF6.
 #sICA individual projection
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
-opts_AddMandatory '--session-expected-timepoints' 'sessionExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
+opts_AddMandatory '--session-expected-timepoints' 'sessionExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'" "--subject-expected-timepoints"
 
 
 #optional
@@ -101,8 +101,7 @@ opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for con
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal processing mode" "FALSE"
 opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Base template label' 'Longitudinal base template label' ""
 opts_AddOptional '--longitudinal-subject' 'Subject' 'Subject label' 'Subject ID, required in longitudinal mode' ""
-opts_AddOptional '--longitudinal-extract-all' 'ExtractAllRunsLong' 'TRUE or FALSE' 'Extract all runs specified in --fmri-names, with
-output name matching --output-fmri-name' "FALSE"
+opts_AddOptional '--longitudinal-extract-all' 'ExtractAllRunsLong' 'TRUE or FALSE' 'Extract all runs specified in --fmri-names, with output name matching the one from --mrfix-concat-name' "FALSE"
 
 #general settings
 opts_AddOptional '--config-out' 'confoutfile' 'file' "generate config file for rerunning with similar settings, or for reusing these results for future cleaning"
@@ -127,7 +126,6 @@ fi
 opts_ShowValues
 
 #processing code goes here
-IFS='@' read -a Sesslist <<<"$SesslistRaw"
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
 FixLegacyBias=$(opts_StringToBool "$FixLegacyBiasString")
@@ -137,15 +135,6 @@ IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 ExtractAllRunsLong=$(opts_StringToBool "$ExtractAllRunsLong")
 
 extractNameAllLong=""
-if [[ "$IsLongitudinal" == "1" ]] 
-    if [[ "$TemplateLong" == "" || "$Subject" == "" ]]; then 
-        log_Err_Abort "--longitudinal-template and --longitudinal-subject are required in longitudinal mode."
-    fi
-    if [[ ExtractAllRunsLong == 1 ]]; then 
-        extractNameAllLong="$OutputfMRIName"
-    fi
-
-fi
 
 if ! [[ "$parLimit" == "-1" || "$parLimit" =~ [1-9][0-9]* ]]
 then
@@ -170,6 +159,42 @@ then
     #alternatively, put the equivalent of this 'if' in the .m or .sh of the DVARS code, and pass the boolean
     signalTxtName="ReCleanSignal.txt"
 fi
+
+if [[ "$IsLongitudinal" == "1" ]]; then
+    if [[ "$TemplateLong" == "" || "$Subject" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template and --longitudinal-subject are required in longitudinal mode."
+    fi
+    if [[ "$ExtractAllRunsLong" == "1" ]]; then 
+        extractNameAllLong="$MRFixConcatName"
+    fi
+    IFS='@' read -a SesslistCross <<<"$SesslistRaw"
+    Sesslist=()
+    for sess in ${SesslistCross[@]}; do
+        Sesslist+=("${sess}.long.$TemplateLong")
+    done
+else 
+    IFS='@' read -a Sesslist <<<"$SesslistRaw"
+fi
+
+#START DEBUG - delete this block later.
+if (( IsLongitudinal )); then 
+    #Split, demean, group variance normalize and re-concatenate cleaned timeseries to produce longitudinal template output.
+    #Also averages cleaned variance.
+    "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
+        --study-folder="$StudyFolder"       \
+        --subject="$Subject"                \
+        --session-list="$SesslistRaw"       \
+        --template-long="$TemplateLong"     \
+        --extract-fmri-name-list="$concatNamesToUse" \
+        --highpass="$HighPass"              \
+        --extract-fmri-name="$extractNameOut" \
+        --reg-name="$RegName"               \
+        --fmri-name-concat-all="$extractNameAllLong" \
+        --fmri-names="$fMRINames"
+fi
+echo "debug block completed"
+exit 0
+#END DEBUG
 
 function stepNameToInd()
 {
@@ -690,7 +715,8 @@ then
 fi
 
 if (( IsLongitudinal )); then 
-    #Split, demean, group variance normalize and re-concatenate timepoints to produce longitudinal template output
+    #Split, demean, group variance normalize and re-concatenate cleaned timeseries to produce longitudinal template output.
+    #Also averages cleaned variance.
     "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
         --study-folder="$StudyFolder"       \
         --subject="$Subject"                \
@@ -698,8 +724,8 @@ if (( IsLongitudinal )); then
         --template-long="$TemplateLong"     \
         --extract-fmri-name-list="$concatNamesToUse" \
         --highpass="$HighPass"              \
-        --extract-fmri-out="$extractNameOut" \
+        --extract-fmri-name="$extractNameOut" \
         --reg-name="$RegName"               \
-        --extract-fmri-out-all="extractNameAllLong" \
+        --fmri-name-concat-all="$extractNameAllLong" \
         --fmri-names="$fMRINames"
 fi
