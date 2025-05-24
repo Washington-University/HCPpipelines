@@ -293,9 +293,9 @@ def average_bvecs(bvals1, bvecs1, bvals2, bvecs2):
 if __name__ == '__main__':
 
     if len(sys.argv) not in (7, 9):
-        print('usage: average_bvecs bvals1 bvecs1 '
-              'bvals2 bvecs2 '
-              'output_basename combine_data_flag '
+        print('usage: average_bvecs bvals1 bvecs1 ' +
+              'bvals2 bvecs2 ' +
+              'output_basename combine_data_flag ' +
               '[overlap1 overlap2]')
         sys.exit(1)
 

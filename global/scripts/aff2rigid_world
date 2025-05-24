@@ -102,7 +102,7 @@ v21=v21/linalg.norm(v21)
 v31=v31-multiply(v31.T * v21,v21)
 v31=v31/linalg.norm(v31)
 tmp=cross(v21[0:3,0].T,v31[0:3,0].T).T
-v41=mat(zeros((4,1)))
+v41=matrix(zeros((4,1)))
 v41[0:3,0]=tmp
 # Map vectors to native space
 w21=ainv*(v21)
@@ -112,7 +112,7 @@ w21=w21/linalg.norm(w21)
 w31=w31-multiply(w31.T * w21,w21)
 w31=w31/linalg.norm(w31)
 tmp=cross(w21[0:3,0].T,w31[0:3,0].T).T
-w41=mat(zeros((4,1)))
+w41=matrix(zeros((4,1)))
 w41[0:3,0]=tmp
 
 # setup matrix: native to MNI space
