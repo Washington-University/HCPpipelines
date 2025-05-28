@@ -97,10 +97,10 @@ opts_AddOptional '--fix-legacy-bias' 'FixLegacyBiasString' 'YES or NO' 'whether 
 opts_AddOptional '--extract-fmri-name-list' 'concatNamesToUse' 'name@name@name...' "list of fMRI run names to concatenate into the --extract-fmri-out output after tICA cleanup"
 opts_AddOptional '--extract-fmri-out' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs, requires --extract-fmri-name-list"
 
-#longitudinal options
-opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal processing mode" "FALSE"
-opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Base template label' 'Longitudinal base template label' ""
-opts_AddOptional '--longitudinal-subject' 'Subject' 'Subject label' 'Subject ID, required in longitudinal mode' ""
+#longitudinal mode specific options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal processing mode. By default, fMRI runs under --extract-fmri-out will be concatenated and stored under base template results directory. Specify --longitudinal-extract-all=TRUE to separately output runs under --fmri-names." "FALSE"
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'template ID' 'Longitudinal base template ID' ""
+opts_AddOptional '--longitudinal-subject' 'Subject' 'Subject' 'Subject ID, required in longitudinal mode' ""
 opts_AddOptional '--longitudinal-extract-all' 'ExtractAllRunsLong' 'TRUE or FALSE' 'Extract all runs specified in --fmri-names, with output name matching the one from --mrfix-concat-name' "FALSE"
 
 #general settings
@@ -161,8 +161,8 @@ then
 fi
 
 if [[ "$IsLongitudinal" == "1" ]]; then
-    if [[ "$TemplateLong" == "" || "$Subject" == "" ]]; then 
-        log_Err_Abort "--longitudinal-template and --longitudinal-subject are required in longitudinal mode."
+    if [[ "$TemplateLong" == "" || "$Subject" == "" || "$extractNameOut" == "" ]]; then 
+        log_Err_Abort "--extract-fmri-out, --longitudinal-template and --longitudinal-subject are required in longitudinal mode."
     fi
     if [[ "$ExtractAllRunsLong" == "1" ]]; then 
         extractNameAllLong="$MRFixConcatName"
@@ -175,26 +175,6 @@ if [[ "$IsLongitudinal" == "1" ]]; then
 else 
     IFS='@' read -a Sesslist <<<"$SesslistRaw"
 fi
-
-#START DEBUG - delete this block later.
-if (( IsLongitudinal )); then 
-    #Split, demean, group variance normalize and re-concatenate cleaned timeseries to produce longitudinal template output.
-    #Also averages cleaned variance.
-    "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
-        --study-folder="$StudyFolder"       \
-        --subject="$Subject"                \
-        --session-list="$SesslistRaw"       \
-        --template-long="$TemplateLong"     \
-        --extract-fmri-name-list="$concatNamesToUse" \
-        --highpass="$HighPass"              \
-        --extract-fmri-name="$extractNameOut" \
-        --reg-name="$RegName"               \
-        --fmri-name-concat-all="$extractNameAllLong" \
-        --fmri-names="$fMRINames"
-fi
-echo "debug block completed"
-exit 0
-#END DEBUG
 
 function stepNameToInd()
 {
@@ -715,8 +695,8 @@ then
 fi
 
 if (( IsLongitudinal )); then 
-    #Split, demean, group variance normalize and re-concatenate cleaned timeseries to produce longitudinal template output.
-    #Also averages cleaned variance.
+    #Split, group variance normalize and concatenate cleaned timeseries across all sessions, storing in longitudinal template output.
+    #Also create averages across sessions for cleaned variance.
     "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
         --study-folder="$StudyFolder"       \
         --subject="$Subject"                \

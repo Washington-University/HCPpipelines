@@ -61,7 +61,7 @@ function makeTemplateConcatRuns {
     local ts_concat_nifti_array #average nifti timeseries
     
     #loop variables 
-    local session sessionLong resultsDir fmri fmri_rt
+    local session sessionLong resultsDir fmri fmri_rt frame_ind1 frame_ind2 NumTPs
     
     local ts_all_dtseries_clean #concatenated runs from all timepoints in order after demeaning, dividing by _vn and muliplying by the average _vn
     for session in ${sessions[*]}; do
@@ -71,61 +71,87 @@ function makeTemplateConcatRuns {
 
         # Average vn's in the atlas and native spaces. We assume that $nameOut exists in $sessionLong tICA output
         vn_average_cifti_array+=(-cifti "$resultsDir/$nameOut/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_vn.dscalar.nii")
-        vn_average_nifti_array+=("$resultsDir/$nameOut/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz")
+        vn_average_nifti_array+=(-volume "$resultsDir/$nameOut/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz")
+        
+        #reset session starting frame
+        frame_ind1=0
         
         for fmri in ${fMRIs[*]}; do
-            #demean each fmri and save to temporary file - cifti
-            fmri_rt=$resultsDir/"$fmri/$fmri"_Atlas_"$RegName"_hp"$HighPass"_clean_tclean
-            wb_command -cifti-reduce "$fmri_rt".dtseries.nii MEAN "$fmri_rt"_mean.dscalar.nii
-            wb_command -cifti-math '(TS - M) / VN' "$fmri_rt"_demean.dtseries.nii \
-                -var TS "$fmri_rt".dtseries.nii\
-                -var M "$fmri_rt"_mean.dscalar.nii -select 1 1 -repeat \
-                -var VN $resultsDir/"$fmri/$fmri"_Atlas_"$RegName"_hp"$HighPass"_vn.dscalar.nii -select 1 1 -repeat 
-            rm "$fmri_rt"_mean.dscalar.nii
-            ts_concat_cifti_array+=(-cifti "${fmri_rt}_demean.dtseries.nii")
+            fmri_rt=$resultsDir/"$fmri/${fmri}_Atlas_${RegName}_hp${HighPass}_clean_tclean"
+            NumTPs=$(wb_command -file-information "$fmri_rt.dtseries.nii" -only-number-of-maps)
+            frame_ind2=$(( frame_ind1 + NumTPs ))
             
-            #demean each fmri and save to temporary file - nifti
-            fmri_rt=$resultsDir/"$fmri/$fmri"_hp"$HighPass"_clean_tclean
-            fslmaths "$fmri_rt".nii.gz -Tmean -mul -1 -add "$fmri_rt".nii.gz -div $resultsDir/"$fmri/$fmri"_hp"$HighPass"_vn.nii.gz "$fmri_rt"_demean.nii
-            ts_concat_nifti_array+=("${fmri_rt}_demean.nii.gz")
+            # 1. cifti: Extract demeaned tcleaned fMRI run, divide by vn            
+            wb_command -cifti-merge "${fmri_rt}_demean.dtseries.nii" \
+                -cifti "$resultsDir/${nameOut}/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean.dtseries.nii" \
+                -index $(( frame_ind1 + 1 ))  \
+                -up-to $(( frame_ind2 ))
+            
+            wb_command -cifti-math 'TS / VN' "${fmri_rt}_demean_v1.dtseries.nii" \
+                -var TS "${fmri_rt}_demean.dtseries.nii" \
+                -var VN "$resultsDir/${nameOut}/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_vn.dscalar.nii" -select 1 1 -repeat
+            ts_concat_cifti_array+=(-cifti "${fmri_rt}_demean_v1.dtseries.nii")
+            #clean up
+            rm -f "${fmri_rt}_demean.dtseries.nii"
+                    
+            # 2. NIFTI processing
+            fmri_rt="$resultsDir/$fmri/${fmri}_hp${HighPass}_clean_tclean"
+            #extract NIFTI time series and divide by average cleaned session's vn
+            wb_command -volume-merge "${fmri_rt}_demean.nii" \
+                -volume "$resultsDir/${nameOut}/${nameOut}_hp${HighPass}_clean_tclean.nii.gz" \
+                -subvolume $(( frame_ind1 + 1 )) \
+                -up-to $(( frame_ind2 ))
+            wb_command -volume-math 'TS / VN' "${fmri_rt}_demean_v1.nii" \
+                -var TS "${fmri_rt}_demean.nii" \
+                -var VN "$resultsDir/${nameOut}/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz" -repeat
+                
+            ts_concat_nifti_array+=(-volume "${fmri_rt}_demean_v1.nii")
+            #clean up
+            rm -f "${fmri_rt}_demean.nii"
+            
+            # 3. Update the starting frame
+            frame_ind1="$frame_ind2"
         done
     done
 
-    # run concat/average commands
+    # concatenate time series across sessions and runs
     wb_command -cifti-merge "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_v1.dtseries.nii" "${ts_concat_cifti_array[@]}"
-    fslmerge -t "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii" "${ts_concat_nifti_array[@]}"
+    wb_command -volume-merge "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii" "${ts_concat_nifti_array[@]}"
+    
+    # average vn's across sessions
     wb_command -cifti-average "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_vn.dscalar.nii" "${vn_average_cifti_array[@]}"
-    fslmerge -t  "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz" "${vn_average_nifti_array[@]}"
-    fslmaths "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz" -Tmean "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz"
-    rm "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz"
+    wb_command -volume-merge "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz" "${vn_average_nifti_array[@]}"
+    wb_command -volume-reduce "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz" MEAN "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz"
 
-    # multiply by average _vn files
     # multiply by average _vn - cifti
     wb_command -cifti-math "TS * VN" "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean.dtseries.nii" \
        -var TS "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_v1.dtseries.nii" \
        -var VN "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_vn.dscalar.nii" -select 1 1 -repeat
+
     # multiply by average _vn - nifti
-    fslmaths "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii.gz" -mul "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz" \
-       "$OutDir/${nameOut}_hp${HighPass}_clean_tclean.nii.gz"
+    wb_command -volume-math "TS * VN" "$OutDir/${nameOut}_hp${HighPass}_clean_tclean.nii.gz" \
+        -var TS "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii" \
+        -var VN "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn.nii.gz" -repeat
     
     #clean up
     rm -f "$OutDir/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_v1.dtseries.nii" \
-        "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii.gz"
+        "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_v1.nii" \
+        "$OutDir/${nameOut}_hp${HighPass}_clean_tclean_vn_all.nii.gz"
         
     for session in ${sessions[*]}; do
         sessionLong="$session.long.$template"
         resultsDir="$StudyFolder/$sessionLong/MNINonLinear/Results"
         for fmri in ${fMRIs[*]}; do
-            rm -f "$resultsDir/$fmri/${fmri}_Atlas_${RegName}_hp${HighPass}_clean_tclean_demean.dtseries.nii" \
-                "$resultsDir/$fmri/${fmri}_hp${HighPass}_clean_tclean_demean.nii.gz"
+            rm -f "$resultsDir/$fmri/${fmri}_Atlas_${RegName}_hp${HighPass}_clean_tclean_demean_v1.dtseries.nii" \
+                "$resultsDir/$fmri/${fmri}_hp${HighPass}_clean_tclean_demean_v1.nii"
         done
     done
 }
 
-#create outputs from the selected time series across all timepoints.
+#create outputs for the selected time series across all timepoints.
 makeTemplateConcatRuns "$concatNamesToUse" "$SesslistRaw" "$TemplateLong" "$extractNameOut"
 
-#optionally, create outputs from all time series.
+#optionally, create outputs for all time series.
 if [[ "$extractNameAll" != "" ]]; then 
     makeTemplateConcatRuns "$fMRINames" "$SesslistRaw" "$TemplateLong" "$extractNameAll"
 fi
