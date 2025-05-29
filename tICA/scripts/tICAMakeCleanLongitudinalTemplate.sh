@@ -35,14 +35,14 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-if [[ "$extractNameAll" != "" && "$fMRINames" == "" ]]; then 
-    log_Err_Abort "--fmri-names is required with --fmri-name-concat-all"
-fi
-
 #display the parsed/default values
 opts_ShowValues
 
 #do work
+if [[ "$extractNameAll" != "" && "$fMRINames" == "" ]]; then 
+    log_Err_Abort "--fmri-names is required with --fmri-name-concat-all"
+fi
+
 TemplateDir="$StudyFolder"/"$Subject.long.$TemplateLong"
 
 function makeTemplateConcatRuns {
@@ -55,10 +55,10 @@ function makeTemplateConcatRuns {
     mkdir -p "$OutDir"
     
     #per fMRI run lists for concat/merge commands
-    local vn_average_cifti_array
-    local vn_average_nifti_array #average of the _vn from all timepoints
-    local ts_concat_cifti_array
-    local ts_concat_nifti_array #average nifti timeseries
+    local vn_average_cifti_array=()
+    local vn_average_nifti_array=() #average of the _vn from all timepoints
+    local ts_concat_cifti_array=()
+    local ts_concat_nifti_array=() #average nifti timeseries
     
     #loop variables 
     local session sessionLong resultsDir fmri fmri_rt frame_ind1 frame_ind2 NumTPs
