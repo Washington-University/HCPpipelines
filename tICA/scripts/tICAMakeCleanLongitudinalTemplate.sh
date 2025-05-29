@@ -25,8 +25,8 @@ opts_AddMandatory '--highpass' 'HighPass' 'hp value' 'High pass used with these 
 opts_AddMandatory '--extract-fmri-name' 'extractNameOut' 'name' "fMRI name for concatenated extracted runs.
 Must match the one used in cortical registration."
 opts_AddOptional  '--reg-name' 'RegName' 'registration algorithm' "Cortical registration algorithm used [MSMAll]" "MSMAll"
-opts_AddOptional  '--fmri-name-concat-all' 'extractNameAll' 'name' "Concatenated output run label. If specified, must match the one used in multi-run FIX and cortical registration." ""
-opts_AddOptional  '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of all fmri run names separated by @. Required with --extract-fmri-out-all" ""
+opts_AddOptional  '--fmri-name-concat-all' 'extractNameAll' 'name' "Concatenated output run label. If specified, must match the one used in multi-run FIX and cortical registration.  Requires --fmri-names."
+opts_AddOptional  '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "when using --fmri-name-concat-all, specify the list of MR FIX run names separated by @ here"
 
 opts_ParseArguments "$@"
 
