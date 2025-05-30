@@ -49,7 +49,7 @@ opts_AddOptional '--ica-mode' 'ICAmode' 'string' "whether to use parts of a prev
 NEW - estimate a new sICA and a new tICA
 REUSE_SICA_ONLY - reuse an existing sICA and estimate a new tICA
 INITIALIZE_TICA - reuse an existing sICA and use an existing tICA to start the estimation
-REUSE_TICA - reuse an existing sICA and an existing tICA (this mode is recommended for longitudinal processing)" \
+REUSE_TICA - reuse an existing sICA and an existing tICA (this mode is mandatory for longitudinal processing)" \
     'NEW'
 #TSC: this is the output group folder, one above MNINonLinear
 opts_AddConfigOptional '--precomputed-clean-folder' 'precomputeTICAFolder' 'precomputeTICAFolder' 'folder' "group folder containing an existing tICA cleanup to make use of for REUSE or INITIALIZE modes"
@@ -162,7 +162,7 @@ fi
 
 if [[ "$IsLongitudinal" == "1" ]]; then
     if [[ "$ICAmode" != "REUSE_ICA" ]]; then
-        log_Warn "mode other than REUSE_ICA is not recommended for longitudinal processing"
+        log_Err "mode other than REUSE_ICA is not supported in longitudinal processing"
     fi
     if [[ "$TemplateLong" == "" || "$Subject" == "" || "$extractNameOut" == "" ]]; then 
         log_Err_Abort "--extract-fmri-out, --longitudinal-template and --longitudinal-subject are required in longitudinal mode."
