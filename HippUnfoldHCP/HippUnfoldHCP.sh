@@ -64,6 +64,18 @@ ln -sf "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii
 log_Msg "Created folder structure under $HippUnfoldDIR and copied T1w and T2w images"
 log_Msg "Starting HippUnfold pipeline for subject: $Subject"
 
+export APPTAINER_BINDPATH=${HIPPUNFOLD_CACHE_DIR}:${HIPPUNFOLD_CACHE_DIR}
+export APPTAINER_CACHEDIR=${HIPPUNFOLD_CACHE_DIR}/apptainer
+export APPTAINERENV_HIPPUNFOLD_CACHE_DIR=${HIPPUNFOLD_CACHE_DIR} #This one actually did something
+
+#export HIPPUNFOLD_CACHE_DIR=${HippUnfoldDIR}/cache #Keep for QuNex?
+#export APPTAINER_BINDPATH=${StudyFolder}:${StudyFolder}
+#export APPTAINER_CACHEDIR=${HippUnfoldDIR}/apptainer
+#export APPTAINERENV_HIPPUNFOLD_CACHE_DIR=${HippUnfoldDIR}/cache #This one actually did something
+#mkdir -p ${HIPPUNFOLD_CACHE_DIR}
+#mkdir -p ${APPTAINER_CACHEDIR}
+
+
 if [[ "${HIPPUNFOLDPATH:-}" == "" ]]
 then
     hippcmd=(hippunfold --use-conda)
@@ -80,7 +92,7 @@ log_Msg "Running T1w HippUnfold for subject: $Subject"
     --cores all \
     --force-output \
     --generate_myelin_map \
-    --output-density native 512 2k 8k 18k
+    --output-density native 512 2k 8k 18k 
 log_Msg "T1w HippUnfold completed."
 
 log_Msg "Running T2w HippUnfold for subject: $Subject"
@@ -91,7 +103,7 @@ log_Msg "Running T2w HippUnfold for subject: $Subject"
     --cores all \
     --force-output \
     --generate_myelin_map \
-    --output-density native 512 2k 8k 18k
+    --output-density native 512 2k 8k 18k 
 log_Msg "T2w HippUnfold completed."
 
 log_Msg "Running T1wT2w HippUnfold for subject: $Subject"
