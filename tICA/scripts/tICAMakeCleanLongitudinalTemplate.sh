@@ -63,7 +63,7 @@ function makeTemplateConcatRuns {
     #loop variables 
     local session sessionLong resultsDir fmri fmri_rt frame_ind1 frame_ind2 NumTPs temp_demean1_v1 temp_demean1 temp_demean2_v1 temp_demean2
     
-    for session in ${sessions[*]}; do
+    for session in "${sessions[@]}"; do
         sessionLong="$session.long.$template"
         echo "Timepoint: $sessionLong"
         resultsDir="$StudyFolder"/"$sessionLong"/MNINonLinear/Results
