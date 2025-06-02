@@ -75,7 +75,7 @@ function makeTemplateConcatRuns {
         #reset session starting frame
         frame_ind1=0
         
-        for fmri in ${fMRIs[@]}; do
+        for fmri in "${fMRIs[@]}"; do
             fmri_rt=$resultsDir/"$fmri/${fmri}_Atlas_${RegName}_hp${HighPass}_clean_tclean"
             NumTPs=$(wb_command -file-information "$fmri_rt.dtseries.nii" -only-number-of-maps)
             frame_ind2=$(( frame_ind1 + NumTPs ))
