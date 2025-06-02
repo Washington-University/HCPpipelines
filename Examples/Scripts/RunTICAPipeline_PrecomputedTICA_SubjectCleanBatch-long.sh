@@ -166,12 +166,9 @@ main() {
     source "${EnvironmentScript}"
 
     # general settings
-    # set the ICA mode
-    # NEW - estimate a new sICA and a new tICA
-    # REUSE_SICA_ONLY - reuse an existing sICA and estimate a new tICA
-    # INITIALIZE_TICA - reuse an existing sICA and use an existing tICA to start the estimation
-    # REUSE_TICA - reuse an existing sICA and an existing tICA"
-    ICAmode="REUSE_TICA"
+    # ICA mode
+    # ICA mode is hard-coded to be REUSE_ICA, which is mandatory in longitudinal mode.
+    # ICAmode="REUSE_TICA"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during individual projection and cleanup, defaults to all detected physical cores, '-1'
     parLimit=-1
@@ -278,7 +275,7 @@ main() {
             --out-group-name="$GroupAverageName" \
             --fmri-resolution="$fMRIResolution" \
             --surf-reg-name="$RegName" \
-            --ica-mode="$ICAmode" \
+            --ica-mode="REUSE_ICA" \
             --num-wishart="$numWisharts" \
             --low-res="$LowResMesh" \
             --low-sica-dims="$LowsICADims" \

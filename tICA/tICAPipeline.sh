@@ -162,17 +162,17 @@ fi
 
 if [[ "$IsLongitudinal" == "1" ]]; then
     if [[ "$ICAmode" != "REUSE_ICA" ]]; then
-        log_Err "mode other than REUSE_ICA is not supported in longitudinal processing"
+        log_Err_Abort "mode other than REUSE_ICA is not supported in longitudinal processing"
     fi
     if [[ "$TemplateLong" == "" || "$Subject" == "" || "$extractNameOut" == "" ]]; then 
         log_Err_Abort "--extract-fmri-out, --longitudinal-template and --longitudinal-subject are required in longitudinal mode."
     fi
-    if [[ "$ExtractAllRunsLong" == "1" ]]; then 
+    if ((ExtractAllRunsLong)); then 
         extractNameAllLong="$MRFixConcatName"
     fi
     IFS='@' read -a SesslistCross <<<"$SesslistRaw"
     Sesslist=()
-    for sess in ${SesslistCross[@]}; do
+    for sess in "${SesslistCross[@]}"; do
         Sesslist+=("${sess}.long.$TemplateLong")
     done
 else 
