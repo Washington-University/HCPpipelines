@@ -160,7 +160,7 @@ then
     signalTxtName="ReCleanSignal.txt"
 fi
 
-if [[ "$IsLongitudinal" == "1" ]]; then
+if ((IsLongitudinal)); then
     if [[ "$ICAmode" != "REUSE_ICA" ]]; then
         log_Err_Abort "mode other than REUSE_ICA is not supported in longitudinal processing"
     fi
