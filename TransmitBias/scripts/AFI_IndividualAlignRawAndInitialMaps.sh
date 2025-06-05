@@ -15,7 +15,7 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 opts_SetScriptDescription "align AFI and myelin-related scans"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
+opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--working-dir' 'AFIFolder' 'path' "where to put intermediate files"
 opts_AddMandatory '--afi-input' 'AFIin' 'file' "two-frame 'actual flip angle' scan"
 opts_AddMandatory '--afi-tr-one' 'TRone' 'number' "TR of first AFI frame"
@@ -29,6 +29,9 @@ opts_AddMandatory '--grayordinates-res' 'grayordRes' 'number' "resolution used i
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myelin mapping was done using version 1.2.3 or earlier of wb_command, set this to true" 'false'
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
+
 
 opts_ParseArguments "$@"
 
@@ -41,6 +44,17 @@ fi
 opts_ShowValues
 
 oldmapping=$(opts_StringToBool "$oldmappingStr")
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
+SessionCross="$Session"
+if (( IsLongitudinal )); then 
+    if [[ "$TemplateLong" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template is required with --is-longitudinal=TRUE"
+    fi
+    SessionLong="$SessionCross.long.$TemplateLong"
+    Session="$SessionLong"
+fi
+
 
 if [[ "$RegName" == "" || "$RegName" == "MSMSulc" ]]
 then
@@ -62,8 +76,8 @@ fi
 #TSC: other two don't have /reg
 #MFG: can make it consistent
 #Build Paths
-T1wFolder="$StudyFolder/$Subject"/T1w
-AtlasFolder="$StudyFolder/$Subject"/MNINonLinear
+T1wFolder="$StudyFolder/$Session"/T1w
+AtlasFolder="$StudyFolder/$Session"/MNINonLinear
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 WorkingDirectory="$AFIFolder"
@@ -104,16 +118,21 @@ fi
 
 fslroi "$useAFI" "$AFIFolder"/AFI_orig_gdc1.nii.gz 0 1
 
-#use new receive-corrected structural for bbr initialization
-"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Subject" \
-    --input-image="$AFIFolder"/AFI_orig_gdc1.nii.gz \
-    --init-target-image="$useT1w" \
-    --contrast-type=T1w \
-    --surface-name=white.deformed \
-    --output-xfm="$WorkingDirectory"/xfms/AFI_orig2str.mat \
-    --output-image="$WorkingDirectory"/AFI_orig_gdc12T1w.nii.gz \
-    --output-inverse-xfm="$WorkingDirectory"/xfms/str2AFI_orig.mat \
-    --bbregister-regfile-out="$WorkingDirectory"/AFI_orig_bbregister.dat
+if (( IsLongitudinal )); then
+	#copy over cross-sectional registration results and multiply by T1w-to-base-template transform.
+	#TODO
+else
+	#use new receive-corrected structural for bbr initialization
+	"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+	    --input-image="$AFIFolder"/AFI_orig_gdc1.nii.gz \
+	    --init-target-image="$useT1w" \
+	    --contrast-type=T1w \
+	    --surface-name=white.deformed \
+	    --output-xfm="$WorkingDirectory"/xfms/AFI_orig2str.mat \
+	    --output-image="$WorkingDirectory"/AFI_orig_gdc12T1w.nii.gz \
+	    --output-inverse-xfm="$WorkingDirectory"/xfms/str2AFI_orig.mat \
+	    --bbregister-regfile-out="$WorkingDirectory"/AFI_orig_bbregister.dat
+fi
 
 if [[ "$GradientDistortionCoeffs" == "" ]]
 then
@@ -177,13 +196,13 @@ tempfiles_create thickness_R_XXXXXX.shape.gii rthickness
 tempfiles_create ribbon_L_XXXXXX.nii.gz lribbon
 tempfiles_create ribbon_R_XXXXXX.nii.gz rribbon
 
-wb_command -cifti-separate "$DownSampleFolder"/"$Subject".thickness"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii COLUMN \
+wb_command -cifti-separate "$DownSampleFolder"/"$Session".thickness"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii COLUMN \
     -metric CORTEX_LEFT "$lthickness" \
     -metric CORTEX_RIGHT "$rthickness"
 
 wb_command -volume-math "ribbon == $LeftGreyRibbonValue" "$lribbon" -var ribbon "$T1wFolder"/ribbon.nii.gz
 
-mappingcommand=(wb_command -volume-to-surface-mapping "$T1wFolder"/AFI_orig.nii.gz "$T1wDownSampleFolder"/"$Subject".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii "$DownSampleFolder"/"$Subject".L.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
+mappingcommand=(wb_command -volume-to-surface-mapping "$T1wFolder"/AFI_orig.nii.gz "$T1wDownSampleFolder"/"$Session".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii "$DownSampleFolder"/"$Session".L.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
     -myelin-style "$lribbon" "$lthickness" "$MyelinMappingSigma")
 if ((oldmapping))
 then
@@ -193,7 +212,7 @@ fi
 
 wb_command -volume-math "ribbon == $RightGreyRibbonValue" "$rribbon" -var ribbon "$T1wFolder"/ribbon.nii.gz
 
-mappingcommand=(wb_command -volume-to-surface-mapping "$T1wFolder"/AFI_orig.nii.gz "$T1wDownSampleFolder"/"$Subject".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii "$DownSampleFolder"/"$Subject".R.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
+mappingcommand=(wb_command -volume-to-surface-mapping "$T1wFolder"/AFI_orig.nii.gz "$T1wDownSampleFolder"/"$Session".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii "$DownSampleFolder"/"$Session".R.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
     -myelin-style "$rribbon" "$rthickness" "$MyelinMappingSigma")
 if ((oldmapping))
 then
@@ -201,19 +220,19 @@ then
 fi
 "${mappingcommand[@]}"
 
-wb_command -cifti-create-dense-scalar "$DownSampleFolder"/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    -left-metric "$DownSampleFolder"/"$Subject".L.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-        -roi-left "$DownSampleFolder"/"$Subject".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
-    -right-metric "$DownSampleFolder"/"$Subject".R.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-        -roi-right "$DownSampleFolder"/"$Subject".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii
+wb_command -cifti-create-dense-scalar "$DownSampleFolder"/"$Session".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    -left-metric "$DownSampleFolder"/"$Session".L.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
+        -roi-left "$DownSampleFolder"/"$Session".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
+    -right-metric "$DownSampleFolder"/"$Session".R.AFI_orig"$RegString"."$LowResMesh"k_fs_LR.func.gii \
+        -roi-right "$DownSampleFolder"/"$Session".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii
 
 tempfiles_create TransmitBias_AFI_raw_XXXXXX.dscalar.nii tempscalar
 
 wb_command -cifti-math "$AFIAngleFormula" "$tempscalar" -fixnan 0 \
-    -var frameone "$DownSampleFolder"/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii -select 1 1 \
-    -var frametwo "$DownSampleFolder"/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii -select 1 2
+    -var frameone "$DownSampleFolder"/"$Session".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii -select 1 1 \
+    -var frametwo "$DownSampleFolder"/"$Session".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii -select 1 2
 
-wb_command -cifti-dilate "$tempscalar" COLUMN 25 25 "$DownSampleFolder"/"$Subject".AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    -left-surface "$T1wDownSampleFolder"/"$Subject".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
-    -right-surface "$T1wDownSampleFolder"/"$Subject".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii
+wb_command -cifti-dilate "$tempscalar" COLUMN 25 25 "$DownSampleFolder"/"$Session".AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    -left-surface "$T1wDownSampleFolder"/"$Session".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+    -right-surface "$T1wDownSampleFolder"/"$Session".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii
 
