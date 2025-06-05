@@ -14,7 +14,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "run only the individual parts of transmit bias correction, if a large group of similar-protocol subjects has already been run through the full group process"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
+opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "Subject"
 opts_AddMandatory '--mode' 'mode' 'string' "what type of transmit bias correction to apply, options and required inputs are:
 AFI - actual flip angle sequence with two different echo times, requires --afi-image, --afi-tr-one, --afi-tr-two, --afi-angle, and --group-corrected-myelin
 
@@ -52,6 +52,10 @@ opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acq
 opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version of the T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps"
 opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
 
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
+
 #generic other settings
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
 #could be optional?
@@ -69,6 +73,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 1 = interpreted MATLAB
 2 = Octave" '1'
 
+
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -83,6 +89,17 @@ useRCFiles=0
 if [[ "$T1wunprocstr" != "" ]]
 then
     useRCFiles=1
+fi
+
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+#SessionCross="$Session"
+
+if (( IsLongitudinal )); then 
+    if [[ "$TemplateLong" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template is required with --is-longitudinal=TRUE"
+    fi
+    #SessionLong="$SessionCross.long.$TemplateLong"
+    #Session="$SessionLong"
 fi
 
 case "$MatlabMode" in
@@ -121,7 +138,7 @@ esac
 
 "$HCPPIPEDIR"/TransmitBias/Phase1_IndividualAlign.sh \
     --study-folder="$StudyFolder" \
-    --subject="$Subject" \
+    --session="$SessionCross" \
     --mode="$mode" \
     --afi-image="$AFIImage" \
     --afi-tr-one="$AFITRone" \
@@ -143,11 +160,14 @@ esac
     --grayordinates-res="$grayordRes" \
     --transmit-res="$transmitRes" \
     --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-    --old-myelin-mapping="$oldmappingStr"
+    --old-myelin-mapping="$oldmappingStr" \
+    --is-longitudinal="$IsLongitudinal" \
+    --longitudinal-template="$TemplateLong"
+    
 
 "$HCPPIPEDIR"/TransmitBias/Phase3_IndividualAdjustment.sh \
     --study-folder="$StudyFolder" \
-    --subject="$Subject" \
+    --subject="$Session" \
     --mode="$mode" \
     --manual-receive="$useRCFiles" \
     --gmwm-template="$GMWMtemplate" \
