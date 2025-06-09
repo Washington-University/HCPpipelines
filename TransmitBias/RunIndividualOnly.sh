@@ -14,7 +14,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "run only the individual parts of transmit bias correction, if a large group of similar-protocol subjects has already been run through the full group process"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "Subject"
+opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--mode' 'mode' 'string' "what type of transmit bias correction to apply, options and required inputs are:
 AFI - actual flip angle sequence with two different echo times, requires --afi-image, --afi-tr-one, --afi-tr-two, --afi-angle, and --group-corrected-myelin
 
@@ -94,14 +94,18 @@ then
 fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
-#SessionCross="$Session"
 
+#In longitudinal mode, Session is re-linked to longitudinal folder. 
+#The majority of code is run unchanged on longitudinal session folder. 
+#SessionCross is used in scripts that specifically require cross-sectional session label
+#for special processing in longitudinal mode
+SessionCross="$Session"
 if (( IsLongitudinal )); then 
     if [[ "$TemplateLong" == "" ]]; then 
         log_Err_Abort "--longitudinal-template is required with --is-longitudinal=TRUE"
     fi
-    #SessionLong="$SessionCross.long.$TemplateLong"
-    #Session="$SessionLong"
+    SessionLong="$SessionCross.long.$TemplateLong"
+    Session="$SessionLong"    
 fi
 
 case "$MatlabMode" in
