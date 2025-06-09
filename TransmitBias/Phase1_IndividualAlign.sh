@@ -272,7 +272,7 @@ case "$mode" in
     (B1Tx)
         "$scriptsdir"/B1Tx_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$Session" \
+            --subject="$SessionCross" \
             --working-dir="$WorkingDIR"/B1Tx \
             --receive-bias="$ReceiveBias" \
             --t2w-receive-corrected="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
