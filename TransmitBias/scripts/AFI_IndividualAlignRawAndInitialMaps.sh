@@ -53,6 +53,14 @@ if (( IsLongitudinal )); then
     fi
     SessionLong="$SessionCross.long.$TemplateLong"
     Session="$SessionLong"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat"
+    if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
+    	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
+    fi
+    xfmAFI2T1wCross="$StudyFolder/$SessionCross/TransmitBias/AFI/xfms/AFI_orig2str.mat"
+    if [ ! -f "$xfmAFI2T1wCross" ]; then 
+    	log_Err_Abort "Cross-sectional AFI to structural transform $xfmAFI2T1wCross not found. Has cross-sectional TransmitBias pipeline been run?"
+    fi
 fi
 
 
@@ -119,8 +127,17 @@ fi
 fslroi "$useAFI" "$AFIFolder"/AFI_orig_gdc1.nii.gz 0 1
 
 if (( IsLongitudinal )); then
-	#copy over cross-sectional registration results and multiply by T1w-to-base-template transform.
-	#TODO
+	#reuse cross-sectional registration results
+	#1. produce output xfm
+	#multiply cross-sectional transform by T1w-to-base-template transform.
+	finalxfm="$WorkingDirectory"/xfms/AFI_orig2str.mat
+	convert_xfm -omat "$finalxfm" -concat "$xfmT1w2BaseTemplate" "$xfmAFI2T1wCross"
+	#2. produce output inverse xfm
+	convert_xfm -omat "$WorkingDirectory"/xfms/str2AFI_orig.mat -inverse "$finalxfm"
+	#3. resample output image
+	wb_command -volume-resample "$AFIFolder"/AFI_orig_gdc1.nii.gz "$useT1w" CUBIC "$WorkingDirectory"/AFI_orig_gdc12T1w.nii.gz \
+	        -affine "$finalxfm" \
+	        -flirt "$AFIFolder"/AFI_orig_gdc1.nii.gz "$T1wFolder"/T1w_acpc_dc.nii.gz
 else
 	#use new receive-corrected structural for bbr initialization
 	"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
