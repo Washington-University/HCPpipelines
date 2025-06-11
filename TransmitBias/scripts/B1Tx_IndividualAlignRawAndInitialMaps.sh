@@ -13,7 +13,6 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
 opts_SetScriptDescription "align B1Tx and myelin-related scans"
-
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--working-dir' 'WorkingDIR' 'path' "where to put intermediate files"
@@ -129,10 +128,10 @@ if (( IsLongitudinal )); then
 	#reuse cross-sectional registration results
 	#1. produce output xfm
 	#multiply cross-sectional transform by T1w-to-base-template transform.
-	finalxfm="$WorkingDirectory"/xfms/B1Tx_mag2str.mat
+	finalxfm="$WorkingDIR"/xfms/B1Tx_mag2str.mat
 	convert_xfm -omat "$finalxfm" -concat "$xfmT1w2BaseTemplate" "$xfmB1Tx2T1wCross"
 	#2. produce output inverse xfm
-	convert_xfm -omat "$WorkingDirectory"/xfms/str2B1Tx_mag.mat -inverse "$finalxfm"
+	convert_xfm -omat "$WorkingDIR"/xfms/str2B1Tx_mag.mat -inverse "$finalxfm"
 	#3. resample output image
 	#wb_command -volume-resample "$WorkingDIR"/${useB1mag} "$useT1w" CUBIC "$WorkingDirectory"/AFI_orig_gdc12T1w.nii.gz \
 	#        -affine "$finalxfm" \
