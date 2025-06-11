@@ -181,7 +181,6 @@ then
     ReceiveBias="$WorkingDIR"/ReceiveField."$transmitRes".nii.gz
     RFWD="$T1wFolder"/CalculateReceiveField
     #doesn't generate MNI space outputs, so doesn't need to know fMRI resolution
-    "$scriptsdir"/CalculateReceiveField.sh \
         --study-folder="$StudyFolder" \
         --subject="$Session" \
         --workingdir="$RFWD" \
@@ -267,12 +266,12 @@ case "$mode" in
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
             --old-myelin-mapping="$oldmapping" \
             --is-longitudinal="$IsLongitudinal" \
-            --longitudinal-template="$TemplateLong" \
+            --longitudinal-template="$TemplateLong"
         ;;
     (B1Tx)
         "$scriptsdir"/B1Tx_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$SessionCross" \
+            --session="$SessionCross" \
             --working-dir="$WorkingDIR"/B1Tx \
             --receive-bias="$ReceiveBias" \
             --t2w-receive-corrected="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
@@ -285,7 +284,9 @@ case "$mode" in
             --grayordinates-res="$grayordRes" \
             --transmit-res="$transmitRes" \
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-            --old-myelin-mapping="$oldmapping"
+            --old-myelin-mapping="$oldmapping" \
+            --is-longitudinal="$IsLongitudinal" \
+            --longitudinal-template="$TemplateLong"
         ;;
     (PseudoTransmit)
         "$scriptsdir"/PseudoTransmit_IndividualAlignRawAndInitialMaps.sh \
