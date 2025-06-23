@@ -5,7 +5,6 @@ set -e
 #  installed versions of: FSL5.0.1 or higher (including python with numpy, needed to run aff2rigid - part of FSL)
 #  environment: FSLDIR
 
-<<<<<<< HEAD
 # ------------------------------------------------------------------------------
 #  Usage Description Function
 # ------------------------------------------------------------------------------
@@ -40,6 +39,27 @@ opts_AddOptional '--ref' 'Reference' 'image' 'reference image' "${FSLDIR}/data/s
 
 opts_AddOptional '--brainsize' 'BrainSizeOpt' 'value' 'brainsize'
 
+opts_AddOptional '--brainextract' 'BrainExtract' 'method' 'brain extraction method: EXVIVO or INVIVO (default)' "INVIVO"
+
+opts_AddOptional '--contrast' 'Contrast' 'type' 'image contrast: T1w (default), T2w, FLAIR - required for ANTS brain extraction' "T1w"
+
+opts_AddOptional '--betfraction' 'BetFraction' 'value' 'BET fractional intensity threshold' "0.3"
+
+opts_AddOptional '--betradius' 'BetRadius' 'value' 'BET head radius' "75"
+
+opts_AddOptional '--bettop2center' 'BetTop2Center' 'value' 'BET top to center distance' "86"
+
+opts_AddOptional '--ref2mm' 'Reference2mm' 'image' '2mm reference image' ""
+
+opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'image' '2mm reference mask' ""
+
+opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'value' 'BET species label' "0"
+
+opts_AddOptional '--betbiasfieldcor' 'BiasfieldCor' 'boolean' 'BET bias field correction: TRUE or FALSE' "FALSE"
+
+opts_AddOptional '--custommask' 'CustomMask' 'image' 'custom brain mask' "NONE"
+
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -49,36 +69,6 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
-=======
-################################################ SUPPORT FUNCTIONS ##################################################
-
-Usage() {
-  echo "`basename $0`: Tool for creating a 6 DOF alignment of the AC, ACPC line and hemispheric plane in MNI space"
-  echo " "
-  echo "Usage: `basename $0` --workingdir=<working dir> --in=<input image> [--ref=<reference image> --ref=<reference brain image>] --out=<output image> --omat=<output matrix> [--brainsize=<brainsize>] [--brainextract=<EXVIVO or INVIVO (default)>] [--contrast=<T1w (default), T2w, FLAIR> requried for ANTS brain extraction]"
-  echo ""
-  exit
-}
-[[ $2 = "" ]] && Usage
-
-if [ -z ${HCPPIPEDIR} ] ; then
-	echo "ERROR: please set HCPPIPEDIR"
-	exit
-fi
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 
 log_Check_Env_Var FSLDIR
 
@@ -91,52 +81,12 @@ log_Check_Env_Var FSLDIR
 #     "$OutputMatrix"  (a 6 DOF mapping from the original image to the ACPC aligned version)
 #     "$Output"  (the ACPC aligned image)
 
-<<<<<<< HEAD
 Output=`$FSLDIR/bin/remove_ext $Output`
 if [[ "$WD" == "" ]]
 then
     WD="${Output}.wdir"
 fi
-=======
-################################################## OPTION PARSING #####################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 5 ] ; then Usage; exit 1; fi
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-Input=`getopt1 "--in" $@`  # "$2"
-Reference=`getopt1 "--ref" $@`  # "$3"
-ReferenceBrain=`getopt1 "--refbrain" $@`  # "$4"
-Output=`getopt1 "--out" $@`  # "$5"
-OutputMatrix=`getopt1 "--omat" $@`  # "$6"
-BrainSizeOpt=`getopt1 "--brainsize" $@`  # "$7"
-BrainExtract=`getopt1 "--brainextract" $@`  # "$8"
-Contrast=`getopt1 "--contrast" $@`  # "$9"
-BetFraction=`getopt1 "--betfraction" $@` # "$10"
-BetRadius=`getopt1 "--betradius" $@` # "$11"
-BetTop2Center=`getopt1 "--bettop2center" $@` # "$12"
-Reference2mm=`getopt1 "--ref2mm" $@` # "$13"
-Reference2mmMask=`getopt1 "--ref2mmmask" $@` # "$14"
-betspecieslabel=`getopt1 "--betspecieslabel" $@`
-BiasfieldCor=`getopt1 "--betbiasfieldcor" $@`  # TRUE or FALSE
-CustomMask=`getopt1 "--custommask" $@`         # custom brain mask
-
-# default parameters
-Reference=$(remove_ext `defaultopt ${Reference} ${FSLDIR}/data/standard/MNI152_T1_1mm`)
-ReferenceMask=$(remove_ext `defaultopt ${ReferenceMask} MNI152_T1_1mm_brain_mask_dil.nii.gz`)
-Output=$(remove_ext `$FSLDIR/bin/remove_ext $Output`)
-WD=`defaultopt $WD ${Output}.wdir`
-Input=$(remove_ext $Input)
-Contrast=`defaultopt $Contrast T1w`
-betspecieslabel=`defaultopt $betspecieslabel 0`
-BetRadius=`defaultopt $BetRadius 75`
-BetTop2Center=`defaultopt $BetTop2Center 86`
-BetFraction=`defaultopt $BetFraction 0.3`
-CustomMask=`defaultopt $CustomMask NONE`
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 
 # make optional arguments truly optional  (as -b without a following argument would crash robustfov)
 if [ X${BrainSizeOpt} != X ] ; then BrainSizeOpt="-b ${BrainSizeOpt}" ; fi
