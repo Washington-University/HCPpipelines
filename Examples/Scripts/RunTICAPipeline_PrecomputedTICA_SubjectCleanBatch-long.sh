@@ -139,7 +139,7 @@ function identify_timepoints
     for visit in ${PossibleVisits[*]}; do
         tp="${subject}_${visit}"
         if [ -d "$StudyFolder/$tp" ] && ! [[ " ${ExcludeVisits[*]+${ExcludeVisits[*]}} " =~ [[:space:]]"$tp"[[:space:]] ]]; then
-             if (( n==0 )); then 
+             if (( n==0 )); then
                     tplist="$tp"
              else
                     tplist="$tplist@$tp"
@@ -167,7 +167,7 @@ main() {
 
     # general settings
     # ICA mode
-    # ICA mode is hard-coded to be REUSE_ICA, which is mandatory in longitudinal mode.
+    # ICA mode is hard-coded to be REUSE_TICA, which is mandatory in longitudinal mode.
     # ICAmode="REUSE_TICA"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during individual projection and cleanup, defaults to all detected physical cores, '-1'
@@ -187,10 +187,10 @@ main() {
 
     # set list of fMRI on which ICA+FIX has been run, use @ to separate runs (not from the precomputed data)
     fMRINames="rfMRI_REST1_AP@rfMRI_REST1_PA@tfMRI_VISMOTOR_PA@tfMRI_CARIT_PA@tfMRI_FACENAME_PA@rfMRI_REST2_AP@rfMRI_REST2_PA"
-    
+
     # fMRI names to extract. Required in longitudinal mode; must match (in longitudinal mode) cortical registration (MSMAll) extract names.
     extractfMRINames="rfMRI_REST1_AP@rfMRI_REST1_PA@rfMRI_REST2_AP@rfMRI_REST2_PA"
-    
+
     # fMRI name to extract. Required in longitudinal mode. Must match (in longitudinal mode) cortical registration (MSMAll) extract name.
     extractfMRIOut="rfMRI_REST"
 
@@ -255,7 +255,7 @@ main() {
         echo "queueing with fsl_sub to to $QUEUE"
         queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
     fi
-    
+
     #iterate over subjects
     for i in ${!Subjlist[@]}; do
         Subject="${Subjlist[i]}"
@@ -275,7 +275,7 @@ main() {
             --out-group-name="$GroupAverageName" \
             --fmri-resolution="$fMRIResolution" \
             --surf-reg-name="$RegName" \
-            --ica-mode="REUSE_ICA" \
+            --ica-mode="REUSE_TICA" \
             --num-wishart="$numWisharts" \
             --low-res="$LowResMesh" \
             --low-sica-dims="$LowsICADims" \

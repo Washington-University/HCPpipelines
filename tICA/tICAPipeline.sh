@@ -161,13 +161,13 @@ then
 fi
 
 if ((IsLongitudinal)); then
-    if [[ "$ICAmode" != "REUSE_ICA" ]]; then
-        log_Err_Abort "mode other than REUSE_ICA is not supported in longitudinal processing"
+    if [[ "$ICAmode" != "REUSE_TICA" ]]; then
+        log_Err_Abort "mode other than REUSE_TICA is not supported in longitudinal processing"
     fi
-    if [[ "$TemplateLong" == "" || "$Subject" == "" || "$extractNameOut" == "" ]]; then 
+    if [[ "$TemplateLong" == "" || "$Subject" == "" || "$extractNameOut" == "" ]]; then
         log_Err_Abort "--extract-fmri-out, --longitudinal-template and --longitudinal-subject are required in longitudinal mode."
     fi
-    if ((ExtractAllRunsLong)); then 
+    if ((ExtractAllRunsLong)); then
         extractNameAllLong="$MRFixConcatName"
     fi
     IFS='@' read -a SesslistCross <<<"$SesslistRaw"
@@ -175,7 +175,7 @@ if ((IsLongitudinal)); then
     for sess in "${SesslistCross[@]}"; do
         Sesslist+=("${sess}.long.$TemplateLong")
     done
-else 
+else
     IFS='@' read -a Sesslist <<<"$SesslistRaw"
 fi
 
@@ -275,7 +275,7 @@ then
     then
         log_Err_Abort "you must specify --precomputed-clean-folder, --precomputed-clean-fmri-name and --precomputed-group-name when using --ica-mode=$ICAmode"
     fi
-    
+
     tICACleaningFolder="$precomputeTICAFolder"
     tICACleaningfMRIName="$precomputeTICAfMRIName"
     tICACleaningGroupAverageName="$precomputeGroupName"
@@ -408,15 +408,15 @@ do
             then
                 tICADim="$sICAActualDim"
             fi
-            
+
             #now we have the dimensionality, set the output string
             OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            
+
             ;;
         (indProjSICA)
             #generate volume template cifti
             #use parallel and do sessions separately first to reduce memory (some added IO)
-            
+
             #in REUSE_TICA mode, VolumeTemplateFile may point to an existing file in the precomputed folder, don't try to write to it if so
             #side effect: only computes the brainmask on first run in REUSE_TICA mode when resolution doesn't match
             if [[ "$tICAmode" != "USE" || ! -f "$VolumeTemplateFile" ]]
@@ -435,7 +435,7 @@ do
                 tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                     "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
                     "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-                    
+
                     #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
                 wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                     "${mergeArgs[@]}"
@@ -452,7 +452,7 @@ do
                     -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                         "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
             fi
-            
+
             for Session in "${Sesslist[@]}"
             do
                 if [[ "$MRFixConcatName" != "" ]]
@@ -533,7 +533,7 @@ do
                 #current mixing matrix naming convention is in ComputeGroupTICA.sh/m
                 #"sICADim" is the --ica-dim argument, which is actually the tICA dim
                 #OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$sICAdim"
-                
+
                 #tICAmixNamePart = 'melodic_mix';
                 #nlfunc = 'tanh';
 
@@ -557,9 +557,9 @@ do
                 #    dlmwrite([OutputFolder '/' tICAmixNamePart nameParamPart], tICAmix, '\t');
                 tica_cmd+=(--tICA-mixing-matrix="$tICACleaningFolder/MNINonLinear/Results/$tICACleaningfMRIName/tICA_d$tICADim/melodic_mix_${tICADim}_tanhF")
             fi
-            
+
             "${tica_cmd[@]}"
-            
+
             ;;
         (indProjTICA)
             for Session in "${Sesslist[@]}"
@@ -697,7 +697,7 @@ then
     opts_conf_WriteConfig "$confoutfile"
 fi
 
-if (( IsLongitudinal )); then 
+if (( IsLongitudinal )); then
     #Split, group variance normalize and concatenate cleaned timeseries across all sessions, storing in longitudinal template output.
     #Also create averages across sessions for cleaned variance.
     "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
