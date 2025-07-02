@@ -75,8 +75,6 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 1 = interpreted MATLAB
 2 = Octave" '1'
 
-
-
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
