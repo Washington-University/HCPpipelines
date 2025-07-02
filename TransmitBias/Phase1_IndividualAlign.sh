@@ -198,7 +198,9 @@ then
         --myelin-correction-field-out="$T1wFolder"/ReceiveFieldCorrection.nii.gz \
         --t1w-corrected-out="$WorkingDIR"/T1w_acpc_dc_newreceive.nii.gz \
         --t2w-corrected-out="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
-        --myelin-surface-correction-out="$DownSampleFolder"/"$Session".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+        --myelin-surface-correction-out="$DownSampleFolder"/"$Session".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+        --is-longitudinal="$IsLongitudinal" \
+        --longitudinal-template="$TemplateLong"
 
     #these files are in the package definitions
     cp "$RFWD"/ReceiveFieldCorrection."$transmitRes".nii.gz "$T1wFolder"/ReceiveFieldCorrection."$transmitRes".nii.gz
@@ -291,7 +293,7 @@ case "$mode" in
     (PseudoTransmit)
         "$scriptsdir"/PseudoTransmit_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$Session" \
+            --session="$SessionCross" \
             --working-dir="$WorkingDIR"/PseudoTransmit \
             --receive-bias="$ReceiveBias" \
             --t2w-receive-corrected="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
@@ -302,7 +304,9 @@ case "$mode" in
             --grayordinates-res="$grayordRes" \
             --transmit-res="$transmitRes" \
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-            --old-myelin-mapping="$oldmapping"
+            --old-myelin-mapping="$oldmapping" \
+            --is-longitudinal="$IsLongitudinal" \
+            --longitudinal-template="$TemplateLong"            
         ;;
     (*)
         log_Err_Abort "internal script error, mode $mode implementation not handled"
