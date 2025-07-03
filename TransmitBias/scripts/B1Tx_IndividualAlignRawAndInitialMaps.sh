@@ -132,10 +132,6 @@ if (( IsLongitudinal )); then
 	convert_xfm -omat "$finalxfm" -concat "$xfmT1w2BaseTemplate" "$xfmB1Tx2T1wCross"
 	#2. produce output inverse xfm
 	convert_xfm -omat "$WorkingDIR"/xfms/str2B1Tx_mag.mat -inverse "$finalxfm"
-	#3. resample output image
-	#wb_command -volume-resample "$WorkingDIR"/${useB1mag} "$useT1w" CUBIC "$WorkingDirectory"/AFI_orig_gdc12T1w.nii.gz \
-	#        -affine "$finalxfm" \
-	#        -flirt "$AFIFolder"/AFI_orig_gdc1.nii.gz "$T1wFolder"/T1w_acpc_dc.nii.gz
 else
 	"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
 	    --input-image="$useB1mag" \

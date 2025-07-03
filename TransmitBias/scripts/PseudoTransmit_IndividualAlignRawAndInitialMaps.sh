@@ -57,10 +57,6 @@ if (( IsLongitudinal )); then
     if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
     	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
     fi
-    #xfmB1Tx2T1wCross="$StudyFolder/$SessionCross/TransmitBias/B1Tx/xfms/B1Tx_mag2str.mat"
-    #if [ ! -f "$xfmB1Tx2T1wCross" ]; then 
-    #	log_Err_Abort "Cross-sectional AFI to structural transform $xfmAFI2T1wCross not found. Has cross-sectional TransmitBias pipeline been run?"
-    #fi
 fi
 
 IFS=' @' read -a fMRINamesArray <<<"$fMRINames"
@@ -115,12 +111,6 @@ function ReuseBBR4Longitudinal {
     convert_xfm -omat "$finalxfmLong" -concat "$xfmT1w2BaseTemplate" "$cross2strxfm"
     #2. produce output inverse xfm
     convert_xfm -omat "$inversexfmLong" -inverse "$finalxfmLong"
-    #3. resample output image
-    #if [[ "$outputImage" != "" ]]; then
-	#    wb_command -volume-resample "$sourceImage" "$targetImage" CUBIC "$outputImage" \
-	#	    -affine "$finalxfm" \
-	#	    -flirt "$sourceImage" "$targetImage"
-    #fi
 }
 
 function align_bias_and_avg()
@@ -131,10 +121,9 @@ function align_bias_and_avg()
     fovargs=()
     for fMRIName in "${fMRINamesArray[@]}"
     do
-        local input="$WorkingDIRCross"/"$fMRIName"_"$namepart"_gdc_dc_jac.nii.gz
+        local input="$WorkingDIR"/"$fMRIName"_"$namepart"_gdc_dc_jac.nii.gz
         local target="$T1wFolder"/T2w_acpc_dc_restore.nii.gz
         
-        #longitudinal TODO: address and test the code in this if-block later.
         if [[ "$ReceiveBias" != "" ]]
         then
             #apply receive bias to input, instead of using non-_restore target
