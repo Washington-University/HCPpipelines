@@ -185,4 +185,5 @@ esac
     --grayordinates-res="$grayordRes" \
     --transmit-res="$transmitRes" \
     --matlab-run-mode="$MatlabMode"
-
+    
+log_Msg "Completed RunIndividualOnly.sh"
