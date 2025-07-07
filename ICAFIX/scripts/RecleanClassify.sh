@@ -30,6 +30,10 @@ opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 's
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
+#TSC: for now, default to what was previously hardcoded
+opts_AddOptional '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data, default 2' '2'
+opts_AddOptional '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm), default 2' '2'
+opts_AddOptional '--grayordinatesres' 'BrainOrdinatesResolution' 'number' 'grayordinates resolution (mm), default 2' '2'
 opts_AddMandatory '--reclassify-as-signal-file' 'ReclassifyAsSignalFile' 'file name' "the file name for the output ReclassifyAsSignal file"
 opts_AddMandatory '--reclassify-as-noise-file' 'ReclassifyAsNoiseFile' 'file name' "the file name for the output ReclassifyAsNoise file"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
@@ -125,10 +129,6 @@ done
 # Preprocess step 1: Merge and dropout
 Caret7_Command="wb_command"
 
-#TODO: enable multiple resolutions like macaque (1.25mm resolution) or 7T (1.6mm resolution)
-FinalfMRIResolution="2"
-SmoothingFWHM="2"
-BrainOrdinatesResolution="2"
 Flag="FALSE" #FALSE=Don't fix zeros, TRUE=Fix zeros
 DeleteIntermediates="TRUE" #TRUE/FALSE
 
