@@ -113,8 +113,7 @@ for i in "${!Subjects[@]}"; do
 	    # propagated to the final output, *and* these pairs will be averaged to yield a single
 	    # volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
 	    # avoids having volumes with different SNR features/ residual distortions.
-	    # [This behavior can be changed through the hard-coded 'CombineDataFlag' variable in the 
-	    # DiffPreprocPipeline_PostEddy.sh script if necessary].
+	    # [This behavior can be changed via the --combine-data-flag if necessary].
 	  
   	    PosData="${RawDataDir}/${TimepointCross}_dMRI_dir98_PA.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_PA.nii.gz"
 	    NegData="${RawDataDir}/${TimepointCross}_dMRI_dir98_AP.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_AP.nii.gz"
