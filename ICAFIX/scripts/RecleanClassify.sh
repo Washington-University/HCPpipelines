@@ -25,15 +25,14 @@ opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of fmri run names separated by @s" #Needs to be the single fMRI run names only (for DVARS and GS code) for MR+FIX, is also the SR+FIX input names
 opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
-opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60'"
+#TSC: used for MNINonLinear/ROIs/wmparc in computeRecleanFeatures, rename as such
+opts_AddMandatory '--greyordinatesres' 'BrainOrdinatesResolution' 'string' "resolution of data, like '2' or '1.60'"
 opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
-#TSC: for now, default to what was previously hardcoded
-opts_AddOptional '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data, default 2' '2'
-opts_AddOptional '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm), default 2' '2'
-opts_AddOptional '--grayordinatesres' 'BrainOrdinatesResolution' 'number' 'grayordinates resolution (mm), default 2' '2'
+opts_AddMandatory '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data, default 2'
+opts_AddMandatory '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm), default 2'
 opts_AddMandatory '--reclassify-as-signal-file' 'ReclassifyAsSignalFile' 'file name' "the file name for the output ReclassifyAsSignal file"
 opts_AddMandatory '--reclassify-as-noise-file' 'ReclassifyAsNoiseFile' 'file name' "the file name for the output ReclassifyAsNoise file"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
@@ -198,7 +197,7 @@ wb_command -cifti-all-labels-to-rois "$SubRegionsROItemp"_labels.dlabel.nii 1 "$
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$fMRIResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$BrainOrdinatesResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)

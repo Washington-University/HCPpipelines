@@ -120,7 +120,9 @@ main() {
 	highpass=2000
 	
 	# set resolution
-	fMRIResolution="2"
+	GrayordinatesResolution="2"
+	MappingSmoothFWHM="2"
+	FinalfMRIResolution="2"
 
 	#run in singularity
 	PythonSingularity="/path/to/singularity.img"
@@ -161,7 +163,9 @@ main() {
 		--fmri-names="$fMRINames" \
 		--mrfix-concat-name="$MRConcatfMRIName" \
 		--fix-high-pass="$highpass" \
-		--fmri-resolution="$fMRIResolution" \
+		--grayordinatesres="$GrayordinatesResolution" \
+		--smoothingFWHM="$MappingSmoothFWHM" \
+		--fmrires="$FinalfMRIResolution" \
 		--subject-expected-timepoints="$subjectExpectedTimepoints" \
 		--low-res="$LowResMesh" \
 		--python-singularity="$PythonSingularity" \
