@@ -21,7 +21,9 @@ AFI - actual flip angle sequence with two different echo times, requires --afi-i
 B1Tx - b1 transmit sequence magnitude/phase pair, requires --b1tx-magnitude, --b1tx-phase, and --group-corrected-myelin
 
 PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, requires --pt-fmri-names, --myelin-template, --group-uncorrected-myelin, and --reference-value"
-opts_AddMandatory '--gmwm-template' 'GMWMtemplate' 'file' "file containing GM+WM volume ROI"
+
+# GMWMtemplate is set automatically if not provided
+opts_AddOptional '--gmwm-template' 'GMWMtemplate' 'file' "file containing GM+WM volume ROI"
 
 #AFI or B1Tx
 opts_AddOptional '--group-corrected-myelin' 'GroupCorrected' 'file' "the group-corrected myelin file from AFI or B1Tx"
@@ -144,6 +146,12 @@ esac
     --transmit-res="$transmitRes" \
     --myelin-mapping-fwhm="$MyelinMappingFWHM" \
     --old-myelin-mapping="$oldmappingStr"
+
+# set the default GMWMtemplate
+if [[ -z "$GMWMtemplate" ]]
+then
+    GMWMtemplate="$StudyFolder"/"$Subject"/MNINonLinear/GMWMTemplate.nii.gz
+fi
 
 "$HCPPIPEDIR"/TransmitBias/Phase3_IndividualAdjustment.sh \
     --study-folder="$StudyFolder" \
