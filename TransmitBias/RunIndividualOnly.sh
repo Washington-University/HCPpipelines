@@ -147,26 +147,10 @@ esac
     --myelin-mapping-fwhm="$MyelinMappingFWHM" \
     --old-myelin-mapping="$oldmappingStr"
 
-# if GMWMtemplate is not set, create the individual GMWM template
+# set the default GMWMtemplate
 if [[ -z "$GMWMtemplate" ]]
 then
-    # output GMWM template location
-    GMWMOut="${StudyFolder}/${Subject}/MNINonLinear/gmwm_template.nii.gz"
-
-    # generate
-    wb_command -volume-label-import \
-        ${StudyFolder}/${Subject}/MNINonLinear/wmparc.nii.gz \
-        ${HCPPIPEDIR}/global/config/FreeSurferAllGMWM.txt \
-        ${GMWMOut} \
-        -discard-others \
-        -drop-unused-labels
-
-    # set GMWMtemplate to the output
-    if [[ ! -f "${GMWMOut}" ]]
-    then
-        log_Err_Abort "wb_command failed to create the individual GMWM template at ${GMWMOut}"
-    fi
-    GMWMtemplate=${GMWMOut}
+    GMWMtemplate="$StudyFolder"/"$Subject"/MNINonLinear/GMWMTemplate.nii.gz
 fi
 
 "$HCPPIPEDIR"/TransmitBias/Phase3_IndividualAdjustment.sh \
