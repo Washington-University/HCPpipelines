@@ -29,7 +29,6 @@ opts_AddMandatory '--grayordinatesres' 'BrainOrdinatesResolution' 'string' "reso
 #TSC: for now, default to what was previously hardcoded
 opts_AddOptional '--fmrires' 'FinalfMRIResolution' 'number' 'final resolution (mm) of the output data, default 2' '2'
 opts_AddOptional '--smoothingFWHM' 'SmoothingFWHM' 'number' 'cifti mapping smoothing FWHM (mm), default 2' '2'
-opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
 opts_AddConfigMandatory '--low-res' 'LowResMesh' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
 opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
@@ -85,7 +84,6 @@ log_Msg "Begin to run the reclean pipeline..."
     --greyordinatesres="$BrainOrdinatesResolution" \
     --fmrires="$FinalfMRIResolution" \
     --smoothingFWHM="$SmoothingFWHM" \
-    --subject-expected-timepoints="$subjectExpectedTimepoints" \
     --surf-reg-name="MSMAll" \
     --low-res="${LowResMesh}" \
     --python-singularity="${PythonSingularity}" \
@@ -151,7 +149,7 @@ if [ -z ${MRFixConcatName} ]; then
             --clean-substring="clean_rclean"
 
     done
-else 
+else
     # apply the reclassification results
     "$HCPPIPEDIR"/ICAFIX/ApplyHandReClassifications.sh \
         --study-folder="$StudyFolder" \
@@ -189,7 +187,7 @@ else
         --config="$config" \
         --processing-mode="$processingmode" \
         --clean-substring="clean_rclean"
-    
+
     # Volume+MSMSulc
     "$HCPPIPEDIR"/ICAFIX/ReApplyFixMultiRunPipeline.sh \
         --path="$StudyFolder" \

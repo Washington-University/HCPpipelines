@@ -27,7 +27,6 @@ opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 #TSC: used for MNINonLinear/ROIs/wmparc in computeRecleanFeatures, rename as such
 opts_AddMandatory '--greyordinatesres' 'BrainOrdinatesResolution' 'string' "resolution of data, like '2' or '1.60'"
-opts_AddMandatory '--subject-expected-timepoints' 'subjectExpectedTimepoints' 'string' "output spectra size for sICA individual projection, RunsXNumTimePoints, like '4800'"
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
@@ -197,7 +196,7 @@ wb_command -cifti-all-labels-to-rois "$SubRegionsROItemp"_labels.dlabel.nii 1 "$
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$subjectExpectedTimepoints" "$HighPass" "$BrainOrdinatesResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$HighPass" "$BrainOrdinatesResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)
@@ -216,7 +215,7 @@ case "$MatlabMode" in
             fi
             matlab_args+="'$thisarg'"
         done
-        
+
         matlabcode="
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$HCPPIPEDIR/global/scripts');

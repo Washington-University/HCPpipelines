@@ -12,7 +12,7 @@ DEFAULT_RUN_LOCAL="FALSE"
 #	Get the command line options for this script
 #
 # Global Output Variables
-#	${StudyFolder}			- Path to folder containing all subjects data in subdirectories named 
+#	${StudyFolder}			- Path to folder containing all subjects data in subdirectories named
 #							  for the subject id
 #	${Subjlist}				- Space delimited list of subject IDs
 #	${EnvironmentScript}	- Script to source to setup pipeline environment
@@ -111,14 +111,14 @@ main() {
 
 	# set list of fMRI
 	fMRINames="rfMRI_REST1_RL@rfMRI_REST1_LR@rfMRI_REST2_LR@rfMRI_REST2_RL"
-  
+
 	# specify the name of concatenated folder
 	# if run Multi-Run specify ConcatNames as null string
 	MRConcatfMRIName="rfMRI_REST"
 
 	# set highpass
 	highpass=2000
-	
+
 	# set resolution
 	GrayordinatesResolution="2"
 	MappingSmoothFWHM="2"
@@ -166,7 +166,6 @@ main() {
 		--grayordinatesres="$GrayordinatesResolution" \
 		--smoothingFWHM="$MappingSmoothFWHM" \
 		--fmrires="$FinalfMRIResolution" \
-		--subject-expected-timepoints="$subjectExpectedTimepoints" \
 		--low-res="$LowResMesh" \
 		--python-singularity="$PythonSingularity" \
 		--python-singularity-mount-path="$PythonSingularityMountPath" \
