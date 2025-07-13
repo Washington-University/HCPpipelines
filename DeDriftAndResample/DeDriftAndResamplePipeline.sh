@@ -437,7 +437,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 			# BC the other types of given myelin maps
 			${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${MyelinMap}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
 		fi
-		MyelinMapsToUse+="${MyelinMap}_BC "
+		MyelinMapsToUse+="${MyelinMap} ${MyelinMap}_BC "
 	done
 	
 	log_Debug_Msg "Point 2.0"
