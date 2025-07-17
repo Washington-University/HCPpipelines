@@ -592,7 +592,7 @@ do
                 par_addjob "$HCPPIPEDIR"/global/scripts/RSNregression.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${lowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${lowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
