@@ -106,6 +106,16 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
 opts_AddOptional '--gdcoeffs' 'GradientDistortionCoeffs' 'file' "gradient distortion coefficients (SIEMENS file)"
 
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (head-first-spine), HFSx (head-first-sphinx) - TH 2023"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "HFS, HFP, FFS or FFP"
+
+opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' 'image' "input spin echo negative phase encoding image 2"
+
+opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' 'image' "input spin echo positive phase encoding image 2"
+
+opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'image' "input spin echo zero phase encoding image"
+
 #Tim special parsing 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Use jacobian" 
 
@@ -147,44 +157,6 @@ log_Check_Env_Var HCPPIPEDIR_Global
 
 ################################################## OPTION PARSING #####################################################
 
-<<<<<<< HEAD
-=======
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  
-T1wImage=`getopt1 "--t1" $@`  
-T1wImageBrain=`getopt1 "--t1brain" $@`  
-T2wImage=`getopt1 "--t2" $@` 
-T2wImageBrain=`getopt1 "--t2brain" $@`  
-MagnitudeInputName=`getopt1 "--fmapmag" $@`  
-PhaseInputName=`getopt1 "--fmapphase" $@`  
-GEB0InputName=`getopt1 "--fmapgeneralelectric" $@` 
-TE=`getopt1 "--echodiff" $@`  
-SpinEchoPhaseEncodeNegative=`getopt1 "--SEPhaseNeg" $@`  
-SpinEchoPhaseEncodePositive=`getopt1 "--SEPhasePos" $@`  
-SEEchoSpacing=`getopt1 "--seechospacing" $@` 
-SEUnwarpDir=`getopt1 "--seunwarpdir" $@`  
-T1wSampleSpacing=`getopt1 "--t1sampspacing" $@`  
-T2wSampleSpacing=`getopt1 "--t2sampspacing" $@`  
-UnwarpDir=`getopt1 "--unwarpdir" $@`  
-OutputT1wImage=`getopt1 "--ot1" $@`  
-OutputT1wImageBrain=`getopt1 "--ot1brain" $@`  
-OutputT1wTransform=`getopt1 "--ot1warp" $@`  
-OutputT2wImage=`getopt1 "--ot2" $@`  
-OutputT2wTransform=`getopt1 "--ot2warp" $@`  
-DistortionCorrection=`getopt1 "--method" $@`  
-TopupConfig=`getopt1 "--topupconfig" $@`  
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  
-UseJacobian=`getopt1 "--usejacobian" $@`
-TruePatientPosition=`getopt1 "--truepatientposition" $@`  # HFS (head-first-spine), HFSx (head-first-sphinx) - TH 2023
-ScannerPatientPosition=`getopt1 "--scannerpatientposition" $@` # HFS, HFP, FFS or FFP
-SpinEchoPhaseEncodeNegative2=`getopt1 "--SEPhaseNeg2" $@`  
-SpinEchoPhaseEncodePositive2=`getopt1 "--SEPhasePos2" $@`  
-SpinEchoPhaseEncodeZero=`getopt1 "--SEPhaseZero" $@`  
-
-# default parameters
-WD=`defaultopt $WD .`
-
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 T1wImage=`${FSLDIR}/bin/remove_ext $T1wImage`
 T1wImageBrain=`${FSLDIR}/bin/remove_ext $T1wImageBrain`
 T2wImage=`${FSLDIR}/bin/remove_ext $T2wImage`
@@ -435,13 +407,9 @@ for TXw in $Modalities ; do
 
     case $DistortionCorrection in
 
-<<<<<<< HEAD
         ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-=======
-        ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GENERAL_ELECTRIC_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
-            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warped${TXw}
           if [[ ! $SPECIES =~ Marmoset ]] ; then
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage}.nii.gz -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
           else
@@ -452,7 +420,6 @@ for TXw in $Modalities ; do
             ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -concat ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat  ${WD}/Fieldmap2${TXwImageBasename}_init.mat
             rm -f ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat                        
           fi
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
             ;;
 
         ${SPIN_ECHO_METHOD_OPT})
