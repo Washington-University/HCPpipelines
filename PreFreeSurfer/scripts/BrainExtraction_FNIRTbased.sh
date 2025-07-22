@@ -13,7 +13,6 @@ set -e
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-<<<<<<< HEAD
 set -eu
 
 pipedirguessed=0
@@ -22,35 +21,6 @@ then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/../.."
-=======
-script_name=$(basename "${0}")
-
-Usage() {
-	cat <<EOF
-${script_name}: Tool for performing brain extraction using non-linear (FNIRT) results
-Usage: ${script_name}
-  [--workingdir=<working dir>]
-  --in=<input image>
-  [--ref=<reference highres image>]
-  [--refmask=<reference brain mask>]
-  [--ref2mm=<reference image 2mm>]
-  [--ref2mmmask=<reference brain mask 2mm>]
-  --outbrain=<output brain extracted image>
-  --outbrainmask=<output brain mask>
-  [--fnirtconfig=<fnirt config file>]
-  [--brainextract=<EXVIVO or INVIVO (default)>]
-  [--edgesigma=<edge sigma (mm) for EXVIVO>]
-  [--betcenter=<x,y,z>]
-  [--betradius=<radius in mm>]
-  [--betfraction=<fract 0 to 1>]
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -78,6 +48,22 @@ opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'mask' 'reference 2mm brain m
 
 opts_AddOptional '--fnirtconfig' 'FNIRTConfig' 'file' 'FNIRT configuration file' "$FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf"
 
+opts_AddOptional '--brainextract' 'BrainExtract' 'string' 'EXVIVO or INVIVO (default)' "INVIVO"
+
+opts_AddOptional '--edgesigma' 'EdgeSigma' 'float' 'edge sigma (mm) for EXVIVO' "0.01"
+
+opts_AddOptional '--betcenter' 'BetCenter' 'string' 'x,y,z' ""
+
+opts_AddOptional '--betradius' 'BetRadius' 'float' 'radius in mm' "75"
+
+opts_AddOptional '--betfraction' 'BetFraction' 'float' 'fract 0 to 1' "0.3"
+
+opts_AddOptional '--initdof' 'InitDof' 'int' 'initial dof' ""
+
+opts_AddOptional '--betbiasfieldcor' 'BiasfieldCor' 'string' 'TRUE or FALSE' "TRUE"
+
+opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'int' 'species label' "0"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -103,46 +89,6 @@ log_Check_Env_Var HCPPIPEDIR_Templates
 
 ################################################## OPTION PARSING #####################################################
 
-<<<<<<< HEAD
-=======
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-Input=`getopt1 "--in" $@`  # "$2"   # if "$Input"_brain exists, it will be used as an initial brain extraction - TH Mey 2023
-Reference=`getopt1 "--ref" $@` # "$3"
-ReferenceMask=`getopt1 "--refmask" $@` # "$4"
-Reference2mm=`getopt1 "--ref2mm" $@` # "$5"
-Reference2mmMask=`getopt1 "--ref2mmmask" $@` # "$6"
-OutputBrainExtractedImage=`getopt1 "--outbrain" $@` # "$7"
-OutputBrainMask=`getopt1 "--outbrainmask" $@` # "$8"
-FNIRTConfig=`getopt1 "--fnirtconfig" $@` # "$9"
-BrainExtract=`getopt1 "--brainextract" $@`
-EdgeSigma=`getopt1 "--edgesigma" $@`
-BetCenter=`getopt1 "--betcenter" $@`
-BetRadius=`getopt1 "--betradius" $@`
-BetFraction=`getopt1 "--betfraction" $@`
-InitDof=`getopt1 "--initdof"  $@` 
-BiasfieldCor=`getopt1 "--betbiasfieldcor" $@`  # TRUE or FALSE
-betspecieslabel=`getopt1 "--betspecieslabel" $@` 
-
-# default parameters
-WD=`defaultopt $WD .`
-Reference=`defaultopt $Reference ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm.nii.gz`
-ReferenceMask=`defaultopt $ReferenceMask ${HCPPIPEDIR_Templates}/MNI152_T1_0.7mm_brain_mask.nii.gz`  # dilate to be conservative with final brain mask
-Reference2mm=`defaultopt $Reference2mm ${HCPPIPEDIR_Templates}/MNI152_T1_2mm.nii.gz`
-Reference2mmMask=`defaultopt $Reference2mmMask ${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz`  # dilate to be conservative with final brain mask
-FNIRTConfig=`defaultopt $FNIRTConfig $FSLDIR/etc/flirtsch/T1_2_MNI152_2mm.cnf`
-
-EdgeSigma=`defaultopt $EdgeSigma 0.01`      # 0.5 or 1.0 may be useful if the edge of ex-vivo brain has abnormaly high signal.  
-
-# default values
-Contrast=`defaultopt $Contrast T1w`
-BiasfieldCor=`defaultopt $BiasfieldCor TRUE`
-SPECIESLABEL=`defaultopt $SPECIESLABEL 1`
-BetRadius=`defaultopt $BetRadius 75`
-BetTop2Center=`defaultopt $BetTop2Center 86`
-BetFraction=`defaultopt $BetFraction 0.3`
-betspecieslabel=`defaultopt $betspecieslabel 0` 
-
 # BET options
 if [ ! -z $BetCenter ] ; then
 	xcenter=$(echo "$(fslval $Input dim1)*$(echo $BetCenter | cut -d ',' -f1 )/$(fslval $Reference2mm dim1)" | bc )
@@ -161,9 +107,6 @@ if [ "BiasfieldCor" = TRUE ] ; then
 fi
 BetOpts+=" -z $betspecieslabel"
 
-
-# Run
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 BaseName=`${FSLDIR}/bin/remove_ext $Input`;
 BaseName=`basename $BaseName`;
 
