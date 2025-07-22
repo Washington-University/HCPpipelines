@@ -8,7 +8,6 @@
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
-<<<<<<< HEAD
 set -eu
 
 pipedirguessed=0
@@ -17,34 +16,6 @@ then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/../.."
-=======
-script_name=$(basename "${0}")
-
-Usage() {
-	cat <<EOF
-
-${script_name}: Tool for bias field correction based on square root of T1w * T2w
-
-Usage: ${script_name}
-  --workingdir=<working directory>
-  --T1im=<input T1 image>
-  --T1brain=<input T1 brain>
-  --T2im=<input T2 image>
-  --obias=<output bias field image>
-  --oT1im=<output corrected T1 image>
-  --oT1brain=<output corrected T1 brain>
-  --oT2im=<output corrected T2 image>
-  --oT2brain=<output corrected T2 brain>
-  [--bfsigma=<num>] : biasfield sigma (default=5)
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    Usage
-    exit 1
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 fi
 
 

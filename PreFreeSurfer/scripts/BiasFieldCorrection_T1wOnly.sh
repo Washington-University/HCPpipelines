@@ -23,23 +23,9 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for bias field correction based on T1w image only"
 
-<<<<<<< HEAD
 opts_AddMandatory '--workingdir' 'WD' 'path' 'working directory'
 
 opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
-=======
-Usage: ${script_name}
-  --workingdir=<working directory> 
-  --T1im=<input T1 image> 
-  [--T1brain=<input T1 image>]  # useful for NHP brain and avoild bet in fsl_anat
-  [--oT1im=<output T1 image>] 
-  [--oT1brain=<output T1 brain>] 
-  [--bfsigma=<input T1 image>]
-  [--strongbias=<TRUE or NONE (default)>]
-  
-EOF
-}
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 
 opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
 
@@ -51,6 +37,8 @@ opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1
 opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 20)" "20"
+
+opts_AddOptional '--strongbias' 'StrongBias' 'flag' "use stronger bias field correction" "FALSE"
 
 opts_ParseArguments "$@"
 
@@ -75,26 +63,6 @@ log_Check_Env_Var FSLDIR
 # T1_fast_bias_idxmask.nii.gz       T1_initfast2_brain.nii.gz         log.txt
 # T1_fast_bias_init.nii.gz          T1_initfast2_brain_mask.nii.gz
 
-<<<<<<< HEAD
-=======
-################################################## OPTION PARSING #####################################################
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  
-T1wImage=`getopt1 "--T1im" $@`  
-T1wBrain=`getopt1 "--T1brain" $@`  
-oBias=`getopt1 "--obias" $@`  
-oT1wImage=`getopt1 "--oT1im" $@`  
-oT1wBrain=`getopt1 "--oT1brain" $@`  
-BiasFieldSmoothingSigma=`getopt1 "--bfsigma" $@`
-StrongBias=`getopt1 "--strongbias" $@`
-if [[ $StrongBias = TRUE ]] ; then
-	StrongBiasFlag="--strongbias"
-else
-	StrongBias=NONE
-	StrongBiasFlag=""
-fi
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 
 WDir="$WD.anat"
 

@@ -85,11 +85,7 @@ for fn in "${imagelist[@]}" ; do
     newimlist="$newimlist $wdir/$bnm"
 done
 
-<<<<<<< HEAD
-=======
-if [ $verbose = yes ] ; then echo "Images: $imagelist  Output: $output"; fi
 
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
     $FSLDIR/bin/fslreorient2std ${fn}.nii.gz ${fn}_reorient
