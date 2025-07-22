@@ -115,12 +115,9 @@ for im2 in $newimlist ; do
 	$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
 
         # re-register using the brain mask as a weighting image
-<<<<<<< HEAD
         #TSC: "-nosearch" only sets angle to 0, still optimizes translation
 		$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
-=======
-	$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
+
     else
 	cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
     fi
