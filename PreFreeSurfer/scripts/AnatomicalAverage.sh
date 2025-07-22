@@ -56,23 +56,11 @@ cleanup=$(opts_StringToBool "$cleanup")
 
 #########################################################################################################
 
-<<<<<<< HEAD
 IFS='@' read -a imagelist <<<"$imagesStr"
 
 if ((${#imagelist[@]} < 2)) ; then
     log_Err_Abort "Must specify at least two images to average"
-=======
-if [ X$output = X ] ; then
-  echo "The compulsory argument -o MUST be used"
-  exit 1;
-fi
 
-if [ `echo $imagelist | wc -w` -lt 2 ] ; then
-  Usage;
-  echo " "
-  echo "Must specify at least two images to average"
-  exit 1;
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 fi
 
 # setup working directory
