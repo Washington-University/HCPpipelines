@@ -29,18 +29,18 @@ opts_AddMandatory '--gmwm-template' 'GMWMtemplate' 'file' "file containing GM+WM
 #AFI or B1Tx
 opts_AddOptional '--group-corrected-myelin' 'GroupCorrected' 'file' "the group-corrected myelin file from AFI or B1Tx"
 
-#AFI-specific
-opts_AddOptional '--afi-image' 'AFIImage' 'file' "two-frame AFI image"
+#AFI-specific. Should be the same as in the corresponding cross-sectional calls.
+#opts_AddOptional '--afi-image' 'AFIImage' 'file' "two-frame AFI image"
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"
 opts_AddOptional '--afi-tr-two' 'AFITRtwo' 'number' "TR of second AFI frame"
 opts_AddOptional '--afi-angle' 'AFITargFlipAngle' 'number' "target flip angle of AFI sequence"
 
-#B1Tx-specific
-opts_AddOptional '--b1tx-magnitude' 'B1TxMag' 'file' "B1Tx magnitude image (for alignment)"
-opts_AddOptional '--b1tx-phase' 'B1TxPhase' 'file' "B1Tx phase image"
+#B1Tx-specific. Should be the same as in the corresponding cross-sectional calls.
+#opts_AddOptional '--b1tx-magnitude' 'B1TxMag' 'file' "B1Tx magnitude image (for alignment)"
+#opts_AddOptional '--b1tx-phase' 'B1TxPhase' 'file' "B1Tx phase image"
 opts_AddOptional '--b1tx-phase-divisor' 'B1TxDiv' 'number' "what to divide the phase map by to obtain proportion of intended flip angle, default 800" '800'
 
-#PseudoTransmit-specific
+#PseudoTransmit-specific. Should be the same as in the corresponding cross-sectional calls.
 opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "fmri runs to use SE/SBRef files from, separated by @"
 opts_AddOptional '--pt-bbr-threshold' 'ptbbrthresh' 'number' "mincost threshold for reinitializing fMRI bbregister with flirt (may need to be increased for aging-related reduction of gray/white contrast), default 0.5" '0.5'
 opts_AddOptional '--myelin-template' 'ReferenceTemplate' 'file' "expected transmit-corrected group-average myelin pattern (for testing correction parameters)"
@@ -97,12 +97,9 @@ for Session in ${Sessions[@]}; do
         --mode="$mode"                                      \
         --gmwm-template="$GMWMtemplate"                     \
         --group-corrected-myelin="$GroupCorrected"          \
-        --afi-image="$AFIImage"                             \
         --afi-tr-one="$AFITRone"                            \
         --afi-tr-two="$AFITRtwo"                            \
         --afi-angle="$AFITargFlipAngle"                     \
-        --b1tx-magnitude="$B1TxMag"                         \
-        --b1tx-phase="$B1TxPhase"                           \
         --b1tx-phase-divisor="$B1TxDiv"                     \
         --pt-fmri-names="$fMRINames"                        \
         --pt-bbr-threshold="$ptbbrthresh"                   \
@@ -117,8 +114,8 @@ for Session in ${Sessions[@]}; do
         --raw-nopsn-t1w="$rawT1wBiased"                     \
         --is-longitudinal="TRUE"                            \
         --longitudinal-template="$TemplateLong"             \
-        --scanner-grad-coeffs="$GradientDistortionCoeffs"    \
-        --reg-name="$RegName"                                \
+        --scanner-grad-coeffs="$GradientDistortionCoeffs"   \
+        --reg-name="$RegName"                               \
         --low-res-mesh="$LowResMesh"                        \
         --grayordinates-res="$grayordRes"                   \
         --transmit-res="$transmitRes"                       \
@@ -126,37 +123,42 @@ for Session in ${Sessions[@]}; do
         --old-myelin-mapping="$oldmappingStr"               \
         --matlab-run-mode="$MatlabMode"                     \
     )
-    #par_add_job_to_stage "$parallel_mode" "$fslsub_queue" "${cmd[@]}"
+    par_add_job_to_stage "$parallel_mode" "$fslsub_queue" "${cmd[@]}"
 done
-#par_finalize_stage "$parallel_mode" "$max_jobs"
+par_finalize_stage "$parallel_mode" "$max_jobs"
 
-if [[ "$mode" == "PseudoTransmit" ]]; then
-    #Average the resulting myelin maps in the template directory
-    T1wDivT2wPseudoCorrArray=()
-    T1wDivT2wPseudoCorrAtlasArray=()
-    MyelinMapPseudoCorrArray=()
+#Average the resulting myelin maps in the template directory
+T1wDivT2wCorrArray=()
+T1wDivT2wCorrAtlasArray=()
+MyelinMapCorrArray=()
 
-    TemplateSession="$Subject.long.$TemplateLong"
-    AtlasFolderTemplate="$StudyFolder/$TemplateSession/MNINonLinear"
-    for Session in ${Sessions[@]}; do
-        SessionLong="$Session".long."$TemplateLong"
-        AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
-        T1wDivT2wPseudoCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_PseudoCorr.nii.gz")
-        T1wDivT2wPseudoCorrAtlasArray+=(-volume "$AtlasFolder/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz")
-        MyelinMapPseudoCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_PseudoCorr_${RegName}.32k_fs_LR.dscalar.nii")
-    done
-    
-    tempfiles_create T1wDivT2wPseudoCorrXXXX.nii temp_T1wDivT2wPseudoCorr
-    wb_command -volume-merge "$temp_T1wDivT2wPseudoCorr" "${T1wDivT2wPseudoCorrArray[@]}"
-    wb_command -volume-reduce "$temp_T1wDivT2wPseudoCorr" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_PseudoCorr.nii.gz
-    
-    tempfiles_create T1wDivT2wPseudoCorrAtlasXXXX.nii temp_T1wDivT2wPseudoCorrAtlas
-    wb_command -volume-merge "$temp_T1wDivT2wPseudoCorrAtlas" "${T1wDivT2wPseudoCorrAtlasArray[@]}"
-    wb_command -volume-reduce "$temp_T1wDivT2wPseudoCorrAtlas" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz
-    
-    wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_PseudoCorr_$RegName.32k_fs_LR.dscalar.nii" \
-        "${MyelinMapPseudoCorrArray[@]}"
-fi
+TemplateSession="$Subject.long.$TemplateLong"
+AtlasFolderTemplate="$StudyFolder/$TemplateSession/MNINonLinear"
 
+case "$mode" in
+    AFI) suffix="Corr" ;;
+    PseudoTransmit) suffix="PseudoCorr" ;;
+    B1Tx) suffix="Corr" ;;
+    *)  log_Err_Abort "Unrecognized transmit correction mode: $mode" ;;
+esac
+
+for Session in ${Sessions[@]}; do
+    SessionLong="$Session".long."$TemplateLong"
+    AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
+    T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
+    T1wDivT2wCorrAtlasArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}_Atlas.nii.gz")
+    MyelinMapCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_${suffix}_${RegName}.32k_fs_LR.dscalar.nii")
+done
+
+tempfiles_create T1wDivT2wCorrXXXX.nii temp_T1wDivT2wCorr
+wb_command -volume-merge "$temp_T1wDivT2wCorr" "${T1wDivT2wCorrArray[@]}"
+wb_command -volume-reduce "$temp_T1wDivT2wCorr" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_${suffix}.nii.gz
+    
+tempfiles_create T1wDivT2wCorrAtlasXXXX.nii temp_T1wDivT2wCorrAtlas
+wb_command -volume-merge "$temp_T1wDivT2wCorrAtlas" "${T1wDivT2wCorrAtlasArray[@]}"
+wb_command -volume-reduce "$temp_T1wDivT2wCorrAtlas" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_${suffix}_Atlas.nii.gz
+    
+wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_${suffix}_$RegName.32k_fs_LR.dscalar.nii" \
+   "${MyelinMapCorrArray[@]}"
 
 log_Msg "Completed TransmitBiasLong.sh"

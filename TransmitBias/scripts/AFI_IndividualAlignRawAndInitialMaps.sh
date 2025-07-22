@@ -17,7 +17,7 @@ opts_SetScriptDescription "align AFI and myelin-related scans"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--working-dir' 'AFIFolder' 'path' "where to put intermediate files"
-opts_AddMandatory '--afi-input' 'AFIin' 'file' "two-frame 'actual flip angle' scan"
+opts_AddOptional '--afi-input' 'AFIin' 'file' "two-frame 'actual flip angle' scan. Mandatory unless is-longitudinal=TRUE" ""
 opts_AddMandatory '--afi-tr-one' 'TRone' 'number' "TR of first AFI frame"
 opts_AddMandatory '--afi-tr-two' 'TRtwo' 'number' "TR of second AFI frame"
 opts_AddOptional '--receive-bias' 'ReceiveBias' 'image' "receive bias field to divide out of AFI images, if PSN wasn't used"
@@ -61,6 +61,11 @@ if (( IsLongitudinal )); then
     if [ ! -f "$xfmAFI2T1wCross" ]; then 
     	log_Err_Abort "Cross-sectional AFI to structural transform $xfmAFI2T1wCross not found. Has cross-sectional TransmitBias pipeline been run?"
     fi
+    AFIFolderCross=$StudyFolder/$SessionCross/TransmitBias/AFI
+else #check for 'mandatory unless longitudinal' options
+    if [[ "$AFIin" == "" ]]; then 
+        log_Err_Abort "--afi-input is required in non-longitudinal mode"
+    fi
 fi
 
 
@@ -96,16 +101,25 @@ GlobalScripts="$HCPPIPEDIR/global/scripts"
 mkdir -p "$AFIFolder"/GradientDistortionUnwarp
 mkdir -p "$WorkingDirectory/xfms"
 
-wb_command -volume-reorient "$AFIin" RPI "$AFIFolder"/AFI_orig.nii.gz
-if [[ "$GradientDistortionCoeffs" == "" ]]
-then
-    cp "$AFIFolder"/AFI_orig.nii.gz "$AFIFolder"/AFI_orig_gdc.nii.gz
+if (( IsLongitudinal )); then 
+    AFI_files=(AFI_orig.nii.gz AFI_orig_gdc_warp.nii.gz AFI_orig_gdc.nii.gz)
+    for file in ${AFI_files[*]}; do 
+        if [ -f "$AFIFolderCross/$file" ]; then 
+            cp $AFIFolderCross/$file $AFIFolder/
+        fi
+    done
 else
-    "$GlobalScripts"/GradientDistortionUnwarp.sh --workingdir="$AFIFolder"/GradientDistortionUnwarp \
-        --coeffs="$GradientDistortionCoeffs" \
-        --in="$AFIFolder"/AFI_orig.nii.gz \
-        --out="$AFIFolder"/AFI_orig_gdc.nii.gz \
-        --owarp="$AFIFolder"/AFI_orig_gdc_warp.nii.gz
+    wb_command -volume-reorient "$AFIin" RPI "$AFIFolder"/AFI_orig.nii.gz
+    if [[ "$GradientDistortionCoeffs" == "" ]]
+    then
+        cp "$AFIFolder"/AFI_orig.nii.gz "$AFIFolder"/AFI_orig_gdc.nii.gz
+    else
+        "$GlobalScripts"/GradientDistortionUnwarp.sh --workingdir="$AFIFolder"/GradientDistortionUnwarp \
+            --coeffs="$GradientDistortionCoeffs" \
+            --in="$AFIFolder"/AFI_orig.nii.gz \
+            --out="$AFIFolder"/AFI_orig_gdc.nii.gz \
+            --owarp="$AFIFolder"/AFI_orig_gdc_warp.nii.gz
+    fi
 fi
 
 useAFI="$AFIFolder"/AFI_orig_gdc.nii.gz
@@ -113,12 +127,16 @@ useT1w="$T1wFolder"/T1w_acpc_dc.nii.gz
 #use new bias field if PSN wasn't used
 if [[ "$ReceiveBias" != "" ]]
 then
-    tempfiles_create TransmitBias_biasresamp_XXXXXX.nii.gz biasresamp
-    wb_command -volume-resample "$ReceiveBias" "$AFIFolder"/AFI_orig_gdc.nii.gz TRILINEAR "$biasresamp"
-    #deal with 0s in receive field by pretending they were 1s
-    wb_command -volume-math 'AFI / (receive + (receive == 0))' "$AFIFolder"/AFI_orig_gdc_RC.nii.gz -fixnan 0 \
-        -var AFI "$AFIFolder"/AFI_orig_gdc.nii.gz \
-        -var receive "$biasresamp" -repeat
+    if (( !IsLongitudinal )); then 
+        tempfiles_create TransmitBias_biasresamp_XXXXXX.nii.gz biasresamp
+        wb_command -volume-resample "$ReceiveBias" "$AFIFolder"/AFI_orig_gdc.nii.gz TRILINEAR "$biasresamp"
+        #deal with 0s in receive field by pretending they were 1s
+        wb_command -volume-math 'AFI / (receive + (receive == 0))' "$AFIFolder"/AFI_orig_gdc_RC.nii.gz -fixnan 0 \
+            -var AFI "$AFIFolder"/AFI_orig_gdc.nii.gz \
+            -var receive "$biasresamp" -repeat
+    else
+        cp $AFIFolderCross/AFI_orig_gdc_RC.nii.gz $AFIFolder/
+    fi
 
     useAFI="$AFIFolder"/AFI_orig_gdc_RC.nii.gz
     useT1w="$T1wRC"

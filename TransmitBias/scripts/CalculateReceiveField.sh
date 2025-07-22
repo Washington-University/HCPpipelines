@@ -130,14 +130,18 @@ then
     then
         image="$psnimage"
     fi
-    #we need to use this file to deal with the fnirt coordinate conventions, so copy it to a standard name
-    cp "$image" "$WD"/gradunwarpin.nii.gz
-    "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
-        --workingdir="$WD"/gradunwarp \
-        --coeffs="$GradientDistortionCoeffs" \
-        --in="$WD"/gradunwarpin.nii.gz \
-        --out="$WD"/gradunwarpout.nii.gz \
-        --owarp="$WD"/gradunwarpfield.nii.gz
+    if (( IsLongitudinal == 0 )); then 
+        #we need to use this file to deal with the fnirt coordinate conventions, so copy it to a standard name
+        cp "$image" "$WD"/gradunwarpin.nii.gz
+        "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
+            --workingdir="$WD"/gradunwarp \
+            --coeffs="$GradientDistortionCoeffs" \
+            --in="$WD"/gradunwarpin.nii.gz \
+            --out="$WD"/gradunwarpout.nii.gz \
+            --owarp="$WD"/gradunwarpfield.nii.gz
+    else #copy the outputs over
+        
+    fi
     
     gradxfmargs=(-warp "$WD"/gradunwarpfield.nii.gz -fnirt "$WD"/gradunwarpin.nii.gz)
 fi

@@ -117,13 +117,13 @@ esac
 #check for missing parameters before launching anything
 case "$mode" in
     (AFI)
-        if [[ "$AFIImage" == "" || "$AFITRone" == "" || "$AFITRtwo" == "" || "$AFITargFlipAngle" == "" || "$GroupCorrected" == "" ]]
+        if [[ "$AFITRone" == "" || "$AFITRtwo" == "" || "$AFITargFlipAngle" == "" || "$GroupCorrected" == "" ]] || [[ "$IsLongitudinal" == "0" && "$AFIImage" == "" ]]
         then
             log_Err_Abort "$mode transmit correction mode requires --afi-image, --afi-tr-one, --afi-tr-two, --afi-angle, and --group-corrected-myelin"
         fi
         ;;
     (B1Tx)
-        if [[ "$B1TxMag" == "" || "$B1TxPhase" == "" || "$B1TxDiv" == "" || "$GroupCorrected" == "" ]]
+        if [[ "$B1TxDiv" == "" || "$GroupCorrected" == "" ]] || { [[ "$IsLongitudinal" == "0" ]] && [[ "$B1TxMag" == "" || "$B1TxPhase" == "" ]] }
         then
             log_Err_Abort "$mode transmit correction mode requires --b1tx-magnitude, --b1tx-phase, --b1tx-phase-divisor, and --group-corrected-myelin"
         fi

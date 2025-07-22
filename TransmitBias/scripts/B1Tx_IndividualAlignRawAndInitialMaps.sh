@@ -16,8 +16,8 @@ opts_SetScriptDescription "align B1Tx and myelin-related scans"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--working-dir' 'WorkingDIR' 'path' "where to put intermediate files"
-opts_AddMandatory '--b1tx-mag' 'b1mag' 'file' "magnitude image of B1Tx map"
-opts_AddMandatory '--b1tx-phase' 'b1phase' 'file' "phase image of B1Tx map"
+opts_AddOptional '--b1tx-mag' 'b1mag' 'file' "magnitude image of B1Tx map. Mandatory unless --is-longitudinal=TRUE"
+opts_AddOptional '--b1tx-phase' 'b1phase' 'file' "phase image of B1Tx map. Mandatory unless --is-longitudinal=TRUE"
 opts_AddMandatory '--b1tx-phase-divisor' 'phasediv' 'number' "what to divide the B1Tx phase map by to obtain proportion of expected flip angle"
 opts_AddOptional '--receive-bias' 'ReceiveBias' 'image' "receive bias field to divide out of B1Tx images, if PSN wasn't used"
 opts_AddOptional '--t2w-receive-corrected' 'T2wRC' 'image' "T2w image with receive correction applied, required when using --receive-bias"
@@ -59,6 +59,7 @@ if (( IsLongitudinal )); then
     if [ ! -f "$xfmB1Tx2T1wCross" ]; then 
     	log_Err_Abort "Cross-sectional AFI to structural transform $xfmAFI2T1wCross not found. Has cross-sectional TransmitBias pipeline been run?"
     fi
+    B1TxFolderCross="$StudyFolder/$SessionCross/TransmitBias/B1Tx"
 fi
 
 
@@ -81,44 +82,55 @@ T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
-
 mkdir -p "$WorkingDIR"/xfms
 
-if [[ "$GradientDistortionCoeffs" != "" ]]
-then
-    cp "$b1mag" "$WorkingDIR"/gradunwarpin.nii.gz
-    
-    "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
-        --workingdir="$WorkingDIR"/gradunwarp \
-        --coeffs="$GradientDistortionCoeffs" \
-        --in="$WorkingDIR"/gradunwarpin.nii.gz \
-        --out="$WorkingDIR"/gradunwarpout.nii.gz \
-        --owarp="$WorkingDIR"/gradunwarpfield.nii.gz
-    
-    gradxfmargs=(-warp "$WorkingDIR"/gradunwarpfield.nii.gz -fnirt "$WorkingDIR"/gradunwarpin.nii.gz)
-    
-    wb_command -volume-resample "$b1mag" "$b1mag" CUBIC "$WorkingDIR"/B1Tx_mag.nii.gz "${gradxfmargs[@]}"
-    #NOTE: assumes no wraparound exists in phase image (but so does the correction math)
-    wb_command -volume-resample "$b1phase" "$b1mag" CUBIC "$WorkingDIR"/B1Tx_phase_raw.nii.gz "${gradxfmargs[@]}"
-else
-    cp "$b1mag" "$WorkingDIR"/B1Tx_mag.nii.gz
-    cp "$b1phase" "$WorkingDIR"/B1Tx_phase_raw.nii.gz
-fi
+if (( IsLongitudinal )); then 
+    B1Tx_files=(gradunwarpin.nii.gz gradunwarpout.nii.gz gradunwarpfield.nii.gz B1Tx_mag.nii.gz B1Tx_phase_raw.nii.gz B1Tx_mag_RC.nii.gz)
+    for file in ${B1Tx_files[*]}; do 
+        if [ -f "$B1TxFolderCross/$file" ]; then 
+            cp $B1TxFolderCross/$file $WorkingDIR/
+        fi
+    done
+else 
+    if [[ "$GradientDistortionCoeffs" != "" ]]
+    then
+        cp "$b1mag" "$WorkingDIR"/gradunwarpin.nii.gz
 
-#divide here to avoid passing it into the other scripts
-wb_command -volume-math "phase / $phasediv" "$WorkingDIR"/B1Tx_phase.nii.gz \
-    -var phase "$WorkingDIR"/B1Tx_phase_raw.nii.gz
+        "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
+            --workingdir="$WorkingDIR"/gradunwarp \
+            --coeffs="$GradientDistortionCoeffs" \
+            --in="$WorkingDIR"/gradunwarpin.nii.gz \
+            --out="$WorkingDIR"/gradunwarpout.nii.gz \
+            --owarp="$WorkingDIR"/gradunwarpfield.nii.gz
+
+        gradxfmargs=(-warp "$WorkingDIR"/gradunwarpfield.nii.gz -fnirt "$WorkingDIR"/gradunwarpin.nii.gz)
+
+        wb_command -volume-resample "$b1mag" "$b1mag" CUBIC "$WorkingDIR"/B1Tx_mag.nii.gz "${gradxfmargs[@]}"
+        #NOTE: assumes no wraparound exists in phase image (but so does the correction math)
+        wb_command -volume-resample "$b1phase" "$b1mag" CUBIC "$WorkingDIR"/B1Tx_phase_raw.nii.gz "${gradxfmargs[@]}"
+    else
+        cp "$b1mag" "$WorkingDIR"/B1Tx_mag.nii.gz
+        cp "$b1phase" "$WorkingDIR"/B1Tx_phase_raw.nii.gz
+    fi
+    #divide here to avoid passing it into the other scripts
+    wb_command -volume-math "phase / $phasediv" "$WorkingDIR"/B1Tx_phase.nii.gz \
+        -var phase "$WorkingDIR"/B1Tx_phase_raw.nii.gz    
+fi
 
 #apply receive correction to magnitude ONLY
 useB1mag="$WorkingDIR"/B1Tx_mag.nii.gz
 useT2w="$T1wFolder"/T2w_acpc_dc.nii.gz
+
+
 if [[ "$ReceiveBias" != "" ]]
 then
-    tempfiles_create TransmitBias_B1receive_XXXXXX.nii.gz b1receive
-    wb_command -volume-resample "$ReceiveBias" "$WorkingDIR"/B1Tx_mag.nii.gz TRILINEAR "$b1receive"
-    wb_command -volume-math 'data / bias' "$WorkingDIR"/B1Tx_mag_RC.nii.gz -fixnan 0 \
-        -var data "$WorkingDIR"/B1Tx_mag.nii.gz \
-        -var bias "$b1receive"
+    if (( !IsLongitudinal )); then 
+        tempfiles_create TransmitBias_B1receive_XXXXXX.nii.gz b1receive
+        wb_command -volume-resample "$ReceiveBias" "$WorkingDIR"/B1Tx_mag.nii.gz TRILINEAR "$b1receive"
+        wb_command -volume-math 'data / bias' "$WorkingDIR"/B1Tx_mag_RC.nii.gz -fixnan 0 \
+            -var data "$WorkingDIR"/B1Tx_mag.nii.gz \
+            -var bias "$b1receive"
+    fi
     useB1mag="$WorkingDIR"/B1Tx_mag_RC.nii.gz
     useT2w="$T2wRC"
 fi

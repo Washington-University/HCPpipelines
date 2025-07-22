@@ -101,14 +101,12 @@ fi
 
 case "$mode" in
     (AFI)
-        if [[ "$AFIImage" == "" || "$AFITRone" == "" || "$AFITRtwo" == "" ]]
-        then
+        if [[ "$AFITRone" == "" || "$AFITRtwo" == "" ]] || [[ "$IsLongitudinal" == "0" && "$AFIImage" == "" ]]; then
             log_Err_Abort "$mode transmit correction mode requires --afi-image, --afi-tr-one, and --afi-tr-two"
         fi
         ;;
     (B1Tx)
-        if [[ "$B1TxMag" == "" || "$B1TxPhase" == "" ]]
-        then
+        if [[ "$IsLongitudinal" == "0" ]] && [[ "$B1TxMag" == "" || "$B1TxPhase" == "" ]]; then
             log_Err_Abort "$mode transmit correction mode requires --b1tx-magnitude and --b1tx-phase"
         fi
         ;;
