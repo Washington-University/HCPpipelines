@@ -526,26 +526,23 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
             --in=${wdir}/${TXwImage}${i} \
             --out=${TXwFolder}/${TXwImage}${i}_gdc \
             --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-<<<<<<< HEAD
+
+          if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+            log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+            ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+		        ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
+ 	        fi
+          
+          if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # for ACPC initialization - TH 2016
+            if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
+              ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
+            fi
+            ${RUN} ${FSLDIR}/bin/fslreorient2std $(remove_ext $Image)_brain ${wdir}/${TXwImage}${i}_brain
+	          log_Msg "Found $(remove_ext $Image)_brain"
+	          ${RUN} ${FSLDIR}/bin/applywarp -i ${wdir}/${TXwImage}${i}_brain -r ${TXwFolder}/${TXwImage}${i}_gdc -w ${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --interp=sinc
+	        fi
+
           OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
-=======
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
-
-           if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-             log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-		 ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
-		 ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
- 	    fi
-
-	    if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # for ACPC initialization - TH 2016
-              if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
-                ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
-              fi
-	      ${RUN} ${FSLDIR}/bin/fslreorient2std $(remove_ext $Image)_brain ${wdir}/${TXwImage}${i}_brain
-	      log_Msg "Found $(remove_ext $Image)_brain"
-	      ${RUN} ${FSLDIR}/bin/applywarp -i ${wdir}/${TXwImage}${i}_brain -r ${TXwFolder}/${TXwImage}${i}_gdc -w ${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --interp=sinc
-	    fi
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
           i=$(($i+1))
         done
 
@@ -554,35 +551,30 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
 
         i=1
         for Image in $TXwInputImages ; do
-	    Image="`${FSLDIR}/bin/remove_ext $Image`"
-            if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
-               ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
-            fi
-           log_Msg "reorient data to std" 
-           if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-	         log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-		   ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
-           else
-          ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-<<<<<<< HEAD
-          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
-=======
-           fi 
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+	        Image="`${FSLDIR}/bin/remove_ext $Image`"
+          if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
+             ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
+          fi
+          log_Msg "reorient data to std" 
+          if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+	          log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+		        ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
+          else
+            ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
+          fi 
 
-	    if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
-	      log_Msg "Found $(remove_ext $Image)_brain"
-             if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
-               ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
-             fi
-             if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-                 ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image}_brain --out=${TXwFolder}/${TXwImage}${i}_gdc_brain --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
-             else
- 	        ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
-             fi
-	      #OutputTXwBrainImageSTRING="${OutputTXwBrainImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc_brain "
-	    fi
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
+	        if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
+	          log_Msg "Found $(remove_ext $Image)_brain"
+            if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
+              ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
+            fi
+            if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+              ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image}_brain --out=${TXwFolder}/${TXwImage}${i}_gdc_brain --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
+            else
+ 	            ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
+            fi
+	        fi
+          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
 
