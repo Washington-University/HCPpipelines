@@ -1,0 +1,324 @@
+#!/bin/bash
+
+# Brain extraction tool for animal
+
+# Copyright (c) 2023
+# All rights reserved.
+
+# Takuya Hayashi, RIKEN Brain Connectomics Imaging Laboratory, Kobe, Japan
+# Stephen Smith, FMRIB Analysis Group, Oxford, UK
+
+# ver 1.1, 27 May 2024 - adapted BSD sed by Akiko Uematsu
+# ver 1.0, 12 Nov 2023 - added options (-R and -B), species (chimp and mini pig). 
+#                      - added functions of rescaling of vtk and debug mode.
+#                      - added help messages.
+#                      - bug fixed for sform and pixdim[0] in output volume.
+# ver 0.1, 16 Jun 2023 - first release
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# * Neither the name of this project nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+trap "script_error $*" ERR
+
+script_error() {
+    echo "$0 failed during command:$@"
+    exit 1
+}
+
+usage_exit() {
+bet2 -h 2>&1 | sed -e 's/bet2\ <input_fileroot>\ <output_fileroot>\ \[options\]/bet4animal\ <input_fileroot>\ <output_fileroot>\ \[arguments\]/g' | head -21
+echo "   -d           debug (don't delete temporary intermediate images)"
+echo ""          
+echo "Variations on default bet2 functionality (mutually exclusive options):"
+echo "   -R		robust brain centre estimation (iterates BET several times)"
+echo "   -B		run bias field correction then run bet with robust brain centre estimation"
+echo ""
+echo "Compulsory arguments (you need to specify either of):"
+echo "   -z <label>     0: Human        (xscale = 1.0,  yscale = 1.0,  zscale = 1.0,  radius = 75)"
+echo "                  1: Chimp        (xscale = 1.5,  yscale = 1.2,  zscale = 1.6,  radius = 45)"
+echo "                  2: Macaque      (xscale = 2.0,  yscale = 1.6,  zscale = 2.2,  radius = 35)"
+echo "                  3: Marmoset     (xscale = 5.0,  yscale = 3.0,  zscale = 5.0,  radius = 12)"
+echo "                  4: Night monkey (xscale = 4.0,  yscale = 3.0,  zscale = 5.0,  radius = 20)"
+echo "                  5: Rat          (xscale = 8.0,  yscale = 6.0,  zscale = 10.0, radius = 10)"
+echo "                  6: Mouse        (xscale = 16.0, yscale = 12.0, zscale = 20.0, radius =  5)"
+echo "                  7: Mini pig     (xscale = 3.0,  yscale = 2.6,  zscale = 2.6,  radius = 25)"
+echo "   -x <x,y,z>     xscale, yscale, zscale for customising scaling values. You may want to combine with '-r' option to customize radius."
+echo ""
+echo "Note that input volume needs to be reoriented in standard space (e.g., using fslreorient2std if NIFTI orientation is correctly labeled),"
+echo "so that AC-PC line of brain is parallel to Y-axis. Useful option is '-c' to specify the voxel coordinate of the brain center-of-gravity."
+echo "Options '-R' and '-B' are not usully recommended for small brains such as marmoset, rat and mouse."
+echo ""
+echo "Example usage for macaque brain:"
+echo ""
+echo "   bet4animal t1.nii.gz t1_brain.nii.gz -z 2 -m -c 128 156 42"
+echo ""
+echo "This usage spcifies species of macaque (-z 2), generation of binary brain mask (-m), and the voxel coordinate of the brain center at 'midline posterior thalamus' in fsleyes (-c 128 156 42)."
+echo ""
+exit 1;
+}
+[ "$1" = "" ] && usage_exit
+
+log_Msg () {
+if ((verbose)) ; then
+   echo "$@"
+fi
+}
+
+get_dims() {
+    xdim=`${FSLDIR}/bin/fslval $1 dim1 | sed 's/-//g'`
+    ydim=`${FSLDIR}/bin/fslval $1 dim2 | sed 's/-//g'`
+    zdim=`${FSLDIR}/bin/fslval $1 dim3 | sed 's/-//g'`
+    xpixdim=`${FSLDIR}/bin/fslval $1 pixdim1 | sed 's/-//g'`
+    ypixdim=`${FSLDIR}/bin/fslval $1 pixdim2 | sed 's/-//g'`
+    zpixdim=`${FSLDIR}/bin/fslval $1 pixdim3 | sed 's/-//g'`
+    #echo $xdim $ydim $zdim $xpixdim $ypixdim $zpixdim
+}
+
+find_centre_in_voxels() {
+    centre=`${FSLDIR}/bin/fslstats $1 -l 0.001 -C`
+    x=`echo $centre | awk '{print $1}'`
+    y=`echo $centre | awk '{print $2}'`
+    z=`echo $centre | awk '{print $3}'`
+    #echo $x $y $z
+}
+
+input=$(remove_ext $1)
+output=$(remove_ext $2)
+shift 2
+NewOpts="$@"
+
+# default variables
+debug=0
+variation=0
+verbose=0
+
+# analyze radius in opts
+if [ ! -z "$(echo "$@" | grep " \-r ")" ] ; then
+	InRadius=$(echo $NewOpts | sed -e 's/-r/@/g' | cut -d '@' -f 2 | awk '{print $1}')
+	NewOpts=$(echo $NewOpts | sed -e 's/-r\ \{1,\}'$InRadius'//g')
+fi
+if [ ! -z "$(echo "$@" | grep " \--radius ")" ] ; then
+	InRadius=$(echo $NewOpts | sed -e 's/--radius/@/g' | cut -d '@' -f 2 | awk '{print $1}')
+	NewOpts=$(echo $NewOpts | sed -e 's/--radius\ \{1,\}'$InRadius'//g')
+fi
+
+# set scaling factors and radius
+if [ ! -z "$(echo "$NewOpts" | grep "\-z")" ] ; then
+	SpeciesLabel=$(echo $@ | sed -e 's/-z/@/g' | cut -d '@' -f 2 | awk '{print $1}')
+	SpeciesLabel=${SpeciesLabel:-1}
+
+	if [ $SpeciesLabel = 0 ] ; then     # macaque
+		xscale=1
+		yscale=1
+		zscale=1
+		DefRadius=${InRadius:-75}
+	elif [ $SpeciesLabel = 1 ] ; then   # chimp - courtesy of Matthew F. Glasser, WUSTL
+		xscale=1.5
+		yscale=1.2
+		zscale=1.6
+		DefRadius=${InRadius:-45}	
+	elif [ $SpeciesLabel = 2 ] ; then   # macaque
+		xscale=2
+		yscale=1.6
+		zscale=2.2
+		DefRadius=${InRadius:-35}
+	elif [ $SpeciesLabel = 3 ] ; then   # marmoset
+		xscale=5
+		yscale=3
+		zscale=5
+		DefRadius=${InRadius:-12}
+	elif [ $SpeciesLabel = 4 ] ; then   # night monkey - courtesy of Masahiko Takada, Kyoto Univ, Japan
+		xscale=4
+		yscale=3
+		zscale=5
+		DefRadius=${InRadius:-20}
+	elif [ $SpeciesLabel = 5 ] ; then   # rat
+		xscale=8
+		yscale=6
+		zscale=10
+		DefRadius=${InRadius:-10}
+	elif [ $SpeciesLabel = 6 ] ; then   # mouse
+		xscale=16
+		yscale=12
+		zscale=20
+		DefRadius=${InRadius:-5}
+	elif [ $SpeciesLabel = 7 ] ; then   # mini pig - courtesy of Hiroshi Watabe, Tohoku Univ, Japan
+		xscale=3
+		yscale=2.6
+		zscale=2.6
+		DefRadius=${InRadius:-25}
+	###
+	# to be added: default values for other species. Please let the authors know your preferred species.
+	###
+	else
+		echo "ERROR: unknown species: $SpeciesLabel"
+		usage_exit
+	fi
+	if [[ ! -z "$(echo $NewOpts | grep "\-x")" ]] ; then
+		echo "ERROR: either of -z or -x option must be used"
+		usage_exit
+	fi
+
+elif [ ! -z "$(echo "$NewOpts" | grep "\-x")" ] ; then
+	scales=$(echo $@ | sed -e 's/-x/@/g' | cut -d '@' -f 2 | awk '{print $1}')
+	if [[ ! -z $(echo $scales | cut -d ',' -f3) ]] ; then
+		xscale=$(echo $scales | cut -d ',' -f1)
+		yscale=$(echo $scales | cut -d ',' -f2)
+		zscale=$(echo $scales | cut -d ',' -f3)
+		DefRadius=${InRadius:-50}
+	else
+		echo "ERROR: unknown format of scales: $scales"
+		usage_exit
+	fi
+	if [[ ! -z "$(echo $NewOpts | grep "\-z")" ]] ; then
+		echo "ERROR: either of -z or -x option must be used"
+		usage_exit
+	fi
+else
+	echo "ERROR: cannnot find a compulsory argument -x or -z"
+	usage_exit
+fi
+
+if [[ ! -z "$(echo "$NewOpts" | grep "\-v")" || ! -z "$(echo "$NewOpts" | grep " \--verbose")" ]] ; then
+	verbose=1
+fi
+
+if [[ ! -z "$(echo "$NewOpts" | grep "\-R")" ]] ; then
+	variation=1
+	NewOpts=`echo $NewOpts | sed 's/-R//g' | sed 's/-n//g'`
+fi
+
+if [[ ! -z "$(echo "$NewOpts" | grep "\-d")" ]] ; then
+	debug=1
+	NewOpts=`echo $NewOpts | sed 's/-d//g'`
+fi
+
+if [[ ! -z "$(echo "$NewOpts" | grep "\-B")" ]] ; then
+	variation=2
+	NewOptsR=""
+	i=1
+	narg=$(echo $NewOpts | wc -w)
+	while [ $i -le $narg ] ; do
+		arg=$(echo $NewOpts | awk '{print $'$i'}')
+		#echo arg=$arg
+		if [ $arg = -w ] ; then
+			echo "WARNING: option -w is omitted when using -B option" 
+			i=$((i+2))
+		else
+			NewOptsR="$NewOptsR $arg"
+			i=$((i+1))
+		fi
+	done
+	NewOpts=$NewOptsR
+fi
+
+NewRadius=$(echo "$DefRadius * $xscale" | bc -l)
+NewOpts="$(echo $NewOpts | sed -e 's/-z\ \{1,\}'$SpeciesLabel'//g' | sed -e 's/-x\ \{1,\}'$scales'//g') -r $NewRadius"
+pixdim=("$(fslval "$input" pixdim1)" "$(fslval "$input" pixdim2)" "$(fslval "$input" pixdim3)")
+newpixdim=("$(echo "${pixdim[0]}*$xscale" | bc -l)" "$(echo "${pixdim[1]}*$yscale" | bc -l)" "$(echo "${pixdim[2]}*$zscale" | bc -l)")
+read -a sform <<<"$($FSLDIR/bin/fslorient -getsform "$input")"
+newsform=()
+for ((i = 0; i < 16; ++i)) ; do
+	if   [[ $i =  0 || $i =  3 ]] ; then
+		scale=$xscale
+	elif [[ $i =  5 || $i =  7 ]] ; then
+		scale=$yscale
+	elif [[ $i = 10 || $i = 11 ]] ; then
+		scale=$zscale
+	else
+		scale=1
+	fi
+	newsform+=("$(echo "${sform[$i]}" | awk '{printf "%.8f\n",$1*'$scale'}')")
+done
+log_Msg "pixdim: ${pixdim[@]}"
+log_Msg "sform: ${sform[@]}"
+log_Msg "x,y,z scales: $xscale,$yscale,$zscale"
+log_Msg "original radius: $DefRadius mm"
+log_Msg "scaled pixdim: ${newpixdim[@]}"
+log_Msg "scaled sform: ${newsform[@]}"
+log_Msg "scaled radius: $NewRadius mm"
+
+# scale volume
+log_Msg "scaling volume.."
+tmp=${output}_bet4animal_$$
+fslmaths $input $tmp
+fslchpixdim $tmp ${newpixdim[@]} > /dev/null 2>&1
+fslorient -setsform "${newsform[@]}" $tmp
+
+# run BET for scaled volume
+if [ "$variation" = 1 ] ; then
+	log_Msg "running bet with robust centre estimation.."
+	get_dims ${tmp}
+	i=1
+	while [ $i -gt 0 ] ; do
+    		#echo $i
+    		if [ $i = 1 ] ; then
+			log_Msg " bet2 ${tmp} ${tmp}_brain $NewOpts"
+			${FSLDIR}/bin/bet2 ${tmp} ${tmp}_brain $NewOpts
+			find_centre_in_voxels ${tmp}_brain
+    		else
+			log_Msg " bet2 ${tmp} ${tmp}_brain $NewOpts -c $x $y $z"
+			${FSLDIR}/bin/bet2 ${tmp} ${tmp}_brain $NewOpts -c $x $y $z
+			ox=$x; oy=$y; oz=$z;
+			find_centre_in_voxels ${tmp}_brain
+			diffsq=`echo "0 k $ox $x - 2 ^ $oy $y - 2 ^ + $oz $z - 2 ^ + 1 / p" | dc -`
+			#echo $diffsq
+			if [ $diffsq -lt 1 ] || [ $i -gt 10 ] ; then
+			    i=_10
+			fi
+		fi
+		i=`echo "$i 1 + p" | dc -`
+	done
+elif [ "$variation" = 2 ] ; then
+	log_Msg "running bet with bias field correction.."
+	bet ${tmp} ${tmp}_brain $NewOpts -B
+else
+	log_Msg "running bet.."
+	log_Msg " bet2 ${tmp} ${tmp}_brain $NewOpts"
+	bet2 ${tmp} ${tmp}_brain $NewOpts
+fi
+
+# rescale volume
+log_Msg "rescaling volume.."
+for type in brain brain_mask brain_skull brain_overlay; do
+	if [ $(imtest ${tmp}_${type} ) = 1 ] ; then
+		fslcpgeom $input ${tmp}_${type}
+		immv ${tmp}_${type} "$output"$(echo ${type} | sed -e 's/^brain//')
+	fi
+done
+
+if [ -e ${tmp}_brain_mesh.vtk ] ; then
+	log_Msg "rescaling mesh.."
+	npoints=$(cat ${tmp}_brain_mesh.vtk | awk 'NR==5 {print $2}')
+	max=$((npoints + 5 ));
+	cat ${tmp}_brain_mesh.vtk | awk '{if (NR<=5) {print}}' > ${tmp}_brain_mesh_head.vtk
+	cat ${tmp}_brain_mesh.vtk | awk '{if (NR>5&&NR<='$max') {print $1/'$xscale',$2/'$yscale',$3/'$zscale'}}' >  ${tmp}_brain_mesh_points.vtk
+	cat ${tmp}_brain_mesh.vtk | awk '{if (NR>'$max') {print}}' >  ${tmp}_brain_mesh_polygons.vtk
+	cat ${tmp}_brain_mesh_head.vtk ${tmp}_brain_mesh_points.vtk ${tmp}_brain_mesh_polygons.vtk > "$output"_mesh.vtk
+	if [ $debug = 0 ] ; then
+		rm ${tmp}_brain_mesh.vtk ${tmp}_brain_mesh_head.vtk  ${tmp}_brain_mesh_points.vtk ${tmp}_brain_mesh_polygons.vtk
+	fi
+fi
+
+if [ $debug = 0 ] ; then
+	imrm $tmp
+fi
+
+exit 0;

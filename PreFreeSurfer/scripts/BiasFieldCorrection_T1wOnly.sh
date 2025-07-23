@@ -38,6 +38,8 @@ opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output correcte
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 20)" "20"
 
+opts_AddOptional '--strongbias' 'StrongBias' 'flag' "use stronger bias field correction" "FALSE"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -70,6 +72,7 @@ verbose_echo "  "
 verbose_red_echo " ===> Running T1w Bias Field Correction"
 verbose_echo " "
 
+log_Msg " StrongBias: $StrongBias"
 mkdir -p $WDir
 
 # Record the input options in a log file
@@ -82,7 +85,13 @@ echo " " >> $WDir/log.txt
 
 # Compute T1w Bias Normalization using fsl_anat function
 
-${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup
+if [ $(${FSLDIR}/bin/imtest $T1wBrain) = 0 ] ; then
+	${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+else
+	fslmaths $T1wBrain -abs ${T1wBrain}_abs # TH - avoid error of Fast if the input has negative values (e.g. due to spline interpolation)
+	${FSLDIR}/bin/fsl_anat -i ${T1wBrain}_abs -o $WD --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+	fslmaths $T1wImage -div ${WDir}/T1_fast_bias.nii.gz ${WDir}/T1_biascorr
+fi
 
 # Use existing brain mask if one is provided
 

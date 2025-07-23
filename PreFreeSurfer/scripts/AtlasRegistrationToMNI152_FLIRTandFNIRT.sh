@@ -1,8 +1,9 @@
 #!/bin/bash 
+set -e
 
 # Requirements for this script
-#  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR
+#  installed versions of: FSL5.0.1+
+#  environment: FSLDIR
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
@@ -67,6 +68,8 @@ opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'mask' 'reference 2mm brain m
 
 opts_AddOptional '--fnirtconfig' 'FNIRTConfig' 'file' 'FNIRT configuration file' "${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf"
 
+opts_AddOptional '--brainextract' 'BrainExtract' 'string' 'brain extraction method' ""
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -80,16 +83,14 @@ opts_ShowValues
 
 log_Check_Env_Var FSLDIR
 
+
 T1wRestoreBasename=`remove_ext $T1wRestore`;
 T1wRestoreBasename=`basename $T1wRestoreBasename`;
 T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
 T1wRestoreBrainBasename=`basename $T1wRestoreBrainBasename`;
 
-log_Msg "START: AtlasRegistration to MNI152"
-
-verbose_echo " "
-verbose_red_echo " ===> Running Atlas Registration to MNI152"
-verbose_echo " "
+echo " "
+echo " START: AtlasRegistration to MNI152"
 
 mkdir -p $WD/xfms
 
@@ -99,43 +100,37 @@ echo "PWD = `pwd`" >> $WD/xfms/log.txt
 echo "date: `date`" >> $WD/xfms/log.txt
 echo " " >> $WD/xfms/log.txt
 
-########################################## DO WORK ##########################################
+########################################## DO WORK ########################################## 
 
 # Linear then non-linear registration to MNI
-verbose_echo " --> Linear then non-linear registration to MNI"
-${FSLDIR}/bin/flirt -interp spline -dof 12 -in ${T1wRestoreBrain} -ref ${ReferenceBrain} -omat ${WD}/xfms/acpc2MNILinear.mat -out ${WD}/xfms/${T1wRestoreBrainBasename}_to_MNILinear
+ ${FSLDIR}/bin/flirt -interp spline -dof 12 -in ${T1wRestoreBrain} -ref ${ReferenceBrain} -omat ${WD}/xfms/acpc2MNILinear.mat -out ${WD}/xfms/${T1wRestoreBrainBasename}_to_MNILinear
 
-${FSLDIR}/bin/fnirt --in=${T1wRestore} --ref=${Reference2mm} --aff=${WD}/xfms/acpc2MNILinear.mat --refmask=${Reference2mmMask} --fout=${OutputTransform} --jout=${WD}/xfms/NonlinearRegJacobians.nii.gz --refout=${WD}/xfms/IntensityModulatedT1.nii.gz --iout=${WD}/xfms/2mmReg.nii.gz --logout=${WD}/xfms/NonlinearReg.txt --intout=${WD}/xfms/NonlinearIntensities.nii.gz --cout=${WD}/xfms/NonlinearReg.nii.gz --config=${FNIRTConfig}
+ ${FSLDIR}/bin/fnirt --in=${T1wRestore} --ref=${Reference2mm} --aff=${WD}/xfms/acpc2MNILinear.mat --refmask=${Reference2mmMask} --fout=${OutputTransform} --jout=${WD}/xfms/NonlinearRegJacobians.nii.gz --refout=${WD}/xfms/IntensityModulatedT1.nii.gz --iout=${WD}/xfms/2mmReg.nii.gz --logout=${WD}/xfms/NonlinearReg.txt --intout=${WD}/xfms/NonlinearIntensities.nii.gz --cout=${WD}/xfms/NonlinearReg.nii.gz --config=${FNIRTConfig}
 
 # Input and reference spaces are the same, using 2mm reference to save time
-verbose_echo " --> Computing 2mm warp"
 ${FSLDIR}/bin/invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${Reference2mm}
 
 # T1w set of warped outputs (brain/whole-head + restored/orig)
-verbose_echo " --> Generarting T1w set of warped outputs"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImage}
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestore}
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestoreBrain}
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
+${FSLDIR}/bin/imcp ${OutputT1wImage} ${OutputT1wImage}_orig
 
 # T2w set of warped outputs (brain/whole-head + restored/orig)
 if [ ! "${T2wImage}" = "NONE" ] ; then
-  verbose_echo " --> Creating T2w set of warped outputs"
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImage}
-  ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestore}
-  ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
-  ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrain} ${OutputT2wImageRestoreBrain}
-else
-  verbose_echo " ... skipping T2w processing"
+ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImage}
+ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestore}
+ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
+ ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrain} ${OutputT2wImageRestoreBrain}
+ ${FSLDIR}/bin/imcp ${OutputT2wImage} ${OutputT2wImage}_orig
 fi
 
-verbose_green_echo "---> Finished Atlas Registration to MNI152"
-verbose_echo " "
-
-log_Msg "END: AtlasRegistration to MNI152"
+echo " "
+echo " END: AtlasRegistration to MNI152"
 echo " END: `date`" >> $WD/xfms/log.txt
 
-########################################## QA STUFF ##########################################
+########################################## QA STUFF ########################################## 
 
 if [ -e $WD/xfms/qa.txt ] ; then rm -f $WD/xfms/qa.txt ; fi
 echo "cd `pwd`" >> $WD/xfms/qa.txt
