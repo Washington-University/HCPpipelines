@@ -22,12 +22,12 @@ opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)"
 opts_AddOptional '--workingdir' 'WD' 'folder' "where to put intermediate files"
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file"
-opts_AddOptional '--bodycoil' 'bodycoil' 'image' "body coil image, requires --headcoil"
-opts_AddOptional '--headcoil' 'headcoil' 'image' "head coil image with matching contrast to --bodycoil"
-opts_AddOptional '--psn-t1w-image' 'psnimage' 'image' "image with PSN correction, requires --nopsn-image"
-opts_AddOptional '--nopsn-t1w-image' 'nopsnimage' 'image' "same image as --psn-image, but without PSN correction applied"
-opts_AddMandatory '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of non-PSN T1w images"
-opts_AddMandatory '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of non-PSN T2w images"
+opts_AddOptional '--bodycoil' 'bodycoil' 'image' "body coil image, requires --headcoil. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--headcoil' 'headcoil' 'image' "head coil image with matching contrast to --bodycoil. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--psn-t1w-image' 'psnimage' 'image' "image with PSN correction, requires --nopsn-image. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--nopsn-t1w-image' 'nopsnimage' 'image' "same image as --psn-image, but without PSN correction applied. Ignored if --is-longitudinal=TRUE."
+opts_AddMandatory '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of non-PSN T1w images. Ignored if --is-longitudinal=TRUE."
+opts_AddMandatory '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of non-PSN T2w images. Ignored if --is-longitudinal=TRUE."
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh for --myelin-surface-correction-out, default '32'" '32'
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration to use, default MSMAll" 'MSMAll'
 opts_AddMandatory '--bias-image-out' 'biasout' 'filename' "output - what file to write the bias field image to"
@@ -78,24 +78,26 @@ opts_ShowValues
 IFS=' @' read -a T1wunprocarray <<<"$T1wunprocstr"
 IFS=' @' read -a T2wunprocarray <<<"$T2wunprocstr"
 
-if [[ "$bodycoil" != "" && "$psnimage" != "" ]]
-then
-    log_Err_Abort "specify only one of --bodycoil or --psn-image"
-fi
+if (( !IsLongitudinal )); then 
+    if [[ "$bodycoil" != "" && "$psnimage" != "" ]]
+    then
+        log_Err_Abort "specify only one of --bodycoil or --psn-image"
+    fi
 
-if [[ "$bodycoil" == "" && "$psnimage" == "" ]]
-then
-    log_Err_Abort "no bias-corrected input image specified"
-fi
+    if [[ "$bodycoil" == "" && "$psnimage" == "" ]]
+    then
+        log_Err_Abort "no bias-corrected input image specified"
+    fi
 
-if [[ "$bodycoil" != "" && "$headcoil" == "" ]]
-then
-    log_Err_Abort "--bodycoil option requires also specifying --headcoil"
-fi
+    if [[ "$bodycoil" != "" && "$headcoil" == "" ]]
+    then
+        log_Err_Abort "--bodycoil option requires also specifying --headcoil"
+    fi
 
-if [[ "$psnimage" != "" && "$nopsnimage" == "" ]]
-then
-    log_Err_Abort "--psn-image option requires also specifying --nopsn-image"
+    if [[ "$psnimage" != "" && "$nopsnimage" == "" ]]
+    then
+        log_Err_Abort "--psn-image option requires also specifying --nopsn-image"
+    fi
 fi
 
 T1wFolder="$StudyFolder"/"$Session"/T1w
@@ -125,12 +127,12 @@ fi
 gradxfmargs=()
 if [[ "$GradientDistortionCoeffs" != "" ]]
 then
-    image="$headcoil"
-    if [[ "$image" == "" ]]
-    then
-        image="$psnimage"
-    fi
     if (( IsLongitudinal == 0 )); then 
+        image="$headcoil"
+        if [[ "$image" == "" ]]
+        then
+            image="$psnimage"
+        fi    
         #we need to use this file to deal with the fnirt coordinate conventions, so copy it to a standard name
         cp "$image" "$WD"/gradunwarpin.nii.gz
         "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
@@ -140,22 +142,25 @@ then
             --out="$WD"/gradunwarpout.nii.gz \
             --owarp="$WD"/gradunwarpfield.nii.gz
     else #copy the outputs over
-        
+        cp "$WDCross"/gradunwarpfield.nii.gz "$WDCross"/gradunwarpin.nii.gz "$WDCross"/gradunwarpout.nii.gz "$WD"/
     fi
-    
     gradxfmargs=(-warp "$WD"/gradunwarpfield.nii.gz -fnirt "$WD"/gradunwarpin.nii.gz)
 fi
 
-if [[ "$bodycoil" != "" ]]
+if [[ "$IsLongitudinal" == 0 && "$bodycoil" != "" ]] || [[ "$IsLongitudinal" == 1 && -f "$WDCross/bodycoil.nii.gz" ]]
 then
-    #paraphrased from AFI
-    if [[ "$GradientDistortionCoeffs" != "" ]]
-    then
-        wb_command -volume-resample "$bodycoil" "$bodycoil" CUBIC "$WD"/bodycoil.nii.gz "${gradxfmargs[@]}"
-        wb_command -volume-resample "$headcoil" "$headcoil" CUBIC "$WD"/headcoil.nii.gz "${gradxfmargs[@]}"
+    #paraphrased from AFI    
+    if (( !IsLongitudinal )); then 
+        if [[ "$GradientDistortionCoeffs" != "" ]]
+        then
+            wb_command -volume-resample "$bodycoil" "$bodycoil" CUBIC "$WD"/bodycoil.nii.gz "${gradxfmargs[@]}"
+            wb_command -volume-resample "$headcoil" "$headcoil" CUBIC "$WD"/headcoil.nii.gz "${gradxfmargs[@]}"
+        else
+            cp "$bodycoil" "$WD"/bodycoil.nii.gz
+            cp "$headcoil" "$WD"/headcoil.nii.gz
+        fi
     else
-        cp "$bodycoil" "$WD"/bodycoil.nii.gz
-        cp "$headcoil" "$WD"/headcoil.nii.gz
+        cp "$WDCross"/bodycoil.nii.gz "$WDCross"/headcoil.nii.gz "$WD"/
     fi
     
     function ReuseBBRLongitudinal {
@@ -187,18 +192,7 @@ then
             "$WDСross"/bodycoil.nii.gz          \
             "$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
             "$WD"/bodycoil2T1w.nii.gz
-            
-        # #1. produce output xfm
-        # #multiply cross-sectional transform by T1w-to-base-template transform.
-        # finalxfm="$WD"/xfms/bodycoil2str.mat
-        # convert_xfm -omat "$finalxfm" -concat "$xfmT1w2BaseTemplate" "$WDCross/xfms/bodycoil2str.mat"
-        # #2. produce output inverse xfm
-        # convert_xfm -omat "$WD"/xfms/str2bodycoil.mat -inverse "$finalxfm"
-        # #3. resample output image
-        # wb_command -volume-resample "$WDСross"/bodycoil.nii.gz "$T1wFolder"/T1w_acpc_dc_restore.nii.gz CUBIC "$WD"/bodycoil2T1w.nii.gz \
-                # -affine "$finalxfm" \
-                # -flirt "$WDСross"/bodycoil.nii.gz "$T1wFolderCross"/T1w_acpc_dc_restore.nii.gz
-                
+
         #B. Head coil.
         ReuseBBRLongitudinal \
             "$WDCross/xfms/headcoil2str.mat"    \
@@ -275,13 +269,17 @@ then
         -var field "$WD"/ReceiveField_dilall."$transmitRes".nii.gz
 else
     #the psn/nopsn images should already be aligned to each other, and in scanner space, but we do need a registration to get the brain/head masks positioned correctly
-    if [[ "$GradientDistortionCoeffs" != "" ]]
-    then
-        wb_command -volume-resample "$psnimage" "$psnimage" CUBIC "$WD"/psnimage.nii.gz "${gradxfmargs[@]}"
-        wb_command -volume-resample "$nopsnimage" "$nopsnimage" CUBIC "$WD"/nopsnimage.nii.gz "${gradxfmargs[@]}"
+    if (( !IsLongitudinal )); then 
+        if [[ "$GradientDistortionCoeffs" != "" ]]
+        then
+            wb_command -volume-resample "$psnimage" "$psnimage" CUBIC "$WD"/psnimage.nii.gz "${gradxfmargs[@]}"
+            wb_command -volume-resample "$nopsnimage" "$nopsnimage" CUBIC "$WD"/nopsnimage.nii.gz "${gradxfmargs[@]}"
+        else
+            cp "$psnimage" "$WD"/psnimage.nii.gz
+            cp "$nopsnimage" "$WD"/nopsnimage.nii.gz
+        fi
     else
-        cp "$psnimage" "$WD"/psnimage.nii.gz
-        cp "$nopsnimage" "$WD"/nopsnimage.nii.gz
+        cp "$WDCross"/psnimage.nii.gz "$WDCross"/nopsnimage.nii.gz "$WD"/
     fi
     
     if (( IsLongitudinal )); then 
@@ -351,16 +349,30 @@ function ReorientBBRandBCAvg()
     #the header carries through GradientDistortionUnwarp.sh, so fix it here first
     local -a namelist=()
     local i
-    for ((i = 1; i <= $#; ++i))
+    local input_list_file="$WDCross"/"$contrast"_unprocarray.lst    
+    local nfiles
+    if (( !IsLongitudinal )); then 
+        nfiles="$#"
+        rm -f "$input_list_file"
+    else
+        nfiles=$(wc -l < "$input_list_file")
+    fi
+    for ((i = 1; i <= nfiles; ++i))
     do
-        if [[ -f "${!i}" ]]
+        if (( !IsLongitudinal )); then 
+            input_file="${!i}"
+        else
+            input_file=$(sed -n "${i}p" "$input_list_file")
+        fi
+        if [[ -f "$input_file" ]]
         then
             tempfiles_create "$contrast$i"_reorient_XXXXXX.nii.gz tempreorient
-            wb_command -volume-reorient "${!i}" RPI "$tempreorient"
+            wb_command -volume-reorient "$input_file" RPI "$tempreorient"
             wb_command -volume-resample "$tempreorient" "$tempreorient" CUBIC "$WD"/"$contrast$i"_dc.nii.gz "${gradxfmargs[@]}"
             namelist+=("$contrast$i")
+            if (( ! IsLongitudinal )); then echo "$input_file" >> "$input_list_file"; fi
         else
-            log_Warn "$contrast image '${!i}' not found"
+            log_Warn "$contrast image '$input_file' not found"
         fi
     done
     if ((${#namelist[@]} < 1))

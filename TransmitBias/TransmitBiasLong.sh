@@ -30,12 +30,14 @@ opts_AddMandatory '--gmwm-template' 'GMWMtemplate' 'file' "file containing GM+WM
 opts_AddOptional '--group-corrected-myelin' 'GroupCorrected' 'file' "the group-corrected myelin file from AFI or B1Tx"
 
 #AFI-specific. Should be the same as in the corresponding cross-sectional calls.
+#Commented parameters are re-used from cross-sectional calls.
 #opts_AddOptional '--afi-image' 'AFIImage' 'file' "two-frame AFI image"
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"
 opts_AddOptional '--afi-tr-two' 'AFITRtwo' 'number' "TR of second AFI frame"
 opts_AddOptional '--afi-angle' 'AFITargFlipAngle' 'number' "target flip angle of AFI sequence"
 
 #B1Tx-specific. Should be the same as in the corresponding cross-sectional calls.
+#Commented parameters are re-used from cross-sectional calls.
 #opts_AddOptional '--b1tx-magnitude' 'B1TxMag' 'file' "B1Tx magnitude image (for alignment)"
 #opts_AddOptional '--b1tx-phase' 'B1TxPhase' 'file' "B1Tx phase image"
 opts_AddOptional '--b1tx-phase-divisor' 'B1TxDiv' 'number' "what to divide the phase map by to obtain proportion of intended flip angle, default 800" '800'
@@ -47,13 +49,13 @@ opts_AddOptional '--myelin-template' 'ReferenceTemplate' 'file' "expected transm
 opts_AddOptional '--group-uncorrected-myelin' 'GroupUncorrectedMyelin' 'file' "the group-average uncorrected myelin file (to set the appropriate scaling of the myelin template)"
 opts_AddOptional '--pt-reference-value-file' 'PseudoTransmitReferenceValueFile' 'file' "text file containing the value in the pseudotransmit map where the flip angle best matches the intended angle, from the Phase2 group script"
 
-#receive correction
-opts_AddOptional '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of unprocessed T1w images, for correcting non-PSN data"
-opts_AddOptional '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of unprocessed T2w images, for correcting non-PSN data"
-opts_AddOptional '--receive-bias-body-coil' 'biasBCin' 'file' "image acquired with body coil receive, to be used with --receive-bias-head-coil"
-opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acquired with head coil receive"
-opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version of the T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps"
-opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
+#receive correction - these are re-used from cross-sectional sessions.
+#opts_AddOptional '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of unprocessed T1w images, for correcting non-PSN data"
+#opts_AddOptional '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of unprocessed T2w images, for correcting non-PSN data"
+#opts_AddOptional '--receive-bias-body-coil' 'biasBCin' 'file' "image acquired with body coil receive, to be used with --receive-bias-head-coil"
+#opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acquired with head coil receive"
+#opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version of the T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps"
+#opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
 
 #generic other settings
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
@@ -90,7 +92,7 @@ opts_ShowValues
 IFS=@ read -r -a Sessions <<< "${SessionList}"
 
 #Run Transmit Bias for all sessions, wait for them to finish.
-for Session in ${Sessions[@]}; do
+for Session in "${Sessions[@]}"; do
     cmd=(${HCPPIPEDIR}/TransmitBias/RunIndividualOnly.sh    \
         --study-folder="$StudyFolder"                       \
         --session="$Session"                                \
@@ -142,7 +144,7 @@ case "$mode" in
     *)  log_Err_Abort "Unrecognized transmit correction mode: $mode" ;;
 esac
 
-for Session in ${Sessions[@]}; do
+for Session in "${Sessions[@]}"; do
     SessionLong="$Session".long."$TemplateLong"
     AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
     T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
