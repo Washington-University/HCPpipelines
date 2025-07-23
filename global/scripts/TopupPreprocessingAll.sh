@@ -26,59 +26,7 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Script for using topup to do distortion correction for EPI (scout)"
 
-<<<<<<< HEAD
 opts_AddMandatory '--phaseone' 'PhaseEncodeOne' 'image(s)' "first set of SE EPI images: assumed to be the 'negative' PE direction"
-=======
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
-
-Usage() {
-  echo "`basename $0`: Script for using topup to do distortion correction for EPI (scout)"
-  echo " "
-  echo "Usage: `basename $0` [--workingdir=<working directory>]"
-  echo "            --phaseone=<first set of SE EPI images: assumed to be the 'negative' PE direction>"
-  echo "            --phasetwo=<second set of SE EPI images: assumed to be the 'positive' PE direction>"
-  echo "            --scoutin=<scout input image: should be corrected for gradient non-linear distortions>"
-  echo "            --seechospacing=<effective echo spacing of EPI, in seconds>"
-  echo "            --unwarpdir=<PE direction for unwarping according to the *voxel* axes: {x,y,x-,y-} or {i,j,i-,j-}>"
-  echo "            --scoutinbrain=<scout input brain image: should be corrected for gradient non-linear distortions>"
-  echo "            [--phasezero=<T2w assumed to be the negligible readout time, should be corrected for gradient non-linear distortions>]"
-  echo "            [--phaseazerobrainmask=<T2w brainmask>]"
-  echo "            [--phaseone2=<first set of SE EPI images of 2nd phase dir: assumed to be the 'negative' PE direction>"
-  echo "            [--phasetwo2=<second set of SE EPI images of 2nd phase dir: assumed to be the 'positive' PE direction>"
-  echo "            [--owarp=<output warpfield image: scout to distortion corrected SE EPI>]"
-  echo "            [--ofmapmag=<output 'Magnitude' image: scout to distortion corrected SE EPI>]" 
-  echo "            [--ofmapmagbrain=<output 'Magnitude' brain image: scout to distortion corrected SE EPI>]"   
-  echo "            [--ofmap=<output scaled topup field map image>]"
-  echo "            [--ojacobian=<output Jacobian image> (of the TOPUP warp field)]"
-  echo "            [--scannerpatientposition=<HFS (default), HFP>]"
-  echo "            [--truepatientposition=<HFS (default), HFSx, FFSx>]"
-  echo "            --gdcoeffs=<gradient non-linearity distortion coefficients (Siemens format)>"
-  echo "            [--topupconfig=<topup config file>]"
-  echo "            [--initworldmat=<world matrix moving func to structure space>"
-  echo "            --usejacobian=<\"true\" or \"false\">"
-  echo "                 Whether to apply the jacobian of the gradient non-linearity distortion correction"
-  echo "                 Irrelevant if --gdcoeffs=NONE"
-  echo "                 (Has nothing to do with the jacobian of the TOPUP warp field)"
-  echo " "
-  echo "   Note: the input SE EPI images should not be distortion corrected (for gradient non-linearities)"
-}
-
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 
 opts_AddMandatory '--phasetwo' 'PhaseEncodeTwo' 'image(s)' "second set of SE EPI images: assumed to be the 'positive' PE direction"
 
@@ -107,6 +55,22 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'path' "topup config file"
 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Whether to apply the jacobian of the gradient non-linearity distortion correction.  Irrelevant if --gdcoeffs=NONE (Has nothing to do with the jacobian of the TOPUP warp field)"
 
+opts_AddOptional '--phasezero' 'PhaseEncodeZero' 'image' "T2w assumed to be the negligible readout time, should be corrected for gradient non-linear distortions"
+
+opts_AddOptional '--phasezerobrainmask' 'SpinEchoPhaseEncodeZeroFSBrainmask' 'image' "T2w brainmask"
+
+opts_AddOptional '--phaseone2' 'PhaseEncodeOne2' 'image(s)' "first set of SE EPI images of 2nd phase dir: assumed to be the 'negative' PE direction"
+
+opts_AddOptional '--phasetwo2' 'PhaseEncodeTwo2' 'image(s)' "second set of SE EPI images of 2nd phase dir: assumed to be the 'positive' PE direction"
+
+opts_AddOptional '--scoutinbrain' 'ScoutInputBrainName' 'image' "scout input brain image: should be corrected for gradient non-linear distortions"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "HFS (default), HFP"
+
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (default), HFSx, FFSx"
+
+opts_AddOptional '--initworldmat' 'InitWorldMat' 'matrix' "world matrix moving func to structure space"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -132,46 +96,7 @@ log_Check_Env_Var FSLDIR
 # Output images (not in $WD): 
 #          ${DistortionCorrectionWarpFieldOutput}  ${JacobianOutput}
 
-<<<<<<< HEAD
-=======
-################################################## OPTION PARSING #####################################################
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then Usage; exit 0; fi
-# check for correct options
-if [ $# -lt 7 ] ; then Usage; exit 1; fi
-
-# parse arguments
-WD=`getopt1 "--workingdir" $@`  # "$1"
-PhaseEncodeOne=`getopt1 "--phaseone" $@`  # "$2" #SCRIPT ASSUMES PhaseOne is the 'negative' direction when setting up the acqparams.txt file for TOPUP
-PhaseEncodeTwo=`getopt1 "--phasetwo" $@`  # "$3" #SCRIPT ASSUMES PhaseTwo is the 'positive' direction when setting up the acqparams.txt file for TOPUP
-ScoutInputName=`getopt1 "--scoutin" $@`  # "$4"
-EchoSpacing=`getopt1 "--seechospacing" $@`  # "$5"
-UnwarpDir=`getopt1 "--unwarpdir" $@`  # "$6"
-DistortionCorrectionWarpFieldOutput=`getopt1 "--owarp" $@`  # "$7"
-DistortionCorrectionMagnitudeOutput=`getopt1 "--ofmapmag" $@`
-DistortionCorrectionMagnitudeBrainOutput=`getopt1 "--ofmapmagbrain" $@`
-DistortionCorrectionFieldOutput=`getopt1 "--ofmap" $@`
-JacobianOutput=`getopt1 "--ojacobian" $@`  # "$8"
-GradientDistortionCoeffs=`getopt1 "--gdcoeffs" $@`  # "$9"
-TopupConfig=`getopt1 "--topupconfig" $@`  # "${11}"
-UseJacobian=`getopt1 "--usejacobian" $@`
-PhaseEncodeZero=`getopt1 "--phasezero" $@` # TH - use T2w
-PhaseEncodeOne2=`getopt1 "--phaseone2" $@` # TH - use additional phase
-PhaseEncodeTwo2=`getopt1 "--phasetwo2" $@` # TH - use additional phase
-ScoutInputBrainName=`getopt1 "--scoutinbrain" $@`  # 
-
-ScannerPatientPosition=`getopt1 "--scannerpatientposition" $@` # TH - scanner's patient position (e.g., HFS, HFP)
-TruePatientPosition=`getopt1 "--truepatientposition" $@` # TH - true patient position (e.g., HFS, HFSx, FFSx)
-InitWorldMat=`getopt1 "--initworldmat" $@` # TH - init rigid-body transformation matrix in world format moving func to structure space, scanned on different days/sessions.
-SpinEchoPhaseEncodeZeroFSBrainmask=`getopt1 "--phasezerobrainmask" $@`
-
-if [[ -n $HCPPIPEDEBUG ]]
-then
-    set -x
-fi
-
->>>>>>> RIKEN/fix/PreFreeSurferPipeline
 #sanity check the jacobian option
 UseJacobian=$(opts_StringToBool "$UseJacobian")
 
