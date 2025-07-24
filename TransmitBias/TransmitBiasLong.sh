@@ -14,7 +14,7 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
 opts_SetScriptDescription "Longitudinal multi-session wrapper for RunIndividualOnly.sh"
 
-opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all sessions"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "longitudinal subject ID"
 opts_AddMandatory '--sessions' 'SessionList' 'session IDs' "@ separated sessions string"
 opts_AddMandatory '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID'
@@ -75,7 +75,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 2 = Octave" '1'
 
 #parallel mode options
-opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
+opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [BUILTIN]" 'BUILTIN'
 opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 
@@ -108,12 +108,6 @@ for Session in "${Sessions[@]}"; do
         --myelin-template="$ReferenceTemplate"              \
         --group-uncorrected-myelin="$GroupUncorrectedMyelin" \
         --pt-reference-value-file="$PseudoTransmitReferenceValueFile" \
-        --unproc-t1w-list="$T1wunprocstr"                   \
-        --unproc-t2w-list="$T2wunprocstr"                   \
-        --receive-bias-body-coil="$biasBCin"                \
-        --receive-bias-head-coil="$biasHCin"                \
-        --raw-psn-t1w="$rawT1wPSN"                          \
-        --raw-nopsn-t1w="$rawT1wBiased"                     \
         --is-longitudinal="TRUE"                            \
         --longitudinal-template="$TemplateLong"             \
         --scanner-grad-coeffs="$GradientDistortionCoeffs"   \
@@ -123,7 +117,7 @@ for Session in "${Sessions[@]}"; do
         --transmit-res="$transmitRes"                       \
         --myelin-mapping-fwhm="$MyelinMappingFWHM"          \
         --old-myelin-mapping="$oldmappingStr"               \
-        --matlab-run-mode="$MatlabMode"                     \
+        --matlab-run-mode="$MatlabMode"                     
     )
     par_add_job_to_stage "$parallel_mode" "$fslsub_queue" "${cmd[@]}"
 done
@@ -138,9 +132,9 @@ TemplateSession="$Subject.long.$TemplateLong"
 AtlasFolderTemplate="$StudyFolder/$TemplateSession/MNINonLinear"
 
 case "$mode" in
-    AFI) suffix="Corr" ;;
-    PseudoTransmit) suffix="PseudoCorr" ;;
-    B1Tx) suffix="Corr" ;;
+    AFI) suffix="Corr"; suffix1="Corr" ;;
+    PseudoTransmit) suffix="PseudoCorr"; suffix1="PseudoCorr_${RegName}" ;;
+    B1Tx) suffix="Corr"; suffix1="Corr" ;;
     *)  log_Err_Abort "Unrecognized transmit correction mode: $mode" ;;
 esac
 
@@ -149,18 +143,18 @@ for Session in "${Sessions[@]}"; do
     AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
     T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
     T1wDivT2wCorrAtlasArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}_Atlas.nii.gz")
-    MyelinMapCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_${suffix}_${RegName}.32k_fs_LR.dscalar.nii")
+    MyelinMapCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii")
 done
 
 tempfiles_create T1wDivT2wCorrXXXX.nii temp_T1wDivT2wCorr
 wb_command -volume-merge "$temp_T1wDivT2wCorr" "${T1wDivT2wCorrArray[@]}"
-wb_command -volume-reduce "$temp_T1wDivT2wCorr" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_${suffix}.nii.gz
+wb_command -volume-reduce "$temp_T1wDivT2wCorr" MEAN "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz"
     
 tempfiles_create T1wDivT2wCorrAtlasXXXX.nii temp_T1wDivT2wCorrAtlas
 wb_command -volume-merge "$temp_T1wDivT2wCorrAtlas" "${T1wDivT2wCorrAtlasArray[@]}"
-wb_command -volume-reduce "$temp_T1wDivT2wCorrAtlas" MEAN "$AtlasFolderTemplate"/T1wDividedByT2w_${suffix}_Atlas.nii.gz
-    
-wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_${suffix}_$RegName.32k_fs_LR.dscalar.nii" \
+wb_command -volume-reduce "$temp_T1wDivT2wCorrAtlas" MEAN "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}_Atlas.nii.gz"
+
+wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii" \
    "${MyelinMapCorrArray[@]}"
 
 log_Msg "Completed TransmitBiasLong.sh"

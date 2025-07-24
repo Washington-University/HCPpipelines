@@ -177,10 +177,12 @@ ReceiveBias=""
 if [[ "$T1wunprocstr" != "" ]]
 then
     ReceiveBias="$WorkingDIR"/ReceiveField."$transmitRes".nii.gz
-    RFWD="$T1wFolder"/CalculateReceiveField
+    
+    RFWD="$T1wFolder"/CalculateReceiveField 
     #doesn't generate MNI space outputs, so doesn't need to know fMRI resolution
+    "$scriptsdir"/CalculateReceiveField.sh \
         --study-folder="$StudyFolder" \
-        --subject="$Session" \
+        --session="$Session" \
         --workingdir="$RFWD" \
         --transmit-res="$transmitRes" \
         --scanner-grad-coeffs="$GradientDistortionCoeffs" \
