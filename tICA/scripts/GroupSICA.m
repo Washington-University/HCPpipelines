@@ -11,6 +11,7 @@ function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList,
     cii = ciftiopen(indata, 'wb_command');
     vn = ciftiopen(indatavn, 'wb_command');
     Out = icaDim(cii.cdata, -1, 1, icadimIters, numWisharts);
+    save([OutFolder '/Out.mat'], 'Out', '-v7.3');
     if icadimOverride > 0
         Out.calcDim = icadimOverride;
     end
@@ -71,7 +72,7 @@ function myprocess(ICAdim, Out, vn, OutFolder, cii)
     
     save([OutFolder '/iq_' num2str(ICAdim)], 'iq', '-v7.3');
     save([OutFolder '/sR_' num2str(ICAdim)], 'sR', '-v7.3');
-    save([OutFolder '/Out_' num2str(ICAdim)], 'Out', '-v7.3');
+%     save([OutFolder '/Out_' num2str(ICAdim)], 'Out', '-v7.3');
 
     %TSC: this may be a problem for compiled, -nodisplay, or octave
     figs = findall(0, 'type', 'figure');
