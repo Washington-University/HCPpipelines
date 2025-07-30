@@ -11,7 +11,6 @@ function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList,
     cii = ciftiopen(indata, 'wb_command');
     vn = ciftiopen(indatavn, 'wb_command');
     Out = icaDim(cii.cdata, -1, 1, icadimIters, numWisharts);
-    save([OutFolder '/Out.mat'], 'Out', '-v7.3');
     if icadimOverride > 0
         Out.calcDim = icadimOverride;
     end
@@ -20,6 +19,7 @@ function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList,
     if status == 0
     	error(['failed to create ' OutFolder ' because of ' msg]);
     end
+    save([OutFolder '/Out.mat'], 'Out', '-v7.3');
     [fid, msg] = fopen([OutFolder '/most_recent_dim.txt'], 'w');
     if fid < 0
     	error(['failed to write to "' OutFolder '/most_recent_dim.txt" because of ' msg]);
@@ -33,8 +33,6 @@ function GroupSICA(indata, indatavn, OutFolder, wfoutname, numWisharts, dimList,
     newcii = cii;
     newcii.cdata = Out.data;
     ciftisave(newcii, wfoutname, 'wb_command');
-
-    mkdir(OutFolder);
     
     for i = dimList(:)'
         myprocess(i, Out, vn, OutFolder, cii);
