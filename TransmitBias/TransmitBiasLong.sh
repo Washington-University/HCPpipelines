@@ -93,7 +93,7 @@ IFS=@ read -r -a Sessions <<< "${SessionList}"
 
 #Run Transmit Bias for all sessions, wait for them to finish.
 for Session in "${Sessions[@]}"; do
-    cmd=(${HCPPIPEDIR}/TransmitBias/RunIndividualOnly.sh    \
+    cmd=("$HCPPIPEDIR"/TransmitBias/RunIndividualOnly.sh    \
         --study-folder="$StudyFolder"                       \
         --session="$Session"                                \
         --mode="$mode"                                      \
