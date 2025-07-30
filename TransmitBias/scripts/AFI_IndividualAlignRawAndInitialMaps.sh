@@ -102,10 +102,10 @@ mkdir -p "$AFIFolder"/GradientDistortionUnwarp
 mkdir -p "$WorkingDirectory/xfms"
 
 if (( IsLongitudinal )); then 
-    AFI_files=(AFI_orig.nii.gz AFI_orig_gdc_warp.nii.gz AFI_orig_gdc.nii.gz)
-    for file in ${AFI_files[*]}; do 
-        if [ -f "$AFIFolderCross/$file" ]; then 
-            cp $AFIFolderCross/$file $AFIFolder/
+    for file in AFI_orig.nii.gz AFI_orig_gdc_warp.nii.gz AFI_orig_gdc.nii.gz
+    do 
+        if [[ -f "$AFIFolderCross/$file" ]]; then 
+            cp "$AFIFolderCross"/"$file" "$AFIFolder"/
         fi
     done
 else
