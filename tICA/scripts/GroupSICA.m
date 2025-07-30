@@ -46,9 +46,28 @@ end
 function myprocess(ICAdim, Out, vn, OutFolder, cii)
     disp(['Out.data size: ' num2str(size(Out.data))]);
     disp(['ICAdim: ' num2str(ICAdim)]);
-    [iq, A, W, S, sR] = icasso('both', Out.data', 100, 'approach', 'symm', 'g', 'pow3', 'lastEig', ICAdim, 'numOfIC', ICAdim, 'maxNumIterations', 1000); 
-    [S_final, A_final, W_final] = fastica(Out.data', 'initGuess', A, 'approach', 'symm', 'g', 'pow3', 'lastEig', ICAdim, 'numOfIC', ICAdim, 'displayMode', 'off', 'maxNumIterations', 1000);
 
+    % run icasso
+    [iq, A, W, S, sR] = icasso('both', Out.data', 100, 'approach', 'symm', 'g', 'pow3', 'lastEig', ICAdim, 'numOfIC', ICAdim, 'maxNumIterations', 1000); 
+    
+    % run final fastica, initalized by icasso concensus
+    fprintf('\t100 icasso runs complete. Running final fastica ...\n');
+    nAttmept = 10; % number to times to attempt final fastica
+    for iAttempt = 1:nAttmept
+      [S_final, A_final, W_final] = fastica(Out.data', 'initGuess', A, 'approach', 'symm', 'g', 'pow3', 'lastEig', ICAdim, 'numOfIC', ICAdim, 'displayMode', 'off', 'maxNumIterations', 1000);
+      if isempty(S_final)
+        if iAttempt < nAttmept
+          fprintf('\tfinal fastica attempt %i did not converge, reattempting ...\n',iAttempt);
+        else
+          error('\tfinal fastica did not converge in %i attempts\n',iAttempt);
+        end
+      else
+        fprintf('Final fastica complete after %i trys, normalizing and saving outputs ...\n',iAttempt);
+        break
+      end
+    end
+
+    % normalize and save outputs
     tSTDs = std(A_final);
     pos = max(S_final') > abs(min(S_final'));
     neg = max(S_final') < abs(min(S_final'));
