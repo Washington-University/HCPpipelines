@@ -85,8 +85,8 @@ DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 mkdir -p "$WorkingDIR"/xfms
 
 if (( IsLongitudinal )); then 
-    B1Tx_files=(gradunwarpin.nii.gz gradunwarpout.nii.gz gradunwarpfield.nii.gz B1Tx_mag.nii.gz B1Tx_phase_raw.nii.gz B1Tx_mag_RC.nii.gz)
-    for file in ${B1Tx_files[*]}; do 
+    for file in gradunwarpin.nii.gz gradunwarpout.nii.gz gradunwarpfield.nii.gz B1Tx_mag.nii.gz B1Tx_phase_raw.nii.gz B1Tx_mag_RC.nii.gz
+    do 
         if [ -f "$B1TxFolderCross/$file" ]; then 
             cp $B1TxFolderCross/$file $WorkingDIR/
         fi
