@@ -127,7 +127,7 @@ useT1w="$T1wFolder"/T1w_acpc_dc.nii.gz
 #use new bias field if PSN wasn't used
 if [[ "$ReceiveBias" != "" ]]
 then
-    if (( !IsLongitudinal )); then 
+    if (( ! IsLongitudinal )); then 
         tempfiles_create TransmitBias_biasresamp_XXXXXX.nii.gz biasresamp
         wb_command -volume-resample "$ReceiveBias" "$AFIFolder"/AFI_orig_gdc.nii.gz TRILINEAR "$biasresamp"
         #deal with 0s in receive field by pretending they were 1s
