@@ -135,7 +135,7 @@ then
             -var AFI "$AFIFolder"/AFI_orig_gdc.nii.gz \
             -var receive "$biasresamp" -repeat
     else
-        cp $AFIFolderCross/AFI_orig_gdc_RC.nii.gz $AFIFolder/
+        cp "$AFIFolderCross"/AFI_orig_gdc_RC.nii.gz "$AFIFolder"/
     fi
 
     useAFI="$AFIFolder"/AFI_orig_gdc_RC.nii.gz
