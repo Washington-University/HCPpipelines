@@ -124,7 +124,7 @@ useT2w="$T1wFolder"/T2w_acpc_dc.nii.gz
 
 if [[ "$ReceiveBias" != "" ]]
 then
-    if (( !IsLongitudinal )); then 
+    if (( ! IsLongitudinal )); then 
         tempfiles_create TransmitBias_B1receive_XXXXXX.nii.gz b1receive
         wb_command -volume-resample "$ReceiveBias" "$WorkingDIR"/B1Tx_mag.nii.gz TRILINEAR "$b1receive"
         wb_command -volume-math 'data / bias' "$WorkingDIR"/B1Tx_mag_RC.nii.gz -fixnan 0 \
