@@ -497,8 +497,10 @@ do
         (ConcatGroupSICA)
             if [[ "$sICAmode" != "ESTIMATE" ]]
             then
-                mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
-                cp "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/"
+              mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
+              if [[ "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" != "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" ]]; then
+                cp "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
+              fi
             fi
             "$HCPPIPEDIR"/tICA/scripts/ConcatGroupSICA.sh \
                 --study-folder="$StudyFolder" \
