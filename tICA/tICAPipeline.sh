@@ -617,6 +617,7 @@ do
             if [[ "$tICAmode" == "USE" ]]
             then
                 #skip to next pipeline stage
+                log_Warn "ComputeTICAFeatures is not supported in REUSE_TICA mode, skipping"
                 continue
             fi
             "$HCPPIPEDIR"/tICA/scripts/ComputeTICAFeatures.sh \
