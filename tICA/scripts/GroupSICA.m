@@ -50,7 +50,7 @@ function myprocess(ICAdim, Out, vn, OutFolder, cii)
     
     % run final fastica, initalized by icasso concensus
     fprintf('\t100 icasso runs complete. Running final fastica ...\n');
-    nAttmept = 10; % number to times to attempt final fastica
+    nAttmept = 100; % number to times to attempt final fastica
     for iAttempt = 1:nAttmept
       [S_final, A_final, W_final] = fastica(Out.data', 'initGuess', A, 'approach', 'symm', 'g', 'pow3', 'lastEig', ICAdim, 'numOfIC', ICAdim, 'displayMode', 'off', 'maxNumIterations', 1000);
       if isempty(S_final)
