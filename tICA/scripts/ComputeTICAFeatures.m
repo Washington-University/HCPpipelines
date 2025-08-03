@@ -112,7 +112,7 @@ unix(['rm ' OutputFolder '/volmap_tmp2.nii.gz'])
 
 % additional information
 Stats=load([OutputFolder '/stats_' num2str(tICAdim) '_' nonlinear '.wb_annsub.csv']);
-Mix=load([OutputFolder '/melodic_mix_' num2str(tICAdim) '_' nonlinear]);
+Mix=load([OutputFolder '/melodic_mix_' num2str(tICAdim) '_' nonlinear],'-ascii');
 % in cifti space
 CorticalParcellation=ciftiopen(CorticalParcellationFile, wbcommand);
 CorticalROIs=zeros(length(tICAMaps.cdata),max(CorticalParcellation.cdata));
