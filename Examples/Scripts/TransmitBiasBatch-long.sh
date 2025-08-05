@@ -12,6 +12,7 @@ function identify_timepoints
     local subject=$1
     local tplist=""
     local tp visit n
+
     #build the list of timepoints
     n=0
     for visit in ${PossibleVisits[*]}; do
@@ -32,51 +33,68 @@ function identify_timepoints
 queue="long.q"
 StudyFolder="${HOME}/data/Pipelines_ExampleData"
 EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+source "$EnvironmentScript"
 
 #data location
 #Space delimited list of subject IDs
-Subjlist=(103818)
+Subjlist=(HCA6002236)
 #list of possible visits. Visit folder is expected to be named <Subject>_<Visit>
-PossibleVisits=(T RT)
+PossibleVisits="V1_MR V2_MR V3_MR"
 #Space delimited list of longitudinal template ID's, one per subject.
-Templates=(103818_T_RT)
+Templates=(HCA6002236_V1_V2_V3)
 
+#all modes
 GMWMTemplate="/group-directory/MNINonLinear/GMWMTemplate.nii.gz"
-GroupCorrectedMyelin="/group-directory/MNINonLinear/fsaverage_LR32k/Partial.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
 
+#general settings
 #set this to a text file that has the scanner transmit voltages for all subjects in the provided list, in order
-GradientDistortionCoeffs="/path-to-gradient-distortion-coefs/coefs.grad"
+#all modes
+GradientDistortionCoeffs=
 RegName=MSMAll
+mode="PseudoTransmit"
+MatlabMode=1
 
-#transmit field acquisition details
-mode="AFI"
+#PseudoTransmit-specific settings
+fMRINames=rfMRI_REST1_AP@rfMRI_REST1_PA
+ptbbrthresh=0.5
+#set this to an already transmit-corrected group average myelin map
+ReferenceTemplate="/path/Group/MNINonLinear/fsaverage_LR32k/GoodAFI.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
+GroupUncorrectedMyelin="/path/Group/MNINonLinear/fsaverage_LR32k/GoodAFI.MyelinMap_MSMAll.32k_fs_LR.dscalar.nii"
+PTRefValFile="/path/PT_refval.txt"
+
+#B1Tx-specific settings
+#the value in the phase image where the flip angle was ideal
+B1TxPhaseDivisor=800
+VoltagesFile="$StudyFolder"/voltages-MySubject.txt
 
 #AFI-specific settings
 AFITRone=20
 AFITRtwo=120
 AFITargetFlipAngle=50
 
-source "$EnvironmentScript"
+#setting shared by B1Tx and AFI
+GroupCorrectedMyelin="/group-directory/MNINonLinear/fsaverage_LR32k/Partial.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
+
 
 for (( i=0; i<${#Subjlist[@]}; i++ )); do
 
     subject="${Subjlist[i]}"
-    echo $subject
     TemplateLong="${Templates[i]}"
     Timepoints=$(identify_timepoints "$subject")
-    echo $Timepoints
 
-    fsl_sub -q $queue "$HCPPIPEDIR/TransmitBias/TransmitBiasLong.sh" \
+    fsl_sub -q "long.q" "$HCPPIPEDIR/TransmitBias/TransmitBiasLong.sh" \
         --study-folder="$StudyFolder" \
         --subject="$subject" \
         --sessions="$Timepoints" \
+        --longitudinal-template="$TemplateLong" \
         --mode="$mode" \
         --reg-name="$RegName" \
         --gmwm-template="$GMWMTemplate" \
-        --group-corrected-myelin="$GroupCorrectedMyelin" \
-        --afi-tr-one="$AFITRone"\
-        --afi-tr-two="$AFITRtwo" \
-        --afi-angle="$AFITargetFlipAngle" \
-        --longitudinal-template="$TemplateLong" \
-        --scanner-grad-coeffs="$GradientDistortionCoeffs" 
+        --pt-fmri-names="$fMRINames" \
+        --pt-bbr-threshold="$ptbbrthresh" \
+        --myelin-template="$ReferenceTemplate" \
+        --group-uncorrected-myelin="$GroupUncorrectedMyelin" \
+        --pt-reference-value-file="$PTRefValFile" \
+        --scanner-grad-coeffs="$GradientDistortionCoeffs" \
+        --matlab-mode="$MatlabMode"
 done

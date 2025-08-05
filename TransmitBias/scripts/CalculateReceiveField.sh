@@ -76,7 +76,7 @@ fi
 IFS=' @' read -a T1wunprocarray <<<"$T1wunprocstr"
 IFS=' @' read -a T2wunprocarray <<<"$T2wunprocstr"
 
-if (( !IsLongitudinal )); then 
+if (( ! IsLongitudinal )); then 
     if [[ "$bodycoil" != "" && "$psnimage" != "" ]]
     then
         log_Err_Abort "specify only one of --bodycoil or --psn-image"
@@ -123,9 +123,9 @@ fi
 #assume the gradunwarp displacements don't change per image (since it doesn't take in any scan timing parameters)
 #would make sense if they don't, being a local but static multiplicative factor on each encoding gradient strength
 gradxfmargs=()
-if [[ "$GradientDistortionCoeffs" != "" ]]
+if [[ "$GradientDistortionCoeffs" != "" && "$IsLongitudinal" == "0" ]] || [[ -f "$WDCross/gradunwarpfield.nii.gz" && "$IsLongitudinal" == "1" ]]
 then
-    if (( IsLongitudinal == 0 )); then 
+    if (( ! IsLongitudinal )); then 
         image="$headcoil"
         if [[ "$image" == "" ]]
         then
@@ -145,10 +145,15 @@ then
     gradxfmargs=(-warp "$WD"/gradunwarpfield.nii.gz -fnirt "$WD"/gradunwarpin.nii.gz)
 fi
 
+if (( IsLongitudinal )); then 
+    if [ -f ]
+fi
+
+
 if [[ "$IsLongitudinal" == 0 && "$bodycoil" != "" ]] || [[ "$IsLongitudinal" == 1 && -f "$WDCross/bodycoil.nii.gz" ]]
 then
     #paraphrased from AFI    
-    if (( !IsLongitudinal )); then 
+    if (( ! IsLongitudinal )); then 
         if [[ "$GradientDistortionCoeffs" != "" ]]
         then
             wb_command -volume-resample "$bodycoil" "$bodycoil" CUBIC "$WD"/bodycoil.nii.gz "${gradxfmargs[@]}"
@@ -269,7 +274,7 @@ then
         -var field "$WD"/ReceiveField_dilall."$transmitRes".nii.gz
 else
     #the psn/nopsn images should already be aligned to each other, and in scanner space, but we do need a registration to get the brain/head masks positioned correctly
-    if (( !IsLongitudinal )); then 
+    if (( ! IsLongitudinal )); then 
         if [[ "$GradientDistortionCoeffs" != "" ]]
         then
             wb_command -volume-resample "$psnimage" "$psnimage" CUBIC "$WD"/psnimage.nii.gz "${gradxfmargs[@]}"
@@ -351,7 +356,7 @@ function ReorientBBRandBCAvg()
     local i
     local input_list_file="$WDCross"/"$contrast"_unprocarray.lst    
     local nfiles
-    if (( !IsLongitudinal )); then 
+    if (( ! IsLongitudinal )); then 
         nfiles="$#"
         rm -f "$input_list_file"
     else
@@ -359,7 +364,7 @@ function ReorientBBRandBCAvg()
     fi
     for ((i = 1; i <= nfiles; ++i))
     do
-        if (( !IsLongitudinal )); then 
+        if (( ! IsLongitudinal )); then 
             input_file="${!i}"
         else
             input_file=$(sed -n "${i}p" "$input_list_file")

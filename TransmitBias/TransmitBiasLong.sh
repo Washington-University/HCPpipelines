@@ -58,8 +58,9 @@ opts_AddOptional '--pt-reference-value-file' 'PseudoTransmitReferenceValueFile' 
 #opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
 
 #generic other settings
-opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
-#could be optional?
+#not used in longitudinal mode.
+#opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
+
 #MFG: stay mandatory
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
@@ -146,7 +147,7 @@ for Session in "${Sessions[@]}"; do
     MyelinMapCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii")
 done
 
-tempfiles_create T1wDivT2wCorrXXXX.nii temp_T1wDivT2wCorr
+tempfiles_create T1wDivT2wCorrXXXX.nii.gz temp_T1wDivT2wCorr
 wb_command -volume-merge "$temp_T1wDivT2wCorr" "${T1wDivT2wCorrArray[@]}"
 wb_command -volume-reduce "$temp_T1wDivT2wCorr" MEAN "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz"
     
