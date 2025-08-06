@@ -111,7 +111,6 @@ for Session in "${Sessions[@]}"; do
         --pt-reference-value-file="$PseudoTransmitReferenceValueFile" \
         --is-longitudinal="TRUE"                            \
         --longitudinal-template="$TemplateLong"             \
-        --scanner-grad-coeffs="$GradientDistortionCoeffs"   \
         --reg-name="$RegName"                               \
         --low-res-mesh="$LowResMesh"                        \
         --grayordinates-res="$grayordRes"                   \

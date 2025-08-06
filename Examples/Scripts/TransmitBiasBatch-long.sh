@@ -49,7 +49,6 @@ GMWMTemplate="/group-directory/MNINonLinear/GMWMTemplate.nii.gz"
 #general settings
 #set this to a text file that has the scanner transmit voltages for all subjects in the provided list, in order
 #all modes
-GradientDistortionCoeffs=
 RegName=MSMAll
 mode="PseudoTransmit"
 MatlabMode=1
@@ -95,6 +94,5 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
         --myelin-template="$ReferenceTemplate" \
         --group-uncorrected-myelin="$GroupUncorrectedMyelin" \
         --pt-reference-value-file="$PTRefValFile" \
-        --scanner-grad-coeffs="$GradientDistortionCoeffs" \
         --matlab-mode="$MatlabMode"
 done
