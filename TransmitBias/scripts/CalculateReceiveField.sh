@@ -145,11 +145,6 @@ then
     gradxfmargs=(-warp "$WD"/gradunwarpfield.nii.gz -fnirt "$WD"/gradunwarpin.nii.gz)
 fi
 
-if (( IsLongitudinal )); then 
-    if [ -f ]
-fi
-
-
 if [[ "$IsLongitudinal" == 0 && "$bodycoil" != "" ]] || [[ "$IsLongitudinal" == 1 && -f "$WDCross/bodycoil.nii.gz" ]]
 then
     #paraphrased from AFI    
