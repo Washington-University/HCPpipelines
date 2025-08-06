@@ -153,15 +153,19 @@ done
 
 function average_volumes
 {
-    local label="$1" avg_array="$2" output="$3" intermediate_result
+    local label="$1"; shift 
+    local output="$1"; shift  
+    local avg_array=( $@ )
+    local intermediate_result
     tempfiles_create "$label"XXXX.nii.gz intermediate_result
-    wb_command -volume-merge "$intermediate_result" "$avg_array"
-    wb_command -volume-reduce "$intermediate_result" MEAN "$AtlasFolderTemplate"/"$output"
+    wb_command -volume-merge "$intermediate_result" "${avg_array[@]}"
+    wb_command -volume-reduce "$intermediate_result" MEAN "$output"
 }
-average_volumes T1wDivT2wCorr "${T1wDivT2wCorrArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz"
-average_volumes T1wDivT2wCorrAtlas "${T1wDivT2wCorrAtlasArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}_Atlas.nii.gz"
-average_volumes T1wDivT2w "${T1wDivT2wArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w.nii.gz"
-average_volumes T1wDivT2wAtlas "${T1wDivT2wAtlasArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_Atlas.nii.gz"
+
+average_volumes T1wDivT2wCorr "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz" "${T1wDivT2wCorrArray[@]}"
+average_volumes T1wDivT2wCorrAtlas "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}_Atlas.nii.gz" "${T1wDivT2wCorrAtlasArray[@]}"
+average_volumes T1wDivT2w "$AtlasFolderTemplate"/"T1wDividedByT2w.nii.gz" "${T1wDivT2wArray[@]}"
+average_volumes T1wDivT2wAtlas "$AtlasFolderTemplate"/"T1wDividedByT2w_Atlas.nii.gz" "${T1wDivT2wAtlasArray[@]}"
 
 wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii" \
    "${MyelinMapCorrArray[@]}"
