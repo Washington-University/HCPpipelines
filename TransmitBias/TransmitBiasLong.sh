@@ -125,7 +125,9 @@ done
 par_finalize_stage "$parallel_mode" "$max_jobs"
 
 #Average the resulting myelin maps in the template directory
+T1wDivT2wArray=()
 T1wDivT2wCorrArray=()
+T1wDivT2wAtlasArray=()
 T1wDivT2wCorrAtlasArray=()
 MyelinMapCorrArray=()
 
@@ -143,17 +145,24 @@ for Session in "${Sessions[@]}"; do
     SessionLong="$Session".long."$TemplateLong"
     AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
     T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
+    T1wDivT2wArray+=(-volume "$AtlasFolder/T1wDividedByT2w.nii.gz")
+
     T1wDivT2wCorrAtlasArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}_Atlas.nii.gz")
+    T1wDivT2wAtlasArray+=(-volume "$AtlasFolder/T1wDividedByT2w_Atlas.nii.gz")
     MyelinMapCorrArray+=(-cifti "$AtlasFolder/fsaverage_LR32k/${SessionLong}.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii")
 done
 
-tempfiles_create T1wDivT2wCorrXXXX.nii.gz temp_T1wDivT2wCorr
-wb_command -volume-merge "$temp_T1wDivT2wCorr" "${T1wDivT2wCorrArray[@]}"
-wb_command -volume-reduce "$temp_T1wDivT2wCorr" MEAN "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz"
-    
-tempfiles_create T1wDivT2wCorrAtlasXXXX.nii temp_T1wDivT2wCorrAtlas
-wb_command -volume-merge "$temp_T1wDivT2wCorrAtlas" "${T1wDivT2wCorrAtlasArray[@]}"
-wb_command -volume-reduce "$temp_T1wDivT2wCorrAtlas" MEAN "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}_Atlas.nii.gz"
+function average_volumes
+{
+    local label="$1" avg_array="$2" output="$3" intermediate_result
+    tempfiles_create "$label"XXXX.nii.gz intermediate_result
+    wb_command -volume-merge "$intermediate_result" "$avg_array"
+    wb_command -volume-reduce "$intermediate_result" MEAN "$AtlasFolderTemplate"/"$output"
+}
+average_volumes T1wDivT2wCorr "${T1wDivT2wCorrArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}.nii.gz"
+average_volumes T1wDivT2wCorrAtlas "${T1wDivT2wCorrAtlasArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_${suffix}_Atlas.nii.gz"
+average_volumes T1wDivT2w "${T1wDivT2wArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w.nii.gz"
+average_volumes T1wDivT2wAtlas "${T1wDivT2wAtlasArray[@]}" "$AtlasFolderTemplate"/"T1wDividedByT2w_Atlas.nii.gz"
 
 wb_command -cifti-average "$AtlasFolderTemplate/fsaverage_LR32k/$TemplateSession.MyelinMap_${suffix1}.32k_fs_LR.dscalar.nii" \
    "${MyelinMapCorrArray[@]}"
