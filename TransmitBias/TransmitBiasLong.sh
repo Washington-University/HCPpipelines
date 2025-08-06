@@ -79,12 +79,22 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [BUILTIN]" 'BUILTIN'
 opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
+opts_AddOptional '--logdir' 'LogDir' 'string' "directory where parallel logs in BUILTIN mode will be written (default: current directory)" ""
 
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+if [ -n "$LogDir" ]; then 
+  mkdir -p "$LogDir"
+  if [ -d "$LogDir" ]; then 
+    par_set_log_dir "$LogDir"
+  else 
+    log_Err_Abort "Directory specified for logs $LogDir does not exist and cannot be created."
+  fi
 fi
 
 #display the parsed/default values
