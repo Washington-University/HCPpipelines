@@ -10,6 +10,7 @@
 
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
+TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
 # For GE HealthCare Fieldmap Distortion Correction methods 
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
 GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
@@ -65,6 +66,10 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
         '${SPIN_ECHO_METHOD_OPT}'
            use Spin Echo Field Maps for readout distortion correction
 
+        '${TOPUP_MISMATCHED_METHOD_OPT}'
+           use Spin Echo Field Maps with mismatched echo spacings and unwarp directions
+           for fMRI data and SE fieldmaps (requires separate echo spacing/unwarp direction parameters)
+
         '${PHILIPS_METHOD_OPT}'
            use Philips specific Gradient Echo Field Maps for readout distortion correction
         
@@ -101,6 +106,10 @@ opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'image' "input spi
 opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'value (seconds)' "effective echo spacing of SEPhaseNeg and SEPhasePos or in seconds"
 
 opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,x-,y-} OR {i,j,i-,j-}' "direction of distortion of the SEPhase images according to *voxel* axes"
+
+opts_AddOptional '--greechospacing' 'GREEchoSpacing' 'value (seconds)' "effective echo spacing of GRE/fMRI images in seconds (for TOPUP_MISMATCHED method)"
+
+opts_AddOptional '--greunwarpdir' 'GREUnwarpDir' '{x,y,x-,y-} OR {i,j,i-,j-}' "direction of distortion of GRE/fMRI images according to *voxel* axes (for TOPUP_MISMATCHED method)"
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
@@ -178,6 +187,8 @@ verbose_echo "  SpinEchoPhaseEncodeNegative          (SEPhaseNeg): $SpinEchoPhas
 verbose_echo "  SpinEchoPhaseEncodePositive          (SEPhasePos): $SpinEchoPhaseEncodePositive"
 verbose_echo "               SEEchoSpacing        (seechospacing): $SEEchoSpacing"
 verbose_echo "                  SEUnwarpDir         (seunwarpdir): $SEUnwarpDir"
+verbose_echo "              GREEchoSpacing       (greechospacing): $GREEchoSpacing"
+verbose_echo "                 GREUnwarpDir        (greunwarpdir): $GREUnwarpDir"
 verbose_echo "             T1wSampleSpacing       (t1sampspacing): $T1wSampleSpacing"
 verbose_echo "             T2wSampleSpacing       (t2sampspacing): $T2wSampleSpacing"
 verbose_echo "                    UnwarpDir           (unwarpdir): $UnwarpDir"
@@ -335,6 +346,80 @@ case $DistortionCorrection in
 
         ;;
 
+    ${TOPUP_MISMATCHED_METHOD_OPT})
+
+        # ----------------------------------------------
+        # -- Mismatched TOPUP (Different Echo Spacings) --
+        # ----------------------------------------------
+
+        if [[ ${SEUnwarpDir} = [xyij] ]] ; then
+          ScoutInputName="${SpinEchoPhaseEncodePositive}"
+        elif [[ ${SEUnwarpDir} = -[xyij] || ${SEUnwarpDir} = [xyij]- ]] ; then
+          ScoutInputName="${SpinEchoPhaseEncodeNegative}"
+        else
+          log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
+        fi
+
+        # Run TopupPreprocessingAll.sh using just the SE fieldmaps with the appropriate 
+        # SE phase standing in for the GRE to get a consistent/correct topup processing run
+        verbose_echo "      ... Running TOPUP preprocessing using SE fieldmaps with SE echo spacing"
+        ${HCPPIPEDIR_Global}/TopupPreprocessingAll.sh \
+            --workingdir=${WD}/FieldMap \
+            --phaseone=${SpinEchoPhaseEncodeNegative} \
+            --phasetwo=${SpinEchoPhaseEncodePositive} \
+            --scoutin=${ScoutInputName} \
+            --echospacing=${SEEchoSpacing} \
+            --unwarpdir=${SEUnwarpDir} \
+            --ofmapmag=${WD}/Magnitude \
+            --ofmapmagbrain=${WD}/Magnitude_brain \
+            --ofmap=${WD}/FieldMap_SE \
+            --ojacobian=${WD}/Jacobian \
+            --gdcoeffs=${GradientDistortionCoeffs} \
+            --topupconfig=${TopupConfig} \
+            --usejacobian=${UseJacobian}
+
+        # Convert naming conventions
+        verbose_echo "      ... Converting naming conventions"
+        ${FSLDIR}/bin/imcp ${WD}/FieldMap_SE ${WD}/FieldMap_SE_orig
+        ${FSLDIR}/bin/imcp ${WD}/Magnitude ${WD}/Magnitude_SE
+        ${FSLDIR}/bin/imcp ${WD}/Magnitude_brain ${WD}/Magnitude_brain_SE
+
+        # Compute the appropriate warpfield for the GRE echo spacing from the topup field
+        verbose_echo "      ... Computing warpfield for GRE echo spacing"
+        # Convert the SE fieldmap to appropriate units for GRE echo spacing
+        # Scale by the ratio of echo spacings: GREEchoSpacing / SEEchoSpacing
+        ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_SE_orig -mul $(echo "scale=6; ${GREEchoSpacing} / ${SEEchoSpacing}" | bc -l) ${WD}/FieldMap_GRE_scaled
+
+        # Create shift map for GRE using GRE echo spacing and unwarp direction
+        ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_GRE_scaled --dwell=${GREEchoSpacing} --saveshift=${WD}/FieldMap_GRE_ShiftMap.nii.gz
+        
+        # Convert GRE unwarp direction to FSL format
+        GREUnwarpDirFSL=${GREUnwarpDir//i/x}
+        GREUnwarpDirFSL=${GREUnwarpDirFSL//j/y}
+        GREUnwarpDirFSL=${GREUnwarpDirFSL//k/z}
+        if [ "${GREUnwarpDirFSL}" = "-x" ] ; then
+          GREUnwarpDirFSL="x-"
+        fi
+        if [ "${GREUnwarpDirFSL}" = "-y" ] ; then
+          GREUnwarpDirFSL="y-"
+        fi
+        if [ "${GREUnwarpDirFSL}" = "-z" ] ; then
+          GREUnwarpDirFSL="z-"
+        fi
+
+        ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/Magnitude_SE --shiftmap=${WD}/FieldMap_GRE_ShiftMap.nii.gz --shiftdir=${GREUnwarpDirFSL} --out=${WD}/FieldMap_GRE_Warp.nii.gz
+
+        # Align the SE (warped according to the GRE distortions) to the GRE
+        verbose_echo "      ... Aligning SE (warped with GRE distortions) to original SE"
+        ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain_SE -r ${WD}/Magnitude_brain_SE -w ${WD}/FieldMap_GRE_Warp.nii.gz -o ${WD}/Magnitude_brain_SE_GREwarped
+
+        # Unwarp the GRE and create the GRE's warpfield
+        verbose_echo "      ... Creating final fieldmap for structural images using GRE parameters"
+        # Use the GRE-scaled fieldmap as the final fieldmap
+        ${FSLDIR}/bin/imcp ${WD}/FieldMap_GRE_scaled ${WD}/FieldMap
+
+        ;;
+
     *)
         log_Err "Unable to create FSL-suitable readout distortion correction field map"
         log_Err_Abort "Unrecognized distortion correction method: ${DistortionCorrection}"
@@ -399,6 +484,12 @@ for TXw in $Modalities ; do
 
         ${SPIN_ECHO_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            ;;
+
+        ${TOPUP_MISMATCHED_METHOD_OPT})
+            # For TOPUP_MISMATCHED, use the SE magnitude images (same as TOPUP)
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain_SE -r ${WD}/Magnitude_brain_SE -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
             ;;
 
