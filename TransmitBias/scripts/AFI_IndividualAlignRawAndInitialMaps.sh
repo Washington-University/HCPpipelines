@@ -169,7 +169,7 @@ else
 	    --bbregister-regfile-out="$WorkingDirectory"/AFI_orig_bbregister.dat
 fi
 
-if [[ "$GradientDistortionCoeffs" == "" && "$IsLongitudinal" == "0" ]] || [[ -f "$AFIFolder/AFI_orig_gdc_warp.nii.gz" && "$IsLongitudinal" == "1" ]]
+if [[ "$GradientDistortionCoeffs" == "" && "$IsLongitudinal" == "0" ]] || [[ ! -f "$AFIFolder/AFI_orig_gdc_warp.nii.gz" && "$IsLongitudinal" == "1" ]]
 then
     rigidalign=(-affine "$WorkingDirectory"/xfms/AFI_orig2str.mat -flirt "$useAFI" "$T1wFolder"/T1w_acpc_dc_restore.nii.gz)
 else
