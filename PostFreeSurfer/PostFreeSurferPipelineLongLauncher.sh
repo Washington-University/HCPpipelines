@@ -83,7 +83,7 @@ opts_ShowValues
 log_Check_Env_Var FSLDIR
 log_Msg "HCPPIPEDIR: ${HCPPIPEDIR}"
 
-IFS=@ read -r -a Timepoints <<< "${Timepoint_list[i]}"
+IFS=@ read -r -a Timepoints <<< "${Timepoint_list}"
 
 if [ -n "$LogDir" ]; then
   mkdir -p "$LogDir"

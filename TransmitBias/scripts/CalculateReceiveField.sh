@@ -18,16 +18,16 @@ Use either --bodycoil and --headcoil together, or --psn-image and --nopsn-image 
 Inputs must be in scanner space."
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
+opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddOptional '--workingdir' 'WD' 'folder' "where to put intermediate files"
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file"
-opts_AddOptional '--bodycoil' 'bodycoil' 'image' "body coil image, requires --headcoil"
-opts_AddOptional '--headcoil' 'headcoil' 'image' "head coil image with matching contrast to --bodycoil"
-opts_AddOptional '--psn-t1w-image' 'psnimage' 'image' "image with PSN correction, requires --nopsn-image"
-opts_AddOptional '--nopsn-t1w-image' 'nopsnimage' 'image' "same image as --psn-image, but without PSN correction applied"
-opts_AddMandatory '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of non-PSN T1w images"
-opts_AddMandatory '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of non-PSN T2w images"
+opts_AddOptional '--bodycoil' 'bodycoil' 'image' "body coil image, requires --headcoil. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--headcoil' 'headcoil' 'image' "head coil image with matching contrast to --bodycoil. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--psn-t1w-image' 'psnimage' 'image' "image with PSN correction, requires --nopsn-image. Ignored if --is-longitudinal=TRUE."
+opts_AddOptional '--nopsn-t1w-image' 'nopsnimage' 'image' "same image as --psn-image, but without PSN correction applied. Ignored if --is-longitudinal=TRUE."
+opts_AddMandatory '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of non-PSN T1w images. Ignored if --is-longitudinal=TRUE."
+opts_AddMandatory '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of non-PSN T2w images. Ignored if --is-longitudinal=TRUE."
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh for --myelin-surface-correction-out, default '32'" '32'
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration to use, default MSMAll" 'MSMAll'
 opts_AddMandatory '--bias-image-out' 'biasout' 'filename' "output - what file to write the bias field image to"
@@ -36,44 +36,73 @@ opts_AddOptional '--t1w-corrected-out' 't1avgout' 'filename' "output - corrected
 opts_AddOptional '--t2w-corrected-out' 't2avgout' 'filename' "output - corrected average T2w image"
 opts_AddOptional '--myelin-surface-correction-out' 'myelinsurfbiasout' 'cifti' "output - correction factor to divide previous myelin surface data by"
 
-opts_ParseArguments "$@"
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
 
+opts_ParseArguments "$@"
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
-
 #display the parsed/default values
 opts_ShowValues
+
+SessionCross="$Session"
+biasoutCross="$biasout" #in longitudinal mode, this is re-defined in the next if-block.
+WDCross="$WD"
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+if (( IsLongitudinal )); then 
+    if [[ "$TemplateLong" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template is required with --is-longitudinal=TRUE"
+    fi
+    SessionLong="$SessionCross.long.$TemplateLong"
+    Session="$SessionLong"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat"
+    if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
+    	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
+    fi
+    #source directory for cross-sectionally calculated tranforms    
+    T1wFolderCross="$StudyFolder/$SessionCross/T1w"
+    WDCross="$T1wFolderCross/CalculateReceiveField"
+    
+    # $biasout image is re-used in registration in ReorientBBRandBCAvg(). We therefore cannot re-use $biasout 
+    # generated in longitudinal template space.
+    # instead, we will use cross-sectional $biasout for registration purposes,
+    # to maintain transform consistent with cross-sectional version.
+    biasoutCross="$StudyFolder"/"$SessionCross"/TransmitBias/ReceiveField."$transmitRes".nii.gz
+fi
 
 IFS=' @' read -a T1wunprocarray <<<"$T1wunprocstr"
 IFS=' @' read -a T2wunprocarray <<<"$T2wunprocstr"
 
-if [[ "$bodycoil" != "" && "$psnimage" != "" ]]
-then
-    log_Err_Abort "specify only one of --bodycoil or --psn-image"
+if (( ! IsLongitudinal )); then 
+    if [[ "$bodycoil" != "" && "$psnimage" != "" ]]
+    then
+        log_Err_Abort "specify only one of --bodycoil or --psn-image"
+    fi
+
+    if [[ "$bodycoil" == "" && "$psnimage" == "" ]]
+    then
+        log_Err_Abort "no bias-corrected input image specified"
+    fi
+
+    if [[ "$bodycoil" != "" && "$headcoil" == "" ]]
+    then
+        log_Err_Abort "--bodycoil option requires also specifying --headcoil"
+    fi
+
+    if [[ "$psnimage" != "" && "$nopsnimage" == "" ]]
+    then
+        log_Err_Abort "--psn-image option requires also specifying --nopsn-image"
+    fi
 fi
 
-if [[ "$bodycoil" == "" && "$psnimage" == "" ]]
-then
-    log_Err_Abort "no bias-corrected input image specified"
-fi
-
-if [[ "$bodycoil" != "" && "$headcoil" == "" ]]
-then
-    log_Err_Abort "--bodycoil option requires also specifying --headcoil"
-fi
-
-if [[ "$psnimage" != "" && "$nopsnimage" == "" ]]
-then
-    log_Err_Abort "--psn-image option requires also specifying --nopsn-image"
-fi
-
-T1wFolder="$StudyFolder"/"$Subject"/T1w
+T1wFolder="$StudyFolder"/"$Session"/T1w
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 
 #only used for DownSampleFolder
-AtlasFolder="$StudyFolder/$Subject"/MNINonLinear
+AtlasFolder="$StudyFolder/$Session"/MNINonLinear
 #only used for cifti ROIs
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 
@@ -94,59 +123,108 @@ fi
 #assume the gradunwarp displacements don't change per image (since it doesn't take in any scan timing parameters)
 #would make sense if they don't, being a local but static multiplicative factor on each encoding gradient strength
 gradxfmargs=()
-if [[ "$GradientDistortionCoeffs" != "" ]]
+if [[ "$GradientDistortionCoeffs" != "" && "$IsLongitudinal" == "0" ]] || [[ -f "$WDCross/gradunwarpfield.nii.gz" && "$IsLongitudinal" == "1" ]]
 then
-    image="$headcoil"
-    if [[ "$image" == "" ]]
-    then
-        image="$psnimage"
+    if (( ! IsLongitudinal )); then 
+        image="$headcoil"
+        if [[ "$image" == "" ]]
+        then
+            image="$psnimage"
+        fi    
+        #we need to use this file to deal with the fnirt coordinate conventions, so copy it to a standard name
+        cp "$image" "$WD"/gradunwarpin.nii.gz
+        "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
+            --workingdir="$WD"/gradunwarp \
+            --coeffs="$GradientDistortionCoeffs" \
+            --in="$WD"/gradunwarpin.nii.gz \
+            --out="$WD"/gradunwarpout.nii.gz \
+            --owarp="$WD"/gradunwarpfield.nii.gz
+    else #copy the outputs over
+        cp "$WDCross"/gradunwarpfield.nii.gz "$WDCross"/gradunwarpin.nii.gz "$WDCross"/gradunwarpout.nii.gz "$WD"/
     fi
-    #we need to use this file to deal with the fnirt coordinate conventions, so copy it to a standard name
-    cp "$image" "$WD"/gradunwarpin.nii.gz
-    "$HCPPIPEDIR"/global/scripts/GradientDistortionUnwarp.sh \
-        --workingdir="$WD"/gradunwarp \
-        --coeffs="$GradientDistortionCoeffs" \
-        --in="$WD"/gradunwarpin.nii.gz \
-        --out="$WD"/gradunwarpout.nii.gz \
-        --owarp="$WD"/gradunwarpfield.nii.gz
-    
     gradxfmargs=(-warp "$WD"/gradunwarpfield.nii.gz -fnirt "$WD"/gradunwarpin.nii.gz)
 fi
 
-if [[ "$bodycoil" != "" ]]
+if [[ "$IsLongitudinal" == 0 && "$bodycoil" != "" ]] || [[ "$IsLongitudinal" == 1 && -f "$WDCross/bodycoil.nii.gz" ]]
 then
-    #paraphrased from AFI
-    if [[ "$GradientDistortionCoeffs" != "" ]]
-    then
-        wb_command -volume-resample "$bodycoil" "$bodycoil" CUBIC "$WD"/bodycoil.nii.gz "${gradxfmargs[@]}"
-        wb_command -volume-resample "$headcoil" "$headcoil" CUBIC "$WD"/headcoil.nii.gz "${gradxfmargs[@]}"
+    #paraphrased from AFI    
+    if (( ! IsLongitudinal )); then 
+        if [[ "$GradientDistortionCoeffs" != "" ]]
+        then
+            wb_command -volume-resample "$bodycoil" "$bodycoil" CUBIC "$WD"/bodycoil.nii.gz "${gradxfmargs[@]}"
+            wb_command -volume-resample "$headcoil" "$headcoil" CUBIC "$WD"/headcoil.nii.gz "${gradxfmargs[@]}"
+        else
+            cp "$bodycoil" "$WD"/bodycoil.nii.gz
+            cp "$headcoil" "$WD"/headcoil.nii.gz
+        fi
     else
-        cp "$bodycoil" "$WD"/bodycoil.nii.gz
-        cp "$headcoil" "$WD"/headcoil.nii.gz
+        cp "$WDCross"/bodycoil.nii.gz "$WDCross"/headcoil.nii.gz "$WD"/
     fi
     
-    "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Subject" \
-        --input-image="$WD"/bodycoil.nii.gz \
-        --init-target-image="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
-        --contrast-type=T1w \
-        --surface-name=pial.deformed \
-        --output-xfm="$WD"/xfms/bodycoil2str.mat \
-        --output-inverse-xfm="$WD"/xfms/str2bodycoil.mat \
-        --output-image="$WD"/bodycoil2T1w.nii.gz \
-        --bbregister-regfile-out="$WD"/bodycoil_bbregister.dat
-    
-    #head coil used old receive bias, presumably because it was in the same loop as the T1w in the old code, which we wanted to match the alignment of the previous myelin code
-    #don't have new bias field yet, so use the old one
-    "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Subject" \
-        --input-image="$WD"/headcoil.nii.gz \
-        --init-target-image="$T1wFolder"/T1w_acpc_dc.nii.gz \
-        --contrast-type=T1w \
-        --surface-name=pial.deformed \
-        --old-receive-bias="$T1wFolder"/BiasField_acpc_dc.nii.gz \
-        --output-xfm="$WD"/xfms/headcoil2str.mat \
-        --output-inverse-xfm="$WD"/xfms/str2headcoil.mat \
-        --output-image="$WD"/headcoil_restore2T1w.nii.gz \
-        --bbregister-regfile-out="$WD"/headcoil_bbregister.dat
+    function ReuseBBRLongitudinal {
+        local cross2strxfm="$1"     #moving image to cross-sectional structural transform
+        local finalxfmLong="$2"     #moving image to longitudinal structural transform
+        local inversexfmLong="$3"   #inverse of $2
+        local sourceImage="$4"      #moving image
+        local targetImage="$5"      #target 
+        local outputImage="$6"      #moving image resampled to target space
+        
+        #1. produce output xfm
+        #multiply cross-sectional transform by T1w-to-base-template transform.
+        convert_xfm -omat "$finalxfmLong" -concat "$xfmT1w2BaseTemplate" "$cross2strxfm"
+        #2. produce output inverse xfm
+        convert_xfm -omat "$inversexfmLong" -inverse "$finalxfmLong"
+        #3. resample output image
+        wb_command -volume-resample "$sourceImage" "$targetImage" CUBIC "$outputImage" \
+                -affine "$finalxfm" \
+                -flirt "$sourceImage" "$targetImage"        
+    }
+
+    if (( IsLongitudinal )); then 
+        #reuse cross-sectional registration results
+        #A. Body coil.
+        ReuseBBRLongitudinal \
+            "$WDCross/xfms/bodycoil2str.mat"    \
+            "$WD/xfms/bodycoil2str.mat"         \
+            "$WD"/xfms/str2bodycoil.mat         \
+            "$WDСross"/bodycoil.nii.gz          \
+            "$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
+            "$WD"/bodycoil2T1w.nii.gz
+
+        #B. Head coil.
+        ReuseBBRLongitudinal \
+            "$WDCross/xfms/headcoil2str.mat"    \
+            "$WD/xfms/headcoil2str.mat"         \
+            "$WD"/xfms/str2headcoil.mat         \
+            "$WDСross"/headcoil.nii.gz          \
+            "$T1wFolder"/T1w_acpc_dc.nii.gz     \
+            "$WD"/headcoil_restore2T1w.nii.gz            
+    else
+        #pial.deformed surface used originally is not generated by some Freesurfer versions
+        "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+            --input-image="$WD"/bodycoil.nii.gz \
+            --init-target-image="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
+            --contrast-type=T1w \
+            --surface-name=pial.deformed \
+            --output-xfm="$WD"/xfms/bodycoil2str.mat \
+            --output-inverse-xfm="$WD"/xfms/str2bodycoil.mat \
+            --output-image="$WD"/bodycoil2T1w.nii.gz \
+            --bbregister-regfile-out="$WD"/bodycoil_bbregister.dat
+            
+        #head coil used old receive bias, presumably because it was in the same loop as the T1w in the old code, which we wanted to match the alignment of the previous myelin code
+        #don't have new bias field yet, so use the old one
+        #pial.deformed surface used originally is not generated by some Freesurfer versions
+        "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+            --input-image="$WD"/headcoil.nii.gz \
+            --init-target-image="$T1wFolder"/T1w_acpc_dc.nii.gz \
+            --contrast-type=T1w \
+            --surface-name=pial.deformed \
+            --old-receive-bias="$T1wFolder"/BiasField_acpc_dc.nii.gz \
+            --output-xfm="$WD"/xfms/headcoil2str.mat \
+            --output-inverse-xfm="$WD"/xfms/str2headcoil.mat \
+            --output-image="$WD"/headcoil_restore2T1w.nii.gz \
+            --bbregister-regfile-out="$WD"/headcoil_bbregister.dat
+    fi
 
     #create a refspace at the expected resolution, so we don't have a weird difference compared to the psn method
     #NOTE: may be oblique
@@ -191,24 +269,38 @@ then
         -var field "$WD"/ReceiveField_dilall."$transmitRes".nii.gz
 else
     #the psn/nopsn images should already be aligned to each other, and in scanner space, but we do need a registration to get the brain/head masks positioned correctly
-    if [[ "$GradientDistortionCoeffs" != "" ]]
-    then
-        wb_command -volume-resample "$psnimage" "$psnimage" CUBIC "$WD"/psnimage.nii.gz "${gradxfmargs[@]}"
-        wb_command -volume-resample "$nopsnimage" "$nopsnimage" CUBIC "$WD"/nopsnimage.nii.gz "${gradxfmargs[@]}"
+    if (( ! IsLongitudinal )); then 
+        if [[ "$GradientDistortionCoeffs" != "" ]]
+        then
+            wb_command -volume-resample "$psnimage" "$psnimage" CUBIC "$WD"/psnimage.nii.gz "${gradxfmargs[@]}"
+            wb_command -volume-resample "$nopsnimage" "$nopsnimage" CUBIC "$WD"/nopsnimage.nii.gz "${gradxfmargs[@]}"
+        else
+            cp "$psnimage" "$WD"/psnimage.nii.gz
+            cp "$nopsnimage" "$WD"/nopsnimage.nii.gz
+        fi
     else
-        cp "$psnimage" "$WD"/psnimage.nii.gz
-        cp "$nopsnimage" "$WD"/nopsnimage.nii.gz
+        cp "$WDCross"/psnimage.nii.gz "$WDCross"/nopsnimage.nii.gz "$WD"/
     fi
     
-    "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Subject" \
-        --input-image="$WD"/psnimage.nii.gz \
-        --init-target-image="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
-        --contrast-type=T1w \
-        --surface-name=white.deformed \
-        --output-xfm="$WD"/xfms/psnimage2str.mat \
-        --output-inverse-xfm="$WD"/xfms/str2psnimage.mat \
-        --output-image="$WD"/psnimage2T1w.nii.gz \
-        --bbregister-regfile-out="$WD"/psnimage_bbregister.dat
+    if (( IsLongitudinal )); then 
+        ReuseBBRLongitudinal \
+            "$WDCross/xfms/psnimage2str.mat"    \
+            "$WD/xfms/psnimage2str.mat"         \
+            "$WD"/xfms/str2psnimage.mat         \
+            "$WDСross"/psnimage.nii.gz          \
+            "$T1wFolder"/T1w_acpc_dc_restore.nii.gz     \
+            "$WD"/psnimage2T1w.nii.gz
+    else
+        "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+            --input-image="$WD"/psnimage.nii.gz \
+            --init-target-image="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
+            --contrast-type=T1w \
+            --surface-name=white.deformed \
+            --output-xfm="$WD"/xfms/psnimage2str.mat \
+            --output-inverse-xfm="$WD"/xfms/str2psnimage.mat \
+            --output-image="$WD"/psnimage2T1w.nii.gz \
+            --bbregister-regfile-out="$WD"/psnimage_bbregister.dat
+    fi
     
     #create a downsampled space (NOTE: not present in original head/body pair code, which used the headcoil image resolution, which was already 2mm, though oblique)
     #maybe make this based on T1w space, rather than PSN grid (who knows, might be oblique), under the assumption that scanner space fits the brain somewhere into the MNI FoV?
@@ -257,16 +349,30 @@ function ReorientBBRandBCAvg()
     #the header carries through GradientDistortionUnwarp.sh, so fix it here first
     local -a namelist=()
     local i
-    for ((i = 1; i <= $#; ++i))
+    local input_list_file="$WDCross"/"$contrast"_unprocarray.lst    
+    local nfiles
+    if (( ! IsLongitudinal )); then 
+        nfiles="$#"
+        rm -f "$input_list_file"
+    else
+        nfiles=$(wc -l < "$input_list_file")
+    fi
+    for ((i = 1; i <= nfiles; ++i))
     do
-        if [[ -f "${!i}" ]]
+        if (( ! IsLongitudinal )); then 
+            input_file="${!i}"
+        else
+            input_file=$(sed -n "${i}p" "$input_list_file")
+        fi
+        if [[ -f "$input_file" ]]
         then
             tempfiles_create "$contrast$i"_reorient_XXXXXX.nii.gz tempreorient
-            wb_command -volume-reorient "${!i}" RPI "$tempreorient"
+            wb_command -volume-reorient "$input_file" RPI "$tempreorient"
             wb_command -volume-resample "$tempreorient" "$tempreorient" CUBIC "$WD"/"$contrast$i"_dc.nii.gz "${gradxfmargs[@]}"
             namelist+=("$contrast$i")
+            if (( ! IsLongitudinal )); then echo "$input_file" >> "$input_list_file"; fi
         else
-            log_Warn "$contrast image '${!i}' not found"
+            log_Warn "$contrast image '$input_file' not found"
         fi
     done
     if ((${#namelist[@]} < 1))
@@ -281,23 +387,34 @@ function ReorientBBRandBCAvg()
         #apply the new receive bias to the input image - bbr would probably work fine without it, but why not
         tempfiles_create ReceiveField_rawbias_XXXXXX.nii.gz rawbias
         tempfiles_add "$rawbias"_inputRC.nii.gz
-        wb_command -volume-resample "$biasout" \
+        #in longitudinal mode, cross-sectional $biasout is needed to re-use the pre-computed bbregister-obtained transform.
+        wb_command -volume-resample "$biasoutCross" \
             "$WD"/"$name"_dc.nii.gz CUBIC "$rawbias"
         wb_command -volume-math 'x / (receive + (receive == 0))' "$rawbias"_inputRC.nii.gz \
             -var x "$WD"/"$name"_dc.nii.gz \
             -var receive "$rawbias"
         
-        #NOTE: bbr output mat convention is always "input" to "T1w/T1w_acpc_dc", hardcoded
-        #output image uses --init-target-image as the reference space
-        "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Subject" \
-            --input-image="$rawbias"_inputRC.nii.gz \
-            --init-target-image="$T1wFolder"/"$contrast"_acpc_dc_restore.nii.gz \
-            --contrast-type="$contrast" \
-            --surface-name=white.deformed \
-            --output-xfm="$WD"/xfms/"$name"2str.mat \
-            --output-inverse-xfm="$WD"/xfms/str2"$name".mat \
-            --output-image="$WD"/"$name"2T1w.nii.gz \
-            --bbregister-regfile-out="$WD"/"$name"_bbregister.dat
+        if (( IsLongitudinal )); then 
+            ReuseBBRLongitudinal \
+                "$WDCross/xfms"/"$name"2str.mat     \
+                "$WD/xfms"/"$name"2str.mat          \
+                "$WD"/xfms/str2"$name".mat         \
+                "$rawbias"_inputRC.nii.gz          \
+                "$T1wFolder"/"$contrast"_acpc_dc_restore.nii.gz     \
+                "$WD"/"$name"2T1w.nii.gz
+        else
+            #NOTE: bbr output mat convention is always "input" to "T1w/T1w_acpc_dc", hardcoded
+            #output image uses --init-target-image as the reference space
+            "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+                --input-image="$rawbias"_inputRC.nii.gz \
+                --init-target-image="$T1wFolder"/"$contrast"_acpc_dc_restore.nii.gz \
+                --contrast-type="$contrast" \
+                --surface-name=white.deformed \
+                --output-xfm="$WD"/xfms/"$name"2str.mat \
+                --output-inverse-xfm="$WD"/xfms/str2"$name".mat \
+                --output-image="$WD"/"$name"2T1w.nii.gz \
+                --bbregister-regfile-out="$WD"/"$name"_bbregister.dat
+        fi
         
         #bias field already has gdc, if coefficients provided
         #could resample to lowres space instead
@@ -354,26 +471,26 @@ then
     
     #approximate the surface effect of the receive correction on the previous myelin maps - receive field is smooth, so method doesn't matter much
     wb_command -volume-to-surface-mapping "$WD"/ReceiveFieldCorrection."$transmitRes".nii.gz \
-        "$T1wDownSampleFolder"/"$Subject".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        "$T1wDownSampleFolder"/"$Session".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
         "$WD"/L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-        -ribbon-constrained "$T1wDownSampleFolder"/"$Subject".L.white"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
-            "$T1wDownSampleFolder"/"$Subject".L.pial"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        -ribbon-constrained "$T1wDownSampleFolder"/"$Session".L.white"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+            "$T1wDownSampleFolder"/"$Session".L.pial"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
             -volume-roi "$T1wFolder"/ROIs/L_TransmitBias_ROI."$transmitRes".nii.gz
     wb_command -volume-to-surface-mapping "$WD"/ReceiveFieldCorrection."$transmitRes".nii.gz \
-        "$T1wDownSampleFolder"/"$Subject".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        "$T1wDownSampleFolder"/"$Session".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
         "$WD"/R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-        -ribbon-constrained "$T1wDownSampleFolder"/"$Subject".R.white"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
-            "$T1wDownSampleFolder"/"$Subject".R.pial"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        -ribbon-constrained "$T1wDownSampleFolder"/"$Session".R.white"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+            "$T1wDownSampleFolder"/"$Session".R.pial"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
             -volume-roi "$T1wFolder"/ROIs/R_TransmitBias_ROI."$transmitRes".nii.gz
     
     tempfiles_create ReceiveCorr_XXXXXX.dscalar.nii receivetemp
     wb_command -cifti-create-dense-scalar "$receivetemp" \
         -left-metric "$WD"/L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-            -roi-left "$DownSampleFolder"/"$Subject".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
+            -roi-left "$DownSampleFolder"/"$Session".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
         -right-metric "$WD"/R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii \
-            -roi-right "$DownSampleFolder"/"$Subject".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii
+            -roi-right "$DownSampleFolder"/"$Session".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii
     wb_command -cifti-dilate "$receivetemp" COLUMN 10 10 "$myelinsurfbiasout" \
-        -left-surface "$T1wDownSampleFolder"/"$Subject".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
-        -right-surface "$T1wDownSampleFolder"/"$Subject".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii
+        -left-surface "$T1wDownSampleFolder"/"$Session".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        -right-surface "$T1wDownSampleFolder"/"$Session".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii
 fi
 

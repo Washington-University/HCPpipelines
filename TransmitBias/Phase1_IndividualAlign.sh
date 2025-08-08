@@ -15,7 +15,7 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 opts_SetScriptDescription "align transmit bias and myelin-related scans and fine-tune receive bias"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
+opts_AddMandatory '--session' 'Session' 'session ID' "(e.g. 100610)" "--subject"
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddMandatory '--mode' 'mode' 'string' "what type of transmit bias correction to apply, options and required inputs are:
 AFI - actual flip angle sequence with two different echo times, requires --afi-image, --afi-tr-one, and --afi-tr-two
@@ -47,6 +47,10 @@ opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acq
 opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version of the T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps"
 opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
 
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
+opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
+
 #generic other settings
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
@@ -68,6 +72,20 @@ fi
 opts_ShowValues
 
 oldmapping=$(opts_StringToBool "$oldmappingStr")
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
+#In longitudinal mode, Session is re-linked to longitudinal folder. 
+#The majority of code is run unchanged on longitudinal session folder. 
+#SessionCross is used in scripts that specifically require cross-sectional session label
+#for special processing in longitudinal mode
+SessionCross="$Session"
+if (( IsLongitudinal )); then 
+    if [[ "$TemplateLong" == "" ]]; then 
+        log_Err_Abort "--longitudinal-template is required with --is-longitudinal=TRUE"
+    fi
+    SessionLong="$SessionCross.long.$TemplateLong"
+    Session="$SessionLong"
+fi
 
 if [[ "$transmitRes" == "" ]]
 then
@@ -83,14 +101,12 @@ fi
 
 case "$mode" in
     (AFI)
-        if [[ "$AFIImage" == "" || "$AFITRone" == "" || "$AFITRtwo" == "" ]]
-        then
+        if [[ "$AFITRone" == "" || "$AFITRtwo" == "" ]] || [[ "$IsLongitudinal" == "0" && "$AFIImage" == "" ]]; then
             log_Err_Abort "$mode transmit correction mode requires --afi-image, --afi-tr-one, and --afi-tr-two"
         fi
         ;;
     (B1Tx)
-        if [[ "$B1TxMag" == "" || "$B1TxPhase" == "" ]]
-        then
+        if [[ "$IsLongitudinal" == "0" ]] && [[ "$B1TxMag" == "" || "$B1TxPhase" == "" ]]; then
             log_Err_Abort "$mode transmit correction mode requires --b1tx-magnitude and --b1tx-phase"
         fi
         ;;
@@ -106,13 +122,13 @@ case "$mode" in
         ;;
 esac
 
-WorkingDIR="$StudyFolder"/"$Subject"/TransmitBias
+WorkingDIR="$StudyFolder"/"$Session"/TransmitBias
 
 mkdir -p "$WorkingDIR"
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Subject"/T1w
-AtlasFolder="$StudyFolder"/"$Subject"/MNINonLinear
+T1wFolder="$StudyFolder"/"$Session"/T1w
+AtlasFolder="$StudyFolder"/"$Session"/MNINonLinear
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -127,7 +143,7 @@ log_File_Must_Exist "$AtlasFolder"/T1w_restore."$grayordRes".nii.gz
 tempfiles_create TransmitBias_zeroscheck_XXXXXX.dscalar.nii zerocheck
 wb_command -cifti-math 'x != x || x == 0' "$zerocheck" \
     -fixnan 1 \
-    -var x "$DownSampleFolder"/"$Subject".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+    -var x "$DownSampleFolder"/"$Session".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 
 numbad=$(wb_command -cifti-stats "$zerocheck" -reduce COUNT_NONZERO)
 
@@ -135,17 +151,17 @@ if [[ "$numbad" != 0 ]]
 then
     log_Msg "check for zeros/NaNs in myelin map returned '$numbad', dilating"
 
-    wb_command -cifti-dilate "$DownSampleFolder"/"$Subject".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii COLUMN 5 5 \
-        "$DownSampleFolder"/"$Subject".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-        -left-surface "$T1wDownSampleFolder"/"$Subject".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
-        -right-surface "$T1wDownSampleFolder"/"$Subject".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+    wb_command -cifti-dilate "$DownSampleFolder"/"$Session".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii COLUMN 5 5 \
+        "$DownSampleFolder"/"$Session".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+        -left-surface "$T1wDownSampleFolder"/"$Session".L.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
+        -right-surface "$T1wDownSampleFolder"/"$Session".R.midthickness"$RegString"."$LowResMesh"k_fs_LR.surf.gii \
         -bad-brainordinate-roi "$zerocheck"
 fi
 
 #NOTE: this script also generates T1w/T1w_acpc_dc_restore."$transmitRes".nii.gz
 "$scriptsdir"/CreateTransmitBiasROIs.sh \
     --study-folder="$StudyFolder" \
-    --subject="$Subject" \
+    --subject="$Session" \
     --grayordinates-res="$grayordRes" \
     --transmit-res="$transmitRes"
 
@@ -161,11 +177,12 @@ ReceiveBias=""
 if [[ "$T1wunprocstr" != "" ]]
 then
     ReceiveBias="$WorkingDIR"/ReceiveField."$transmitRes".nii.gz
-    RFWD="$T1wFolder"/CalculateReceiveField
+    
+    RFWD="$T1wFolder"/CalculateReceiveField 
     #doesn't generate MNI space outputs, so doesn't need to know fMRI resolution
     "$scriptsdir"/CalculateReceiveField.sh \
         --study-folder="$StudyFolder" \
-        --subject="$Subject" \
+        --session="$Session" \
         --workingdir="$RFWD" \
         --transmit-res="$transmitRes" \
         --scanner-grad-coeffs="$GradientDistortionCoeffs" \
@@ -181,12 +198,14 @@ then
         --myelin-correction-field-out="$T1wFolder"/ReceiveFieldCorrection.nii.gz \
         --t1w-corrected-out="$WorkingDIR"/T1w_acpc_dc_newreceive.nii.gz \
         --t2w-corrected-out="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
-        --myelin-surface-correction-out="$DownSampleFolder"/"$Subject".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+        --myelin-surface-correction-out="$DownSampleFolder"/"$Session".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+        --is-longitudinal="$IsLongitudinal" \
+        --longitudinal-template="$TemplateLong"
 
     #these files are in the package definitions
     cp "$RFWD"/ReceiveFieldCorrection."$transmitRes".nii.gz "$T1wFolder"/ReceiveFieldCorrection."$transmitRes".nii.gz
-    cp "$RFWD"/L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii "$DownSampleFolder"/"$Subject".L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii
-    cp "$RFWD"/R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii "$DownSampleFolder"/"$Subject".R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii
+    cp "$RFWD"/L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii "$DownSampleFolder"/"$Session".L.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii
+    cp "$RFWD"/R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii "$DownSampleFolder"/"$Session".R.ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.func.gii
     
     #shouldn't use a low res volume in -fnirt for structural warp
     acpc2mni=(-warp "$AtlasFolder"/xfms/acpc_dc2standard.nii.gz -fnirt "$AtlasFolder"/T1w_restore.nii.gz)
@@ -207,9 +226,9 @@ then
 
     #generate receive-corrected myelin, to simplify and improve the group averaging, etc code
     #NOTE: some later phases need to know whether receive bias correction was done
-    wb_command -cifti-math 'myelin / receivecorr' "$WorkingDIR"/"$Subject".MyelinMap_onlyRC"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-        -var myelin "$DownSampleFolder"/"$Subject".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-        -var receivecorr "$DownSampleFolder"/"$Subject".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+    wb_command -cifti-math 'myelin / receivecorr' "$WorkingDIR"/"$Session".MyelinMap_onlyRC"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+        -var myelin "$DownSampleFolder"/"$Session".MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+        -var receivecorr "$DownSampleFolder"/"$Session".ReceiveFieldCorrection"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
     
     #MFG: just clamp 100 here, leave dilation for _Atlas
     #because the RC convention is division, we may need to replace any zeros, so add the "== 0" test to RC
@@ -234,7 +253,7 @@ case "$mode" in
     (AFI)
         "$scriptsdir"/AFI_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$Subject" \
+            --session="$SessionCross" \
             --working-dir="$WorkingDIR"/AFI \
             --receive-bias="$ReceiveBias" \
             --t1w-receive-corrected="$WorkingDIR"/T1w_acpc_dc_newreceive.nii.gz \
@@ -247,12 +266,14 @@ case "$mode" in
             --grayordinates-res="$grayordRes" \
             --transmit-res="$transmitRes" \
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-            --old-myelin-mapping="$oldmapping"
+            --old-myelin-mapping="$oldmapping" \
+            --is-longitudinal="$IsLongitudinal" \
+            --longitudinal-template="$TemplateLong"
         ;;
     (B1Tx)
         "$scriptsdir"/B1Tx_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$Subject" \
+            --session="$SessionCross" \
             --working-dir="$WorkingDIR"/B1Tx \
             --receive-bias="$ReceiveBias" \
             --t2w-receive-corrected="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
@@ -265,12 +286,14 @@ case "$mode" in
             --grayordinates-res="$grayordRes" \
             --transmit-res="$transmitRes" \
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-            --old-myelin-mapping="$oldmapping"
+            --old-myelin-mapping="$oldmapping" \
+            --is-longitudinal="$IsLongitudinal" \
+            --longitudinal-template="$TemplateLong"
         ;;
     (PseudoTransmit)
         "$scriptsdir"/PseudoTransmit_IndividualAlignRawAndInitialMaps.sh \
             --study-folder="$StudyFolder" \
-            --subject="$Subject" \
+            --session="$SessionCross" \
             --working-dir="$WorkingDIR"/PseudoTransmit \
             --receive-bias="$ReceiveBias" \
             --t2w-receive-corrected="$WorkingDIR"/T2w_acpc_dc_newreceive.nii.gz \
@@ -281,7 +304,9 @@ case "$mode" in
             --grayordinates-res="$grayordRes" \
             --transmit-res="$transmitRes" \
             --myelin-mapping-fwhm="$MyelinMappingFWHM" \
-            --old-myelin-mapping="$oldmapping"
+            --old-myelin-mapping="$oldmapping" \
+            --is-longitudinal="$IsLongitudinal" \
+            --longitudinal-template="$TemplateLong"            
         ;;
     (*)
         log_Err_Abort "internal script error, mode $mode implementation not handled"
