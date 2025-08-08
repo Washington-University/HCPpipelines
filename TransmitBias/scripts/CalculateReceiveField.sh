@@ -205,7 +205,7 @@ then
             --input-image="$WD"/bodycoil.nii.gz \
             --init-target-image="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
             --contrast-type=T1w \
-            --surface-name=pial \
+            --surface-name=pial.deformed \
             --output-xfm="$WD"/xfms/bodycoil2str.mat \
             --output-inverse-xfm="$WD"/xfms/str2bodycoil.mat \
             --output-image="$WD"/bodycoil2T1w.nii.gz \
@@ -218,7 +218,7 @@ then
             --input-image="$WD"/headcoil.nii.gz \
             --init-target-image="$T1wFolder"/T1w_acpc_dc.nii.gz \
             --contrast-type=T1w \
-            --surface-name=pial \
+            --surface-name=pial.deformed \
             --old-receive-bias="$T1wFolder"/BiasField_acpc_dc.nii.gz \
             --output-xfm="$WD"/xfms/headcoil2str.mat \
             --output-inverse-xfm="$WD"/xfms/str2headcoil.mat \

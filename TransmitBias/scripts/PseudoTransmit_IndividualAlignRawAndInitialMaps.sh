@@ -102,9 +102,6 @@ function ReuseBBR4Longitudinal {
     local cross2strxfm="$1"     #moving image to cross-sectional structural transform
     local finalxfmLong="$2"     #moving image to longitudinal structural transform
     local inversexfmLong="$3"   #inverse of $2
-    local sourceImage="$4"      #moving image
-    local targetImage="$5"      #target 
-    #local outputImage="$6"      #moving image resampled to target space
         
     #1. produce output xfm
     #multiply cross-sectional transform by T1w-to-base-template transform.
@@ -148,9 +145,7 @@ function align_bias_and_avg()
         	ReuseBBR4Longitudinal 	\
         		"$matrixCross"	\
         		"$matrix" 	\
-        		"${WorkingDIR}/xfms/str2${fMRIName}_${namepart}_gdc_dc_jac.mat" \
-        		"$input"	\
-        		"$target"   		
+        		"${WorkingDIR}/xfms/str2${fMRIName}_${namepart}_gdc_dc_jac.mat"
         else
 		#we want the output in T1w/ transmitRes space, not anatomical ($target), so don't use --output-image
 		"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
