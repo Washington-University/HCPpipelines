@@ -37,12 +37,12 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     SubjectList = myreadtext(SubjListName);
     fMRIList = myreadtext(fMRIListName);
     
-    TCSFullConcat = ciftiopen(TCSConcatName, wbcommand);
-    TCSMaskConcat = ciftiopen(TCSMaskName, wbcommand);
-    AvgTCS = ciftiopen(AvgTCSName, wbcommand);%only used as a template, and only because cifti-legacy doesn't handle reset of sdseries
-    sICAAvgSpectra = ciftiopen(sICAAvgSpectraName, wbcommand);
-    sICAMaps = ciftiopen(sICAMapsAvgName, wbcommand);
-    sICAVolMaps = ciftiopen(sICAVolMapsAvgName, wbcommand);
+    TCSFullConcat = cifti_read(TCSConcatName);
+    TCSMaskConcat = cifti_read(TCSMaskName);
+    AvgTCS = cifti_read(AvgTCSName);%only used as a template, and only because cifti-legacy doesn't handle reset of sdseries
+    sICAAvgSpectra = cifti_read(sICAAvgSpectraName);
+    sICAMaps = cifti_read(sICAMapsAvgName);
+    sICAVolMaps = cifti_read(sICAVolMapsAvgName);
 
     if ~strcmp(tICAMM,'')
         tICAMM = load(tICAMM);
@@ -60,12 +60,12 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     if exist(handSigFile,'file')
         sigIdx = load(handSigFile,'-ascii');
         sICAdim = numel(sigIdx);
-        TCSFullConcat.cdata = TCSFullConcat.cdata(sigIdx,:);
-        TCSMaskConcat.cdata = TCSMaskConcat.cdata(sigIdx,:);
-        AvgTCS.cdata = AvgTCS.cdata(sigIdx,:);
-        sICAAvgSpectra.cdata = sICAAvgSpectra.cdata(sigIdx,:);
-        sICAMaps.cdata = sICAMaps.cdata(:,sigIdx);
-        sICAVolMaps.cdata = sICAVolMaps.cdata(:,sigIdx);
+        TCSFullConcat = filterCifti(TCSFullConcat,1,sigIdx);
+        TCSMaskConcat = filterCifti(TCSMaskConcat,1,sigIdx);
+        AvgTCS = filterCifti(AvgTCS,1,sigIdx);
+        sICAAvgSpectra = filterCifti(sICAAvgSpectra,1,sigIdx);
+        sICAMaps = filterCifti(sICAMaps,2,sigIdx);
+        sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
         
         if ~isempty(tICAMM) &&  ~all(size(A) == sICAdim)
             error('tICAMM dimensionaily doesn''t match sICA dimensionality post HandSignal.txt filtering')
@@ -203,8 +203,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
         
         nameParamPart = ['_' num2str(tICAdim) '_' nlfunc IT];
-        ciftisavereset(tICAMaps, [OutputFolder '/' tICAMapsNamePart nameParamPart '.dscalar.nii'], wbcommand);
-        ciftisavereset(tICAVolMaps, [OutputFolder '/' tICAVolMapsNamePart nameParamPart '.dscalar.nii'], wbcommand);
+        cifti_write(tICAMaps, [OutputFolder '/' tICAMapsNamePart nameParamPart '.dscalar.nii']);
+        cifti_write(tICAVolMaps, [OutputFolder '/' tICAVolMapsNamePart nameParamPart '.dscalar.nii']);
 
         dlmwrite([OutputFolder '/' tICAmixNamePart nameParamPart], tICAmix, '\t');
         dlmwrite([OutputFolder '/' tICAunmixNamePart nameParamPart], tICAunmix, '\t');
@@ -228,7 +228,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
         tICAtcs.cdata = tICAtcs.cdata';
 
-        ciftisavereset(tICAtcs, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii'], wbcommand);
+        cifti_write(tICAtcs, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
 
         tICAtcsAll = reshape(tICAtcs.cdata, tICAdim, RunsXNumTimePoints, numsubj);
 
@@ -237,8 +237,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         tICAtcsabsmean = AvgTCS;
         tICAtcsabsmean.cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1)), 3) / numfullsubj;
 
-        ciftisavereset(tICAtcsmean, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii'], wbcommand);
-        ciftisavereset(tICAtcsabsmean, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii'], wbcommand);
+        cifti_write(tICAtcsmean, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii']);
+        cifti_write(tICAtcsabsmean, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii']);
 
         tICAspectra = sICAAvgSpectra;
         tICAspectranorm = sICAAvgSpectra;
@@ -249,8 +249,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         tICAspectra.cdata = nets_spectra_sp(ts)';
         tICAspectranorm.cdata = nets_spectra_sp(ts, [], 1)';
 
-        ciftisavereset(tICAspectra, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii'], wbcommand);
-        ciftisavereset(tICAspectranorm, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii'], wbcommand);
+        cifti_write(tICAspectra, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii']);
+        cifti_write(tICAspectranorm, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii']);
 
     end % for i = ITERATIONS
 
@@ -287,3 +287,11 @@ function lines = myreadtext(filename)
     lines = array{1};
 end
 
+function C = filterCifti(C,dimIdx,filtIdx)
+    % subselect from one dim of cifti
+    C.diminfo{dimIdx}.length = numel(filtIdx);
+    C.diminfo{dimIdx}.maps = C.diminfo{dimIdx}.maps(filtIdx);
+    idx = repmat({':'}, 1, ndims(C.cdata));
+    idx{dimIdx} = filtIdx;
+    C.cdata = C.cdata(idx{:});
+end
