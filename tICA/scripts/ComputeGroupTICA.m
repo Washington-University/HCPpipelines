@@ -55,7 +55,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     
     TCSMask = reshape(TCSMaskConcat.cdata, [sICAdim, RunsXNumTimePoints, numsubj]);
 
-    %% optionlly, filter Group sICA components before running tICA
+    %% optionally, filter Group sICA components to hand picked list before running tICA
     handSigFile = [OutputFolder '/../sICA/HandSignal.txt'];% assumes OutputFolder and /sICA are always in the same parent dir
     if exist(handSigFile,'file')
         sigIdx = load(handSigFile,'-ascii');
