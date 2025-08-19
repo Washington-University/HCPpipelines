@@ -1,5 +1,6 @@
 function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListName, fMRIListName, sICAdim, RunsXNumTimePoints, TCSConcatName, TCSMaskName, AvgTCSName, sICAAvgSpectraName, sICAMapsAvgName, sICAVolMapsAvgName, OutputFolder, OutString, RegName, LowResMesh, tICAmode, tICAMM)
     
+    %% handle arguments and set filepath parts
     %if isdeployed()
         %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
     %end
@@ -28,6 +29,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         RegString = ['_' RegName];
     end
     
+    %% load data
     TCSList = myreadtext(TCSListName);
     %MapList = myreadtext(MapListName);
     %VolMapList = myreadtext(VolMapListName);
@@ -43,7 +45,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     sICAVolMaps = ciftiopen(sICAVolMapsAvgName, wbcommand);
 
     if ~strcmp(tICAMM,'')
-        tICAMM=load(tICAMM);
+        tICAMM = load(tICAMM);
     end
 
     numsubj = length(TCSList);
@@ -53,9 +55,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
     TCSMask = reshape(TCSMaskConcat.cdata, [sICAdim, RunsXNumTimePoints, numsubj]);
 
+    %% perform runwise normalization
     numfullsubj = 0;
-
-    %tica runwise normalization
     TCSFullRunVars = single(zeros(sICAdim, RunsXNumTimePoints * numsubj));
     for i = 1:numsubj
         if exist(TCSList{i}, 'file')
@@ -82,6 +83,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     end
     %end tica runwise normalization
 
+    %% set up tICA loop
     nlfunc = 'tanh';
     iterations = 100;
     tICAdim = sICAdim;
@@ -109,6 +111,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         error('tICAmode not recognized');
     end
     
+    %% run tICA loop
     %We do different types of icasso, etc in different modes/iterations, but we do things in between all iterations, and save out some files the same way each time
     %So, rely on iteration number as a mode switch, even though it is ugly
     for i = ITERATIONS
@@ -233,8 +236,9 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         ciftisavereset(tICAspectra, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii'], wbcommand);
         ciftisavereset(tICAspectranorm, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii'], wbcommand);
 
-    end
+    end % for i = ITERATIONS
 
+    %% package and save outputs
     for i = 1:numsubj
         if exist(TCSList{i}, 'file')
             sICATCS = ciftiopen(TCSList{i}, 'wb_command');
