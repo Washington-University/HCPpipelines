@@ -7,7 +7,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     sICAdim = str2double(sICAdim);
     RunsXNumTimePoints = str2double(RunsXNumTimePoints);
     
-    wbcommand = 'wb_command';
+%     wbcommand = 'wb_command'; 
     
     %naming conventions inside OutputFolder, probably don't need to be changeable
     tICAMapsNamePart = 'tICA_Maps';
@@ -67,7 +67,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         sICAMaps = filterCifti(sICAMaps,2,sigIdx);
         sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
         
-        if ~isempty(tICAMM) &&  ~all(size(A) == sICAdim)
+        if ~isempty(tICAMM) && ~all(size(tICAMM) == sICAdim)
             error('tICAMM dimensionaily doesn''t match sICA dimensionality post HandSignal.txt filtering')
         end
     end
@@ -185,7 +185,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             %tICAMaps.cdata = tICAMaps.cdata .* repmat(sign(all), size(tICAMaps.cdata, 1), 1);
             %tICAVolMaps.cdata = tICAVolMaps.cdata .* repmat(sign(all), size(tICAVolMaps.cdata, 1), 1);
 
-           [TSTDs TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
+           [TSTDs, TIs] = sort(std(tICAtcs.cdata, [], 1), 'descend'); %Sort based on unnormalized tICA temporal standard deviations
         else
             TSTDs = std(tICAtcs.cdata, [], 1); %unnormalized tICA temporal standard deviations
             TIs = [1:1:length(TSTDs)];
