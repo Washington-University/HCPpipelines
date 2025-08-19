@@ -66,7 +66,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         sICAAvgSpectra = filterCifti(sICAAvgSpectra,1,sigIdx);
         sICAMaps = filterCifti(sICAMaps,2,sigIdx);
         sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
-        
+        TCSMask = TCSMask(sigIdx,:,:);
         if ~isempty(tICAMM) && ~all(size(tICAMM) == sICAdim)
             error('tICAMM dimensionaily doesn''t match sICA dimensionality post HandSignal.txt filtering')
         end
