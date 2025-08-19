@@ -79,14 +79,6 @@ opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA 
 #TSC: remove option until ComputeGroupTICA.m allows different dimensionalities
 #opts_AddConfigOptional '--tica-dim' 'tICADim' 'tICADim' 'integer' "override the default of tICA dimensionality = sICA dimensionality. Must be less than or equal to sICA dimensionality"
 
-# if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
-HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
-if [ -e "${HandSignalFile}" ]; then
-    tICADim=$(wc -w < "${HandSignalFile}")
-else
-    tICADim=""
-fi
-
 #tICA Individual Projection
 #uses hardcoded conventions
 
@@ -123,6 +115,13 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 
 opts_ParseArguments "$@"
 
+# if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
+HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
+if [ -e "${HandSignalFile}" ]; then
+    tICADim=$(wc -w < "${HandSignalFile}")
+else
+    tICADim=""
+fi
 
 if ((pipedirguessed))
 then
