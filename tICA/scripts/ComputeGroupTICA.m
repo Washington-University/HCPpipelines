@@ -52,8 +52,25 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     if length(SubjectList) ~= numsubj || length(SpectraList) ~= numsubj
         error('input lists are not the same length');
     end
-
+    
     TCSMask = reshape(TCSMaskConcat.cdata, [sICAdim, RunsXNumTimePoints, numsubj]);
+
+    %% optionlly, filter Group sICA components before running tICA
+    handSigFile = [OutputFolder '/../sICA/HandSignal.txt'];% assumes OutputFolder and /sICA are always in the same parent dir
+    if exist(handSigFile,'file')
+        sigIdx = load(handSigFile,'-ascii');
+        sICAdim = numel(sigIdx);
+        TCSFullConcat.cdata = TCSFullConcat.cdata(sigIdx,:);
+        TCSMaskConcat.cdata = TCSMaskConcat.cdata(sigIdx,:);
+        AvgTCS.cdata = AvgTCS.cdata(sigIdx,:);
+        sICAAvgSpectra.cdata = sICAAvgSpectra.cdata(sigIdx,:);
+        sICAMaps.cdata = sICAMaps.cdata(:,sigIdx);
+        sICAVolMaps.cdata = sICAVolMaps.cdata(:,sigIdx);
+        
+        if ~isempty(tICAMM) &&  ~all(size(A) == sICAdim)
+            error('tICAMM dimensionaily doesn''t match sICA dimensionality post HandSignal.txt filtering')
+        end
+    end
 
     %% perform runwise normalization
     numfullsubj = 0;
@@ -81,16 +98,15 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             TCSFullRunVars(:, subjBaseInd - 1 + (1:size(TCSRunVarSub, 2))) = TCSRunVarSub;
         end
     end
+    sICAtcsvars = std(TCSFullConcat.cdata, [], 2);
+    TCSFullConcat.cdata = (TCSFullConcat.cdata ./ TCSFullRunVars) .* repmat(sICAtcsvars, 1, size(TCSFullRunVars, 2)); %Making all runs contribute equally improves tICA decompositions
+    TCSFullConcat.cdata(~isfinite(TCSFullConcat.cdata)) = 0;
     %end tica runwise normalization
 
     %% set up tICA loop
     nlfunc = 'tanh';
     iterations = 100;
     tICAdim = sICAdim;
-
-    sICAtcsvars = std(TCSFullConcat.cdata, [], 2);
-    TCSFullConcat.cdata = (TCSFullConcat.cdata ./ TCSFullRunVars) .* repmat(sICAtcsvars, 1, size(TCSFullRunVars, 2)); %Making all runs contribute equally improves tICA decompositions
-    TCSFullConcat.cdata(~isfinite(TCSFullConcat.cdata)) = 0;
 
     %This loop produces more reproducible and better tICA decompositions
     if strcmp(tICAmode,'ESTIMATE')
