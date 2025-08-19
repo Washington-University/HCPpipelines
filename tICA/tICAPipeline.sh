@@ -78,7 +78,14 @@ opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA 
 #FIXME: ComputeGroupTICA.m hardcodes "tICAdim = sICAdim;", line 76
 #TSC: remove option until ComputeGroupTICA.m allows different dimensionalities
 #opts_AddConfigOptional '--tica-dim' 'tICADim' 'tICADim' 'integer' "override the default of tICA dimensionality = sICA dimensionality. Must be less than or equal to sICA dimensionality"
-tICADim=""
+
+# if Group sICA hand reclassifications exists, use it to filter the group sICA components before running tICA
+HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
+if [ -e "${HandSignalFile}" ]; then
+    tICADim=$(wc -w < "${HandSignalFile}")
+else
+    tICADim=""
+fi
 
 #tICA Individual Projection
 #uses hardcoded conventions
@@ -313,7 +320,7 @@ else
     then
         tICADim="$sICAActualDim"
     fi
-    OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+    OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 fi
 #leave OutputString unset if we don't know the dimensionality yet
 
@@ -411,7 +418,7 @@ do
             fi
 
             #now we have the dimensionality, set the output string
-            OutputString="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             ;;
         (indProjSICA)
@@ -651,7 +658,7 @@ do
         (CleanData)
             if [[ "$NuisanceListTxt" == "" ]]
             then
-                NuisanceListTxt="$tICACleaningFolder/MNINonLinear/Results/${tICACleaningfMRIName}/tICA_d${sICAActualDim}/Noise.txt"
+                NuisanceListTxt="$tICACleaningFolder/MNINonLinear/Results/${tICACleaningfMRIName}/tICA_d${tICADim}/Noise.txt"
             fi
             for Session in "${Sesslist[@]}"
             do
