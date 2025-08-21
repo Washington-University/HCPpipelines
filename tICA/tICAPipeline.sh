@@ -412,11 +412,13 @@ do
                 --matlab-run-mode="$MatlabMode"
             ;;
         (indProjSICA)
-            # now we have the dimensionality, set the sICA and tICA output strings
-            sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
-            if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
+            # now we have the dimensionality, set the sICA output strings
+            if [[ "$sicadimOverride" ]]; then 
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+            fi
             OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
 
             #generate volume template cifti
@@ -499,11 +501,13 @@ do
             par_runjobs "$parLimit"
             ;;
         (ConcatGroupSICA)
-            # now we have the dimensionality, set the sICA and tICA output strings
-            sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
-            if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
+            # now we have the dimensionality, set the sICA output strings
+            if [[ "$sicadimOverride" ]]; then 
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+            fi
             OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             if [[ "$sICAmode" != "ESTIMATE" ]]
             then
@@ -526,7 +530,11 @@ do
             ;;
         (ComputeGroupTICA)
             # now we have the dimensionality, set the sICA and tICA output strings
-            sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
+            if [[ "$sicadimOverride" ]]; then 
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+            fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
             OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
@@ -539,10 +547,11 @@ do
                         --out-folder="${StudyFolder}/${GroupAverageName}"
                         --fmri-concat-name="$OutputfMRIName"
                         --surf-reg-name="$RegName"
-                        --ica-dim="$tICADim"
+                        --sICA-dim="$sICAActualDim"
+                        --tICA-dim="$tICADim"
                         --subject-expected-timepoints="$sessionExpectedTimepoints"
                         --low-res-mesh="$LowResMesh"
-                        --sica-proc-string="${OutputStringTICA}_WR"
+                        --sica-proc-string="${OutputStringSICA}_WR"
                         --tICA-mode="$tICAmode"
                         --matlab-run-mode="$MatlabMode"
                      )
@@ -582,7 +591,11 @@ do
             ;;
         (indProjTICA)
             # now we have the dimensionality, set the sICA and tICA output strings
-            sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
+            if [[ "$sicadimOverride" ]]; then 
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+            fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
             OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
