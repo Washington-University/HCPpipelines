@@ -6,7 +6,7 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
     sICAdim = str2double(sICAdim);
     RunsXNumTimePoints = str2double(RunsXNumTimePoints);
     
-    wbcommand = 'wb_command';
+%     wbcommand = 'wb_command';
     
     TCSList = myreadtext(TCSListName);
     MapList = myreadtext(MapListName);
@@ -40,10 +40,10 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
         if exist(TCSList{i}, 'file')
             numgoodsubj = numgoodsubj + 1;
             
-            sICAMapsSub = ciftiopen(MapList{i}, wbcommand);
-            sICAVolMapsSub = ciftiopen(VolMapList{i}, wbcommand);
-            TCSSub = ciftiopen(TCSList{i}, wbcommand);
-            SpectraSub = ciftiopen(SpectraList{i}, wbcommand);
+            sICAMapsSub = cifti_read(MapList{i});
+            sICAVolMapsSub = cifti_read(VolMapList{i});
+            TCSSub = cifti_read(TCSList{i});
+            SpectraSub = cifti_read(SpectraList{i});
             
             sICAVolMapsSub.cdata(~isfinite(sICAVolMapsSub.cdata)) = 0;
             TCSPad = zeros(sICAdim, RunsXNumTimePoints, 'single');
@@ -76,12 +76,14 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
 
     TCSFullConcat = TCSSub; % use the last good subject as a template
     TCSFullConcat.cdata = TCSFull;
-    ciftisavereset(TCSFullConcat, OutTCSName, wbcommand);
+    TCSFullConcat.diminfo{2}.length = size(TCSFullConcat.cdata,2);
+    cifti_write(TCSFullConcat, OutTCSName);
     clear TCSFullConcat;
 
     TCSMaskConcat = TCSSub;
     TCSMaskConcat.cdata = TCSMask;
-    ciftisavereset(TCSMaskConcat, OutTCSMaskName, wbcommand);
+    TCSMaskConcat.diminfo{2}.length = size(TCSMaskConcat.cdata,2);
+    cifti_write(TCSMaskConcat, OutTCSMaskName);
     clear TCSMaskConcat;
 
     %previously sICATSTDs
@@ -94,24 +96,24 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
     %subjects with full TS
     TCSMean = TCSTemplate;
     TCSMean.cdata = TCSSum / numfullsubj;
-    ciftisave(TCSMean, OutAvgTCSName, wbcommand);
+    cifti_write(TCSMean, OutAvgTCSName);
 
     TCSAbsMean = TCSTemplate;
     TCSAbsMean.cdata = TCSAbsSum / numfullsubj;
-    ciftisave(TCSAbsMean, OutAbsAvgTCSName, wbcommand);
+    cifti_write(TCSAbsMean, OutAbsAvgTCSName);
 
     SpectraMean = SpectraTemplate;
     SpectraMean.cdata = SpectraSum / numfullsubj;
-    ciftisave(SpectraMean, OutAvgSpectraName, wbcommand);
+    cifti_write(SpectraMean, OutAvgSpectraName);
 
     %subjects with any data
     sICAMapsMean = sICAMapsSub;
     sICAMapsMean.cdata = sICAMapsSum / numgoodsubj;
-    ciftisave(sICAMapsMean, OutAvgMapsName, wbcommand);
+    cifti_write(sICAMapsMean, OutAvgMapsName);
 
     sICAVolMapsMean = sICAVolMapsSub;
     sICAVolMapsMean.cdata = sICAVolMapsSum / numgoodsubj;
-    ciftisave(sICAVolMapsMean, OutAvgVolMapsName, wbcommand);
+    cifti_write(sICAVolMapsMean, OutAvgVolMapsName);
 end
 
 function lines = myreadtext(filename)
