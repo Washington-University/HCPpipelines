@@ -647,7 +647,11 @@ do
             ;;
         (ComputeTICAFeatures)
             # now we have the dimensionality, set the sICA and tICA output strings
-            sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
+            if [[ "$sicadimOverride" ]]; then 
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+            fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
             OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
