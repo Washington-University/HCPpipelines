@@ -413,7 +413,7 @@ do
             ;;
         (indProjSICA)
             # now we have the dimensionality, set the sICA output strings
-            if [[ "$sicadimOverride" ]]; then 
+            if [[ "$sicadimOverride" != "" ]]; then 
                 sICAActualDim="$sicadimOverride"
             else
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
