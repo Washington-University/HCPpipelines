@@ -711,7 +711,7 @@ do
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
                     --noise-list="$NuisanceListTxt" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${TICA}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputStringTICA}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --subject-concat-timeseries="$MRFixConcatName" \
                     --fix-high-pass="$HighPass" \
