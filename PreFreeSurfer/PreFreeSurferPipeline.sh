@@ -642,6 +642,8 @@ if [ "$RunMode" -lt 3 ]; then
 
     if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
 
+      log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
+      log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
       mkdir -p ${TXwFolder}/ACPCAlignment  # TH modified 2016-2023
       ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
         --workingdir=${TXwFolder}/ACPCAlignment \
@@ -689,13 +691,23 @@ if [ "$RunMode" -lt 4 ]; then
 
   #### Brain Extraction (FNIRT-based Masking) ####
 
+  if [[ $TXw = T2w && $T2wFolder != NONE ]] ; then
+    TXwInputImages="${T2wInputImages}"
+    TXwFolder=${T2wFolder}
+    TXwImage=${T2wImage}
+    TXwTemplate=${T2wTemplate}
+    TXwTemplateBrain=${T2wTemplateBrain}
+    TXwTemplate2mm=${T2wTemplate2mm}
+  fi
+
   if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
 
     if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
         log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
     fi
  
-    log_Msg "Brain extract with FNIRT" 
+    log_Msg "Performing Brain Extraction using FNIRT-based Masking"
+    log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
     mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
     ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
   --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
