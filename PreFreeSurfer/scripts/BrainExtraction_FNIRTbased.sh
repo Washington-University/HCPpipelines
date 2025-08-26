@@ -91,19 +91,19 @@ log_Check_Env_Var HCPPIPEDIR_Templates
 
 # BET options
 if [ ! -z $BetCenter ] ; then
-	xcenter=$(echo "$(fslval $Input dim1)*$(echo $BetCenter | cut -d ',' -f1 )/$(fslval $Reference2mm dim1)" | bc )
-	ycenter=$(echo "$(fslval $Input dim2)*$(echo $BetCenter | cut -d ',' -f2 )/$(fslval $Reference2mm dim2)" | bc )
-	zcenter=$(echo "$(fslval $Input dim3)*$(echo $BetCenter | cut -d ',' -f3 )/$(fslval $Reference2mm dim3)" | bc )		
-	BetOpts=" -c $xcenter $ycenter $zcenter"
+  xcenter=$(echo "$(fslval $Input dim1)*$(echo $BetCenter | cut -d ',' -f1 )/$(fslval $Reference2mm dim1)" | bc )
+  ycenter=$(echo "$(fslval $Input dim2)*$(echo $BetCenter | cut -d ',' -f2 )/$(fslval $Reference2mm dim2)" | bc )
+  zcenter=$(echo "$(fslval $Input dim3)*$(echo $BetCenter | cut -d ',' -f3 )/$(fslval $Reference2mm dim3)" | bc )   
+  BetOpts=" -c $xcenter $ycenter $zcenter"
 fi
 if [ ! -z $BetRadius ] ; then
-	BetOpts+=" -r $BetRadius"
+  BetOpts+=" -r $BetRadius"
 fi
 if [ ! -z $BetFraction ] ; then
-	BetOpts+=" -f $BetFraction"
+  BetOpts+=" -f $BetFraction"
 fi
 if [ "BiasfieldCor" = TRUE ] ; then 
-	BetOpts+=" -B"               # bias filed correction and rubust centre estimation
+  BetOpts+=" -B"               # bias filed correction and rubust centre estimation
 fi
 BetOpts+=" -z $betspecieslabel"
 
@@ -141,59 +141,59 @@ echo " " >> $WD/log.txt
 
 # Register to 2mm reference image (linear then non-linear)
 if [ "$BrainExtract" = INVIVO ] ; then
-	log_Msg "In-vivo brain"
+  log_Msg "In-vivo brain"
 
-	if [[ $(imtest "$Input"_custom_brain) = 1 ]] ; then
-		verbose_echo " ... linear registration using predefined brain to reference brain"
-		fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
-		${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input"_custom_brain -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
-	elif [ ! -z "$BetOpts" ] ; then
-		verbose_echo " ... initial BET with opts: $BetOpts"
-		fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
-		fslmaths "$Input" "$WD"/"$BaseName"
-		${HCPPIPEDIR_Global}/bet4animal "$WD"/"$BaseName" "$WD"/"$BaseName"_brain_initI $BetOpts     # "-c 48 56 51 -r 36" for A21051401
-		if [ ! $SPECIES = Human ] ; then
-			verbose_echo " ... init linear registration to 2mm reference brain"
-			flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -schedule $FSLDIR/etc/flirtsch/xyztrans.sch -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
-		else
-			verbose_echo " ... init linear registration to 2mm reference brain"
-			flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -dof 12 -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
-		fi
-		convert_xfm -omat "$WD"/roughlin_initIinv.mat -inverse "$WD"/roughlin_initI.mat
-		flirt -in "$Reference2mmMask" -ref "$WD"/"$BaseName" -applyxfm -init "$WD"/roughlin_initIinv.mat -o "$WD"/"$BaseName"_brain_initII_mask -interp nearestneighbour
-		fslmaths "$WD"/"$BaseName" -mas "$WD"/"$BaseName"_brain_initII_mask "$WD"/"$BaseName"_brain_initII
-		verbose_echo " ... tuned linear registration to 2mm reference brain"
-		flirt -in "$WD"/"$BaseName"_brain_initII -ref "$WD"/ReferenceBrain -dof 6 -omat "$WD"/roughlin_initII.mat -o "$WD"/"$BaseName"_brain_initII_to_ReferenceBrain -nosearch
-		verbose_echo " ... tuned linear registration to reference"
-		flirt -in "$WD"/"$BaseName" -ref "$Reference2mm" -dof 12 -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch -init "$WD"/roughlin_initII.mat -inweight "$WD"/"$BaseName"_brain_initII -refweight "$Reference2mmMask"
-	else
-		verbose_echo " ... linear registration to reference"
-		${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$Reference" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
-	fi
-	verbose_echo " ... non-linear registration to 2mm reference"
-	${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
+  if [[ $(imtest "$Input"_custom_brain) = 1 ]] ; then
+    verbose_echo " ... linear registration using predefined brain to reference brain"
+    fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
+    ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input"_custom_brain -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
+  elif [ ! -z "$BetOpts" ] ; then
+    verbose_echo " ... initial BET with opts: $BetOpts"
+    fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
+    fslmaths "$Input" "$WD"/"$BaseName"
+    ${HCPPIPEDIR_Global}/bet4animal "$WD"/"$BaseName" "$WD"/"$BaseName"_brain_initI $BetOpts     # "-c 48 56 51 -r 36" for A21051401
+    if [ ! $SPECIES = Human ] ; then
+      verbose_echo " ... init linear registration to 2mm reference brain"
+      flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -schedule $FSLDIR/etc/flirtsch/xyztrans.sch -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
+    else
+      verbose_echo " ... init linear registration to 2mm reference brain"
+      flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -dof 12 -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
+    fi
+    convert_xfm -omat "$WD"/roughlin_initIinv.mat -inverse "$WD"/roughlin_initI.mat
+    flirt -in "$Reference2mmMask" -ref "$WD"/"$BaseName" -applyxfm -init "$WD"/roughlin_initIinv.mat -o "$WD"/"$BaseName"_brain_initII_mask -interp nearestneighbour
+    fslmaths "$WD"/"$BaseName" -mas "$WD"/"$BaseName"_brain_initII_mask "$WD"/"$BaseName"_brain_initII
+    verbose_echo " ... tuned linear registration to 2mm reference brain"
+    flirt -in "$WD"/"$BaseName"_brain_initII -ref "$WD"/ReferenceBrain -dof 6 -omat "$WD"/roughlin_initII.mat -o "$WD"/"$BaseName"_brain_initII_to_ReferenceBrain -nosearch
+    verbose_echo " ... tuned linear registration to reference"
+    flirt -in "$WD"/"$BaseName" -ref "$Reference2mm" -dof 12 -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch -init "$WD"/roughlin_initII.mat -inweight "$WD"/"$BaseName"_brain_initII -refweight "$Reference2mmMask"
+  else
+    verbose_echo " ... linear registration to reference"
+    ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$Reference" -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
+  fi
+  verbose_echo " ... non-linear registration to 2mm reference"
+  ${FSLDIR}/bin/fnirt --in="$Input" --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
 
 elif [ "$BrainExtract" = EXVIVO ] ; then
-	log_Msg "Ex-vivo brain"
-	fslmaths "$Reference" -mas "$ReferenceMask" "$WD"/ReferenceBrain
-	if [ $(imtest ${Input}_custom_brain) = 1 ] ; then
-		fslmaths ${Input}_custom_brain -bin "$WD"/Inputmask
-	else
-		fslmaths $Input -thr $(fslstats "$Input" -M | awk '{print $1*0.1}') -bin -fillh "$WD"/Inputmask
-	fi
-	verbose_echo " ... linear registration to 2mm reference"
-	${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
-	verbose_echo " ... synthesize head volume"
-	convert_xfm -omat "$WD"/roughlininv.mat -inverse "$WD"/roughlin.mat
-	applywarp -i "$Reference" -r "$Input" --premat="$WD"/roughlininv.mat -o "$WD"/Reference2str.nii.gz
-	meanb=$(fslstats $Input -k "$WD"/Inputmask -M)
-	meann=$(fslstats "$WD"/Reference2str.nii.gz -k "$WD"/Inputmask -M)
-	fslmaths "$WD"/Reference2str.nii.gz -div $meann -mul $meanb "$WD"/Reference2str.nii.gz
-	fslmaths "$WD"/Inputmask -mul $Input "$WD"/InputMasked
-	fslmaths "$WD"/Inputmask -binv -mul "$WD"/Reference2str.nii.gz -add "$WD"/InputMasked "$WD"/InputHead
-	verbose_echo " ... non-linear registration to 2mm reference"
-	${FSLDIR}/bin/fnirt --in="$WD"/InputHead --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
-	imcp "$WD"/InputHead $Input
+  log_Msg "Ex-vivo brain"
+  fslmaths "$Reference" -mas "$ReferenceMask" "$WD"/ReferenceBrain
+  if [ $(imtest ${Input}_custom_brain) = 1 ] ; then
+    fslmaths ${Input}_custom_brain -bin "$WD"/Inputmask
+  else
+    fslmaths $Input -thr $(fslstats "$Input" -M | awk '{print $1*0.1}') -bin -fillh "$WD"/Inputmask
+  fi
+  verbose_echo " ... linear registration to 2mm reference"
+  ${FSLDIR}/bin/flirt -interp spline -dof 12 -in "$Input" -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin.mat -out "$WD"/"$BaseName"_to_MNI_roughlin.nii.gz -nosearch
+  verbose_echo " ... synthesize head volume"
+  convert_xfm -omat "$WD"/roughlininv.mat -inverse "$WD"/roughlin.mat
+  applywarp -i "$Reference" -r "$Input" --premat="$WD"/roughlininv.mat -o "$WD"/Reference2str.nii.gz
+  meanb=$(fslstats $Input -k "$WD"/Inputmask -M)
+  meann=$(fslstats "$WD"/Reference2str.nii.gz -k "$WD"/Inputmask -M)
+  fslmaths "$WD"/Reference2str.nii.gz -div $meann -mul $meanb "$WD"/Reference2str.nii.gz
+  fslmaths "$WD"/Inputmask -mul $Input "$WD"/InputMasked
+  fslmaths "$WD"/Inputmask -binv -mul "$WD"/Reference2str.nii.gz -add "$WD"/InputMasked "$WD"/InputHead
+  verbose_echo " ... non-linear registration to 2mm reference"
+  ${FSLDIR}/bin/fnirt --in="$WD"/InputHead --ref="$Reference2mm" --aff="$WD"/roughlin.mat --refmask="$Reference2mmMask" --fout="$WD"/str2standard.nii.gz --jout="$WD"/NonlinearRegJacobians.nii.gz --refout="$WD"/IntensityModulatedT1.nii.gz --iout="$WD"/"$BaseName"_to_MNI_nonlin.nii.gz --logout="$WD"/NonlinearReg.txt --intout="$WD"/NonlinearIntensities.nii.gz --cout="$WD"/NonlinearReg.nii.gz --config="$FNIRTConfig"
+  imcp "$WD"/InputHead $Input
 fi
 
 # Overwrite the image output from FNIRT with a spline interpolated highres version

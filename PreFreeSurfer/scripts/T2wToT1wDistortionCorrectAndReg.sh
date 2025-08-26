@@ -505,7 +505,7 @@ else
   mkdir -p ${WD}/T2w2T1w
   PipelineScripts=${HCPPIPEDIR_PreFS}
   if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-  	BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+    BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
   fi
   ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
     --workingdir=${WD}/T2w2T1w/BiasFieldCorrection_sqrtT1wXT2w \

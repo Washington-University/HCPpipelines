@@ -102,19 +102,19 @@ in=$(imglob -extension $volin)
 out=$(remove_ext $out)
 
 if [[ ! -e $in ]] ; then
-	log_Err_Abort "cannot find $volin"
+  log_Err_Abort "cannot find $volin"
 fi
 if [ $ref != NONE ] ; then
-	if [ ! -e $ref  ] ; then
+  if [ ! -e $ref  ] ; then
                 log_Err_Abort "cannnot find volume: $ref"
-	else
-		ref=$(remove_ext $ref)
-	fi
+  else
+    ref=$(remove_ext $ref)
+  fi
 fi
 if [ $affine != NONE ] ; then
-	if [ ! -e $affine ] ; then
-		log_Err_Abort "cannnot find affine"
-	fi
+  if [ ! -e $affine ] ; then
+    log_Err_Abort "cannnot find affine"
+  fi
 fi
 
 function readsform () {
@@ -126,65 +126,65 @@ tmp=${out}_$$
 # matrix is inferred by Nudge, makerot using inputs of a structure volume and a reference volume
 
 if [ $TruePosition = HFSx ] ; then
-	echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+  echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 elif [ $TruePosition = FFSx ] ; then
-	# rotation y=180
-	echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+  # rotation y=180
+  echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 elif [ $TruePosition = HFS ] ; then
-	# rotate x=-90, z=180
-	echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
-	echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+  # rotate x=-90, z=180
+  echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 elif [ $TruePosition = FFS ] ; then
-	# rotation x=-90
-	echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
-	echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+  # rotation x=-90
+  echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 else
-	log_Err_Abort "unknown position: $TruePosition"
+  log_Err_Abort "unknown position: $TruePosition"
 fi
 
 if [ $PatientPosition = HFP ] ; then
-	# rotation x=90
-	echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
-	echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
+  # rotation x=90
+  echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = HFS ] ; then
-	# rotation x=-90, z=180
-	echo "-1  0  0  0" >  ${tmp}_reorient_II.world.mat
-	echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
+  # rotation x=-90, z=180
+  echo "-1  0  0  0" >  ${tmp}_reorient_II.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = FFS ] ; then
-	# rotation x=-90
-	echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
-	echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
+  # rotation x=-90
+  echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = FFP ] ; then
-	# rotation x=90, z=180
-	echo "-1  0  0  0" >  ${tmp}_reorient_II.world.mat
-	echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
+  # rotation x=90, z=180
+  echo "-1  0  0  0" >  ${tmp}_reorient_II.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = NONE ] ; then
-	# rotation x=0, z=0
-	echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
-	echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
-	echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
-	cp ${tmp}_reorient_II.world.mat ${tmp}_reorient_I.world.mat
+  # rotation x=0, z=0
+  echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
+  cp ${tmp}_reorient_II.world.mat ${tmp}_reorient_I.world.mat
 else
-	log_Err_Abort "unknown Patient position: $PatientPosition"
+  log_Err_Abort "unknown Patient position: $PatientPosition"
 fi
 
 # Correct orientation
@@ -195,36 +195,36 @@ ${CARET7DIR}/wb_command -volume-set-space ${in} ${tmp}.nii.gz -sform $(cat ${tmp
 
 # Reorient to standard RPI space
 if [ $reorient2std = TRUE ] ; then
-	${CARET7DIR}/wb_command -volume-reorient ${tmp}.nii.gz RPI ${tmp}.nii.gz
+  ${CARET7DIR}/wb_command -volume-reorient ${tmp}.nii.gz RPI ${tmp}.nii.gz
 fi
 
 # Run rigid-body registration to reference volume if requested
 if [ $ref != NONE ] ; then
-	flirt -in ${tmp}.nii.gz -ref $ref -dof 6 -omat ${out}2ref.mat
-	${CARET7DIR}/wb_command -convert-affine -from-flirt ${out}2ref.mat ${tmp}.nii.gz $(imglob -extension ${ref}) -to-world ${out}2ref.world.mat
-	affine=${out}2ref.world.mat
-	cp ${tmp}.nii.gz ${out}2ref.nii.gz
-	applytrans=${out}2ref
+  flirt -in ${tmp}.nii.gz -ref $ref -dof 6 -omat ${out}2ref.mat
+  ${CARET7DIR}/wb_command -convert-affine -from-flirt ${out}2ref.mat ${tmp}.nii.gz $(imglob -extension ${ref}) -to-world ${out}2ref.world.mat
+  affine=${out}2ref.world.mat
+  cp ${tmp}.nii.gz ${out}2ref.nii.gz
+  applytrans=${out}2ref
 else
-	applytrans=${tmp}
+  applytrans=${tmp}
 fi
 
 # Apply transformation to sform if requested
 if [ $affine != NONE ] ; then
-	readsform ${applytrans}.nii.gz ${tmp}_sform.mat
-	convert_xfm -omat ${tmp}_newsform.mat -concat ${affine} ${tmp}_sform.mat
-	${CARET7DIR}/wb_command -volume-set-space ${applytrans}.nii.gz ${applytrans}.nii.gz -sform $(cat ${tmp}_newsform.mat | head -3)
-	convert_xfm -omat ${tmp}_world.mat -concat ${affine} ${tmp}_reorient.world.mat
-	mv ${tmp}_world.mat ${tmp}_reorient.world.mat
+  readsform ${applytrans}.nii.gz ${tmp}_sform.mat
+  convert_xfm -omat ${tmp}_newsform.mat -concat ${affine} ${tmp}_sform.mat
+  ${CARET7DIR}/wb_command -volume-set-space ${applytrans}.nii.gz ${applytrans}.nii.gz -sform $(cat ${tmp}_newsform.mat | head -3)
+  convert_xfm -omat ${tmp}_world.mat -concat ${affine} ${tmp}_reorient.world.mat
+  mv ${tmp}_world.mat ${tmp}_reorient.world.mat
 fi
 
 ${CARET7DIR}/wb_command -convert-affine -from-world ${tmp}_reorient.world.mat -to-flirt ${tmp}_reorient.mat ${in} ${applytrans}.nii.gz
 
 if [ $omat != NONE ] ; then
-	mv ${tmp}_reorient.mat ${out}_reorient.mat
-	mv ${tmp}_reorient.world.mat ${out}_reorient.world.mat
+  mv ${tmp}_reorient.mat ${out}_reorient.mat
+  mv ${tmp}_reorient.world.mat ${out}_reorient.world.mat
 else
-	rm ${tmp}_reorient.world.mat ${tmp}_reorient.mat
+  rm ${tmp}_reorient.world.mat ${tmp}_reorient.mat
 fi
 mv ${tmp}.nii.gz ${out}.nii.gz
 rm ${tmp}_sform.mat ${tmp}_newsform.mat ${tmp}_reorient_I.world.mat ${tmp}_reorient_II.world.mat
