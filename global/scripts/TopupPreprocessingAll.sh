@@ -154,17 +154,17 @@ log_Msg "PhaseOne: $PhaseEncodeOne"
 log_Msg "PhaseTwo: $PhaseEncodeTwo"
 
 if [[ ! -z $PhaseEncodeOne2 && $PhaseEncodeOne2 != NONE ]] ; then 
-	if [[ `fslhd $PhaseEncodeOne2 | grep '^dim[123]'` != `fslhd $ScoutInputName | grep '^dim[123]'` ]]
-	then
-		log_Err_Abort "2nd pair of spin echo fieldmap images have different dimensions!"
-	fi
-	${FSLDIR}/bin/imcp $PhaseEncodeOne2 ${WD}/PhaseOne2
-	${FSLDIR}/bin/imcp $PhaseEncodeTwo2 ${WD}/PhaseTwo2
-	log_Msg "PhaseOne2: $PhaseEncodeOne2"
-	log_Msg "PhaseTwo2: $PhaseEncodeTwo2"
-	Phase2ndDir=TRUE
+  if [[ `fslhd $PhaseEncodeOne2 | grep '^dim[123]'` != `fslhd $ScoutInputName | grep '^dim[123]'` ]]
+  then
+    log_Err_Abort "2nd pair of spin echo fieldmap images have different dimensions!"
+  fi
+  ${FSLDIR}/bin/imcp $PhaseEncodeOne2 ${WD}/PhaseOne2
+  ${FSLDIR}/bin/imcp $PhaseEncodeTwo2 ${WD}/PhaseTwo2
+  log_Msg "PhaseOne2: $PhaseEncodeOne2"
+  log_Msg "PhaseTwo2: $PhaseEncodeTwo2"
+  Phase2ndDir=TRUE
 else
-	Phase2ndDir=FALSE
+  Phase2ndDir=FALSE
 fi
 
 log_Msg "Phase2ndDir: $Phase2ndDir"
@@ -230,7 +230,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     fi
     log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
     for vol in PhaseOne PhaseTwo PhaseOne_gdc PhaseTwo_gdc PhaseOne_gdc_warp PhaseTwo_gdc_warp $Phase2ndSet; do
-	${GlobalScripts}/CorrectVolumeOrientation --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition $initmat
+  ${GlobalScripts}/CorrectVolumeOrientation --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition $initmat
     done
 
   else
@@ -243,8 +243,8 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
        for vol in PhaseOne PhaseTwo PhaseOne_gdc PhaseTwo_gdc PhaseOne_gdc_warp PhaseTwo_gdc_warp $Phase2ndSet; do
           ${CARET7DIR}/wb_command -nifti-information -print-header "$WD"/"$vol".nii.gz | grep -3 "effective sform" | tail -3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$WD"/"$vol"_effectivesform.mat
           echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$WD"/"$vol"_effectivesform.mat
-     	   convert_xfm -omat "$WD"/${vol}_newsform.mat -concat ${InitWorldMat} "$WD"/"$vol"_effectivesform.mat
-	   ${CARET7DIR}/wb_command -volume-set-space "$WD"/"$vol".nii.gz "$WD"/"$vol".nii.gz -sform $(cat "$WD"/${vol}_newsform.mat | head -3)
+         convert_xfm -omat "$WD"/${vol}_newsform.mat -concat ${InitWorldMat} "$WD"/"$vol"_effectivesform.mat
+     ${CARET7DIR}/wb_command -volume-set-space "$WD"/"$vol".nii.gz "$WD"/"$vol".nii.gz -sform $(cat "$WD"/${vol}_newsform.mat | head -3)
           rm  "$WD"/${vol}_newsform.mat "$WD"/"$vol"_effectivesform.mat
        done
     fi 
@@ -313,8 +313,8 @@ else
          for vol in PhaseOne PhaseTwo PhaseOne_gdc PhaseTwo_gdc $Phase2ndSet; do
            ${CARET7DIR}/wb_command -nifti-information -print-header "$WD"/"$vol".nii.gz | grep -3 "effective sform" | tail -3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$WD"/"$vol"_effectivesform.mat
            echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$WD"/"$vol"_effectivesform.mat
-     	    convert_xfm -omat "$WD"/${vol}_newsform.mat -concat ${InitWorldMat} "$WD"/"$vol"_effectivesform.mat
-	    ${CARET7DIR}/wb_command -volume-set-space "$WD"/"$vol".nii.gz "$WD"/"$vol".nii.gz -sform $(cat "$WD"/${vol}_newsform.mat | head -3)
+          convert_xfm -omat "$WD"/${vol}_newsform.mat -concat ${InitWorldMat} "$WD"/"$vol"_effectivesform.mat
+      ${CARET7DIR}/wb_command -volume-set-space "$WD"/"$vol".nii.gz "$WD"/"$vol".nii.gz -sform $(cat "$WD"/${vol}_newsform.mat | head -3)
            rm  "$WD"/${vol}_newsform.mat "$WD"/"$vol"_effectivesform.mat
          done
       fi 
@@ -419,8 +419,8 @@ elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
    done
   fi
 else
-	# Per Jesper Anderson, topup does NOT allow PE dir to be along Z (no good reason, other than that made implementation easier)
-	log_Err_Abort "Invalid entry for --unwarpdir ($UnwarpDir)"
+  # Per Jesper Anderson, topup does NOT allow PE dir to be along Z (no good reason, other than that made implementation easier)
+  log_Err_Abort "Invalid entry for --unwarpdir ($UnwarpDir)"
 fi
 
 # add T2w as a PhaseZero volume - TH 2023 

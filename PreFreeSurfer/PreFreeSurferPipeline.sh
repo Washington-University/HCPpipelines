@@ -493,7 +493,7 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
           TXwFolder=${T2wFolder}
           TXwImage=${T2wImage}
           TXwTemplate=${T2wTemplate}
-         	TXwTemplateBrain=${T2wTemplateBrain}
+          TXwTemplateBrain=${T2wTemplateBrain}
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
       OutputTXwImageARRAY=()
@@ -530,17 +530,17 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
           if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
             log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
             ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
-		        ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
- 	        fi
+            ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
+          fi
           
           if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # for ACPC initialization - TH 2016
             if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
               ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
             fi
             ${RUN} ${FSLDIR}/bin/fslreorient2std $(remove_ext $Image)_brain ${wdir}/${TXwImage}${i}_brain
-	          log_Msg "Found $(remove_ext $Image)_brain"
-	          ${RUN} ${FSLDIR}/bin/applywarp -i ${wdir}/${TXwImage}${i}_brain -r ${TXwFolder}/${TXwImage}${i}_gdc -w ${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --interp=sinc
-	        fi
+            log_Msg "Found $(remove_ext $Image)_brain"
+            ${RUN} ${FSLDIR}/bin/applywarp -i ${wdir}/${TXwImage}${i}_brain -r ${TXwFolder}/${TXwImage}${i}_gdc -w ${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --interp=sinc
+          fi
 
           OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
@@ -551,29 +551,29 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
 
         i=1
         for Image in $TXwInputImages ; do
-	        Image="`${FSLDIR}/bin/remove_ext $Image`"
+          Image="`${FSLDIR}/bin/remove_ext $Image`"
           if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
              ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
           fi
           log_Msg "reorient data to std" 
           if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-	          log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-		        ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
+            log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+            ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
           else
             ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
           fi 
 
-	        if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
-	          log_Msg "Found $(remove_ext $Image)_brain"
+          if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
+            log_Msg "Found $(remove_ext $Image)_brain"
             if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
               ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
             fi
             if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
               ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image}_brain --out=${TXwFolder}/${TXwImage}${i}_gdc_brain --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
             else
- 	            ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
+              ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
             fi
-	        fi
+          fi
           OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
@@ -627,7 +627,7 @@ if [ "$RunMode" -lt 3 ]; then
       TXwInputImages="${T2wInputImages}"
       TXwFolder=${T2wFolder}
       TXwImage=${T2wImage}
-      TXwTemplate=${T2wTemplate}	
+      TXwTemplate=${T2wTemplate}  
       TXwTemplateBrain=${T2wTemplateBrain}
       TXwTemplate2mm=${T2wTemplate2mm}
       #TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
@@ -672,19 +672,19 @@ if [ "$RunMode" -lt 4 ]; then
   for TXw in ${Modalities} ; do
     # set up appropriate input variables
     if [ $TXw = T1w ] ; then
-	    TXwInputImages="${T1wInputImages}"
-	    TXwFolder=${T1wFolder}
-	    TXwImage=${T1wImage}
+      TXwInputImages="${T1wInputImages}"
+      TXwFolder=${T1wFolder}
+      TXwImage=${T1wImage}
       TXwTemplate=${T1wTemplate}
-	    TXwTemplateBrain=${T1wTemplateBrain}
-	    TXwTemplate2mm=${T1wTemplate2mm}
+      TXwTemplateBrain=${T1wTemplateBrain}
+      TXwTemplate2mm=${T1wTemplate2mm}
     else
-	    TXwInputImages="${T2wInputImages}"
-	    TXwFolder=${T2wFolder}
-	    TXwImage=${T2wImage}
-	    TXwTemplate=${T2wTemplate}
- 	    TXwTemplateBrain=${T2wTemplateBrain}
-	    TXwTemplate2mm=${T2wTemplate2mm}
+      TXwInputImages="${T2wInputImages}"
+      TXwFolder=${T2wFolder}
+      TXwImage=${T2wImage}
+      TXwTemplate=${T2wTemplate}
+      TXwTemplateBrain=${T2wTemplateBrain}
+      TXwTemplate2mm=${T2wTemplate2mm}
     fi
 
   #### Brain Extraction (FNIRT-based Masking) ####
@@ -698,21 +698,21 @@ if [ "$RunMode" -lt 4 ]; then
     log_Msg "Brain extract with FNIRT" 
     mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
     ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
-	--workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
-	--in=${TXwFolder}/${TXwImage}_acpc \
-	--ref=${TXwTemplate} \
-	--refmask=${AtlasSpaceFolder}/TemplateMask \
-	--ref2mm=${TXwTemplate2mm} \
-	--ref2mmmask=${Template2mmMask} \
-	--outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
-	--outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
-	--fnirtconfig=${FNIRTConfig} \
+  --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
+  --in=${TXwFolder}/${TXwImage}_acpc \
+  --ref=${TXwTemplate} \
+  --refmask=${AtlasSpaceFolder}/TemplateMask \
+  --ref2mm=${TXwTemplate2mm} \
+  --ref2mmmask=${Template2mmMask} \
+  --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
+  --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
+  --fnirtconfig=${FNIRTConfig} \
        --betcenter=${betcenter} \
        --betradius=${betradius} \
-	--betfraction=${betfraction} \
-	--initdof=$InitDof \
+  --betfraction=${betfraction} \
+  --initdof=$InitDof \
        --betbiasfieldcor=${betbiasfieldcor} \
-	--brainextract=${BrainExtract} \
+  --brainextract=${BrainExtract} \
        --betspecieslabel=${betspecieslabel} 
   fi 
   done 
@@ -739,7 +739,7 @@ if [ "$RunMode" -lt 5 ]; then
         rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
       fi
 
-   if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then 	 # added T2w as a phase zero volume - TH Jan 2023
+   if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then    # added T2w as a phase zero volume - TH Jan 2023
         SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
    fi
   else

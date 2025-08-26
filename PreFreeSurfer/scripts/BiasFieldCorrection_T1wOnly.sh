@@ -86,11 +86,11 @@ echo " " >> $WDir/log.txt
 # Compute T1w Bias Normalization using fsl_anat function
 
 if [ $(${FSLDIR}/bin/imtest $T1wBrain) = 0 ] ; then
-	${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+  ${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
 else
-	fslmaths $T1wBrain -abs ${T1wBrain}_abs # TH - avoid error of Fast if the input has negative values (e.g. due to spline interpolation)
-	${FSLDIR}/bin/fsl_anat -i ${T1wBrain}_abs -o $WD --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
-	fslmaths $T1wImage -div ${WDir}/T1_fast_bias.nii.gz ${WDir}/T1_biascorr
+  fslmaths $T1wBrain -abs ${T1wBrain}_abs # TH - avoid error of Fast if the input has negative values (e.g. due to spline interpolation)
+  ${FSLDIR}/bin/fsl_anat -i ${T1wBrain}_abs -o $WD --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+  fslmaths $T1wImage -div ${WDir}/T1_fast_bias.nii.gz ${WDir}/T1_biascorr
 fi
 
 # Use existing brain mask if one is provided
