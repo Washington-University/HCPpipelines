@@ -80,7 +80,7 @@ for File in ${Names} ; do
             tempfiles_add "$currentParcel"_wmparc.nii.gz
             
             "$Caret7_Command" -volume-resample \
-                "$AtlasSpaceFolder"/wmparc.nii.gz \
+                "$AtlasFolder"/wmparc.nii.gz \
                 "$volumeIn" \
                 ENCLOSING_VOXEL \
                 "$currentParcel"_wmparc.nii.gz
