@@ -85,7 +85,7 @@ for File in ${Names} ; do
                 ENCLOSING_VOXEL \
                 "$currentParcel"_wmparc.nii.gz
             "$Caret7_Command" -volume-label-import \
-                "$AtlasAtlasResultsFolder"/wmparc."$FinalfMRIResolution".nii.gz \
+                "$currentParcel"_wmparc.nii.gz \
                 "$HCPPIPEDIR_Config"/FreeSurferSubcorticalLabelTableLut.txt \
                 "$currentParcel" \
                 -discard-others
