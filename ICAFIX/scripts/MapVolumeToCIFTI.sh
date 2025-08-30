@@ -89,6 +89,11 @@ for File in ${Names} ; do
                 "$HCPPIPEDIR_Config"/FreeSurferSubcorticalLabelTableLut.txt \
                 "$currentParcel" \
                 -discard-others
+            
+            #HACK: already-compiled computeRecleanFeatures always looks in MNINonLinear/ROIs for wmparc matching SBRef
+            #so copy it there unconditionally when we create ROIs.$fMRIres.nii.gz
+            #NOTE: if we make fMRISurface keep these files around, we need to tell computeRecleanFeatures where to find it
+            cp "$currentParcel"_wmparc.nii.gz "$AtlasFolder"/ROIs/wmparc."$FinalfMRIResolution".nii.gz
         fi
 
         $Caret7_Command -volume-parcel-resampling-generic $volumeIn $currentParcel $newParcel $kernel $volumeOut ${ResampleFlag}

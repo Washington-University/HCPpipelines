@@ -196,7 +196,7 @@ wb_command -cifti-all-labels-to-rois "$SubRegionsROItemp"_labels.dlabel.nii 1 "$
 # shortcut in case the folder gets renamed
 this_script_dir=$(dirname "$0")
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
-matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$HighPass" "$BrainOrdinatesResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
+matlab_argarray=("$StudyFolder" "$Subject" "$fMRIListName" "$HighPass" "$FinalfMRIResolution" "$CorticalParcellationFile" "$WMLabelFile" "$CSFLabelFile" "$VisualROItemp" "$LanguageROItemp" "$SubRegionsROItemp" "$NonGreyParcelsFile")
 
 case "$MatlabMode" in
     (0)
