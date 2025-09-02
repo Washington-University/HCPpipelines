@@ -174,7 +174,7 @@ DEFAULT_DEGREES_OF_FREEDOM=6
 # Perform the steps of the HCP Diffusion Preprocessing Pipeline
 opts_SetScriptDescription "Perform the steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 
 opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
@@ -319,7 +319,7 @@ if (( IsLongitudinal )); then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
     T1wCross2LongXfm=$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
-    if [ ! -f "$T1wCross2LongXfm" ]; then 
+    if [ ! -f "$T1wCross2LongXfm" ]; then
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi
 fi
@@ -359,7 +359,7 @@ validate_scripts() {
 # Validate scripts
 validate_scripts "$@"
 
-if (( ! IsLongitudinal )); then 
+if (( ! IsLongitudinal )); then
     log_Msg "Invoking Pre-Eddy Steps"
     pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
         "--path=${StudyFolder}"
@@ -373,7 +373,8 @@ if (( ! IsLongitudinal )); then
         "--topup-config-file=${TopupConfig}"
         "--printcom=${runcmd}"
         "--select-best-b0=${SelectBestB0}"
-        "--ensure-even-slices=${EnsureEvenSlices}")
+        "--ensure-even-slices=${EnsureEvenSlices}"
+        "--combine-data-flag=${CombineDataFlag}")
 
     log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
     "${pre_eddy_cmd[@]}"
