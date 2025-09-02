@@ -56,24 +56,24 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     TCSMask = reshape(TCSMaskConcat.cdata, [sICAdim, RunsXNumTimePoints, numsubj]);
 
     %% optionally, filter Group sICA components to hand picked list before running tICA
-    handSigFile = [OutputFolder '/../sICA/HandSignal.txt'];% assumes OutputFolder and /sICA are always in the same parent dir
-    if exist(handSigFile,'file')
-        sigIdx = load(handSigFile,'-ascii');
-        tICAdim = numel(sigIdx);
-        TCSFullConcat = filterCifti(TCSFullConcat,1,sigIdx);
-        TCSMaskConcat = filterCifti(TCSMaskConcat,1,sigIdx);
-        AvgTCS = filterCifti(AvgTCS,1,sigIdx);
-        sICAAvgSpectra = filterCifti(sICAAvgSpectra,1,sigIdx);
-        sICAMaps = filterCifti(sICAMaps,2,sigIdx);
-        sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
-        TCSMask = TCSMask(sigIdx,:,:);
-        if ~isempty(tICAMM) && ~all(size(tICAMM) == tICAdim)
-            error('tICAMM dimensionaily doesn''t match sICA dimensionality post HandSignal.txt filtering')
-        end
-    else
-      tICAdim = sICAdim;
-      sigIdx = 1:sICAdim;
-    end
+    % handSigFile = [OutputFolder '/../sICA/HandSignal.txt'];% assumes OutputFolder and /sICA are always in the same parent dir
+    % if exist(handSigFile,'file')
+    %     sigIdx = load(handSigFile,'-ascii');
+    %     tICAdim = numel(sigIdx);
+    %     TCSFullConcat = filterCifti(TCSFullConcat,1,sigIdx);
+    %     TCSMaskConcat = filterCifti(TCSMaskConcat,1,sigIdx);
+    %     AvgTCS = filterCifti(AvgTCS,1,sigIdx);
+    %     sICAAvgSpectra = filterCifti(sICAAvgSpectra,1,sigIdx);
+    %     sICAMaps = filterCifti(sICAMaps,2,sigIdx);
+    %     sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
+    %     TCSMask = TCSMask(sigIdx,:,:);
+    %     if ~isempty(tICAMM) && ~all(size(tICAMM) == tICAdim)
+    %         error('tICAMM dimensionality doesn''t match sICA dimensionality post HandSignal.txt filtering')
+    %     end
+    % else
+    %   tICAdim = sICAdim;
+    %   sigIdx = 1:sICAdim;
+    % end
 
     %% perform runwise normalization
     numfullsubj = 0;
@@ -270,7 +270,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             SubjFolder = [StudyFolder '/' SubjectList{i} '/'];
 
             tICATCS.diminfo{1}.length = tICAdim;
-            tICATCS.diminfo{1}.maps = tICATCS.diminfo{1}.maps(sigIdx);
+            tICATCS.diminfo{1}.maps = tICATCS.diminfo{1}.maps;%(sigIdx);
             tICATCS.diminfo{2}.length = size(tICATCS.cdata,2);
             cifti_write(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
 
@@ -282,7 +282,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
 
             tICASpectra.diminfo{1}.length = tICAdim;
-            tICASpectra.diminfo{1}.maps = tICASpectra.diminfo{1}.maps(sigIdx);
+            tICASpectra.diminfo{1}.maps = tICASpectra.diminfo{1}.maps;%(sigIdx);
             tICASpectra.diminfo{2}.length = size(tICASpectra.cdata,2);
             cifti_write(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME
         end
@@ -299,11 +299,11 @@ function lines = myreadtext(filename)
     lines = array{1};
 end
 
-function C = filterCifti(C,dimIdx,filtIdx)
-    % subselect from one dim of cifti
-    C.diminfo{dimIdx}.length = numel(filtIdx);
-    C.diminfo{dimIdx}.maps = C.diminfo{dimIdx}.maps(filtIdx);
-    idx = repmat({':'}, 1, ndims(C.cdata));
-    idx{dimIdx} = filtIdx;
-    C.cdata = C.cdata(idx{:});
-end
+% function C = filterCifti(C,dimIdx,filtIdx)
+%     % subselect from one dim of cifti
+%     C.diminfo{dimIdx}.length = numel(filtIdx);
+%     C.diminfo{dimIdx}.maps = C.diminfo{dimIdx}.maps(filtIdx);
+%     idx = repmat({':'}, 1, ndims(C.cdata));
+%     idx{dimIdx} = filtIdx;
+%     C.cdata = C.cdata(idx{:});
+% end

@@ -115,11 +115,13 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 
 opts_ParseArguments "$@"
 
-# if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
+# if Group sICA hand classifications exists, use it to filter the group sICA components before projecting to individuals
 HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
 if [ -e "${HandSignalFile}" ]; then
-    tICADim=$(wc -w < "${HandSignalFile}")
-else
+    # Import the contents of $HandSignalFile as an array
+    read -a sigIdx < "${HandSignalFile}"
+    tICADim="${#sigIdx[@]}"
+  else
     tICADim=""
 fi
 
@@ -413,13 +415,22 @@ do
             ;;
         (indProjSICA)
             # now we have the dimensionality, set the sICA output strings
-            if [[ "$sicadimOverride" != "" ]]; then 
+            if [[ "$sicadimOverride" ]]; then 
                 sICAActualDim="$sicadimOverride"
             else
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
             fi
-            OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-
+            if [[ "$tICADim" == "" ]]; then 
+                tICADim="$sICAActualDim";
+            else
+              # apply hand filtering to group SICA components before projecting to individuals
+              SICAgroupMaps=${sICAoutfolder}/melodic_oIC_${sICAActualDim}.dscalar.nii
+              SICAgroupMapsFilt=${sICAoutfolder}/melodic_oIC_${tICADim}.dscalar.nii
+              merge_args=()
+              for idx in "${sigIdx[@]}"; do merge_args+=(-cifti "$SICAgroupMaps" -index "$idx");done
+              wb_command -cifti-merge "$SICAgroupMapsFilt" "${merge_args[@]}"
+            fi
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             #generate volume template cifti
             #use parallel and do sessions separately first to reduce memory (some added IO)
@@ -481,7 +492,7 @@ do
                 par_addjob "$HCPPIPEDIR"/global/scripts/RSNregression.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
-                    --group-maps="${sICAoutfolder}/melodic_oIC_${sICAActualDim}.dscalar.nii" \
+                    --group-maps="${sICAoutfolder}/melodic_oIC_${tICADim}.dscalar.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
@@ -489,7 +500,7 @@ do
                     --method=weighted \
                     --low-ica-dims="$LowsICADims" \
                     --low-ica-template-name="$sICAoutfolder/melodic_oIC_REPLACEDIM.dscalar.nii" \
-                    --output-string="$OutputStringSICA" \
+                    --output-string="$OutputString" \
                     --output-spectra="$sessionExpectedTimepoints" \
                     --volume-template-cifti="$VolumeTemplateFile" \
                     --output-z=1 \
@@ -507,7 +518,9 @@ do
             else
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
             fi
-            OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+
 
             if [[ "$sICAmode" != "ESTIMATE" ]]
             then
@@ -525,7 +538,7 @@ do
                 --ica-dim="$sICAActualDim" \
                 --subject-expected-timepoints="$sessionExpectedTimepoints" \
                 --low-res-mesh="$LowResMesh" \
-                --sica-proc-string="${OutputStringSICA}_WR" \
+                --sica-proc-string="${OutputString}_WR" \
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ComputeGroupTICA)
@@ -536,8 +549,7 @@ do
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
-            OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             #running this step in USE mode generates files in the output folder, which removes the need for a second OutputString to track the input naming for that mode
             tica_cmd=("$HCPPIPEDIR"/tICA/scripts/ComputeGroupTICA.sh
@@ -551,7 +563,7 @@ do
                         --tICA-dim="$tICADim"
                         --subject-expected-timepoints="$sessionExpectedTimepoints"
                         --low-res-mesh="$LowResMesh"
-                        --sica-proc-string="${OutputStringSICA}_WR"
+                        --sica-proc-string="${OutputString}_WR"
                         --tICA-mode="$tICAmode"
                         --matlab-run-mode="$MatlabMode"
                      )
@@ -597,8 +609,7 @@ do
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
-            OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             for Session in "${Sesslist[@]}"
             do
@@ -629,13 +640,13 @@ do
                 par_addjob "$HCPPIPEDIR"/global/scripts/RSNregression.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputStringTICA}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
                     --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
                     --method=single \
-                    --output-string="${OutputStringTICA}_WR_tICA" \
+                    --output-string="${OutputString}_WR_tICA" \
                     --output-spectra="$sessionExpectedTimepoints" \
                     --volume-template-cifti="$VolumeTemplateFile" \
                     --output-z=1 \
@@ -653,8 +664,7 @@ do
                 sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
-            OutputStringSICA="$OutputfMRIName"_d"$sICAActualDim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
-            OutputStringTICA="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
+            OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
             #FIXME: is ComputeTICAFeatures supported in USE mode?  Should it take the brainmask as an argument instead of expecting a copy in the output folder?
             #TODO: No need for it, a prior classification must be specified in USE mode
@@ -673,7 +683,7 @@ do
                 --fmri-output-name="$OutputfMRIName" \
                 --ica-dim="$tICADim" \
                 --proc-string="${fMRIProcSTRING/_Atlas${RegString}/}" \
-                --tica-proc-string="${OutputStringTICA}_WR_tICA" \
+                --tica-proc-string="${OutputString}_WR_tICA" \
                 --fmri-resolution="$fMRIResolution" \
                 --surf-reg-name="$RegName" \
                 --low-res="$LowResMesh" \
@@ -715,7 +725,7 @@ do
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
                     --noise-list="$NuisanceListTxt" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputStringTICA}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --subject-concat-timeseries="$MRFixConcatName" \
                     --fix-high-pass="$HighPass" \
