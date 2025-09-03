@@ -45,7 +45,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     sICAVolMaps = cifti_read(sICAVolMapsAvgName);
 
     if ~strcmp(tICAMM,'')
-        tICAMM = load(tICAMM);
+        tICAMM = load(tICAMM, '-ascii');
     end
 
     numsubj = length(TCSList);

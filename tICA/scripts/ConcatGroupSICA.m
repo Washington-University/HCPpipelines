@@ -13,7 +13,7 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
     VolMapList = myreadtext(VolMapListName);
     SpectraList = myreadtext(SpectraListName);
 
-    sICAiq = load(InputStats);
+    sICAiq = load(InputStats, '-ascii');
 
     numsubj = length(TCSList);
     if length(MapList) ~= numsubj || length(VolMapList) ~= numsubj || length(SpectraList) ~= numsubj
