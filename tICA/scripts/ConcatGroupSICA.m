@@ -6,8 +6,6 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
     sICAdim = str2double(sICAdim);
     RunsXNumTimePoints = str2double(RunsXNumTimePoints);
     
-%     wbcommand = 'wb_command';
-    
     TCSList = myreadtext(TCSListName);
     MapList = myreadtext(MapListName);
     VolMapList = myreadtext(VolMapListName);

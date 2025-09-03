@@ -521,21 +521,23 @@ do
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
-
-            if [[ "$sICAmode" != "ESTIMATE" ]]
-            then
-              mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
-              if [[ "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" != "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" ]]; then
-                cp "${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv" "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
-              fi
+            mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
+            sicaAnnsub="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
+            ticaAnnsub="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${tICADim}.wb_annsub.csv"
+            if [[ "$sicaAnnsub" != "$ticaAnnsub" ]] && [[ "$sICAActualDim" == "$tICADim" ]]; then
+                cp "$sicaAnnsub" "$ticaAnnsub";
+            else
+                rm "$ticaAnnsub"
+                awk -v idxs="${sigIdx[*]}" 'BEGIN{split(idxs,a," ");for(i in a)k[a[i]]=1} k[NR]' "$sicaAnnsub" >> "$ticaAnnsub"
             fi
+            
             "$HCPPIPEDIR"/tICA/scripts/ConcatGroupSICA.sh \
                 --study-folder="$StudyFolder" \
                 --subject-list="$SesslistRaw" \
                 --out-folder="${StudyFolder}/${GroupAverageName}" \
                 --fmri-concat-name="$OutputfMRIName" \
                 --surf-reg-name="$RegName" \
-                --ica-dim="$sICAActualDim" \
+                --ica-dim="$tICADim" \
                 --subject-expected-timepoints="$sessionExpectedTimepoints" \
                 --low-res-mesh="$LowResMesh" \
                 --sica-proc-string="${OutputString}_WR" \
@@ -559,8 +561,7 @@ do
                         --out-folder="${StudyFolder}/${GroupAverageName}"
                         --fmri-concat-name="$OutputfMRIName"
                         --surf-reg-name="$RegName"
-                        --sICA-dim="$sICAActualDim"
-                        --tICA-dim="$tICADim"
+                        --sICA-dim="$tICADim"
                         --subject-expected-timepoints="$sessionExpectedTimepoints"
                         --low-res-mesh="$LowResMesh"
                         --sica-proc-string="${OutputString}_WR"

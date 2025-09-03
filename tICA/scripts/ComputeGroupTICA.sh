@@ -40,7 +40,6 @@ opts_AddMandatory '--out-folder' 'OutGroupFolder' 'path' "group average folder"
 opts_AddMandatory '--fmri-concat-name' 'fMRIConcatName' 'string' "name for the concatenated data, like 'rfMRI_REST_7T'"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'name' "the surface registration string"
 opts_AddMandatory '--sICA-dim' 'sICAdim' 'integer' "number of sICA components"
-opts_AddMandatory '--tICA-dim' 'tICAdim' 'integer' "number of tICA components"
 opts_AddMandatory '--subject-expected-timepoints' 'RunsXNumTimePoints' 'integer' "number of concatenated timepoints in a subject with full data"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'integer' "mesh resolution, like '32'"
 opts_AddMandatory '--sica-proc-string' 'sICAProcString' 'string' "name part to use for some outputs, like 'tfMRI_RET_7T_d73_WF5_WR'"
@@ -65,7 +64,7 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$tICAdim"
+OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$sICAdim"
 
 TCSConcatName="$OutputFolder/sICA_TCS_$sICAdim.sdseries.nii"
 TCSMaskName="$OutputFolder/sICA_TCSMASK_$sICAdim.sdseries.nii"

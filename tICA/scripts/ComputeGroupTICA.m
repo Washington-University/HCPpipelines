@@ -55,29 +55,9 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     
     TCSMask = reshape(TCSMaskConcat.cdata, [sICAdim, RunsXNumTimePoints, numsubj]);
 
-    %% optionally, filter Group sICA components to hand picked list before running tICA
-    % handSigFile = [OutputFolder '/../sICA/HandSignal.txt'];% assumes OutputFolder and /sICA are always in the same parent dir
-    % if exist(handSigFile,'file')
-    %     sigIdx = load(handSigFile,'-ascii');
-    %     tICAdim = numel(sigIdx);
-    %     TCSFullConcat = filterCifti(TCSFullConcat,1,sigIdx);
-    %     TCSMaskConcat = filterCifti(TCSMaskConcat,1,sigIdx);
-    %     AvgTCS = filterCifti(AvgTCS,1,sigIdx);
-    %     sICAAvgSpectra = filterCifti(sICAAvgSpectra,1,sigIdx);
-    %     sICAMaps = filterCifti(sICAMaps,2,sigIdx);
-    %     sICAVolMaps = filterCifti(sICAVolMaps,2,sigIdx);
-    %     TCSMask = TCSMask(sigIdx,:,:);
-    %     if ~isempty(tICAMM) && ~all(size(tICAMM) == tICAdim)
-    %         error('tICAMM dimensionality doesn''t match sICA dimensionality post HandSignal.txt filtering')
-    %     end
-    % else
-    %   tICAdim = sICAdim;
-    %   sigIdx = 1:sICAdim;
-    % end
-
     %% perform runwise normalization
     numfullsubj = 0;
-    TCSFullRunVars = single(zeros(tICAdim, RunsXNumTimePoints * numsubj));
+    TCSFullRunVars = single(zeros(sICAdim, RunsXNumTimePoints * numsubj));
     for i = 1:numsubj
         if exist(TCSList{i}, 'file')
             subjBaseInd = (i - 1) * RunsXNumTimePoints + 1;
@@ -139,15 +119,13 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             normicasig = W * TCSFullConcat.cdata;
         elseif i == 1
             IT = [num2str(i)];
-            fprintf('\nsICAdim: %i\n', sICAdim);
-            fprintf('tICAdim: %i\n', tICAdim);
-            [iq, A, W, normicasig, sR] = icasso('both', TCSFullConcat.cdata, iterations, 'approach', 'symm', 'g', nlfunc, 'lastEig', tICAdim, 'numOfIC', tICAdim, 'maxNumIterations', 1000); %x1
+            [iq, A, W, normicasig, sR] = icasso('both', TCSFullConcat.cdata, iterations, 'approach', 'symm', 'g', nlfunc, 'lastEig', sICAdim, 'numOfIC', sICAdim, 'maxNumIterations', 1000); %x1
         elseif i > 5
             IT = ['F'];
-            [normicasig, A, W] = fastica(TCSFullConcat.cdata, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', tICAdim, 'numOfIC', tICAdim, 'displayMode', 'off', 'maxNumIterations', 1000); %x1
+            [normicasig, A, W] = fastica(TCSFullConcat.cdata, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', sICAdim, 'numOfIC', sICAdim, 'displayMode', 'off', 'maxNumIterations', 1000); %x1
         else
             IT = [num2str(i)];
-            [iq, A, W, normicasig, sR] = icasso('bootstrap', TCSFullConcat.cdata, iterations, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', tICAdim, 'numOfIC', tICAdim, 'maxNumIterations', 1000); %x4
+            [iq, A, W, normicasig, sR] = icasso('bootstrap', TCSFullConcat.cdata, iterations, 'initGuess', A, 'approach', 'symm', 'g', nlfunc, 'lastEig', sICAdim, 'numOfIC', sICAdim, 'maxNumIterations', 1000); %x4
         end
 
         % normicasig has stdev = 1, we want to multiply the (approximate) amplitudes from A into it
@@ -206,7 +184,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         tICAVolMaps.cdata(:, [1:1:length(Is)]) = single(tICAVolMaps.cdata(:, Is));
 
         
-        nameParamPart = ['_' num2str(tICAdim) '_' nlfunc IT];
+        nameParamPart = ['_' num2str(sICAdim) '_' nlfunc IT];
         cifti_write(tICAMaps, [OutputFolder '/' tICAMapsNamePart nameParamPart '.dscalar.nii']);
         cifti_write(tICAVolMaps, [OutputFolder '/' tICAVolMapsNamePart nameParamPart '.dscalar.nii']);
 
@@ -234,22 +212,22 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
         cifti_write(tICAtcs, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
 
-        tICAtcsAll = reshape(tICAtcs.cdata, tICAdim, RunsXNumTimePoints, numsubj);
+        tICAtcsAll = reshape(tICAtcs.cdata, sICAdim, RunsXNumTimePoints, numsubj);
 
         tICAtcsmean = AvgTCS;
-        tICAtcsmean.cdata = sum(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1), 3) / numfullsubj;
+        tICAtcsmean.cdata = sum(tICAtcsAll .* single(TCSMask(1:sICAdim, :, :) == 1), 3) / numfullsubj;
         tICAtcsabsmean = AvgTCS;
-        tICAtcsabsmean.cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1)), 3) / numfullsubj;
+        tICAtcsabsmean.cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:sICAdim, :, :) == 1)), 3) / numfullsubj;
 
         cifti_write(tICAtcsmean, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii']);
         cifti_write(tICAtcsabsmean, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii']);
 
         tICAspectra = sICAAvgSpectra;
         tICAspectranorm = sICAAvgSpectra;
-        ts.Nnodes = tICAdim;
+        ts.Nnodes = sICAdim;
         ts.Nsubjects = numfullsubj;
         ts.NtimepointsPerSubject = RunsXNumTimePoints;
-        ts.ts = (((tICAtcs.cdata .* single(TCSMaskConcat.cdata(1:tICAdim, :) == 1)) ./ numfullsubj) .* numsubj)'; %compensate for the zeros by ratio of full-data subjects to all subjects?
+        ts.ts = (((tICAtcs.cdata .* single(TCSMaskConcat.cdata(1:sICAdim, :) == 1)) ./ numfullsubj) .* numsubj)'; %compensate for the zeros by ratio of full-data subjects to all subjects?
         tICAspectra.cdata = nets_spectra_sp(ts)';
         tICAspectranorm.cdata = nets_spectra_sp(ts, [], 1)';
 
@@ -269,7 +247,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             tICASpectra = sICASpectra;
             SubjFolder = [StudyFolder '/' SubjectList{i} '/'];
 
-            tICATCS.diminfo{1}.length = tICAdim;
+            tICATCS.diminfo{1}.length = sICAdim;
             tICATCS.diminfo{1}.maps = tICATCS.diminfo{1}.maps;%(sigIdx);
             tICATCS.diminfo{2}.length = size(tICATCS.cdata,2);
             cifti_write(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
@@ -281,7 +259,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             tICASpectra.cdata = nets_spectra_sp(ts)';
 
 
-            tICASpectra.diminfo{1}.length = tICAdim;
+            tICASpectra.diminfo{1}.length = sICAdim;
             tICASpectra.diminfo{1}.maps = tICASpectra.diminfo{1}.maps;%(sigIdx);
             tICASpectra.diminfo{2}.length = size(tICASpectra.cdata,2);
             cifti_write(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME
