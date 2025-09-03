@@ -112,7 +112,7 @@ end
 % e.g., what if OUTSTRING, WM, or CSF arguments are not supplied?
 
 % Read set of FIX classified noise components
-Inoise=load(noiselist);
+Inoise=load(noiselist,'-ascii');
 
 %%%% Read data, (optionally revert bias field correction) and compute basic stats
 BO=ciftiopen([inputdtseries '.dtseries.nii'],WBC);
