@@ -123,8 +123,8 @@ ParcelReorder=load(ParcelReorderFile,'-ascii');
 %VertexAreas=ciftiopen([StudyFolder '/' GroupAverageName '/MNINonLinear/fsaverage_LR32k/' GroupAverageName '.midthickness' RegString '_va.32k_fs_LR.dscalar.nii'], wbcommand);
 
 pipedir = getenv('HCPPIPEDIR');
-vertarealeft = gifti([pipedir '/global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.L.midthickness_va_avg.32k_fs_LR.shape.gii']);
-vertarearight = gifti([pipedir '/global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.R.midthickness_va_avg.32k_fs_LR.shape.gii']);
+vertarealeft = gifti([pipedir '/global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.L.midthickness_va_avg.' LowResMesh 'k_fs_LR.shape.gii']);
+vertarearight = gifti([pipedir '/global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.R.midthickness_va_avg.' LowResMesh 'k_fs_LR.shape.gii']);
 VertexAreas = cifti_struct_create_from_template(tICAMaps, zeros(size(tICAMaps.cdata, 1), 1, 'single'), 'dscalar');
 VertexAreas = cifti_struct_dense_replace_surface_data(VertexAreas, vertarealeft.cdata, 'CORTEX_LEFT');
 VertexAreas = cifti_struct_dense_replace_surface_data(VertexAreas, vertarearight.cdata, 'CORTEX_RIGHT');
