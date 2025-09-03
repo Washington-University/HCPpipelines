@@ -168,9 +168,9 @@ HighPassVar=var((OrigTCS - HighPassTCS),[],tpDim);
 confounds=[]; %#ok<NASGU>
 [~, ~, ext] = fileparts(motionparameters);
 if isempty(ext)
-  confounds=load([motionparameters '.txt']);
+  confounds=load([motionparameters '.txt'],'-ascii');
 else
-  confounds=load(motionparameters);
+  confounds=load(motionparameters,'-ascii');
 end
 mvm=confounds;
 confounds=confounds(:,1:6); %Be sure to limit to just the first 6 elements
@@ -186,11 +186,11 @@ unix(['rm ' outprefix '_fakeNIFTI.nii.gz']);
 fprintf('%s - Finished fslmaths filtering of motion confounds\n',func_name);
 
 %%%%  Read ICA component timeseries
-ICAorig=normalise(load(sprintf(ICAs)));
+ICAorig=normalise(load(ICAs,'-ascii'));
 
 %%%%  Read WM Timeseries and Highpass Filter
 if ~strcmp(WM,'NONE')
-    WMtcOrig=demean(load(sprintf(WM)));
+    WMtcOrig=demean(load(WM,'-ascii')));
     fprintf('%s - Starting fslmaths filtering of wm tcs \n',func_name);
     save_avw(reshape(WMtcOrig',size(WMtcOrig,2),1,1,size(WMtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
     system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));
@@ -201,7 +201,7 @@ end
 
 %%%%  Read CSF Timeseries and Highpass Filter
 if ~strcmp(CSF,'NONE')
-    CSFtcOrig=demean(load(sprintf(CSF)));
+    CSFtcOrig=demean(load(CSF,'-ascii'));
     fprintf('%s - Starting fslmaths filtering of csf tcs \n',func_name);
     save_avw(reshape(CSFtcOrig',size(CSFtcOrig,2),1,1,size(CSFtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
     system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));

@@ -60,7 +60,7 @@ end
 if ~exist(TE,'file')
   error('%s does not exist!',TE)
 end
-TE=load(TE);
+TE = load(TE,'-ascii');
 if ~isvector(TE) || ~isnumeric(TE)
   error('TE isn''t a numeric vector, check inputs!')
 end
