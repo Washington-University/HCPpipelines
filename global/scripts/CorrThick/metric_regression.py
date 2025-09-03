@@ -12,6 +12,7 @@ def metric_regression(subjects_dir,subject,hemi,surface,mesh,rois,weights):
     import numpy as np
     import os
     from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
         
     d = {} # read all the curvature values and save them in a dictionary
     curvs = ['H', 'k1', 'k2', 'K', 'SI', 'C']
@@ -98,7 +99,7 @@ def metric_regression(subjects_dir,subject,hemi,surface,mesh,rois,weights):
             
     ###############################################################################   
     # parallelize roi regression
-    with ProcessPoolExecutor(max_workers=1) as executor:
+    with ProcessPoolExecutor(max_workers=14,mp_context=multiprocessing.get_context("fork")) as executor:
         results = list(executor.map(process_roi, [(j, rois[j], weights[j], d) for j in range(len(rois)) if d['t'][j] != 0], chunksize=10000))
     
     coeff, coeff_norm, t_corr = zip(*results)  # Unzip results into separate lists
@@ -166,6 +167,10 @@ def process_roi(args):
     
     import numpy as np
     import scipy.stats as stats
+    import os
+    os.environ["MKL_NUM_THREADS"] = "1" 
+    os.environ["NUMEXPR_NUM_THREADS"] = "1" 
+    os.environ["OMP_NUM_THREADS"] = "1"
     
     j=args[0]
     region=args[1]
