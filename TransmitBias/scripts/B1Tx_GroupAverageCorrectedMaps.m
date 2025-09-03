@@ -3,14 +3,14 @@ function B1Tx_GroupAverage(IndCorrMyelinAvgFile, IndCorrMyelinAsymmOutFile, IndC
     surfasymmnorm(AvgICorrMyelinMap, IndCorrMyelinAsymmOutFile, 'Average Individual-corrected Myelin Asymmetry');
     clear AvgICorrMyelinMap;
 
-    FWHM = load(B1TxStatsFile);
+    FWHM = load(B1TxStatsFile,'-ascii');
     SB1Tx = cifti_read(SB1TxFile);
-    CSFRegressors = load(CSFStatsFile);
+    CSFRegressors = load(CSFStatsFile,'-ascii');
     
     IndCorrAllMyelinMaps = cifti_read(IndCorrAllMyelinFile);
-    
-    GoodVoltages = load(GoodVoltagesFile);
-    
+
+    GoodVoltages = load(GoodVoltagesFile,'-ascii');
+
     %selecting csf percentile to use
     Corr = zeros(1, size(CSFRegressors, 2));
     for i = 1:size(CSFRegressors, 2)
