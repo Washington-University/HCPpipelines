@@ -248,7 +248,6 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             SubjFolder = [StudyFolder '/' SubjectList{i} '/'];
 
             tICATCS.diminfo{1}.length = tICAdim;
-            tICATCS.diminfo{1}.maps = tICATCS.diminfo{1}.maps;%(sigIdx);
             tICATCS.diminfo{2}.length = size(tICATCS.cdata,2);
             cifti_write(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
 
@@ -260,7 +259,6 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
 
             tICASpectra.diminfo{1}.length = tICAdim;
-            tICASpectra.diminfo{1}.maps = tICASpectra.diminfo{1}.maps;%(sigIdx);
             tICASpectra.diminfo{2}.length = size(tICASpectra.cdata,2);
             cifti_write(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME
         end
@@ -276,12 +274,3 @@ function lines = myreadtext(filename)
     fclose(fid);
     lines = array{1};
 end
-
-% function C = filterCifti(C,dimIdx,filtIdx)
-%     % subselect from one dim of cifti
-%     C.diminfo{dimIdx}.length = numel(filtIdx);
-%     C.diminfo{dimIdx}.maps = C.diminfo{dimIdx}.maps(filtIdx);
-%     idx = repmat({':'}, 1, ndims(C.cdata));
-%     idx{dimIdx} = filtIdx;
-%     C.cdata = C.cdata(idx{:});
-% end
