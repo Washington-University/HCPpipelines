@@ -39,7 +39,7 @@ opts_AddMandatory '--fmri-list' 'fMRIListRaw' 'rfMRI_REST1_RL@rfMRI_REST1_LR...'
 opts_AddMandatory '--out-folder' 'OutGroupFolder' 'path' "group average folder"
 opts_AddMandatory '--fmri-concat-name' 'fMRIConcatName' 'string' "name for the concatenated data, like 'rfMRI_REST_7T'"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'name' "the surface registration string"
-opts_AddMandatory '--sICA-dim' 'sICAdim' 'integer' "number of sICA components"
+opts_AddMandatory '--tICA-dim' 'tICAdim' 'integer' "number of tICA components"
 opts_AddMandatory '--subject-expected-timepoints' 'RunsXNumTimePoints' 'integer' "number of concatenated timepoints in a subject with full data"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'integer' "mesh resolution, like '32'"
 opts_AddMandatory '--sica-proc-string' 'sICAProcString' 'string' "name part to use for some outputs, like 'tfMRI_RET_7T_d73_WF5_WR'"
@@ -64,18 +64,18 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$sICAdim"
+OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$tICAdim"
 
-TCSConcatName="$OutputFolder/sICA_TCS_$sICAdim.sdseries.nii"
-TCSMaskName="$OutputFolder/sICA_TCSMASK_$sICAdim.sdseries.nii"
-AvgTCSName="$OutputFolder/sICA_AVGTCS_$sICAdim.sdseries.nii"
-AbsAvgTCSName="$OutputFolder/sICA_ABSAVGTCS_$sICAdim.sdseries.nii"
-AvgSpectraName="$OutputFolder/sICA_Spectra_$sICAdim.sdseries.nii"
+TCSConcatName="$OutputFolder/sICA_TCS_$tICAdim.sdseries.nii"
+TCSMaskName="$OutputFolder/sICA_TCSMASK_$tICAdim.sdseries.nii"
+AvgTCSName="$OutputFolder/sICA_AVGTCS_$tICAdim.sdseries.nii"
+AbsAvgTCSName="$OutputFolder/sICA_ABSAVGTCS_$tICAdim.sdseries.nii"
+AvgSpectraName="$OutputFolder/sICA_Spectra_$tICAdim.sdseries.nii"
 
-#AnnsubName="$OutputFolder/sICA_stats_$sICAdim.wb_annsub.csv"
+#AnnsubName="$OutputFolder/sICA_stats_$tICAdim.wb_annsub.csv"
 
-AvgMapsName="$OutputFolder/sICA_Maps_$sICAdim.dscalar.nii"
-AvgVolMapsName="$OutputFolder/sICA_VolMaps_$sICAdim.dscalar.nii"
+AvgMapsName="$OutputFolder/sICA_Maps_$tICAdim.dscalar.nii"
+AvgVolMapsName="$OutputFolder/sICA_VolMaps_$tICAdim.dscalar.nii"
 
 RegString=""
 if [[ "$RegName" != "" ]]
@@ -133,7 +133,7 @@ done
 this_script_dir=$(dirname "$0")
 
 #matlab function arguments have been changed to strings, to avoid having two copies of the argument list in the script
-matlab_argarray=("$StudyFolder" "$SubjListName" "$TCSListName" "$SpectraListName" "$fMRIListName" "$sICAdim" "$RunsXNumTimePoints" "$TCSConcatName" "$TCSMaskName" "$AvgTCSName" "$AvgSpectraName" "$AvgMapsName" "$AvgVolMapsName" "$OutputFolder" "$sICAProcString" "$RegName" "$LowResMesh" "$tICAmode" "$tICAMM")
+matlab_argarray=("$StudyFolder" "$SubjListName" "$TCSListName" "$SpectraListName" "$fMRIListName" "$tICAdim" "$RunsXNumTimePoints" "$TCSConcatName" "$TCSMaskName" "$AvgTCSName" "$AvgSpectraName" "$AvgMapsName" "$AvgVolMapsName" "$OutputFolder" "$sICAProcString" "$RegName" "$LowResMesh" "$tICAmode" "$tICAMM")
 
 case "$MatlabMode" in
     (0)

@@ -561,7 +561,7 @@ do
                         --out-folder="${StudyFolder}/${GroupAverageName}"
                         --fmri-concat-name="$OutputfMRIName"
                         --surf-reg-name="$RegName"
-                        --sICA-dim="$tICADim"
+                        --tICA-dim="$tICADim"
                         --subject-expected-timepoints="$sessionExpectedTimepoints"
                         --low-res-mesh="$LowResMesh"
                         --sica-proc-string="${OutputString}_WR"
