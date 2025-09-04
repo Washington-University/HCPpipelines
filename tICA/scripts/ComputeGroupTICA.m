@@ -39,8 +39,6 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
     
     TCSFullConcat = cifti_read(TCSConcatName);
     TCSMaskConcat = cifti_read(TCSMaskName);
-    AvgTCS = cifti_read(AvgTCSName);%only used as a template, and only because cifti-legacy doesn't handle reset of sdseries
-    sICAAvgSpectra = cifti_read(sICAAvgSpectraName);
     sICAMaps = cifti_read(sICAMapsAvgName);
     sICAVolMaps = cifti_read(sICAVolMapsAvgName);
 
@@ -208,43 +206,25 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
         end
 
-        tICAtcs.cdata = tICAtcs.cdata';
-
-        tICAtcs.diminfo{1} = cifti_diminfo_make_scalars(size(tICAtcs.cdata, 1));
-        tICAtcs.diminfo{2} = cifti_diminfo_make_series(size(tICAtcs.cdata, 2));
-        cifti_write(tICAtcs, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
+        cdata = tICAtcs.cdata';
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
 
         tICAtcsAll = reshape(tICAtcs.cdata, tICAdim, RunsXNumTimePoints, numsubj);
 
-        tICAtcsmean = AvgTCS;
-        tICAtcsmean.cdata = sum(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1), 3) / numfullsubj;
-        tICAtcsabsmean = AvgTCS;
-        tICAtcsabsmean.cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1)), 3) / numfullsubj;
-        
-        tICAtcsmean.diminfo{1} = cifti_diminfo_make_scalars(size(tICAtcsmean.cdata, 1));
-        tICAtcsmean.diminfo{2} = cifti_diminfo_make_series(size(tICAtcsmean.cdata, 2));
-        cifti_write(tICAtcsmean, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii']);
+        cdata = sum(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1), 3) / numfullsubj;      
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii']);
 
-        tICAtcsabsmean.diminfo{1} = cifti_diminfo_make_scalars(size(tICAtcsabsmean.cdata, 1));
-        tICAtcsabsmean.diminfo{2} = cifti_diminfo_make_series(size(tICAtcsabsmean.cdata, 2));
-        cifti_write(tICAtcsabsmean, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii']);
+        cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1)), 3) / numfullsubj;
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii']);
 
-        tICAspectra = sICAAvgSpectra;
-        tICAspectranorm = sICAAvgSpectra;
         ts.Nnodes = tICAdim;
         ts.Nsubjects = numfullsubj;
         ts.NtimepointsPerSubject = RunsXNumTimePoints;
         ts.ts = (((tICAtcs.cdata .* single(TCSMaskConcat.cdata(1:tICAdim, :) == 1)) ./ numfullsubj) .* numsubj)'; %compensate for the zeros by ratio of full-data subjects to all subjects?
-        tICAspectra.cdata = nets_spectra_sp(ts)';
-        tICAspectranorm.cdata = nets_spectra_sp(ts, [], 1)';
-        
-        tICASpectra.diminfo{1} = cifti_diminfo_make_scalars(size(tICASpectra.cdata, 1));
-        tICASpectra.diminfo{2} = cifti_diminfo_make_series(size(tICASpectra.cdata, 2));
-        cifti_write(tICAspectra, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii']);
-
-        tICAspectranorm.diminfo{1} = cifti_diminfo_make_scalars(size(tICAspectranorm.cdata, 1));
-        tICAspectranorm.diminfo{2} = cifti_diminfo_make_series(size(tICAspectranorm.cdata, 2));
-        cifti_write(tICAspectranorm, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii']);
+        cdata = nets_spectra_sp(ts)';
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii']);
+        cdata = nets_spectra_sp(ts, [], 1)';
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii']);
 
     end % for i = ITERATIONS
 
@@ -254,25 +234,17 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             SubjFolder = [StudyFolder '/' SubjectList{i} '/'];
 
             sICATCS = cifti_read(TCSList{i});
-            sICASpectra = cifti_read(SpectraList{i});
             tICATCS = sICATCS;
             %tICATCS.cdata = pinv(tICAmix) * sICATCS.cdata;
             tICATCS.cdata = squeeze(tICAtcsAll(:, std(tICAtcsAll(:, :, i), [], 1) > 0, i));
+            cifti_write_sdseries(tICATCS.cdata, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
 
-            tICATCS.diminfo{1} = cifti_diminfo_make_scalars(size(tICATCS.cdata, 1));
-            tICATCS.diminfo{2} = cifti_diminfo_make_series(size(tICATCS.cdata, 2));
-            cifti_write(tICATCS, [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
-            
-            tICASpectra = sICASpectra;
             ts.Nnodes = size(tICATCS.cdata, 1);
             ts.Nsubjects = 1;
             ts.ts = tICATCS.cdata';
             ts.NtimepointsPerSubject = size(tICATCS.cdata, 2);
-            tICASpectra.cdata = nets_spectra_sp(ts)';
-
-            tICASpectra.diminfo{1} = cifti_diminfo_make_scalars(size(tICASpectra.cdata, 1));
-            tICASpectra.diminfo{2} = cifti_diminfo_make_series(size(tICASpectra.cdata, 2));
-            cifti_write(tICASpectra, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME
+            cdata = nets_spectra_sp(ts)';
+            cifti_write_sdseries(cdata, [SubjFolder '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii']);%FIXME
         end
     end
 end

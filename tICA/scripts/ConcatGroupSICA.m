@@ -72,18 +72,10 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
         end
     end
 
-    TCSFullConcat = TCSSub; % use the last good subject as a template
-    TCSFullConcat.cdata = TCSFull;
-    TCSFullConcat.diminfo{1} = cifti_diminfo_make_scalars(size(TCSFullConcat.cdata, 1));
-    TCSFullConcat.diminfo{2} = cifti_diminfo_make_series(size(TCSFullConcat.cdata, 2));
-    cifti_write(TCSFullConcat, OutTCSName);
+    cifti_write_sderies(TCSFull, OutTCSName);
     clear TCSFullConcat;
 
-    TCSMaskConcat = TCSSub;
-    TCSMaskConcat.cdata = TCSMask;
-    TCSMaskConcat.diminfo{1} = cifti_diminfo_make_scalars(size(TCSMaskConcat.cdata, 1));
-    TCSMaskConcat.diminfo{2} = cifti_diminfo_make_series(size(TCSMaskConcat.cdata, 2));
-    cifti_write(TCSMaskConcat, OutTCSMaskName);
+    cifti_write_sderies(TCSMask, OutTCSMaskName);
     clear TCSMaskConcat;
 
     %previously sICATSTDs
