@@ -99,7 +99,8 @@ def metric_regression(subjects_dir,subject,hemi,surface,mesh,rois,weights):
             
     ###############################################################################   
     # parallelize roi regression
-    with ProcessPoolExecutor(max_workers=14,mp_context=multiprocessing.get_context("fork")) as executor:
+    max_workers = psutil.cpu_count(logical=False)
+    with ProcessPoolExecutor(max_workers=max_workers,mp_context=multiprocessing.get_context("fork")) as executor:
         results = list(executor.map(process_roi, [(j, rois[j], weights[j], d) for j in range(len(rois)) if d['t'][j] != 0], chunksize=10000))
     
     coeff, coeff_norm, t_corr = zip(*results)  # Unzip results into separate lists
@@ -168,9 +169,6 @@ def process_roi(args):
     import numpy as np
     import scipy.stats as stats
     import os
-    os.environ["MKL_NUM_THREADS"] = "1" 
-    os.environ["NUMEXPR_NUM_THREADS"] = "1" 
-    os.environ["OMP_NUM_THREADS"] = "1"
     
     j=args[0]
     region=args[1]
@@ -228,11 +226,12 @@ def process_roi(args):
     t_nonzero = t_w[t_w != 0]
     ones = ones[ones != 0]
     curv_matrix_nonzero = np.vstack((curv_matrix_nonzero, ones))
-    coeff = np.matmul(np.linalg.inv(np.matmul(curv_matrix_nonzero, np.transpose(curv_matrix_nonzero))),
-                      np.matmul(curv_matrix_nonzero, t_nonzero))
+    with threadpool_limits(limits=1, user_api='blas'):
+        coeff = np.matmul(np.linalg.inv(np.matmul(curv_matrix_nonzero, np.transpose(curv_matrix_nonzero))), np.matmul(curv_matrix_nonzero, t_nonzero))
     curv_matrix = np.array([k1, k12, k2, k22, K, K2, SI, SI2, C, C2], dtype=float)
     coeff_norm = coeff[0:(len(coeff) - 1)] * stats.median_abs_deviation(curv_matrix, axis=1)
-    t_m = t - np.matmul(coeff[0:len(coeff) - 1], curv_matrix)
+    with threadpool_limits(limits=1, user_api='blas'):
+        t_m = t - np.matmul(coeff[0:len(coeff) - 1], curv_matrix)
     index = np.where(region == j)
     t_corr = float(t_m[index])
     
