@@ -13,6 +13,7 @@ def metric_regression(subjects_dir,subject,hemi,surface,mesh,rois,weights):
     import os
     from concurrent.futures import ProcessPoolExecutor
     import multiprocessing
+    import psutil
         
     d = {} # read all the curvature values and save them in a dictionary
     curvs = ['H', 'k1', 'k2', 'K', 'SI', 'C']
