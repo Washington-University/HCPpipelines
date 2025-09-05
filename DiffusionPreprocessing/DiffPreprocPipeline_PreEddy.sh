@@ -119,7 +119,7 @@ DEFAULT_B0_MAX_BVAL=50
 
 opts_SetScriptDescription "Perform the Pre-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 
 opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
@@ -142,6 +142,12 @@ opts_AddOptional '--select-best-b0' 'SelectBestB0String' 'Boolean' "If set selec
 opts_AddOptional '--ensure-even-slices' 'EnsureEvenSlicesString' 'Boolean' "If set will ensure the input images to FSL's topup and eddy have an even number of slices by removing one slice if necessary. This behaviour used to be the default, but is now optional, because discarding a slice is incompatible with using slice-to-volume correction in FSL's eddy." "False"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
+
+opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified value is passed as the CombineDataFlag value for the eddy_postproc.sh script. If JAC resampling has been used in eddy, this value determines what to do with the output file.
+  2 - include in the output all volumes uncombined (i.e., output file of eddy)
+  1 - include in the output and combine only volumes where both LR/RL (or AP/PA) pairs have been acquired
+  0 - As 1, but also include uncombined single volumes
+Defaults to 1" "1"
 
 opts_ParseArguments "$@"
 
@@ -375,9 +381,17 @@ for ((j = 1; j < ${Neg_count}; j++)); do
 	fi
 done
 
-if [ ${Paired_flag} -eq 0 ]; then
-	log_Err "Wrong Input! No pairs of phase encoding directions have been found!"
-	log_Err_Abort "At least one pair is needed!"
+if [[ ${Paired_flag} == 0 && ${CombineDataFlag} == 1 ]]; then
+	log_Err "No pairs of phase encoding directions were specified in the inputs"
+	log_Err "But --combine-data-flag=1 requires pairs to exist"
+	log_Err_Abort "Either fix inputs if you have paired dMRI scans, or consider using --combine-data-flag=2 instead"
+fi
+
+# As of 2025.09.04, Paired_flag==0 works with SelectBestB0==1 path, but not with SelectBestB0==0
+if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
+	log_Err "No pairs of phase encoding directions were specified in the inputs"
+	log_Err "Input at least one posData/negData pair, even if they don't have the same length, or even the same bvals/bvecs"
+	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used"
 fi
 
 log_Msg "Running Intensity Normalisation"
