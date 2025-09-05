@@ -387,6 +387,13 @@ if [[ ${Paired_flag} == 0 && ${CombineDataFlag} == 1 ]]; then
 	log_Err_Abort "Either fix inputs if you have paired dMRI scans, or consider using --combine-data-flag=2 instead"
 fi
 
+# As of 2025.09.04, Paired_flag==0 works with SelectBestB0==1 path, but not with SelectBestB0==0
+if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
+	log_Err "No pairs of phase encoding directions were specified in the inputs"
+	log_Err "Input at least one posData/negData pair, even if they don't have the same length, or even the same bvals/bvecs"
+	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used"
+fi
+
 log_Msg "Running Intensity Normalisation"
 ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
