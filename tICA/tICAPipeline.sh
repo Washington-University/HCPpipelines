@@ -527,7 +527,7 @@ do
             if [[ "$sicaAnnsub" != "$ticaAnnsub" ]] && [[ "$sICAActualDim" == "$tICADim" ]]; then
                 cp "$sicaAnnsub" "$ticaAnnsub";
             else
-                rm "$ticaAnnsub"
+                rm -f "$ticaAnnsub"
                 awk -v idxs="${sigIdx[*]}" 'BEGIN{split(idxs,a," ");for(i in a)k[a[i]]=1} k[NR]' "$sicaAnnsub" >> "$ticaAnnsub"
             fi
             
