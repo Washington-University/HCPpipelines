@@ -317,11 +317,6 @@ then
 else
     #dim override provided, use it and set OutputString since we know all the pieces
     sICAActualDim="$sicadimOverride"
-    if [[ "$tICADim" == "" ]]
-    then
-        tICADim="$sICAActualDim"
-    fi
-    OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 fi
 #leave OutputString unset if we don't know the dimensionality yet
 
