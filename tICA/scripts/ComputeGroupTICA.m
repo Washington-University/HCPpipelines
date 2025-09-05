@@ -206,8 +206,8 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
 
         end
 
-        cdata = tICAtcs.cdata';
-        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
+        tICAtcs.cdata = tICAtcs.cdata';
+        cifti_write_sdseries(tICAtcs.cdata, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii']);
 
         tICAtcsAll = reshape(tICAtcs.cdata, tICAdim, RunsXNumTimePoints, numsubj);
 
