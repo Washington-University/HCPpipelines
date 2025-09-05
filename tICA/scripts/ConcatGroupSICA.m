@@ -72,10 +72,10 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
         end
     end
 
-    cifti_write_sderies(TCSFull, OutTCSName);
+    cifti_write_sdseries(TCSFull, OutTCSName);
     clear TCSFullConcat;
 
-    cifti_write_sderies(TCSMask, OutTCSMaskName);
+    cifti_write_sdseries(TCSMask, OutTCSMaskName);
     clear TCSMaskConcat;
 
     %previously sICATSTDs
