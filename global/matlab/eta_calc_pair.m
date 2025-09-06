@@ -18,12 +18,13 @@ function eta_matrix = eta_calc_pair(zmapa, zmapb)
             %
             % mean value matrix for each location in the 2 images
             Mwithin  = (zmapa(:, i) + zmapb(:, j)) / 2;
-            SSwithin = sum((zmapa(:, i) - Mwithin) .^ 2, 1) + sum((zmapb(:, j) - Mwithin, 1) .^ 2);
-            SStot    = sum((zmapa(:, i) - Mgrand ) .^ 2, 1) + sum((zmapb(:, j) - Mgrand , 1) .^ 2);
+            SSwithin = sum((zmapa(:, i) - Mwithin) .^ 2, 1) + sum((zmapb(:, j) - Mwithin) .^ 2, 1);
+            SStot    = sum((zmapa(:, i) - Mgrand ) .^ 2, 1) + sum((zmapb(:, j) - Mgrand ) .^ 2, 1);
             %
             % N.B. SStot = SSwithin + SSbetween so eta can also be written as SSbetween/SStot
             eta_matrix(i, j) = 1 - SSwithin / SStot;
         end
     end
 end
+
 
