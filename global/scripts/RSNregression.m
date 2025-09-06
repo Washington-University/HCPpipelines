@@ -212,7 +212,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 NODEts = (NODEts ./ TCSRunVarSub) .* repmat(sICAtcsvars, 1, size(TCSRunVarSub, 2)); %Making all runs contribute equally improves tICA decompositions
                 NODEts(~isfinite(NODEts)) = 0;
 
-                A = load(optional.tICAMM);
+                A = load(optional.tICAMM,'-ascii');
 
                 if size(A,1) ~= size(NODEts,1)
                     error('Mixing matrix to be used does not match dimensions of the sICA components');

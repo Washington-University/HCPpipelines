@@ -27,7 +27,7 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   
   %% %%  read set of bad components
   %TSC: do this before the cd() - somehow interpreted matlab allowed it after, but compiled didn't, and 'which' said not found in interpreted, so I have no idea what it previously loaded while testing...
-  DDremove=load(fixlist);
+  DDremove=load(fixlist,'-ascii');
   
   %% %% setup the following variables for your site
   curDir = pwd;
@@ -109,7 +109,7 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
   end
   
   %% %%  read ICA component timeseries
-  ICA = functionnormalise(load('filtered_func_data.ica/melodic_mix'));
+  ICA = functionnormalise(load('filtered_func_data.ica/melodic_mix','-ascii'));
   
   %% %%  do the cleanup
   if aggressive == 1
@@ -222,7 +222,7 @@ function fix_3_clean(fixlist,aggressive,domot,hp,WBC,DOvol)
       confounds=read_avw('mc/prefiltered_func_data_mcf_conf_hp');
       confounds=functionnormalise(reshape(confounds,size(confounds,1),size(confounds,4))');
     else
-      confounds=load('mc/prefiltered_func_data_mcf.par');
+      confounds=load('mc/prefiltered_func_data_mcf.par','-ascii');
       confounds=confounds(:,1:6);
       %confounds=functionnormalise(confounds(:,std(confounds)>0.000001)); % remove empty columns
       confounds=functionnormalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);

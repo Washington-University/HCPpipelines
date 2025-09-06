@@ -20,8 +20,8 @@ fprintf('%s - wbcommand: %s\n', func_name, wbcommand)
 cleandtseries=ciftiopen(cleandtseries,wbcommand);
 
 VN=cleandtseries;
-ICAtcs=normalise(load(ICAtcs));
-ICANoise=load(ICANoise);
+ICAtcs=normalise(load(ICAtcs,'-ascii'));
+ICANoise=load(ICANoise,'-ascii');
 ICASignal=setdiff([1:1:size(ICAtcs,2)],ICANoise);
 
 cleandtseries.cdata=demean(cleandtseries.cdata,2);
