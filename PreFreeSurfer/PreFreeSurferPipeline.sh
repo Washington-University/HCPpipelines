@@ -289,7 +289,7 @@ opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use j
 # NHP options
 opts_AddOptional '--t2wtype' 'T2wType' 'string' "T2w or FLAIR" "T2w"
 opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
-opts_AddOptional '--runmode' 'RunMode' 'int' "Run mode (default: 1)" "1"
+opts_AddOptional '--runmode' 'RunMode' 'string' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: NEW, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration (default: NEW)" "NEW"
 opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (default: HFS)" "HFS"
 opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position (default: HFS)" "HFS"
 opts_AddOptional '--betcenter' 'betcenter' 'string' "Center coordinates for BET (default: 45,55,39)" "45,55,39"
@@ -348,6 +348,29 @@ if [[ "$RUN" != "" ]]
 then
     log_Err_Abort "--printcom is not consistently implemented, do not rely on it"
 fi
+
+# Convert the --runmode string argument into a numeric code
+case "$RunMode" in
+  NEW)
+    RunMode=1
+    ;;
+  ACPCAlignment)
+    RunMode=2
+    ;;
+  BrainExtraction)
+    RunMode=3
+    ;;
+  T2wToT1wRegAndBiasCorrection)
+    RunMode=4
+    ;;
+  AtlasRegistration)
+    RunMode=5
+    ;;
+  *)
+    echo "Error: invalid runmode '$RunMode'"
+    exit 1
+    ;;
+esac
 
 # ------------------------------------------------------------------------------
 #  Compliance check
