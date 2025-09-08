@@ -199,7 +199,7 @@ case $DistortionCorrection in
         # -- GE HealthCare Legacy Gradient Echo Field Maps --
         # --------------------------------------------------- 
 
-        ${FSLDIR}/bin/fslsplit ${GEB0InputName}     # split image into vol0000=fieldmap and vol0001=magnitude
+        ${FSLDIR}/bin/fslsplit ${GEB0InputName} ${WD}/vol     # split image into vol0000=fieldmap and vol0001=magnitude
         ${FSLDIR}/bin/immv vol0000 ${WD}/FieldMapHertz
         ${FSLDIR}/bin/immv vol0001 ${WD}/Magnitude
         ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
