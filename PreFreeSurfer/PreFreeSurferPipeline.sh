@@ -545,6 +545,20 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
       else
         log_Msg "Processing Modality: $TXw"
       fi
+    TXwFolder=${T2wFolder}
+    TXwImage=${T2wImage}
+    # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
+    log_Msg "Copying T2w reference volume in ${AtlasSpaceFolder}"
+    ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplate} ${AtlasSpaceFolder}/T2wTemplate
+    ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplateBrain} ${AtlasSpaceFolder}/T2wTemplateBrain
+    TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
+    TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
+    TXwTemplate2mm=${T2wTemplate2mm}
+    echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+    echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+    fi
+    OutputTXwImageSTRING=""
+    OutputTXwBrainImageSTRING=""
 
       # Perform Gradient Nonlinearity Correction
 
