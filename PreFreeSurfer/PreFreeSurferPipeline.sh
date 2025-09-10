@@ -506,18 +506,34 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
 
       # set up appropriate input variables
       if [ $TXw = T1w ] ; then
-          TXwInputImages="${T1wInputImages}"
-          TXwFolder=${T1wFolder}
-          TXwImage=${T1wImage}
-          TXwTemplate=${T1wTemplate}
-          TXwTemplate2mm=${T1wTemplate2mm}
+        TXwInputImages="${T1wInputImages}"
+        TXwFolder=${T1wFolder}
+        TXwImage=${T1wImage}
+        TXwTemplate=${T1wTemplate}
+        # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
+        StrucRes=$(${FSLDIR}/bin/fslval $(echo ${T1wInputImages} | cut -d ' ' -f1) pixdim1 | awk '{printf "%0.2f", $1}')
+        RefRes=$(${FSLDIR}/bin/fslval ${T1wTemplate} pixdim1 | awk '{printf "%0.2f", $1}')
+        log_Msg "Resolution of structure: $StrucRes"
+        log_Msg "Resolution of T1wTemplate: $RefRes" 
+        log_Msg "Copying T1w reference volume in ${AtlasSpaceFolder}"
+        ${RUN} ${FSLDIR}/bin/imcp ${T1wTemplate} ${AtlasSpaceFolder}/T1wTemplate
+        ${RUN} ${FSLDIR}/bin/imcp ${T1wTemplateBrain} ${AtlasSpaceFolder}/T1wTemplateBrain
+        ${RUN} ${FSLDIR}/bin/imcp ${TemplateMask} ${AtlasSpaceFolder}/TemplateMask
+        Contrast=T1w
+        TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
+        TXwTemplateBrain=${T1wTemplateBrain}
+        TXwTemplate2mm=${T1wTemplate2mm}
+        echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
+        echo "TemplateMask: ${TemplateMask}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
+        echo "T1wTemplate2mm: ${T1wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+        echo "Template2mmMask: ${Template2mmMask}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
       else
-          TXwInputImages="${T2wInputImages}"
-          TXwFolder=${T2wFolder}
-          TXwImage=${T2wImage}
-          TXwTemplate=${T2wTemplate}
-          TXwTemplateBrain=${T2wTemplateBrain}
-          TXwTemplate2mm=${T2wTemplate2mm}
+        TXwInputImages="${T2wInputImages}"
+        TXwFolder=${T2wFolder}
+        TXwImage=${T2wImage}
+        TXwTemplate=${T2wTemplate}
+        TXwTemplateBrain=${T2wTemplateBrain}
+        TXwTemplate2mm=${T2wTemplate2mm}
       fi
       OutputTXwImageARRAY=()
 
