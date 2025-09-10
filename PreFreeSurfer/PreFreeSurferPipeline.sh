@@ -684,30 +684,6 @@ fi
 # ACPC align T1w or T2w image to specified MNI Template to create native volume space
 if [ "$RunMode" -lt 3 ]; then
 
-  Modalities="T1w T2w"
-
-  for TXw in ${Modalities} ; do
-    # set up appropriate input variables
-    if [ $TXw = T1w ] ; then
-      TXwInputImages="${T1wInputImages}"
-      TXwFolder=${T1wFolder}
-      TXwImage=${T1wImage}
-      TXwTemplate=${T1wTemplate}
-      TXwTemplateBrain=${T1wTemplateBrain}
-      TXwTemplate2mm=${T1wTemplate2mm}
-      #TXwTemplate2mmBrain=${T1wTemplate2mmBrain}
-
-    elif [[ $TXw = T2w && $T2wFolder != NONE ]] ; then
-      TXwInputImages="${T2wInputImages}"
-      TXwFolder=${T2wFolder}
-      TXwImage=${T2wImage}
-      TXwTemplate=${T2wTemplate}  
-      TXwTemplateBrain=${T2wTemplateBrain}
-      TXwTemplate2mm=${T2wTemplate2mm}
-      #TXwTemplate2mmBrain=${T2wTemplate2mmBrain}
-
-    fi
-
   #### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
     if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
         log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
@@ -739,42 +715,8 @@ if [ "$RunMode" -lt 3 ]; then
     fi
   done
 
-fi
-# Brain Extraction(FNIRT-based Masking)
-if [ "$RunMode" -lt 4 ]; then
-
-  Modalities="T1w T2w"
-
-  for TXw in ${Modalities} ; do
-    # set up appropriate input variables
-    if [ $TXw = T1w ] ; then
-      TXwInputImages="${T1wInputImages}"
-      TXwFolder=${T1wFolder}
-      TXwImage=${T1wImage}
-      TXwTemplate=${T1wTemplate}
-      TXwTemplateBrain=${T1wTemplateBrain}
-      TXwTemplate2mm=${T1wTemplate2mm}
-    else
-      TXwInputImages="${T2wInputImages}"
-      TXwFolder=${T2wFolder}
-      TXwImage=${T2wImage}
-      TXwTemplate=${T2wTemplate}
-      TXwTemplateBrain=${T2wTemplateBrain}
-      TXwTemplate2mm=${T2wTemplate2mm}
-    fi
-
-  #### Brain Extraction (FNIRT-based Masking) ####
-
-  if [[ $TXw = T2w && $T2wFolder != NONE ]] ; then
-    TXwInputImages="${T2wInputImages}"
-    TXwFolder=${T2wFolder}
-    TXwImage=${T2wImage}
-    TXwTemplate=${T2wTemplate}
-    TXwTemplateBrain=${T2wTemplateBrain}
-    TXwTemplate2mm=${T2wTemplate2mm}
-  fi
-
-  if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
+    if [ "$RunMode" -lt 4 ]; then
+      # Brain Extraction(FNIRT-based Masking)
 
     if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
         log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
