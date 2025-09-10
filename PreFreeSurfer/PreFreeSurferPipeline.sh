@@ -650,6 +650,27 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
             --cleanup=no \
             --brain-size="$BrainSize" \
             --image-list="$OutputTXwImageSTRING"
+        if [ "$SPECIES" != "Human" ] && [ `echo $OutputTXwBrainImageSTRING | wc -w` -ge 1 ] ; then   # For ACPC initialization - TH 2016 
+          log_Msg "PERFORMING SIMPLE AVERAGING FOR ${TXw} BRAIN" 
+          if [ `echo $OutputTXwBrainImageSTRING | wc -w` = 1 ] ; then
+            for img in $OutputTXwBrainImageSTRING ; do
+               ${RUN} flirt -in $img -ref ${TXwFolder}/${TXwImage} -applyxfm -init ${TXwFolder}/Average${TXw}Images/ToHalfTrans0001.mat -o ${TXwFolder}/${TXwImage}_brain -interp nearestneighbour
+            done
+          elif [ `echo $OutputTXwBrainImageSTRING | wc -w` =  `echo $OutputTXwImageSTRING | wc -w` ] ; then
+            i=1; 
+            for img in $OutputTXwBrainImageSTRING ; do
+               num=$(echo $OutputTXwBrainImageSTRING | wc -w)
+               num=$(zeropad $num 4)
+               ${RUN} flirt -in $img -ref ${TXwFolder}/${TXwImage} -applyxfm -init ${TXwFolder}/Average${TXw}Images/ToHalfTrans${num}.mat -o ${TXwFolder}/Average${TXw}Images/${TXwImage}${i}_gdc_brain -interp nearestneighbour
+               OutputTXwBrainImageSTRINGTMP="$OutputTXwBrainImageSTRINGTMP ${TXwFolder}/Average${TXw}Images/${TXwImage}${i}_gdc_brain"
+               i=$((i + 1))
+            done
+            ${RUN} fslmerge -t  ${TXwFolder}/${TXwImage}_brain $OutputTXwBrainImageSTRINGTMP
+            ${RUN} fslmaths ${TXwFolder}/${TXwImage}_brain -Tmean ${TXwFolder}/${TXwImage}_brain
+          else
+          	log_Err_Abort "ERROR: the brain only image should be prepared either for the initial input or for all the inputs"
+          fi
+        fi
       else
         log_Msg "Not Averaging ${TXw} Images"
         log_Msg "ONLY ONE IMAGE FOUND: COPYING"
