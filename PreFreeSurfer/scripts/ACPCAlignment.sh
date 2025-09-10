@@ -110,7 +110,7 @@ fslmaths "$Reference2mm" "$WD"/Reference
 fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
 
 # Crop the FOV
-if [ $(imtest ${CustomMask}) = 1 ] ; then
+if [[ "$SPECIES" != "Human" ]] && [ $(imtest ${CustomMask}) = 1 ] ; then
   verbose_echo " --> Cropping the FOV with custom mask"
   fslmaths "$Input" -mas "$CustomMask" "$Input"_custom_brain
   ${FSLDIR}/bin/flirt -in "$Input"_custom_brain -ref "$WD"/ReferenceBrain -omat "$WD"/full2roi.mat -out "$WD"/robustroi_brain -searchrx -30 30 -searchry -30 30 -searchrz -30 30 -dof 6
@@ -127,16 +127,16 @@ fi
 
 # Register cropped image to MNI152 (12 DOF)
 
-if [ $(imtest ${CustomMask}) = 1 ] ; then
+if [[ "$SPECIES" != "Human" ]] && [ $(imtest ${CustomMask}) = 1 ] ; then
   verbose_echo " --> Using custom_mask for linear registration"
   ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi_brain.nii.gz -ref "$WD"/ReferenceBrain -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30 -dof 12
   if [ $(imtest "$Input"_dc_restore) = 1 ] ; then
     imrm  "$Input"_dc_restore
   fi
-elif [ $BrainExtract = EXVIVO ] ; then
+elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = EXVIVO ] ; then
   verbose_echo " --> Run EXVIVO brain registration using ReferenceBrain"
   ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$WD"/ReferenceBrain -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-elif [ $BrainExtract = INVIVO ] ; then
+elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
   isopixdim=$(fslval "$Reference2mm" pixdim1)
   #flirt -in "$WD"/robustroi.nii.gz -ref "$WD"/robustroi.nii.gz -applyisoxfm $isopixdim -o "$WD"/robustroi2mm.nii.gz -interp sinc
   dim1=$(fslval "$WD"/robustroi.nii.gz dim1)
@@ -174,7 +174,7 @@ ${CARET7DIR}/wb_command -convert-affine -from-world "$WD"/full2std_rigid_world.m
 verbose_echo " --> Creating a resampled image"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "$Input" -r "$Reference" --premat="$OutputMatrix" -o "$Output"
 
-if [ $(imtest ${CustomMask}) = 1 ] ; then
+if [[ "$SPECIES" != "Human" ]] && [ $(imtest ${CustomMask}) = 1 ] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=nn -i $(dirname "$Input")/custom_mask.nii.gz -r "$Reference" --premat="$OutputMatrix" -o "$Output"_custom_brain_mask
   fslmaths "$Output" -mas "$Output"_custom_brain_mask "$Output"_custom_brain
 fi

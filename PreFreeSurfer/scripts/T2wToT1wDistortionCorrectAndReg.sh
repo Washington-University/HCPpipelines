@@ -412,7 +412,7 @@ for TXw in $Modalities ; do
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
           if [[ ! $SPECIES =~ Marmoset ]] ; then
             ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warped${TXw} -ref ${TXwImage}.nii.gz -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-          else
+          elif [[ "$SPECIES" != "Human" ]] ; then
             ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/Fieldmap2${TXw}.mat ${WD}/Magnitude.nii.gz ${WD}/../../${TXw}/${TXw}.nii.gz
             ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}_init.mat -concat ${WD}/../../${TXw}/xfms/acpc.mat ${WD}/Fieldmap2${TXw}.mat
             ${FSLDIR}/bin/flirt -in  ${WD}/Magnitude_warped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}_init.mat -interp spline -out ${WD}/Magnitude_warped${TXw}2${TXwImageBasename}_init
@@ -500,25 +500,25 @@ else
         
   verbose_echo ""
   verbose_red_echo " ---> Running T2w to T1w registration"
-
-  ### Create tentative biasfield corrected image to improve T2w-to-T1w registration - TH Jan 2021
-  mkdir -p ${WD}/T2w2T1w
-  PipelineScripts=${HCPPIPEDIR_PreFS}
-  if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
-    BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+  if [[ "$SPECIES" != "Human" ]] ; then
+    ### Create tentative biasfield corrected image to improve T2w-to-T1w registration - TH Jan 2021
+    mkdir -p ${WD}/T2w2T1w
+    PipelineScripts=${HCPPIPEDIR_PreFS}
+    if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+      BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+    fi
+    ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
+      --workingdir=${WD}/T2w2T1w/BiasFieldCorrection_sqrtT1wXT2w \
+      --T1im=${WD}/${T1wImageBasename} \
+      --T1brain=${WD}/${T1wImageBrainBasename} \
+      --T2im=${WD}/${T2wImageBasename} \
+      --obias=${WD}/T2w2T1w/BiasField_acpc \
+      --oT1im=${WD}/${T1wImageBasename}_restore \
+      --oT1brain=${WD}/${T1wImageBasename}_restore_brain \
+      --oT2im=${WD}/${T2wImageBasename}_restore \
+      --oT2brain=${WD}/${T2wImageBasename}_restore_brain \
+      ${BiasFieldSmoothingSigma}
   fi
-  ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
-    --workingdir=${WD}/T2w2T1w/BiasFieldCorrection_sqrtT1wXT2w \
-    --T1im=${WD}/${T1wImageBasename} \
-    --T1brain=${WD}/${T1wImageBrainBasename} \
-    --T2im=${WD}/${T2wImageBasename} \
-    --obias=${WD}/T2w2T1w/BiasField_acpc \
-    --oT1im=${WD}/${T1wImageBasename}_restore \
-    --oT1brain=${WD}/${T1wImageBasename}_restore_brain \
-    --oT2im=${WD}/${T2wImageBasename}_restore \
-    --oT2brain=${WD}/${T2wImageBasename}_restore_brain \
-    ${BiasFieldSmoothingSigma}
-
   ### Now do T2w to T1w registration
   mkdir -p ${WD}/T2w2T1w
 
