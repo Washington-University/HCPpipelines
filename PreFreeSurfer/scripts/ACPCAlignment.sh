@@ -28,7 +28,7 @@ opts_SetScriptDescription "Tool for creating a 6 DOF alignment of the AC, ACPC l
 
 opts_AddMandatory '--workingdir' 'WD' 'path' 'working directory'
 
-opts_AddMandatory '--in' 'Input' 'image' 'inputvimage'
+opts_AddMandatory '--in' 'Input' 'image' 'input image'
 
 opts_AddMandatory '--out' 'Output' 'image' 'output_image'
 
@@ -115,13 +115,13 @@ if [[ "$SPECIES" != "Human" ]] && [ $(imtest ${CustomMask}) = 1 ] ; then
   fslmaths "$Input" -mas "$CustomMask" "$Input"_custom_brain
   ${FSLDIR}/bin/flirt -in "$Input"_custom_brain -ref "$WD"/ReferenceBrain -omat "$WD"/full2roi.mat -out "$WD"/robustroi_brain -searchrx -30 30 -searchry -30 30 -searchrz -30 30 -dof 6
   # Invert the matrix (to get ROI to full FOV)
-  verbose_echo " --> Inverting the materix"
+  verbose_echo " --> Inverting the matrix"
   ${FSLDIR}/bin/convert_xfm -omat "$WD"/roi2full.mat -inverse "$WD"/full2roi.mat
 else
   verbose_echo " --> Cropping the FOV with $BrainSizeOpt"
   ${FSLDIR}/bin/robustfov -i "$Input" -m "$WD"/roi2full.mat -r "$WD"/robustroi.nii.gz $BrainSizeOpt
   # Invert the matrix (to get full FOV to ROI)
-  verbose_echo " --> Inverting the materix"
+  verbose_echo " --> Inverting the matrix"
   ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2roi.mat -inverse "$WD"/roi2full.mat
 fi
 
@@ -160,7 +160,7 @@ else              # NONE
   ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$Reference2mm" -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 fi
 
-verbose_echo " --> Geting a 6 DOF approximation"
+verbose_echo " --> Getting a 6 DOF approximation"
 # Concatenate matrices to get full FOV to MNI
 ${FSLDIR}/bin/convert_xfm -omat "$WD"/full2std.mat -concat "$WD"/roi2std.mat "$WD"/full2roi.mat
 
