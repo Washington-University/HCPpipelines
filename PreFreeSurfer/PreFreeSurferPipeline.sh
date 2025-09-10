@@ -975,7 +975,8 @@ imrm ${T1wFolder}/xfms/${OutputOrigT1wToT1wPostFS}
 #  so, the primary purpose of the following is to generate the Atlas Registration itself).
 # ------------------------------------------------------------------------------
 
-log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
+  imcp ${T1wTemplate2mm} ${AtlasSpaceFolder}/T1wTemplate2mm
+  imcp ${Template2mmMask} ${AtlasSpaceFolder}/Template2mmMask
 
 ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
   --workingdir=${AtlasSpaceFolder} \
