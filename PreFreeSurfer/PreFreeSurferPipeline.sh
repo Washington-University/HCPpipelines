@@ -289,7 +289,7 @@ opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use j
 # NHP options
 opts_AddOptional '--t2wtype' 'T2wType' 'string' "T2w or FLAIR" "T2w"
 opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
-opts_AddOptional '--runmode' 'RunMode' 'string' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: NEW, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration (default: NEW)" "NEW"
+opts_AddOptional '--runmode' 'RunMode' 'string' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration (default: Default)" "Default"
 opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (default: HFS)" "HFS"
 opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position (default: HFS)" "HFS"
 opts_AddOptional '--betcenter' 'betcenter' 'string' "Center coordinates for BET (default: 45,55,39)" "45,55,39"
@@ -351,7 +351,7 @@ fi
 
 # Convert the --runmode string argument into a numeric code
 case "$RunMode" in
-  NEW)
+  Default)
     RunMode=1
     ;;
   ACPCAlignment)
