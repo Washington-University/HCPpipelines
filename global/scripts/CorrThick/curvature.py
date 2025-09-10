@@ -151,6 +151,7 @@ def mean_curvature(x,y,z,subjects_dir,subject,hemi,surface):
             cost = np.dot(n1, u1)
             sint = np.dot(n1, u2)
             theta = -math.atan2(sint,cost)
+            theta = -theta
             edge = np.sqrt((x[int(h)] - x[ind2])**2 + (y[int(h)] - y[ind2])**2 + (z[int(h)] - z[ind2])**2)
             h_tri[h, j] = theta*edge
             j = j + 1
