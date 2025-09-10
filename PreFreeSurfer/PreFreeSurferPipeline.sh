@@ -870,8 +870,12 @@ if [ "$RunMode" -lt 5 ]; then
   else  # -- No T2w image
 
     log_Msg "Performing Bias Field Correction using T1w image only"
-    BiasFieldFastSmoothingSigma="20"
-    BiasFieldFastSmoothingSigma="--bfsigma=${BiasFieldFastSmoothingSigma}"
+    if [ "$SPECIES" = "Human" ] ; then
+      BiasFieldFastSmoothingSigma=${BiasFieldSmoothingSigma}
+    else
+      BiasFieldFastSmoothingSigma="20"
+      BiasFieldFastSmoothingSigma="--bfsigma=${BiasFieldFastSmoothingSigma}"
+    fi
 
     ${RUN} ${HCPPIPEDIR_PreFS}/BiasFieldCorrection_T1wOnly.sh \
       --workingdir=${T1wFolder}/BiasFieldCorrection_T1wOnly \
@@ -880,7 +884,7 @@ if [ "$RunMode" -lt 5 ]; then
       --obias=${T1wFolder}/BiasField_acpc_dc \
       --oT1im=${T1wFolder}/${T1wImage}_acpc_dc_restore \
       --oT1brain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-      ${BiasFieldSmoothingSigma}
+      ${BiasFieldFastSmoothingSigma}
 
   fi
 fi
