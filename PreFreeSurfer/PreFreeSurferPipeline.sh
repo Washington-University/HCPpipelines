@@ -791,6 +791,7 @@ if [ "$RunMode" -lt 5 ]; then
         --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
         --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
         --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+        --SEPhaseZeroBrainMask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
         --t1sampspacing=${T1wSampleSpacing} \
