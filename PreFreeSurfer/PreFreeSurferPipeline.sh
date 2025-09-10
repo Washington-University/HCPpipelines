@@ -767,12 +767,12 @@ if [ "$RunMode" -lt 5 ]; then
         rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
       fi
 
-   if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then    # added T2w as a phase zero volume - TH Jan 2023
-        SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
-   fi
-  else
-   wdir=${T1wFolder}/T2wToT1wDistortionCorrectAndReg
-  fi
+          if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then    # added T2w as a phase zero volume - TH Jan 2023
+            SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
+            convert_xfm -omat ${T2wFolder}/xfms/acpc_inv.mat -inverse ${T2wFolder}/xfms/acpc.mat
+	          flirt -in ${T2wFolder}/T2w_acpc_brain_mask -ref ${T2wFolder}/T2w -applyxfm -init ${T2wFolder}/xfms/acpc_inv.mat -o ${T2wFolder}/T2w_brain -interp nearestneighbour
+            SpinEchoPhaseEncodeZeroFSBrainmask=${T2wFolder}/T2w_brain
+          fi
       log_Msg "mkdir -p ${wdir}"
       mkdir -p ${wdir}
 
