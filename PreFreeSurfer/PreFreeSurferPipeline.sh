@@ -498,7 +498,7 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 # NOTE: We skip all the way to AtlasRegistration (last step) if using a custom 
 # brain mask or custom structural images ($CustomBrain={MASK|CUSTOM})
 
-if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
+if [ "$CustomBrain" = "NONE" ] ; then
 
   Modalities="T1w T2w"
 
@@ -559,6 +559,8 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
     fi
     OutputTXwImageSTRING=""
     OutputTXwBrainImageSTRING=""
+    if [ "$RunMode" -lt 2 ] ; then
+
 
       # Perform Gradient Nonlinearity Correction
 
@@ -681,25 +683,21 @@ if [ "$CustomBrain" = "NONE" ] && [ "$RunMode" -lt 2 ] ; then
         log_Msg "ONLY ONE IMAGE FOUND: COPYING"
         ${RUN} ${FSLDIR}/bin/imcp ${TXwFolder}/${TXwImage}1_gdc ${TXwFolder}/${TXwImage}
       fi
-
-  done
-  
-fi
-
-# ACPC align T1w or T2w image to specified MNI Template to create native volume space
-if [ "$RunMode" -lt 3 ]; then
-
-  #### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
-    if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
-        log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
-        CustomMask="${TXwFolder}/custom_mask"
     fi
 
-    if [[ $TXw = T1w || ( $TXw = T2w && $T2wFolder != NONE ) ]] ; then
+
+    # ACPC align T1w or T2w image to specified MNI Template to create native volume space
+    if [ "$RunMode" -lt 3 ]; then
+
+      #### ACPC align T1w and T2w image to 0.7mm MNI T1wTemplate to create native volume space ####
+      if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
+          log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
+          CustomMask="${TXwFolder}/custom_mask"
+      fi
 
       log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
       log_Msg "mkdir -p ${TXwFolder}/ACPCAlignment"
-      mkdir -p ${TXwFolder}/ACPCAlignment  # TH modified 2016-2023
+      mkdir -p ${TXwFolder}/ACPCAlignment
       ${RUN} ${HCPPIPEDIR_PreFS}/ACPCAlignment.sh \
         --workingdir=${TXwFolder}/ACPCAlignment \
         --in=${TXwFolder}/${TXwImage} \
@@ -716,61 +714,57 @@ if [ "$RunMode" -lt 3 ]; then
         --ref2mm=${TXwTemplate2mm} \
         --ref2mmmask=${Template2mmMask} \
         --betspecieslabel=$betspecieslabel \
-        --custommask=${CustomMask} 
+        --custommask=${CustomMask}
     fi
-  done
 
     if [ "$RunMode" -lt 4 ]; then
       # Brain Extraction(FNIRT-based Masking)
 
-    if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
-        log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
-    fi
- 
-    log_Msg "Performing Brain Extraction using FNIRT-based Masking"
-    log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
-    mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
-    ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
-  --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
-  --in=${TXwFolder}/${TXwImage}_acpc \
-  --ref=${TXwTemplate} \
-  --refmask=${AtlasSpaceFolder}/TemplateMask \
-  --ref2mm=${TXwTemplate2mm} \
-  --ref2mmmask=${Template2mmMask} \
-  --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
-  --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
-  --fnirtconfig=${FNIRTConfig} \
-       --betcenter=${betcenter} \
-       --betradius=${betradius} \
-  --betfraction=${betfraction} \
-  --initdof=$InitDof \
-       --betbiasfieldcor=${betbiasfieldcor} \
-  --brainextract=${BrainExtract} \
-       --betspecieslabel=${betspecieslabel} 
-  fi 
-  done 
-
+      if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
+          log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
+      fi
+  
+      log_Msg "Performing Brain Extraction using FNIRT-based Masking"
+      log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
+      mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
+      ${RUN} ${HCPPIPEDIR_PreFS}/BrainExtraction_FNIRTbased.sh \
+        --workingdir=${TXwFolder}/BrainExtraction_FNIRTbased \
+        --in=${TXwFolder}/${TXwImage}_acpc \
+        --ref=${TXwTemplate} \
+        --refmask=${AtlasSpaceFolder}/TemplateMask \
+        --ref2mm=${TXwTemplate2mm} \
+        --ref2mmmask=${Template2mmMask} \
+        --outbrain=${TXwFolder}/${TXwImage}_acpc_brain \
+        --outbrainmask=${TXwFolder}/${TXwImage}_acpc_brain_mask \
+        --fnirtconfig=${FNIRTConfig} \
+        --betcenter=${betcenter} \
+        --betradius=${betradius} \
+        --betfraction=${betfraction} \
+        --initdof=$InitDof \
+        --betbiasfieldcor=${betbiasfieldcor} \
+        --brainextract=${BrainExtract} \
+        --betspecieslabel=${betspecieslabel}
+    fi   
   # End of looping over modalities (T1w and T2w)
-fi
+  done
 
   # ------------------------------------------------------------------------------
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
-if [ "$RunMode" -lt 5 ]; then
-  SpinEchoPhaseEncodeZero=""
-  case $AvgrdcSTRING in
+  if [ "$RunMode" -lt 5 ]; then
+    SpinEchoPhaseEncodeZero=""
+    case $AvgrdcSTRING in
 
-    ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
+      ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
-      log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
-  if [ ! $T2wFolder = NONE ] ; then
-      wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-      if [ -d ${wdir} ] ; then
-        # DO NOT change the following line to "rm -r ${wdir}" because the
-        # chances of something going wrong with that are much higher, and
-        # rm -r always needs to be treated with the utmost caution
-        rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
-      fi
+        log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
+          wdir=${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+          if [ -d ${wdir} ] ; then
+            # DO NOT change the following line to "rm -r ${wdir}" because the
+            # chances of something going wrong with that are much higher, and
+            # rm -r always needs to be treated with the utmost caution
+            rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
+          fi
 
           if [ $(imtest ${T2wFolder}/T2w) = 1 ] ; then    # added T2w as a phase zero volume - TH Jan 2023
             SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
@@ -778,6 +772,7 @@ if [ "$RunMode" -lt 5 ]; then
 	          flirt -in ${T2wFolder}/T2w_acpc_brain_mask -ref ${T2wFolder}/T2w -applyxfm -init ${T2wFolder}/xfms/acpc_inv.mat -o ${T2wFolder}/T2w_brain -interp nearestneighbour
             SpinEchoPhaseEncodeZeroFSBrainmask=${T2wFolder}/T2w_brain
           fi
+
       log_Msg "mkdir -p ${wdir}"
       mkdir -p ${wdir}
 
@@ -893,9 +888,7 @@ if [ "$RunMode" -lt 5 ]; then
       ${BiasFieldFastSmoothingSigma}
 
   fi
-fi
 
-if [ "$RunMode" -lt 6 ]; then
 
   # ------------------------------------------------------------------------------
   # Create a one-step resampled version of the {T1w,T2w}_acpc_dc outputs
@@ -960,56 +953,61 @@ else
 
 fi  # --- skipped all the way to here if using customized structural images (--custombrain=CUSTOM)
 
-# Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
-# i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
-# or the PostFreeSurferPipeline versions.
-# Make sure that you rerun FreeSurfer and PostFreeSurfer if using --custombrain={CUSTOM|MASK}
-# or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised; 
-# in the --custombrain=NONE condition, the recommendation would be to simply delete the existing data, 
-# and run PreFreeSurfer (and then FreeSurfer and PostFreeSurfer) de novo].
+if [ "$RunMode" -lt 6 ]; then
 
-OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
-imrm ${T1wFolder}/xfms/${OutputOrigT1wToT1wPostFS}
+  # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
+  # i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
+  # or the PostFreeSurferPipeline versions.
+  # Make sure that you rerun FreeSurfer and PostFreeSurfer if using --custombrain={CUSTOM|MASK}
+  # or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised; 
+  # in the --custombrain=NONE condition, the recommendation would be to simply delete the existing data, 
+  # and run PreFreeSurfer (and then FreeSurfer and PostFreeSurfer) de novo].
+
+  OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
+  imrm ${T1wFolder}/xfms/${OutputOrigT1wToT1wPostFS}
 
 
-# ------------------------------------------------------------------------------
-#  Atlas Registration to MNI152: FLIRT + FNIRT
-#  Also applies the MNI registration to T1w and T2w images
-#  (although, these will be overwritten, and the final versions generated via
-#  a one-step resampling equivalent in PostFreeSurfer/CreateMyelinMaps.sh;
-#  so, the primary purpose of the following is to generate the Atlas Registration itself).
-# ------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------
+  #  Atlas Registration to MNI152: FLIRT + FNIRT
+  #  Also applies the MNI registration to T1w and T2w images
+  #  (although, these will be overwritten, and the final versions generated via
+  #  a one-step resampling equivalent in PostFreeSurfer/CreateMyelinMaps.sh;
+  #  so, the primary purpose of the following is to generate the Atlas Registration itself).
+  # ------------------------------------------------------------------------------
+
+  log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
 
   imcp ${T1wTemplate2mm} ${AtlasSpaceFolder}/T1wTemplate2mm
   imcp ${Template2mmMask} ${AtlasSpaceFolder}/Template2mmMask
 
-${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
-  --workingdir=${AtlasSpaceFolder} \
-  --t1=${T1wFolder}/${T1wImage}_acpc_dc \
-  --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
-  --t1restbrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
-  --t2=${T1wFolder_T2wImageWithPath_acpc_dc} \
-  --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
-  --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-  --ref=${AtlasSpaceFolder}/T1wTemplate \
-  --refbrain=${AtlasSpaceFolder}/T1wTemplateBrain \
-  --refmask=${AtlasSpaceFolder}/TemplateMask \
-  --ref2mm=${T1wTemplate2mm} \
-  --ref2mmmask=${Template2mmMask} \
-  --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
-  --oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
-  --ot1=${AtlasSpaceFolder}/${T1wImage} \
-  --ot1rest=${AtlasSpaceFolder}/${T1wImage}_restore \
-  --ot1restbrain=${AtlasSpaceFolder}/${T1wImage}_restore_brain \
-  --ot2=${AtlasSpaceFolder}/${T2wImage} \
-  --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
-  --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-  --fnirtconfig=${FNIRTConfig} \
-  --brainextract=${BrainExtract}
+  ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
+    --workingdir=${AtlasSpaceFolder} \
+    --t1=${T1wFolder}/${T1wImage}_acpc_dc \
+    --t1rest=${T1wFolder}/${T1wImage}_acpc_dc_restore \
+    --t1restbrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain \
+    --t2=${T1wFolder_T2wImageWithPath_acpc_dc} \
+    --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
+    --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
+    --ref=${AtlasSpaceFolder}/T1wTemplate \
+    --refbrain=${AtlasSpaceFolder}/T1wTemplateBrain \
+    --refmask=${AtlasSpaceFolder}/TemplateMask \
+    --ref2mm=${T1wTemplate2mm} \
+    --ref2mmmask=${Template2mmMask} \
+    --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
+    --oinvwarp=${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz \
+    --ot1=${AtlasSpaceFolder}/${T1wImage} \
+    --ot1rest=${AtlasSpaceFolder}/${T1wImage}_restore \
+    --ot1restbrain=${AtlasSpaceFolder}/${T1wImage}_restore_brain \
+    --ot2=${AtlasSpaceFolder}/${T2wImage} \
+    --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
+    --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
+    --fnirtconfig=${FNIRTConfig} \
+    --brainextract=${BrainExtract}
+
+
+
+fi
 log_Msg "Completed!"
-
-
-
 
 #### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
