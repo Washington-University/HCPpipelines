@@ -90,6 +90,7 @@ opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflatio
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
+opts_AddOptional '--metric-regression' 'MetricReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'" 'BOTH'
 
 opts_AddOptional '--subject-long' 'Subject' 'subject ID' "subject label (used in longitudinal mode), may be different from Session"
 opts_AddOptional '--longitudinal-mode' 'LongitudinalMode' 'NONE|TIMEPOINT_STAGE1|TIMEPOINT_STAGE2|TEMPLATE' "longitudinal processing mode
@@ -407,6 +408,7 @@ if ((doProcessing)); then
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
     argList+=("$IsLongitudinal")
+    argList+=("$MetricReg")                                # ${42}
     
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
