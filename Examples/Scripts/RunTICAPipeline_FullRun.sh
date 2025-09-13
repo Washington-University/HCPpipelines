@@ -23,6 +23,9 @@ DEFAULT_GROUP_NAME="S1200_MSMAll7T175" # the group average name, which must be s
 DEFAULT_REG_NAME="MSMAll" # the registration string corresponding to the input files, which must be specified the same in MSMAll pipeline before running this tICA script
 DEFAULT_CONFIG_FILE="${HOME}/Examples/Scripts/tICA_config.txt" # generate config file for rerunning with similar settings, or for reusing these results for future cleaning
 DEFAULT_MATLAB_MODE=1 # MatlabMode
+DEFAULT_RUN_LOCAL=0
+DEFAULT_QUEUE=""
+#DEFAULT_QUEUE="hcp_priority.q"
 
 get_options() {
     local scriptName=$(basename "$0")
@@ -36,6 +39,8 @@ get_options() {
     RegName="${DEFAULT_REG_NAME}"
     ConfigFile="${DEFAULT_CONFIG_FILE}"
     MatlabMode="${DEFAULT_MATLAB_MODE}"
+    RunLocal="${DEFAULT_RUN_LOCAL}"
+    QUEUE="${DEFAULT_QUEUE}"
 
     # parse arguments
     local index argument
@@ -65,6 +70,12 @@ get_options() {
                 ;;
             --MatlabMode=*)
                 MatlabMode="${argument#*=}"
+                ;;
+            --runlocal | --RunLocal)
+                RunLocal=1
+                ;;
+            --queue=*)
+                QUEUE="${argument#*=}"
                 ;;
             *)
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -234,9 +245,18 @@ main() {
     # step8: CleanData inputs
     # set whether the input data used the legacy bias correction
     FixLegacyBiasString="NO"
+    
+    if ((RunLocal)) || [[ "$QUEUE" == "" ]]
+    then
+        echo "running locally"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "queueing with fsl_sub to to $QUEUE"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
 
     # tICA pipeline
-    "$HCPPIPEDIR"/tICA/tICAPipeline.sh --study-folder="$StudyFolder" \
+    "${queuing_command[@]}" "$HCPPIPEDIR"/tICA/tICAPipeline.sh --study-folder="$StudyFolder" \
                                     --subject-list="$Subjlist" \
                                     --fmri-names="$fMRINames" \
                                     --output-fmri-name="$OutputfMRIName" \

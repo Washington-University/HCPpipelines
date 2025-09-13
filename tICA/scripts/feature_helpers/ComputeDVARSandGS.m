@@ -38,7 +38,14 @@ for i=1:length(Subjlist)
             %sICA=sICA_table{:,:};
             %sICA(find(isnan(sICA)))=0;
             if rclean==1
-                Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt']);
+                if exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/HandSignal.txt'])
+                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/HandSignal.txt']);
+                elseif exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt'])
+                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt']);
+                else
+                    disp('reclean or hand sICA classification file not found');
+                    quit
+                end
             else
                 Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt']);
             end

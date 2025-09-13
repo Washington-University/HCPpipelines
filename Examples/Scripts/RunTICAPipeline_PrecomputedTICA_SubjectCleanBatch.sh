@@ -4,7 +4,7 @@ set -eu
 
 # this is an example script to run the tICA pipeline to clean a batch of subjects with group sICA and group tICA results that are both generated from a previous computation
 # steps that aren't needed for this mode are automaticaly skipped inside the pipeline
-# please make sure that pecomputed group sICA and group tICA exist
+# please make sure that precomputed group sICA and group tICA exist
 # please make sure that ICA-FIX, MSMAll and MakeAverageDataset are done properly matching the input arguments before running this tICA pipeline
 
 # Global default values
@@ -15,6 +15,9 @@ DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCP
 DEFAULT_GROUP_NAME="ExampleGroup" # the group average name, which must be specified the same in MakeAverageDataset before running this tICA script
 DEFAULT_REG_NAME="MSMAll" # the registration string corresponding to the input files, which must be specified the same in MSMAll pipeline before running this tICA script
 DEFAULT_MATLAB_MODE=1 # MatlabMode
+DEFAULT_RUN_LOCAL=0
+DEFAULT_QUEUE=""
+#DEFAULT_QUEUE="hcp_priority.q"
 
 get_options() {
     local scriptName=$(basename "$0")
@@ -27,6 +30,8 @@ get_options() {
     GroupAverageName="${DEFAULT_GROUP_NAME}"
     RegName="${DEFAULT_REG_NAME}"
     MatlabMode="${DEFAULT_MATLAB_MODE}"
+    RunLocal="${DEFAULT_RUN_LOCAL}"
+    QUEUE="${DEFAULT_QUEUE}"
 
     # parse arguments
     local index argument
@@ -54,6 +59,12 @@ get_options() {
                 ;;
             --MatlabMode=*)
                 MatlabMode="${argument#*=}"
+                ;;
+            --runlocal | --RunLocal)
+                RunLocal=1
+                ;;
+            --queue=*)
+                QUEUE="${argument#*=}"
                 ;;
             *)
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -205,8 +216,17 @@ main() {
     # set whether the input data used the legacy bias correction (not from the precomputed data)
     FixLegacyBiasString="NO"
 
+    if ((RunLocal)) || [[ "$QUEUE" == "" ]]
+    then
+        echo "running locally"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "queueing with fsl_sub to to $QUEUE"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
+
     # tICA pipeline
-    "$HCPPIPEDIR"/tICA/tICAPipeline.sh --study-folder="$StudyFolder" \
+    "${queuing_command[@]}" "$HCPPIPEDIR"/tICA/tICAPipeline.sh --study-folder="$StudyFolder" \
                                     --subject-list="$Subjlist" \
                                     --fmri-names="$fMRINames" \
                                     --output-fmri-name="$OutputfMRIName" \

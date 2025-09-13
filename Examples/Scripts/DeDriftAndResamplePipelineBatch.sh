@@ -63,7 +63,7 @@ Subjlist=(HCD0001305_V1_MR HCD0008117_V1_MR) #List of subject IDs
 HighResMesh="164"
 LowResMesh="32"
 #Do not use RegName from MSMAllPipelineBatch.sh
-RegName="MSMAll_InitalReg_2_d40_WRN"
+RegName="MSMAll_InitialReg_2_d40_WRN"
 DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 ConcatRegName="MSMAll"
 #standard maps to resample
@@ -82,7 +82,7 @@ dontFixNames=()
 SmoothingFWHM="2" #Should equal previous grayordinates smoothing (because we are resampling from unsmoothed native mesh timeseries)
 HighPass="0"
 MotionRegression=FALSE
-MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
+MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
 #Example of how older HCP-YA results were originally run
 #These settings are no longer recommended - recommendations are to do MR FIX using all of a subject's runs, in the order they were acquired, no motion regression, HighPass 0
@@ -90,19 +90,19 @@ MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #Subjlist=(100307 101006) #List of subject IDs
 #HighResMesh="164"
 #LowResMesh="32"
-#RegName="MSMAll_InitalReg_2_d40_WRN"
+#RegName="MSMAll_InitialReg_2_d40_WRN"
 #DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 #ConcatRegName="MSMAll"
 #Maps=(sulc curvature corrThickness thickness)
 #MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames=()
 #MRFixNames=()
-#fixNames=(rfMRI_REST1_LR rfMRI_REST1_RL rfMRI_REST2_LR rfMRI_REST2_RL)
+#fixNames=(rfMRI_REST1_RL rfMRI_REST1_LR rfMRI_REST2_LR rfMRI_REST2_RL)
 #dontFixNames=(tfMRI_EMOTION_LR tfMRI_EMOTION_RL tfMRI_GAMBLING_LR tfMRI_GAMBLING_RL tfMRI_LANGUAGE_LR tfMRI_LANGUAGE_RL tfMRI_MOTOR_LR tfMRI_MOTOR_RL tfMRI_RELATIONAL_LR tfMRI_RELATIONAL_RL tfMRI_SOCIAL_LR tfMRI_SOCIAL_RL tfMRI_WM_LR tfMRI_WM_RL)
 #SmoothingFWHM="2" #Should equal previous grayordinates smoothing (because we are resampling from unsmoothed native mesh timeseries)
 #HighPass="2000"
 #MotionRegression=TRUE
-#MatlabMode="0" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
+#MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"

@@ -64,11 +64,13 @@ opts_AddMandatory '--oscout' 'ScoutOutput' 'image' "output transformed + distort
 opts_AddMandatory '--ojacobian' 'JacobianOut' 'image' "output transformed + distortion corrected Jacobian image"
 
 #Optional Args 
+
 opts_AddOptional '--fmrirefpath' 'fMRIReferencePath' 'path' "path to an external BOLD reference or NONE (default)" "NONE"
 
-opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb command to do volume resampeling instead of applywarp, requires wb_command version newer than 1.5.0" "0"
+opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb_command to do volume timeseries resampling instead of applywarp (wb_command supports -affine-series, which avoids needing to separate the frames of the input), default TRUE, requires wb_command version 1.5.0 or newer" "TRUE"
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
+
 
 opts_ParseArguments "$@"
 
@@ -103,17 +105,7 @@ log_Check_Env_Var FSLDIR
 #with wb_command -volume-resample, the warpfields and per-frame motion affines do not need to be combined in advance,
 #and the timeseries can be resampled without splitting into one-frame files, resulting in much less file IO
 
-case "$(echo "$useWbResample" | tr '[:upper:]' '[:lower:]')" in
-    (yes | true | 1)
-        useWbResample=1
-        ;;
-    (no | false | 0)
-        useWbResample=0
-        ;;
-    (*)
-        log_Err_Abort "unrecognized boolean '$useWbResample', please use yes/no, true/false, or 1/0"
-        ;;
-esac
+useWbResample=$(opts_StringToBool "$useWbResampleStr")
 
 # --- Report arguments
 
@@ -144,9 +136,9 @@ verbose_echo "        --fmrirefpath: ${fMRIReferencePath}"
 verbose_echo "         --fmrirefreg: ${fMRIReferenceReg}"
 verbose_echo " "
 
-BiasFieldFile=`basename "$BiasField"`
-T1wImageFile=`basename $T1wImage`
-FreeSurferBrainMaskFile=`basename "$FreeSurferBrainMask"`
+BiasFieldFile=$(basename "$BiasField")
+T1wImageFile=$(basename $T1wImage)
+FreeSurferBrainMaskFile=$(basename "$FreeSurferBrainMask")
 
 echo " "
 echo " START: OneStepResampling"
@@ -155,16 +147,16 @@ mkdir -p $WD
 
 # Record the input options in a log file
 echo "$0 $@" >> $WD/log.txt
-echo "PWD = `pwd`" >> $WD/log.txt
-echo "date: `date`" >> $WD/log.txt
+echo "PWD = $(pwd)" >> $WD/log.txt
+echo "date: $(date)" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 
 ########################################## DO WORK ##########################################
 
 #Save TR for later
-TR_vol=`${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1`
-NumFrames=`${FSLDIR}/bin/fslval ${InputfMRI} dim4`
+TR_vol=$(${FSLDIR}/bin/fslval ${InputfMRI} pixdim4 | cut -d " " -f 1)
+NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 
 # Create fMRI resolution standard space files for T1w image, wmparc, and brain mask
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
@@ -178,6 +170,7 @@ else
   ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
   ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
 fi
+
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}
 
 # Create brain masks in this space from the FreeSurfer output (changing resolution)
@@ -193,8 +186,8 @@ ${FSLDIR}/bin/fslmaths ${WD}/${BiasFieldFile}.${FinalfMRIResolution} -thr 0.1 ${
 # Create a combined warp if nonlinear registration to reference is used
 if [ "$fMRIReferenceReg" == "nonlinear" ]; then
   # Note that the name of the post motion correction warp is hard-coded in MotionCorrection.sh
-  ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${MotionMatrixFolder}/postmc2fmriref_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postmc2struct_warp
-  ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/postmc2struct_warp --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
+    ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${MotionMatrixFolder}/postmc2fmriref_warp --warp2=${fMRIToStructuralInput} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postmc2struct_warp
+    ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/postmc2struct_warp --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 else
   ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${fMRIToStructuralInput} --warp2=${StructuralToStandard} --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${OutputTransform}
 fi
@@ -226,7 +219,7 @@ then
     
     for ((k=0; k < $NumFrames; k++))
     do
-        vnum=`${FSLDIR}/bin/zeropad $k 4`
+        vnum=$(${FSLDIR}/bin/zeropad $k 4)
         
         #use unquoted $() to change whitespace to spaces
         echo $(cat "$MotionMatrixFolder/${MotionMatrixPrefix}$vnum") >> "$affseries"
@@ -246,6 +239,7 @@ then
              -affine-series "$affseries" -flirt "$InputfMRI" "$InputfMRI"
              -warp "$OutputTransform".nii.gz -fnirt "$InputfMRI")
     
+    #force int32 to improve compressibility (applywarp uses the input datatype, workbench defaults to float32, but storing the interpolated float values increases the .gz file size compared to the input) - BOLD data should be noise-dominated and scanners generally output int types, so this should generally be fine
     wb_command -volume-resample "$InputfMRI" "$WD/$T1wImageFile.$FinalfMRIResolution".nii.gz CUBIC "$OutputfMRI".nii.gz "${xfmargs[@]}" -nifti-output-datatype INT32
     
     #resample all-ones volume series with enclosing voxel to determine FOV coverage
@@ -267,7 +261,7 @@ else
     FrameMergeSTRING=""
     FrameMergeSTRINGII=""
     for ((k=0; k < $NumFrames; k++)); do
-      vnum=`${FSLDIR}/bin/zeropad $k 4`
+      vnum=$(${FSLDIR}/bin/zeropad $k 4)
 
       # Add stuff for estimating RMS motion
       rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt

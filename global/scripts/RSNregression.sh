@@ -211,9 +211,11 @@ OutputVolZ=""
 if ((DoZ))
 then
     OutputZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
     if ((DoVol))
     then
         OutputVolZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
 SpectraParams=""
@@ -259,6 +261,10 @@ if ((DoZ))
 then
     matlab_argarray+=("OutputZ" "$OutputZ")
 fi
+if ((DoZ))
+then
+    matlab_argarray+=("OutputZMM" "$OutputZMM")
+fi
 if [[ "$SpectraParams" != "" ]]
 then
     matlab_argarray+=("SpectraParams" "$SpectraParams")
@@ -281,6 +287,10 @@ then
     if ((DoZ))
     then
         matlab_argarray+=("OutputVolZ" "$OutputVolZ")
+    fi
+    if ((DoZ))
+    then
+        matlab_argarray+=("OutputVolZMM" "$OutputVolZMM")
     fi
     if ((DoFixBias))
     then

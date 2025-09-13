@@ -14,18 +14,24 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functio
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
 #description to use in usage - syntax of parameters is now explained automatically
-opts_SetScriptDescription "implements Single Subject Scan Concatenation"
+opts_SetScriptDescription "implements Single Session Scan Concatenation"
 #mandatory
 #general inputs
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects" "--path"
-opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
+opts_AddMandatory '--session' 'Session' '100206' "one session ID" "--subject"
 opts_AddMandatory '--fmri-names-list' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of single-run fmri run names separated by @s"
-opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single subject scan"
+opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to give to concatenated single session scan"
 opts_AddMandatory '--fmri-proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_hp0_clean'"
 opts_AddMandatory '--output-proc-string' 'OutputProcSTRING' 'string' "the output file name component, e.g. '_vn'"
 #optional inputs
 opts_AddOptional '--start-frame' 'StartFrame' 'integer' "the starting frame to choose from each fMRI run (inclusive), defaults to '1'" '1'
 opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose from each fMRI run (inclusive), defaults to '' which preserves the ending frame of every fMRI run from --fmri-names-list" ''
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal mode [FALSE]" "FALSE"
+opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal mode" ""
+opts_AddOptional '--fmri-config-long' 'fMRIConfigLong' 'file_name' "longitudinal runs configuration file [fmri_list.txt].
+Only supply file name without path. The file is expected to be in [Longitudinal template folder]/MNINonLinear/Results" "fmri_list.txt"
+opts_AddOptional '--template-long' 'TemplateLong' 'template ID' "Longitudinal template ID" ""
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -51,18 +57,52 @@ opts_ShowValues
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
-log_Msg "Starting Single Subject Scan Concatenation using the selected frame range"
+log_Msg "Starting Single Session Scan Concatenation using the selected frame range"
+
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
+# Return value for key, given arrays of keys and values.
+# Used to decode longitudinal fMRI configuration.
+function val4key()
+{
+    local -n keys=$1
+    local -n vals=$2
+    local i key="$3"
+    for i in "${!keys[@]}"; do
+        if [[ "${keys[i]}" == "$key" ]]; then
+            echo "${vals[i]}"
+            return 0
+        fi
+    done
+    echo ""
+    return 1
+}
+
+#populate fMRI arrays
+if (( IsLongitudinal )); then
+    if [ -z "$TemplateLong" ]; then 
+        log_Err_Abort "Longitudinal template ID cannot be empty"
+    fi
+    #Read longitudinal run names from the configuration file.
+    conf="${StudyFolder}/$SubjectLong.long.$TemplateLong/MNINonLinear/Results/$fMRIConfigLong"
+    IFS='@' read -ra TemplateRuns < <(sed -n '1p' "$conf")
+    IFS='@' read -ra Timepoints < <(sed -n '2p' "$conf")
+    IFS='@' read -ra fMRIRunsCross < <(sed -n '3p' "$conf")
+    IFS='@' read -ra ConcatNamesCross < <(sed -n '4p' "$conf")
+fi
+
 # Naming Conventions and other variables
 IFS='@' read -a fMRINamesArray <<< "${fMRINames}"
 fMRINames=$(echo ${fMRINames} | sed 's/@/ /g')
 log_Msg "fMRINames: ${fMRINames}"
 
 if [ "${OutputProcSTRING}" = "NONE" ]; then
-	OutputProcSTRING=""
+    OutputProcSTRING=""
+    
 fi
 log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
 
-AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
+AtlasFolder="${StudyFolder}/${Session}/MNINonLinear"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
 OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
@@ -78,34 +118,34 @@ runFrames=()
 runTR=()
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index))
 do
-	fMRIName="${fMRINamesArray[index]}"
-	ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
-	log_Msg "ResultsFolder: ${ResultsFolder}"
-	FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
-	log_Msg "FullDenseTCS: ${FullDenseTCS}"
-	NumFrames=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-number-of-maps`
-	runFrames[index]="$NumFrames"
-	TR=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-step-interval`
-	runTR[index]="$TR"
-	if ((index == 0 )); then
-		minFrames=${runFrames[index]}
-	else
-		if (( ${runFrames[index]}<minFrames )); then
-			minFrames=${runFrames[index]}
-		fi
-	fi
+    fMRIName="${fMRINamesArray[index]}"        
+    ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
+    log_Msg "ResultsFolder: ${ResultsFolder}"
+    FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
+    log_Msg "FullDenseTCS: ${FullDenseTCS}"
+    NumFrames=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-number-of-maps`
+    runFrames[index]="$NumFrames"
+    TR=`${Caret7_Command} -file-information "${FullDenseTCS}" -only-step-interval`
+    runTR[index]="$TR"
+    if ((index == 0 )); then
+        minFrames=${runFrames[index]}
+    else
+        if (( ${runFrames[index]}<minFrames )); then
+            minFrames=${runFrames[index]}
+        fi
+    fi
 done
 
 EndFrameToUse=""
 if [[ "$EndFrame" == "" ]]; then
-	# preserving the timeseries to the end
-	FrameString="Frame${StartFrame}ToTheEnd"
+    # preserving the timeseries to the end
+    FrameString="Frame${StartFrame}ToTheEnd"
 else
-	# check valid frame range
-	if ((StartFrame > minFrames ||  EndFrame > minFrames || StartFrame < 1 || EndFrame < 1 || StartFrame > EndFrame)); then
-		log_Err_Abort "The provided start frame ${StartFrame} and end frame ${EndFrame} is not valid, it must be between the range 1 to ${minFrames}. Please check the fMRI runs."
-	fi
-	FrameString="Frame${StartFrame}To${EndFrame}"
+    # check valid frame range
+    if ((StartFrame > minFrames ||  EndFrame > minFrames || StartFrame < 1 || EndFrame < 1 || StartFrame > EndFrame)); then
+        log_Err_Abort "The provided start frame ${StartFrame} and end frame ${EndFrame} is not valid, it must be between the range 1 to ${minFrames}. Please check the fMRI runs."
+    fi
+    FrameString="Frame${StartFrame}To${EndFrame}"
 fi
 
 log_Msg "FrameString: ${FrameString}"
@@ -113,13 +153,13 @@ log_Msg "FrameString: ${FrameString}"
 duration=0
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index))
 do
-	TR="${runTR[index]}"
-	if [[ "$EndFrame" == "" ]]; then
-		Frames=$((runFrames[index]-StartFrame+1))
-	else
-		Frames=$((EndFrame-StartFrame+1))
-	fi
-	duration=$(bc -l <<< $duration+$TR*$Frames)
+    TR="${runTR[index]}"
+    if [[ "$EndFrame" == "" ]]; then
+        Frames=$((runFrames[index]-StartFrame+1))
+    else
+        Frames=$((EndFrame-StartFrame+1))
+    fi
+    duration=$(bc -l <<< $duration+$TR*$Frames)
 done
 
 # convert to mins secs
@@ -131,44 +171,50 @@ MergeArray=()
 cnt=0
 # loop for demean+vn+concat
 for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
-	fMRIName="${fMRINamesArray[$index]}"
-	log_Msg "fMRIName: ${fMRIName}"
-	ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
-	log_Msg "ResultsFolder: ${ResultsFolder}"
-	
-	FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
-	# temporary files
-	FrameDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}.dtseries.nii
-	FrameMean=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}_mean.dscalar.nii
-	FrameOutput=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}${OutputProcSTRING}.dtseries.nii
-	# mark temp files for mean, and timeseries after the processing
-	tempfiles_add ${FrameMean} ${FrameOutput}
-	# pick frames
-	if [[ "$EndFrame" == "" ]]; then
-		if ((StartFrame==1)); then
-			# override the FrameDenseTCS with the full dense timeseries
-			FrameDenseTCS=${FullDenseTCS}
-		else
-			tempfiles_add ${FrameDenseTCS}
-			${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${runFrames[index]}
-		fi
-	else
-		tempfiles_add ${FrameDenseTCS}
-		${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
-	fi
+    fMRIName="${fMRINamesArray[$index]}"
+    log_Msg "fMRIName: ${fMRIName}"
+    ResultsFolder="${AtlasFolder}/Results/${fMRIName}"
+    log_Msg "ResultsFolder: ${ResultsFolder}"
+    
+    FullDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}.dtseries.nii
+    # temporary files
+    FrameDenseTCS=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}.dtseries.nii
+    FrameMean=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}_mean.dscalar.nii
+    FrameOutput=${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_${FrameString}${OutputProcSTRING}.dtseries.nii
+    # mark temp files for mean, and timeseries after the processing
+    tempfiles_add ${FrameMean} ${FrameOutput}
+    # pick frames
+    if [[ "$EndFrame" == "" ]]; then
+        if ((StartFrame==1)); then
+            # override the FrameDenseTCS with the full dense timeseries
+            FrameDenseTCS=${FullDenseTCS}
+        else
+            tempfiles_add ${FrameDenseTCS}
+            ${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${runFrames[index]}
+        fi
+    else
+        tempfiles_add ${FrameDenseTCS}
+        ${Caret7_Command} -cifti-merge ${FrameDenseTCS} -cifti ${FullDenseTCS} -column ${StartFrame} -up-to ${EndFrame}
+    fi
 
-	# mean file
-	${Caret7_Command} -cifti-reduce ${FrameDenseTCS} MEAN ${FrameMean}
-	
-	# vn file
-	OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
-	log_File_Must_Exist "$OutputVN"
-	
-	# demean + vn
-	${Caret7_Command} -cifti-math "(TCS - Mean) / max(VN, 0.001)" ${FrameOutput} -var TCS ${FrameDenseTCS} -var Mean ${FrameMean} -select 1 1 -repeat -var VN ${OutputVN} -select 1 1 -repeat
-	
-	# construct the merge string
-	MergeArray+=(-cifti "${FrameOutput}")
+    # mean file
+    ${Caret7_Command} -cifti-reduce ${FrameDenseTCS} MEAN ${FrameMean}
+    
+    # vn file
+    OutputVN="${ResultsFolder}/${fMRIName}${fMRIProcSTRING}_vn.dscalar.nii"
+    # resolve longitudinal fMRI and concat names for the given $fMRIName
+    if (( IsLongitudinal )); then 
+        Timepoint=$(val4key TemplateRuns Timepoints $fMRIName)
+        ConcatNameTimepoint=$(val4key TemplateRuns ConcatNamesCross $fMRIName)
+        OutputVN="${StudyFolder}/$Timepoint.long.$TemplateLong/MNINonLinear/Results/$ConcatNameTimepoint/$ConcatNameTimepoint${fMRIProcSTRING}_vn.dscalar.nii"
+    fi
+    log_File_Must_Exist "$OutputVN"
+    
+    # demean + vn
+    ${Caret7_Command} -cifti-math "(TCS - Mean) / max(VN, 0.001)" ${FrameOutput} -var TCS ${FrameDenseTCS} -var Mean ${FrameMean} -select 1 1 -repeat -var VN ${OutputVN} -select 1 1 -repeat
+    
+    # construct the merge string
+    MergeArray+=(-cifti "${FrameOutput}")
 done
 
 # save the frame range and duration info

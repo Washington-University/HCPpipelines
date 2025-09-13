@@ -40,16 +40,16 @@
 # The primary purposes of the PreFreeSurfer Pipeline are:
 #
 # 1. To average any image repeats (i.e. multiple T1w or T2w images available)
-# 2. To create a native, undistorted structural volume space for the subject
-#    * Subject images in this native space will be distortion corrected
+# 2. To create a native, undistorted structural volume space for the session
+#    * Session images in this native space will be distortion corrected
 #      for gradient and b0 distortions and rigidly aligned to the axes
 #      of the MNI space. "Native, undistorted structural volume space"
-#      is sometimes shortened to the "subject's native space" or simply
+#      is sometimes shortened to the "session's native space" or simply
 #      "native space".
 # 3. To provide an initial robust brain extraction
 # 4. To align the T1w and T2w structural images (register them to the native space)
 # 5. To perform bias field correction
-# 6. To register the subject's native space to the MNI space
+# 6. To register the session's native space to the MNI space
 #
 # ## Prerequisites:
 #
@@ -83,12 +83,12 @@
 # ### Output Directories
 #
 # Command line arguments are used to specify the StudyFolder (--path) and
-# the Subject (--subject).  All outputs are generated within the tree rooted
-# at ${StudyFolder}/${Subject}.  The main output directories are:
+# the Session (--session).  All outputs are generated within the tree rooted
+# at ${StudyFolder}/${Session}.  The main output directories are:
 #
-# * The T1wFolder: ${StudyFolder}/${Subject}/T1w
-# * The T2wFolder: ${StudyFolder}/${Subject}/T2w
-# * The AtlasSpaceFolder: ${StudyFolder}/${Subject}/MNINonLinear
+# * The T1wFolder: ${StudyFolder}/${Session}/T1w
+# * The T2wFolder: ${StudyFolder}/${Session}/T2w
+# * The AtlasSpaceFolder: ${StudyFolder}/${Session}/MNINonLinear
 #
 # All outputs are generated in directories at or below these three main
 # output directories.  The full list of output directories is:
@@ -118,9 +118,9 @@
 # Also note that the following output directories are created:
 #
 # * T1wFolder, which is created by concatenating the following three option
-#   values: --path / --subject / --t1
+#   values: --path / --session / --t1
 # * T2wFolder, which is created by concatenating the following three option
-#   values: --path / --subject / --t2
+#   values: --path / --session / --t2
 #
 # These two output directories must be different. Otherwise, various output
 # files with standard names contained in such subdirectories, e.g.
@@ -182,14 +182,13 @@ opts_SetScriptDescription "Prepares raw data for running the FreeSurfer HCP pipe
 #  Usage Description Function
 # ------------------------------------------------------------------------------
 
+opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to study data folder (required)  Used with --session input to create full path to root  directory for all outputs generated as path/session)"
 
-opts_AddMandatory '--path' 'StudyFolder' 'path' "Path to study data folder (required)  Used with --subject input to create full path to root  directory for all outputs generated as path/subject)"
+opts_AddMandatory '--session' 'Session' 'session' "Session ID (required)  Used with --path input to create full path to root  directory for all outputs generated as path/session" "--subject"
 
-opts_AddMandatory '--subject' 'Subject' 'subject' "Subject ID (required)  Used with --path input to create full path to root  directory for all outputs generated as path/subject"
+opts_AddMandatory '--t1' 'T1wInputImages' "T1" "An @ symbol separated list of full paths to T1-weighted  (T1w) structural images for the session (required)"
 
-opts_AddMandatory '--t1' 'T1wInputImages' "T1" "An @ symbol separated list of full paths to T1-weighted  (T1w) structural images for the subject (required)"
-
-opts_AddMandatory '--t2' 'T2wInputImages' "T2" "An @ symbol separated list of full paths to T2-weighted  (T2w) structural images for the subject (required for   hcp-style data, can be NONE for legacy-style data,   see --processing-mode option)"
+opts_AddMandatory '--t2' 'T2wInputImages' "T2" "An @ symbol separated list of full paths to T2-weighted  (T2w) structural images for the session (required for   hcp-style data, can be NONE for legacy-style data,   see --processing-mode option)"
 
 opts_AddMandatory '--t1template' 'T1wTemplate' 'file_path' "MNI T1w template"
 
@@ -211,7 +210,7 @@ opts_AddMandatory '--brainsize' 'BrainSize' 'size_value' "Brain size estimate in
 
 opts_AddMandatory '--fnirtconfig' 'FNIRTConfig' 'file_path' "FNIRT 2mm T1w Configuration file"
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/GE HealthCare Gradient Echo Fieldmap magnitude file"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file_path' "Siemens/Philips/GE HealthCare Gradient Echo Fieldmap magnitude files (@-separated)"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'file_path' "Siemens/Philips Gradient Echo Fieldmap phase file or GE HealthCare Fieldmap in Hertz"
 
@@ -231,7 +230,7 @@ opts_AddMandatory '--t1samplespacing' 'T1wSampleSpacing' 'seconds' "T1 image sam
 
 opts_AddMandatory '--t2samplespacing' 'T2wSampleSpacing' 'seconds' "T2 image sample spacing, 'NONE' if not used"
 
-opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} OR {i,j,k,i-,j-,k-}' "Readout direction of the T1w and T2w images (according to the *voxel axes)  (Used with either a gradient echo field map   or a spin echo field map)"
+opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} OR {i,j,k,i-,j-,k-}' "Readout direction of the T1w and T2w images (according to the *voxel* axes)  (Used with either a gradient echo field map   or a spin echo field map)"
 
 opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'file_path' "File containing gradient distortion  coefficients, Set to 'NONE' to turn off"
 
@@ -266,11 +265,11 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file_path' "Configuration file f
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias Field Smoothing Sigma (optional)"
 
-opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom  brain mask saved as '<subject>/T1w/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.   If PreFreeSurfer has been run before and you have created custom structural images, e.g.:  
-- '<subject>/T1w/T1w_acpc_dc_restore_brain.nii.gz' 
-- '<subject>/T1w/T1w_acpc_dc_restore.nii.gz' 
-- '<subject>/T1w/T2w_acpc_dc_restore_brain.nii.gz' 
-- '<subject>/T1w/T2w_acpc_dc_restore.nii.gz' 
+opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom  brain mask saved as '<session>/T1w/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.   If PreFreeSurfer has been run before and you have created custom structural images, e.g.:  
+- '<session>/T1w/T1w_acpc_dc_restore_brain.nii.gz' 
+- '<session>/T1w/T1w_acpc_dc_restore.nii.gz' 
+- '<session>/T1w/T2w_acpc_dc_restore_brain.nii.gz' 
+- '<session>/T1w/T2w_acpc_dc_restore.nii.gz' 
   to be used when peforming MNI152 Atlas registration, specify 'CUSTOM'.  When 'MASK' or 'CUSTOM' is specified, only the AtlasRegistration step is run.  If the parameter is omitted or set to NONE (the default),   standard image processing will take place.  If using 'MASK' or 'CUSTOM', the data still needs to be staged properly by   running FreeSurfer and PostFreeSurfer afterwards.  NOTE: This option allows manual correction of brain images in cases when they  were not successfully processed and/or masked by the regular use of the pipelines.  Before using this option, first ensure that the pipeline arguments used were   correct and that templates are a good match to the data. " "NONE"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls_whether_the_HCP_acquisition_and_processing_guidelines_should_be_treated_as_requirements.__LegacyStyleData' "'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image. " "HCPStyleData"
@@ -355,9 +354,9 @@ T2wFolder="T2w" #Location of T2w images
 AtlasSpaceFolder="MNINonLinear"
 
 # Build Paths
-T1wFolder=${StudyFolder}/${Subject}/${T1wFolder}
-T2wFolder=${StudyFolder}/${Subject}/${T2wFolder}
-AtlasSpaceFolder=${StudyFolder}/${Subject}/${AtlasSpaceFolder}
+T1wFolder=${StudyFolder}/${Session}/${T1wFolder}
+T2wFolder=${StudyFolder}/${Session}/${T2wFolder}
+AtlasSpaceFolder=${StudyFolder}/${Session}/${AtlasSpaceFolder}
 
 log_Msg "T1wFolder: $T1wFolder"
 log_Msg "T2wFolder: $T2wFolder"
@@ -434,7 +433,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
           TXwTemplate=${T2wTemplate}
           TXwTemplate2mm=${T2wTemplate2mm}
       fi
-      OutputTXwImageSTRING=""
+      OutputTXwImageARRAY=()
 
       # skip modality if no image
 
@@ -464,7 +463,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             --in=${wdir}/${TXwImage}${i} \
             --out=${TXwFolder}/${TXwImage}${i}_gdc \
             --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
 
@@ -474,20 +473,29 @@ if [ "$CustomBrain" = "NONE" ] ; then
         i=1
         for Image in $TXwInputImages ; do
           ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-          OutputTXwImageSTRING="${OutputTXwImageSTRING}${TXwFolder}/${TXwImage}${i}_gdc "
+          OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
           i=$(($i+1))
         done
 
       fi
 
       # Average Like (Same Modality) Scans
+      OutputTXwImageSTRING=$(IFS=@; echo "${OutputTXwImageARRAY[*]}")
 
       if [ `echo $TXwInputImages | wc -w` -gt 1 ] ; then
         log_Msg "Averaging ${TXw} Images"
         log_Msg "mkdir -p ${TXwFolder}/Average${TXw}Images"
         mkdir -p ${TXwFolder}/Average${TXw}Images
         log_Msg "PERFORMING SIMPLE AVERAGING"
-        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh -o ${TXwFolder}/${TXwImage} -s ${TXwTemplate} -m ${TemplateMask} -n -w ${TXwFolder}/Average${TXw}Images --noclean -v -b $BrainSize $OutputTXwImageSTRING
+        ${RUN} ${HCPPIPEDIR_PreFS}/AnatomicalAverage.sh \
+            --output="${TXwFolder}/${TXwImage}" \
+            --standard-image="${TXwTemplate}" \
+            --standard-mask="${TemplateMask}" \
+            --crop=no \
+            --working-dir="${TXwFolder}/Average${TXw}Images" \
+            --cleanup=no \
+            --brain-size="$BrainSize" \
+            --image-list="$OutputTXwImageSTRING"
       else
         log_Msg "Not Averaging ${TXw} Images"
         log_Msg "ONLY ONE IMAGE FOUND: COPYING"

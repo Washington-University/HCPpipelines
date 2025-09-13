@@ -60,11 +60,11 @@ compile_prepareICAs()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
-				  -I "${HCPPIPEDIR}/global/matlab" \
-				  -I "${HCPCIFTIRWDIR}" \
-				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
-				  -d "${output_directory}"
+		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
+		-I "${HCPPIPEDIR}/global/matlab" \
+		-I "${HCPCIFTIRWDIR}" \
+		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+		-d "${output_directory}"
 
 	popd > /dev/null
 }
@@ -86,12 +86,12 @@ compile_functionhighpassandvariancenormalize()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
-				  -I "${HCPPIPEDIR}/global/matlab" \
-				  -I "${HCPPIPEDIR}/global/matlab/icaDim" \
-				  -I "${HCPCIFTIRWDIR}" \
-				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
-				  -d "${output_directory}"
+		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
+		-I "${HCPPIPEDIR}/global/matlab" \
+		-I "${HCPPIPEDIR}/global/matlab/icaDim" \
+		-I "${HCPCIFTIRWDIR}" \
+		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+		-d "${output_directory}"
 	
 	popd > /dev/null
 }
@@ -113,12 +113,69 @@ compile_computeRecleanFeatures()
 
 	log_Msg "Compiling ${app_name} application"
 	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
-				  -I "${HCPPIPEDIR}/ICAFIX/scripts" \
-				  -I "${HCPPIPEDIR}/global/matlab" \
-				  -I "${HCPCIFTIRWDIR}" \
-				  -I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
-				  -d "${output_directory}"
+		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
+		-I "${HCPPIPEDIR}/global/matlab" \
+		-I "${HCPCIFTIRWDIR}" \
+		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+		-d "${output_directory}"
 
+	popd > /dev/null
+}
+
+# ------------------------------------------------------------------------------
+# Compile the melodicicasso MATLAB code
+# ------------------------------------------------------------------------------
+
+compile_melodicicasso()
+{
+	local app_name=melodicicasso
+	local output_directory=Compiled_${app_name}
+
+	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
+	log_Msg "Working in ${PWD}"
+
+	log_Msg "Creating output directory: ${output_directory}"
+	mkdir -p ${output_directory}
+
+	log_Msg "Compiling ${app_name} application"
+	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
+		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
+		-I "${HCPPIPEDIR}/global/matlab" \
+		-a "$HCPPIPEDIR/global/matlab/icasso122/sim2dis.m" \
+		-a "$HCPPIPEDIR/global/matlab/icasso122/sqrtsim2dis.m" \
+		-I "${HCPPIPEDIR}/global/matlab/icasso122" \
+		-I "${HCPPIPEDIR}/global/matlab/icaDim" \
+		-I "${HCPCIFTIRWDIR}" \
+		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+		-d "${output_directory}"
+	
+	popd > /dev/null
+}
+
+# ------------------------------------------------------------------------------
+# Compile the fix_3_clean MATLAB code
+# ------------------------------------------------------------------------------
+
+compile_fix_3_clean()
+{
+	local app_name=fix_3_clean
+	local output_directory=Compiled_${app_name}
+
+	pushd ${HCPPIPEDIR}/ICAFIX/scripts > /dev/null
+	log_Msg "Working in ${PWD}"
+
+	log_Msg "Creating output directory: ${output_directory}"
+	mkdir -p ${output_directory}
+
+	log_Msg "Compiling ${app_name} application"
+	${MATLAB_HOME}/bin/mcc -m -v ${app_name}.m \
+		-I "${HCPPIPEDIR}/ICAFIX/scripts" \
+		-I "${HCPPIPEDIR}/global/matlab" \
+		-I "${HCPPIPEDIR}/global/matlab/icaDim" \
+		-I "${HCPCIFTIRWDIR}" \
+		-I "${HCPPIPEDIR}/global/fsl/etc/matlab" \
+		-d "${output_directory}"
+	
 	popd > /dev/null
 }
 
@@ -131,6 +188,8 @@ main()
 	compile_prepareICAs
 	compile_functionhighpassandvariancenormalize
 	compile_computeRecleanFeatures
+	compile_melodicicasso
+	compile_fix_3_clean
 }
 
 # ------------------------------------------------------------------------------

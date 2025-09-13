@@ -28,7 +28,7 @@ opts_AddOptional '--standard-image' 'StandardImage' 'image' "standard image (e.g
 
 opts_AddOptional '--standard-mask' 'StandardMask' 'image' "standard brain mask (e.g. MNI152_T1_2mm_brain_mask_dil)" "$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz"
 
-opts_AddOptional '--brain-size' 'BrainSizeOpt' 'number' "pass a brain size value to robustfov"
+opts_AddOptional '--brain-size' 'BrainSize' 'number' "pass a brain size value to robustfov"
 
 opts_AddOptional '--crop' 'crop' 'yes OR no' "whether to crop images, default yes" "yes"
 
@@ -83,7 +83,12 @@ done
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
     $FSLDIR/bin/fslreorient2std ${fn}.nii.gz ${fn}_reorient
-    $FSLDIR/bin/robustfov -i ${fn}_reorient -r ${fn}_roi -m ${fn}_roi2orig.mat $BrainSizeOpt
+    fovcmd=("$FSLDIR"/bin/robustfov -i "${fn}"_reorient -r "${fn}"_roi -m "${fn}"_roi2orig.mat)
+    if [[ "$BrainSize" != "" ]]
+    then
+        fovcmd+=(-b "$BrainSize")
+    fi
+    "${fovcmd[@]}"
     $FSLDIR/bin/convert_xfm -omat ${fn}TOroi.mat -inverse ${fn}_roi2orig.mat
     $FSLDIR/bin/flirt -in ${fn}_roi -ref "$StandardImage" -omat ${fn}roi_to_std.mat -out ${fn}roi_to_std -dof 12 -searchrx -30 30 -searchry -30 30 -searchrz -30 30
     $FSLDIR/bin/convert_xfm -omat ${fn}_std2roi.mat -inverse ${fn}roi_to_std.mat

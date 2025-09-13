@@ -86,7 +86,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for re
 
 opts_AddOptional '--workingdir' 'WD' 'path' "working directory" "."
 
-opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input fieldmap magnitude image"
+opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'image' "input fieldmap magnitude images (@-separated)"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'image' "input fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
 

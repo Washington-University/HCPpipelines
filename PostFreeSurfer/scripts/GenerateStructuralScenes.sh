@@ -32,8 +32,8 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all sessions"
+opts_AddMandatory '--session' 'Session' 'session ID' ""
 opts_AddMandatory '--output-folder' 'OutputSceneFolder' 'path' "output location for QC scene, etc"
 
 opts_AddOptional '--copy-templates' 'TemplatesMethod' 'no|links|files' "how to add the template files to the output directory, default 'files'" 'files'
@@ -73,7 +73,7 @@ TemplatesFolder="$HCPPIPEDIR/global/templates/StructuralQC"
 # to $OutputSceneFolder (use 'TRUE') or not (use 'FALSE', in which case the script determines
 # the relative path to the $TemplatesFolder, and uses that in creating the scene).
 # N.B. If you use 'TRUE', and $OutputSceneFolder is empty (""), then you'll be creating a
-# copy of the template files for each individual subject.
+# copy of the template files for each individual session.
 #CopyTemplates=FALSE
 
 # If $CopyTemplates is TRUE, you may want to copy the files as symlinks rather than making copies of the files.
@@ -160,7 +160,7 @@ function copyTemplateFiles {
 
 # The following are matched to actual strings in the TEMPLATE_structuralQC.scene file
 StudyFolderDummyStr="StudyFolder"
-SubjectIDDummyStr="SubjectID"
+SessionIDDummyStr="SubjectID"
 TemplatesFolderDummyStr="TemplatesFolder"
 
 # ----------------------------
@@ -186,33 +186,33 @@ if ((verbose)); then
 fi
 
 # Define some convenience variables
-AtlasSpaceFolder="$StudyFolder/$Subject/MNINonLinear"
+AtlasSpaceFolder="$StudyFolder/$Session/MNINonLinear"
 mesh="164k_fs_LR"
 
 if [[ -d "$AtlasSpaceFolder/xfms" ]]; then
     if ((verbose)); then
-        echo "Subject folder appears to be okay."
+        echo "Session folder appears to be okay."
     fi
 else
-    log_Err_Abort "ERROR:  Subject folder missing expected directory MNINonLinear/xfms"
+    log_Err_Abort "ERROR:  Session folder missing expected directory MNINonLinear/xfms"
 fi
 
 # Replace dummy strings in the template scenes to generate
-# a scene file appropriate for each subject
-SubjectSceneFile="$OutputSceneFolder/$Subject.structuralQC.wb_scene"
+# a scene file appropriate for each session
+SessionSceneFile="$OutputSceneFolder/$Session.structuralQC.wb_scene"
 sed -e "s|${StudyFolderDummyStr}|${relPathToStudy}|g" \
-    -e "s|${SubjectIDDummyStr}|${Subject}|g" \
+    -e "s|${SessionIDDummyStr}|${Session}|g" \
     -e "s|${TemplatesFolderDummyStr}|${relPathToTemplates}|g" \
-    "$TemplatesFolder"/TEMPLATE_structuralQC.scene > "$SubjectSceneFile"
+    "$TemplatesFolder"/TEMPLATE_structuralQC.scene > "$SessionSceneFile"
 
 # If StrainJ maps don't exist for the various registrations, 
 # but ArealDistortion maps do, use those instead
 for regName in FS MSMSulc MSMAll; do
-    if [[ ! -e "$AtlasSpaceFolder/$Subject.StrainJ_$regName.$mesh.dscalar.nii" && -e "$AtlasSpaceFolder/$Subject.ArealDistortion_$regName.$mesh.dscalar.nii" ]]; then
+    if [[ ! -e "$AtlasSpaceFolder/$Session.StrainJ_$regName.$mesh.dscalar.nii" && -e "$AtlasSpaceFolder/$Session.ArealDistortion_$regName.$mesh.dscalar.nii" ]]; then
         echo "... using ArealDistortion_${regName} map in place of StrainJ_${regName}"
         # Following version of sed "in-place" replacement should work on both Linux and MacOS
-        sed -i.bak "s|StrainJ_${regName}|ArealDistortion_${regName}|g" "$SubjectSceneFile"
-        rm -f "$SubjectSceneFile.bak"
+        sed -i.bak "s|StrainJ_${regName}|ArealDistortion_${regName}|g" "$SessionSceneFile"
+        rm -f "$SessionSceneFile.bak"
     fi
 done
 
@@ -225,7 +225,7 @@ if [[ -e "$acpc2MNILinear" ]]; then
     nativeVol=T1w_acpc_dc_restore
     volumeIn="$AtlasSpaceFolder/../T1w/$nativeVol.nii.gz"
     volumeRef="$AtlasSpaceFolder/T1w_restore.nii.gz"
-    volumeOut="$OutputSceneFolder/$Subject.${nativeVol}_to_MNILinear.nii.gz"
+    volumeOut="$OutputSceneFolder/$Session.${nativeVol}_to_MNILinear.nii.gz"
     if [[ "$maskDilate" != "-1" ]]
     then
         tempfiles_create strucQC_resamp_XXXXXX.nii.gz tempresample
@@ -260,7 +260,7 @@ fi
 
 # Convert FNIRT's Jacobian to log base 2
 jacobian="$AtlasSpaceFolder/xfms/NonlinearRegJacobians.nii.gz"
-jacobianLog2="$OutputSceneFolder/$Subject.NonlinearRegJacobians_log2.nii.gz"
+jacobianLog2="$OutputSceneFolder/$Session.NonlinearRegJacobians_log2.nii.gz"
 wb_command -volume-math "ln(x)/ln(2)" "$jacobianLog2" -var x "$jacobian"
 
 # Set palette properties
@@ -275,30 +275,57 @@ wb_command -volume-palette "$jacobianLog2" MODE_USER_SCALE \
 # Map to surface
 mapName=NonlinearRegJacobians_FNIRT
 for hemi in L R; do 
-    surf=$AtlasSpaceFolder/$Subject.$hemi.midthickness.$mesh.surf.gii
+    surf=$AtlasSpaceFolder/$Session.$hemi.midthickness.$mesh.surf.gii
     # Warpfields are smooth enough that trilinear interpolation is fine in -volume-to-surface-mapping
     wb_command -volume-to-surface-mapping $jacobianLog2 "$surf" \
-        "$OutputSceneFolder/$Subject.$mapName.$hemi.$mesh.func.gii" -trilinear
+        "$OutputSceneFolder/$Session.$mapName.$hemi.$mesh.func.gii" -trilinear
 done
 
 # Convert to dscalar and set palette properties
-wb_command -cifti-create-dense-scalar "$OutputSceneFolder/$Subject.$mapName.$mesh.dscalar.nii" \
-  -left-metric "$OutputSceneFolder/$Subject.$mapName.L.$mesh.func.gii" \
-  -right-metric "$OutputSceneFolder/$Subject.$mapName.R.$mesh.func.gii"
-wb_command -set-map-names "$OutputSceneFolder/$Subject.$mapName.$mesh.dscalar.nii" -map 1 "${Subject}_$mapName"
-wb_command -cifti-palette "$OutputSceneFolder/$Subject.$mapName.$mesh.dscalar.nii" MODE_USER_SCALE \
-  "$OutputSceneFolder/$Subject.$mapName.$mesh.dscalar.nii" \
+wb_command -cifti-create-dense-scalar "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.nii" \
+  -left-metric "$OutputSceneFolder/$Session.$mapName.L.$mesh.func.gii" \
+  -right-metric "$OutputSceneFolder/$Session.$mapName.R.$mesh.func.gii"
+wb_command -set-map-names "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.nii" -map 1 "${Session}_$mapName"
+wb_command -cifti-palette "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.nii" MODE_USER_SCALE \
+  "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.nii" \
   "${paletteArgs[@]}"
+
+#detect MSMAll not having been run yet (the scene capturing tries to load StrainJ/R_MSMAll, even though this is run from PostFS)
+#make fake files to prevent error messages
+#since we are going to create and then delete them, don't do anything if either one already exists
+#so if one of the two expected-missing files exists, we do nothing, and let -show-scene complain
+fakeMSMAll=0
+if [[ ! -f "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii && \
+      ! -f "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii ]]
+then
+    fakeMSMAll=1
+    
+    log_Msg "creating temporary fake MSMAll files to silence -show-scene errors"
+    #try to clean up fake files even for abnormal script exit
+    tempfiles_add "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii
+
+    #make all-zeros files from the respective MSMSulc files
+    wb_command -cifti-math '0' "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii \
+        -var x "$AtlasSpaceFolder"/"$Session".StrainJ_MSMSulc."$mesh".dscalar.nii
+    wb_command -cifti-math '0' "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii \
+        -var x "$AtlasSpaceFolder"/"$Session".StrainR_MSMSulc."$mesh".dscalar.nii
+fi
 
 pngDir="$OutputSceneFolder/snapshots"
 mkdir -p "${pngDir}"
-sceneFile="${Subject}.structuralQC.wb_scene"
+sceneFile="${Session}.structuralQC.wb_scene"
 numScenes=$(grep "SceneInfo Index" "$OutputSceneFolder/$sceneFile" | wc -l)
 for ((ind = 1; ind <= numScenes; ind++)); do
     wb_command -show-scene "$OutputSceneFolder/$sceneFile" $ind "${pngDir}/${sceneFile}${ind}.png" 100 100 -use-window-size
 done
 
 # Cleanup
-rm "$OutputSceneFolder/$Subject.$mapName."{L,R}".$mesh.func.gii"
+if ((fakeMSMAll))
+then
+    log_Msg "removing fake MSMAll files"
+    #remove the fake files manually in case someone has turned off tempfiles deletion
+    rm -f "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii
+fi
+rm "$OutputSceneFolder/$Session.$mapName."{L,R}".$mesh.func.gii"
 
 log_Msg "structural QC scene generation completed"

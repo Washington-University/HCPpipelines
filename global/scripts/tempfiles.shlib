@@ -1,9 +1,29 @@
 #!/bin/echo This script should not be run directly:
 
+#we want a "log error and abort" function, so use the shlib for that
+if [[ "$(type -t log_Err_Abort)" != "function" ]]
+then
+    source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+fi
+
 #call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason, including crash or interrupt)
 function tempfiles_add()
 {
-    tempfiles_list+=("$@")
+    for file in "$@"
+    do
+        #absolute paths go in as-is
+        if [[ "$file" == /* ]]
+        then
+            tempfiles_list+=("$file")
+        else
+            #relative paths need to be converted in case the script does a cd
+            #use an extra character to stop the "strip multiple trailing newlines" behavior
+            filedirdot=$(cd "$(dirname "$file")"; pwd; echo -n .)
+            #manually strip the 1 newline added by pwd and the extra char
+            filedir=${filedirdot%$'\n'.}
+            tempfiles_list+=("$filedir/$(basename "$file")")
+        fi
+    done
 }
 
 #call 'tempfiles_keep 1' to disable deletion
@@ -26,25 +46,16 @@ function tempfiles_create()
         local pattbegin="${1:0:$beginchars}"
         if [[ "$pattbegin" == "" ]]
         then
-            echo "tempfiles_create pattern '$1' needs more consecutive X's" 1>&2
-            exit 1
+            log_Err_Abort "tempfiles_create pattern '$1' needs more consecutive X's"
         fi
         #-t doesn't even look at X's in the template
         #so, handle the /tmp, $TMPDIR stuff manually
         local retbase="$(mktemp "${TMPDIR:-/tmp}/$pattbegin")"
         #don't immediately delete the mktemp result, for better non-collision
         tempfiles_add "$retbase"
-        if (($# <= 1))
-        then
-            echo "developer warning: subshell use of tempfiles_create on mac leaves empty files behind" 1>&2
-        fi
         local ret="$retbase""$pattend"
         echo -n "" > "$ret"
     else
-        if (($# <= 1))
-        then
-            echo "developer warning: possible subshell usage of tempfiles_create detected" 1>&2
-        fi
         local ret="$(mktemp --tmpdir "$1")"
     fi
     tempfiles_add "$ret"
@@ -52,8 +63,21 @@ function tempfiles_create()
     then
         printf -v "$2" '%s' "$ret"
     else
+        #error but don't abort
+        echo "developer error: tempfiles_create called with less than two arguments, this will likely leave temporary files behind" 1>&2
+        
         echo "$ret"
     fi
+}
+
+#makes a copy of a file in the temporary directory and adds it to tempfiles list
+#arguments: filename varname
+function tempfiles_copy()
+{
+    filebase=$(basename "$1")
+    template=$(echo "$filebase" | cut -f1 -d.).tmpcopy_XXXXX.$(echo "$filebase" | cut -f2- -d.)
+    tempfiles_create "$template" "$2"
+    cp "$1" "${!2}"
 }
 
 #implementation details
@@ -62,14 +86,22 @@ tempfiles_keep 0
 
 function tempfiles_cleanup()
 {
-    if [[ "$tempfiles_keepvar" == "0" ]] && ((${#tempfiles_list[@]} > 0))
+    if ((${#tempfiles_list[@]} > 0))
     then
-        rm -f -- "${tempfiles_list[@]}" || true
-        tempfiles_list=()
+        if [[ "$tempfiles_keepvar" == "0" ]]
+        then
+            rm -f -- "${tempfiles_list[@]}" || true
+        else
+            log_Warn "due to tempfiles_keep, the following temporary files were not deleted: ${tempfiles_list[*]}" 1>&2
+        fi
     fi
+    #clear the current list regardless, for less surprising semantics
+    tempfiles_list=()
 }
 
-function tempfiles_par_shell_reset()
+#this is mainly for the purpose of parallel.shlib, as a backgrounded function doesn't affect global variables
+#however, this would also be needed for functions that use tempfiles which are called in a subshell, which also don't affect global variables
+function tempfiles_subshell_reset()
 {
     tempfiles_list=()
     #ignore setting for keeping temp files?
