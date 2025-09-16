@@ -55,8 +55,6 @@ opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'image' '2mm reference mask' 
 
 opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'value' 'BET species label' "0"
 
-opts_AddOptional '--betbiasfieldcor' 'BiasfieldCor' 'boolean' 'BET bias field correction: TRUE or FALSE' "FALSE"
-
 opts_AddOptional '--custommask' 'CustomMask' 'image' 'custom brain mask' "NONE"
 
 

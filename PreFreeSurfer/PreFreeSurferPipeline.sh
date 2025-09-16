@@ -171,12 +171,7 @@ then
     #fix this if the script is more than one level below HCPPIPEDIR
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
-# parameter initialization
-InitDof="${InitDof:=""}"
-TXwTemplateBrain="${TXwTemplateBrain:=""}"
-OutputTXwImageSTRING="${OutputTXwImageSTRING:=""}"
-CustomMask="${CustomMask:=""}"
-betbiasfieldcor="${betbiasfieldcor:=""}"
+
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
@@ -693,6 +688,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
       if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/custom_mask) = 1 ] ; then
           log_Msg "Using ${TXwFolder}/custom_mask for ACPCAlignment and BrainExtraction"
           CustomMask="${TXwFolder}/custom_mask"
+      else
+        CustomMask="NONE"
       fi
 
       log_Msg "Aligning ${TXw} image to ${TXwTemplate} to create native volume space"
@@ -710,7 +707,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --betfraction=${betfraction} \
         --bettop2center=${bettop2center} \
         --betradius=${betradius} \
-        --betbiasfieldcor=${betbiasfieldcor} \
         --ref2mm=${TXwTemplate2mm} \
         --ref2mmmask=${Template2mmMask} \
         --betspecieslabel=$betspecieslabel \
@@ -740,8 +736,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
         --betcenter=${betcenter} \
         --betradius=${betradius} \
         --betfraction=${betfraction} \
-        --initdof=$InitDof \
-        --betbiasfieldcor=${betbiasfieldcor} \
         --brainextract=${BrainExtract} \
         --betspecieslabel=${betspecieslabel}
     fi   

@@ -58,10 +58,6 @@ opts_AddOptional '--betradius' 'BetRadius' 'float' 'radius in mm' "75"
 
 opts_AddOptional '--betfraction' 'BetFraction' 'float' 'fract 0 to 1' "0.3"
 
-opts_AddOptional '--initdof' 'InitDof' 'int' 'initial dof' ""
-
-opts_AddOptional '--betbiasfieldcor' 'BiasfieldCor' 'string' 'TRUE or FALSE' "TRUE"
-
 opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'int' 'species label' "0"
 
 opts_ParseArguments "$@"
