@@ -1,7 +1,6 @@
 function computeRecleanFeatures(StudyFolder, ...
                                 Subject, ...
                                 fMRIListName, ...
-                                RunsXNumTimePoints, ...
                                 hp, ...
                                 Resolution, ...
                                 CorticalParcellationFile, ...
@@ -9,7 +8,6 @@ function computeRecleanFeatures(StudyFolder, ...
                                 CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile)
 
 fMRINames = myreadtext(fMRIListName);
-RunsXNumTimePoints = str2double(RunsXNumTimePoints);
 
 CorticalParcellation=ciftiopen(CorticalParcellationFile,'wb_command');
 VisualROI_CIFTI=ciftiopen(VisualAreasFile,'wb_command');
@@ -50,7 +48,8 @@ for j=1:length(fMRINames)
         end
         probability=prob_file.data(1:size(sICA,2),:);
         Stats=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats']);
-        FeaturesFile=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']);
+        FeaturesFileTable=readtable([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']); % can properly read files both w/ and w/o header; Context: pyfix has features.csv w/ header but legacy fix doesn't
+        FeaturesFile=table2array(FeaturesFileTable); % convert table object to a matrix
         Powerspectra=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix']);
 
         % derive TR
@@ -83,10 +82,10 @@ for j=1:length(fMRINames)
 
         CIFTIMSMAll=ciftiopen(CIFTIMSMAll_file,'wb_command');
         CIFTIMSMAllVN=ciftiopen(vn_file_path,'wb_command');
-        CIFTIMSMAll.cdata=CIFTIMSMAll.cdata./repmat(CIFTIMSMAllVN.cdata,1,size(CIFTIMSMAll.cdata,2));           
+        CIFTIMSMAll.cdata=CIFTIMSMAll.cdata./repmat(CIFTIMSMAllVN.cdata,1,size(CIFTIMSMAll.cdata,2));
         CIFTIMSMAllSmooth=ciftiopen([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
         CIFTIMSMAllSmoothVN=ciftiopen([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
-        CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./repmat(CIFTIMSMAllSmoothVN.cdata,1,size(CIFTIMSMAllSmooth.cdata,2));           
+        CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./repmat(CIFTIMSMAllSmoothVN.cdata,1,size(CIFTIMSMAllSmooth.cdata,2));
         %CIFTIDropouts=ciftiopen([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'],'wb_command');
         cifti_dropout_file=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'];
 
@@ -108,25 +107,25 @@ for j=1:length(fMRINames)
         DROPOUT=read_avw(dropout_file);
         VOLUME=read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz']);
         SBREFOrig = read_avw([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
-        
+
         VOLUME = reshape(VOLUME, prod([size(VOLUME, 1), size(VOLUME, 2), size(VOLUME, 3)]), size(VOLUME, 4));
         volumeValid = range(VOLUME, 2) > 0;
         Volume_data = VOLUME(volumeValid, :);
-        
+
         [wmparc_data, WMPARC] = vol_reshape_and_mask(WMPARC, volumeValid);
         wm_data = vol_reshape_and_mask(WM, volumeValid);
         csf_data = vol_reshape_and_mask(CSF, volumeValid);
         nongray_data = vol_reshape_and_mask(NONGREY, volumeValid);
         dropout_data = vol_reshape_and_mask(DROPOUT, volumeValid);
         sbref_data = vol_reshape_and_mask(SBREFOrig, volumeValid);
-        
+
         wm_data(wm_data ~= 0) = 1;
         csf_data(csf_data ~= 0) = 1;
         noisy_data=(sum(Volume_data,2)./sbref_data)>prctile(sum(Volume_data,2)./sbref_data,87.5);
         edge_data=wmparc_data==0;
         Volume_data=Volume_data./std(Volume_data(:));
         CIFTI.cdata=CIFTI.cdata./std(CIFTI.cdata(:));
-        
+
         nongray_data(nongray_data ~= 0) =1;
 
         NonGrey=nongray_data;
@@ -141,7 +140,7 @@ for j=1:length(fMRINames)
         VOLSMOOTHROIS=reshape(VOLSMOOTHROIS,size(SBREFOrig,1),size(SBREFOrig,2),size(SBREFOrig,3),size(SBREFOrig,4));
         save_avw(VOLSMOOTHROIS,[SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz'],'f',[1.6 1.6 1.6 1]);
         system(['fslcpgeom ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
-        
+
         SmoothingSigma=FinalSpatialSmoothingFWHM/(2*sqrt(2*log(2)));
         system(['wb_command -volume-label-import ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz "" ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz']);
         system(['wb_command -volume-parcel-smoothing ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz ' SubjFolderlist '/MNINonLinear/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz ' num2str(SmoothingSigma) ' ' SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
@@ -150,7 +149,7 @@ for j=1:length(fMRINames)
         VolumeSmooth_data = vol_reshape_and_mask(VOLUMESMOOTH, volumeValid);
         VolumeSmooth_data=VolumeSmooth_data./std(Volume_data(:));
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./std(CIFTIMSMAll.cdata(:));
-        
+
         % structure idx
         CIFTI_LENGTH=length(CIFTI.cdata);
 
@@ -169,7 +168,7 @@ for j=1:length(fMRINames)
         CEREBELLUM_Right_idx_list = CEREBELLUM_Right_idx_list_tmp.ciftilist;
 
         CEREBELLUM_idx_list = [CEREBELLUM_Left_idx_list, CEREBELLUM_Right_idx_list];
-        
+
         BRAIN_STEM_idx_list_tmp = cifti_diminfo_dense_get_volume_structure_info(CIFTI.diminfo{1}, 'BRAIN_STEM');
         BRAIN_STEM_idx_list = BRAIN_STEM_idx_list_tmp.ciftilist;
 
@@ -200,7 +199,7 @@ for j=1:length(fMRINames)
             NewFeatures(k,18)=sum(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./sum(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,19)=sum(abs(Volume_data(noisy_data==1,k)))./sum(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,20)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,21)=sum(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI
             NewFeatures(k,22)=sum(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./sum(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,23)=sum(abs(CIFTI.cdata(:,k)))./sum(abs(Volume_data(NonGrey==1,k))); %CIFTI/NonGrey
             NewFeatures(k,24)=sum(abs(CIFTI.cdata(CORTEX_idx_list,k)))./sum(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey
@@ -225,7 +224,7 @@ for j=1:length(fMRINames)
             NewFeatures(k,42)=mean(abs(CIFTI.cdata(CIFTIDropouts.cdata>0.25,k)))./mean(abs(CIFTI.cdata(:,k))); %CIFTIDropout/CIFTI (computed using HCP Pipelines from SE and GRE Images)
             NewFeatures(k,43)=mean(abs(Volume_data(noisy_data==1,k)))./mean(abs(CIFTI.cdata(:,k))); %NoisyVoxels/CIFTI (top 12.5% variance)
             NewFeatures(k,44)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonVisualROI==1,k))); %VisualCortexCIFTI/NonVisualCortexCIFTI
-            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI              
+            NewFeatures(k,45)=mean(abs(CIFTIMSMAll.cdata(VisualROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(CEREBELLUM_idx_list,k))); %VisualCortexCIFTI/CerebellumCIFTI
             NewFeatures(k,46)=mean(abs(CIFTIMSMAll.cdata(LanguageROI==1,k)))./mean(abs(CIFTIMSMAll.cdata(NonLanguageROI==1,k))); %LanguageCortexCIFTI/NonLanguageCortexCIFTI
             NewFeatures(k,47)=mean(abs(CIFTI.cdata(:,k)))./mean(abs(Volume_data(NonGrey==1,k))); %CIFTI/NonGrey
             NewFeatures(k,48)=mean(abs(CIFTI.cdata(CORTEX_idx_list,k)))./mean(abs(Volume_data(NonGrey==1,k))); %Cerebral Cortex/NonGrey

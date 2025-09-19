@@ -97,13 +97,13 @@ HighPass="0"
 fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-RegName="MSMAll_InitalReg"
+RegName="MSMAll_InitialReg"
 HighResMesh="164"
 LowResMesh="32"
 InRegName="MSMSulc"
 MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 Octave
 
-fMRINames=`echo ${fMRINames} | sed 's/ /@/g'`
+fMRINames=$(echo ${fMRINames} | sed 's/ /@/g')
 
 for Subject in $Subjlist ; do
     echo "    ${Subject}"

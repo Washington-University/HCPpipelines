@@ -290,6 +290,27 @@ wb_command -cifti-palette "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.ni
   "$OutputSceneFolder/$Session.$mapName.$mesh.dscalar.nii" \
   "${paletteArgs[@]}"
 
+#detect MSMAll not having been run yet (the scene capturing tries to load StrainJ/R_MSMAll, even though this is run from PostFS)
+#make fake files to prevent error messages
+#since we are going to create and then delete them, don't do anything if either one already exists
+#so if one of the two expected-missing files exists, we do nothing, and let -show-scene complain
+fakeMSMAll=0
+if [[ ! -f "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii && \
+      ! -f "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii ]]
+then
+    fakeMSMAll=1
+    
+    log_Msg "creating temporary fake MSMAll files to silence -show-scene errors"
+    #try to clean up fake files even for abnormal script exit
+    tempfiles_add "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii
+
+    #make all-zeros files from the respective MSMSulc files
+    wb_command -cifti-math '0' "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii \
+        -var x "$AtlasSpaceFolder"/"$Session".StrainJ_MSMSulc."$mesh".dscalar.nii
+    wb_command -cifti-math '0' "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii \
+        -var x "$AtlasSpaceFolder"/"$Session".StrainR_MSMSulc."$mesh".dscalar.nii
+fi
+
 pngDir="$OutputSceneFolder/snapshots"
 mkdir -p "${pngDir}"
 sceneFile="${Session}.structuralQC.wb_scene"
@@ -299,6 +320,12 @@ for ((ind = 1; ind <= numScenes; ind++)); do
 done
 
 # Cleanup
+if ((fakeMSMAll))
+then
+    log_Msg "removing fake MSMAll files"
+    #remove the fake files manually in case someone has turned off tempfiles deletion
+    rm -f "$AtlasSpaceFolder"/"$Session".StrainJ_MSMAll."$mesh".dscalar.nii "$AtlasSpaceFolder"/"$Session".StrainR_MSMAll."$mesh".dscalar.nii
+fi
 rm "$OutputSceneFolder/$Session.$mapName."{L,R}".$mesh.func.gii"
 
 log_Msg "structural QC scene generation completed"

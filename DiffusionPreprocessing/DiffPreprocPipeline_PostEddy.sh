@@ -120,9 +120,9 @@ DEFAULT_DEGREES_OF_FREEDOM=6
 
 opts_SetScriptDescription "Perform the Post-Eddy steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder" 
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
 
@@ -139,6 +139,9 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
 Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
+
+#If set, longitudinal mode is triggered.
+opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. If set, longitudinal mode is triggered." ""
 
 
 opts_ParseArguments "$@"
@@ -196,8 +199,8 @@ validate_scripts() {
 validate_scripts "$@"
 
 # Establish output directory paths
-outdir=${StudyFolder}/${Subject}/${DWIName}
-outdirT1w=${StudyFolder}/${Subject}/T1w/${DWIName}
+outdir=${StudyFolder}/${Session}/${DWIName}
+outdirT1w=${StudyFolder}/${Session}/T1w/${DWIName}
 
 # Determine whether Gradient Nonlinearity Distortion coefficients are supplied
 GdFlag=0
@@ -206,16 +209,23 @@ if [ ! ${GdCoeffs} = "NONE" ]; then
 	GdFlag=1
 fi
 
+IsLongitudinal=0
+if [ -n "$T1wCross2LongXfm" ]; then
+    IsLongitudinal=1
+fi
+
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
 select_flag="0"
 if ((SelectBestB0)); then
 	select_flag="1"
 fi
-${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+if (( ! IsLongitudinal )); then 
+    ${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+fi
 
 # Establish variables that follow naming conventions
-T1wFolder="${StudyFolder}/${Subject}/T1w" #Location of T1w images
+T1wFolder="${StudyFolder}/${Session}/T1w" #Location of T1w images
 T1wImage="${T1wFolder}/T1w_acpc_dc"
 T1wRestoreImage="${T1wFolder}/T1w_acpc_dc_restore"
 T1wRestoreImageBrain="${T1wFolder}/T1w_acpc_dc_restore_brain"
@@ -228,21 +238,22 @@ DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
 ${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-	--t1folder="${T1wFolder}" \
-	--subject="${Subject}" \
-	--workingdir="${outdir}/reg" \
-	--datadiffdir="${outdir}/data" \
-	--t1="${T1wImage}" \
-	--t1restore="${T1wRestoreImage}" \
-	--t1restorebrain="${T1wRestoreImageBrain}" \
-	--biasfield="${BiasField}" \
-	--brainmask="${FreeSurferBrainMask}" \
-	--datadiffT1wdir="${outdirT1w}" \
-	--regoutput="${RegOutput}" \
-	--QAimage="${QAImage}" \
-	--dof="${DegreesOfFreedom}" \
-	--gdflag=${GdFlag} \
-	--diffresol=${DiffRes}
+    --t1folder="${T1wFolder}" \
+    --session="${Session}" \
+    --workingdir="${outdir}/reg" \
+    --datadiffdir="${outdir}/data" \
+    --t1="${T1wImage}" \
+    --t1restore="${T1wRestoreImage}" \
+    --t1restorebrain="${T1wRestoreImageBrain}" \
+    --biasfield="${BiasField}" \
+    --brainmask="${FreeSurferBrainMask}" \
+    --datadiffT1wdir="${outdirT1w}" \
+    --regoutput="${RegOutput}" \
+    --QAimage="${QAImage}" \
+    --dof="${DegreesOfFreedom}" \
+    --gdflag=${GdFlag} \
+    --diffresol=${DiffRes} \
+    --t1w-cross2long-xfm="$T1wCross2LongXfm"
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"
@@ -253,11 +264,11 @@ from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 
 ${runcmd} mkdir -p ${to_location}
 for filename in ${from_files}; do
-	${runcmd} cp -p ${filename} ${to_location}
+	${runcmd} cp -p ${filename} ${to_location} || ${runcmd} cp ${filename} ${to_location}
 done
 
 ${runcmd} mkdir -p ${outdirT1w}/QC
-${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
+${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC || ${runcmd} cp ${outdir}/QC/* ${outdirT1w}/QC
 ${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 
 log_Msg "Completed!"

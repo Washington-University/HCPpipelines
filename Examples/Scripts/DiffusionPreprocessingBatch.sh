@@ -125,8 +125,7 @@ for Subject in $Subjlist ; do
   # propagated to the final output, *and* these pairs will be averaged to yield a single
   # volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
   # avoids having volumes with different SNR features/ residual distortions.
-  # [This behavior can be changed through the hard-coded 'CombineDataFlag' variable in the 
-  # DiffPreprocPipeline_PostEddy.sh script if necessary].
+  # [This behavior can be changed via the --combine-data-flag if necessary].
   
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"

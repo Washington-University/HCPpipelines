@@ -39,11 +39,12 @@ function par_addjob()
 function par_runjobs()
 {
     #check if there are any jobs added
-    if (( ${#par_jobarray[@]} == 0 )); then 
+    if ((${#par_jobarray[@]} == 0))
+    then 
         echo "WARNING: no parallel jobs added, nothing to run"
         return 0 
     fi
-
+    #avoid calling par_numphys if we have an argument, because it can produce a warning
     local numpar=-1
     #treat empty string as default
     if (($# >= 1)) && [[ "$1" != "" ]]
@@ -91,18 +92,21 @@ function par_runjobs()
                 wait "${jobpids[$((i - numpar))]}"
             fi
         fi
+        joboutlog="$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log"
+        joberrlog="$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log"
         (
-            tempfiles_par_shell_reset
+            tempfiles_subshell_reset
             
             #WARNING: using a pipe puts the command in a different subshell, which breaks tempfiles, so all input/output redirect/pipe stuff is done on the outside of this subshell
             if ! "${cmdargs[@]}"
             then
                 #since the subshell is backgrounded, we have a saved copy of whatever the global launch count was when the subshell started
-                echo "error in job $par_global_launch_count, command: ${cmdargs[*]}" >> "$badjobslog"
+                echo "error in job $par_global_launch_count, check "$joberrlog" and "$joboutlog", command: ${cmdargs[*]}" >> "$badjobslog"
             fi
             
             tempfiles_cleanup
-        ) <<<"${par_jobinputarray[i]}" 2>&1 > "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.o.log" | tee "$par_logfile_dir/$par_global_scriptname.$$.$par_global_launch_count.e.log" 1>&2 &
+            #explanation: set stderr messages to go to original stdout, redirect only stdout messages to a file, take the new stdout (which only has stderr left in it) and tee it (duplicate the messages) to a file and back to stdout, redirect that stdout back to stderr
+        ) <<<"${par_jobinputarray[i]}" 2>&1 > "$joboutlog" | tee "$joberrlog" 1>&2 &
         #save all the job pids, why not
         jobpids[$i]="$!"
         par_global_launch_count=$((par_global_launch_count + 1))

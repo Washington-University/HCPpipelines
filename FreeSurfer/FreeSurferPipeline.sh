@@ -694,6 +694,18 @@ return_code=$?
 if [ "${return_code}" != "0" ]; then
     log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"
 fi
+#TSC: make pial.deformed also
+mri_surf2surf --s ${SessionID} --sval-xyz pial --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval pial.deformed --surfreg pial --hemi lh
+return_code=$?
+if [ "${return_code}" != "0" ]; then
+    log_Err_Abort "mri_surf2surf command for left hemisphere failed with return_code: ${return_code}"
+fi
+
+mri_surf2surf --s ${SessionID} --sval-xyz pial --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval pial.deformed --surfreg pial --hemi rh
+return_code=$?
+if [ "${return_code}" != "0" ]; then
+    log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"
+fi
 
 popd
 

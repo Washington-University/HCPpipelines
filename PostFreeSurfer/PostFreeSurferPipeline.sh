@@ -73,17 +73,13 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
-#help info for option gets printed like "--foo=<$3> - $4"
-
-#TSC:should --path or --study-folder be the flag displayed by the usage?
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" "--path"
 opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label." "--subject" #legacy --subject option
-opts_AddMandatory '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "<HCPpipelines>/global/templates/standard_mesh_atlases or equivalent"
-opts_AddMandatory '--grayordinatesres' 'GrayordinatesResolutions' 'number' "usually '2', resolution of grayordinates to use"
-opts_AddMandatory '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<HCPpipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
-opts_AddMandatory '--hiresmesh' 'HighResMesh' 'number' "usually '164', the standard mesh for T1w-resolution data data"
-opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the standard mesh for fMRI data"
+opts_AddOptional '--surfatlasdir' 'SurfaceAtlasDIR' 'path' "path to find low resolution spheres, etc, default <pipelines>/global/templates/standard_mesh_atlases" "$HCPPIPEDIR/global/templates/standard_mesh_atlases"
+opts_AddOptional '--grayordinatesres' 'GrayordinatesResolution' 'number' "resolution of grayordinates to use, default 2" '2'
+opts_AddOptional '--grayordinatesdir' 'GrayordinatesSpaceDIR' 'path' "<pipelines>/global/templates/<num>_Greyordinates or equivalent, for the given --grayordinatesres"
+opts_AddOptional '--hiresmesh' 'HighResMesh' 'number' "the standard mesh for T1w-resolution data data, default 164" '164'
+opts_AddOptional '--lowresmesh' 'LowResMeshes' 'number' "the standard mesh(es) to use for fMRI data, like 32@59"
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
 opts_AddMandatory '--freesurferlabels' 'FreeSurferLabels' 'file' "location of FreeSurferAllLut.txt"
 opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin map to use for bias correction"
@@ -128,6 +124,38 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+#internal scripts don't actually support multiple low res in one call, mostly because they are in different folders
+if [[ "$GrayordinatesSpaceDIR" == "" ]]
+then
+    case "$GrayordinatesResolution" in
+        (2)
+            GrayordinatesSpaceDIR="$HCPPIPEDIR"/global/templates/91282_Greyordinates
+            ;;
+        (1.60)
+            GrayordinatesSpaceDIR="$HCPPIPEDIR"/global/templates/170494_Greyordinates
+            ;;
+        (*)
+            log_Err_Abort "grayordinate resolution '$GrayordinatesResolution' not recognized as a standard resolution, please use '2', '1.60', or specify --grayordinatesdir manually"
+            ;;
+    esac
+fi
+
+#internal scripts do support lists for this LowResMeshes though...
+if [[ "$LowResMeshes" == "" ]]
+then
+    case "$GrayordinatesResolution" in
+        (2)
+            LowResMeshes=32
+            ;;
+        (1.60)
+            LowResMeshes=59
+            ;;
+        (*)
+            log_Err_Abort "grayordinate resolution '$GrayordinatesResolution' not recognized as a standard resolution, please use '2', '1.60', or specify --lowresmesh manually"
+            ;;
+    esac
+fi
 
 doProcessing=1
 doQC=1
@@ -306,7 +334,7 @@ if ((doProcessing)); then
     argList+=("$T1wImageBrainMask")         # ${17}
     argList+=("$FreeSurferLabels")          # ${18}
     argList+=("$GrayordinatesSpaceDIR")     # ${19}
-    argList+=("$GrayordinatesResolutions")  # ${20}
+    argList+=("$GrayordinatesResolution")   # ${20}
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
@@ -314,7 +342,7 @@ if ((doProcessing)); then
     argList+=("$Subject")                   # ${25} #Actual subject label, not session label.
     argList+=("$LongitudinalTemplate")      # ${26}
     argList+=("$SessionList")  # ${27}
-
+    
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
     if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
@@ -332,6 +360,7 @@ if ((doProcessing)); then
     argList+=("$AtlasSpaceT1wImage")        # ${6}
     argList+=("$T1wRestoreImage")           # ${7}  Called T1wImage in CreateRibbon.sh
     argList+=("$FreeSurferLabels")          # ${8}
+    
     "$PipelineScripts"/CreateRibbon.sh "${argList[@]}"
 
     log_Msg "Myelin Mapping"
@@ -378,8 +407,31 @@ if ((doProcessing)); then
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
     argList+=("$IsLongitudinal")
+    
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
+
+    # Longitudinal mode only:
+    # copy template medial wall ROI's created at the previous step to all timepoints.
+    # This works as follows: 
+    # 1. in the TIMEPOINT_STAGE1, the ROI creation is skipped, and ribbon and myelin map creation is not done
+    # 2. in the TEMPLATE stage, the ROI's and myelin maps for the template are created
+    # 3. then, the code below is executed to copy the template ROI's to the timepoints 
+    # 4. TIMEPOINT_STAGE2 is executed (only post-MSMSulc surface creation code is executed in FreeSurfer2CaretConvertAndRegisterNonlinear.sh), 
+    # surfaces and myelin maps are created using the template ROI's.
+    
+    if [ "$LongitudinalMode" == "TEMPLATE" ]; then
+        IFS=@ read -r -a Sessions <<< "$SessionList"
+        NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
+        for tp in ${Sessions[@]}; do
+            NativeFolderTP="$tp.long.$LongitudinalTemplate"
+            mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
+            for Hemisphere in L R; do
+                cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+                "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+            done
+        done
+    fi
 
 if ((doQC)); then
   log_Msg "Generating structural QC scene and snapshots"
@@ -393,4 +445,3 @@ verbose_green_echo "---> Finished ${log_ToolName}"
 verbose_echo " "
 
 log_Msg "Completed!"
-

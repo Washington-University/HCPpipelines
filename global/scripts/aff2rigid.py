@@ -6,11 +6,11 @@ from commands import getoutput
 from numpy import *
 
 def usage():
-    print "Usage: " + argv[0] + " <input2standard mat> <output mat>"
-    print " "
-    print "       First argument is the FLIRT transform (12 DOF) from the input image to standard"
-    print "       Second argument is the output matrix which will go from the input image to standard space (6 DOF)"
-    print "          aligning the AC, the AC-PC line and the mid-sagittal plane (in order of decreasing accuracy)"
+    print("Usage: " + argv[0] + " <input2standard mat> <output mat>")
+    print(" ")
+    print("       First argument is the FLIRT transform (12 DOF) from the input image to standard")
+    print("       Second argument is the output matrix which will go from the input image to standard space (6 DOF)")
+    print("          aligning the AC, the AC-PC line and the mid-sagittal plane (in order of decreasing accuracy)")
     sys.exit(1)
 
 if len(argv) < 2:
@@ -33,7 +33,7 @@ v21=v21/linalg.norm(v21)
 v31=v31-multiply(v31.T * v21,v21)
 v31=v31/linalg.norm(v31)
 tmp=cross(v21[0:3,0].T,v31[0:3,0].T).T
-v41=mat(zeros((4,1)))
+v41=matrix(zeros((4,1)))
 v41[0:3,0]=tmp
 # Map vectors to native space
 w21=ainv*(v21)
@@ -43,7 +43,7 @@ w21=w21/linalg.norm(w21)
 w31=w31-multiply(w31.T * w21,w21)
 w31=w31/linalg.norm(w31)
 tmp=cross(w21[0:3,0].T,w31[0:3,0].T).T
-w41=mat(zeros((4,1)))
+w41=matrix(zeros((4,1)))
 w41[0:3,0]=tmp
 
 # setup matrix: native to MNI space
