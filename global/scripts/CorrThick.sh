@@ -25,6 +25,31 @@ opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smooth
 opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
 opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
+# This pipeline requires several Python dependencies: numpy, nibabel, scipy, psutil (plus standard libraries: os, math, multiprocessing, concurrent.futures) 
+
+# To run this pipeline stand-alone (without rerunning the full HCP pipeline), 
+# prepare a batch script that defines: 
+# - Your subject directory 
+# - The subject list 
+# - Registration method(s) (MSMSulc, MSMAll, or both) 
+# - The location of the HCP Pipeline environment setup script (SetUpHCPPipeline.sh) 
+
+# Example batch script: 
+
+####################################### 
+#EnvironmentScript="/path/to/SetUpHCPPipeline.sh" # HCP Pipeline environment script 
+#source "$EnvironmentScript" 
+
+#SubjectDir="/path/to/subjects" 
+#SubjList="100206 100307 100408 ...." # space-separated subject IDs 
+
+#RegName="MSMSulc@MSMAll" # one or more registrations 
+
+#for Subject in $SubjList ; do 
+	#bash "$HCPPIPEDIR/global/scripts/CorrThick.sh" --subject-dir="$SubjectDir" --subject="$Subject" --regnames="$RegNames" --skip-computation=NO 
+#done 
+#######################################
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -68,7 +93,7 @@ if ((! SkC)); then
 		fi
 		(
 			cd "$HCPPIPEDIR"/global/scripts/CorrThick
-			python CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth"
+			python3 CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth"
 		)
 	done	
 fi
