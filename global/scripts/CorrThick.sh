@@ -23,7 +23,14 @@ opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression ca
 opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
 opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
 opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
-opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
+opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected (folding-compensated) cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
+
+# The papers associated with this pipeline are available at: 
+
+# https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1 and
+# https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
+
+# Please cite these work and give proper attribution when using this measure.
 
 # This pipeline requires several Python dependencies: numpy, nibabel, scipy, psutil (plus standard libraries: os, math, multiprocessing, concurrent.futures) 
 

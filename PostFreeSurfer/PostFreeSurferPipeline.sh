@@ -92,7 +92,7 @@ opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run struct
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 opts_AddOptional '--metric-regression' 'MetricReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'
 NOTE: if you run with 'OLD' and later decide you want the results from the new method, it is NOT RECOMMENDED to rerun PostFreeSurferPipeline.sh again, because it runs a registration that shouldn't be changed after other preprocessing pipelines are run.
-Instead, run global/scripts/CorrThick.sh with appropriate arguments, which will only generate the new folding-compensated thickness outputs.
+Instead, run global/scripts/CorrThick.sh with appropriate arguments, which will only generate the new folding-compensated (curvature-corrected) thickness outputs.
 'NEW' or 'BOTH' require python 3 with numpy, nibabel, and scipy installed." 'BOTH'
 
 opts_AddOptional '--subject-long' 'Subject' 'subject ID' "subject label (used in longitudinal mode), may be different from Session"
