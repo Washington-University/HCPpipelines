@@ -33,21 +33,21 @@ for i=1:length(Subjlist)
     end
     for j=1:length(fMRINames)
         if exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt'],'file')
-            sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+            sICA=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'],'-ascii');
             %sICA_table=readtable([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
             %sICA=sICA_table{:,:};
             %sICA(find(isnan(sICA)))=0;
             if rclean==1
                 if exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/HandSignal.txt'])
-                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/HandSignal.txt']);
+                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/HandSignal.txt'],'-ascii');
                 elseif exist([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt'])
-                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt']);
+                    Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/ReCleanSignal.txt'],'-ascii');
                 else
                     disp('reclean or hand sICA classification file not found');
                     quit
                 end
             else
-                Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt']);
+                Signal=load([SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_hp' hp '.ica/Signal.txt'],'-ascii');
             end
             file_name=[SubjFolder '/MNINonLinear/Results/' fMRINames{j} '/' fMRINames{j} '_Atlas' RegString ProcString '.dtseries.nii'];
             CIFTIDenseTimeSeries=ciftiopen(file_name,wbcommand);
