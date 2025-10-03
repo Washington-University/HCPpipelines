@@ -73,7 +73,7 @@ SkC=$(opts_StringToBool "$SkipCompute")
 #set paths
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
-T1wFolder="$SubjectDir"/"$Subject"/T1w/Native
+T1wNativeFolder="$SubjectDir"/"$Subject"/T1w/Native
 
 #Make intermediate directory to save intermediate files
 mkdir -p "$NativeFolder"/CorrThick
@@ -127,9 +127,9 @@ for Hemisphere in $Hemi ; do
 			RegString="_$RegName"
 		fi
 		for Map in $MapListFunc ; do
-			wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map""$RegString"."$HighResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+			wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map""$RegString"."$HighResMesh"k_fs_LR.shape.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
 			wb_command -metric-mask "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map""$RegString"."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/"$Subject"."$Hemisphere"."$Map""$RegString"."$HighResMesh"k_fs_LR.shape.gii
-			wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map""$RegString"."$LowResMesh"k_fs_LR.shape.gii -area-surfs "$T1wFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+			wb_command -metric-resample "$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.shape.gii "$RegSphere" "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map""$RegString"."$LowResMesh"k_fs_LR.shape.gii -area-surfs "$T1wNativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
 			wb_command -metric-mask "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map""$RegString"."$LowResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$NonlinearFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map""$RegString"."$LowResMesh"k_fs_LR.shape.gii
 		done
 	done

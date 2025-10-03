@@ -90,7 +90,7 @@ opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflatio
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
-opts_AddOptional '--metric-regression' 'MetricReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'
+opts_AddOptional '--thickness-regression' 'ThicknessReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'
 NOTE: if you run with 'OLD' and later decide you want the results from the new method, it is NOT RECOMMENDED to rerun PostFreeSurferPipeline.sh again, because it runs a registration that shouldn't be changed after other preprocessing pipelines are run.
 Instead, run global/scripts/CorrThick.sh with appropriate arguments, which will only generate the new folding-compensated (curvature-corrected) thickness outputs.
 'NEW' or 'BOTH' require python 3 with numpy, nibabel, and scipy installed." 'BOTH'
@@ -411,7 +411,7 @@ if ((doProcessing)); then
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
     argList+=("$IsLongitudinal")
-    argList+=("$MetricReg")                                # ${42}
+    argList+=("$ThicknessReg")                                # ${42}
     
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
