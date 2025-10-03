@@ -96,6 +96,14 @@ UseIndMean="${40}"
 IsLongitudinal="${41}"
 MetricReg="${42}"
 
+case "$MetricReg" in
+    (NEW|OLD|BOTH)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized thickness compensation method: '$MetricReg', use NEW, OLD, or BOTH"
+        ;;
+esac
+
 log_Msg "RegName: ${RegName}"
 
 verbose_echo " "
