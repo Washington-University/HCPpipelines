@@ -25,37 +25,78 @@ opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smooth
 opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
 opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected (folding-compensated) cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
-# The papers associated with this pipeline are available at: 
+cat <<EOF
 
-# https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1 and
-# https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
+Curvature-corrected cortical thickness pipeline
+-----------------------------------------------
 
-# Please cite these work and give proper attribution when using this measure.
+This script computes folding-compensated cortical thickness (curvature-corrected thickness),
+and saves regression coefficients, curvatures, and resampled outputs.
 
-# This pipeline requires several Python dependencies: numpy, nibabel, scipy, psutil (plus standard libraries: os, math, multiprocessing, concurrent.futures) 
+References:
+  - https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1
+  - https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
+Please cite these works when using this measure.
 
-# To run this pipeline stand-alone (without rerunning the full HCP pipeline), 
-# prepare a batch script that defines: 
-# - Your subject directory 
-# - The subject list 
-# - Registration method(s) (MSMSulc, MSMAll, or both) 
-# - The location of the HCP Pipeline environment setup script (SetUpHCPPipeline.sh) 
+Requirements:
+  Python dependencies: numpy, nibabel, scipy, psutil
+  Standard libraries: os, math, multiprocessing, concurrent.futures
 
-# Example batch script: 
+EOF
 
-####################################### 
-#EnvironmentScript="/path/to/SetUpHCPPipeline.sh" # HCP Pipeline environment script 
-#source "$EnvironmentScript" 
+# Extended help text
+print_help() {
+    cat <<EOF
 
-#SubjectDir="/path/to/subjects" 
-#SubjList="100206 100307 100408 ...." # space-separated subject IDs 
+Arguments:
+  Mandatory:
+    --subject-dir   Path to folder containing all subjects
+    --subject       Subject ID
 
-#RegName="MSMSulc@MSMAll" # one or more registrations 
+  Optional:
+    --regnames       Registration name(s), separated by '@', default: MSMSulc
+    --hemi           Hemisphere: L=Left, R=Right, B=Both, default: B
+    --surf           Surface: white or midthickness, default: midthickness
+    --patch-size     Patch kernel size in mm FWHM, default: 6
+    --surf-smooth    Surface smoothing in mm FWHM, default: 2.14
+    --metric-smooth  Metric smoothing in mm FWHM, default: 2.52
+    --skip-computation  YES or NO, skip computation if already available, default: NO
+    
+Running stand-alone:
+  To run outside the full HCP pipeline, prepare a batch script that defines (at least):
+    - Subject directory
+    - Subject list
+    - Location of the HCP Pipeline environment setup script (SetUpHCPPipeline.sh)
 
-#for Subject in $SubjList ; do 
-	#bash "$HCPPIPEDIR/global/scripts/CorrThick.sh" --subject-dir="$SubjectDir" --subject="$Subject" --regnames="$RegNames" --skip-computation=NO 
-#done 
-#######################################
+Example batch script:
+---------------------------------------
+EnvironmentScript="/path/to/SetUpHCPPipeline.sh" # HCP Pipeline environment script
+source "\$EnvironmentScript"
+
+SubjectDir="/path/to/subjects"
+SubjList="100206 100307 100408 ...."  # space-separated subject IDs
+RegNames="MSMSulc@MSMAll"
+
+for Subject in \$SubjList ; do
+    bash "\$HCPPIPEDIR/global/scripts/CorrThick.sh" \\
+        --subject-dir="\$SubjectDir" \\
+        --subject="\$Subject" \\
+        --regnames="\$RegNames" \\
+        --skip-computation=NO
+done
+---------------------------------------
+
+EOF
+}
+
+# If --help is present, print help and exit
+for arg in "$@"; do
+    if [[ "$arg" == "--help" ]]; then
+        print_help
+        exit 0
+    fi
+done
+
 
 opts_ParseArguments "$@"
 
