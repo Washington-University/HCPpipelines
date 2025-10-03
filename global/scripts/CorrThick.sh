@@ -13,25 +13,7 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 #description of script/command
-opts_SetScriptDescription "Run curvature-corrected cortical thickness python script and save curvatures, regression coefficients, and curvature-corrected thickness"
-
-opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
-opts_AddOptional '--regnames' 'RegNamesStr' 'my reg str' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' default MSMSulc" "MSMSulc"
-opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for regression calculation, L=Left, R=Right, or B=Both, default 'B'" "B"
-opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression calculation, white or midthickness, default midthickness" "midthickness"
-opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
-opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
-opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
-opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected (folding-compensated) cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
-
-cat <<EOF
-
-Curvature-corrected cortical thickness pipeline
------------------------------------------------
-
-This script computes folding-compensated cortical thickness (curvature-corrected thickness),
-and saves regression coefficients, curvatures, and resampled outputs.
+opts_SetScriptDescription "Run curvature-corrected (folding-compensated) cortical thickness python script and save curvature-corrected (folding-compensated) thickness, curvatures, regression coefficients, and resampled outputs.
 
 References:
   - https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1
@@ -42,26 +24,6 @@ Requirements:
   Python dependencies: numpy, nibabel, scipy, psutil
   Standard libraries: os, math, multiprocessing, concurrent.futures
 
-EOF
-
-# Extended help text
-print_help() {
-    cat <<EOF
-
-Arguments:
-  Mandatory:
-    --subject-dir   Path to folder containing all subjects
-    --subject       Subject ID
-
-  Optional:
-    --regnames       Registration name(s), separated by '@', default: MSMSulc
-    --hemi           Hemisphere: L=Left, R=Right, B=Both, default: B
-    --surf           Surface: white or midthickness, default: midthickness
-    --patch-size     Patch kernel size in mm FWHM, default: 6
-    --surf-smooth    Surface smoothing in mm FWHM, default: 2.14
-    --metric-smooth  Metric smoothing in mm FWHM, default: 2.52
-    --skip-computation  YES or NO, skip computation if already available, default: NO
-    
 Running stand-alone:
   To run outside the full HCP pipeline, prepare a batch script that defines (at least):
     - Subject directory
@@ -77,26 +39,33 @@ SubjectDir="/path/to/subjects"
 SubjList="100206 100307 100408 ...."  # space-separated subject IDs
 RegNames="MSMSulc@MSMAll"
 
-for Subject in \$SubjList ; do
-    bash "\$HCPPIPEDIR/global/scripts/CorrThick.sh" \\
-        --subject-dir="\$SubjectDir" \\
-        --subject="\$Subject" \\
-        --regnames="\$RegNames" \\
+for Subject in \$SubjList; do
+    \"\$HCPPIPEDIR/global/scripts/CorrThick.sh\" \\
+        --subject-dir=\"\$SubjectDir\" \\
+        --subject=\"\$Subject\" \\
+        --regnames=\"\$RegNames\" \\
         --skip-computation=NO
 done
----------------------------------------
 
-EOF
-}
+OR example usage with fsl_sub:
 
-# If --help is present, print help and exit
-for arg in "$@"; do
-    if [[ "$arg" == "--help" ]]; then
-        print_help
-        exit 0
-    fi
+for Subject in \$SubjList; do
+    fsl_sub -q matlabparallel.q \"\$HCPPIPEDIR/global/scripts/CorrThick.sh\" \\
+        --subject-dir=\"\$SubjectDir\" \\
+        --subject=\"\$Subject\" \\
+        --regnames=\"\$RegNames\"
 done
+---------------------------------------"
 
+opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddOptional '--regnames' 'RegNamesStr' 'my reg str' "set the desired registration name(s) separated by @, 'string' 'RegName@RegName@RegName@...etc.' default MSMSulc" "MSMSulc"
+opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for regression calculation, L=Left, R=Right, or B=Both, default 'B'" "B"
+opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression calculation, white or midthickness, default midthickness" "midthickness"
+opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
+opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
+opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
+opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected (folding-compensated) cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
 opts_ParseArguments "$@"
 
