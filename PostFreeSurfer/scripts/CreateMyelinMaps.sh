@@ -94,13 +94,13 @@ CorrectionSigma="${38}"
 RegName="${39}"
 UseIndMean="${40}"
 IsLongitudinal="${41}"
-MetricReg="${42}"
+ThicknessReg="${42}"
 
-case "$MetricReg" in
+case "$ThicknessReg" in
     (NEW|OLD|BOTH)
         ;;
     (*)
-        log_Err_Abort "unrecognized thickness compensation method: '$MetricReg', use NEW, OLD, or BOTH"
+        log_Err_Abort "unrecognized folding-compensated (curvature-corrected) thickness computation method: '$ThicknessReg', use NEW, OLD, or BOTH"
         ;;
 esac
 
