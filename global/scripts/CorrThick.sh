@@ -12,8 +12,8 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-#description of script/command
-opts_SetScriptDescription "Run curvature-corrected (folding-compensated) cortical thickness python script and save curvature-corrected (folding-compensated) thickness, curvatures, regression coefficients, and resampled outputs.
+# Description of script/command
+opts_SetScriptDescription 'Run curvature-corrected (folding-compensated) cortical thickness Python script and save curvature-corrected thickness, curvatures, regression coefficients, and resampled outputs.
 
 References:
   - https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1
@@ -25,37 +25,37 @@ Requirements:
   Standard libraries: os, math, multiprocessing, concurrent.futures
 
 Running stand-alone:
-  To run outside the full HCP pipeline, prepare a batch script that defines (at least):
+  To run outside the full HCP pipeline, prepare a batch script that defines at least:
     - Subject directory
     - Subject list
     - Location of the HCP Pipeline environment setup script (SetUpHCPPipeline.sh)
 
 Example batch script:
 ---------------------------------------
-EnvironmentScript="/path/to/SetUpHCPPipeline.sh" # HCP Pipeline environment script
-source "\$EnvironmentScript"
+EnvironmentScript="/path/to/SetUpHCPPipeline.sh"  # HCP Pipeline environment script
+source "$EnvironmentScript"
 
 SubjectDir="/path/to/subjects"
-SubjList="100206 100307 100408 ...."  # space-separated subject IDs
+SubjList="100206 100307 100408 ..."  # space-separated subject IDs
 RegNames="MSMSulc@MSMAll"
 
-for Subject in \$SubjList; do
-    \"\$HCPPIPEDIR/global/scripts/CorrThick.sh\" \\
-        --subject-dir=\"\$SubjectDir\" \\
-        --subject=\"\$Subject\" \\
-        --regnames=\"\$RegNames\" \\
+for Subject in $SubjList; do
+    "$HCPPIPEDIR/global/scripts/CorrThick.sh" \
+        --subject-dir="$SubjectDir" \
+        --subject="$Subject" \
+        --regnames="$RegNames" \
+        --patch-size=6
         --skip-computation=NO
 done
 
 OR example usage with fsl_sub:
 
-for Subject in \$SubjList; do
-    fsl_sub -q matlabparallel.q \"\$HCPPIPEDIR/global/scripts/CorrThick.sh\" \\
-        --subject-dir=\"\$SubjectDir\" \\
-        --subject=\"\$Subject\" \\
-        --regnames=\"\$RegNames\"
+for Subject in $SubjList; do
+    fsl_sub -q matlabparallel.q "$HCPPIPEDIR/global/scripts/CorrThick.sh" \
+        --subject-dir="$SubjectDir" \
+        --subject="$Subject" \
 done
----------------------------------------"
+---------------------------------------'
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"

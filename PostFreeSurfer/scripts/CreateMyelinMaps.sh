@@ -211,7 +211,7 @@ for Hemisphere in L R ; do
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
   fi
 
-  if [ "${MetricReg}" = "OLD" ] || [ "${MetricReg}" = "BOTH" ]; then
+  if [ "${ThicknessReg}" = "OLD" ] || [ "${ThicknessReg}" = "BOTH" ]; then
      ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".curvature.native.shape.gii
   fi
 
@@ -239,7 +239,7 @@ for Hemisphere in L R ; do
   done
 done
 
-if [ "${MetricReg}" = "NEW" ] || [ "${MetricReg}" = "BOTH" ]; then
+if [ "${ThicknessReg}" = "NEW" ] || [ "${ThicknessReg}" = "BOTH" ]; then
   $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regnames="$RegName"
 fi
 
