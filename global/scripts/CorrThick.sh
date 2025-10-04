@@ -89,10 +89,16 @@ T1wNativeFolder="$SubjectDir"/"$Subject"/T1w/Native
 mkdir -p "$NativeFolder"/CorrThick
 
 #Loop through left and right hemispheres
-if [[ "$Hemi" == *B* ]]
-then
-	Hemi="L R"
-fi
+case "$Hemi" in
+    (L|R|"L R"|"R L")
+        ;;
+    (B)
+        Hemi="L R"
+        ;;
+    (*)
+        log_Err_Abort "unrecognized hemisphere specification '$Hemi', use L, R, or B"
+        ;;
+esac
 
 RegNames=`echo "$RegNamesStr" | sed s/"@"/" "/g`
 
