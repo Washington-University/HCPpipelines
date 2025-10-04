@@ -22,7 +22,6 @@ Please cite these works when using this measure.
 
 Requirements:
   Python dependencies: numpy, nibabel, scipy, psutil
-  Standard libraries: os, math, multiprocessing, concurrent.futures
 
 Running stand-alone:
   To run outside the full HCP pipeline, prepare a batch script that defines at least:
