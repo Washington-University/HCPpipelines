@@ -20,8 +20,7 @@ References:
   - https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
 Please cite these works when using this measure.
 
-# Requirements for this script:
-#  Python3 with dependencies numpy, nibabel, scipy, and psutil'
+This script requires python3 with numpy, nibabel, scipy, and psutil'
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
