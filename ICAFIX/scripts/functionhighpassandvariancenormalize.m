@@ -139,7 +139,7 @@ singlerun = pdflag || (hp >= 0);
 
 %% Load the motion confounds, and the CIFTI (if single run) (don't need either if MR FIX)
 if singlerun
-    confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
+    confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par'],'-ascii');
     confounds=confounds(:,1:6);
     %% normalise function is in $HCPPIPEDIR/global/matlab/normalise.m
     confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);

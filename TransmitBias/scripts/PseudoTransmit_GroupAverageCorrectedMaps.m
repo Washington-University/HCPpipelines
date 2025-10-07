@@ -23,10 +23,10 @@ function PseudoTransmit_GroupAverageCorrectedMaps(myelinRCFile, myelinAsymmOutFi
 
     IndCorrAllMyelinMaps = cifti_read(IndCorrAllMyelinFile); %All.IndPseudoCorr
     
-    Voltages = load(VoltagesFile);
-    PTStats = load(PTStatsFile);
+    Voltages = load(VoltagesFile,'-ascii');
+    PTStats = load(PTStatsFile,'-ascii');
     rptnorm = cifti_read(rPTNormFile);
-    CSFRegressors = load(CSFStatsFile);
+    CSFRegressors = load(CSFStatsFile,'-ascii');
 
     Corr = [];
     for i = 1:size(CSFRegressors, 2)
