@@ -94,6 +94,15 @@ CorrectionSigma="${38}"
 RegName="${39}"
 UseIndMean="${40}"
 IsLongitudinal="${41}"
+ThicknessReg="${42}"
+
+case "$ThicknessReg" in
+    (NEW|OLD|BOTH)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized folding-compensated (curvature-corrected) thickness computation method: '$ThicknessReg', use NEW, OLD, or BOTH"
+        ;;
+esac
 
 log_Msg "RegName: ${RegName}"
 
@@ -202,7 +211,9 @@ for Hemisphere in L R ; do
     RegSphere="${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii"
   fi
 
-  ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".curvature.native.shape.gii
+  if [ "${ThicknessReg}" = "OLD" ] || [ "${ThicknessReg}" = "BOTH" ]; then
+     ${CARET7DIR}/wb_command -metric-regression "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".corrThickness.native.shape.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -remove "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".curvature.native.shape.gii
+  fi
 
   #Reduce memory usage by smoothing on downsampled mesh
   LowResMesh="${LowResMeshesArray[0]}"
@@ -227,6 +238,10 @@ for Hemisphere in L R ; do
     done
   done
 done
+
+if [ "${ThicknessReg}" = "NEW" ] || [ "${ThicknessReg}" = "BOTH" ]; then
+  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regnames="$RegName"
+fi
 
 LowResMeshList=""
 for LowResMesh in "${LowResMeshesArray[@]}" ; do
