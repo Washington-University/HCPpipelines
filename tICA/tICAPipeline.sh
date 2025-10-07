@@ -413,17 +413,19 @@ do
             if [[ "$sicadimOverride" ]]; then 
                 sICAActualDim="$sicadimOverride"
             else
-                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
             fi
             if [[ "$tICADim" == "" ]]; then 
-                tICADim="$sICAActualDim";
+                tICADim="$sICAActualDim"
             else
-              # apply hand filtering to group SICA components before projecting to individuals
-              SICAgroupMaps=${sICAoutfolder}/melodic_oIC_${sICAActualDim}.dscalar.nii
-              SICAgroupMapsFilt=${sICAoutfolder}/melodic_oIC_${tICADim}.dscalar.nii
-              merge_args=()
-              for idx in "${sigIdx[@]}"; do merge_args+=(-cifti "$SICAgroupMaps" -index "$idx");done
-              wb_command -cifti-merge "$SICAgroupMapsFilt" "${merge_args[@]}"
+                # apply hand filtering to group SICA components before projecting to individuals
+                SICAgroupMaps=${sICAoutfolder}/melodic_oIC_${sICAActualDim}.dscalar.nii
+                SICAgroupMapsFilt=${sICAoutfolder}/melodic_oIC_${tICADim}.dscalar.nii
+                merge_args=()
+                for idx in "${sigIdx[@]}"; do
+                    merge_args+=(-cifti "$SICAgroupMaps" -index "$idx")
+                done
+                wb_command -cifti-merge "$SICAgroupMapsFilt" "${merge_args[@]}"
             fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
