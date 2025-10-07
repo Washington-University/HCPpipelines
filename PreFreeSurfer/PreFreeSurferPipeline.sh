@@ -606,32 +606,34 @@ if [ "$CustomBrain" = "NONE" ] ; then
                         ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
                     else
                         Image="`${FSLDIR}/bin/remove_ext $Image`"
-                    if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
-                        ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
-                    fi
-                    log_Msg "reorient data to std" 
-                    if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-                        log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-                        ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
-                    else
-                        ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
-                    fi 
-
-                    if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
-                        log_Msg "Found $(remove_ext $Image)_brain"
-                        if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
-                            ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
+                    
+                        if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
+                            ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
                         fi
+                        log_Msg "reorient data to std" 
                         if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
-                            ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image}_brain --out=${TXwFolder}/${TXwImage}${i}_gdc_brain --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
+                            log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+                            ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
                         else
-                            ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
+                            ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
+                        fi 
+
+                        if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # TH 2016 for ACPC initialization
+                            log_Msg "Found $(remove_ext $Image)_brain"
+                            if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
+                                ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
+                            fi
+                            if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+                                ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${Image}_brain --out=${TXwFolder}/${TXwImage}${i}_gdc_brain --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
+                            else
+                                ${RUN} ${FSLDIR}/bin/fslreorient2std ${Image}_brain ${TXwFolder}/${TXwImage}${i}_gdc_brain
+                            fi
                         fi
                     fi
                     OutputTXwImageARRAY+=("${TXwFolder}/${TXwImage}${i}_gdc")
                     i=$(($i+1))
                 done
-
+            fi
             
 
             # Average Like (Same Modality) Scans
