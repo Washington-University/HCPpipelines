@@ -113,6 +113,10 @@ get_batch_options() {
 				command_line_specified_run_local="TRUE"
 				index=$(( index + 1 ))
 				;;
+            --Species=*)
+                command_line_specified_subj=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
 			*)
 				echo ""
 				echo "ERROR: Unrecognized Option: ${argument}"
@@ -512,7 +516,8 @@ main()
 			--unwarpdir="$UnwarpDir" \
 			--gdcoeffs="$GradientDistortionCoeffs" \
 			--avgrdcmethod="$AvgrdcSTRING" \
-			--topupconfig="$TopupConfig"
+			--topupconfig="$TopupConfig" \
+			--species="$Species"
 
 	done
 }
