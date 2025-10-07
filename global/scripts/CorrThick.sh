@@ -18,37 +18,7 @@ opts_SetScriptDescription 'Run curvature-corrected (folding-compensated) cortica
 References:
   - https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1
   - https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
-Please cite these works when using this measure.
-
-Requirements:
-  Python dependencies: numpy, nibabel, scipy, psutil
-
-Example batch script for running stand-alone:
----------------------------------------
-EnvironmentScript="/path/to/SetUpHCPPipeline.sh"  # HCP Pipeline environment script
-source "$EnvironmentScript"
-
-SubjectDir="/path/to/subjects"
-SubjList="100206 100307 100408 ..."  # space-separated subject IDs
-RegNames="MSMSulc@MSMAll"
-
-for Subject in $SubjList; do
-    "$HCPPIPEDIR/global/scripts/CorrThick.sh" \
-        --subject-dir="$SubjectDir" \
-        --subject="$Subject" \
-        --regnames="$RegNames" \
-        --patch-size=6 \
-        --skip-computation=NO
-done
-
-OR example usage with fsl_sub:
-
-for Subject in $SubjList; do
-    fsl_sub -q matlabparallel.q "$HCPPIPEDIR/global/scripts/CorrThick.sh" \
-        --subject-dir="$SubjectDir" \
-        --subject="$Subject" \
-done
----------------------------------------'
+Please cite these works when using this measure.'
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
