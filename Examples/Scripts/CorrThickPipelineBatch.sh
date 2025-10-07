@@ -27,12 +27,12 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+        *)
+            echo ""
+            echo "ERROR: Unrecognized Option: ${argument}"
+            echo ""
+            exit 1
+            ;;
         esac
     done
 }
