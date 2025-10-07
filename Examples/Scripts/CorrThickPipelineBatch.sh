@@ -1,3 +1,5 @@
+#!/bin/bash
+
 get_batch_options() {
     local arguments=("$@")
 
