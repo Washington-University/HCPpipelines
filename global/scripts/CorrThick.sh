@@ -23,13 +23,7 @@ Please cite these works when using this measure.
 Requirements:
   Python dependencies: numpy, nibabel, scipy, psutil
 
-Running stand-alone:
-  To run outside the full HCP pipeline, prepare a batch script that defines at least:
-    - Subject directory
-    - Subject list
-    - Location of the HCP Pipeline environment setup script (SetUpHCPPipeline.sh)
-
-Example batch script:
+Example batch script for running stand-alone:
 ---------------------------------------
 EnvironmentScript="/path/to/SetUpHCPPipeline.sh"  # HCP Pipeline environment script
 source "$EnvironmentScript"
