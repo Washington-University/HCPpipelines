@@ -121,6 +121,14 @@ opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Lon
 
 opts_ParseArguments "$@"
 
+case "$ThicknessReg" in
+    (NEW|OLD|BOTH)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized folding-compensated (curvature-corrected) thickness computation method: '$ThicknessReg', use NEW, OLD, or BOTH"
+        ;;
+esac
+
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
