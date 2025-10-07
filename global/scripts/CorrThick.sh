@@ -18,7 +18,10 @@ opts_SetScriptDescription 'Run curvature-corrected (folding-compensated) cortica
 References:
   - https://www.biorxiv.org/content/10.1101/2025.05.03.651968v1
   - https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.25776
-Please cite these works when using this measure.'
+Please cite these works when using this measure.
+
+# Requirements for this script:
+#  Python3 with dependencies numpy, nibabel, scipy, and psutil'
 
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
