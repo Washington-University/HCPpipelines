@@ -43,7 +43,7 @@ for Subject in $SubjList; do
         --subject-dir="$SubjectDir" \
         --subject="$Subject" \
         --regnames="$RegNames" \
-        --patch-size=6
+        --patch-size=6 \
         --skip-computation=NO
 done
 
