@@ -85,7 +85,7 @@ for Subject in $Subjlist ; do
 
     "${queuing_command[@]}" "$HCPPIPEDIR"/global/scripts/CorrThick.sh \
         --subject-dir="$StudyFolder" \
-        --subject="$Subject" \
+        --subject="$Subject"
 done
 
 
