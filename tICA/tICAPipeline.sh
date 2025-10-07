@@ -121,7 +121,7 @@ if [ -e "${HandSignalFile}" ]; then
     # Import the contents of $HandSignalFile as an array
     read -a sigIdx < "${HandSignalFile}"
     tICADim="${#sigIdx[@]}"
-  else
+else
     tICADim=""
 fi
 
@@ -510,10 +510,10 @@ do
             ;;
         (ConcatGroupSICA)
             # now we have the dimensionality, set the sICA output strings
-            if [[ "$sicadimOverride" ]]; then 
+            if [[ "$sicadimOverride" ]]; then
                 sICAActualDim="$sicadimOverride"
             else
-                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
@@ -522,7 +522,7 @@ do
             sicaAnnsub="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
             ticaAnnsub="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${tICADim}.wb_annsub.csv"
             if [[ "$sicaAnnsub" != "$ticaAnnsub" ]] && [[ "$sICAActualDim" == "$tICADim" ]]; then
-                cp "$sicaAnnsub" "$ticaAnnsub";
+                cp "$sicaAnnsub" "$ticaAnnsub"
             else
                 rm -f "$ticaAnnsub"
                 awk -v idxs="${sigIdx[*]}" 'BEGIN{split(idxs,a," ");for(i in a)k[a[i]]=1} k[NR]' "$sicaAnnsub" >> "$ticaAnnsub"
@@ -542,10 +542,10 @@ do
             ;;
         (ComputeGroupTICA)
             # now we have the dimensionality, set the sICA and tICA output strings
-            if [[ "$sicadimOverride" ]]; then 
+            if [[ "$sicadimOverride" ]]; then
                 sICAActualDim="$sicadimOverride"
             else
-                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
@@ -601,10 +601,10 @@ do
             ;;
         (indProjTICA)
             # now we have the dimensionality, set the sICA and tICA output strings
-            if [[ "$sicadimOverride" ]]; then 
+            if [[ "$sicadimOverride" ]]; then
                 sICAActualDim="$sicadimOverride"
             else
-                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
@@ -656,10 +656,10 @@ do
             ;;
         (ComputeTICAFeatures)
             # now we have the dimensionality, set the sICA and tICA output strings
-            if [[ "$sicadimOverride" ]]; then 
+            if [[ "$sicadimOverride" ]]; then
                 sICAActualDim="$sicadimOverride"
             else
-                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt"); 
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
             fi
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
