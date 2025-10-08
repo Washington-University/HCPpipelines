@@ -63,6 +63,7 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
                 TCSAbsSum = TCSAbsSum + abs(TCSPad);
                 
                 if isempty(SpectraTemplate)
+                  % sdseries units and step sizes are copied from these template files
                     SpectraSub.cdata = [];
                     SpectraTemplate = SpectraSub;
                     TCSSub.cdata = [];
