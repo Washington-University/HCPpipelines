@@ -26,7 +26,7 @@ opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' 
 opts_AddOptional '--mrfix-concat-name' 'MRFixConcatName' 'rfMRI_REST' "if multi-run FIX was used, you must specify the concat name with this option"
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 #TSC: used for MNINonLinear/ROIs/wmparc in computeRecleanFeatures, rename as such
-opts_AddMandatory '--greyordinatesres' 'BrainOrdinatesResolution' 'string' "resolution of data, like '2' or '1.60'"
+opts_AddMandatory '--grayordinatesres' 'BrainOrdinatesResolution' 'string' "resolution of data, like '2' or '1.60'"
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"

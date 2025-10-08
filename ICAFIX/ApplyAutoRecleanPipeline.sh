@@ -81,7 +81,7 @@ log_Msg "Begin to run the reclean pipeline..."
     --fmri-names="$fMRINames" \
     --mrfix-concat-name="$MRFixConcatName" \
     --fix-high-pass="$HighPass" \
-    --greyordinatesres="$BrainOrdinatesResolution" \
+    --grayordinatesres="$BrainOrdinatesResolution" \
     --fmrires="$FinalfMRIResolution" \
     --smoothingFWHM="$SmoothingFWHM" \
     --surf-reg-name="MSMAll" \
