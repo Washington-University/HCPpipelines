@@ -70,7 +70,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
                 dtseriesName = [SubjFolder fMRIList{j}];
                 if exist(dtseriesName, 'file')
                     [~, runLengthStr] = system(['wb_command -file-information -only-number-of-maps ' dtseriesName]);
-                    runLength = str2double(runLengthStr);
+                    runLength = sum(cellfun(@str2double,splitlines(runLengthStr)),'omitnan'); % more robust to shell warnings in system call output
                     nextStart = thisStart + runLength;
                     TCSRunVarSub = [TCSRunVarSub repmat(std(TCSFullConcat.cdata(:, thisStart:(nextStart - 1)), [], 2), 1, runLength)];
 
@@ -211,24 +211,24 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
         end
 
         tICAtcs.cdata = tICAtcs.cdata';
-        cifti_write_sdseries(tICAtcs.cdata, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart));
+        cifti_write_sdseries(tICAtcs.cdata, [OutputFolder '/' tICAtcsNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);
 
         tICAtcsAll = reshape(tICAtcs.cdata, tICAdim, RunsXNumTimePoints, numsubj);
 
         cdata = sum(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1), 3) / numfullsubj;      
-        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart));
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsmeanNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);
 
         cdata = sum(abs(tICAtcsAll .* single(TCSMask(1:tICAdim, :, :) == 1)), 3) / numfullsubj;
-        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart));
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAtcsabsmeanNamePart nameParamPart '.sdseries.nii'], 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);
 
         ts.Nnodes = tICAdim;
         ts.Nsubjects = numfullsubj;
         ts.NtimepointsPerSubject = RunsXNumTimePoints;
         ts.ts = (((tICAtcs.cdata .* single(TCSMaskConcat.cdata(1:tICAdim, :) == 1)) ./ numfullsubj) .* numsubj)'; %compensate for the zeros by ratio of full-data subjects to all subjects?
         cdata = nets_spectra_sp(ts)';
-        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii'], 'unit', SpectraTemplate.diminfo{2}.seriesUnit, 'step', SpectraTemplate.diminfo{2}.seriesStep, 'start', SpectraTemplate.diminfo{2}.seriesStart));
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectraNamePart nameParamPart '.sdseries.nii'], 'unit', SpectraTemplate.diminfo{2}.seriesUnit, 'step', SpectraTemplate.diminfo{2}.seriesStep, 'start', SpectraTemplate.diminfo{2}.seriesStart);
         cdata = nets_spectra_sp(ts, [], 1)';
-        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii'], 'unit', SpectraTemplate.diminfo{2}.seriesUnit, 'step', SpectraTemplate.diminfo{2}.seriesStep, 'start', SpectraTemplate.diminfo{2}.seriesStart));
+        cifti_write_sdseries(cdata, [OutputFolder '/' tICAspectranormNamePart nameParamPart '.sdseries.nii'], 'unit', SpectraTemplate.diminfo{2}.seriesUnit, 'step', SpectraTemplate.diminfo{2}.seriesStep, 'start', SpectraTemplate.diminfo{2}.seriesStart);
 
     end % for i = ITERATIONS
 
