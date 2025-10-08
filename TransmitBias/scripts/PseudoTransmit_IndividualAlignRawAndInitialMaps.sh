@@ -147,18 +147,18 @@ function align_bias_and_avg()
         		"$matrix" 	\
         		"${WorkingDIR}/xfms/str2${fMRIName}_${namepart}_gdc_dc_jac.mat"
         else
-		#we want the output in T1w/ transmitRes space, not anatomical ($target), so don't use --output-image
-		"$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
-		    --input-image="$input" \
-		    --init-xfm="$StudyFolder"/"$Session"/"$fMRIName"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/fMRI2str.mat \
-		    --init-target-image="$target" \
-		    --contrast-type=T2w \
-		    --surface-name=white.deformed \
-		    --output-xfm="$matrix" \
-		    --output-inverse-xfm="$WorkingDIR"/xfms/str2"$fMRIName"_"$namepart"_gdc_dc_jac.mat \
-		    --rerun-threshold="$bbrthresh" \
-		    --bbregister-regfile-out="$WorkingDIR"/"$fMRIName"_"$namepart"_bbregister.dat
-	fi
+            #we want the output in T1w/ transmitRes space, not anatomical ($target), so don't use --output-image
+            "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
+                --input-image="$input" \
+                --init-xfm="$StudyFolder"/"$Session"/"$fMRIName"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/fMRI2str.mat \
+                --init-target-image="$target" \
+                --contrast-type=T2w \
+                --surface-name=white.deformed \
+                --output-xfm="$matrix" \
+                --output-inverse-xfm="$WorkingDIR"/xfms/str2"$fMRIName"_"$namepart"_gdc_dc_jac.mat \
+                --rerun-threshold="$bbrthresh" \
+                --bbregister-regfile-out="$WorkingDIR"/"$fMRIName"_"$namepart"_bbregister.dat
+        fi
 
         local -a xfmargs=(-affine "$matrix" -flirt "$input" "$target")
         local refvol="$T1wFolder"/T1w_acpc_dc_restore."$transmitRes".nii.gz
