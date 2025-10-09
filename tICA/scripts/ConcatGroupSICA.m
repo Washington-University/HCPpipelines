@@ -63,6 +63,7 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
                 TCSAbsSum = TCSAbsSum + abs(TCSPad);
                 
                 if isempty(SpectraTemplate)
+                  % sdseries units and step sizes are copied from these template files
                     SpectraSub.cdata = [];
                     SpectraTemplate = SpectraSub;
                     TCSSub.cdata = [];
@@ -72,10 +73,10 @@ function ConcatGroupSICA(TCSListName, MapListName, VolMapListName, SpectraListNa
         end
     end
 
-    cifti_write_sdseries(TCSFull, OutTCSName);
+    cifti_write_sdseries(TCSFull, OutTCSName, 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);
     clear TCSFullConcat;
 
-    cifti_write_sdseries(TCSMask, OutTCSMaskName);
+    cifti_write_sdseries(TCSMask, OutTCSMaskName, 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);
     clear TCSMaskConcat;
 
     %previously sICATSTDs
