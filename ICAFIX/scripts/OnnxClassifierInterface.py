@@ -13,10 +13,19 @@ class OnnxClassifier(object):
                 self.load_model(model_name)
 
     def load_model(self, model_name):
+        """
+        loads an onnx model from file
+        model_name: path to the model file
+        """
         self.model = ort.InferenceSession(model_name)
         self.ensemble = False
 
     def load_model_ensemble(self, model_name):
+        """
+        loads many onnx model from files and ensemble them
+        model_name: prefix for model file, the full model name should be f"{model_name}_{idx}.onnx"
+                    we allow model_name include .onnx extension and the script will remove it
+        """
         models = []
         model_name = model_name.replace(".onnx", "")
         for i in range(1, 1000):
@@ -30,6 +39,11 @@ class OnnxClassifier(object):
         self.ensemble = True
 
     def predict_proba(self, x):
+        """
+        predicts the probability of each class
+        x: a np.array with shape (batch, features)
+        return: a np.array with shape (batch, class prob)
+        """
         x = x.astype(np.float32)
         if self.ensemble:
             results = []
