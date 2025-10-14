@@ -320,7 +320,7 @@ ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC.dtseri
 # Remove the intermediate .dtseries versions of the melodic maps
 rm ${ICAFolder}/melodic_oIC_vol.dtseries.nii ${ICAFolder}/melodic_oIC.dtseries.nii
 
-log_Msg "Create scaler series of ICA timecourses"
+log_Msg "Create scalar series of ICA timecourses"
 ${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAs} ${ICAs}.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
 
 # TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
