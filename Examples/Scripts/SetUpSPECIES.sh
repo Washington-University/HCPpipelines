@@ -9,6 +9,18 @@
 # Copyright (c) 2016-2023
 # All rights reserved.
 
+# Usage: source SetUpSPECIES.sh [Species] [StrucRes]
+# Arguments:
+#   Species: Species type (Human, Chimp, Mac, Mac30BS, Cyno, Rhesus, Snow, Marmoset, NightMonkey)
+#   StrucRes: Structural resolution (optional, defaults to species-specific values)
+
+# Get arguments if provided, otherwise use environment variables or defaults
+SPECIES="${1:-Human}"
+StrucRes="${2:-}"
+
+# SPECIES is now defaulted to "Human" if not provided
+# StrucRes can be empty and will use species-specific defaults
+
 ## Species specific variables
 if [[ "$SPECIES" =~ Human ]] ; then
 
