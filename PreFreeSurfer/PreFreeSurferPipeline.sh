@@ -404,8 +404,8 @@ log_Msg "T2wFolder: $T2wFolder"
 log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
 
 # Unpack List of Images
-T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g' | sed -e  's/^[ \t]*//'`
-T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g' | sed -e  's/^[ \t]*//'`
+T1wInputImages=`echo ${T1wInputImages} | sed 's/@/ /g'`
+T2wInputImages=`echo ${T2wInputImages} | sed 's/@/ /g'`
 
 log_Msg "T1wInputImages: $T1wInputImages"
 log_Msg "T2wInputImages: $T2wInputImages"
@@ -516,7 +516,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             ${RUN} ${FSLDIR}/bin/imcp ${TemplateMask} ${AtlasSpaceFolder}/TemplateMask
             Contrast=T1w
             TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
-            TXwTemplateBrain=${T1wTemplateBrain}
+            #TXwTemplateBrain=${T1wTemplateBrain}
             TXwTemplate2mm=${T1wTemplate2mm}
             echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "TemplateMask: ${TemplateMask}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -527,7 +527,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             TXwFolder=${T2wFolder}
             TXwImage=${T2wImage}
             TXwTemplate=${T2wTemplate}
-            TXwTemplateBrain=${T2wTemplateBrain}
+            #TXwTemplateBrain=${T2wTemplateBrain}
             TXwTemplate2mm=${T2wTemplate2mm}
         fi
         OutputTXwImageARRAY=()
@@ -547,7 +547,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplate} ${AtlasSpaceFolder}/T2wTemplate
         ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplateBrain} ${AtlasSpaceFolder}/T2wTemplateBrain
         TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
-        TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
+        #TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
         TXwTemplate2mm=${T2wTemplate2mm}
         echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
         echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -699,7 +699,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --workingdir=${TXwFolder}/ACPCAlignment \
                 --in=${TXwFolder}/${TXwImage} \
                 --ref=${TXwTemplate} \
-                --refbrain=${TXwTemplateBrain} \
                 --out=${TXwFolder}/${TXwImage}_acpc \
                 --omat=${TXwFolder}/xfms/acpc.mat \
                 --brainsize=${BrainSize} \
@@ -710,7 +709,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --ref2mm=${TXwTemplate2mm} \
                 --ref2mmmask=${Template2mmMask} \
                 --betspecieslabel=$betspecieslabel \
-                --custommask=${CustomMask}
+                --custommask=${CustomMask} \
+                --species=${SPECIES}
         fi
 
         if [ "$RunMode" -lt 4 ]; then
