@@ -2,19 +2,88 @@
 
 
 Usage () {
-echo "$(basename $0) <Subject Folder> <Subject ID> <SPECIES> <RunMode (Default, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration)> [BrainExtract]"
+echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> [--BrainExtract=<method>] [--StrucRes=<resolution>]"
 echo ""
-echo "Option"
-echo " [BrainExtract]: INVIVO (default)  or EXVIVO"
+echo "Required Options:"
+echo "  --StudyFolder: Path to the study folder containing subject data"
+echo "  --Subject: Subject identifier"
+echo "  --Species: Species type (Human, Chimp, Mac, Marmoset, etc.)"
+echo "  --RunMode: Pipeline run mode (Default, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration)"
+echo ""
+echo "Optional Options:"
+echo "  --BrainExtract: INVIVO (default) or EXVIVO"
+echo "  --StrucRes: Structural resolution in mm (species-specific default will be used if not specified)"
+echo ""
 exit 1;
 }
-[ "$4" = "" ] && Usage
 
-StudyFolder=$1
-Subjlist=$2
-SPECIES=$3
-RunMode=$4
-BrainExtract=$5
+# Initialize variables
+StudyFolder=""
+Subjlist=""
+SPECIES=""
+RunMode=""
+BrainExtract=""
+StrucRes=""
+
+# Parse command line arguments
+get_batch_options() {
+    local arguments=("$@")
+    
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+    
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+        
+        case ${argument} in
+            --StudyFolder=*)
+                StudyFolder=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Subject=*)
+                Subjlist=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Species=*)
+                SPECIES=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --RunMode=*)
+                RunMode=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --BrainExtract=*)
+                BrainExtract=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --StrucRes=*)
+                StrucRes=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                Usage
+                ;;
+        esac
+    done
+}
+
+# Parse arguments
+get_batch_options "$@"
+
+# Check required parameters
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$RunMode" ]; then
+    echo "ERROR: Missing required parameters"
+    Usage
+fi
+
+# Set default values for optional parameters
+BrainExtract=${BrainExtract:-INVIVO}
+RunMode=${RunMode:-Default}
+
 
 echo "$(basename $0) $@"
 
@@ -24,9 +93,8 @@ fi
 source $EnvironmentScript
 
 # species specific config
-export SPECIES
-source $HCPPIPEDIR/Examples/Scripts/SetUpSPECIES.sh
-
+# If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh "$SPECIES" "$StrucRes"
 RunMode=${RunMode:-Default}
 
 for Subject in $Subjlist ; do
