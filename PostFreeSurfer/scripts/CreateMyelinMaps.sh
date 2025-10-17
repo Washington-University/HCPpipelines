@@ -113,7 +113,7 @@ verbose_echo " "
 # -- check for presence of T2w image
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
 
-if (( IsLongitudinal )); then 
+if (( IsLongitudinal )); then
 	if [ `${FSLDIR}/bin/imtest "$T1wFolder/T2w_acpc_dc.nii.gz"` -eq 0 ]; then
 		T2wPresent="NO"
 	else
@@ -217,12 +217,12 @@ for Hemisphere in L R ; do
 
   #Reduce memory usage by smoothing on downsampled mesh
   LowResMesh="${LowResMeshesArray[0]}"
-  
+
   if [ "${T2wPresent}" = "YES" ] ; then
     ${CARET7DIR}/wb_command -volume-math "(ribbon > ($ribbon - 0.01)) * (ribbon < ($ribbon + 0.01))" "$T1wFolder"/temp_ribbon.nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
     ${CARET7DIR}/wb_command -volume-to-surface-mapping "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii -myelin-style "$T1wFolder"/temp_ribbon.nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$MyelinMappingSigma"
     rm "$T1wFolder"/temp_ribbon.nii.gz
-    ${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii "$SurfaceSmoothingSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".SmoothedMyelinMap.native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii  
+    ${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii "$SurfaceSmoothingSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".SmoothedMyelinMap.native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
   fi
 
   for STRING in $MapListFunc ; do
@@ -240,7 +240,7 @@ for Hemisphere in L R ; do
 done
 
 if [ "${ThicknessReg}" = "NEW" ] || [ "${ThicknessReg}" = "BOTH" ]; then
-  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Subject" --regnames="$RegName"
+  $HCPPIPEDIR/global/scripts/CorrThick.sh --subject-dir="$StudyFolder" --subject="$Session" --regnames="$RegName"
 fi
 
 LowResMeshList=""
@@ -272,9 +272,9 @@ ${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${Native
 	${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii \
 	${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
 	BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
-		
+
 # BC processing
-if [ "${T2wPresent}" = "YES" ] ; then	
+if [ "${T2wPresent}" = "YES" ] ; then
 	# determine the resolution of the reference myelin map
 	IsRefValid=false
 	# append the HighResMesh into the full ResMesh array
@@ -291,12 +291,12 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			break
 		fi
 	done
-	
+
 	# error when the number of vertex doesn't have a match
 	if [ "$IsRefValid" = false ]; then
 		log_Err_Abort "The mesh resolution of the input reference map ${ReferenceMyelinMaps} doesn't match with any template files in ${HCPPIPEDIR}/global/templates/standard_mesh_atlases!"
 	fi
-	
+
 	case "$RefResMesh" in
 		(${HighResMesh})
 			SphereFolder=${AtlasSpaceFolder}
@@ -329,7 +329,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
 		-metric CORTEX_LEFT "$SphereFolder"/"$Session".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
 		-metric CORTEX_RIGHT "$SphereFolder"/"$Session".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
-	
+
 	# ----- Begin moved statements -----
 	# Recompute Myelin Map Bias Field Based on Better Registration
 	log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
@@ -346,8 +346,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# bias field is computed in the module MyelinMap_BC.sh
 	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
 		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
-		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.BiasField.native.func.gii	
-	
+		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.BiasField.native.func.gii
+
 	# bias field in native space is already generated
 	# BC is already applied in module MyelinMap_BC on MyelinMap
 	# BC the other types of given myelin maps
@@ -360,7 +360,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
 			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.${MyelinMap}_BC.native.func.gii \
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.${MyelinMap}_BC.native.func.gii
-			
+
 		# create cifti and gifti MyelinMap in the high res mesh space
 		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
 			COLUMN ${AtlasSpaceFolder}/${Session}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
