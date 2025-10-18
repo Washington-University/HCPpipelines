@@ -43,6 +43,15 @@ your compute environment. In particular, the `${FSL_FIXDIR}/settings.sh` file
 likely needs modification. (The settings.sh.WUSTL_CHPC2 file in this directory
 is the settings.sh file that is used on the WUSTL "CHPC2" cluster).
 
+# AutoReclean python dependencies
+
+To create a conda environment for the ApplyAutoReclean pipeline, use this command:
+
+```bash
+conda env create -f "$HCPPIPEDIR"/environment.yml [-n AutoRecleanEnv or -p /somewhere/you/want/the/conda/environment/installed ]
+```
+If using the native python version, please specify `--python-interpreter` with its absolute path, such as `--python-interpreter=/usr/bin/python3`.
+
 # Notes on MATLAB usage
 
 Most of the scripts in this directory at some point rely on functions written
@@ -71,14 +80,7 @@ git clone https://github.com/coalsont/GNU-Octave-enable-64.git && cd GNU-Octave-
 
 ### Control of Matlab mode within specific scripts
 
-#### hcp_fix and hcp_fix_multi_run
-
-The Matlab mode is controlled by the `FSL_FIX_MATLAB_MODE` environment variable within the
-`${FSL_FIXDIR}/settings.sh` file.
-[Note: If the `${FSL_FIXDIR}/settings.sh` file is set up appropriately (i.e., FIX v1.068 or later),
-it should respect the value of `FSL_FIX_MATLAB_MODE` in your current environment].
-
-#### ReApplyFixPipeline, ReApplyFixMultiRunPipeline, and PostFix
+#### ReApplyFixPipeline, ReApplyFixMultiRunPipeline, PostFix, ApplyAutoReclean, hcp_fix_multi_run
 
 The Matlab mode is controlled via the `--matlab-run-mode` input argument
 (defaults to mode 1, interpreted Matlab).
@@ -92,7 +94,34 @@ Does not use any Matlab code.
 If your cluster compute environment doesn't support the use of interpreted
 MATLAB, your options are either to use compiled MATLAB or Octave.
 
+#### hcp_fix_multi_run, ReApplyFixMultiRunPipeline
+
+* The `MATLAB_COMPILER_RUNTIME` environment variable must to set to
+the directory containing the 'R2022b' MCR, which is the version of the MCR
+used to compile the MATLAB functions specific to the HCPpipelines (as opposed
+to the FIX distribution).  If you are using legacy matlab/R-based FSL fix, this
+is a different runtime version than legacy FSL fix uses.
+
+i.e.,
+
+	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2022b
+
+#### PostFix
+
+The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
+directory containing the 'R2022b' MCR (i.e., same as with
+`hcp_fix_multi_run` and `ReApplyFixMultiRunPipeline`).
+
 #### hcp_fix, ReApplyFixPipeline
+
+These scripts are largely legacy code, which has not received the
+improvements made to hcp_fix_multi_run (which by default uses the newer
+python FSL fix).  We plan to add single-run support to hcp_fix_multi_run in
+the future.  These legacy scripts rely on the matlab/R-based version of FSL
+fix.  You may need to recompile the version of fix_3_clean in the HCP
+pipelines using the same matlab version as the legacy FSL R/matlab (2017b)
+fix for this legacy code to work smoothly.  The readme info for this legacy
+code is preserved below:
 
 The `FSL_FIX_MCRROOT` environment variable in the `${FSL_FIXDIR}/settings.sh`
 file must be set to the "root" of the directory containing the "MATLAB
@@ -103,26 +132,9 @@ GIFTI I/O functionality, compiled Matlab mode is not functional for FIX
 versions 1.068 - 1.06.11).
 [Note that the `${FSL_FIXDIR}/settings.sh` file automatically determines the MCR version number].
 
-#### hcp_fix_multi_run, ReApplyFixMultiRunPipeline
+## LEGACY INFORMATION: Supplemental instructions for installing legacy FIX
 
-* First, `${FSL_FIXDIR}/settings.sh` must be set up correctly.
-* Second, the `MATLAB_COMPILER_RUNTIME` environment variable must to set to
-the directory containing the 'R2017b/v93' MCR, which is the version of the MCR
-used to compile the MATLAB functions specific to the HCPpipelines (as opposed
-to the FIX distribution).
-
-i.e.,
-
-	export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2017b/v93
-
-#### PostFix
-
-The `MATLAB_COMPILER_RUNTIME` environment variable must be set to the
-directory containing the 'R2017b/v93' MCR (i.e., same as with
-`hcp_fix_multi_run` and `ReApplyFixMultiRunPipeline`.
-
-
-# Supplemental instructions for installing FIX
+The below information is not applicable when using the newer FSL python fix, and can be ignored:
 
 Some effort (trial and error) is required to install the versions of R packages specified on the [FIX User Guide] page, so below are instructions obtained from working installations of FIX.  Note that [FIX]'s minimum supported version of R is 3.3.0.
 
@@ -150,12 +162,6 @@ do
     R CMD INSTALL "$package".tar.gz
 done
 ```
-# The installation of HCP python conda env
-
-```bash
-conda env create -f environment.yml
-```
-If using the native env, please specify `--python-interpreter` and an example would be `--python-interpreter=/my/conda/path/envs/hcp_python_env/bin/python3`.
 
 <!-- References -->
 
