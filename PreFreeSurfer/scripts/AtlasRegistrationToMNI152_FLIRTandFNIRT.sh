@@ -2,8 +2,8 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1+
-#  environment: FSLDIR
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
