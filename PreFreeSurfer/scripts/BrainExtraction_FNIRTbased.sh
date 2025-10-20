@@ -1,9 +1,6 @@
 #!/bin/bash 
 set -e
 
-# Requirements for this script
-#  installed versions of: FSL5.0.1+ , HCP Pipeline
-#  environment: as in SetUpHCPPipeline.sh   (or individually: FSLDIR, HCPPIPEDIR_Templates)
 
 # Requirements for this script
 #  installed versions of: FSL
