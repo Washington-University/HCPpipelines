@@ -70,8 +70,7 @@ if [ X$wdir = X ] ; then
 fi
 if [ ! -d $wdir ] ; then
     if [ -f $wdir ] ; then 
-  echo "A file already exists with the name $wdir - cannot use this as the working directory"
-  exit 1;
+        log_Err_Abort "A file already exists with the name $wdir - cannot use this as the working directory"
     fi
     mkdir $wdir
 fi
