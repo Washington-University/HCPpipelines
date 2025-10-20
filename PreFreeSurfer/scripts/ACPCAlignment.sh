@@ -2,8 +2,8 @@
 set -e
 
 # Requirements for this script
-#  installed versions of: FSL5.0.1 or higher (including python with numpy, needed to run aff2rigid - part of FSL)
-#  environment: FSLDIR
+#  installed versions of: FSL (including python with numpy, needed to run aff2rigid - part of FSL)
+#  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
 #  Usage Description Function
