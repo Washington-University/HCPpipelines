@@ -57,6 +57,8 @@ opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'value' 'BET species labe
 
 opts_AddOptional '--custommask' 'CustomMask' 'image' 'custom brain mask' "NONE"
 
+opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
+
 
 opts_ParseArguments "$@"
 
