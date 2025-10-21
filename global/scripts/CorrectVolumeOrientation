@@ -44,33 +44,65 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 # Usage
 opts_SetScriptDescription "CORRECT VOLUME ORIENTATION
-This script corrects or changes orientation of the NIFTI volume. It is useful to correct the orientation information of the NIFTI header, for example, 1) when the data was collected with the 'Patient position' incorrectly entered in the scanner or 2) when the true patient position can not be entered by the scanner (e.g. the patient or animal is in sphinx position, while the scanner cannot accept it). True patient positions available are 'head-first-sphinx (HFSx)', 'foot-first-sphinx (FFSx)', 'head-first-supine (HFS)' and 'foot-first-supine (FFS)'.
+This script corrects or changes orientation of the NIFTI volume. It is useful to 
+correct the orientation information of the NIFTI header, for example, 1) when the 
+data was collected with the 'Patient position' incorrectly entered in the scanner 
+or 2) when the true patient position can not be entered by the scanner (e.g. the 
+patient or animal is in sphinx position, while the scanner cannot accept it). 
+True patient positions available are 'head-first-sphinx (HFSx)', 
+'foot-first-sphinx (FFSx)', 'head-first-supine (HFS)' and 'foot-first-supine (FFS)'.
 
 Example protocols and usages:
 
-Ex) #1. the simplest usage is when an MRI volume (MRI.nii.gz) is scanned in the true position of HFSx but the scanner's Patient Position is set to HFP.
+Ex) #1. the simplest usage is when an MRI volume (MRI.nii.gz) is scanned in the 
+true position of HFSx but the scanner's Patient Position is set to HFP.
 
-$ CorrectVolumeOrientation --in=MRI.nii.gz --tposition=HFSx --sposition=HFP --out=MRI2reorient.nii.gz
+$ CorrectVolumeOrientation --in=MRI.nii.gz --tposition=HFSx --sposition=HFP 
+  --out=MRI2reorient.nii.gz
 
-Ex) #2. structural MRI scanned in true position of HFS on day1 (T1w_d1_HFS) and fMRI scanned in true posiiton in HFSx on day2 (fMRI_d2_HFSx) and additional fast T1w scanned for registration purpose on day2 (T1w_d2_HFSx), where scanner's patient orientaion is set to HFS on day1 and HFP on day2. In this case, the fast T1w scanned on day2 is corrected for the head orientation and registrated to the T1w on day1, then the fMRI data on day2 is corrected for head orientation and initialized for head position using fast T1w scanned on day2. In this case, the option --ref is useful to 'fake' the output volume as if it were scanned on the same position as in day1. 
+Ex) #2. structural MRI scanned in true position of HFS on day1 (T1w_d1_HFS) and 
+fMRI scanned in true position in HFSx on day2 (fMRI_d2_HFSx) and additional fast 
+T1w scanned for registration purpose on day2 (T1w_d2_HFSx), where scanner's 
+patient orientation is set to HFS on day1 and HFP on day2. In this case, the 
+fast T1w scanned on day2 is corrected for the head orientation and registered to 
+the T1w on day1, then the fMRI data on day2 is corrected for head orientation 
+and initialized for head position using fast T1w scanned on day2. In this case, 
+the option --ref is useful to 'fake' the output volume as if it were scanned on 
+the same position as in day1.
 
-$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz  --tposition=HFSx --sposition=HFP --ref=T1w_d1_HFS.nii.gz              --out=T1w_d2_reorient.nii.gz
-$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx --sposition=HFP --init=T1w_d2_reorient2ref.world.mat --out=fMRI_d2_reorient2ref.nii.gz 
+$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
+  --sposition=HFP --ref=T1w_d1_HFS.nii.gz --out=T1w_d2_reorient.nii.gz
+$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
+  --sposition=HFP --init=T1w_d2_reorient2ref.world.mat 
+  --out=fMRI_d2_reorient2ref.nii.gz
 
-Please confirm that the registration is successful by viewing T1w_d1 and T1w_d2_reorient2ref. If this is not the case, please goto Ex) #4.
+Please confirm that the registration is successful by viewing T1w_d1 and 
+T1w_d2_reorient2ref. If this is not the case, please goto Ex) #4.
 
-Ex) #3. structural MRI on day1, function MRI and fast structural scan on day 2 all scanned in true position of HFSx, where scanner's patient orientaion is set to HFP. In this case, the structural MRI scan in day1 must be corrected for the head orientation first, then the structural and functional MRI in day2 are treated as in #1.
+Ex) #3. structural MRI on day1, function MRI and fast structural scan on day 2 
+all scanned in true position of HFSx, where scanner's patient orientation is set 
+to HFP. In this case, the structural MRI scan in day1 must be corrected for the 
+head orientation first, then the structural and functional MRI in day2 are 
+treated as in #1.
 
-$ CorrectVolumeOrientation --in=T1w_d1_HFSx.nii.gz  --tposition=HFSx --sposition=HFP --out=T1w_d1_reorient.nii.gz
-$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz  --tposition=HFSx --sposition=HFP --ref=T1w_d1_reorient.nii.gz         --out=T1w_d2_reorient.nii.gz
-$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx --sposition=HFP --init=T1w_d2_reorient2ref.world.mat --out=fMRI_d2_reorient2ref.nii.gz 
+$ CorrectVolumeOrientation --in=T1w_d1_HFSx.nii.gz --tposition=HFSx 
+  --sposition=HFP --out=T1w_d1_reorient.nii.gz
+$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
+  --sposition=HFP --ref=T1w_d1_reorient.nii.gz --out=T1w_d2_reorient.nii.gz
+$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
+  --sposition=HFP --init=T1w_d2_reorient2ref.world.mat 
+  --out=fMRI_d2_reorient2ref.nii.gz
 
-Please confirm that the registration is successful by viewing T1w_d1_reorient and T1w_d2_reorient2ref. If this is not the case, please goto Ex) #4.
+Please confirm that the registration is successful by viewing T1w_d1_reorient and 
+T1w_d2_reorient2ref. If this is not the case, please goto Ex) #4.
 
-Ex) #4. if registration with --ref is not working, please consider doing registration by tuning options flirt, e.g.,
+Ex) #4. if registration with --ref is not working, please consider doing 
+registration by tuning options flirt, e.g.,
 
-$ flirt -in T1w_d2_reorient.nii.gz -ref <reference volume> -dof 6 -omat T1w_d2_reorient2ref.mat <flirt options> 
-$ wb_command -convert-affine T1w_d2_reorient2ref.mat T1w_d2_reorient.nii.gz <reference volume> -to-world T1w_d2_reorient2ref.world.mat
+$ flirt -in T1w_d2_reorient.nii.gz -ref <reference volume> -dof 6 
+  -omat T1w_d2_reorient2ref.mat <flirt options>
+$ wb_command -convert-affine T1w_d2_reorient2ref.mat T1w_d2_reorient.nii.gz 
+  <reference volume> -to-world T1w_d2_reorient2ref.world.mat
 
 "
 
