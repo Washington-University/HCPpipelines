@@ -17,13 +17,6 @@ Usage () {
     exit 1;
 }
 
-# Initialize variables
-StudyFolder=""
-Subjlist=""
-SPECIES=""
-RunMode=""
-BrainExtract=""
-StrucRes=""
 
 # Parse command line arguments
 get_batch_options() {
