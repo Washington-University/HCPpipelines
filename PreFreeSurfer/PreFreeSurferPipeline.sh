@@ -294,6 +294,8 @@ opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to c
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
 opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'string' "default: " ""
 opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume" "FALSE"
+opts_AddOptional '--bffsigma' 'BiasFieldFastSmoothingSigma' 'value' "Bias Field Smoothing Sigma for Bias Field Correction using T1w image only (only for NHP, default: 20)" "20"
+
 # ------------------------------------------------------------------------------
 #  Parse Arugments
 # ------------------------------------------------------------------------------
@@ -864,7 +866,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
             if [ "$SPECIES" = "Human" ] ; then
                 BiasFieldFastSmoothingSigma=${BiasFieldSmoothingSigma}
             else
-                BiasFieldFastSmoothingSigma="20"
                 BiasFieldFastSmoothingSigma="--bfsigma=${BiasFieldFastSmoothingSigma}"
             fi
 
