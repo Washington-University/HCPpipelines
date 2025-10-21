@@ -511,15 +511,12 @@ if [ "$CustomBrain" = "NONE" ] ; then
             RefRes=$(${FSLDIR}/bin/fslval ${T1wTemplate} pixdim1 | awk '{printf "%0.2f", $1}')
             log_Msg "Resolution of structure: $StrucRes"
             log_Msg "Resolution of T1wTemplate: $RefRes" 
-            log_Msg "Copying T1w reference volume in ${AtlasSpaceFolder}"
-            ${RUN} ${FSLDIR}/bin/imcp ${T1wTemplate} ${AtlasSpaceFolder}/T1wTemplate
-            ${RUN} ${FSLDIR}/bin/imcp ${T1wTemplateBrain} ${AtlasSpaceFolder}/T1wTemplateBrain
-            ${RUN} ${FSLDIR}/bin/imcp ${TemplateMask} ${AtlasSpaceFolder}/TemplateMask
             Contrast=T1w
             TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
             #TXwTemplateBrain=${T1wTemplateBrain}
             TXwTemplate2mm=${T1wTemplate2mm}
             echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
+            echo "T1wTemplateBrain: ${T1wTemplateBrain}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "TemplateMask: ${TemplateMask}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "T1wTemplate2mm: ${T1wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "Template2mmMask: ${Template2mmMask}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -544,9 +541,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
         TXwFolder=${T2wFolder}
         TXwImage=${T2wImage}
         # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
-        log_Msg "Copying T2w reference volume in ${AtlasSpaceFolder}"
-        ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplate} ${AtlasSpaceFolder}/T2wTemplate
-        ${RUN} ${FSLDIR}/bin/imcp ${T2wTemplateBrain} ${AtlasSpaceFolder}/T2wTemplateBrain
         TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
         #TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
         TXwTemplate2mm=${T2wTemplate2mm}
@@ -973,8 +967,8 @@ if [ "$RunMode" -lt 6 ]; then
 
     log_Msg "Performing Atlas Registration to MNI152 (FLIRT and FNIRT)"
 
-    imcp ${T1wTemplate2mm} ${AtlasSpaceFolder}/T1wTemplate2mm
-    imcp ${Template2mmMask} ${AtlasSpaceFolder}/Template2mmMask
+    echo "T1wTemplate2mm: ${T1wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+    echo "Template2mmMask: ${Template2mmMask}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
 
     ${RUN} ${HCPPIPEDIR_PreFS}/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh \
         --workingdir=${AtlasSpaceFolder} \
@@ -984,9 +978,9 @@ if [ "$RunMode" -lt 6 ]; then
         --t2=${T1wFolder_T2wImageWithPath_acpc_dc} \
         --t2rest=${T1wFolder}/${T2wImage}_acpc_dc_restore \
         --t2restbrain=${T1wFolder}/${T2wImage}_acpc_dc_restore_brain \
-        --ref=${AtlasSpaceFolder}/T1wTemplate \
-        --refbrain=${AtlasSpaceFolder}/T1wTemplateBrain \
-        --refmask=${AtlasSpaceFolder}/TemplateMask \
+        --ref=${T1wTemplate} \
+        --refbrain=${T1wTemplateBrain} \
+        --refmask=${TemplateMask} \
         --ref2mm=${T1wTemplate2mm} \
         --ref2mmmask=${Template2mmMask} \
         --owarp=${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz \
