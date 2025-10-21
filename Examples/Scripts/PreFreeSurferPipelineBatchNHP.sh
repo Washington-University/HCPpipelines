@@ -85,7 +85,6 @@ source $EnvironmentScript
 # species specific config
 # If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh "$SPECIES" "$StrucRes"
-RunMode=${RunMode:-Default}
 
 for Subject in $Subjlist ; do
     echo $Subject
