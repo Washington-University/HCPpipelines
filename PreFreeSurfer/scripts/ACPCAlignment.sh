@@ -156,7 +156,7 @@ elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
   ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$WD"/Reference -init "$WD"/roi2std_init.mat -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -nosearch -dof 12 # -inweight "$WD"/robustroi_brain_mask -refweight "$Reference2mmMask" - 0609 did not work with these inweight & refweight
 else              # NONE 
   verbose_echo " --> Registering cropped image to MNI152 (12 DOF)"
-  ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$Reference2mm" -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+  ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi.nii.gz -ref "$Reference" -omat "$WD"/roi2std.mat -out "$WD"/acpc_final.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 fi
 
 verbose_echo " --> Getting a 6 DOF approximation"
