@@ -120,7 +120,6 @@ verbose_echo " "
 verbose_echo " START: BrainExtraction_FNIRT"
 log_Msg "START: BrainExtraction_FNIRT"
 
-if [ -w $WD ] ; then rm -rf $WD; fi
 mkdir -p $WD
 
 # Record the input options in a log file
