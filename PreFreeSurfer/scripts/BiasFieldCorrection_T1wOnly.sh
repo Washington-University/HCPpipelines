@@ -81,6 +81,16 @@ echo "PWD = `pwd`" >> $WDir/log.txt
 echo "date: `date`" >> $WDir/log.txt
 echo " " >> $WDir/log.txt
 
+# set StrongBiasFlag to TRUE or FALSE
+StrongBias=$(opts_StringToBool "$StrongBias")
+
+# if TRUE, pass --strongbias to fsl_anat
+if ((StrongBiasFlag)); then
+	StrongBiasFlag="--strongbias"
+else
+	StrongBias=NONE
+	StrongBiasFlag=""
+fi
 ########################################## DO WORK ##########################################
 
 # Compute T1w Bias Normalization using fsl_anat function
