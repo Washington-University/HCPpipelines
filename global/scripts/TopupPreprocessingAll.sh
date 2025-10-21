@@ -261,7 +261,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     # Make a conservative (eroded) intersection of the two masks
     if [ "$SPECIES" != "Human" ] ; then
          ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -bin ${WD}/Mask  # -ero is too aggressive for NHP - TH 2024
-    elif
+    else
         ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -ero -bin ${WD}/Mask
     fi
 
