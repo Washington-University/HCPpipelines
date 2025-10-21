@@ -17,7 +17,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
     CorticalScaleFactor="1"
 
     #PreFreeSurferPipeLineBatch.sh
-    BrainExtract="${BrainExtract:-INVIVO}"
     BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
     Defacing="TRUE"
     betcenter="45,55,39"         # comma separated voxel coordinates in T1wTemplate2mm
@@ -87,7 +86,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     CorticalScaleFactor="2"
 
     #PreFreeSurferPipeLineBatch.sh
-    BrainExtract="${BrainExtract:-INVIVO}"
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     Defacing="NONE"
     betcenter="46,53,52"         # comma separated voxel coordinates in T1wTemplate2mm
@@ -145,7 +143,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     CorticalScaleFactor="3"
 
     #PreFreeSurferPipeLineBatch.sh
-    BrainExtract="${BrainExtract:-INVIVO}"
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     Defacing="NONE"
 
@@ -321,7 +318,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     CorticalScaleFactor="10"
 
     #PreFreeSurferPipeLineBatch.sh
-    BrainExtract="${BrainExtract:-INVIVO}"
     BrainSize="50"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     Defacing="NONE"
     betcenter="50,40,30"         # comma separated voxel coordinates in T1wTemplate2mm
@@ -408,7 +404,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     CorticalScaleFactor="5"
 
     #PreFreeSurferPipeLineBatch.sh
-    BrainExtract="${BrainExtract:-INVIVO}"
     BrainSize="40"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     Defacing="NONE"
     betcenter="48,60,42"         # comma separated voxel coordinates in T1wTemplate2mm
