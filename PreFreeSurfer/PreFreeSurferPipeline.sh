@@ -515,7 +515,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
             log_Msg "Resolution of T1wTemplate: $RefRes" 
             Contrast=T1w
             TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
-            #TXwTemplateBrain=${T1wTemplateBrain}
             TXwTemplate2mm=${T1wTemplate2mm}
             echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "T1wTemplateBrain: ${T1wTemplateBrain}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -527,7 +526,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
             TXwFolder=${T2wFolder}
             TXwImage=${T2wImage}
             TXwTemplate=${T2wTemplate}
-            #TXwTemplateBrain=${T2wTemplateBrain}
             TXwTemplate2mm=${T2wTemplate2mm}
         fi
         OutputTXwImageARRAY=()
@@ -544,7 +542,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
         TXwImage=${T2wImage}
         # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
         TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
-        #TXwTemplateBrain=${AtlasSpaceFolder}/T2wTemplateBrain
         TXwTemplate2mm=${T2wTemplate2mm}
         echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
         echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -696,7 +693,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --workingdir=${TXwFolder}/ACPCAlignment \
                 --in=${TXwFolder}/${TXwImage} \
                 --ref=${TXwTemplate} \
-                --refbrain=${TXwTemplateBrain} \
                 --out=${TXwFolder}/${TXwImage}_acpc \
                 --omat=${TXwFolder}/xfms/acpc.mat \
                 --brainsize=${BrainSize} \
