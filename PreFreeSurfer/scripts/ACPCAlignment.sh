@@ -104,10 +104,10 @@ echo "date: `date`" >> $WD/log.txt
 echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
-
-fslmaths "$Reference2mm" "$WD"/Reference
-fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
-
+if [[ "$SPECIES" != "Human" ]] ; then
+  fslmaths "$Reference2mm" "$WD"/Reference
+  fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
+fi
 # Crop the FOV
 if [[ "$SPECIES" != "Human" ]] && [ $(imtest ${CustomMask}) = 1 ] ; then
   verbose_echo " --> Cropping the FOV with custom mask"
