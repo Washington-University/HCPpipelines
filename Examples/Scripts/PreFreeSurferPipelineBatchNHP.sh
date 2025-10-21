@@ -80,9 +80,6 @@ if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$Ru
     Usage
 fi
 
-# Set default values for optional parameters
-BrainExtract=${BrainExtract:-INVIVO}
-RunMode=${RunMode:-Default}
 
 
 echo "$(basename $0) $@"
