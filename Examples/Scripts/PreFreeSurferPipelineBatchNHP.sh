@@ -144,9 +144,6 @@ for Subject in $Subjlist ; do
         GradientDistortionCoeffs=${GradientDistortionCoeffsDIR}/coeff_${Gradient}.grad
     fi
     BiasFieldSmoothingSigma="${BiasFieldSmoothingSigma:-5}"  # Useally set to 5. "NONE" if not used
-    BrainExtract="${BrainExtract:-INVIVO}"          # INVIVO, EXVIVO
-    Defacing="${Defacing:-TRUE}"                    # TRUE or NONE, Do defacing by default if SPECIES is Human
-    T2wType="${T2wType:-T2w}"                       # T2w or FLAIR
 
     # adapt human convention
     if [ "$T1wInputImages" = "" ] && [ "$T1wlist" != "" ] ; then T1wInputImages="$T1wlist";fi
@@ -242,7 +239,6 @@ for Subject in $Subjlist ; do
         --topupconfig=${TopupConfig} \
         --bfsigma=${BiasFieldSmoothingSigma} \
         --brainextract=${BrainExtract} \
-        --defacing=${Defacing} \
         --t2wtype=${T2wType} \
         --runmode=${RunMode} \
         --species=${SPECIES} \
