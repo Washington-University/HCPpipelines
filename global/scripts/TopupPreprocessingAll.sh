@@ -522,7 +522,7 @@ if [[ $UnwarpDir = [xyij] ]] ; then
             ${GlobalScripts}/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
         fi
             ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseTwo_gdc_one_brain -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc -nosearch
-    elif
+    else
         ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef -ref ${WD}/PhaseTwo_gdc_one -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc
     fi
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseTwo_gdc.mat
