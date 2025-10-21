@@ -58,7 +58,6 @@ IFS='@' read -a imagelist <<<"$imagesStr"
 
 if ((${#imagelist[@]} < 2)) ; then
     log_Err_Abort "Must specify at least two images to average"
-
 fi
 
 # setup working directory
@@ -110,7 +109,6 @@ for im2 in $newimlist ; do
         # re-register using the brain mask as a weighting image
         #TSC: "-nosearch" only sets angle to 0, still optimizes translation
         $FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
-
     else
         cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
     fi
