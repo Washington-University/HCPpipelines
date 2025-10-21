@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -e
 
 # Requirements for this script
 #  installed versions of: FSL (including python with numpy, needed to run aff2rigid - part of FSL)
