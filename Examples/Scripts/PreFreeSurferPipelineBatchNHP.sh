@@ -89,8 +89,65 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh "$SPECIES" "$StrucRes"
 for Subject in $Subjlist ; do
     echo $Subject
 
-    #Scan settings
-    source ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt
+    # ------------------------------------------------------------------------------
+    # Load scan-specific configuration parameters
+    # The file ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt defines:
+    #   ## Structural MRI
+    #   - T1wInputImages, T2wInputImages
+    #
+    #   ## Readout Distortion Correction
+    #   - T1wSampleSpacing, T2wSampleSpacing
+    #
+    #   ## Gradient Nonlinearity Correction
+    #   - Gradient, UnwarpDir
+    #
+    #   ## Resting-state fMRI
+    #   - Tasklist, Taskreflist, PhaseEncodinglist, Fmriconcatlist
+    #
+    #   ## TopUp (Distortion correction for sMRI/fMRI)
+    #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, DwellTime
+    #
+    #   ## Diffusion MRI
+    #   - DmrilistPositive, DmrilistNegative, EchoSpacing, PEdir
+    #
+    # If the config file is not found, please set values manually.
+    # ------------------------------------------------------------------------------
+    if [ -f "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt" ]; then
+        source "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt"
+    else
+        echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. Please set values manually."
+
+        ## Structural MRI
+        T1wInputImages=
+        T2wInputImages=
+
+        ## Readout Distortion Correction
+        T1wSampleSpacing=
+        T2wSampleSpacing=
+
+        ## Gradient Nonlinearity Correction
+        Gradient=
+        UnwarpDir=
+
+        ## Resting-state fMRI
+        Tasklist=
+        Taskreflist=
+        PhaseEncodinglist=
+        Fmriconcatlist=
+
+        ## TopUp
+        TopupNegative=
+        TopupPositive=
+        TopupNegative2=
+        TopupPositive2=
+        DwellTime=
+
+        ## Diffusion MRI
+        DmrilistPositive=
+        DmrilistNegative=
+        EchoSpacing=
+        PEdir=
+    fi
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then
         T1wSampleSpacing=$T1wSampleSpacing  # read from Seriesinfo.txt
