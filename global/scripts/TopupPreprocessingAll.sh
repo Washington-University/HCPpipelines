@@ -259,7 +259,11 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseTwo_mask -r ${WD}/PhaseTwo_mask -w ${WD}/PhaseTwo_gdc_warp -o ${WD}/PhaseTwo_mask_gdc
 
     # Make a conservative (eroded) intersection of the two masks
-    ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -bin ${WD}/Mask  # -ero is too aggressive for NHP - TH 2024
+    if [ "$SPECIES" != "Human" ] ; then
+         ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -bin ${WD}/Mask  # -ero is too aggressive for NHP - TH 2024
+    elif
+        ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne_mask_gdc -mas ${WD}/PhaseTwo_mask_gdc -ero -bin ${WD}/Mask
+    fi
 
     if [ ! $Phase2ndDir = TRUE ] ; then
         # Merge both sets of images
@@ -497,26 +501,30 @@ if [[ $UnwarpDir = [xyij] ]] ; then
     vnum=`${FSLDIR}/bin/zeropad $VolumeNumber 2`
     # register scout to SE input (PhaseTwo) + combine motion and distortion correction
     ${FSLDIR}/bin/fslroi ${WD}/PhaseTwo_gdc ${WD}/PhaseTwo_gdc_one 0 1  # For flirt in FSL 6, -ref argument must be single 3D volume
-    if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
-        ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
-        ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
-        ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
-        fslmaths ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -thr 0.5 -dilD -dilD ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz
-        fslmaths ${WD}/SBRef -mas ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz ${WD}/SBRef_brain
-        fslmaths ${WD}/PhaseTwo_gdc_one -mas ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz ${WD}/PhaseTwo_gdc_one_brain
-    else
-        # remove non-brain structure (particularly eyes, muscles) in NHP not to degrade the registration between SBRef and SEField - TH 2024 
-        dim1=$(fslval "$WD"/SBRef.nii.gz dim1)
-        dim2=$(fslval "$WD"/SBRef.nii.gz dim2)
-        dim3=$(fslval "$WD"/SBRef.nii.gz dim3)
-        centerx=$(echo "$dim1*0.5" | bc | awk '{printf "%d", $1}')
-        centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
-        centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
-        # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
-        ${GlobalScripts}/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
-        ${GlobalScripts}/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+    if [ "$SPECIES" != "Human" ] ; then
+        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
+            ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
+            ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
+            ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
+            fslmaths ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -thr 0.5 -dilD -dilD ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz
+            fslmaths ${WD}/SBRef -mas ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz ${WD}/SBRef_brain
+            fslmaths ${WD}/PhaseTwo_gdc_one -mas ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz ${WD}/PhaseTwo_gdc_one_brain
+        else
+            # remove non-brain structure (particularly eyes, muscles) in NHP not to degrade the registration between SBRef and SEField - TH 2024 
+            dim1=$(fslval "$WD"/SBRef.nii.gz dim1)
+            dim2=$(fslval "$WD"/SBRef.nii.gz dim2)
+            dim3=$(fslval "$WD"/SBRef.nii.gz dim3)
+            centerx=$(echo "$dim1*0.5" | bc | awk '{printf "%d", $1}')
+            centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
+            centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
+            # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
+            ${GlobalScripts}/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+            ${GlobalScripts}/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+        fi
+            ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseTwo_gdc_one_brain -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc -nosearch
+    elif
+        ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef -ref ${WD}/PhaseTwo_gdc_one -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc
     fi
-    ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseTwo_gdc_one_brain -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc -nosearch
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseTwo_gdc.mat
     ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/PhaseTwo_gdc_one --premat=${WD}/SBRef2WarpField.mat --warp1=${WD}/WarpField_${vnum} --out=${WD}/WarpField
     ${FSLDIR}/bin/imcp ${WD}/Jacobian_${vnum} ${WD}/Jacobian
