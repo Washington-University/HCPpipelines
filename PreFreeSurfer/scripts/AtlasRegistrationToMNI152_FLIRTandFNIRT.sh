@@ -67,8 +67,6 @@ opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'mask' 'reference 2mm brain m
 
 opts_AddOptional '--fnirtconfig' 'FNIRTConfig' 'file' 'FNIRT configuration file' "${HCPPIPEDIR_Config}/T1_2_MNI152_2mm.cnf"
 
-opts_AddOptional '--brainextract' 'BrainExtract' 'string' 'brain extraction method' ""
-
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
