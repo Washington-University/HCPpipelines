@@ -36,8 +36,6 @@ opts_AddOptional '--working-dir' 'wdir' 'dir' "temporary working directory"
 
 opts_AddOptional '--cleanup' 'cleanup' 'yes OR no' "whether to delete the working directory (if set via --working-dir), default yes" "yes"
 
-opts_AddOptional '--verbose' 'verbose' 'yes OR no' "verbose output" "no"
-
 opts_ParseArguments "$@"
 
 #display the parsed/default values
