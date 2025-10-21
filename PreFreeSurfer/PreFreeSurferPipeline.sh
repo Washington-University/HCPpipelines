@@ -984,9 +984,7 @@ if [ "$RunMode" -lt 6 ]; then
         --ot2=${AtlasSpaceFolder}/${T2wImage} \
         --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
         --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-        --fnirtconfig=${FNIRTConfig} \
-        --brainextract=${BrainExtract}
-
+        --fnirtconfig=${FNIRTConfig} 
 
 
 fi
