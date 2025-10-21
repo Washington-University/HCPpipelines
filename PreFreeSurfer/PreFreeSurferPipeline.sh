@@ -347,7 +347,7 @@ fi
 
 # Convert the --runmode string argument into a numeric code
 case "$RunMode" in
-    Default)
+    Default|"")
         RunMode=1
         ;;
     ACPCAlignment)
@@ -700,6 +700,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --workingdir=${TXwFolder}/ACPCAlignment \
                 --in=${TXwFolder}/${TXwImage} \
                 --ref=${TXwTemplate} \
+                --refbrain=${TXwTemplateBrain} \
                 --out=${TXwFolder}/${TXwImage}_acpc \
                 --omat=${TXwFolder}/xfms/acpc.mat \
                 --brainsize=${BrainSize} \
