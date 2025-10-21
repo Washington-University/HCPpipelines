@@ -514,7 +514,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
             log_Msg "Resolution of structure: $StrucRes"
             log_Msg "Resolution of T1wTemplate: $RefRes" 
             Contrast=T1w
-            TXwTemplate=${AtlasSpaceFolder}/T1wTemplate	
             TXwTemplate2mm=${T1wTemplate2mm}
             echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "T1wTemplateBrain: ${T1wTemplateBrain}" >> ${AtlasSpaceFolder}/TemplateInfo.txt
@@ -527,6 +526,9 @@ if [ "$CustomBrain" = "NONE" ] ; then
             TXwImage=${T2wImage}
             TXwTemplate=${T2wTemplate}
             TXwTemplate2mm=${T2wTemplate2mm}
+            # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
+            echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+            echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
         fi
         OutputTXwImageARRAY=()
 
@@ -538,13 +540,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         else
             log_Msg "Processing Modality: $TXw"
         fi
-        TXwFolder=${T2wFolder}
-        TXwImage=${T2wImage}
-        # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
-        TXwTemplate=${AtlasSpaceFolder}/T2wTemplate	
-        TXwTemplate2mm=${T2wTemplate2mm}
-        echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
-        echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
+  
 
         OutputTXwImageSTRING=""
         OutputTXwBrainImageSTRING=""
