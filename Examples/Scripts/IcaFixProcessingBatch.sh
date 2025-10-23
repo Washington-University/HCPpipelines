@@ -132,38 +132,45 @@ main() {
 		export FSL_FIXDIR=${FixDir}
 	fi
 
-	# set list of fMRI on which to run ICA+FIX, separate MR FIX groups with %, use spaces (or @ like dedrift...) to otherwise separate runs
-	# the MR FIX groups determine what gets concatenated before doing ICA
-	# the groups can be whatever you want, you can make a day 1 group and a day 2 group, or just concatenate everything, etc
+	# "Multi-run" (concatenated) spatial ICA FIX is recommended and "single-run" spatial ICA FIX is deprecated. 
+	# Most commonly, all fMRI runs are combined in a single Multi-run fix denoising effort delimited by @,
+	# but if separate concatinated run groups are needed (e.g., very large amounts of fMRI acquired over several days), 
+	# separate those groups with %. Runs delimited by spaces will call single run spatial ICA FIX.
 	fMRINames="tfMRI_WM_RL@tfMRI_WM_LR@tfMRI_GAMBLING_RL@tfMRI_GAMBLING_LR@tfMRI_MOTOR_RL@tfMRI_MOTOR_LR%tfMRI_LANGUAGE_RL@tfMRI_LANGUAGE_LR@tfMRI_SOCIAL_RL@tfMRI_SOCIAL_LR@tfMRI_RELATIONAL_RL@tfMRI_RELATIONAL_LR@tfMRI_EMOTION_RL@tfMRI_EMOTION_LR"
 
-	# If you wish to run "multi-run" (concatenated) FIX, specify the names to give the concatenated output files
-	# In this case, all the runs included in ${fMRINames} become the input to multi-run FIX
-	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"  ## Use space (or @) to separate concatenation groups
-	# Otherwise, leave ConcatNames empty (in which case "single-run" FIX is executed serially on each run in ${fMRINames})
-	#ConcatNames=""
+	# Provide a name (or names) for concatinated outputs with multiple names delimited by @. 
+	# Single run spatial ICA FIX requires a blank ConcatNames="" variable.
+	ConcatNames="tfMRI_WM_GAMBLING_MOTOR_RL_LR@tfMRI_LANGUAGE_SOCIAL_RELATIONAL_EMOTION_RL_LR"
 
-	# set temporal highpass full-width (2*sigma) to use, in seconds, cannot be 0 for single-run FIX
-	# MR FIX also supports 0 for a linear detrend, or "pdX" for a polynomial detrend of order X
-	# e.g., bandpass=pd1 is linear detrend (functionally equivalent to bandpass=0)
-	# bandpass=pd2 is a quadratic detrend
+	# A linear detrend "0" or "pd1" is recommended for multi-run spatial ICA FIX for short or medium length runs.
+	# For very long continuous runs (e.g., 1 hour or more) phantom studies may indicate asymptotic heating behavior.
+	# Such nonlinear trends can be removed with "pd2" (quadractic).
+	# Higher order linear detrends "pdX" for a polynomial detrend of order X should only be used with evidence from phantom studies.
+	# Temporal highpass can be set with full-width (2*sigma) to use, in seconds, however, this is not recommended.
+	# Highpass filters are non-selective (affect both signal and artifacts) and may make ICA less able to separate signal and artifacts.
+    # Single run FIX requires bandpass=2000
 	bandpass=0
-	#bandpass=2000 #for single run FIX, bandpass=2000 was used in HCP preprocessing
 
-	# set whether or not to regress motion parameters (24 regressors)
-	# out of the data as part of FIX (TRUE or FALSE)
-	domot=FALSE
+	# 24 movement parameter regression is no longer recommended and has been removed from all current HCP data releases.
+	# Movement parameter regression was found to only remove neural signal of interest above and beyond 
+	# spatial ICA cleanup (Glasser et al., 2019 Neuroimage; Supplemental).
+	domot=FALSE #(TRUE or FALSE)
 
-	# set the ICA Method (MELODIC or ICASSO)
+	# The ICA method controls whether ICA is run once (MELODIC) or many times (ICASSO)
+	# ICASSO is much more computationally intensive, particularly when many components are found,
+	# but may be helpful in more challenging datasts (e.g., non-human primates).
 	ICAmethod=MELODIC
 	
 	# set the training data used in multi-run fix mode
 	MRTrainingData=HCP_Style_Single_Multirun_Dedrift.RData
 
-	# set the training data used in single-run fix mode
-	SRTrainingData=HCP_hp2000.RData
+	# set the training data used in single-run fix mode (not recommended)
+	# SRTrainingData=HCP_hp2000.RData
 	
 	# set FIX threshold (controls sensitivity/specificity tradeoff)
+	# 50 means set the cutoff at 0.5 probability signal/artifact, which will be most accurate;
+	# however, excluding signal is typically considered a much worse error than including artifact,
+	# so the Fix threshold is typically set to 10.
 	FixThreshold=10
 	
 	#delete highpass files (note that delete intermediates=TRUE is not recommended for MR+FIX)
@@ -195,22 +202,23 @@ main() {
 		echo ${Subject}
 
 		ResultsFolder="${StudyFolder}/${Subject}/MNINonLinear/Results"
-		
-		if [ -z "${ConcatNames}" ]; then
+
+		#Uncomment below if needing Single Run FIX (deprecated)
+		#if [ -z "${ConcatNames}" ]; then
 			# single-run FIX
-			fMRINamesFlat=$(echo ${fMRINames} | sed 's/[@%]/ /g')
+		#	fMRINamesFlat=$(echo ${fMRINames} | sed 's/[@%]/ /g')
 			
-			for fMRIName in ${fMRINamesFlat}; do
-				echo "  ${fMRIName}"
+		#	for fMRIName in ${fMRINamesFlat}; do
+		#		echo "  ${fMRIName}"
 
-				InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
+		#		InputFile="${ResultsFolder}/${fMRIName}/${fMRIName}"
 
-				cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
-				echo "About to run: ${cmd[*]}"
-				"${cmd[@]}"
-			done
+		#		cmd=("${queuing_command[@]}" "${HCPPIPEDIR}/ICAFIX/hcp_fix" "${InputFile}" ${bandpass} ${domot} "${SRTrainingData}" ${FixThreshold} "${DeleteIntermediates}")
+		#		echo "About to run: ${cmd[*]}"
+		#		"${cmd[@]}"
+		#	done
 
-		else
+		#else
 			#need arrays to sanity check number of concat groups
 			IFS=' @' read -a concatarray <<< "${ConcatNames}"
 			IFS=% read -a fmriarray <<< "${fMRINames}"
@@ -249,8 +257,8 @@ main() {
 				echo "About to run: ${cmd[*]}"
 				"${cmd[@]}"
 			done
-
-		fi
+        #Uncomment below if needing Single Run FIX (deprecated)
+		#fi
 
 	done
 }  # main()
