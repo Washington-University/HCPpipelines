@@ -80,14 +80,12 @@ echo "PWD = `pwd`" >> $WDir/log.txt
 echo "date: `date`" >> $WDir/log.txt
 echo " " >> $WDir/log.txt
 
-# set StrongBiasFlag to TRUE or FALSE
+# parse/sanity check for TRUE or FALSE, yes/no, etc
 StrongBias=$(opts_StringToBool "$StrongBias")
-
 # if TRUE, pass --strongbias to fsl_anat
-if ((StrongBiasFlag)); then
+if ((StrongBias)); then
 	StrongBiasFlag="--strongbias"
 else
-	StrongBias=NONE
 	StrongBiasFlag=""
 fi
 ########################################## DO WORK ##########################################
