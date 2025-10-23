@@ -185,7 +185,10 @@ opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "
 opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn"
 
 opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED (or deprecated millisec option)"
-opts_AddOptional '--echospacing' 'echospacing' 'Number in millisec' "DEPRECATED: please use --echospacing-seconds"
+
+opts_AddOptional '--seechospacing' 'seechospacing' 'Number in millisec' "DEPRECATED: please use --seechospacing-seconds"
+
+opts_AddOptional '--echospacing' 'seechospacing' 'Number in millisec' "DEPRECATED: please use --seechospacing-seconds"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
 
@@ -253,14 +256,14 @@ then
 fi
 
 #resolve echo spacing being required and exclusivity
-if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
+if [[ "$seechospacing" == "" && "$echospacingsec" == "" ]]
 then
-    log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
+    log_Err_Abort "You must specify --seechospacing-seconds or --seechospacing"
 fi
 
-if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
+if [[ "$seechospacing" != "" && "$echospacingsec" != "" ]]
 then
-    log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+    log_Err_Abort "You must not specify both --seechospacing-seconds and --seechospacing"
 fi
 
 #internally, PreEddy script expects milliseconds
@@ -269,7 +272,7 @@ then
     echospacingmilli=$(echo "$echospacingsec * 1000" | bc -l)
 else
     #could add a deprecation warning here, if we want to remove the old parameter in the future
-    echospacingmilli="$echospacing"
+    echospacingmilli="$seechospacing"
 fi
 
 #check for input unit errors

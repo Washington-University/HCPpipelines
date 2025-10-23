@@ -65,7 +65,7 @@ fi
 #   ${StudyFolder}/${Subject}/unprocessed/tfMRI_EMOTION_AP/${Subject}_SpinEchoFieldMap_AP.nii.gz
 #
 #
-# Change Scan Settings: EchoSpacing, FieldMap DeltaTE (if not using TOPUP),
+# Change Scan Settings: SEEchoSpacing, FieldMap DeltaTE (if not using TOPUP),
 # and $TaskList to match your acquisitions
 #
 # If using gradient distortion correction, use the coefficents from your scanner.
@@ -182,12 +182,12 @@ for i in "${!Subjects[@]}"; do
 			fMRISBRef="${StudyFolder}/${TimepointLong}/unprocessed/${fMRIName}/${TimepointCross}_${fMRIName}_SBRef.nii.gz"
 
 			# "Effective" Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
-			# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+			# SEEchoSpacing = 1/(BWPPPE * ReconMatrixPE)
 			#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
 			#   ReconMatrixPE = size of the reconstructed image in the PE dimension
 			# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 			# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-			EchoSpacing="0.00058" 
+			SEEchoSpacing="0.00058" 
 
 			# Susceptibility distortion correction method (required for accurate processing)
 			# Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GEHealthCareLegacyFieldMap, GEHealthCareFieldMap, PhilipsFieldMap
@@ -268,7 +268,7 @@ for i in "${!Subjects[@]}"; do
 				--fmapmag="$MagnitudeInputName" \
 				--fmapphase="$PhaseInputName" \
 				--fmapcombined="$GEB0InputName" \
-				--echospacing="$EchoSpacing" \
+				--seechospacing="$SEEchoSpacing" \
 				--echodiff="$DeltaTE" \
 				--unwarpdir="$UnwarpDir" \
 				--fmrires="$FinalFMRIResolution" \
@@ -295,7 +295,7 @@ for i in "${!Subjects[@]}"; do
 				--fmapmag=$MagnitudeInputName \
 				--fmapphase=$PhaseInputName \
 				--fmapcombined=$GEB0InputName \
-				--echospacing=$EchoSpacing \
+				--seechospacing=$SEEchoSpacing \
 				--echodiff=$DeltaTE \
 				--unwarpdir=$UnwarpDir \
 				--fmrires=$FinalFMRIResolution \
