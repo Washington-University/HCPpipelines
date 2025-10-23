@@ -10,6 +10,11 @@
 # Copyright (c) 2016-2023
 # All rights reserved.
 
+SPECIES="$1"
+StrucRes="$2"
+UnwarpDir="$3"
+MION="$4"
+
 ## Species specific variables
 if [[ "$SPECIES" == *Human* ]] ; then
 
@@ -28,7 +33,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Config for topup or "NONE" if not used
-    UnwarpDir="${UnwarpDir:-z}" # z appears to be best or "NONE" if not used, read from Read.direction in Seriesinfo.txt (PA:y, AP:y-, RL:x, LR:x-, FH:z, HF:z-)
     BiasFieldSmoothingSigma="5.0"
     T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm.nii.gz"  
     T1wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain.nii.gz" 
@@ -96,7 +100,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Chimp_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_chimp_fMRI.cnf" #Config for topup or "NONE" if not used
-    UnwarpDir="${UnwarpDir:-z-}" # z appears to be best or "NONE" if not used
     BiasFieldSmoothingSigma="4.0"
     T1wTemplate="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_${StrucRes}mm.nii.gz"  
     T1wTemplateBrain="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_${StrucRes}mm_brain.nii.gz" 
@@ -146,7 +149,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Macaque_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf" #Config for topup or "NONE" if not used
-    UnwarpDir="${UnwarpDir:-z-}" # z appears to be best or "NONE" if not used
     BiasFieldSmoothingSigma="3.5"
 
     betspecieslabel="2"          # bet4animal species label
@@ -278,7 +280,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     def_FIXTHR=10
     def_volwisharts=1
     def_ciftiwisharts=2
-    MION=${MION:-0}
     if [ ! "$FSL_FIXDIR" = $FSLDIR/bin ] ; then
         TrainingData="NHPHCP_Macaque_RIKEN30MRFIX"
         if [ "$MION" = 1 ] ; then 
@@ -323,7 +324,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used
-    UnwarpDir="${UnwarpDir:-z-}" # z appears to be best or "NONE" if not used
     BiasFieldSmoothingSigma="1.5" 
     BrainTemplate="MarmosetRIKEN25"
     #BrainTemplate="MarmosetRIKEN20"
@@ -407,7 +407,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used
-    UnwarpDir="${UnwarpDir:-z-}" # z appears to be best or "NONE" if not used
      BiasFieldSmoothingSigma="2.5"
     BrainTemplate="NightMonkey9"
     T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_0.25mm.nii.gz"
