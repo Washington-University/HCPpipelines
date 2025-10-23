@@ -13,6 +13,8 @@ Usage () {
     echo ""
     echo "Optional Options:"
     echo "  --BrainExtract: INVIVO (default) or EXVIVO"
+    echo "  --UnwarpDir: Unwarp direction (default: z)"
+    echo "  --MION: Use MION (default: 0)"
     echo ""
     exit 1;
 }
@@ -54,6 +56,14 @@ get_batch_options() {
                 BrainExtract=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
+            --UnwarpDir=*)
+                UnwarpDir=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --MION=*)
+                MION=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -73,7 +83,17 @@ if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$Ru
     Usage
 fi
 
+if [ -z "$UnwarpDir" ]; then
+    if [ "$SPECIES" != "Human" ]; then
+        UnwarpDir="z-"
+    else
+        UnwarpDir="z"
+    fi
+fi
 
+if [ -z "$MION" ]; then
+    MION="0"
+fi
 
 echo "$(basename $0) $@"
 
@@ -84,7 +104,9 @@ source $EnvironmentScript
 
 # species specific config
 # If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh "$SPECIES" "$StrucRes"
+#if you used MION, change the fix training data by uncommenting this line and providing the path to the training file if necessary.
+#TrainingData=NHPHCP_Macaque.USPIO
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh "$SPECIES" "$StrucRes" "$UnwarpDir"
 
 for Subject in $Subjlist ; do
     echo $Subject
