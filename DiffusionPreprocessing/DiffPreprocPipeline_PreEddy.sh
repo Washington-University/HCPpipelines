@@ -129,7 +129,7 @@ opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "
 
 opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn"
 
-opts_AddMandatory '--echospacing' 'echospacing' 'Number in msec' "Echo spacing in msecs"
+opts_AddMandatory '--seechospacing' 'seechospacing' 'Number in msec' "Echo spacing in msecs" "--echospacing"
 
 opts_AddOptional '--topup-config-file' 'TopupConfig' 'Path' "File containing the FSL topup configuration. Defaults to b02b0.cnf in the HCP configuration directory '(as defined by HCPPIPEDIR_Config).'"
 
@@ -327,7 +327,7 @@ dimPminus1=$(($dimP - 1))
 #Total_readout=EffectiveEchoSpacing*(ReconMatrixPE-1)
 # Factors such as in-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 # must already be accounted for as part of the "EffectiveEchoSpacing"
-ro_time=$(echo "${echospacing} * ${dimPminus1}" | bc -l)
+ro_time=$(echo "${seechospacing} * ${dimPminus1}" | bc -l)
 ro_time=$(echo "scale=6; ${ro_time} / 1000" | bc -l) # Convert from ms to sec
 log_Msg "Total readout time is $ro_time secs"
 
