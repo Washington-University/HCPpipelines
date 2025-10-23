@@ -19,6 +19,14 @@ Usage () {
     exit 1;
 }
 
+# ==== User-editable section ====
+# Edit these variables before running
+StudyFolder="${HOME}/projects/Pipelines_ExampleData"
+Subjlist="100307 100610"
+SPECIES="Human"
+RunMode="Default"
+BrainExtract="INVIVO"
+StrucRes="0.8"
 
 # Parse command line arguments
 get_batch_options() {
