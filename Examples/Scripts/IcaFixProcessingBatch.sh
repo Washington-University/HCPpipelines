@@ -5,7 +5,7 @@ DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="100307 100610"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
-#DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript
+#DEFAULT_FIXDIR="${HOME}/tools/fix1.06"  ##OPTIONAL: If not set will use $FSL_FIXDIR specified in EnvironmentScript (pyfix recommended, leave unset)
 
 #
 # Function Description
@@ -16,7 +16,7 @@ DEFAULT_RUN_LOCAL="FALSE"
 #							  for the subject id
 #	${Subjlist}				- Space delimited list of subject IDs
 #	${EnvironmentScript}	- Script to source to setup pipeline environment
-#	${FixDir}				- Directory containing FIX
+#	${FixDir}				- Directory containing FIX (pyfix is recommended, leave unset)
 #	${RunLocal}				- Indication whether to run this processing "locally" i.e. not submit
 #							  the processing to a cluster or grid
 #
@@ -87,6 +87,7 @@ get_options() {
 		exit 1
 	fi
 
+    # Note that pyfix is recommended not legacy R FIX, as pyfix is more accurate and easier to use, leave commented out.
 	# MPH: Allow FixDir to be empty at this point, so users can take advantage of the FSL_FIXDIR setting
 	# already in their EnvironmentScript
 #	if [ -z ${FixDir} ]
@@ -126,6 +127,7 @@ main() {
 	# set up pipeline environment variables and software
 	source "$EnvironmentScript"
 
+    # Note that pyfix is recommended not legacy R FIX, as pyfix is more accurate and easier to use.
 	# MPH: If DEFAULT_FIXDIR is set, or --FixDir argument was used, then use that to
 	# override the setting of FSL_FIXDIR in EnvironmentScript
 	if [ ! -z ${FixDir} ]; then
