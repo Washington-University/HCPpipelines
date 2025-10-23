@@ -508,11 +508,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
             TXwFolder=${T1wFolder}
             TXwImage=${T1wImage}
             TXwTemplate=${T1wTemplate}
-            # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
-            StrucRes=$(${FSLDIR}/bin/fslval $(echo ${T1wInputImages} | cut -d ' ' -f1) pixdim1 | awk '{printf "%0.2f", $1}')
-            RefRes=$(${FSLDIR}/bin/fslval ${T1wTemplate} pixdim1 | awk '{printf "%0.2f", $1}')
-            log_Msg "Resolution of structure: $StrucRes"
-            log_Msg "Resolution of T1wTemplate: $RefRes" 
             Contrast=T1w
             TXwTemplate2mm=${T1wTemplate2mm}
             echo "T1wTemplate: ${T1wTemplate}" >  ${AtlasSpaceFolder}/TemplateInfo.txt
