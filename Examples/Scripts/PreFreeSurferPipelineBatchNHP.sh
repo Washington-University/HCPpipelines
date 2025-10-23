@@ -2,17 +2,17 @@
 
 
 Usage () {
-    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> [--BrainExtract=<method>] [--StrucRes=<resolution>]"
+    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> --StrucRes=<resolution> [--BrainExtract=<method>] "
     echo ""
     echo "Required Options:"
     echo "  --StudyFolder: Path to the study folder containing subject data"
     echo "  --Subject: Subject identifier"
     echo "  --Species: Species type (Human, Chimp, Mac, Marmoset, etc.)"
     echo "  --RunMode: Pipeline run mode (Default, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration)"
+    echo "  --StrucRes: Structural resolution in mm (species-specific default will be used if not specified)"
     echo ""
     echo "Optional Options:"
     echo "  --BrainExtract: INVIVO (default) or EXVIVO"
-    echo "  --StrucRes: Structural resolution in mm (species-specific default will be used if not specified)"
     echo ""
     exit 1;
 }
@@ -46,12 +46,12 @@ get_batch_options() {
                 RunMode=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --BrainExtract=*)
-                BrainExtract=${argument#*=}
-                index=$(( index + 1 ))
-                ;;
             --StrucRes=*)
                 StrucRes=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --BrainExtract=*)
+                BrainExtract=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             *)
@@ -68,7 +68,7 @@ get_batch_options() {
 get_batch_options "$@"
 
 # Check required parameters
-if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$RunMode" ]; then
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$RunMode" ] || [ -z "$StrucRes" ]; then
     echo "ERROR: Missing required parameters"
     Usage
 fi

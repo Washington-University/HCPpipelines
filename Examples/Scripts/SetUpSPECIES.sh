@@ -26,7 +26,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
     bettop2center="86"           # Distance between top of FOV and center of brain
     betspecieslabel="0"          # bet4animal species label
 
-    StrucRes=${StrucRes:-0.7}
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Config for topup or "NONE" if not used
     UnwarpDir="${UnwarpDir:-z}" # z appears to be best or "NONE" if not used, read from Read.direction in Seriesinfo.txt (PA:y, AP:y-, RL:x, LR:x-, FH:z, HF:z-)
@@ -95,7 +94,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     bettop2center="60"           # Distance between top of FOV and center of brain
     betspecieslabel="1"          # bet4animal species label
 
-    StrucRes=${StrucRes:-0.8}
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Chimp_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_chimp_fMRI.cnf" #Config for topup or "NONE" if not used
     UnwarpDir="${UnwarpDir:-z-}" # z appears to be best or "NONE" if not used
@@ -185,8 +183,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         bettop2center="34"
 
         BrainTemplate="Mac25Cyno"
-        StrucRes=${StrucRes:-0.5}
-        #StrucRes=0.25  # D99 template
         T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
         T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm_brain.nii.gz"
         T2wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_restore_${StrucRes}mm.nii.gz"
@@ -222,8 +218,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         #Template2mmBrain="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_1.0mm_brain.nii.gz" #MacaqueYerkes1.0mm brain template
 
         BrainTemplate="Mac25Rhesus"
-        StrucRes=${StrucRes:-0.5}
-        #StrucRes=0.25  # D99 template NMT v2.0 (SARM)template 
         T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
         T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm_brain.nii.gz"
         T2wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_restore_${StrucRes}mm.nii.gz"
@@ -334,9 +328,7 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     BrainTemplate="MarmosetRIKEN25"
     #BrainTemplate="MarmosetRIKEN20"
 
-    StrucRes=${StrucRes:-0.2}
-    #StrucRes=0.15 # SAM template
-    #StrucRes=0.1  # bmaV2, Nencki-Monash
+
     T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
     T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm_brain.nii.gz" 
     T2wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_restore_${StrucRes}mm.nii.gz" 
