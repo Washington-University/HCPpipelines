@@ -147,13 +147,8 @@ if [ "$SPECIES" != "Human" ] ; then
       fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
       fslmaths "$Input" "$WD"/"$BaseName"
       ${HCPPIPEDIR_Global}/bet4animal "$WD"/"$BaseName" "$WD"/"$BaseName"_brain_initI $BetOpts     # "-c 48 56 51 -r 36" for A21051401
-      if [ ! $SPECIES = Human ] ; then
-        verbose_echo " ... init linear registration to 2mm reference brain"
-        flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -schedule $FSLDIR/etc/flirtsch/xyztrans.sch -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
-      else
-        verbose_echo " ... init linear registration to 2mm reference brain"
-        flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -dof 12 -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
-      fi
+      verbose_echo " ... init linear registration to 2mm reference brain"
+      flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -schedule $FSLDIR/etc/flirtsch/xyztrans.sch -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
       convert_xfm -omat "$WD"/roughlin_initIinv.mat -inverse "$WD"/roughlin_initI.mat
       flirt -in "$Reference2mmMask" -ref "$WD"/"$BaseName" -applyxfm -init "$WD"/roughlin_initIinv.mat -o "$WD"/"$BaseName"_brain_initII_mask -interp nearestneighbour
       fslmaths "$WD"/"$BaseName" -mas "$WD"/"$BaseName"_brain_initII_mask "$WD"/"$BaseName"_brain_initII
