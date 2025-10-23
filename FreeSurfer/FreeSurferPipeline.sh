@@ -24,7 +24,7 @@
 #
 # ## License
 #
-# See the [LICENSE](https://github.com/Washington-University/HCPPipelines/blob/master/LICENSE.md) file
+# See the [LICENSE](https://github.com/Washington-University/Pipelines/blob/master/LICENSE.md) file
 #
 #~ND~END~
 
@@ -150,6 +150,11 @@ opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that 
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
+# NHP options
+opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhes|MacaqueFusc|NightMonkey|Marmoset' "Species type (required).  Controls species-specific processing parameters" ""
+
+opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FShires|FSFinish' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish (default: Default)" "Default"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -182,9 +187,17 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
+# 既存のパラメータ処理部分の後に追加
+if [[ "$Species" == "NONE" ]]; then
+    Species=""
+fi
+
+
+
 #check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
 Compliance="HCPStyleData"
 ComplianceMsg=""
+
 
 if ((! existing_session))
 then
@@ -201,6 +214,11 @@ then
     then
         ComplianceMsg+=" --t2w-image= or --t2= not present or set to NONE"
         Compliance="LegacyStyleData"
+    fi
+
+	if [[ "${Species}" = "" ]]
+    then
+        log_Err_Abort "--species not set and '--existing-session' not used"
     fi
 fi
 
@@ -220,6 +238,8 @@ log_Check_Env_Var FREESURFER_HOME
 
 # Platform info
 log_Msg "Platform Information Follows: "
+log_Msg "Species: ${Species}"
+log_Msg "RunMode: ${RunMode:-1}"
 uname -a
 
 configure_custom_tools()
@@ -228,14 +248,15 @@ configure_custom_tools()
     local which_conf2hires
     local which_longmc
 
-    which_recon_all=$(which recon-all.v6.hires || true)
-    which_conf2hires=$(which conf2hires || true)
-    which_longmc=$(which longmc || true)
+    which_recon_all=$(which recon-all.v6.hiresNHP)
+    which_conf2hires=$(which conf2hiresNHP)
+    which_longmc=$(which longmc)
+    which_setupfsnhp=$(which SetUpFSNHP.sh)
 
-    if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
+    if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_setupfsnhp}" = "" ||  "${which_longmc}" = "" ]] ; then
         export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
         log_Warn "We were not able to locate one of the following required tools:"
-        log_Warn "recon-all.v6.hires, conf2hires, or longmc"
+        log_Warn "recon-all.v6.hiresNHP, conf2hiresNHP, SetUpFSNHP.sh or longmc"
         log_Warn ""
         log_Warn "To be able to run this script using the standard versions of these tools,"
         log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
@@ -246,6 +267,7 @@ configure_custom_tools()
         log_Warn ""
         log_Warn "PATH set to: ${PATH}"
     fi    
+    PipelineScripts=${HCPPIPEDIR}/FreeSurfer/scripts
 }
 
 # Show tool versions
@@ -256,15 +278,15 @@ show_tool_versions()
     ${HCPPIPEDIR}/show_version
 
     # Show recon-all version
-    log_Msg "Showing recon-all.v6.hires version"
-    local which_recon_all=$(which recon-all.v6.hires || true)
+    log_Msg "Showing recon-all.v6.hiresNHP version"
+    local which_recon_all=$(which recon-all.v6.hiresNHP)
     log_Msg ${which_recon_all}
-    recon-all.v6.hires -version
+    recon-all.v6.hiresNHP -version
     
     # Show tkregister version
-    log_Msg "Showing tkregister version"
-    which tkregister
-    tkregister -version
+    log_Msg "Showing tkregister2 version"
+    which tkregister2
+    tkregister2 -version
 
     # Show mri_concatenate_lta version
     log_Msg "Showing mri_concatenate_lta version"
@@ -283,13 +305,13 @@ show_tool_versions()
 
 validate_freesurfer_version()
 {
-    if [ -z "${FREESURFER_HOME}" ]; then
+    if [ -z "${FREESURFER_HOME}" ] ; then
         log_Err_Abort "FREESURFER_HOME must be set"
     fi
     
     freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
 
-    if [ -f "${freesurfer_version_file}" ]; then
+    if [ -f "${freesurfer_version_file}" ] ; then
         freesurfer_version_string=$(cat "${freesurfer_version_file}")
         log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
     else
@@ -319,7 +341,7 @@ validate_freesurfer_version()
 
     if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
         # e.g. 4.y.z, 5.y.z
-        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP-NHP.sh if you want to continue using FreeSurfer 5.3)"
     fi
 }
 
@@ -475,7 +497,7 @@ make_t1wxt2w_qc_file()
 
 
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
-OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
+OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -484,251 +506,713 @@ log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 log_Msg "Retrieve positional parameters"
 # ----------------------------------------------------------------------
-SessionDIR="${SessionDIR}"
-SessionID="${SessionID}"
-T1wImage="${T1wImage}"       # Irrelevant if '--existing-session' flag is set
-T1wImageBrain="${T1wImageBrain}"  # Irrelevant if '--existing-session' flag is set
-T2wImage="${T2wImage}"       # Irrelevant if '--existing-session' flag is set
-recon_all_seed="${recon_all_seed}"
+SubjectDIR="${1}"
+SubjectID="${2}"
+T1wImage="${3}"       # Irrelevant if '--existing-subject' flag is set
+T1wImageBrain="${4}"  # Irrelevant if '--existing-subject' flag is set
+T2wImage="${5}"       # Irrelevant if '--existing-subject' flag is set
+recon_all_seed="${6}"
 
+#RunMode="$p_runmode"
+#SPECIES="$p_species"
+RunMode="${RunMode:-1}"
+SPECIES="${Species}"
+
+# Species-specific environments imported from SPECIES4FS.cnf
+export SPECIES
+source ${HCPPIPEDIR}/FreeSurfer/custom/SetUpFSNHP.sh
+ScaleSuffix="_scaled"
+
+# Convert the --runmode string argument into a numeric code
+case "$RunMode" in
+	Default)
+		RunMode=1
+		;;
+	FSinit)
+		RunMode=1
+		;;
+	FSbrainseg)
+		RunMode=2
+		;;
+	FSsurfinit)
+		RunMode=3
+		;;
+	FShires)
+		RunMode=4
+		;;
+	FSfinish)
+		RunMode=5
+		;;
+	*)
+		echo "Error: invalid runmode '$RunMode'"
+		exit 1
+		;;
+esac
+
+## MPH: Hack!
+# For backwards compatibility, continue to allow positional specification of parameters for the above set of 6 parameters.
+# But any new parameters/options in the script will only be accessible via a named parameter/flag.
+# Here, we retrieve those from the global variable that was set in get_options()
+if [ "${flair}" = "TRUE" ] ; then
+	flair=${flair}
+fi
+if [ "${p_existing_subject}" = "TRUE" ] ; then
+	existing_subject=${p_existing_subject}
+fi
+if [ ! -z "${p_extra_reconall_args}" ] ; then
+	extra_reconall_args="${p_extra_reconall_args}"
+fi
+if [ ! -z "${p_conf2hires}" ] ; then
+	conf2hires=${p_conf2hires}
+fi
 
 # ----------------------------------------------------------------------
 # Log values retrieved from positional parameters
 # ----------------------------------------------------------------------
-log_Msg "SessionDIR: ${SessionDIR}"
-log_Msg "SessionID: ${SessionID}"
+log_Msg "SubjectDIR: ${SubjectDIR}"
+log_Msg "SubjectID: ${SubjectID}"
 log_Msg "T1wImage: ${T1wImage}"
 log_Msg "T1wImageBrain: ${T1wImageBrain}"
 log_Msg "T2wImage: ${T2wImage}"
 log_Msg "recon_all_seed: ${recon_all_seed}"
 log_Msg "flair: ${flair}"
-log_Msg "existing_session: ${existing_session}"
-log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
+log_Msg "existing_subject: ${existing_subject}"
+log_Msg "extra_reconall_args: ${extra_reconall_args}"
 log_Msg "conf2hires: ${conf2hires}"
+log_Msg "runmode: ${RunMode}"
+log_Msg "SPECIES: ${SPECIES}"
+# ----------------------------------------------------------------------
+log_Msg "Figure out the number of cores to use."
+# ----------------------------------------------------------------------
+# Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the
+# number of cores a job will use. If this environment variable is set, we will use it to
+num_cores=0
+# determine the number of cores to tell recon-all to use.
 
-if ((! existing_session)); then
+if [[ -z ${NSLOTS} ]] ; then
+	num_cores=8
+else
+	num_cores="${NSLOTS}"
+fi
+log_Msg "num_cores: ${num_cores}"
 
-    # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
-    # certain files need to be reverted to their PreFreeSurfer output versions
-    if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
-        log_Err "The --existing-session flag was not invoked AND PostFreeSurfer has already been run."
-        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/T1w/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
-        log_Err_Abort "If this is the goal, delete ${SessionDIR}/${SessionID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
-    fi
+if [ "${existing_subject}" != "TRUE" ] ; then
 
-    # ----------------------------------------------------------------------
-    log_Msg "Thresholding T1w image to eliminate negative voxel values"
-    # ----------------------------------------------------------------------
-    zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
-    log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
-
-    fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
-    fi
+	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
+	# certain files need to be reverted to their PreFreeSurfer output versions
+	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
+		log_Msg "revert PreFreeSurfer resampling"	
+		${HCPPIPEDIR_FS}/RevertPreFreeSurferResampling.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
+		imrm ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}
+	fi
 fi
 
-# ----------------------------------------------------------------------
-log_Msg "Call custom recon-all: recon-all.v6.hires"
-# ----------------------------------------------------------------------
+if [ "${existing_subject}" = "TRUE" ] ; then
 
-recon_all_cmd=(recon-all.v6.hires -subjid "$SessionID" -sd "$SessionDIR")
-if ((! existing_session)); then  # input volumes only necessary first time through
-    recon_all_cmd+=(-all -i "$zero_threshold_T1wImage" -emregmask "$T1wImageBrain")
-    if [ "${T2wImage}" != "" ]; then
-        if ((flair)); then
-            recon_all_cmd+=(-FLAIR "$T2wImage")
-        else
-            recon_all_cmd+=(-T2 "$T2wImage")
-        fi
-    fi
+	if [ -e "$SubjectDIR"/"$SubjectID"_scaled ] ; then
+		rm -rf "$SubjectDIR"/"$SubjectID" 
+		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
+	fi
+	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
+		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
+			log_Msg "revert PreFreeSurfer resampling"	
+			${HCPPIPEDIR_FS}/RevertPreFreeSurferResampling.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
+		fi
+		imrm ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}
+	fi
+
+	if [ -e "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh ] ; then
+		rm "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh
+	fi
 fi
-
+	
 # By default, refine pial surfaces using T2 (if T2w image provided).
 # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
 # this can be accomplished using --extra-reconall-arg=-noT2pial
-if [ "${T2wImage}" != "" ]; then
-    if ((flair)); then
-        recon_all_cmd+=(-FLAIRpial)
-    else
-        recon_all_cmd+=(-T2pial)
-    fi
+if [ "${T2wImage}" != "NONE" ] ; then
+	if [ "${flair}" = "TRUE" ] ; then
+		recon_all_pial=" -FLAIRpial"
+		recon_all_T2input=" -FLAIR $(remove_ext ${T2wImage})_scaled.nii.gz"
+		T2Type=FLAIR
+	else
+		recon_all_pial=" -T2pial"
+		recon_all_T2input=" -T2 $(remove_ext ${T2wImage})_scaled.nii.gz"
+		T2Type=T2
+	fi
+	if [ -e "$SubjectDIR"/"$SubjectID"/mri/transforms/${T2Type}raw.lta ] ; then
+		rm "$SubjectDIR"/"$SubjectID"/mri/transforms/${T2Type}raw.lta # remove this otherwise conf2hires will not update this - TH
+	fi
+else
+		recon_all_T2input=""
+		recon_all_pial=""
+		T2Type="NONE"		
 fi
 
-if [ ! -z "${recon_all_seed}" ]; then
-    recon_all_cmd+=(-norandomness -rng-seed "$recon_all_seed")
+if [ $SPECIES = Human ] ; then
+	HumanProc="-curvstats -avgcurv -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -pctsurfcon -hyporelabel -aparc2aseg -apas2aseg -segstats -wmparc -balabels"
+else
+	HumanProc=""
 fi
 
-#add any extra args
-recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
+recon_all_cmd="recon-all.v6.hiresNHP"
+recon_all_cmd+=" -subjid ${SubjectID}"
+recon_all_cmd+=" -sd ${SubjectDIR}"
 
-# The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
+if [ ! -z "${extra_reconall_args}" ] ; then
+	extra_reconall_args=" ${extra_reconall_args}"
+fi
+extra_reconall_args+=" -openmp ${num_cores}"	
+if [ ! -z "${recon_all_seed}" ] ; then
+	extra_reconall_args+=" -norandomness -rng-seed ${recon_all_seed}"
+fi
+log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
+
+if [[ ! -z "$GCSdir" && ! -z "$GCS" ]] ; then
+	extra_reconall_args+=" -gcs-dir $GCSdir -gcs $GCS"
+fi
+
+# The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
-if ((conf2hires)); then
-    recon_all_cmd+=(-conf2hires)
+if [ "${conf2hires}" = "TRUE" ] ; then
+	conf2hiresflag=" -conf2hires"
 fi
 
-log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
-"${recon_all_cmd[@]}"
-return_code=$?
-if [ "${return_code}" != "0" ]; then
-    log_Err_Abort "recon-all command failed with return_code: ${return_code}"
+# expert options for recon-all
+if [ -e "$SubjectDIR"/"$SubjectID".expert.opts ] ; then
+	rm "$SubjectDIR"/"$SubjectID".expert.opts
 fi
 
-if ((! existing_session)); then
-    # ----------------------------------------------------------------------
-    log_Msg "Clean up file: ${zero_threshold_T1wImage}"
-    # ----------------------------------------------------------------------
-    rm ${zero_threshold_T1wImage}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
-    fi
+for cmd in mri_normalize mri_segment mri_fill mris_inflate1 mris_inflate2 mris_smooth mris_make_surfaces mris_register bbregister; do    
+	cmd_args=${cmd}_args
+	if [ ! -z "${!cmd_args}" ] ; then
+		log_Msg "expert opts: $cmd ${!cmd_args}"
+		echo "$cmd ${!cmd_args}" >> "$SubjectDIR"/"$SubjectID".expert.opts
+	fi
+done
+
+# options for conf2hires
+if [ ! -z "$T1normSigma" ] ; then
+	c2hxopts=" --t1norm-sigma $T1normSigma"
+fi
+if [ ! -z "$T2normSigma" ] ; then
+	c2hxopts+=" --t2norm-sigma $T2normSigma"
+fi
+if [ ! -z "$VariableSigma" ] ; then
+	c2hxopts+=" --variablesigma $VariableSigma"
+fi
+if [ ! -z "$PialSigma" ] ; then
+	c2hxopts+=" --psigma $PialSigma"
+fi
+if [ ! -z "$WhiteSigma" ] ; then
+	c2hxopts+=" --wsigma $WhiteSigma"
+fi
+if [ ! -z "$SmoothNiter" ] ; then
+	c2hxopts+=" --smooth $SmoothNiter"
+fi
+if [ ! -z "$NSigmaAbove" ] ; then
+	c2hxopts+=" --nsigma_above $NSigmaAbove"
+fi
+if [ ! -z "$NSigmaBelow" ] ; then
+	c2hxopts+=" --nsigma_below $NSigmaBelow"
+fi
+if [ ! -z "$WMProjAbs" ] ; then
+	c2hxopts+=" --wm-proj-abs $WMProjAbs"
+fi
+if [ ! -z "$WMSeg_wlo" ] ; then
+	c2hxopts+=" --wlo $WMSeg_wlo"
+fi
+if [ ! -z "$WMSeg_ghi" ] ; then
+	c2hxopts+=" --ghi $WMSeg_ghi"
+fi
+if [ ! -z "$MIN_GRAY_AT_WHITE_BORDER" ] ; then
+	c2hxopts+=" --min_gray_at_white_border $MIN_GRAY_AT_WHITE_BORDER"
+fi
+if [ ! -z "$MAX_GRAY_AT_CSF_BORDER" ] ; then
+	c2hxopts+=" --max_gray_at_csf_border $MAX_GRAY_AT_CSF_BORDER"
+fi
+if [ ! -z "$MIN_GRAY_AT_CSF_BORDER" ] ; then
+	c2hxopts+=" --min_gray_at_csf_border $MIN_GRAY_AT_CSF_BORDER"
+fi
+if [ ! -z "$MAX_GRAY" ] ; then
+	c2hxopts+=" --max_gray $MAX_GRAY"
+fi
+if [ ! -z "$MAX_CSF" ] ; then
+	c2hxopts+=" --max_csf $MAX_CSF"
+fi
+if [ ! -z "$SmoothNiterPial" ] ; then
+	c2hxopts+=" --smoothpial $SmoothNiterPial"
+fi
+if [ ! -z "$MaxThickness" ] ; then
+	c2hxopts+=" --max $MaxThickness"
+fi
+if [ "$CopyBiasFromConf" = "TRUE" ] ; then
+	c2hxopts+=" --copy-bias-from-conf"
+fi	
+if [ ! -z "$c2hxopts" ] ; then
+	log_Msg "conf2hires expert opts: $c2hxopts"
+	echo "conf2hiresNHP $c2hxopts" >> "$SubjectDIR"/"$SubjectID".expert.opts
+fi
+ExpertOpts="-expert "$SubjectDIR"/"$SubjectID".expert.opts -xopts-overwrite"
+
+log_Msg "recon-all log: $SubjectDIR/$SubjectID/scripts/recon-all.log"
+LF="$SubjectDIR"/"$SubjectID"/scripts/recon-all.log
+
+
+
+if [ "$RunMode" -lt 2 ] ; then
+	if [ "${existing_subject}" != "TRUE" ] ; then
+
+		# ----------------------------------------------------------------------
+		log_Msg "Thresholding T1w image to eliminate negative voxel values"
+		# ----------------------------------------------------------------------
+		zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
+		log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
+
+		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
+		return_code=$?
+		if [ "${return_code}" != "0" ] ; then
+			log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
+		fi
+
+		## This section scales them so that FreeSurfer 6 can work properly in scaled space. The data will be
+		## rescaled to the original space by a script, RescaleVolumeAndSurface.sh, after FS was finished - TH 2017-2023 
+		log_Msg "Scale T1w brain volume"		
+		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
+		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
+
+		recon_all_T1input=" -i $(remove_ext ${T1wImage})_scaled.nii.gz"
+		recon_all_T1braininput=" -emregmask $(remove_ext ${T1wImageBrain})_scaled.nii.gz"
+
+		if [ "${T2wImage}" != "NONE" ] ; then
+			log_Msg "Scale T2w volume"
+			${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T2wImage" "$ScaleFactor" $(remove_ext ${T2wImage})_scaled
+		fi
+
+	fi
+
+	# ----------------------------------------------------------------------
+	log_Msg "Call custom recon-all: recon-all.v6.hires"
+	# ----------------------------------------------------------------------
+	
+	if [ -e "$SubjectDIR"/"$SubjectID" ] ; then
+		rm -rf "$SubjectDIR"/"$SubjectID"
+	fi
+	if [ -e "$SubjectDIR"/"$SubjectID""$ScaleSuffix" ] ; then
+		rm -rf "$SubjectDIR"/"$SubjectID""$ScaleSuffix"
+	fi
+	
+	recon_all_initrun=" -motioncor"
+	recon_all_initrun+="$recon_all_T1input"
+	recon_all_initrun+="$recon_all_T1braininput"
+	recon_all_initrun+="$recon_all_T2input"
+
+	log_Msg "...recon_all_cmd: ${recon_all_cmd} ${recon_all_initrun} ${extra_reconall_args} ${ExpertOpts}"
+	${recon_all_cmd} ${recon_all_initrun} ${extra_reconall_args} ${ExpertOpts}
+	return_code=$?
+	if [ "${return_code}" != "0" ] ; then
+		log_Err_Abort "recon-all command failed with return_code: ${return_code}"
+	fi
+
+	log_Msg "...brainmasking, intensitycor"
+	cmd=(fslmaths $(remove_ext ${T1wImageBrain})_scaled.nii.gz -thr 0 "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz)
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+	cmd=(mri_convert "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz --conform)
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+	## This section replaces 'FS -nuintensirycor' for NHP - TH 2017-2023
+	cmd=("$PipelineScripts"/IntensityCor.sh "$SubjectDIR"/"$SubjectID"/mri/orig.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz -t1 -m "$IntensityCor","$BiasFieldFastSmoothingSigma" "$StrongBias_args")
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+	log_Msg "...second recon-all for normaliztion1"
+	${recon_all_cmd} -normalization ${extra_reconall_args} ${ExpertOpts}
 
 fi
 
-## MPH: Portions of the following are unnecesary in the case of ${existing_session} = "TRUE"
-## but rather than identify what is and isn't strictly necessary (which itself may interact
-## with the specific stages run in recon-all), we'll simply run it all to be safe that all
-## files created following recon-all are appropriately updated
-# ----------------------------------------------------------------------
-log_Msg "Creating eye.dat"
-# ----------------------------------------------------------------------
-mridir=${SessionDIR}/${SessionID}/mri
+if [ "$RunMode" -lt 3 ] ; then
+	log_Msg "...skullstripping"      ## This section replaces 'FS -skullstrip' for NHP - TH 2017-2024
 
-transformsdir=${mridir}/transforms
-mkdir -p ${transformsdir}
+	mridir=${SubjectDIR}/${SubjectID}/mri
 
-eye_dat_file=${transformsdir}/eye.dat
+	if [ ! -e "$mridir"/brainmask.edit.mgz ] ; then
 
-log_Msg "...This creates ${eye_dat_file}"
-echo "${SessionID}" > ${eye_dat_file}
-echo "1" >> ${eye_dat_file}
-echo "1" >> ${eye_dat_file}
-echo "1" >> ${eye_dat_file}
-echo "1 0 0 0" >> ${eye_dat_file}
-echo "0 1 0 0" >> ${eye_dat_file}
-echo "0 0 1 0" >> ${eye_dat_file}
-echo "0 0 0 1" >> ${eye_dat_file}
-echo "round" >> ${eye_dat_file}
+		if [ "$SkullStripMethod" = PreFS ] ; then
 
-if [[ "${T2wImage}" != "" ]]; then
-    # ----------------------------------------------------------------------
-    log_Msg "Making T2w to T1w registration available in FSL format"
-    # ----------------------------------------------------------------------
+			DilateDistance=1 
 
-    pushd ${mridir}
+			cmd=(mri_convert "$mridir"/brainmask.conf.mgz "$mridir"/brainmask.conf.nii.gz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    if ((flair)); then
-        t2_or_flair="FLAIR"
-    else
-        t2_or_flair="T2"
-    fi
+			cmd=(fslmaths "$mridir"/brainmask.conf.nii.gz -bin  "$mridir"/brainmask.conf.bin.nii.gz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "...Create a registration between the original conformed space and the rawavg space"
-    tkregister_cmd="tkregister"
-    tkregister_cmd+=" --mov orig.mgz"
-    tkregister_cmd+=" --targ rawavg.mgz"
-    tkregister_cmd+=" --regheader"
-    tkregister_cmd+=" --noedit"
-    tkregister_cmd+=" --reg deleteme.dat"
-    tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
-    tkregister_cmd+=" --s ${SessionID}"
+			cmd=($CARET7DIR/wb_command -volume-dilate "$mridir"/brainmask.conf.bin.nii.gz $DilateDistance NEAREST "$mridir"/brainmask.bin.nii.gz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
-    log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+			cmd=(mri_convert "$mridir"/brainmask.bin.nii.gz "$mridir"/brainmask.bin.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    ${tkregister_cmd}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "tkregister command failed with return_code: ${return_code}"
-    fi
+			cmd=(mri_mask "$mridir"/T1.mgz "$mridir"/brainmask.bin.mgz "$mridir"/brainmask.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			
+			cmd=(rm "$mridir"/brainmask.bin.nii.gz "$mridir"/brainmask.conf.nii.gz "$mridir"/brainmask.conf.bin.nii.gz "$mridir"/brainmask.bin.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "...Concatenate the ${t2_or_flair}raw->orig and orig->rawavg transforms"
-    mri_concatenate_lta_cmd="mri_concatenate_lta"
-    mri_concatenate_lta_cmd+=" transforms/${t2_or_flair}raw.lta"
-    mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
-    mri_concatenate_lta_cmd+=" Q.lta"
+		elif [ "$SkullStripMethod" = FS ] ; then
 
-    log_Msg "......The following concatenates transforms/${t2_or_flair}raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
-    log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
-    ${mri_concatenate_lta_cmd}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
-    fi
+			cmd=(mri_em_register -uns 3 -mask "$mridir"/brainmask.conf.mgz "$mridir"/nu.mgz "$GCAdir"/"$GCA" "$mridir"/transforms/talairach_init.lta)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "...Convert to FSL format"
-    tkregister_cmd="tkregister"
-    tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
-    tkregister_cmd+=" --targ rawavg.mgz"
-    tkregister_cmd+=" --reg Q.lta"
-    tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
-    tkregister_cmd+=" --noedit"
+			cmd=(mri_convert "$mridir"/brainmask.conf.mgz "$mridir"/brainmask.conf.nii.gz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
-    log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+			cmd=(fslmaths "$mridir"/brainmask.conf.nii.gz -bin -dilM -dilM "$mridir"/brainmask.conf.dil2.nii.gz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    ${tkregister_cmd}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "tkregister command failed with return_code: ${return_code}"
-    fi
+			cmd=(mri_convert "$mridir"/brainmask.conf.dil2.nii.gz "$mridir"/brainmask.conf.dil2.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    log_Msg "...Clean up"
-    rm deleteme.dat
-    rm Q.lta
+			cmd=(mri_mask "$mridir"/T1.mgz "$mridir"/brainmask.conf.dil2.mgz "$mridir"/T1_prebrainmask.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-    popd
+			# mri_watershed in NHP requires pre-masked input to minimize probability of failure (<5%)- TH Jan 2024
+			cmd=(mri_watershed -T1 -less -r 70 -c 127 107 108 -atlas "$GCAdir"/"$GCA" "$mridir"/transforms/talairach_init.lta "$mridir"/T1_prebrainmask.mgz "$mridir"/brainmask.auto.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+			cmd=(cp "$mridir"/brainmask.auto.mgz "$mridir"/brainmask.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+			cmd=(rm "$mridir"/brainmask.conf.dil2.nii.gz "$mridir"/brainmask.conf.nii.gz "$mridir"/brainmask.conf.dil2.mgz)
+			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		fi
+
+	else
+		log_Msg "Found brainmask.edit.mgz. Use it for subsequent analysis"
+		vol="brainmask.edit"
+		while [ -e "$mridir"/${vol}.mgz ] ; do
+			vol="${vol}+"
+		done
+		cmd=(cp "$mridir"/brainmask.edit.mgz "$mridir"/${vol}.mgz)
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+		cmd=(cp "$mridir"/brainmask.edit.mgz "$mridir"/brainmask.mgz)
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+		checkfile="$mridir"/brainmask.finalsurfs.mgz
+		if [ -e "$checkfile" ] ; then
+			if [ ! -w "$checkfile" ] ; then
+				log_Err_Abort "no permission to write $checkfile"
+			fi
+		fi
+	fi
+
+	## This section replaces function of 'recon-all -gcareg, -canorm and -careg' using FLIRT and FNIRT - TH 2017-2024
+	log_Msg "...registration to GCA template"
+	cmd=("$PipelineScripts"/Conf2GCAReg_FNIRTbased.sh "$SubjectDIR" "$SubjectID" "$GCAdir/$GCA")
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+
+	log_Msg "...third recon-all steps for segmentation with GCA"
+	${recon_all_cmd} -calabel -gca-dir $GCAdir -gca $GCA -normalization2 -maskbfs ${extra_reconall_args} ${ExpertOpts}
+
 fi
 
-# ----------------------------------------------------------------------
-log_Msg "Creating white surface files in rawavg space"
-# ----------------------------------------------------------------------
+if [ "$RunMode" -lt 4 ]; then
 
-pushd ${mridir}
+	## This section replaces function of 'recon-all -segmentation'  - TH 2017-2024
+	## Paste claustrum and deweight cortical gray in wm.mgz. If any of wm.edit.mgz, brainmask.edit.mgz, brain.finalsurfs.edit.mgz
+	## or aseg.presurf.edit.mgz was found, the script uses each as wm.mgz, brainmask.mnz, brain.finalsurfs.mgz and aseg.presurf.mgz respectively.
+	## ${PipelineScripts}/IntensityNormalize.sh may be useful for normalizing intensity of white matter or grey matter to create
+	## brain.finalsurfs.edit.mgz,
+	cmd=("$PipelineScripts"/SubcortSegment.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat "$mri_segment_args")
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-export SUBJECTS_DIR="$SessionDIR"
+	mridir=${SubjectDIR}/${SubjectID}/mri
 
-reg=$mridir/transforms/orig2rawavg.dat
-# generate registration between conformed and hires based on headers
-# Note that the convention of tkregister2 is that the resulting $reg is the registration
-# matrix that maps from the "--targ" space into the "--mov" space. 
+	## if filled.edit.mgz is found, it is used as filled.mgz - TH 2025
+	if [ -e ${mridir}/filled.edit.mgz ] ; then
+			log_Msg "Found ${mridir}/filled.edit.mgz. Replace filled.mgz with it"
+			if [ ! -e ${mridir}/filled.orig.mgz ] ; then
+				cp ${mridir}/filled.mgz ${mridir}/filled.orig.mgz
+			fi
+			vol="${mridir}/filled.edit"
+				while [ -e ${vol}.mgz ] ; do
+				vol="${vol}+"
+			done
+			cp ${mridir}/filled.edit.mgz ${mridir}/filled.mgz
+			mv ${mridir}/filled.edit.mgz ${vol}.mgz
+			FILL=""
+	else
+			FILL="-fill"
+	fi
+	
+	log_Msg "...fourth recon-all steps with edited filled.mgz"
+	${recon_all_cmd} ${FILL} -tessellate -smooth1 -inflate1 -qsphere -fix -white -smooth2 -inflate2 -curvHK -sphere -surfreg -avgcurvtifpath $GCAdir -avgcurvtif $AvgCurvTif -jacobian_white -cortparc  ${extra_reconall_args} ${ExpertOpts}
 
-tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
-
-#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
-mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
-return_code=$?
-if [ "${return_code}" != "0" ]; then
-    log_Err_Abort "mri_surf2surf command for left hemisphere failed with return_code: ${return_code}"
 fi
 
-mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi rh
-return_code=$?
-if [ "${return_code}" != "0" ]; then
-    log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"
+if [ "$RunMode" -lt 5 ]; then
+
+	mridir=${SubjectDIR}/${SubjectID}/mri
+ 
+	## if brain.finalsurfs.edit.mgz is found, it is used as brain.finalsurfs.mgz - TH 2024
+	if [ -e ${mridir}/brain.finalsurfs.edit.mgz ] ; then
+		log_Msg "Found ${mridir}/brain.finalsurfs.edit.mgz. Replace brain.finalsurfs.mgz with it"
+		if [ ! -e ${mridir}/brain.finalsurfs.orig.mgz ] ; then
+			cp ${mridir}/brain.finalsurfs.mgz ${mridir}/brain.finalsurfs.orig.mgz
+		fi
+		vol="${mridir}/brain.finalsurfs.edit"
+		while [ -e ${vol}.mgz ] ; do
+			vol="${vol}+"
+		done
+		cp ${mridir}/brain.finalsurfs.edit.mgz ${mridir}/brain.finalsurfs.mgz
+		mv ${mridir}/brain.finalsurfs.edit.mgz ${vol}.mgz
+	fi
+
+	if [ -e ${mridir}/brainmask.edit.mgz ] ; then
+		log_Msg "Found brainmask.edit.mgz. Use it for subsequent analysis"
+		vol="brainmask.edit"
+		while [ -e "$mridir"/${vol}.mgz ] ; do
+			vol="${vol}+"
+		done
+		cp "$mridir"/brainmask.edit.mgz "$mridir"/brainmask.mgz
+		mv "$mridir"/brainmask.edit.mgz "$mridir"/${vol}.mgz
+		mri_mask "${mridir}"/brain.finalsurfs.mgz "$mridir"/brainmask.mgz "${mridir}"/brain.finalsurfs.mgz
+	fi
+
+	## if aseg.presurf.edit.mgz is found, it is used as aseg.presurfs.mgz - TH 2024
+	if [ -e ${mridir}/aseg.presurf.edit.mgz ] ; then
+		log_Msg "Found ${mridir}/aseg.presurf.edit.mgz. Replace aseg.presurf.mgz with it"
+		if [ ! -e ${mridir}/aseg.finalsurf.orig.mgz ] ; then
+			cp ${mridir}/aseg.presurf.mgz ${mridir}/aseg.presurf.orig.mgz
+		fi
+		vol="${mridir}/aseg.presurf.edit"
+		while [ -e ${vol}.mgz ] ; do
+			vol="${vol}+"
+		done
+		cp ${mridir}/aseg.presurf.edit.mgz ${mridir}/aseg.presurf.mgz
+		mv ${mridir}/aseg.presurf.edit.mgz ${vol}.mgz
+	fi
+
+	if [ $(echo "$ScaleFactor < 6" | bc) = 1 ] ; then  # brain is larger than the rat
+		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
+		${recon_all_cmd} -cortribbon ${recon_all_pial} ${ExpertOpts} ${conf2hiresflag}
+		log_Msg "...rescale volume and surface to native space"
+		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	else
+		log_Msg "...rescale volume and surface to native space"
+		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
+		${recon_all_cmd} -cortribbon ${recon_all_pial} ${ExpertOpts} ${conf2hiresflag}
+	fi
+
+	# ----------------------------------------------------------------------
+	log_Msg "Generating QC file" in scaled space
+	# ----------------------------------------------------------------------
+	mridir=${SubjectDIR}/${SubjectID}/mri
+
+	make_t1w_hires_nifti_file "${mridir}"
+
+	if [ "${T2wImage}" != "NONE" ] ; then
+
+		make_t2w_hires_nifti_file "${mridir}"
+
+		make_t1wxt2w_qc_file "${mridir}"
+	fi
+
 fi
 
-popd
+if [ "$RunMode" -lt 6 ]; then
 
-# ----------------------------------------------------------------------
-log_Msg "Generating QC file"
-# ----------------------------------------------------------------------
+	if [ "$SPECIES" = Human ] ; then
+		log_Msg "CurvStat, CortParc etc for Human"
+		${recon_all_cmd} -curvstats -avgcurv -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -pctsurfcon -hyporelabel -aparc2aseg -apas2aseg -segstats -wmparc -balabels
+	fi
+	
+	if [ "${existing_subject}" != "TRUE" ] ; then
+		# ----------------------------------------------------------------------
+		log_Msg "Clean up file: ${zero_threshold_T1wImage}"
+		# ----------------------------------------------------------------------
+		rm ${zero_threshold_T1wImage}
+		return_code=$?
+		if [ "${return_code}" != "0" ] ; then
+			log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
+		fi
 
-make_t1w_hires_nifti_file "${mridir}"
+	fi
 
-if [[ "${T2wImage}" != "" ]]; then
+	## MPH: Portions of the following are unnecesary in the case of ${existing_subject} = "TRUE"
+	## but rather than identify what is and isn't strictly necessary (which itself may interact
+	## with the specific stages run in recon-all), we'll simply run it all to be safe that all
+	## files created following recon-all are appropriately updated
+	# ----------------------------------------------------------------------
+	log_Msg "Creating eye.dat"
+	# ----------------------------------------------------------------------
+	mridir=${SubjectDIR}/${SubjectID}/mri
 
-    make_t2w_hires_nifti_file "${mridir}"
+	transformsdir=${mridir}/transforms
+	mkdir -p ${transformsdir}
 
-    make_t1wxt2w_qc_file "${mridir}"
+	eye_dat_file=${transformsdir}/eye.dat
+
+	log_Msg "...This creates ${eye_dat_file}"
+	echo "${SubjectID}" > ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1" >> ${eye_dat_file}
+	echo "1 0 0 0" >> ${eye_dat_file}
+	echo "0 1 0 0" >> ${eye_dat_file}
+	echo "0 0 1 0" >> ${eye_dat_file}
+	echo "0 0 0 1" >> ${eye_dat_file}
+	echo "round" >> ${eye_dat_file}
+
+	if [ "${T2wImage}" != "NONE" ] ; then
+		# ----------------------------------------------------------------------
+		log_Msg "Making T2w to T1w registration available in FSL format"
+		# ----------------------------------------------------------------------
+
+		pushd ${mridir}
+
+		if [ "${flair}" = "TRUE" ] ; then
+			t2_or_flair="FLAIR"
+		else
+			t2_or_flair="T2"
+		fi
+
+		log_Msg "...Create a registration between the original conformed space and the rawavg space"
+		tkregister_cmd="tkregister2"
+		tkregister_cmd+=" --mov orig.mgz"
+		tkregister_cmd+=" --targ rawavg.mgz"
+		tkregister_cmd+=" --regheader"
+		tkregister_cmd+=" --noedit"
+		tkregister_cmd+=" --reg deleteme.dat"
+		tkregister_cmd+=" --ltaout transforms/orig-to-rawavg.lta"
+		tkregister_cmd+=" --s ${SubjectID}"
+
+		log_Msg "......The following produces deleteme.dat and transforms/orig-to-rawavg.lta"
+		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+
+		${tkregister_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ] ; then
+			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Concatenate the ${t2_or_flair}raw->orig and orig->rawavg transforms"
+		mri_concatenate_lta_cmd="mri_concatenate_lta"
+		mri_concatenate_lta_cmd+=" transforms/${t2_or_flair}raw.lta"
+		mri_concatenate_lta_cmd+=" transforms/orig-to-rawavg.lta"
+		mri_concatenate_lta_cmd+=" Q.lta"
+
+		log_Msg "......The following concatenates transforms/${t2_or_flair}raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
+		log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
+		${mri_concatenate_lta_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ] ; then
+			log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Convert to FSL format"
+		tkregister_cmd="tkregister2"
+		tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
+		tkregister_cmd+=" --targ rawavg.mgz"
+		tkregister_cmd+=" --reg Q.lta"
+		tkregister_cmd+=" --fslregout transforms/${T2wtoT1wFile}"
+		tkregister_cmd+=" --noedit"
+
+		log_Msg "......The following produces the transforms/${T2wtoT1wFile} file that we need"
+		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
+
+		${tkregister_cmd}
+		return_code=$?
+		if [ "${return_code}" != "0" ] ; then
+			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
+		fi
+
+		log_Msg "...Clean up"
+		rm deleteme.dat
+		rm Q.lta
+
+		popd
+	fi
+
+	# ----------------------------------------------------------------------
+	log_Msg "Creating white surface files in rawavg space"
+	# ----------------------------------------------------------------------
+
+	pushd ${mridir}
+	
+	export SUBJECTS_DIR="$SubjectDIR"
+	
+	reg=$mridir/transforms/orig2rawavg.dat
+	# generate registration between conformed and hires based on headers
+	# Note that the convention of tkregister2 is that the resulting $reg is the registration
+	# matrix that maps from the "--targ" space into the "--mov" space. 
+	
+	tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
+	
+	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.
+	#The ?h.pial.deformed surfaces are used for USPIO fMRI registration - TH 2024
+	for hemi in lh rh; do
+		for surf in white pial; do
+			mri_surf2surf --s ${SubjectID} --sval-xyz "$surf" --reg "$reg" --tval-xyz ${mridir}/rawavg.mgz --tval "$surf".deformed --surfreg "$surf" --hemi "$hemi"
+			return_code=$?
+			if [ "${return_code}" != "0" ] ; then
+				log_Err_Abort "mri_surf2surf command for $hemi hemisphere $surf failed with return_code: ${return_code}"
+			fi
+		done
+	done
+	
+	popd
+	
+	# ----------------------------------------------------------------------
+	log_Msg "Generating QC file"
+	# ----------------------------------------------------------------------
+
+	make_t1w_hires_nifti_file "${mridir}"
+
+	if [ "${T2wImage}" != "NONE" ] ; then
+
+		make_t2w_hires_nifti_file "${mridir}"
+
+		make_t1wxt2w_qc_file "${mridir}"
+	fi
 fi
-
 # ----------------------------------------------------------------------
 log_Msg "Completing main functionality"
 # ----------------------------------------------------------------------
+
+
+
+
+# Global processing - everything above here should be in a function
+
+g_script_name=$(basename "${0}")
+
+
+# ------------------------------------------------------------------------------
+#  Check that HCPPIPEDIR is defined and Load Function Libraries
+# ------------------------------------------------------------------------------
+
+if [ -z "${HCPPIPEDIR}" ] ; then
+	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
+	exit 1
+fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
+
+opts_ShowVersionIfRequested $@
+
+if opts_CheckForHelpRequest $@; then
+	show_usage
+	exit 0
+fi
+
+${HCPPIPEDIR}/show_version
+
 
 
 log_Msg "Completed!"
