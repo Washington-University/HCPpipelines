@@ -727,7 +727,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --betradius=${betradius} \
                 --betfraction=${betfraction} \
                 --brainextract=${BrainExtract} \
-                --betspecieslabel=${betspecieslabel}
+                --betspecieslabel=${betspecieslabel} \
+                --species=${SPECIES}
         fi   
         # End of looping over modalities (T1w and T2w)
     done
