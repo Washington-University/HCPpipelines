@@ -182,13 +182,13 @@ for Subject in $Subjlist ; do
 	echo "  ${SCRIPT_NAME}: NegData: ${NegData}"
 
 	# "Effective" Echo Spacing of dMRI image (specified in *msec* for the dMRI processing)
-	# EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+	# SEEchoSpacing = 1/(BWPPPE * ReconMatrixPE)
 	#   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
 	#   ReconMatrixPE = size of the reconstructed image in the PE dimension
 	# In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 	# all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-	EchoSpacing=0.2733285956376756
-	echo "  ${SCRIPT_NAME}: EchoSpacing: ${EchoSpacing} (ms)"
+	SEEchoSpacing=0.2733285956376756
+	echo "  ${SCRIPT_NAME}: SEEchoSpacing: ${SEEchoSpacing} (ms)"
 
 	PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 	echo "  ${SCRIPT_NAME}: PEdir: ${PEdir}"
@@ -212,7 +212,7 @@ for Subject in $Subjlist ; do
 		--negData="${NegData}" \
 		--path="${StudyFolder}" \
 		--subject="${SubjectID}" \
-		--echospacing="${EchoSpacing}" \
+		--seechospacing="${SEEchoSpacing}" \
 		--PEdir="${PEdir}" \
 		--gdcoeffs="${Gdcoeffs}" \
 		--b0maxbval=100 \

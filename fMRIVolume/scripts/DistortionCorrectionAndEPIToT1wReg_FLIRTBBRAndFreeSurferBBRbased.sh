@@ -101,7 +101,9 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
 #Optional Args 
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
 
-opts_AddOptional '--echospacing' 'EchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
+opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
+
+opts_AddOptional '--echospacing' 'SEEchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
 
 opts_AddOptional '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}>]' "PE direction for unwarping according to the *voxel* axes. Polarity matters! If your distortions are twice as bad as in the original images, try using the opposite polarity for --unwarpdir."
 
@@ -384,11 +386,11 @@ if (( ! IsLongitudinal )); then
                 fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
 
                 # register scout to T1w image using fieldmap
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --seechospacing=${SEEchoSpacing} --pedir=${UnwarpDir}
 
             else
                 # register scout to T1w image using fieldmap
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --seechospacing=${SEEchoSpacing} --pedir=${UnwarpDir}
 
             fi
 
@@ -421,7 +423,7 @@ if (( ! IsLongitudinal )); then
                 --phaseone=${SpinEchoPhaseEncodeNegative} \
                 --phasetwo=${SpinEchoPhaseEncodePositive} \
                 --scoutin=${ScoutInputName} \
-                --echospacing=${EchoSpacing} \
+                --seechospacing=${SEEchoSpacing} \
                 --unwarpdir=${UnwarpDir} \
                 --owarp=${WD}/WarpField \
                 --ojacobian=${WD}/Jacobian \
