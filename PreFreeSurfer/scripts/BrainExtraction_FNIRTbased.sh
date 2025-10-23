@@ -146,7 +146,7 @@ if [ "$SPECIES" != "Human" ] ; then
       verbose_echo " ... initial BET with opts: $BetOpts"
       fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
       fslmaths "$Input" "$WD"/"$BaseName"
-      ${HCPPIPEDIR_Global}/bet4animal "$WD"/"$BaseName" "$WD"/"$BaseName"_brain_initI $BetOpts     # "-c 48 56 51 -r 36" for A21051401
+      ${FSLDIR}/bin/bet4animal "$WD"/"$BaseName" "$WD"/"$BaseName"_brain_initI $BetOpts     # "-c 48 56 51 -r 36" for A21051401
       verbose_echo " ... init linear registration to 2mm reference brain"
       flirt -in "$WD"/"$BaseName"_brain_initI -ref "$WD"/ReferenceBrain -omat "$WD"/roughlin_initI.mat -schedule $FSLDIR/etc/flirtsch/xyztrans.sch -o "$WD"/"$BaseName"_brain_initI_to_ReferenceBrain
       convert_xfm -omat "$WD"/roughlin_initIinv.mat -inverse "$WD"/roughlin_initI.mat
