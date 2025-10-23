@@ -72,7 +72,6 @@ verbose_echo "  "
 verbose_red_echo " ===> Running T1w Bias Field Correction"
 verbose_echo " "
 
-log_Msg " StrongBias: $StrongBias"
 mkdir -p $WDir
 
 # Record the input options in a log file
