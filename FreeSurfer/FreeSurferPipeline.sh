@@ -127,9 +127,9 @@ fi
 opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by prefreesurfer"
 
 # Show usage information
-opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
+opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --session-dir input to create full path to root directory for all outputs generated as path/session" "--subject"
 
-opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "--subjectDIR"
+opts_AddMandatory '--session-dir' 'SessionDIR' 'session' 'path to session directory required' "--subjectDIR"
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
 
