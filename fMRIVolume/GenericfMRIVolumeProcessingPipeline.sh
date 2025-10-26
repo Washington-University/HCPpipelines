@@ -40,6 +40,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
+ON_SCANNER_METHOD_OPT="OnScanner"
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -94,7 +95,11 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
 
         '${NONE_METHOD_OPT}'
              do not use any SDC
-             NOTE: Only valid when Pipeline is called with --processing-mode='LegacyStyleData'"
+             NOTE: Only valid when Pipeline is called with --processing-mode='LegacyStyleData'
+
+        '${ON_SCANNER_METHOD_OPT}'
+             do not do any additional SDC
+             NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC"			 
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 
@@ -367,7 +372,7 @@ case "$DistortionCorrection" in
         fi
         ;;
 
-    ${NONE_METHOD_OPT})
+    ${NONE_METHOD_OPT}|${ON_SCANNER_METHOD_OPT})
         # Do nothing
         ;;
 
@@ -377,7 +382,7 @@ case "$DistortionCorrection" in
 
 esac
 # Additionally, EchoSpacing and UnwarpDir needed for all except NONE
-if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" ]]; then
+if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" || $DistortionCorrection != "${ON_SCANNER_METHOD_OPT}" ]]; then
     if [ -z ${EchoSpacing} ]; then
         log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
     fi
@@ -530,8 +535,8 @@ ComplianceWarn=""
 
 # -- No distortion correction method
 
-if [ "${DistortionCorrection}" = 'NONE' ]; then
-  ComplianceMsg+=" --dcmethod=NONE"
+if [ "${DistortionCorrection}" = "${NONE_METHOD_OPT}" ]; then
+  ComplianceMsg+=" --dcmethod=${NONE_METHOD_OPT}"
   Compliance="LegacyStyleData"
   log_Warn "The fMRIVolume pipeline is being run without appropriate distortion correction"
   log_Warn "  of the fMRI images. This is NOT RECOMMENDED under normal circumstances. We will "
@@ -546,6 +551,13 @@ if [ "${DistortionCorrection}" = 'NONE' ]; then
   log_Warn "  to gold-standard fieldmap-based correction."
 fi
 
+if [ "${DistortionCorrection}" = "${ON_SCANNER_METHOD_OPT}" ]; then
+  DistortionCorrection="NONE"
+  log_Warn "On scanner susceptibility distortion correction methods, such as Siemens Static Field Correction,"
+  log_Warn "are currently considered experimental and have not yet been validated in the HCP Pipelines."
+  log_Warn "Some pulse sequences, such as EPTI, may not require additional susceptibility distortion correction;"
+  log_Warn "however, these methods have not yet been validated in the HCP Pipelines."
+fi
 # -- Slice timing correction
 
 if [ "${DoSliceTimeCorrection}" = 'TRUE' ]; then
