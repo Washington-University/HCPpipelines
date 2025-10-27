@@ -138,7 +138,7 @@ for Subject in $Subjlist ; do
     #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, DwellTime
     #
     #   ## Diffusion MRI
-    #   - DmrilistPositive, DmrilistNegative, SEEchoSpacing, PEdir
+    #   - DmrilistPositive, DmrilistNegative, EchoSpacing, PEdir
     #
     # If the config file is not found, please set values manually.
     # ------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ for Subject in $Subjlist ; do
         ## Diffusion MRI
         DmrilistPositive=
         DmrilistNegative=
-        SEEchoSpacing=
+        EchoSpacing=
         PEdir=
     fi
   

@@ -101,9 +101,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              do not do any additional SDC
              NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC"			 
 
-opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
-
-opts_AddOptional '--echospacing' 'SEEchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
+opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 
 opts_AddOptional '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction for unwarping according to the *voxel* axes, Polarity matters!  If your distortions are twice as bad as in the original images, try using the opposite polarity for --unwarpdir."
 
@@ -383,10 +381,10 @@ case "$DistortionCorrection" in
         ;;
 
 esac
-# Additionally, SEEchoSpacing and UnwarpDir needed for all except NONE
+# Additionally, EchoSpacing and UnwarpDir needed for all except NONE
 if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" || $DistortionCorrection != "${ON_SCANNER_METHOD_OPT}" ]]; then
-    if [ -z ${SEEchoSpacing} ]; then
-        log_Err_Abort "--seechospacing must be specified with --dcmethod=${DistortionCorrection}"
+    if [ -z ${EchoSpacing} ]; then
+        log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
     fi
     if [ -z ${UnwarpDir} ]; then
         log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
@@ -920,7 +918,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --echodiff=${deltaTE} \
         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-        --seechospacing=${SEEchoSpacing} \
+        --echospacing=${EchoSpacing} \
         --unwarpdir=${UnwarpDir} \
         --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
         --biasfield=${T1wFolder}/${BiasField} \

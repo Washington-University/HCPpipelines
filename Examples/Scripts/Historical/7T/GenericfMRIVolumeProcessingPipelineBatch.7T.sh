@@ -176,12 +176,12 @@ do
         fMRISBRef="NONE"
         
         # "Effective" Echo Spacing of fMRI image (specified in *sec* for the fMRI processing)
-        # SEEchoSpacing = 1/(BWPPPE * ReconMatrixPE)
+        # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
         #   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
         #   ReconMatrixPE = size of the reconstructed image in the PE dimension
         # In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
         # all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-        SEEchoSpacing="0.00032"
+        EchoSpacing="0.00032"
 
         # Susceptibility distortion correction method (required for accurate processing)
         # Values: TOPUP, SiemensFieldMap (same as FIELDMAP), GEHealthCareLegacyFieldMap, GEHealthCareFieldMap, PhilipsFieldMap
@@ -265,7 +265,7 @@ do
             --fmapmag="$MagnitudeInputName" \
             --fmapphase="$PhaseInputName" \
             --fmapcombined="$GEB0InputName" \
-            --seechospacing="$SEEchoSpacing" \
+            --echospacing="$EchoSpacing" \
             --echodiff="$DeltaTE" \
             --unwarpdir="$UnwarpDir" \
             --fmrires="$FinalFMRIResolution" \

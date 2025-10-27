@@ -72,7 +72,7 @@ Usage() {
     echo "  --fmapmag=<image>      : fieldmap magnitude image - wholehead extracted"
     echo "  --fmapmagbrain=<image> : fieldmap magnitude image - brain extracted"
     echo "  --wmseg=<image>        : white matter segmentation of T1 image"
-    echo "  --seechospacing=<val>    : Effective EPI echo spacing (sometimes called dwell time) - in seconds"
+    echo "  --echospacing=<val>    : Effective EPI echo spacing (sometimes called dwell time) - in seconds"
     echo "  --pedir=<dir>          : phase encoding direction, dir = x/y/z/-x/-y/-z"
     echo "  --weight=<image>       : weighting image (in T1 space)"
     echo "  --nofmapreg            : do not perform registration of fmap to T1 (use if fmap already registered) "
@@ -81,7 +81,7 @@ Usage() {
     echo "  -v                     : verbose output"
     echo "  -h                     : display this help message"
     echo " "
-    echo "e.g.:  `basename $0` --epi=example_func --t1=struct --t1brain=struct_brain --out=epi2struct --fmap=fmap_rads --fmapmag=fmap_mag --fmapmagbrain=fmap_mag_brain --seechospacing=0.0005 --pedir=-y"
+    echo "e.g.:  `basename $0` --epi=example_func --t1=struct --t1brain=struct_brain --out=epi2struct --fmap=fmap_rads --fmapmag=fmap_mag --fmapmagbrain=fmap_mag_brain --echospacing=0.0005 --pedir=-y"
     echo " "
     echo "Note that if parallel acceleration is used in the EPI acquisition then the *effective* echo spacing is the actual echo spacing between acquired lines in k-space divided by the acceleration factor."
     echo " "
@@ -177,15 +177,7 @@ while [ $# -ge 1 ] ; do
 	--out)
 	    vout=`get_imarg1 $1`;
 	    shift;;
-	--seechospacing)
-	    dwell=`get_arg1 $1`;
-	    if [ `echo "if ( $dwell > 0.2 ) {1}; if ( $dwell <= 0.2 ) {0}" | bc -l` = 1 ] ; then 
-		msdwell=`echo "scale=6; $dwell / 1000.0" | bc -l`;
-		echo "Echo spacing should be specified in seconds, not milliseconds.  Value of $dwell appears to be incorrectly specified in milliseconds.  Try using the value $msdwell instead."; 
-		exit 1; 
-	    fi
-	    shift;;
-    --echospacing)
+	--echospacing)
 	    dwell=`get_arg1 $1`;
 	    if [ `echo "if ( $dwell > 0.2 ) {1}; if ( $dwell <= 0.2 ) {0}" | bc -l` = 1 ] ; then 
 		msdwell=`echo "scale=6; $dwell / 1000.0" | bc -l`;
@@ -281,7 +273,7 @@ if [ $use_fmap = yes ] ; then
 	exit 1;
     fi
     if [ X$dwell = X ] ; then
-	echo "The argument --seechospacing MUST be specified if using fieldmaps"
+	echo "The argument --echospacing MUST be specified if using fieldmaps"
 	exit 1;
     fi
 fi
