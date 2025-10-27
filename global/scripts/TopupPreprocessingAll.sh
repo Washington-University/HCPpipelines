@@ -32,7 +32,7 @@ opts_AddMandatory '--phasetwo' 'PhaseEncodeTwo' 'image(s)' "second set of SE EPI
 
 opts_AddMandatory '--scoutin' 'ScoutInputName' 'image' "scout input image: should be corrected for gradient non-linear distortions"
 
-opts_AddMandatory '--echospacing' 'EchoSpacing' 'number (seconds)' "effective echo spacing of EPI or in seconds"
+opts_AddMandatory '--seechospacing' 'SEEchoSpacing' 'number (seconds)' "effective echo spacing of EPI or in seconds" "--echospacing"
 
 opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,x-,y-} or {i,j,i-,j-}' "PE direction for unwarping according to the *voxel* axes"
 
@@ -359,7 +359,7 @@ fi
 if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
     dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim1`
     dimPminus1=$(($dimP - 1))
-    ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+    ro_time=`echo "scale=6; ${SEEchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
     log_Msg "Total readout time is $ro_time secs"
     i=1
     while [ $i -le $dimtOne ] ; do
@@ -376,7 +376,7 @@ if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
     if [ $Phase2ndDir = TRUE ] ; then
         dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne2 dim1`
         dimPminus1=$(($dimP - 1))
-        ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+        ro_time=`echo "scale=6; ${SEEchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
         log_Msg "Total readout time is $ro_time secs"
         i=1
         while [ $i -le $dimtOne2 ] ; do
@@ -393,7 +393,7 @@ if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
 elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
     dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne dim2`
     dimPminus1=$(($dimP - 1))
-    ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+    ro_time=`echo "scale=6; ${SEEchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
     i=1
     while [ $i -le $dimtOne ] ; do
         echo "0 -1 0 $ro_time" >> $txtfname
@@ -409,7 +409,7 @@ elif [[ $UnwarpDir = [yj] || $UnwarpDir = [yj]- || $UnwarpDir = -[yj] ]] ; then
     if [ $Phase2ndDir = TRUE ] ; then
         dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne2 dim1`
         dimPminus1=$(($dimP - 1))
-        ro_time=`echo "scale=6; ${EchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
+        ro_time=`echo "scale=6; ${SEEchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
         log_Msg "Total readout time is $ro_time secs"
         i=1
         while [ $i -le $dimtOne2 ] ; do
