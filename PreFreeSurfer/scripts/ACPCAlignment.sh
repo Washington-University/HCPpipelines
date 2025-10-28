@@ -66,6 +66,11 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+# Sanity check for BrainExtract value
+if [ "$BrainExtract" != "EXVIVO" ] && [ "$BrainExtract" != "INVIVO" ]; then
+    log_Err_Abort "Invalid value for BrainExtract: '$BrainExtract'. Must be either 'EXVIVO' or 'INVIVO'."
+fi
+
 #display the parsed/default values
 opts_ShowValues
 

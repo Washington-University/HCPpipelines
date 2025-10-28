@@ -239,7 +239,6 @@ for Subject in $Subjlist ; do
 
     TruePatientPosition=${StrucTruePatientPosition:-HFS}
     ScannerPatientPosition=${StrucScannerPatientPosition:-HFS}
-    echo "BrainExtract=$BrainExtract"
 
 # ${FSLDIR}/bin/fsl_sub ${QUEUE} ${LOG} \
     ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \

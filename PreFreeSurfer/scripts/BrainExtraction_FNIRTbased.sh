@@ -82,6 +82,13 @@ log_Check_Env_Var HCPPIPEDIR_Templates
 
 ################################################## OPTION PARSING #####################################################
 
+# Sanity check for BrainExtract value
+if [ "$BrainExtract" != "EXVIVO" ] && [ "$BrainExtract" != "INVIVO" ]; then
+    log_Err_Abort "Invalid value for BrainExtract: '$BrainExtract'. Must be either 'EXVIVO' or 'INVIVO'."
+fi
+
+
+
 # BET options
 if [ ! -z $BetCenter ] ; then
   xcenter=$(echo "$(fslval $Input dim1)*$(echo $BetCenter | cut -d ',' -f1 )/$(fslval $Reference2mm dim1)" | bc )
