@@ -88,6 +88,8 @@ opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correct
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
+
+
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 opts_AddOptional '--thickness-regression' 'ThicknessReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'
@@ -119,6 +121,15 @@ Longitudinal Freesurfer files for template are stored under <Subject>.long.<Temp
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
 opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list @ separated, if LongitudinalMode==TEMPLATE"
 
+#NHP options
+opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target species for non-human primate processing [human]" "human"
+
+#TODO NHP: choose adequate default options
+opts_AddOptional '--myelinmappingfwhm' 'MyelinMappingFWHM' 'float' "Myelin mapping FWHM" "2"
+opts_AddOptional '--surfacesmoothingfwhm' 'SurfaceSmoothingFWHM' "2"
+opts_AddOptional '--msmsulcconf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "NONE"
+opts_AddOptional 'flatmaprootname' 'FlatMapRootName' 'string' 'Flat map root name' "NONE"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -128,6 +139,10 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+if [ "$LongitudinalMode" == "NONE" && "$Species" != "human" ]; then 
+    log_Err_Abort "Longitudinal mode supports only human species." 
+fi
 
 #internal scripts don't actually support multiple low res in one call, mostly because they are in different folders
 if [[ "$GrayordinatesSpaceDIR" == "" ]]
@@ -219,6 +234,11 @@ case "$ThicknessReg" in
         log_Err_Abort "unrecognized folding-compensated (curvature-corrected) thickness computation method: '$ThicknessReg', use NEW, OLD, or BOTH"
         ;;
 esac
+
+NonHumanSpecies=0
+if [ "$Species" != "human" ]; then 
+    NonHumanSpecies=1
+fi
 
 echo ExperimentRoot: $ExperimentRoot
 
@@ -350,10 +370,14 @@ if ((doProcessing)); then
     argList+=("$SubcorticalGrayLabels")     # ${21}
     argList+=("$RegName")                   # ${22}
     argList+=("$InflateExtraScale")         # ${23}
-    argList+=("$LongitudinalMode")          # ${24}
+    argList+=("$LongitudinalMode")          # ${24} #Longitudinal mode parameters
     argList+=("$Subject")                   # ${25} #Actual subject label, not session label.
     argList+=("$LongitudinalTemplate")      # ${26}
-    argList+=("$SessionList")  # ${27}
+    argList+=("$SessionList")               # ${27}
+    argList+=("$Species")                   # ${28} NHP parameters
+    argList+=("MSMSulcConf")                # ${29}
+    argList+=("FlatMapRootName")            # #{30} 
+
     
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
 
@@ -418,36 +442,40 @@ if ((doProcessing)); then
     argList+=("$CorrectionSigma")
     argList+=("$RegName")                                  # ${39}
     argList+=("$UseIndMean")
-    argList+=("$IsLongitudinal")
-    argList+=("$ThicknessReg")                                # ${42}
+    argList+=("$IsLongitudinal")                            #Longitudinal option
+    argList+=("$ThicknessReg")                              # ${42}
+    argList+=("$Species")                                   # ${43} NHP parameters
+    argList+=("MyelinMappingFWHM")                          # ${44}
+    argList+=("SurfaceSmoothingFWHM")                       # ${45}
     
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
 
-    # Longitudinal mode only:
-    # copy template medial wall ROI's created at the previous step to all timepoints.
-    # This works as follows: 
-    # 1. in the TIMEPOINT_STAGE1, the ROI creation is skipped, and ribbon and myelin map creation is not done
-    # 2. in the TEMPLATE stage, the ROI's and myelin maps for the template are created
-    # 3. then, the code below is executed to copy the template ROI's to the timepoints 
-    # 4. TIMEPOINT_STAGE2 is executed (only post-MSMSulc surface creation code is executed in FreeSurfer2CaretConvertAndRegisterNonlinear.sh), 
-    # surfaces and myelin maps are created using the template ROI's.
-    
-    if [ "$LongitudinalMode" == "TEMPLATE" ]; then
-        IFS=@ read -r -a Sessions <<< "$SessionList"
-        NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
-        for tp in ${Sessions[@]}; do
-            NativeFolderTP="$tp.long.$LongitudinalTemplate"
-            mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
-            for Hemisphere in L R; do
-                cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
-                "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
-            done
-        done
-    fi
+# Longitudinal mode only:
+# copy template medial wall ROI's created at the previous step to all timepoints.
+# This works as follows: 
+# 1. in the TIMEPOINT_STAGE1, the ROI creation is skipped, and ribbon and myelin map creation is not done
+# 2. in the TEMPLATE stage, the ROI's and myelin maps for the template are created
+# 3. then, the code below is executed to copy the template ROI's to the timepoints 
+# 4. TIMEPOINT_STAGE2 is executed (only post-MSMSulc surface creation code is executed in FreeSurfer2CaretConvertAndRegisterNonlinear.sh), 
+# surfaces and myelin maps are created using the template ROI's.
 
-if ((doQC)); then
+if [ "$LongitudinalMode" == "TEMPLATE" ]; then
+    IFS=@ read -r -a Sessions <<< "$SessionList"
+    NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
+    for tp in ${Sessions[@]}; do
+        NativeFolderTP="$tp.long.$LongitudinalTemplate"
+        mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
+        for Hemisphere in L R; do
+            cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+            "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+        done
+    done
+fi
+
+if (( doQC )); then
   log_Msg "Generating structural QC scene and snapshots"
+  #TODO: Do NHP need special QC?
     "$PipelineScripts"/GenerateStructuralScenes.sh \
         --study-folder="$StudyFolder" \
         --session="$ExperimentRoot" \

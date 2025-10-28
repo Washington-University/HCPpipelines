@@ -95,6 +95,9 @@ RegName="${39}"
 UseIndMean="${40}"
 IsLongitudinal="${41}"
 ThicknessReg="${42}"
+Species="${43}" #NHP parameters
+MyelinMappingFWHM="${44}" 
+SurfaceSmoothingFWHM="${45}" 
 
 case "$ThicknessReg" in
     (NEW|OLD|BOTH)
@@ -110,10 +113,15 @@ verbose_echo " "
 verbose_red_echo " ===> Running ${script_name}"
 verbose_echo " "
 
+NonHumanSpecies=0
+if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
+
 # -- check for presence of T2w image
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
 
 if (( IsLongitudinal )); then
+	if (( NonHumanSpecies )); then log_Err_Abort "NHP not supported in longitudinal mode"; fi
+
 	if [ `${FSLDIR}/bin/imtest "$T1wFolder/T2w_acpc_dc.nii.gz"` -eq 0 ]; then
 		T2wPresent="NO"
 	else
@@ -129,8 +137,19 @@ fi
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
-MyelinMappingFWHM="5"
-SurfaceSmoothingFWHM="4"
+
+if (( NonHumanSpecies )); then 
+	MyelinMappingFWHM="${MyelinMappingFWHM:-5}"
+	SurfaceSmoothingFWHM="${SurfaceSmoothingFWHM:-4}"
+else
+	MyelinMappingFWHM="5"
+	SurfaceSmoothingFWHM="4"
+fi
+
+echo "MyelinMappingFWHM=$MyelinMappingFWHM"
+echo "SurfaceSmoothingFWHM=$SurfaceSmoothingFWHM"
+echo "CorrectionSigma=$CorrectionSigma"
+
 MyelinMappingSigma=`echo "$MyelinMappingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
@@ -179,6 +198,14 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
 	fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 	fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
+
+	#TODO NHP: check if this is needed.
+	if (( NonHumanSpecies )); then 
+		# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
+		invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
+		applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
+		fslmaths "$(remove_ext $OrginalT2wImage)"_brainmask_fs -thr 0.5 -bin "$(remove_ext $OrginalT2wImage)"_brainmask_fs
+	fi
 	fi
 fi
 
@@ -190,11 +217,20 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-math "(T1w / T2w) * (((ribbon > ($LeftGreyRibbonValue - 0.01)) * (ribbon < ($LeftGreyRibbonValue + 0.01))) + ((ribbon > ($RightGreyRibbonValue - 0.01)) * (ribbon < ($RightGreyRibbonValue + 0.01))))" "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
+
+  #TODO: Check NHP
+  if (( NonHumanSpecies )); then 
+	${CARET7DIR}/wb_command -cifti-separate-all "$ReferenceMyelinMaps" -left "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii -right "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
+  fi
 fi
 
 MapListFunc="corrThickness@shape"
 if [ "${T2wPresent}" = "YES" ] ; then
-  MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
+  if (( NonHumanSpecies )); then 
+	MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
+  else 
+  	MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
+  fi
 fi
 
 for Hemisphere in L R ; do
@@ -223,6 +259,29 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -volume-to-surface-mapping "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii -myelin-style "$T1wFolder"/temp_ribbon.nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$MyelinMappingSigma"
     rm "$T1wFolder"/temp_ribbon.nii.gz
     ${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii "$SurfaceSmoothingSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".SmoothedMyelinMap.native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
+
+	#TODO: Check NHP or old HCP?
+	if (( NonHumanSpecies )); then 
+		${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".RefMyelinMap."$HighResMesh"k_fs_LR.func.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} ADAP_BARY_AREA "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii -area-surfs "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii -current-roi "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii
+		${CARET7DIR}/wb_command -metric-dilate "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 30 "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii -nearest
+		${CARET7DIR}/wb_command -metric-mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii
+
+		for Map in MyelinMap RefMyelinMap ; do
+		${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map".native.func.gii ${RegSphere} "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ADAP_BARY_AREA "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii -area-surfs "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii -current-roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+		${CARET7DIR}/wb_command -metric-smoothing "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii "$CorrectionSigma" "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma"."$LowResMesh"k_fs_LR.func.gii -roi "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii
+		${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma"."$LowResMesh"k_fs_LR.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii ${RegSphere} ADAP_BARY_AREA "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma".native.func.gii -area-surfs "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".midthickness."$LowResMesh"k_fs_LR.surf.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii -current-roi "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii
+		${CARET7DIR}/wb_command -metric-dilate "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma".native.func.gii "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii 30 "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma".native.func.gii -nearest
+		${CARET7DIR}/wb_command -metric-mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma".native.func.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma".native.func.gii
+		rm "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"."$LowResMesh"k_fs_LR.func.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$Hemisphere"."$Map"_s"$CorrectionSigma"."$LowResMesh"k_fs_LR.func.gii
+		done
+		#${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii "$CorrectionSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap_s"$CorrectionSigma".native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+		#${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap.native.func.gii "$CorrectionSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap_s"$CorrectionSigma".native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+
+		${CARET7DIR}/wb_command -metric-math "(Individual - Reference) * Mask" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BiasField.native.func.gii -var Individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap_s"$CorrectionSigma".native.func.gii -var Reference "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap_s"$CorrectionSigma".native.func.gii -var Mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+		${CARET7DIR}/wb_command -metric-math "(Individual - Bias) * Mask" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap_BC.native.func.gii -var Individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap.native.func.gii -var Bias "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BiasField.native.func.gii -var Mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+		${CARET7DIR}/wb_command -metric-math "(Individual - Bias) * Mask" "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".SmoothedMyelinMap_BC.native.func.gii -var Individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".SmoothedMyelinMap.native.func.gii -var Bias "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".BiasField.native.func.gii -var Mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".roi.native.shape.gii
+		rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".MyelinMap_s"$CorrectionSigma".native.func.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Subject"."$Hemisphere".RefMyelinMap_s"$CorrectionSigma".native.func.gii
+	fi
   fi
 
   for STRING in $MapListFunc ; do
@@ -264,139 +323,143 @@ for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"
 done
 
 # Create surface on HighResMesh in session's T1w space
-${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii \
-	${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii \
-	${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
-	BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
-${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii \
-	${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii \
-	${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
-	BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+# TODO: Check NHP. The code below only exists in HCP version. Test for NHP processing if needed.
+if (( ! NonHumanSpecies )); then 
+	${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii \
+		${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii \
+		${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
+		BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
+	${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii \
+		${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii \
+		${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
+		BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 
-# BC processing
-if [ "${T2wPresent}" = "YES" ] ; then
-	# determine the resolution of the reference myelin map
-	IsRefValid=false
-	# append the HighResMesh into the full ResMesh array
-	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
-	AllAvailableMeshesArray+=(${HighResMesh})
-	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
-	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
-	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
-		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
-		if [ "$NumRefSurfVertices" = "$NumSurfVertices" ]; then
-			RefResMesh=${ResMesh}
-			IsRefValid=true
-			log_Msg "Find the template file with the same resolution mesh as the reference myelin map! The ResMesh is ${RefResMesh}"
-			break
-		fi
-	done
-
-	# error when the number of vertex doesn't have a match
-	if [ "$IsRefValid" = false ]; then
-		log_Err_Abort "The mesh resolution of the input reference map ${ReferenceMyelinMaps} doesn't match with any template files in ${HCPPIPEDIR}/global/templates/standard_mesh_atlases!"
-	fi
-
-	case "$RefResMesh" in
-		(${HighResMesh})
-			SphereFolder=${AtlasSpaceFolder}
-			T1wSurfFolder=${StudyFolder}/${Session}/T1w
-			;;
-		(*)
-			SphereFolder=${AtlasSpaceFolder}/fsaverage_LR${RefResMesh}k
-			T1wSurfFolder=${StudyFolder}/${Session}/T1w/fsaverage_LR${RefResMesh}k
-			;;
-	esac
-
-	#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
-	LowResMesh="${LowResMeshesArray[0]}"
-	MyelinTargetFile=${ReferenceMyelinMaps}
-	# only resample the reference map into low res mesh if it isn't the first LowResMesh
-	if [ "$RefResMesh" != "${LowResMesh}" ]; then
-		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
-		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
-		${CARET7DIR}/wb_command -cifti-resample ${ReferenceMyelinMaps} \
-				COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii \
-				COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
-				${MyelinTargetFile} \
-				-surface-postdilate 40 \
-				-left-spheres ${SphereFolder}/${Session}.L.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-left-area-surfs ${T1wSurfFolder}/${Session}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
-				-right-spheres ${SphereFolder}/${Session}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-right-area-surfs ${T1wSurfFolder}/${Session}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-	fi
-	# the gifti files from reference maps are generated in previous versions
-	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
-		-metric CORTEX_LEFT "$SphereFolder"/"$Session".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
-		-metric CORTEX_RIGHT "$SphereFolder"/"$Session".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
-
-	# ----- Begin moved statements -----
-	# Recompute Myelin Map Bias Field Based on Better Registration
-	log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
-	# Myelin Map BC using low res
-	"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
-		--study-folder="$StudyFolder" \
-		--subject="$Session" \
-		--registration-name="MSMSulc" \
-		--use-ind-mean="$UseIndMean" \
-		--low-res-mesh="$LowResMesh" \
-		--myelin-target-file="$MyelinTargetFile" \
-		--map="MyelinMap"
-	# ----- End moved statements -----
-	# bias field is computed in the module MyelinMap_BC.sh
-	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
-		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
-		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.BiasField.native.func.gii
-
-	# bias field in native space is already generated
-	# BC is already applied in module MyelinMap_BC on MyelinMap
-	# BC the other types of given myelin maps
-	${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap_BC.native.dscalar.nii \
-		-var Var ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap.native.dscalar.nii \
-		-var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii
-
-	# myelin map only loop
-	for MyelinMap in MyelinMap SmoothedMyelinMap ; do
-		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
-			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.${MyelinMap}_BC.native.func.gii \
-			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.${MyelinMap}_BC.native.func.gii
-
-		# create cifti and gifti MyelinMap in the high res mesh space
-		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
-			COLUMN ${AtlasSpaceFolder}/${Session}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
-			COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
-			${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii \
-			-surface-postdilate 40 \
-			-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
-			-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii \
-			-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
-			-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
-		# gifti files
-		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii COLUMN \
-			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${Session}.L.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii \
-			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${Session}.R.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii
-	done
-	# remove intermediate files
-	# rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
-	# create cifti and gift MyelinMap in the low res mesh spaces
-	for LowResMesh in "${LowResMeshesArray[@]}" ; do
-		for MyelinMap in MyelinMap SmoothedMyelinMap ; do
-			${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
-				COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}.${LowResMesh}k_fs_LR.dscalar.nii \
-				COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
-				${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
-				-surface-postdilate 40 \
-				-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
-				-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
-			# gifti files
-			${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii COLUMN \
-				-metric CORTEX_LEFT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
-				-metric CORTEX_RIGHT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii
+	# BC processing
+	if [ "${T2wPresent}" = "YES" ] ; then
+		# determine the resolution of the reference myelin map
+		IsRefValid=false
+		# append the HighResMesh into the full ResMesh array
+		AllAvailableMeshesArray="${LowResMeshesArray[@]}"
+		AllAvailableMeshesArray+=(${HighResMesh})
+		NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
+		# compare vertex numbers between mesh files in the template directory and the input reference myelin map
+		for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
+			NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
+			if [ "$NumRefSurfVertices" = "$NumSurfVertices" ]; then
+				RefResMesh=${ResMesh}
+				IsRefValid=true
+				log_Msg "Find the template file with the same resolution mesh as the reference myelin map! The ResMesh is ${RefResMesh}"
+				break
+			fi
 		done
-	done
-fi
+
+		# error when the number of vertex doesn't have a match
+		if [ "$IsRefValid" = false ]; then
+			log_Err_Abort "The mesh resolution of the input reference map ${ReferenceMyelinMaps} doesn't match with any template files in ${HCPPIPEDIR}/global/templates/standard_mesh_atlases!"
+		fi
+
+		case "$RefResMesh" in
+			(${HighResMesh})
+				SphereFolder=${AtlasSpaceFolder}
+				T1wSurfFolder=${StudyFolder}/${Session}/T1w
+				;;
+			(*)
+				SphereFolder=${AtlasSpaceFolder}/fsaverage_LR${RefResMesh}k
+				T1wSurfFolder=${StudyFolder}/${Session}/T1w/fsaverage_LR${RefResMesh}k
+				;;
+		esac
+
+		#Reduce memory usage by smoothing on downsampled mesh (match the gifti version by using the first lowresmesh)
+		LowResMesh="${LowResMeshesArray[0]}"
+		MyelinTargetFile=${ReferenceMyelinMaps}
+		# only resample the reference map into low res mesh if it isn't the first LowResMesh
+		if [ "$RefResMesh" != "${LowResMesh}" ]; then
+			log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
+			MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
+			${CARET7DIR}/wb_command -cifti-resample ${ReferenceMyelinMaps} \
+					COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.MyelinMap.${LowResMesh}k_fs_LR.dscalar.nii \
+					COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
+					${MyelinTargetFile} \
+					-surface-postdilate 40 \
+					-left-spheres ${SphereFolder}/${Session}.L.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
+					-left-area-surfs ${T1wSurfFolder}/${Session}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+					-right-spheres ${SphereFolder}/${Session}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
+					-right-area-surfs ${T1wSurfFolder}/${Session}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+		fi
+		# the gifti files from reference maps are generated in previous versions
+		${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
+			-metric CORTEX_LEFT "$SphereFolder"/"$Session".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
+			-metric CORTEX_RIGHT "$SphereFolder"/"$Session".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
+
+		# ----- Begin moved statements -----
+		# Recompute Myelin Map Bias Field Based on Better Registration
+		log_Msg "Recompute Myelin Map Bias Field Based on Better Registration"
+		# Myelin Map BC using low res
+		"$HCPPIPEDIR"/global/scripts/MyelinMap_BC.sh \
+			--study-folder="$StudyFolder" \
+			--subject="$Session" \
+			--registration-name="MSMSulc" \
+			--use-ind-mean="$UseIndMean" \
+			--low-res-mesh="$LowResMesh" \
+			--myelin-target-file="$MyelinTargetFile" \
+			--map="MyelinMap"
+		# ----- End moved statements -----
+		# bias field is computed in the module MyelinMap_BC.sh
+		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
+			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
+			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.BiasField.native.func.gii
+
+		# bias field in native space is already generated
+		# BC is already applied in module MyelinMap_BC on MyelinMap
+		# BC the other types of given myelin maps
+		${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap_BC.native.dscalar.nii \
+			-var Var ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap.native.dscalar.nii \
+			-var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii
+
+		# myelin map only loop
+		for MyelinMap in MyelinMap SmoothedMyelinMap ; do
+			${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii COLUMN \
+				-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.${MyelinMap}_BC.native.func.gii \
+				-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.${MyelinMap}_BC.native.func.gii
+
+			# create cifti and gifti MyelinMap in the high res mesh space
+			${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
+				COLUMN ${AtlasSpaceFolder}/${Session}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
+				COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
+				${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii \
+				-surface-postdilate 40 \
+				-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
+				-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii \
+				-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
+				-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+			# gifti files
+			${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii COLUMN \
+				-metric CORTEX_LEFT ${AtlasSpaceFolder}/${Session}.L.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii \
+				-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${Session}.R.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii
+		done
+		# remove intermediate files
+		# rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+		# create cifti and gift MyelinMap in the low res mesh spaces
+		for LowResMesh in "${LowResMeshesArray[@]}" ; do
+			for MyelinMap in MyelinMap SmoothedMyelinMap ; do
+				${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
+					COLUMN ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}.${LowResMesh}k_fs_LR.dscalar.nii \
+					COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
+					${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
+					-surface-postdilate 40 \
+					-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
+					-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+					-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
+					-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				# gifti files
+				${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii COLUMN \
+					-metric CORTEX_LEFT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
+					-metric CORTEX_RIGHT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii
+			done
+		done
+	fi
+fi #human-only (??) code
+
 #Add CIFTI Maps to Spec Files
 
 MapListDscalar="corrThickness@dscalar"
