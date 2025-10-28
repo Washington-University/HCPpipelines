@@ -10,10 +10,12 @@
 # Copyright (c) 2016-2023
 # All rights reserved.
 
-SPECIES="$1"
-StrucRes="$2"
-UnwarpDir="$3"
-MION="$4"
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
+opts_AddMandatory '--species' 'SPECIES' 'species' 'species name'
+opts_AddMandatory '--structres' 'StrucRes' 'structres' 'structural resolution'
+opts_ParseArguments "$@"
 
 ## Species specific variables
 if [[ "$SPECIES" == *Human* ]] ; then
