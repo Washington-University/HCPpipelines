@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL, gradunwarp (HCP version)
+#  installed versions of: FSL 6.0.6, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
 ################################################ SUPPORT FUNCTIONS ##################################################
@@ -518,8 +518,8 @@ if [[ $UnwarpDir = [xyij] ]] ; then
             centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
             centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
             # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
-            ${GlobalScripts}/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
-            ${GlobalScripts}/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+            ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+            ${FSLDIR}/bin/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
         fi
             ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseTwo_gdc_one_brain -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc -nosearch
     else
@@ -552,8 +552,8 @@ elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
         centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
         centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
         # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
-        ${GlobalScripts}/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
-        ${GlobalScripts}/bet4animal ${WD}/PhaseOne_gdc_one ${WD}/PhaseOne_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+        ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+        ${FSLDIR}/bin/bet4animal ${WD}/PhaseOne_gdc_one ${WD}/PhaseOne_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
     fi
     ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseOne_gdc_one_brain -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc -nosearch
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat
@@ -600,7 +600,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/Magnitudes -Tmean ${WD}/Magnitude
 if [ "$species" = 0 ]  ; then 
     ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
 else
-    ${GlobalScripts}/bet4animal ${WD}/Magnitude ${WD}/Magnitude_brain -m -z $species #Brain extract the magnitude image
+    ${FSLDIR}/bin/bet4animal ${WD}/Magnitude ${WD}/Magnitude_brain -m -z $species #Brain extract the magnitude image
 fi
 
 # copy images to specified outputs

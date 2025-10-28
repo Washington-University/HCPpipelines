@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL (including python with numpy, needed to run aff2rigid - part of FSL)
+#  installed versions of: FSL=6.0.6 (including python with numpy, needed to run aff2rigid - part of FSL)
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
     BC="-B"
   fi
   verbose_echo " --> Run initial BET with options: -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC"
-  ${HCPPIPEDIR_Global}/bet4animal "$WD"/robustroi.nii.gz "$WD"/robustroi_brain -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC
+  ${FSLDIR}/bin/bet4animal "$WD"/robustroi.nii.gz "$WD"/robustroi_brain -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC
   verbose_echo " --> Registering brain extracted image to MNI152 (12 DOF)"
   ${FSLDIR}/bin/flirt -interp spline -in "$WD"/robustroi_brain.nii.gz -ref "$WD"/ReferenceBrain -omat "$WD"/roi2std_init.mat -out "$WD"/acpc_final_init.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30 -dof 6
   verbose_echo " --> Registering cropped image to MNI152 (12 DOF)"
