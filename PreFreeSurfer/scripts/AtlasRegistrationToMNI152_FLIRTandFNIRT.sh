@@ -127,7 +127,6 @@ if [ ! "${T2wImage}" = "NONE" ] ; then
   ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T2wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestore}
   ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T2wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT2wImageRestoreBrain}
   ${FSLDIR}/bin/fslmaths ${OutputT2wImageRestore} -mas ${OutputT2wImageRestoreBrain} ${OutputT2wImageRestoreBrain}
-  ${FSLDIR}/bin/imcp ${OutputT2wImage} ${OutputT2wImage}_orig
 else
   verbose_echo " ... skipping T2w processing"
 fi
