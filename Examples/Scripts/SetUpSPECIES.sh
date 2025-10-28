@@ -59,22 +59,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
     InflateScale="1"
     FlatMapRootName="colin.cerebral"
     
-    # fMRI & ICAFIX
-    MotionCorrectionMethod="MCFLIRT"
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0_HCP_fMRI.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
-    FinalFMRIResolution=2
-    def_FIXTHR=10
-    def_volwisharts=2
-    def_ciftiwisharts=3
-    TrainingData="HCP_Style_Single_Multirun_Dedrift"
-    G_DEFAULT_LOW_RES_MESH=32
-
-    # dMRI
-    GrayordinatesResolutions="1.25" #Needs to match what is in PostFreeSurfer. 
-    DiffTopupConfig="${HCPPIPEDIR_Config}/b02b0_HCP_dMRI.cnf"
-    FSBBRDIFF=TRUE
-    DiffWMProjAbs="2"
-
     # MakeAverageDataset
     PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
 
@@ -123,17 +107,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
     SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
     GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human. 
-
-    # fMRI & ICAFIX
-    MotionCorrectionMethod="MCFLIRT"
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0_chimp_fMRI.cnf" #Topup config if using TOPUP, set to NONE if using regular FIELDMAP
-    G_DEFAULT_LOW_RES_MESH=32
-
-    # dMRI
-    GrayordinatesResolutions="1.2" #Needs to match what is in PostFreeSurfer. 
-    DiffTopupConfig="${HCPPIPEDIR_Config}/b02b0_chimp_dMRI.cnf"
-    FSBBRDIFF=TRUE
-    DiffWMProjAbs="1"
 
     # MakeAverageDataset
     PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
@@ -273,32 +246,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     MSMSulcConf="MSMSulcStrainFinalconfMacaque"
     FlatMapRootName="$BrainTemplate"
 
-    # fMRI & ICAFIX
-    MotionCorrectionMethod="MCFLIRT"
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf"
-    FinalFMRIResolution=1.2  # Changed from 1.25 to 1.2 to make low-resolution volume symmetrical between left and right with respect to the center - TH Mar 2025.
-    def_FIXTHR=10
-    def_volwisharts=1
-    def_ciftiwisharts=2
-    if [ ! "$FSL_FIXDIR" = $FSLDIR/bin ] ; then
-        TrainingData="NHPHCP_Macaque_RIKEN30MRFIX"
-        if [ "$MION" = 1 ] ; then 
-            TrainingData=NHPHCP_Macaque.USPIO
-        fi
-    else
-        TrainingData="NHPHCP_Macaque_RIKEN30MRFIX"
-        if [ "$MION" = 1 ] ; then 
-            TrainingData=/mnt/pub/PROJ/NHP_NNP/MacaqueRhesus/NHPHCP_Macaque.USPIO.pyfix/NHPHCP_Macaque.USPIO
-        fi
-    fi
-    G_DEFAULT_LOW_RES_MESH=10
-
-    # dMRI
-    GrayordinatesResolutions="0.5@1.2" #Needs to match what is in PostFreeSurfer. 
-    DiffTopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_dMRI.cnf"
-    FSBBRDIFF=TRUE
-    DiffWMProjAbs="0.7"
-
     #Tractography
     StandardResolution=0.5
     LowResMesh=32
@@ -355,33 +302,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     FlatMapRootName="$BrainTemplate"
     
-    # fMRI & ICAFIX
-    MotionCorrectionMethod="FLIRT"
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf"
-    FinalFMRIResolution=0.8
-    def_FIXTHR=10
-    def_volwisharts=3
-    def_ciftiwisharts=5
-    if [ ! "$FSL_FIXDIR" = $FSLDIR/bin ] ; then
-        CustomTrainingData="NHPHCP_Marmoset"
-        if [ "$MION" = 1 ] ; then 
-            TrainingData=NHPHCP_Macaque.USPIO
-        fi
-    else
-        CustomTrainingData="NHPHCP_Marmoset"
-        if [ "$MION" = 1 ] ; then 
-            TrainingData=/mnt/pub/PROJ/NHP_NNP/MacaqueRhesus/NHPHCP_Macaque.USPIO.pyfix/NHPHCP_Macaque.USPIO
-        fi
-    fi
-
-    G_DEFAULT_LOW_RES_MESH=4
-
-    # dMRI
-    GrayordinatesResolutions="0.2@0.5@0.8" #Needs to match what is in PostFreeSurfer. 
-    DiffTopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_dMRI.cnf"
-    FSBBRDIFF=TRUE
-    DiffWMProjAbs="0.5"
-
     #Tractography
     StandardResolution=0.2
     LowResMesh=32
@@ -407,7 +327,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used
-     BiasFieldSmoothingSigma="2.5"
+    BiasFieldSmoothingSigma="2.5"
     BrainTemplate="NightMonkey9"
     T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_0.25mm.nii.gz"
     T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_0.25mm_brain.nii.gz"
@@ -431,22 +351,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     InflateScale="2.5"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     
-    # fMRI & ICAFIX
-    MotionCorrectionMethod="MCFLIRT"
-    TopUpConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf"
-    FinalFMRIResolution=1.0 
-    def_FIXTHR=10
-    def_volwisharts=1
-    def_ciftiwisharts=2
-    TrainingData=NHPHCP_Marmoset
-    G_DEFAULT_LOW_RES_MESH=10
-
-    # dMRI
-    GrayordinatesResolutions="0.5@1.2" #Needs to match what is in PostFreeSurfer. 
-    DiffTopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_dMRI.cnf"
-    FSBBRDIFF=TRUE
-    DiffWMProjAbs="0.5"
-
     # MakeAverageDataset
     PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
 
