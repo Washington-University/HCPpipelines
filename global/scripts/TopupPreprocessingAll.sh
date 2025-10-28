@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL 6.0.6, gradunwarp (HCP version)
+#  installed versions of: FSL>=6.0.6, gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Global, PATH for gradient_unwarp.py
 
 ################################################ SUPPORT FUNCTIONS ##################################################

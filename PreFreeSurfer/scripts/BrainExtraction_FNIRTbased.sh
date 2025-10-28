@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL=6.0.6
+#  installed versions of: FSL>=6.0.6
 #  environment: HCPPIPEDIR, FSLDIR, HCPPIPEDIR_Templates
 
 # ------------------------------------------------------------------------------

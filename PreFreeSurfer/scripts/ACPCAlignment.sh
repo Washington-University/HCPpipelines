@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Requirements for this script
-#  installed versions of: FSL=6.0.6 (including python with numpy, needed to run aff2rigid - part of FSL)
+#  installed versions of: FSL>=6.0.6 (including python with numpy, needed to run aff2rigid - part of FSL)
 #  environment: HCPPIPEDIR, FSLDIR
 
 # ------------------------------------------------------------------------------
