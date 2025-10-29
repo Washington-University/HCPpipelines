@@ -106,7 +106,10 @@ source $EnvironmentScript
 # If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
 #SPECIES="Human"
 #StrucRes=0.8
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes" 
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
+#HACK: work around the log tool name hack in the sourced script
+#since debug.shlib will be active by default, set the log toolname back to the Batch script
+log_SetToolName "$(basename -- "$0")"
 
 for Subject in $Subjlist ; do
     echo $Subject
