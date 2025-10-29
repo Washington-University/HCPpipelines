@@ -122,14 +122,9 @@ for Subject in $Subjlist ; do
     #   ## Gradient Nonlinearity Correction
     #   - Gradient, UnwarpDir
     #
-    #   ## Resting-state fMRI
-    #   - Tasklist, Taskreflist, PhaseEncodinglist, Fmriconcatlist
-    #
     #   ## TopUp (Distortion correction for sMRI/fMRI)
     #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, SEEchoSpacing
     #
-    #   ## Diffusion MRI
-    #   - DmrilistPositive, DmrilistNegative, SEEchoSpacing, PEdir
     #
     # If the config file is not found, please set values manually.
     # ------------------------------------------------------------------------------
