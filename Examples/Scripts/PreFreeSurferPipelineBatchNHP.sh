@@ -94,10 +94,6 @@ if [ -z "$UnwarpDir" ]; then
     fi
 fi
 
-if [ -z "$MION" ]; then
-    MION="0"
-fi
-
 echo "$(basename $0) $@"
 
 if [ -z ${EnvironmentScript} ] ; then
@@ -107,8 +103,8 @@ source $EnvironmentScript
 
 # species specific config
 # If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
-#if you used MION, change the fix training data by uncommenting this line and providing the path to the training file if necessary.
-#TrainingData=NHPHCP_Macaque.USPIO
+#SPECIES="Human"
+#StrucRes=0.8
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes" 
 
 for Subject in $Subjlist ; do
