@@ -78,6 +78,30 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+
+# set betspecieslabel based on species
+case $SPECIES in
+  *Human*)
+    betspecieslabel="0"
+    ;;
+  *Chimp*)
+    betspecieslabel="1"
+    ;;
+  *Macaque*)
+    betspecieslabel="2"
+    ;;
+  Marmoset)
+    betspecieslabel="3"
+    ;;
+  NightMonkey)
+    betspecieslabel="4"
+    ;;
+  *)
+    betspecieslabel=""
+    log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Rhesus, Chimp, NightMonkey, Marmoset."
+    ;;
+esac
+
 #display the parsed/default values
 opts_ShowValues
 
@@ -99,18 +123,6 @@ log_Check_Env_Var FSLDIR
 
 #sanity check the jacobian option
 UseJacobian=$(opts_StringToBool "$UseJacobian")
-
-if [[ "$SPECIES" =~ Human || "$SPECIES" = "" ]] ; then
-    species=0
-elif [[ "$SPECIES" =~ Chimp ]] ; then
-    species=1
-elif [[ "$SPECIES" =~ Macaque ]] ; then
-    species=2
-elif [[ "$SPECIES" =~ Marmoset ]] ; then
-    species=3
-elif [[ "$SPECIES" =~ NightMonkey ]] ; then
-    species=4
-fi
 
 GlobalScripts=${HCPPIPEDIR_Global}
 
@@ -518,8 +530,8 @@ if [[ $UnwarpDir = [xyij] ]] ; then
             centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
             centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
             # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
-            ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
-            ${FSLDIR}/bin/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+            ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $betspecieslabel -c $centerx $centery $centerz -f 0.4
+            ${FSLDIR}/bin/bet4animal ${WD}/PhaseTwo_gdc_one ${WD}/PhaseTwo_gdc_one_brain -m -z $betspecieslabel -c $centerx $centery $centerz -f 0.4
         fi
             ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseTwo_gdc_one_brain -omat ${WD}/SBRef2PhaseTwo_gdc.mat -out ${WD}/SBRef2PhaseTwo_gdc -nosearch
     else
@@ -552,8 +564,8 @@ elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
         centery=$(echo "$dim2*0.45" | bc| awk '{printf "%d", $1}')
         centerz=$(echo "$dim3*0.5" | bc | awk '{printf "%d", $1}')
         # brain extraction before registration betweeen SBRef and SEField for NHP - TH 2024 
-        ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $species -c $centerx $centery $centerz -f 0.4
-        ${FSLDIR}/bin/bet4animal ${WD}/PhaseOne_gdc_one ${WD}/PhaseOne_gdc_one_brain -m -z $species -c $centerx $centery $centerz -f 0.4
+        ${FSLDIR}/bin/bet4animal ${WD}/SBRef ${WD}/SBRef_brain -m -z $betspecieslabel -c $centerx $centery $centerz -f 0.4
+        ${FSLDIR}/bin/bet4animal ${WD}/PhaseOne_gdc_one ${WD}/PhaseOne_gdc_one_brain -m -z $betspecieslabel -c $centerx $centery $centerz -f 0.4
     fi
     ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/SBRef_brain -ref ${WD}/PhaseOne_gdc_one_brain -omat ${WD}/SBRef2PhaseOne_gdc.mat -out ${WD}/SBRef2PhaseOne_gdc -nosearch
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/SBRef2WarpField.mat -concat ${WD}/MotionMatrix_${vnum}.mat ${WD}/SBRef2PhaseOne_gdc.mat
@@ -597,10 +609,10 @@ ${FSLDIR}/bin/fslmaths ${WD}/SBRef_dc -mul ${WD}/Jacobian ${WD}/SBRef_dc_jac
 # Calculate Equivalent Field Map
 ${FSLDIR}/bin/fslmaths ${WD}/TopupField -mul 6.283 ${WD}/TopupField
 ${FSLDIR}/bin/fslmaths ${WD}/Magnitudes -Tmean ${WD}/Magnitude
-if [ "$species" = 0 ]  ; then 
+if [ "$betspecieslabel" = 0 ]  ; then 
     ${FSLDIR}/bin/bet ${WD}/Magnitude ${WD}/Magnitude_brain -f 0.35 -m #Brain extract the magnitude image
 else
-    ${FSLDIR}/bin/bet4animal ${WD}/Magnitude ${WD}/Magnitude_brain -m -z $species #Brain extract the magnitude image
+    ${FSLDIR}/bin/bet4animal ${WD}/Magnitude ${WD}/Magnitude_brain -m -z $betspecieslabel #Brain extract the magnitude image
 fi
 
 # copy images to specified outputs
