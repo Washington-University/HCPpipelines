@@ -26,6 +26,7 @@ SPECIES="Human"
 RunMode="Default"
 BrainExtract="INVIVO"
 StrucRes="0.8"
+UnwarpDir=""
 
 # Parse command line arguments
 get_batch_options() {
