@@ -31,7 +31,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
     betbiasfieldcor="TRUE"
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="86"           # Distance between top of FOV and center of brain
-    betspecieslabel="0"          # bet4animal species label
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Config for topup or "NONE" if not used
@@ -74,7 +73,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     betradius="45"               # brain radius for bet
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="60"           # Distance between top of FOV and center of brain
-    betspecieslabel="1"          # bet4animal species label
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Chimp_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_chimp_fMRI.cnf" #Config for topup or "NONE" if not used
@@ -115,7 +113,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="3.5"
 
-    betspecieslabel="2"          # bet4animal species label
 
     if [[ "$SPECIES" == *Mac30BS* ]] ; then     # Rhesus and Cyno hybrid template
 
@@ -250,7 +247,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     betfraction="0.5"
     betbiasfieldcor="FALSE"
     bettop2center="12"           # distance in mm from the top of FOV to the center of brain in robustroi
-    betspecieslabel="3"          # bet4animal species label
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used
@@ -298,7 +294,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     betradius="20"
     betfraction="0.4"
     bettop2center="16"
-    betspecieslabel="4"          # bet4animal species label
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used

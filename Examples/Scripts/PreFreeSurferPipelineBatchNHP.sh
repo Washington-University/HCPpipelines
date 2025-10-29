@@ -253,8 +253,7 @@ for Subject in $Subjlist ; do
         --betcenter=${betcenter} \
         --betradius=${betradius} \
         --betfraction=${betfraction} \
-        --bettop2center=${bettop2center} \
-        --betspecieslabel=${betspecieslabel}
+        --bettop2center=${bettop2center}
       
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -297,8 +296,7 @@ for Subject in $Subjlist ; do
         --betcenter=${betcenter} \
         --betradius=${betradius} \
         --betfraction=${betfraction} \
-        --bettop2center=${bettop2center} \
-        --betspecieslabel=${betspecieslabel} "
+        --bettop2center=${bettop2center} "
 
     echo ". ${EnvironmentScript}"
 

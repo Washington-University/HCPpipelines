@@ -53,8 +53,6 @@ opts_AddOptional '--betradius' 'BetRadius' 'float' 'radius in mm' "75"
 
 opts_AddOptional '--betfraction' 'BetFraction' 'float' 'fract 0 to 1' "0.3"
 
-opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'int' 'species label' "0"
-
 opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
 
 opts_ParseArguments "$@"
@@ -87,7 +85,28 @@ if [ "$BrainExtract" != "EXVIVO" ] && [ "$BrainExtract" != "INVIVO" ]; then
     log_Err_Abort "Invalid value for BrainExtract: '$BrainExtract'. Must be either 'EXVIVO' or 'INVIVO'."
 fi
 
-
+# set betspecieslabel based on species
+case $SPECIES in
+  *Human*)
+    betspecieslabel="0"
+    ;;
+  *Chimp*)
+    betspecieslabel="1"
+    ;;
+  *Macaque*)
+    betspecieslabel="2"
+    ;;
+  Marmoset)
+    betspecieslabel="3"
+    ;;
+  NightMonkey)
+    betspecieslabel="4"
+    ;;
+  *)
+    betspecieslabel=""
+    log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Rhesus, Chimp, NightMonkey, Marmoset."
+    ;;
+esac
 
 # BET options
 if [ ! -z $BetCenter ] ; then

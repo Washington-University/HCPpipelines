@@ -52,8 +52,6 @@ opts_AddOptional '--ref2mm' 'Reference2mm' 'image' '2mm reference image' ""
 
 opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'image' '2mm reference mask' ""
 
-opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'value' 'BET species label' "0"
-
 opts_AddOptional '--custommask' 'CustomMask' 'image' 'custom brain mask' "NONE"
 
 opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
@@ -70,6 +68,29 @@ fi
 if [ "$BrainExtract" != "EXVIVO" ] && [ "$BrainExtract" != "INVIVO" ]; then
     log_Err_Abort "Invalid value for BrainExtract: '$BrainExtract'. Must be either 'EXVIVO' or 'INVIVO'."
 fi
+
+# set betspecieslabel based on species
+case $SPECIES in
+  *Human*)
+    betspecieslabel="0"
+    ;;
+  *Chimp*)
+    betspecieslabel="1"
+    ;;
+  *Macaque*)
+    betspecieslabel="2"
+    ;;
+  Marmoset)
+    betspecieslabel="3"
+    ;;
+  NightMonkey)
+    betspecieslabel="4"
+    ;;
+  *)
+    betspecieslabel=""
+    log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Rhesus, Chimp, NightMonkey, Marmoset."
+    ;;
+esac
 
 #display the parsed/default values
 opts_ShowValues

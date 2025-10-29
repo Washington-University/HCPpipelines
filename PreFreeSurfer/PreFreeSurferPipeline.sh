@@ -292,7 +292,6 @@ opts_AddOptional '--betradius' 'betradius' 'int' "Radius for BET (default: 75)" 
 opts_AddOptional '--betfraction' 'betfraction' 'float' "Fraction for BET (default: 0.3)" "0.3"
 opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to center for BET (default: 86)" "86"
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
-opts_AddOptional '--betspecieslabel' 'betspecieslabel' 'string' "default: " ""
 opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume" "FALSE"
 opts_AddOptional '--bias-field-sigma-no-T2w' 'BiasFieldSmoothingSigmaNoT2w' 'value' "Bias Field Smoothing Sigma for Bias Field Correction using T1w image only (only for NHP, default: 20)" "20"
 
@@ -697,7 +696,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --betradius=${betradius} \
                 --ref2mm=${TXwTemplate2mm} \
                 --ref2mmmask=${Template2mmMask} \
-                --betspecieslabel=$betspecieslabel \
                 --custommask=${CustomMask} \
                 --species=${SPECIES}
         fi
@@ -726,7 +724,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --betradius=${betradius} \
                 --betfraction=${betfraction} \
                 --brainextract=${BrainExtract} \
-                --betspecieslabel=${betspecieslabel} \
                 --species=${SPECIES}
         fi   
         # End of looping over modalities (T1w and T2w)
