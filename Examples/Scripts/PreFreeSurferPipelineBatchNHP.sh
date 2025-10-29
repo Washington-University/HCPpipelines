@@ -140,38 +140,24 @@ for Subject in $Subjlist ; do
     if [ -f "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt" ]; then
         source "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt"
     else
-        echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. Please set values manually."
+        echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. 
+        Please prepare hcppipe_conf.txt.
+        Alternatively, uncomment the lines in the Batch File, set appropriate values manually, and run again."
 
-        ## Structural MRI
-        T1wInputImages=
-        T2wInputImages=
-
-        ## Readout Distortion Correction
-        T1wSampleSpacing=
-        T2wSampleSpacing=
-
-        ## Gradient Nonlinearity Correction
-        Gradient=
-        UnwarpDir=
-
-        ## Resting-state fMRI
-        Tasklist=
-        Taskreflist=
-        PhaseEncodinglist=
-        Fmriconcatlist=
-
-        ## TopUp
-        TopupNegative=
-        TopupPositive=
-        TopupNegative2=
-        TopupPositive2=
-        DwellTime=
-
-        ## Diffusion MRI
-        DmrilistPositive=
-        DmrilistNegative=
-        SEEchoSpacing=
-        PEdir=
+        ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
+        #T1wInputImages="t1_1 t1_2"                                            # input T1w
+        #T2wInputImages="t2_1 t2_2"                                            # input T2w
+        #T2wType="T2w"                                                         # T2w contrast type: T2w (default) or FLAIR, to be used for FreeSurferPipeline
+        # optional variables of sMRI
+        #StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
+        #StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
+        #T1wSampleSpacing=".00000710000000000000"                              # readout time (optional for B0 distortion correction)
+        #T2wSampleSpacing=".00000210000000000000"                              # readout time (optional for B0 distortion correction)
+        #StrucTopupNegative="SEField_1_AP"                                     # negative phase encoding directions (LR or AP) (optional for B0 distortion correction)
+        #StrucTopupPositive="SEField_1_PA"                                     # positive phase encoding directions (RL or PA) (optional for B0 distortion correction)
+        #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
+        #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
+        #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
     fi
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then
