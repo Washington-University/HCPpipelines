@@ -116,6 +116,7 @@ opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' 'image' "input s
 
 opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'image' "input spin echo zero phase encoding image"
 
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
 #Tim special parsing 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Use jacobian" 
 

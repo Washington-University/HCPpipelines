@@ -791,8 +791,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --gdcoeffs=${GradientDistortionCoeffs} \
                     --usejacobian=${UseJacobian} \
                     --truepatientposition=${TruePatientPosition} \
-                    --scannerpatientposition=${ScannerPatientPosition}
-
+                    --scannerpatientposition=${ScannerPatientPosition} \
+                    --species=${SPECIES}
                 ;;
 
             *)
