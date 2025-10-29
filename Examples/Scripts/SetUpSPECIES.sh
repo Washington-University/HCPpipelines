@@ -29,6 +29,11 @@ opts_AddMandatory '--species' 'SPECIES' 'species' 'species name'
 opts_AddMandatory '--structres' 'StrucRes' 'structres' 'structural resolution'
 opts_ParseArguments "$@"
 
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
 ## Species specific variables
 if [[ "$SPECIES" == *Human* ]] ; then
 
