@@ -221,7 +221,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
         Phase2ndSet=""
     fi
 
-    if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+    if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
         if [ ! -z "$InitWorldMat" ] ; then
             log_Msg "Apply init rigid-body transformation to sform"
             initmat="--init=${InitWorldMat}"
