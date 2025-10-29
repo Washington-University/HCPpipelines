@@ -1,4 +1,11 @@
-#! /bin/bash
+#!/bin/bash
+set -eu
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
 
 # Species specific config file 
 
