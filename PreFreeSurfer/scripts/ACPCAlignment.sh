@@ -131,6 +131,10 @@ echo " " >> $WD/log.txt
 
 ########################################## DO WORK ########################################## 
 if [[ "$SPECIES" != "Human" ]] ; then
+  if [[ "$Reference2mm" == "" || "$Reference2mmMask" == "" ]]
+  then
+    log_Err_Abort "--ref2mm and --ref2mmmask are required when species is not 'Human'"
+  fi
   fslmaths "$Reference2mm" "$WD"/Reference
   fslmaths "$Reference2mm" -mas "$Reference2mmMask" "$WD"/ReferenceBrain
 fi
