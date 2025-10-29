@@ -61,14 +61,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
     InflateScale="1"
     FlatMapRootName="colin.cerebral"
     
-    # MakeAverageDataset
-    PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
-
-    #Tractography
-    StandardResolution=2
-    LowResMesh=32
-    PATHLENGTH=2000
-    
 elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     BrainScaleFactor="1.25"
@@ -109,9 +101,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
     SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
     GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human. 
-
-    # MakeAverageDataset
-    PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
 
 elif [[ "$SPECIES" == *Macaque* ]] ; then
 
@@ -248,14 +237,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     MSMSulcConf="MSMSulcStrainFinalconfMacaque"
     FlatMapRootName="$BrainTemplate"
 
-    #Tractography
-    StandardResolution=0.5
-    LowResMesh=32
-    PATHLENGTH=200
-
-    # MakeAverageDataset
-    PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
-
 elif [[ "$SPECIES" = Marmoset ]] ; then
 
     BrainScaleFactor="5"
@@ -303,14 +284,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     InflateScale="1"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     FlatMapRootName="$BrainTemplate"
-    
-    #Tractography
-    StandardResolution=0.2
-    LowResMesh=32
-    PATHLENGTH=80
-    
-    # MakeAverageDataset
-    PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
 
 elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, Takuro Ikeda on Aug 2020
 
@@ -344,7 +317,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/MyelinMap_BC.164k_fs_LR.dscalar.nii"
     MyelinMappingFWHM="1.5" # based on median cortical thickenss of owl
-     SurfaceSmoothingFWHM="1.5" # 4 by default 
+    SurfaceSmoothingFWHM="1.5" # 4 by default 
     CorrectionSigma="4"
     LowResMeshes="32@10" #Needs to match what is in PostFreeSurfer
     FinalfMRIResolution="1.0" #Needs to match what is in fMRIVolume
@@ -352,9 +325,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     GrayordinatesResolution="1.0" #Needs to match what is in PostFreeSurfer. 
     InflateScale="2.5"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
-    
-    # MakeAverageDataset
-    PreGradientSmoothingSigma="$(echo "1/${CorticalScaleFactor}" | bc -l)"
 
 else
 
