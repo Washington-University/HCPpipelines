@@ -20,6 +20,11 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 
+opts_SetScriptDescription "This file should be sourced from an NHP batch launch script, not run by itself, because it sets a bunch of variables to be used by a pipeline call."
+#HACK: sourcing leaves $0 set to the outer script name, so let's make log messages a little more obvious by telling the logger what name to use
+#we have already sourced log.shlib via newopts.shlib
+log_SetToolName "SetUpSPECIES.sh"
+
 opts_AddMandatory '--species' 'SPECIES' 'species' 'species name'
 opts_AddMandatory '--structres' 'StrucRes' 'structres' 'structural resolution'
 opts_ParseArguments "$@"
