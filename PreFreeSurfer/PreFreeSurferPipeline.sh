@@ -370,8 +370,7 @@ case "$RunMode" in
         RunMode=5
         ;;
     *)
-        echo "Error: invalid runmode '$RunMode'"
-        exit 1
+        log_Err_Abort "Error: invalid runmode '$RunMode'"
         ;;
 esac
 
