@@ -126,7 +126,7 @@ for Subject in $Subjlist ; do
     #   - Tasklist, Taskreflist, PhaseEncodinglist, Fmriconcatlist
     #
     #   ## TopUp (Distortion correction for sMRI/fMRI)
-    #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, DwellTime
+    #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, SEEchoSpacing
     #
     #   ## Diffusion MRI
     #   - DmrilistPositive, DmrilistNegative, SEEchoSpacing, PEdir
@@ -167,7 +167,7 @@ for Subject in $Subjlist ; do
                 SpinEchoPhaseEncodeNegative2=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupNegative2 | awk '{print $1}') # first SEfield will be used
                 SpinEchoPhaseEncodePositive2=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupPositive2 | awk '{print $1}') # first SEfield will be used
             fi
-            DwellTime="$(echo $StrucSEDwellTime | awk '{print $1}')"    # dwell time for SE field, read from Dwelltime in Seriesinfo.txt
+            SEEchoSpacing="$(echo $StrucSEDwellTime | awk '{print $1}')"    # dwell time for SE field, read from SEEchoSpacing in Seriesinfo.txt
             SEUnwarpDir="$(echo $StrucSEUnwarpDir | awk '{print $1}')"  # read from PhaseEncodinglist in Seriesinfo.txt. x or y (minus or not does not matter)
             AvgrdcSTRING="TOPUP" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = Use Spin Echo FieldMap
         elif [[ $(imtest $StrucMagnitudeInputName) = 1 && $(imtest $StrucPhaseInputName) = 1 && -n $StrucDwelltime ]] ; then
@@ -184,7 +184,7 @@ for Subject in $Subjlist ; do
         SpinEchoPhaseEncodeNegative="NONE" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data), set to NONE if using regular FIELDMAP
         SpinEchoPhaseEncodePositive="NONE" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data), set to NONE if using regular FIELDMAP
         TE="NONE" # "2.46" delta TE in ms for field map or "NONE" if not used
-        DwellTime="NONE" # Echo Spacing or Dwelltime of SE Field Map image (or "NONE" if not used) = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples)
+        SEEchoSpacing="NONE" # Echo Spacing or SEEchoSpacing of SE Field Map image (or "NONE" if not used) = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples)
         SEUnwarpDir="NONE" # x or y (minus or not does not matter) "NONE" if not used
         UnwarpDir="NONE"
         AvgrdcSTRING="NONE" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction   "TOPUP" = Use Spin Echo FieldMap"${
@@ -240,7 +240,7 @@ for Subject in $Subjlist ; do
         --SEPhasePos="$SpinEchoPhaseEncodePositive" \
         --SEPhaseNeg2="$SpinEchoPhaseEncodeNegative2" \
         --SEPhasePos2="$SpinEchoPhaseEncodePositive2" \
-        --seechospacing="$DwellTime" \
+        --seechospacing="$SEEchoSpacing" \
         --seunwarpdir="$SEUnwarpDir" \
         --t1samplespacing="$T1wSampleSpacing" \
         --t2samplespacing="$T2wSampleSpacing" \
@@ -284,7 +284,7 @@ for Subject in $Subjlist ; do
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
         --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
         --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
-        --seechospacing=${DwellTime} \
+        --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
         --t1samplespacing=${T1wSampleSpacing} \
         --t2samplespacing=${T2wSampleSpacing} \
