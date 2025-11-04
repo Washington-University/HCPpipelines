@@ -292,7 +292,7 @@ opts_AddOptional '--betradius' 'betradius' 'int' "Radius for BET (default: 75)" 
 opts_AddOptional '--betfraction' 'betfraction' 'float' "Fraction for BET (default: 0.3)" "0.3"
 opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to center for BET (default: 86)" "86"
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
-opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume" "FALSE"
+opts_AddOptional '--use-t2w-phase-zero ' 'UsePhaseZero' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume" "FALSE"
 opts_AddOptional '--bias-field-sigma-no-T2w' 'BiasFieldSmoothingSigmaNoT2w' 'value' "Bias Field Smoothing Sigma for Bias Field Correction using T1w image only (only for NHP, default: 20)" "20"
 
 # ------------------------------------------------------------------------------
@@ -747,7 +747,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
                 fi
 
-                if [ $(imtest ${T2wFolder}/T2w) = 1 ] && [ "$flair" = "FALSE" && "$SPECIES" != "Human" ] ; then    # added T2w as a phase zero volume - TH Jan 2023
+                if [ $(imtest ${T2wFolder}/T2w) = 1 ] && [ "$use-t2w-phase-zero" = "FALSE" && "$SPECIES" != "Human" ] ; then    # added T2w as a phase zero volume - TH Jan 2023
                     SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
                     convert_xfm -omat ${T2wFolder}/xfms/acpc_inv.mat -inverse ${T2wFolder}/xfms/acpc.mat
                     flirt -in ${T2wFolder}/T2w_acpc_brain_mask -ref ${T2wFolder}/T2w -applyxfm -init ${T2wFolder}/xfms/acpc_inv.mat -o ${T2wFolder}/T2w_brain -interp nearestneighbour
