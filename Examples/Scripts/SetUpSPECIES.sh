@@ -188,15 +188,15 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         bettop2center="30"           # distance in mm from the top of FOV to the center of brain in robustroi
 
         #BrainTemplate="MacaqueYerkes19"
-        #T1wTemplate="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_0.5mm_dedrift.nii.gz" #MacaqueYerkes0.5mm template 
-        #T1wTemplateBrain="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_0.5mm_dedrift_brain.nii.gz" #Brain extracted MacaqueYerkes0.5mm template
-        #T1wTemplate2mm="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_1.0mm_dedrift" #MacaqueYerkes1.0mm template brain modified by Takuya Hayshi on Oct 24th 2015. 
-        #T2wTemplate="${HCPPIPEDIR_Templates}/${BrainTemplate}_T2w_0.5mm_dedrift.nii.gz" #MacaqueYerkes0.5mm T2wTemplate 
-        #T2wTemplateBrain="${HCPPIPEDIR_Templates}/${BrainTemplate}_T2w_0.5mm_dedrift_brain.nii.gz" #Brain extracted MacaqueYerkes0.5mm T2wTemplate
-        #T2wTemplate2mm="${HCPPIPEDIR_Templates}/${BrainTemplate}_T2w_1.0mm_dedrift" #MacaqueYerkes1.0mm T2wTemplate brain, modified by Takuya Hayashi on Oct 24th 2015.
-        #TemplateMask="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_0.5mm_brain_mask_dedrift.nii.gz" #Brain mask MacaqueYerkes0.5mm template
-        #Template2mmMask="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_1.0mm_brain_mask_dedrift.nii.gz" #MacaqueYerkes1.0mm template
-        #Template2mmBrain="${HCPPIPEDIR_Templates}/${BrainTemplate}_T1w_1.0mm_brain.nii.gz" #MacaqueYerkes1.0mm brain template
+        #T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_0.5mm_dedrift.nii.gz" #MacaqueYerkes0.5mm template 
+        #T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_0.5mm_dedrift_brain.nii.gz" #Brain extracted MacaqueYerkes0.5mm template
+        #T1wTemplate2mm="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_1.0mm_dedrift" #MacaqueYerkes1.0mm template brain modified by Takuya Hayshi on Oct 24th 2015. 
+        #T2wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T2w_0.5mm_dedrift.nii.gz" #MacaqueYerkes0.5mm T2wTemplate 
+        #T2wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T2w_0.5mm_dedrift_brain.nii.gz" #Brain extracted MacaqueYerkes0.5mm T2wTemplate
+        #T2wTemplate2mm="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T2w_1.0mm_dedrift" #MacaqueYerkes1.0mm T2wTemplate brain, modified by Takuya Hayashi on Oct 24th 2015.
+        #TemplateMask="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_0.5mm_brain_mask_dedrift.nii.gz" #Brain mask MacaqueYerkes0.5mm template
+        #Template2mmMask="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_1.0mm_brain_mask_dedrift.nii.gz" #MacaqueYerkes1.0mm template
+        #Template2mmBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}_T1w_1.0mm_brain.nii.gz" #MacaqueYerkes1.0mm brain template
 
         BrainTemplate="Mac25Rhesus"
         T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
