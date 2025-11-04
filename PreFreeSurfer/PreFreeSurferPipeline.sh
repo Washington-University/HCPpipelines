@@ -282,7 +282,6 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls
 opts_AddOptional '--usejacobian' 'UseJacobian' 'TRUE or FALSE' "Whether to use jacobian modulation when correcting spin echo fieldmaps for gradient distortion" "True" # NOT IN THE ORIGNAL SCRIPT
 
 # NHP options
-opts_AddOptional '--t2wtype' 'T2wType' 'string' "T2w or FLAIR" "T2w"
 opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
 opts_AddOptional '--runmode' 'RunMode' 'string' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, ACPCAlignment, BrainExtraction, T2wToT1wRegAndBiasCorrection, AtlasRegistration (default: Default)" "Default"
 opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (default: HFS)" "HFS"
