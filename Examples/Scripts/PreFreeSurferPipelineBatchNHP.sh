@@ -146,8 +146,8 @@ for Subject in $Subjlist ; do
         # optional variables of sMRI
         #StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
         #StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
-        #T1wSampleSpacing=".00000710000000000000"                              # readout time (optional for B0 distortion correction)
-        #T2wSampleSpacing=".00000210000000000000"                              # readout time (optional for B0 distortion correction)
+        #T1wSampleSpacing=".00000710000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
+        #T2wSampleSpacing=".00000210000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
         #StrucTopupNegative="SEField_1_AP"                                     # negative phase encoding directions (LR or AP) (optional for B0 distortion correction)
         #StrucTopupPositive="SEField_1_PA"                                     # positive phase encoding directions (RL or PA) (optional for B0 distortion correction)
         #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
