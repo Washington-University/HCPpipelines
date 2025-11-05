@@ -105,8 +105,56 @@ source $EnvironmentScript
 # species specific config
 # If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
 #SPECIES="Human"
-#StrucRes=0.8
+#StrucRes=0.8 # 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
+# ------------------------------------------------------------------------------
+# Load scan-specific configuration parameters
+# The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
+
+#BrainScaleFactor="1"
+#CorticalScaleFactor="1"
+
+#### PreFreeSurferPipeLineBatch.sh
+#BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
+#betcenter="45,55,39"         # comma separated voxel coordinates in T1wTemplate2mm
+#betradius="75"               # brain radius for bet
+#betbiasfieldcor="TRUE"
+#betfraction="0.3"            # fractional intensity threshold for bet
+#bettop2center="86"           # Distance between top of FOV and center of brain
+
+#FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf" #FNIRT 2mm T1w Config
+#TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Config for topup or "NONE" if not used
+#BiasFieldSmoothingSigma="5.0"
+#T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm.nii.gz"  
+#T1wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain.nii.gz" 
+#T1wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T1_2mm"  
+#T1wTemplate2mmBrain="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain.nii.gz" 
+#T2wTemplate="${HCPPIPEDIR_Templates}/MNI152_T2_${StrucRes}mm.nii.gz"  
+#T2wTemplate2mmBrain="${HCPPIPEDIR_Templates}/MNI152_T2_2mm_brain.nii.gz" 
+#T2wTemplateBrain="${HCPPIPEDIR_Templates}/MNI152_T2_${StrucRes}mm_brain" 
+#T2wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T2_2mm" 
+#TemplateMask="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain_mask.nii.gz" 
+#Template2mmMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz" 
+
+#### PostFreeSurferPipeLineBatch.sh
+#MyelinMappingFWHM="5" 
+#SurfaceSmoothingFWHM="4"
+#CorrectionSigma="7"
+#SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
+#GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
+#ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+#LowResMeshes="32" #Needs to match what is in PostFreeSurfer
+#FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
+#SmoothingFWHM="2" #Recommended to be roughly the voxel size
+#GrayordinatesResolution="2" #should be either 1 (7T) or 2 (3T) for human. 
+#InflateScale="1"
+#FlatMapRootName="colin.cerebral"
+
+# If you want to set parameters manually, 
+# please remove above comments and set appropriate values
+# (Default values are for Human).
+# ------------------------------------------------------------------------------
+
 #HACK: work around the log tool name hack in the sourced script
 #since debug.shlib will be active by default, set the log toolname back to the Batch script
 log_SetToolName "$(basename -- "$0")"
