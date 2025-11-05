@@ -43,7 +43,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
-    Defacing="TRUE"
     betcenter="45,55,39"         # comma separated voxel coordinates in T1wTemplate2mm
     betradius="75"               # brain radius for bet
     betbiasfieldcor="TRUE"
@@ -85,7 +84,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
-    Defacing="NONE"
     betcenter="46,53,52"         # comma separated voxel coordinates in T1wTemplate2mm
     betbiasfieldcor="TRUE"
     betradius="45"               # brain radius for bet
@@ -125,7 +123,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
-    Defacing="NONE"
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Macaque_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf" #Config for topup or "NONE" if not used
@@ -259,7 +256,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="50"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
-    Defacing="NONE"
     betcenter="50,40,30"         # comma separated voxel coordinates in T1wTemplate2mm
     betradius="12"
     betfraction="0.5"
@@ -306,7 +302,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="40"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
-    Defacing="NONE"
     betcenter="48,60,42"         # comma separated voxel coordinates in T1wTemplate2mm
     betbiasfieldcor="FALSE"
     betradius="20"
