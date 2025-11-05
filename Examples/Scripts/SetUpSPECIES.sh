@@ -93,24 +93,24 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Chimp_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_chimp_fMRI.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="4.0"
-    T1wTemplate="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_${StrucRes}mm.nii.gz"  
-    T1wTemplateBrain="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_${StrucRes}mm_brain.nii.gz" 
-    T1wTemplate2mm="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_1.6mm.nii.gz"  
-    T1wTemplate2mmBrain="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_1.6mm_brain.nii.gz" 
-    T2wTemplate="${HCPPIPEDIR_Templates}/ChimpYerkes29_T2w_${StrucRes}mm.nii.gz"  
-    T2wTemplate2mmBrain="${HCPPIPEDIR_Templates}/ChimpYerkes29_T2w_1.6mm_brain.nii.gz" 
-    T2wTemplateBrain="${HCPPIPEDIR_Templates}/ChimpYerkes29_T2w_${StrucRes}mm_brain.nii.gz" 
-    T2wTemplate2mm="${HCPPIPEDIR_Templates}/ChimpYerkes29_T2w_1.6mm.nii.gz" 
-    TemplateMask="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_${StrucRes}mm_brain_mask.nii.gz" 
-    Template2mmMask="${HCPPIPEDIR_Templates}/ChimpYerkes29_T1w_1.6mm_brain_mask.nii.gz" 
+    T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_${StrucRes}mm.nii.gz"  
+    T1wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_${StrucRes}mm_brain.nii.gz" 
+    T1wTemplate2mm="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_1.6mm.nii.gz"  
+    T1wTemplate2mmBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_1.6mm_brain.nii.gz" 
+    T2wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_${StrucRes}mm.nii.gz"  
+    T2wTemplate2mmBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_1.6mm_brain.nii.gz" 
+    T2wTemplateBrain="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_${StrucRes}mm_brain.nii.gz" 
+    T2wTemplate2mm="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T2w_1.6mm.nii.gz" 
+    TemplateMask="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_${StrucRes}mm_brain_mask.nii.gz" 
+    Template2mmMask="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_1.6mm_brain_mask.nii.gz" 
 
     #PostFreeSurferPipeLineBatch.sh
     MyelinMappingFWHM="4" # based on median cortical thickenss of owl
     SurfaceSmoothingFWHM="4" # 4 by default 
     CorrectionSigma=6
-    SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
-    GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
-    ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+    SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
+    GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
+    ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
     FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
     SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
