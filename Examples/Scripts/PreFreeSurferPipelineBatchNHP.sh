@@ -162,26 +162,27 @@ log_SetToolName "$(basename -- "$0")"
 for Subject in $Subjlist ; do
     echo $Subject
 
-    # ------------------------------------------------------------------------------
-    # Load scan-specific configuration parameters
-    # The file ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt defines:
-    #   ## Structural MRI
-    #   - T1wInputImages, T2wInputImages
-    #
-    #   ## Readout Distortion Correction
-    #   - T1wSampleSpacing, T2wSampleSpacing
-    #
-    #   ## Gradient Nonlinearity Correction
-    #   - Gradient, UnwarpDir
-    #
-    #   ## TopUp (Distortion correction for sMRI/fMRI)
-    #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, SEEchoSpacing
-    #
-    #
-    # If the config file is not found, please set values manually.
-    # ------------------------------------------------------------------------------
     if [ -f "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt" ]; then
         source "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt"
+        # ------------------------------------------------------------------------------
+        # Load scan-specific configuration parameters
+        # The file ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt defines:
+        #   ## Structural MRI
+        #   - T1wInputImages, T2wInputImages
+        #
+        #   ## Readout Distortion Correction
+        #   - T1wSampleSpacing, T2wSampleSpacing
+        #
+        #   ## Gradient Nonlinearity Correction
+        #   - Gradient, UnwarpDir
+        #
+        #   ## TopUp (Distortion correction for sMRI/fMRI)
+        #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, SEEchoSpacing
+        #
+        #
+        # If the config file is not found, please set values manually.
+        # ------------------------------------------------------------------------------
+
     else
         echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. 
         Please prepare hcppipe_conf.txt.
@@ -190,7 +191,6 @@ for Subject in $Subjlist ; do
         ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
         #T1wInputImages="t1_1 t1_2"                                            # input T1w
         #T2wInputImages="t2_1 t2_2"                                            # input T2w
-        #T2wType="T2w"                                                         # T2w contrast type: T2w (default) or FLAIR, to be used for FreeSurferPipeline
         # optional variables of sMRI
         #StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
         #StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
