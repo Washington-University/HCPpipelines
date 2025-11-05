@@ -291,7 +291,7 @@ opts_AddOptional '--betradius' 'betradius' 'int' "Radius for BET (default: 75)" 
 opts_AddOptional '--betfraction' 'betfraction' 'float' "Fraction for BET (default: 0.3)" "0.3"
 opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to center for BET (default: 86)" "86"
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
-opts_AddOptional '--use-t2w-phase-zero ' 'UsePhaseZero' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume" "FALSE"
+opts_AddOptional '--use-t2w-phase-zero' 'UsePhaseZero' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume, for dark-CSF acquisition types (FLAIR)" "FALSE"
 opts_AddOptional '--bias-field-sigma-no-T2w' 'BiasFieldSmoothingSigmaNoT2w' 'value' "Bias Field Smoothing Sigma for Bias Field Correction using T1w image only (only for NHP, default: 20)" "20"
 
 # ------------------------------------------------------------------------------
