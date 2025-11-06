@@ -184,10 +184,10 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 NonHumanSpecies=0
-if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
+if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
 
-#TODO NHP: Does this need to be conditioned by NonHumanSpecies?
-if (( NonHumanSpecies ))  && [ ! -e "$T1wFolder"/fsaverage_LR"$HighResMesh"k ] ; then  # TH added Mar 2023
+#TODO NHP: new feature from NHP, needs testing
+if [ ! -e "$T1wFolder"/fsaverage_LR"$HighResMesh"k ] ; then  # TH added Mar 2023
 	mkdir -p  "$T1wFolder"/fsaverage_LR"$HighResMesh"k
 fi
 
@@ -213,8 +213,10 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
     for Image in wmparc aparc.a2009s+aseg aparc+aseg ; do
         if [ -e "$FreeSurferFolder"/mri/"$Image".mgz ] ; then
             mri_convert -rt nearest -rl "$T1wFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/"$Image".mgz "$T1wFolder"/"$Image"_1mm.nii.gz
-            #TODO NHP: the original NHP line is below. Why?
-            #applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
+            #TODO NHP: check that the condition is as intended.
+            if (( NonHumanSpecies )); then 
+                applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
+            fi
             applywarp --rel --interp=nn -i "$T1wFolder"/"$Image"_1mm.nii.gz -r "$T1wFolder"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$Image".nii.gz
             applywarp --rel --interp=nn -i "$T1wFolder"/"$Image"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$Image".nii.gz
             ${CARET7DIR}/wb_command -volume-label-import "$T1wFolder"/"$Image".nii.gz "$FreeSurferLabels" "$T1wFolder"/"$Image".nii.gz -drop-unused-labels
@@ -251,14 +253,12 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
       ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
     done
 
-    #TODO: check if this is NHP or old HCP code.
-    if (( NonHumanSpecies )); then 
-        [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
-        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+    #TODO: new NHP feature for all cases, double-check if it works and where it belongs in the code
+    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Subject"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-        [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
-        ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
-    fi
+    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
+    ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
 
     #Import Subcortical ROIs
     for GrayordinatesResolution in ${GrayordinatesResolutions} ; do
@@ -437,7 +437,6 @@ for Hemisphere in L R ; do
         for Map in aparc aparc.a2009s ; do #Remove BA because it doesn't convert properly
             if [ -e "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot ] ; then
                 mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii
-                #TODO - check NHP
                 if (( NonHumanSpecies )); then 
                     # Cortical area of aparc is defined by cortical label in FreeSurfer. The following
                     # two commands adapt FS-based cortical label (?h.cortex.label) to those of HCP (atlasroi) - TH Sep 2025
@@ -459,10 +458,8 @@ for Hemisphere in L R ; do
         cp "$SurfaceAtlasDIR"/"$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii
         cp "$SurfaceAtlasDIR"/"$Hemisphere".refsulc."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/${Session}.${Hemisphere}.refsulc."$HighResMesh"k_fs_LR.shape.gii
 
-        #TODO check NHP
         if (( NonHumanSpecies )) && [ -e "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
-            fi
         elif [ -e "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
         fi
@@ -683,20 +680,15 @@ for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".inflated."$LowResMesh"k_fs_LR.surf.gii
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".very_inflated."$LowResMesh"k_fs_LR.surf.gii
 
-        #TODO: check NHP
-        if (( NonHumanSpecies )); then 
-            #Create hiresmesh  fs_LR spec file in structural space. - TH added Mar 2023
-            for Surface in white midthickness pial ; do
-                ${CARET7DIR}/wb_command -surface-resample "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii ${RegSphere} "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii BARYCENTRIC "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
-                ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
-            done
-        fi
-        #TODO: NHP or old HCP?
-        if (( NonHumanSpecies )); then
-            ${CARET7DIR}/wb_command -surface-generate-inflated "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii -iterations-scale "$HighResInflationScale"
-            ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii
-            ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii
-        fi
+        #TODO: new feature from NHP, check if this code works as intended.
+        for Surface in white midthickness pial ; do
+            ${CARET7DIR}/wb_command -surface-resample "$T1wFolder"/"$NativeFolder"/"$Subject"."$Hemisphere"."$Surface".native.surf.gii ${RegSphere} "$AtlasSpaceFolder"/"$Subject"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii BARYCENTRIC "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
+            ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
+        done
+        #TODO: new feature from NHP, pay attention in tests.
+        ${CARET7DIR}/wb_command -surface-generate-inflated "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii -iterations-scale "$HighResInflationScale"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii
+        ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Subject"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii
     done
 done
 
@@ -841,7 +833,6 @@ done
 
 log_Msg "Done creating midthickness Vertex Area (VA) maps"
 
-#TODO: check NHP
 if (( NonHumanSpecies )); then
     # Fine tuning brainmask using FreeSurfer surfaces in NHP. The tuned brainmask will be used for fMRIVolume/Diffusion preproc - TH 2024-2025
     log_Msg "Fine tuning of brainmask_fs"
