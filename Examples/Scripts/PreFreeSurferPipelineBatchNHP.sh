@@ -134,19 +134,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #TemplateMask="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain_mask.nii.gz" 
 #Template2mmMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz" 
 
-#### PostFreeSurferPipeLineBatch.sh
-#MyelinMappingFWHM="5" 
-#SurfaceSmoothingFWHM="4"
-#CorrectionSigma="7"
-#SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
-#GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
-#ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
-#LowResMeshes="32" #Needs to match what is in PostFreeSurfer
-#FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
-#SmoothingFWHM="2" #Recommended to be roughly the voxel size
-#GrayordinatesResolution="2" #should be either 1 (7T) or 2 (3T) for human. 
-#InflateScale="1"
-#FlatMapRootName="colin.cerebral"
 
 # If you want to set parameters manually, 
 # please remove above comments and set appropriate values
