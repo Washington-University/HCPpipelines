@@ -107,8 +107,6 @@ source $EnvironmentScript
 #SPECIES="Human"
 #StrucRes=0.8 # 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
-# ------------------------------------------------------------------------------
-# Load scan-specific configuration parameters
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 
 #BrainScaleFactor="1"
