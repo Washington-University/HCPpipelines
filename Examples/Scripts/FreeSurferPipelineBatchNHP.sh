@@ -17,9 +17,8 @@ T2wType=$3
 SPECIES=$4
 RunMode=$5
 
-if [ -z EnvironmentScript ] ; then
-	EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-fi
+#put the full path to your edited version of SetUpHCPPipeline.sh here
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 source $EnvironmentScript
 
 # Log the originating call
