@@ -82,6 +82,14 @@ for Hemisphere in $Hemi ; do
 	ReferenceMesh="$(cd "$(dirname -- "$RefMesh")"; pwd)/${RefMeshFile/HEMISPHERE/$Hemisphere}"
 	RefDataFile=$(basename -- "$RefData")
 	ReferenceData="$(cd "$(dirname -- "$RefData")"; pwd)/${RefDataFile/HEMISPHERE/$Hemisphere}"
+
+	if (( NonHumanSpecies )); then 
+		wb_command -surface-affine-regression "$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$NativeFolder"/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii "$NativeFolder"/MSMSulc/${Hemisphere}.mat
+		wb_command -surface-apply-affine "$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$NativeFolder"/MSMSulc/${Hemisphere}.mat "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
+		wb_command -surface-modify-sphere "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii 100 "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
+		cp "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii "$NativeFolder"/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii
+	fi
+
 	(
 		cd "$NativeFolder"/"$RegName"
 
