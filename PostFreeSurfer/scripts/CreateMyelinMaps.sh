@@ -199,13 +199,11 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 	fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
 
-	#TODO NHP: check if this is needed.
-	if (( NonHumanSpecies )); then 
-		# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
-		invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
-		applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
-		fslmaths "$(remove_ext $OrginalT2wImage)"_brainmask_fs -thr 0.5 -bin "$(remove_ext $OrginalT2wImage)"_brainmask_fs
-	fi
+	#TODO NHP: new feature from NHP, test
+	# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
+	invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
+	applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
+	fslmaths "$(remove_ext $OrginalT2wImage)"_brainmask_fs -thr 0.5 -bin "$(remove_ext $OrginalT2wImage)"_brainmask_fs
 	fi
 fi
 

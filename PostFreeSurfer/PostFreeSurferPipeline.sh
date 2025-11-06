@@ -122,13 +122,13 @@ opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudia
 opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list @ separated, if LongitudinalMode==TEMPLATE"
 
 #NHP options
-opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target species for non-human primate processing [human]" "human"
+opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target species for non-human primate processing [Human]" "Human"
 
 #TODO NHP: choose adequate default options
-opts_AddOptional '--myelinmappingfwhm' 'MyelinMappingFWHM' 'float' "Myelin mapping FWHM" "2"
-opts_AddOptional '--surfacesmoothingfwhm' 'SurfaceSmoothingFWHM' "2"
-opts_AddOptional '--msmsulcconf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "NONE"
-opts_AddOptional 'flatmaprootname' 'FlatMapRootName' 'string' 'Flat map root name' "NONE"
+opts_AddOptional '--myelin-volume-fwhm' 'MyelinVolumeFWHM' 'float' "Myelin mapping volume smoothing FWHM" "2"
+opts_AddOptional '--myelin-surface-fwhm' 'MyelinSurfaceFWHM' 'float' "Myelin mapping surface smoothing FWHM" "2"
+opts_AddOptional '--msmsulc-conf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "NONE"
+opts_AddOptional '--flatmap-root-name' 'FlatMapRootName' 'string' 'Flat map root name' "NONE"
 
 opts_ParseArguments "$@"
 
@@ -140,7 +140,7 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-if [ "$LongitudinalMode" == "NONE" && "$Species" != "human" ]; then 
+if [ "$LongitudinalMode" == "NONE" && "$Species" != "Human" ]; then 
     log_Err_Abort "Longitudinal mode supports only human species." 
 fi
 
@@ -236,7 +236,7 @@ case "$ThicknessReg" in
 esac
 
 NonHumanSpecies=0
-if [ "$Species" != "human" ]; then 
+if [ "$Species" != "Human" ]; then 
     NonHumanSpecies=1
 fi
 
@@ -445,8 +445,8 @@ if ((doProcessing)); then
     argList+=("$IsLongitudinal")                            #Longitudinal option
     argList+=("$ThicknessReg")                              # ${42}
     argList+=("$Species")                                   # ${43} NHP parameters
-    argList+=("MyelinMappingFWHM")                          # ${44}
-    argList+=("SurfaceSmoothingFWHM")                       # ${45}
+    argList+=("MyelinVolumeFWHM")                          # ${44}
+    argList+=("MyelinSurfaceFWHM")                       # ${45}
     
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
