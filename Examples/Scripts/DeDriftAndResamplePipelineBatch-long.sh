@@ -161,7 +161,7 @@ fixNames=$(IFS=@; echo "${fixNames[*]}")
 dontFixNames=$(IFS=@; echo "${dontFixNames[*]}")
 
 for i in "${!Subjlist[@]}" ; do
-	Subject="${Subjlist[i]}"
+    Subject="${Subjlist[i]}"
     echo "    ${Subject}"
     TemplateLong="${Templates[i]}"
     Timepoint_list_cross_at_separated=$(identify_timepoints "$Subject")
