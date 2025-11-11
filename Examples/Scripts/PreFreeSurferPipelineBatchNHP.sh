@@ -133,6 +133,7 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #T2wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T2_2mm" 
 #TemplateMask="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain_mask.nii.gz" 
 #Template2mmMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz" 
+#UsePhaseZero="FALSE" #Indicates whether to add T2-weighted image as a phase zero volume, for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
 
 
 # If you want to set parameters manually, 
@@ -282,7 +283,7 @@ for Subject in $Subjlist ; do
         --topupconfig="$TopupConfig" \
         --bfsigma="$BiasFieldSmoothingSigma" \
         --brainextract="$BrainExtract" \
-        --t2wtype="$T2wType" \
+        --use-t2w-phase-zero="$UsePhaseZero" \
         --runmode="$RunMode" \
         --species=${SPECIES} \
         --truepatientposition=${TruePatientPosition} \
