@@ -19,10 +19,6 @@ get_batch_options() {
                 command_line_specified_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --Subjlist=*)
-                command_line_specified_subj=${argument#*=}
-                index=$(( index + 1 ))
-                ;;
             --runlocal)
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
