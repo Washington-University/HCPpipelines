@@ -32,16 +32,6 @@ PRINTCOM=""
 #PRINTCOM="echo"
 
 
-echo "#### Environments ####################################################################"
-echo Host: `hostname`
-echo PATH: $PATH
-echo LD_LIBRARY_PATH: $LD_LIBRARY_PATH
-echo CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES
-echo FREESURFER_HOME=$FREESURFER_HOME
-echo PERL
-which perl
-perl -V | tail -11
-echo "######################################################################################"
 
 
 ########################################## INPUT
