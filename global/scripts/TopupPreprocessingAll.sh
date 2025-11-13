@@ -78,6 +78,8 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+#display the parsed/default values
+opts_ShowValues
 
 # set betspecieslabel based on species
 case $SPECIES in
@@ -102,8 +104,6 @@ case $SPECIES in
     ;;
 esac
 
-#display the parsed/default values
-opts_ShowValues
 
 # Verify required environment variables are set and log value
 log_Check_Env_Var FSLDIR
