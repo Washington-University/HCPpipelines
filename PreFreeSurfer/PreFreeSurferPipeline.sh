@@ -989,5 +989,4 @@ if [ "$RunMode" -lt 6 ]; then
 fi
 log_Msg "Completed!"
 
-#### Next stage: FreeSurfer/FreeSurferPipeline.sh
 
