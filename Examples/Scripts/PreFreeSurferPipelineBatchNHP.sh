@@ -326,7 +326,6 @@ for Subject in $Subjlist ; do
         --topupconfig=${TopupConfig} \
         --bfsigma=${BiasFieldSmoothingSigma} \
         --brainextract=${BrainExtract} \
-        --t2wtype=${T2wType} \
         --runmode=${RunMode} \
         --species=${SPECIES} \
         --truepatientposition=${TruePatientPosition} \
