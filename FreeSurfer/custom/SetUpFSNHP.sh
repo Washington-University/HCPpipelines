@@ -14,7 +14,7 @@ SkullStripMethod=PreFS                                             # PreFS or FS
 SPECIES="$1"
 isFLAIR="$2"    #NOTE: must be "0" or "1"
 
-if [[ "$SPECIES" =~ Human ]] ; then
+if [[ "$SPECIES" == *Human* ]] ; then
 
   IntensityCor="FAST"
   TemplateWMSkeleton="NONE"
@@ -40,7 +40,7 @@ if [[ "$SPECIES" =~ Human ]] ; then
   FSBBRDIFF=TRUE
   DiffWMProjAbs="2"
 
-elif [[ "$SPECIES" =~ Chimp ]] ; then
+elif [[ "$SPECIES" == *Chimp* ]] ; then
 
   IntensityCor="FAST"
   TemplateWMSkeleton="NONE"
@@ -79,7 +79,7 @@ elif [[ "$SPECIES" =~ Chimp ]] ; then
   FSBBRDIFF=TRUE
   DiffWMProjAbs="1"
 
-elif [[ "$SPECIES" =~ Macaque ]] ; then                            # tuned by TH and AU
+elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by TH and AU
 
   # IntensityCor
   IntensityCor="FAST"
@@ -96,13 +96,13 @@ elif [[ "$SPECIES" =~ Macaque ]] ; then                            # tuned by TH
   mris_inflate1_args="-n 250"                                 # set higher # of iterations (default=10) to avoid "white surface short cut"
   mris_sphere_args=" -RADIUS 55 -remove_negative 1"
 
-  if [[ "$SPECIES" =~ 30BS ]] ; then                          # Rhesus and Cyno hybrid template
+  if [[ "$SPECIES" == *30BS* ]] ; then                          # Rhesus and Cyno hybrid template
 
     BrainTemplate="Mac30BS"
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage" #Template Dir with FreeSurfer NHP GCA and TIF files
     TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton.nii.gz"
 
-  elif [[ "$SPECIES" =~ Cyno ]] ; then                        # Cynomolgus (Macaca fascicularis)
+  elif [[ "$SPECIES" == *Cyno* ]] ; then                        # Cynomolgus (Macaca fascicularis)
 
     #WMSeg_wlo="95"                                      # suppress white matter surface invasion to cortical ribbon  e.g. M174
     #mri_segment_args="-wlo $WMSeg_wlo" 
@@ -110,13 +110,13 @@ elif [[ "$SPECIES" =~ Macaque ]] ; then                            # tuned by TH
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
     TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
 
-  elif [[ "$SPECIES" =~ Rhesus ]] ; then                      # Rhesus (Macaca mulatta)
+  elif [[ "$SPECIES" == *Rhesus* ]] ; then                      # Rhesus (Macaca mulatta)
 
     BrainTemplate="Mac25Rhesus"
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
     TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
 
-  elif [[ "$SPECIES" =~ Snow ]] ; then                        # Japanese snow monkey (Macaca fuscata)
+  elif [[ "$SPECIES" == *Snow* ]] ; then                        # Japanese snow monkey (Macaca fuscata)
 
     BrainTemplate="Mac6Snow"
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
