@@ -627,9 +627,7 @@ if [ "${conf2hires}" = "TRUE" ] ; then
 fi
 
 # expert options for recon-all
-if [ -e "$SubjectDIR"/"$SubjectID".expert.opts ] ; then
-	rm "$SubjectDIR"/"$SubjectID".expert.opts
-fi
+rm -f "$SubjectDIR"/"$SubjectID".expert.opts
 
 for cmd in mri_normalize mri_segment mri_fill mris_inflate1 mris_inflate2 mris_smooth mris_make_surfaces mris_register bbregister; do    
 	cmd_args=${cmd}_args
