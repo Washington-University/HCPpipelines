@@ -505,9 +505,7 @@ log_Msg "Starting main functionality"
 
 
 
-# Species-specific environments imported from SPECIES4FS.cnf
-export SPECIES
-source ${HCPPIPEDIR}/FreeSurfer/custom/SetUpFSNHP.sh
+source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$Species"
 ScaleSuffix="_scaled"
 
 # Convert the --runmode string argument into a numeric code
