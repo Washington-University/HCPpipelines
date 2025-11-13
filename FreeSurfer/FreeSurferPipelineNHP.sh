@@ -534,38 +534,7 @@ case "$RunMode" in
 		;;
 esac
 
-## MPH: Hack!
-# For backwards compatibility, continue to allow positional specification of parameters for the above set of 6 parameters.
-# But any new parameters/options in the script will only be accessible via a named parameter/flag.
-# Here, we retrieve those from the global variable that was set in get_options()
-if [ "${flair}" = "TRUE" ] ; then
-	flair=${flair}
-fi
-if [ "${p_existing_subject}" = "TRUE" ] ; then
-	existing_subject=${p_existing_subject}
-fi
-if [ ! -z "${p_extra_reconall_args}" ] ; then
-	extra_reconall_args="${p_extra_reconall_args}"
-fi
-if [ ! -z "${p_conf2hires}" ] ; then
-	conf2hires=${p_conf2hires}
-fi
 
-# ----------------------------------------------------------------------
-# Log values retrieved from positional parameters
-# ----------------------------------------------------------------------
-log_Msg "SubjectDIR: ${SubjectDIR}"
-log_Msg "SubjectID: ${SubjectID}"
-log_Msg "T1wImage: ${T1wImage}"
-log_Msg "T1wImageBrain: ${T1wImageBrain}"
-log_Msg "T2wImage: ${T2wImage}"
-log_Msg "recon_all_seed: ${recon_all_seed}"
-log_Msg "flair: ${flair}"
-log_Msg "existing_subject: ${existing_subject}"
-log_Msg "extra_reconall_args: ${extra_reconall_args}"
-log_Msg "conf2hires: ${conf2hires}"
-log_Msg "runmode: ${RunMode}"
-log_Msg "SPECIES: ${SPECIES}"
 # ----------------------------------------------------------------------
 log_Msg "Figure out the number of cores to use."
 # ----------------------------------------------------------------------
