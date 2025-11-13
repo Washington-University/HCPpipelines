@@ -602,11 +602,6 @@ else
 		T2Type="NONE"		
 fi
 
-if [ $SPECIES = Human ] ; then
-	HumanProc="-curvstats -avgcurv -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -pctsurfcon -hyporelabel -aparc2aseg -apas2aseg -segstats -wmparc -balabels"
-else
-	HumanProc=""
-fi
 
 recon_all_cmd="recon-all.v6.hiresNHP"
 recon_all_cmd+=" -subjid ${SubjectID}"
