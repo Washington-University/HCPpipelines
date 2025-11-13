@@ -11,6 +11,8 @@
 
 SkullStripMethod=PreFS                                             # PreFS or FS. PreFS method is recommended for NHP - TH Feb 2024
 
+SPECIES="$1"
+isFLAIR="$2"    #NOTE: must be "0" or "1"
 
 if [[ "$SPECIES" =~ Human ]] ; then
 
