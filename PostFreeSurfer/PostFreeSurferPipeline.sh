@@ -140,10 +140,6 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-if [ "$LongitudinalMode" == "NONE" && "$Species" != "Human" ]; then 
-    log_Err_Abort "Longitudinal mode supports only human species." 
-fi
-
 #internal scripts don't actually support multiple low res in one call, mostly because they are in different folders
 if [[ "$GrayordinatesSpaceDIR" == "" ]]
 then
@@ -226,6 +222,10 @@ case "$LongitudinalMode" in
         log_Err_Abort "unrecognized value for --longitudinal mode: $LongitudinalMode" 
         ;;
 esac
+
+if [ "$Sesslist" != "NONE" && "$Species" != "Human" ]; then 
+    log_Err_Abort "Longitudinal mode supports only human species." 
+fi
 
 case "$ThicknessReg" in
     (NEW|OLD|BOTH)
