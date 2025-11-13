@@ -342,7 +342,7 @@ log_Msg "Parsing Command Line Options"
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(opts_StringToBool ${UseJacobian})"
 
-# Set UsePhaseZero to true or false
+# Set UsePhaseZero to 1 or 0
 UsePhaseZero=$(opts_StringToBool "$UsePhaseZero") 
 
 # Use --printcom=echo for just printing everything and not actually
