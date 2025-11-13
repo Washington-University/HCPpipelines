@@ -503,20 +503,7 @@ OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N
 log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 
-# ----------------------------------------------------------------------
-log_Msg "Retrieve positional parameters"
-# ----------------------------------------------------------------------
-SubjectDIR="${1}"
-SubjectID="${2}"
-T1wImage="${3}"       # Irrelevant if '--existing-subject' flag is set
-T1wImageBrain="${4}"  # Irrelevant if '--existing-subject' flag is set
-T2wImage="${5}"       # Irrelevant if '--existing-subject' flag is set
-recon_all_seed="${6}"
 
-#RunMode="$p_runmode"
-#SPECIES="$p_species"
-RunMode="${RunMode:-1}"
-SPECIES="${Species}"
 
 # Species-specific environments imported from SPECIES4FS.cnf
 export SPECIES
