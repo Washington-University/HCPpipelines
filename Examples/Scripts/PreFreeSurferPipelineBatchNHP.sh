@@ -103,9 +103,7 @@ fi
 source $EnvironmentScript
 
 # species specific config
-# If StrucRes is not provided, SetUpSPECIES.sh will use species-specific default
-#SPECIES="Human"
-#StrucRes=0.8 # 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
+# 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 
