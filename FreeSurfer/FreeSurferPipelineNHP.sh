@@ -1186,32 +1186,7 @@ log_Msg "Completing main functionality"
 
 
 
-# Global processing - everything above here should be in a function
 
-g_script_name=$(basename "${0}")
-
-
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-if [ -z "${HCPPIPEDIR}" ] ; then
-	echo "${g_script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-	exit 1
-fi
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-source ${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib  # Check processing mode requirements
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
-
-${HCPPIPEDIR}/show_version
 
 
 
