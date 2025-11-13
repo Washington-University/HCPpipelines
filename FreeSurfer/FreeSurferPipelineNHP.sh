@@ -549,7 +549,7 @@ else
 fi
 log_Msg "num_cores: ${num_cores}"
 
-if [ "${existing_subject}" != "TRUE" ] ; then
+if ((! existing_session)) ; then
 
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
 	# certain files need to be reverted to their PreFreeSurfer output versions
