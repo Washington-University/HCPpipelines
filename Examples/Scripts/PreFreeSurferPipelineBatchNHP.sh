@@ -133,7 +133,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #T2wTemplate2mm="${HCPPIPEDIR_Templates}/MNI152_T2_2mm" 
 #TemplateMask="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm_brain_mask.nii.gz" 
 #Template2mmMask="${HCPPIPEDIR_Templates}/MNI152_T1_2mm_brain_mask_dil.nii.gz" 
-#UsePhaseZero="FALSE" #Indicates whether to add T2-weighted image as a phase zero volume, for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
 
 
 # If you want to set parameters manually, 
@@ -187,6 +186,7 @@ for Subject in $Subjlist ; do
         #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
         #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
         #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
+        #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
     fi
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then

@@ -1,7 +1,7 @@
 ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
 T1wInputImages="t1_1 t1_2"                                            # input T1w
 T2wInputImages="t2_1 t2_2"                                            # input T2w
-T2wType="T2w"                                                         # T2w contrast type: T2w (default) or FLAIR, to be used for FreeSurferPipeline
+UsePhaseZero="TRUE"                                                   # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
 # optional variables of sMRI
 StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
 StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
