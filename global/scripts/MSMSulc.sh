@@ -22,7 +22,6 @@ opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the co
 opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, L=Left, R=Right, default B=Both" "B"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
-opts_AddOptional '--species' 'Species' 'string'	"set species [Human]" "Human"
 
 opts_ParseArguments "$@"
 
@@ -55,9 +54,6 @@ then
 	RefData="$SurfaceTemplateFolder"/HEMISPHERE.refsulc.164k_fs_LR.shape.gii
 fi
 
-NonHumanSpecies=0
-if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
-
 #Make MSMSulc Directory
 mkdir -p "$NativeFolder"/"$RegName"
 
@@ -82,13 +78,6 @@ for Hemisphere in $Hemi ; do
 	ReferenceMesh="$(cd "$(dirname -- "$RefMesh")"; pwd)/${RefMeshFile/HEMISPHERE/$Hemisphere}"
 	RefDataFile=$(basename -- "$RefData")
 	ReferenceData="$(cd "$(dirname -- "$RefData")"; pwd)/${RefDataFile/HEMISPHERE/$Hemisphere}"
-
-	if (( NonHumanSpecies )); then 
-		wb_command -surface-affine-regression "$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$NativeFolder"/${Subject}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii "$NativeFolder"/MSMSulc/${Hemisphere}.mat
-		wb_command -surface-apply-affine "$NativeFolder"/${Subject}.${Hemisphere}.sphere.native.surf.gii "$NativeFolder"/MSMSulc/${Hemisphere}.mat "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-		wb_command -surface-modify-sphere "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii 100 "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-		cp "$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii "$NativeFolder"/${Subject}.${Hemisphere}.sphere.rot.native.surf.gii
-	fi
 
 	(
 		cd "$NativeFolder"/"$RegName"
