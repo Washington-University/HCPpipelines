@@ -52,11 +52,12 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
   SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
   T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
   T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
+  isFLAIR=false
   if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
       T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
       T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
       if [ "$T2wType" = "FLAIR" ] ; then 
-         FLAIRopt="--flair"
+         isFLAIR=true
       fi
   else
   	T2wImage="NONE"
@@ -69,7 +70,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
       --t1="$T1wImage" \
       --t1brain="$T1wImageBrain" \
       --t2="$T2wImage" \
-      "$FLAIRopt" \
+      --flair="$isFLAIR" \
       --species="$SPECIES" \
       --runmode="$RunMode" 
 
@@ -80,7 +81,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
       --t1="$T1wImage" \
       --t1brain="$T1wImageBrain" \
       --t2="$T2wImage" \
-      "$FLAIRopt" \
+      --flair="$isFLAIR" \
       --species="$SPECIES" \
       --runmode="$RunMode" 
 
