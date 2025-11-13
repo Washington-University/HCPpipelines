@@ -187,7 +187,6 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
-# 既存のパラメータ処理部分の後に追加
 if [[ "$Species" == "NONE" ]]; then
     Species=""
 fi
