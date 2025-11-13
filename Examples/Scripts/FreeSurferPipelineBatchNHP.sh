@@ -75,14 +75,14 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
-  echo "set -- --subject="$Subject" \
+  echo set -- --subject="$Subject" \
       --subjectDIR="$SubjectDIR" \
       --t1="$T1wImage" \
       --t1brain="$T1wImageBrain" \
       --t2="$T2wImage" \
       "$FLAIRopt" \
       --species="$SPECIES" \
-      --runmode="$RunMode"" 
+      --runmode="$RunMode" 
 
   echo ". ${EnvironmentScript}"
 
