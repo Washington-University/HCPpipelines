@@ -47,45 +47,45 @@ PRINTCOM=""
 
 for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
 
-  #Input Variables
-  SubjectID="$Subject" #FreeSurfer Subject ID Name
-  SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
-  T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-  T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
-  isFLAIR=false
-  if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
-      T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
-      T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
-      if [ "$T2wType" = "FLAIR" ] ; then 
-         isFLAIR=true
-      fi
-  else
-  	T2wImage="NONE"
-	T2wType=NONE
-  fi
+    #Input Variables
+    SubjectID="$Subject" #FreeSurfer Subject ID Name
+    SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
+    T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+    T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
+    isFLAIR=false
+    if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
+        T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+        T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
+        if [ "$T2wType" = "FLAIR" ] ; then 
+            isFLAIR=true
+        fi
+    else
+        T2wImage="NONE"
+        T2wType=NONE
+    fi
   
-     ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
-      --subject="$Subject" \
-      --subjectDIR="$SubjectDIR" \
-      --t1="$T1wImage" \
-      --t1brain="$T1wImageBrain" \
-      --t2="$T2wImage" \
-      --flair="$isFLAIR" \
-      --species="$SPECIES" \
-      --runmode="$RunMode" 
+    ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
+        --subject="$Subject" \
+        --subjectDIR="$SubjectDIR" \
+        --t1="$T1wImage" \
+        --t1brain="$T1wImageBrain" \
+        --t2="$T2wImage" \
+        --flair="$isFLAIR" \
+        --species="$SPECIES" \
+        --runmode="$RunMode" 
 
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+    # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
-  echo set -- --subject="$Subject" \
-      --subjectDIR="$SubjectDIR" \
-      --t1="$T1wImage" \
-      --t1brain="$T1wImageBrain" \
-      --t2="$T2wImage" \
-      --flair="$isFLAIR" \
-      --species="$SPECIES" \
-      --runmode="$RunMode" 
+    echo set -- --subject="$Subject" \
+        --subjectDIR="$SubjectDIR" \
+        --t1="$T1wImage" \
+        --t1brain="$T1wImageBrain" \
+        --t2="$T2wImage" \
+        --flair="$isFLAIR" \
+        --species="$SPECIES" \
+        --runmode="$RunMode" 
 
-  echo ". ${EnvironmentScript}"
+    echo ". ${EnvironmentScript}"
 
 done
 
