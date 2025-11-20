@@ -68,8 +68,21 @@ if [ -n "${command_line_specified_sess}" ]; then
     Sesslist="${command_line_specified_sess}"
 fi
 
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" $StructResOption
 
+#The following values are set in SetUpSPECIES.sh:
+# Example for chimp:
+# MyelinMappingFWHM="4" 
+# SurfaceSmoothingFWHM="4" 
+# CorrectionSigma=6
+# SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
+# GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
+# ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+# LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
+# FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
+# SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
+# GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human.
+
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" $StructResOption
 
 
 # Requirements for this script
@@ -99,11 +112,11 @@ for Session in $Sesslist ; do
     echo $Session
 
     #Input Variables
-    SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
-    GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/91282_Greyordinates"
-    GrayordinatesResolutions="2" #Usually 2mm, if multiple delimit with @, must already exist in templates dir
+    #SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
+    #GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/91282_Greyordinates"
+    #GrayordinatesResolutions="2" #Usually 2mm, if multiple delimit with @, must already exist in templates dir
     HighResMesh="164" #Usually 164k vertices
-    LowResMeshes="32" #Usually 32k vertices, if multiple delimit with @, must already exist in templates dir
+    #LowResMeshes="32" #Usually 32k vertices, if multiple delimit with @, must already exist in templates dir
     SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
     FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
@@ -121,7 +134,7 @@ for Session in $Sesslist ; do
         --session="$Session" \
         --surfatlasdir="$SurfaceAtlasDIR" \
         --grayordinatesdir="$GrayordinatesSpaceDIR" \
-        --grayordinatesres="$GrayordinatesResolutions" \
+        --grayordinatesres="$GrayordinatesResolution" \
         --hiresmesh="$HighResMesh" \
         --lowresmesh="$LowResMeshes" \
         --subcortgraylabels="$SubcorticalGrayLabels" \
@@ -129,7 +142,12 @@ for Session in $Sesslist ; do
         --refmyelinmaps="$ReferenceMyelinMaps" \
         --regname="$RegName" \
         --use-ind-mean="$UseIndMean"\
-        --species="$Species")
+        --species="$Species"
+        --mcsigma="$CorrectionSigma"
+        --myelin-voume-fwhm="$MyelinMappingFWHM"
+        --myelin-surface-fwhm="$SurfaceSmoothingFWHM"
+        
+        )
     
     "${job[@]}"
 
