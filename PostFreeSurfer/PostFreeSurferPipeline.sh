@@ -124,7 +124,6 @@ opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Lon
 #NHP options
 opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target species for non-human primate processing [Human]" "Human"
 
-#TODO NHP: choose adequate default options
 opts_AddOptional '--myelin-volume-fwhm' 'MyelinVolumeFWHM' 'float' "Myelin mapping volume smoothing FWHM" "2"
 opts_AddOptional '--myelin-surface-fwhm' 'MyelinSurfaceFWHM' 'float' "Myelin mapping surface smoothing FWHM" "2"
 opts_AddOptional '--msmsulc-conf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "NONE"
