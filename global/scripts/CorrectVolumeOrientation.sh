@@ -98,6 +98,15 @@ if [ -z "$CARET7DIR" ] ; then
     log_Err_Abort "CARET7DIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+# sanity check the input arguments
+if [ $omat == NONE ] ; then
+  omat=FALSE
+fi
+if [ $reorient2std == NONE ] ; then
+  reorient2std=FALSE
+fi
+omat=$(opts_StringToBool "$omat")
+reorient2std=$(opts_StringToBool "$reorient2std")
 # Display the parsed/default values
 opts_ShowValues
 
@@ -224,7 +233,7 @@ fi
 
 ${CARET7DIR}/wb_command -convert-affine -from-world ${tmp}_reorient.world.mat -to-flirt ${tmp}_reorient.mat ${in} ${applytrans}.nii.gz
 
-if [ $omat != NONE ] ; then
+if [ $omat != FALSE ] ; then
   mv ${tmp}_reorient.mat ${out}_reorient.mat
   mv ${tmp}_reorient.world.mat ${out}_reorient.world.mat
 else
