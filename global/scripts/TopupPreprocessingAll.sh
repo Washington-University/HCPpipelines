@@ -65,9 +65,9 @@ opts_AddOptional '--phasetwo2' 'PhaseEncodeTwo2' 'image(s)' "second set of SE EP
 
 opts_AddOptional '--scoutinbrain' 'ScoutInputBrainName' 'image' "scout input brain image: should be corrected for gradient non-linear distortions"
 
-opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "HFS (default), HFP"
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "HFS (default), HFP" 'HFS'
 
-opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (default), HFSx, FFSx"
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (default), HFSx, FFSx" 'HFS'
 
 opts_AddOptional '--initworldmat' 'InitWorldMat' 'matrix' "world matrix moving func to structure space"
 
