@@ -202,7 +202,10 @@ fi
 
 # Correct orientation
 readsform ${in} ${tmp}_sform.mat
-convert_xfm -omat ${tmp}_reorient.world.mat -concat ${tmp}_reorient_II.world.mat ${tmp}_reorient_I.world.mat
+convert_xfm -omat ${tmp}_reorient_II_inv.world.mat -inverse ${tmp}_reorient_II.world.mat
+#undo the scanner-applied patient orientation transform to get bore coordinates, then apply the true patient orientation transform
+convert_xfm -omat ${tmp}_reorient.world.mat -concat ${tmp}_reorient_I.world.mat ${tmp}_reorient_II_inv.world.mat
+#apply combined transform to sform
 convert_xfm -omat ${tmp}_newsform.mat -concat ${tmp}_reorient.world.mat ${tmp}_sform.mat
 ${CARET7DIR}/wb_command -volume-set-space ${in} ${tmp}.nii.gz -sform $(cat ${tmp}_newsform.mat | head -3)
 
