@@ -161,9 +161,6 @@ fi
 ${FSLDIR}/bin/imcp $PhaseEncodeOne ${WD}/PhaseOne
 ${FSLDIR}/bin/imcp $PhaseEncodeTwo ${WD}/PhaseTwo
 ${FSLDIR}/bin/imcp $ScoutInputName ${WD}/SBRef
-log_Msg "SBRef: $ScoutInputName"
-log_Msg "PhaseOne: $PhaseEncodeOne"
-log_Msg "PhaseTwo: $PhaseEncodeTwo"
 
 if [[ ! -z $PhaseEncodeOne2 && $PhaseEncodeOne2 != NONE ]] ; then 
     if [[ `fslhd $PhaseEncodeOne2 | grep '^dim[123]'` != `fslhd $ScoutInputName | grep '^dim[123]'` ]]
@@ -172,8 +169,6 @@ if [[ ! -z $PhaseEncodeOne2 && $PhaseEncodeOne2 != NONE ]] ; then
     fi
     ${FSLDIR}/bin/imcp $PhaseEncodeOne2 ${WD}/PhaseOne2
     ${FSLDIR}/bin/imcp $PhaseEncodeTwo2 ${WD}/PhaseTwo2
-    log_Msg "PhaseOne2: $PhaseEncodeOne2"
-    log_Msg "PhaseTwo2: $PhaseEncodeTwo2"
     Phase2ndDir=TRUE
 else
     Phase2ndDir=FALSE
