@@ -293,7 +293,7 @@ else
         ${FSLDIR}/bin/imcp ${WD}/PhaseTwo2 ${WD}/PhaseTwo2_gdc
     fi
 
-    if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+    if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
         if [ ! -z "$InitWorldMat" ] ; then
             log_Msg "Apply init rigid-body transformation"
             initmat="--init=${InitWorldMat}"
