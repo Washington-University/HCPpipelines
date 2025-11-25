@@ -138,7 +138,7 @@ log_Check_Env_Var HCPPIPEDIR_Global
 # For distortion correction:
 #
 # Output files (in $WD): Magnitude  Magnitude_brain  Phase  FieldMap
-#                        Magnitude_brain_warpedT1w  Magnitude_brain_warpedT1w2${TXwImageBrainBasename}
+#                        Magnitude_brain_warppedT1w  Magnitude_brain_warppedT1w2${TXwImageBrainBasename}
 #                        fieldmap2${T1wImageBrainBasename}.mat   FieldMap2${T1wImageBrainBasename}
 #                        FieldMap2${T1wImageBrainBasename}_ShiftMap
 #                        FieldMap2${T1wImageBrainBasename}_Warp ${T1wImageBasename}  ${T1wImageBrainBasename}
