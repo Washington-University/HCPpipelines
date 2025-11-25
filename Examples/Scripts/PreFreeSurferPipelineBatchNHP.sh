@@ -189,14 +189,14 @@ for Subject in $Subjlist ; do
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then
         if [[ -n $StrucTopupPositive && -n $StrucTopupNegative && -n $StrucSEDwellTime && "$StrucTopupPositive" != NONE ]] ; then
-            SpinEchoPhaseEncodeNegative=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupNegative | awk '{print $1}') # first SEfield will be used
-            SpinEchoPhaseEncodePositive=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupPositive | awk '{print $1}') # first SEfield will be used
+            SpinEchoPhaseEncodeNegative=${StudyFolder}/${Subject}/RawData/$StrucTopupNegative
+            SpinEchoPhaseEncodePositive=${StudyFolder}/${Subject}/RawData/$StrucTopupPositive
             if [[ -n $StrucTopupPositive2  && -n $StrucTopupNegative2 && "$StrucTopupPositive2" != NONE ]] ; then
-                SpinEchoPhaseEncodeNegative2=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupNegative2 | awk '{print $1}') # first SEfield will be used
-                SpinEchoPhaseEncodePositive2=${StudyFolder}/${Subject}/RawData/$(echo $StrucTopupPositive2 | awk '{print $1}') # first SEfield will be used
+                SpinEchoPhaseEncodeNegative2=${StudyFolder}/${Subject}/RawData/$StrucTopupNegative2
+                SpinEchoPhaseEncodePositive2=${StudyFolder}/${Subject}/RawData/$StrucTopupPositive2
             fi
-            SEEchoSpacing="$(echo $StrucSEDwellTime | awk '{print $1}')"    # dwell time for SE field, read from SEEchoSpacing in Seriesinfo.txt
-            SEUnwarpDir="$(echo $StrucSEUnwarpDir | awk '{print $1}')"  # read from PhaseEncodinglist in Seriesinfo.txt. x or y (minus or not does not matter)
+            SEEchoSpacing=$StrucSEDwellTime # dwell time for SE field, read from SEEchoSpacing in Seriesinfo.txt
+            SEUnwarpDir=$StrucSEUnwarpDir # read from PhaseEncodinglist in Seriesinfo.txt. x or y (minus or not does not matter)
             AvgrdcSTRING="TOPUP" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction "TOPUP" = Use Spin Echo FieldMap
         elif [[ $(imtest $StrucMagnitudeInputName) = 1 && $(imtest $StrucPhaseInputName) = 1 && -n $StrucDwelltime ]] ; then
             MagnitudeInputName="${StudyFolder}/${Subject}/RawData/${StrucMagnitudeInputName}" #Expects 4D magitude volume with two 3D timepoints or "NONE" if not used
