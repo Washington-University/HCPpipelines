@@ -33,9 +33,9 @@ opts_AddMandatory '--out' 'Output' 'image' 'output_image'
 
 opts_AddMandatory '--omat' 'OutputMatrix' 'matrix' 'output matrix'
 
-#optional args
-opts_AddOptional '--ref' 'Reference' 'image' 'reference image' "${FSLDIR}/data/standard/MNI152_T1_1mm.nii.gz"
+opts_AddMandatory '--ref' 'Reference' 'image' 'reference image' 
 
+#optional args
 opts_AddOptional '--brainsize' 'BrainSizeOpt' 'value' 'brainsize'
 
 opts_AddOptional '--brainextract' 'BrainExtract' 'method' 'brain extraction method: EXVIVO or INVIVO (default)' "INVIVO"
