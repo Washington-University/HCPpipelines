@@ -54,6 +54,8 @@ opts_AddOptional '--fmri-qc' 'QCMode' 'YES OR NO OR ONLY' "Controls whether to g
 
 opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to do goodVoxel procedure (default = YES)" "YES"
 
+opts_AddOptional '--species' 'Species' 'e.g. Human, etc.' "Species [Human]" "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -150,7 +152,7 @@ if ((doProcessing)); then
 
     #Subcortical Processing
     log_Msg "Subcortical Processing"
-    "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
+    "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution" "$Species"
 
     #Generation of Dense Timeseries
     log_Msg "Generation of Dense Timeseries"

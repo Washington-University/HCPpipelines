@@ -73,6 +73,8 @@ log_Msg "SmoothingFWHM: ${SmoothingFWHM}"
 BrainOrdinatesResolution="$7"
 log_Msg "BrainOrdinatesResolution: ${BrainOrdinatesResolution}"
 
+Species="$8"
+
 VolumefMRI="${ResultsFolder}/${NameOffMRI}"
 log_Msg "VolumefMRI: ${VolumefMRI}"
 
@@ -84,6 +86,9 @@ log_Msg "Sigma: ${Sigma}"
 
 #deal with fsl_sub being silly when we want to use numeric equality on decimals
 unset POSIXLY_CORRECT
+
+NonHumanSpecies=0
+if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
 
 #generate subject-roi space fMRI cifti for subcortical
 if [[ `echo "$BrainOrdinatesResolution == $FinalfMRIResolution" | bc -l | cut -f1 -d.` == "1" ]]
@@ -99,7 +104,12 @@ fi
 
 log_Msg "Dilating out zeros"
 #dilate out any exact zeros in the input data, for instance if the brain mask is wrong. Note that the CIFTI space cannot contain zeros to produce a valid CIFTI file (dilation also occurs below).
-${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+if (( NonHumanSpecies )); then 
+    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii -nearest -merged-volume
+else
+    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+fi
+
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii
 
 log_Msg "Generate atlas subcortical template cifti"
@@ -126,11 +136,18 @@ rm -f ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii
 #the standard space output cifti must not contain zeros (or correlation, ICA, variance normalization, etc will break), so dilate in case freesurfer was unable to segment something (may only be applicable for bad quality structurals)
 #NOTE: wb_command v1.4.0 and later should only output exact 0s past the edge of predilate, so this works as desired
 #earlier verions of wb_command may produce undesired results in the subjects that need this dilation
-${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
+
+#TODO NHP: the command below doesn't have analog in NHP version. Resolve before merging.
+if (( NonHumanSpecies )); then 
+    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii -nearest -merged-volume
+else
+    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
+fi    
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii
 
 #write output volume, delete temporary
 #NOTE: $VolumefMRI contains a path in it, it is not a file in the current directory
+#TODO check NHP: NHP version doesn't have '_dilate' suffix in the command below - supposedly because no dilation is done. Resolve before merging.
 ${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii COLUMN -volume-all "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
 
