@@ -222,7 +222,7 @@ case "$LongitudinalMode" in
         ;;
 esac
 
-if [ "$Sesslist" != "NONE" && "$Species" != "Human" ]; then 
+if [ "$IsLongitudinal" != "0" ] && [ "$Species" != "Human" ]; then 
     log_Err_Abort "Longitudinal mode supports only human species." 
 fi
 
