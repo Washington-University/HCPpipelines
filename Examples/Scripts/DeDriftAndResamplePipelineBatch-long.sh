@@ -4,7 +4,6 @@ get_batch_options() {
     local arguments=("$@")
 
     command_line_specified_study_folder=""
-    command_line_specified_subj=""
     command_line_specified_run_local="FALSE"
 
     local index=0
@@ -134,10 +133,6 @@ MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_M
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
-fi
-
-if [ -n "${command_line_specified_subj}" ]; then
-    Subjlist="${command_line_specified_subj}"
 fi
 
 # Log the originating call
