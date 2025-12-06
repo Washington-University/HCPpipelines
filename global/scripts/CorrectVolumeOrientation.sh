@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Takuya Hayashi, RIKEN Brain Connectomics Imaging Laboratory, Kobe
+# Tim Coalson, Washington University in St. Louis
 
 set -eu
 
@@ -79,7 +81,7 @@ $ wb_command -convert-affine T1w_d2_reorient2ref.mat T1w_d2_reorient.nii.gz
 "
 
 opts_AddMandatory '--in'               'volin'           'volume'                 "input volume scanned with a true patient position in the scanner."
-opts_AddMandatory '--tposition'        'TruePosition'    'HFSx, FFSx, HFS, FFS' "true patient position in the scanner"
+opts_AddMandatory '--tposition'        'TruePosition'    'HFSx, FFSx, HFS, HFP, FFS, FFP' "true patient position in the scanner"
 opts_AddMandatory '--sposition'        'PatientPosition' 'HFS, HFP, FFS, FFP, NONE'    "patient position entered in the scanner, described in the tag (0018,5100) in the standard DICOM. If specified NONE, it does not change sform unless specified --init option."
 opts_AddMandatory '--out'              'out'             'volume'                 "output volume filename." 
 opts_AddOptional  '--omat'             'omat'            'TRUE or NONE (default)' "output transformation matrix for reorientation. Outputs are <out>_reorient.world.mat (in world format) and <out>_reorient.mat (FSL flirt format)." "NONE"
@@ -144,10 +146,10 @@ if [ $TruePosition = HFSx ] ; then
   echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 elif [ $TruePosition = FFSx ] ; then
-  # rotation y=180
+  # rotation x=180, y=180
   echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
-  echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
-  echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 elif [ $TruePosition = HFS ] ; then
   # rotate x=-90, z=180
@@ -155,21 +157,33 @@ elif [ $TruePosition = HFS ] ; then
   echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
-elif [ $TruePosition = FFS ] ; then
+elif [ $PatientPosition = HFP ] ; then
   # rotation x=-90
   echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
   echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+elif [ $TruePosition = FFS ] ; then
+  # rotation x=90
+  echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
+elif [ $TruePosition = FFP ] ; then
+  # rotation x=90, z=180
+  echo "-1  0  0  0" >  ${tmp}_reorient_I.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
 else
   log_Err_Abort "unknown position: $TruePosition"
 fi
 
 if [ $PatientPosition = HFP ] ; then
-  # rotation x=90
+  # rotation x=-90
   echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
-  echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
-  echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = HFS ] ; then
   # rotation x=-90, z=180
@@ -178,10 +192,10 @@ elif [ $PatientPosition = HFS ] ; then
   echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = FFS ] ; then
-  # rotation x=-90
+  # rotation x=90
   echo " 1  0  0  0" >  ${tmp}_reorient_II.world.mat
-  echo " 0  0 -1  0" >> ${tmp}_reorient_II.world.mat
-  echo " 0  1  0  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0  0  1  0" >> ${tmp}_reorient_II.world.mat
+  echo " 0 -1  0  0" >> ${tmp}_reorient_II.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_II.world.mat
 elif [ $PatientPosition = FFP ] ; then
   # rotation x=90, z=180
@@ -243,6 +257,6 @@ else
   rm ${tmp}_reorient.world.mat ${tmp}_reorient.mat
 fi
 mv ${tmp}.nii.gz ${out}.nii.gz
-rm ${tmp}_sform.mat ${tmp}_newsform.mat ${tmp}_reorient_I.world.mat ${tmp}_reorient_II.world.mat
+rm ${tmp}_sform.mat ${tmp}_newsform.mat ${tmp}_reorient_I.world.mat ${tmp}_reorient_II.world.mat ${tmp}_reorient_II_inv.world.mat
 
 exit 0
