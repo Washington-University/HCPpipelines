@@ -140,7 +140,6 @@ rm -f ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii
 #NOTE: wb_command v1.4.0 and later should only output exact 0s past the edge of predilate, so this works as desired
 #earlier verions of wb_command may produce undesired results in the subjects that need this dilation
 
-#TODO NHP: the command below doesn't have analog in NHP version. Resolve before merging.
 if (( NonHumanSpecies )); then 
     ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii -nearest -merged-volume
 else
@@ -150,7 +149,6 @@ rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii
 
 #write output volume, delete temporary
 #NOTE: $VolumefMRI contains a path in it, it is not a file in the current directory
-#TODO check NHP: NHP version doesn't have '_dilate' suffix in the command below - supposedly because no dilation is done. Resolve before merging.
 ${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii COLUMN -volume-all "$VolumefMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
 
