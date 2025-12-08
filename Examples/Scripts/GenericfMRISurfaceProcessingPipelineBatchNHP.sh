@@ -81,6 +81,9 @@ fi
 #Set up pipeline environment variables and software
 source "$EnvironmentScript"
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES"
+#HACK: work around the log tool name hack in the sourced script
+#since debug.shlib will be active by default, set the log toolname back to the Batch script
+log_SetToolName "$(basename -- "$0")"
 
 
 # Log the originating call
