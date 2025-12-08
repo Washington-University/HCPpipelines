@@ -105,10 +105,12 @@ fi
 
 log_Msg "Dilating out zeros"
 #dilate out any exact zeros in the input data, for instance if the brain mask is wrong. Note that the CIFTI space cannot contain zeros to produce a valid CIFTI file (dilation also occurs below).
-if (( NonHumanSpecies )); then 
-    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii -nearest -merged-volume
+if (( NonHumanSpecies )); then
+    "$CARET7DIR"/wb_command -cifti-dilate "${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii" COLUMN 0 10 "${ResultsFolder}/${NameOffMRI}_temp_subject_dilate_init.dtseries.nii"
+    "$CARET7DIR"/wb_command -cifti-dilate "${ResultsFolder}/${NameOffMRI}_temp_subject_dilate_init.dtseries.nii" COLUMN 0 10 "${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii" -nearest -merged-volume
+    rm -f "${ResultsFolder}/${NameOffMRI}_temp_subject_dilate_init.dtseries.nii"
 else
-    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii
+    "$CARET7DIR"/wb_command -cifti-dilate "${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii" COLUMN 0 30 "${ResultsFolder}/${NameOffMRI}_temp_subject_dilate.dtseries.nii"
 fi
 
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_subject.dtseries.nii
