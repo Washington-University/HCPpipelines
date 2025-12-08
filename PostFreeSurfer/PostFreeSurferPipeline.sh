@@ -222,7 +222,7 @@ case "$LongitudinalMode" in
         ;;
 esac
 
-if [ "$IsLongitudinal" != "0" ] && [ "$Species" != "Human" ]; then 
+if (( IsLongitudinal )) && [ "$Species" != "Human" ]; then 
     log_Err_Abort "Longitudinal mode supports only human species." 
 fi
 
@@ -374,8 +374,8 @@ if ((doProcessing)); then
     argList+=("$LongitudinalTemplate")      # ${26}
     argList+=("$SessionList")               # ${27}
     argList+=("$Species")                   # ${28} NHP parameters
-    argList+=("MSMSulcConf")                # ${29}
-    argList+=("FlatMapRootName")            # #{30} 
+    argList+=("$MSMSulcConf")                # ${29}
+    argList+=("$FlatMapRootName")            # #{30} 
 
     
     "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
@@ -444,8 +444,8 @@ if ((doProcessing)); then
     argList+=("$IsLongitudinal")                            #Longitudinal option
     argList+=("$ThicknessReg")                              # ${42}
     argList+=("$Species")                                   # ${43} NHP parameters
-    argList+=("MyelinVolumeFWHM")                          # ${44}
-    argList+=("MyelinSurfaceFWHM")                       # ${45}
+    argList+=("$MyelinVolumeFWHM")                          # ${44}
+    argList+=("$MyelinSurfaceFWHM")                       # ${45}
     
     "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
 fi
