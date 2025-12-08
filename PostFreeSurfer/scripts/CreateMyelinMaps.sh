@@ -404,7 +404,9 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		--use-ind-mean="$UseIndMean" \
 		--low-res-mesh="$LowResMesh" \
 		--myelin-target-file="$MyelinTargetFile" \
-		--map="MyelinMap"
+		--map="MyelinMap" \
+		--mcsigma="$CorrectionSigma"
+
 	# ----- End moved statements -----		
 	# bias field is computed in the module MyelinMap_BC.sh
 	# TODO NHP test this command for NHP subjects
