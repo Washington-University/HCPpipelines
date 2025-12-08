@@ -74,6 +74,7 @@ BrainOrdinatesResolution="$7"
 log_Msg "BrainOrdinatesResolution: ${BrainOrdinatesResolution}"
 
 Species="$8"
+log_Msg "Species: ${Species}"
 
 VolumefMRI="${ResultsFolder}/${NameOffMRI}"
 log_Msg "VolumefMRI: ${VolumefMRI}"
