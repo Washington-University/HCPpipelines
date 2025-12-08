@@ -59,7 +59,7 @@ get_batch_options "$@"
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Session folders (named by SessionID)
 Sesslist="100307 100610" #Space delimited list of Session IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-SPECIES="Human"
+SPECIES="Macaque"
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -150,7 +150,8 @@ for Session in $Sesslist ; do
             --fmrires="$FinalfMRIResolution" \
             --smoothingFWHM="$SmoothingFWHM" \
             --grayordinatesres="$GrayordinatesResolution" \
-            --regname="$RegName"
+            --regname="$RegName" \
+            --species="$SPECIES"
 
         # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -161,7 +162,8 @@ for Session in $Sesslist ; do
             --fmrires=$FinalfMRIResolution \
             --smoothingFWHM=$SmoothingFWHM \
             --grayordinatesres=$GrayordinatesResolution \
-            --regname=$RegName"
+            --regname=$RegName" \
+            --species="$SPECIES"
 
         echo ". ${EnvironmentScript}"
 
