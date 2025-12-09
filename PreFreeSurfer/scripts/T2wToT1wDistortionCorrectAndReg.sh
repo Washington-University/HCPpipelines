@@ -152,7 +152,7 @@ log_Check_Env_Var HCPPIPEDIR_Global
 #
 # Output images (in $WD/T2w2T1w):  sqrtT1wbyT2w  T2w_reg.mat  T2w_reg_init.mat
 #                                  T2w_dc_reg  (the warp field)
-#                                  T2w_reg     (the warped image)
+#                                  T2w_reg     (the warpped image)
 # Output images (not in $WD):  ${OutputT2wTransform}   ${OutputT2wImage}
 #        Note that these outputs are copies of the last two images (respectively) from the T2w2T1w subdirectory
 
@@ -428,8 +428,8 @@ for TXw in $Modalities ; do
 
         ${SPIN_ECHO_METHOD_OPT})
             if [[ ! $SPECIES == *Marmoset* ]] ; then
-                ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warped${TXw}
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+                ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
             else  # Marmoset data does not work well for BET-based brain extraction, thus start from the head image and scanner coordinates
                 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
                 # Register fieldmap to ACPC space assuming that head is not much moving during scans between SEfield and structure
