@@ -381,7 +381,7 @@ if [[ $UnwarpDir = [xi] || $UnwarpDir = [xi]- || $UnwarpDir = -[xi] ]] ; then
         i=`echo "$i + 1" | bc`
     done
     if [ $Phase2ndDir = TRUE ] ; then
-        dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne2 dim1`
+        dimP=`${FSLDIR}/bin/fslval ${WD}/PhaseOne2 dim2`
         dimPminus1=$(($dimP - 1))
         ro_time=`echo "scale=6; ${SEEchoSpacing} * ${dimPminus1}" | bc -l` #Compute Total_readout in secs with up to 6 decimal places
         log_Msg "Total readout time is $ro_time secs"
