@@ -25,7 +25,7 @@ Subjlist="100307 100610"
 SPECIES="Human"
 RunMode="Default"
 BrainExtract="INVIVO"
-StrucRes="0.8"
+StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 UnwarpDir=""
 
 # Parse command line arguments
@@ -102,8 +102,10 @@ if [ -z ${EnvironmentScript} ] ; then
 fi
 source $EnvironmentScript
 
-# species specific config
-# 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
+#HACK: work around the log tool name hack in SetUpSPECIES.sh
+#since debug.shlib will be active by default, set the log toolname back to the Batch script
+log_SetToolName "$(basename -- "$0")"
+
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 
@@ -138,9 +140,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 # (Default values are for Human).
 # ------------------------------------------------------------------------------
 
-#HACK: work around the log tool name hack in the sourced script
-#since debug.shlib will be active by default, set the log toolname back to the Batch script
-log_SetToolName "$(basename -- "$0")"
 
 for Subject in $Subjlist ; do
     echo $Subject
