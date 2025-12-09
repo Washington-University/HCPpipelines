@@ -293,6 +293,7 @@ opts_AddOptional '--bettop2center' 'bettop2center' 'int' "Distance from top to c
 opts_AddOptional '--brainextract' 'BrainExtract' 'string' "Brain extraction method (default: INVIVO)" "INVIVO"
 opts_AddOptional '--use-t2w-phase-zero' 'UsePhaseZero' 'TRUE/FALSE' "Indicates whether to add T2-weighted image as a phase zero volume, for bright-CSF T2w contrast acquisition types (e.g., not FLAIR)" "FALSE"
 opts_AddOptional '--bias-field-sigma-no-T2w' 'BiasFieldSmoothingSigmaNoT2w' 'value' "Bias Field Smoothing Sigma for Bias Field Correction using T1w image only (only for NHP, default: 20)" "20"
+opts_AddOptional '--betbiasfieldcor' 'BetBiasFieldCor' 'TRUE/FALSE' "Indicates whether to correct bias field for BET (default: FALSE)" "FALSE"
 
 # ------------------------------------------------------------------------------
 #  Parse Arugments
@@ -699,7 +700,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --ref2mm=${TXwTemplate2mm} \
                 --ref2mmmask=${Template2mmMask} \
                 --custommask=${CustomMask} \
-                --species=${SPECIES}
+                --species=${SPECIES} \
+                --betbiasfieldcor=${BetBiasFieldCor}
         fi
 
         if [ "$RunMode" -lt 4 ]; then

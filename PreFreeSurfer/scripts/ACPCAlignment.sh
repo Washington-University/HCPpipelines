@@ -54,8 +54,9 @@ opts_AddOptional '--ref2mmmask' 'Reference2mmMask' 'image' '2mm reference mask' 
 
 opts_AddOptional '--custommask' 'CustomMask' 'image' 'custom brain mask' "NONE"
 
-opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
+opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human" 
 
+opts_AddOptional '--betbiasfieldcor' 'BetBiasFieldCor' 'TRUE/FALSE' "Indicates whether to correct bias field for BET (default: FALSE)" "FALSE"
 
 opts_ParseArguments "$@"
 
@@ -175,7 +176,7 @@ elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
   centerx=$(echo "$dim1*0.5" | bc | awk '{printf "%d", $1}')
   centery=$(echo "$dim2*0.48" | bc| awk '{printf "%d", $1}')
   centerz=$(echo "$dim3 - $BetTop2Center/$pixdim3" | bc | awk '{printf "%d", $1}') 
-  if [ "$BiasfieldCor" = TRUE ] ; then
+  if [ "$BetBiasFieldCor" = TRUE ] ; then
     BC="-B"
   fi
   verbose_echo " --> Run initial BET with options: -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC"
