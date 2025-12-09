@@ -57,7 +57,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   VariableSigma="3"
   PialSigma="2"
   SmoothNiter="1"
-  if [ "${p_flair}" != "TRUE" ] ; then                        # control T2 pial
+  if ((isFLAIR)) ; then                                  # control T2 pial
     NSigmaAbove="3"                                      # 2: FS6 default
     NSigmaBelow="3"                                      # 3: FS6 default
   else
@@ -189,7 +189,7 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
   WhiteSigma="2"                                                
   SmoothNiter="2"                                             # for white in conf2hires 
   SmoothNiterPial="2"                                         # for woT2pial & pial in conf2hires                                           
-  if [ "${p_flair}" != "TRUE" ] ; then                        # control T2 pial
+  if ((isFLAIR)) ; then                                       # control T2 pial
     NSigmaAbove="0"
     NSigmaBelow="1"
   else                                                        # control T2-FLAIR pial
@@ -238,7 +238,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH
   PialSigma="4"                                               # larger value needed for smaller brain
   SmoothNiter="2"
   SmoothNiterPial="2"                                         # for woT2pial & pial                                            
-  if [ "${p_flair}" != "TRUE" ] ; then                        # control T2 pial
+  if ((isFLAIR)) ; then                        				  # control T2 pial
     NSigmaAbove="1"                                           # 2: FS6 default
     NSigmaBelow="3"                                           # 2: FS6 default
   else                                                        # control T2-FLAIR pial
