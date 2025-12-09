@@ -79,10 +79,10 @@ then
                 #same logic
                 if ((i + 1 < ${#origargs[@]})) && (opts_StringToBool "${origargs[i + 1]}" &> /dev/null)
                 then
-                    newargs+=(--existing-session "${origargs[i + 1]}")
+                    newargs+=(--existing-subject "${origargs[i + 1]}")
                     i=$((i + 1))
                 else
-                    newargs+=(--existing-session=TRUE)
+                    newargs+=(--existing-subject=TRUE)
                     changeargs=1
                 fi
                 ;;
@@ -127,26 +127,26 @@ fi
 opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by prefreesurfer"
 
 # Show usage information
-opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
+opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/subject"
 
-opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "--subject-dir"
+opts_AddOptional '--subject-dir' 'SubjectDIR' 'subject' 'path to subject directory required, unless --existing-subject is set' "--subject-dir"
 
-opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
+opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-subject is set' "" "--t1"
 
-opts_AddOptional '--t1w-brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask required, unless --existing-session is set' "" "--t1brain"
+opts_AddOptional '--t1w-brain' 'T1wImageBrain' "T1Brain" 'path to T1w brain mask required, unless --existing-subject is set' "" "--t1brain"
 
-opts_AddOptional '--t2w-image' 'T2wImage' "T2" "path to T2w image required, unless --existing-session is set" "" "--t2"
+opts_AddOptional '--t2w-image' 'T2wImage' "T2" "path to T2w image required, unless --existing-subject is set" "" "--t2"
 
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
-opts_AddOptional '--flair' 'flairString' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
+opts_AddOptional '--flair' 'flair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/session.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
+opts_AddOptional '--existing-subject' 'existing_subject' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
-opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-session flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
+opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-subject flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
 
-opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
+opts_AddOptional '--conf2hires' 'conf2hires' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-subject --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
@@ -172,9 +172,9 @@ opts_ShowValues
 extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manual[@]}"})
 
 #parse booleans
-flair=$(opts_StringToBool "$flairString")
-existing_session=$(opts_StringToBool "$existing_sessionString")
-conf2hires=$(opts_StringToBool "$conf2hiresString")
+flair=$(opts_ToBool "$flair")
+existing_subject=$(opts_StringToBool "$existing_subject")
+conf2hires=$(opts_StringToBool "$conf2hires")
 
 #deal with NONE convention
 if [[ "$T1wImage" == "NONE" ]]; then
@@ -193,20 +193,20 @@ fi
 
 
 
-#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
+#check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
 
-if ((! existing_session))
+if ((! existing_subject))
 then
     if [[ "${T1wImage}" = "" ]]
     then
-        log_Err_Abort "--t1 not set and '--existing-session' not used"
+        log_Err_Abort "--t1 not set and '--existing-subject' not used"
     fi
     if [[ "${T1wImageBrain}" = "" ]]
     then
-        log_Err_Abort "--t1brain not set and '--existing-session' not used"
+        log_Err_Abort "--t1brain not set and '--existing-subject' not used"
     fi
 
     if [[ "${T2wImage}" = "" ]]
@@ -217,7 +217,7 @@ then
 
 	if [[ "${Species}" = "" ]]
     then
-        log_Err_Abort "--species not set and '--existing-session' not used"
+        log_Err_Abort "--species not set and '--existing-subject' not used"
     fi
 fi
 
@@ -549,7 +549,7 @@ else
 fi
 log_Msg "num_cores: ${num_cores}"
 
-if ((! existing_session)) ; then
+if ((! existing_subject)) ; then
 
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
 	# certain files need to be reverted to their PreFreeSurfer output versions
