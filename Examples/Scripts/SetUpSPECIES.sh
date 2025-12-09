@@ -49,7 +49,7 @@ if [[ "$SPECIES" == *Human* ]] ; then
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="86"           # Distance between top of FOV and center of brain
 
-    FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf" #FNIRT 2mm T1w Config
+    FNIRTConfig=${FSLDIR}/etc/flirtsch/T1_2_MNI152_2mm.cnf #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="5.0"
     T1wTemplate="${HCPPIPEDIR_Templates}/MNI152_T1_${StrucRes}mm.nii.gz"  
@@ -90,7 +90,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="60"           # Distance between top of FOV and center of brain
 
-    FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Chimp_1mm.cnf" #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
+    FNIRTConfig=${FSLDIR}/etc/flirtsch/T1_2_MNI152_2mm.cnf #FNIRT 2mm T1w Config  High resolution warping, optimized regularization
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_Chimp_fMRI.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="4.0"
     T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_${StrucRes}mm.nii.gz"  
