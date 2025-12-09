@@ -504,7 +504,7 @@ log_Msg "Starting main functionality"
 
 
 
-source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$Species"
+source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$Species" "$flair"
 ScaleSuffix="_scaled"
 
 # Convert the --runmode string argument into a numeric code
