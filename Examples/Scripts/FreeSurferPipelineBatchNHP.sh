@@ -4,21 +4,85 @@ set -e
 #  installed versions of: FSL6.0.4 or higher , FreeSurfer (version 6.0 or higher) , gradunwarp (python code from MGH)
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
-usage () {
-echo "Usage: $0 <StudyFolder> <SubjectID> <T2w type> <SPECIES> <RunMode>"
-echo "    Runmode: 1 - 3"
-exit 1
+Usage () {
+    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> [--T2wType=<type>] [--EnvironmentScript=<path>]"
+    echo ""
+    echo "Required Options:"
+    echo "  --StudyFolder: Path to the study folder containing subject data"
+    echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
+    echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
+    echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhes, MacaqueFusc, NightMonkey, Marmoset)"
+    echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
+    echo ""
+    exit 1
 }
-[ "$5" = "" ] && usage
 
-StudyFolder=$1
-Subjlist=$2
-T2wType=$3
-SPECIES=$4
-RunMode=$5
+# ==== User-editable section ====
 
-#put the full path to your edited version of SetUpHCPPipeline.sh here
+# Edit these variables before running
+
+StudyFolder="${HOME}/projects/Pipelines_ExampleData"
+Subjlist="100307"
+SPECIES="Human"
+RunMode="Default"
+T2wType="T2w"
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+
+# Parse command line arguments
+get_batch_options() {
+    local arguments=("$@")
+    
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+    
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+        
+        case ${argument} in
+            --StudyFolder=*)
+                StudyFolder=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Subject=*)
+                Subjlist=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --T2wType=*)
+                T2wType=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Species=*)
+                SPECIES=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --RunMode=*)
+                RunMode=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                Usage
+                ;;
+        esac
+    done
+}
+
+# Parse arguments
+get_batch_options "$@"
+
+# Check required parameters
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ]; then
+    echo "ERROR: Missing required parameters"
+    Usage
+fi
+
+# Load environment script
+if [ -z ${EnvironmentScript} ] ; then
+    EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
+fi
 source $EnvironmentScript
 
 # Log the originating call
