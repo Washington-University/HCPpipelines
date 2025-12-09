@@ -13,7 +13,7 @@ Usage () {
     echo ""
     echo "Optional Options:"
     echo "  --BrainExtract: INVIVO (default) or EXVIVO"
-    echo "  --UnwarpDir: Unwarp direction (default: z)"
+    echo "  --StrucUnwarpDir: Unwarp direction (default: z)"
     echo ""
     exit 1;
 }
@@ -26,7 +26,7 @@ SPECIES="Human"
 RunMode="Default"
 BrainExtract="INVIVO"
 StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
-UnwarpDir=""
+StrucUnwarpDir=""
 
 # Parse command line arguments
 get_batch_options() {
@@ -64,8 +64,8 @@ get_batch_options() {
                 BrainExtract=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --UnwarpDir=*)
-                UnwarpDir=${argument#*=}
+            --StrucUnwarpDir=*)
+                StrucUnwarpDir=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             *)
@@ -87,11 +87,11 @@ if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$SPECIES" ] || [ -z "$Ru
     Usage
 fi
 
-if [ -z "$UnwarpDir" ]; then
+if [ -z "$StrucUnwarpDir" ]; then
     if [ "$SPECIES" != "Human" ]; then
-        UnwarpDir="z-"
+        StrucUnwarpDir="z-"
     else
-        UnwarpDir="z"
+        StrucUnwarpDir="z"
     fi
 fi
 
@@ -156,7 +156,7 @@ for Subject in $Subjlist ; do
         #   - T1wSampleSpacing, T2wSampleSpacing
         #
         #   ## Gradient Nonlinearity Correction
-        #   - GradientDistortionCoeffs, UnwarpDir
+        #   - GradientDistortionCoeffs, StrucUnwarpDir
         #
         #   ## TopUp (Distortion correction for sMRI/fMRI)
         #   - TopupNegative, TopupPositive, TopupNegative2, TopupPositive2, SEEchoSpacing
@@ -183,7 +183,7 @@ for Subject in $Subjlist ; do
         #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
         #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
         #GradientDistortionCoeffs="<path to>/coeff_SC72C_Skyra.grad"           # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
-        #UnwarpDir=z                                                           # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
+        #StrucUnwarpDir=z                                                           # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
         #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
     fi
   
@@ -214,7 +214,7 @@ for Subject in $Subjlist ; do
         TE="NONE" # "2.46" delta TE in ms for field map or "NONE" if not used
         SEEchoSpacing="NONE" # Echo Spacing or SEEchoSpacing of SE Field Map image (or "NONE" if not used) = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples)
         SEUnwarpDir="NONE" # x or y (minus or not does not matter) "NONE" if not used
-        UnwarpDir="NONE"
+        StrucUnwarpDir="NONE"
         AvgrdcSTRING="NONE" #Averaging and readout distortion correction methods: "NONE" = average any repeats with no readout correction "FIELDMAP" = average any repeats and use field map for readout correction   "TOPUP" = Use Spin Echo FieldMap"${
         TopupConfig="NONE" #Config for topup or "NONE" if not used
         T1wSampleSpacing="${T1wSampleSpacing:-NONE}" #"0.0000150" DICOM field (0019,1018) in s or "NONE" if not used
@@ -270,7 +270,7 @@ for Subject in $Subjlist ; do
         --seunwarpdir="$SEUnwarpDir" \
         --t1samplespacing="$T1wSampleSpacing" \
         --t2samplespacing="$T2wSampleSpacing" \
-        --unwarpdir="$UnwarpDir" \
+        --unwarpdir="$StrucUnwarpDir" \
         --gdcoeffs="$GradientDistortionCoeffs" \
         --avgrdcmethod="$AvgrdcSTRING" \
         --topupconfig="$TopupConfig" \
@@ -314,7 +314,7 @@ for Subject in $Subjlist ; do
         --seunwarpdir=${SEUnwarpDir} \
         --t1samplespacing=${T1wSampleSpacing} \
         --t2samplespacing=${T2wSampleSpacing} \
-        --unwarpdir=${UnwarpDir} \
+        --unwarpdir=${StrucUnwarpDir} \
         --gdcoeffs=${GradientDistortionCoeffs} \
         --avgrdcmethod=${AvgrdcSTRING} \
         --topupconfig=${TopupConfig} \
