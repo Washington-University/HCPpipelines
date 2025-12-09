@@ -84,7 +84,7 @@ opts_AddMandatory '--in'               'volin'           'volume'               
 opts_AddMandatory '--tposition'        'TruePosition'    'HFSx, FFSx, HFS, HFP, FFS, FFP' "true patient position in the scanner"
 opts_AddMandatory '--sposition'        'PatientPosition' 'HFS, HFP, FFS, FFP, NONE'    "patient position entered in the scanner, described in the tag (0018,5100) in the standard DICOM. If specified NONE, it does not change sform unless specified --init option."
 opts_AddMandatory '--out'              'out'             'volume'                 "output volume filename." 
-opts_AddOptional  '--omat'             'omat'            'TRUE or NONE (default)' "output transformation matrix for reorientation. Outputs are <out>_reorient.world.mat (in world format) and <out>_reorient.mat (FSL flirt format)." "NONE"
+opts_AddOptional  '--omat'             'omat'            'TRUE or FALSE (default)' "output transformation matrix for reorientation. Outputs are <out>_reorient.world.mat (in world format) and <out>_reorient.mat (FSL flirt format)." "FALSE"
 opts_AddOptional  '--reorient2std'     'reorient2std'    'TRUE (default) or NONE' "reorient to RPI ('radiological') convention." 'TRUE'
 opts_AddOptional  '--ref'              'ref'             'volume'                 "run a rigid-body registration to reference volume, save transformation matrix as <out>2ref.world.mat and <out>2ref.mat and registrated volume as <out>2ref.nii.gz." 'NONE'
 opts_AddOptional  '--init'             'affine'          'matrix'                 "apply a rigid-body transformation matrix (in world format) to sform of <out>.nii.gz" 'NONE'
@@ -101,9 +101,7 @@ if [ -z "$CARET7DIR" ] ; then
 fi
 
 # sanity check the input arguments
-if [ $omat == NONE ] ; then
-  omat=FALSE
-fi
+
 if [ $reorient2std == NONE ] ; then
   reorient2std=FALSE
 fi
@@ -250,7 +248,7 @@ fi
 
 ${CARET7DIR}/wb_command -convert-affine -from-world ${tmp}_reorient.world.mat -to-flirt ${tmp}_reorient.mat ${in} ${applytrans}.nii.gz
 
-if [ $omat != FALSE ] ; then
+if (($omat)) ; then
   mv ${tmp}_reorient.mat ${out}_reorient.mat
   mv ${tmp}_reorient.world.mat ${out}_reorient.world.mat
 else
