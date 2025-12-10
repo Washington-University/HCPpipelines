@@ -141,7 +141,9 @@ rm -f ${ResultsFolder}/${NameOffMRI}_temp_template.dlabel.nii
 #earlier verions of wb_command may produce undesired results in the subjects that need this dilation
 
 if (( NonHumanSpecies )); then 
-    ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 10 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii -nearest -merged-volume
+    "$CARET7DIR"/wb_command -cifti-dilate "${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii" COLUMN 0 10 "${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate_init.dtseries.nii"
+    "$CARET7DIR"/wb_command -cifti-dilate "${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate_init.dtseries.nii" COLUMN 0 10 "$ResultsFolder/${NameOffMRI}_temp_atlas_dilate.dtseries.nii" -nearest -merged-volume
+    rm -f "${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate_init.dtseries.nii"
 else
     ${CARET7DIR}/wb_command -cifti-dilate ${ResultsFolder}/${NameOffMRI}_temp_atlas.dtseries.nii COLUMN 0 30 ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
 fi    
@@ -153,4 +155,3 @@ ${CARET7DIR}/wb_command -cifti-separate ${ResultsFolder}/${NameOffMRI}_temp_atla
 rm -f ${ResultsFolder}/${NameOffMRI}_temp_atlas_dilate.dtseries.nii
 
 log_Msg "END"
-
