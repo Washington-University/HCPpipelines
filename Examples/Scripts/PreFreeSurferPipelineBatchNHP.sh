@@ -182,8 +182,8 @@ for Subject in $Subjlist ; do
         #StrucTopupPositive="SEField_1_PA"                                     # positive phase encoding directions (RL or PA) (optional for B0 distortion correction)
         #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
         #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
-        #GradientDistortionCoeffs="<path to>/coeff_SC72C_Skyra.grad"           # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
-        #StrucUnwarpDir=z                                                           # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
+        #GradientDistortionCoeffs="<path/to/gradient_coefficient.grad>"        # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
+        #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
         #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
     fi
   
