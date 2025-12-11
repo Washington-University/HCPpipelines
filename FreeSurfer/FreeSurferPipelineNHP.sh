@@ -129,7 +129,7 @@ opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by
 # Show usage information
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/subject"
 
-opts_AddOptional '--subject-dir' 'SubjectDIR' 'subject' 'path to subject directory required, unless --existing-subject is set' "--subject-dir"
+opts_AddOptional '--subject-dir' 'SubjectDIR' 'subject' 'path to subject directory required, unless --existing-subject is set'
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-subject is set' "" "--t1"
 
