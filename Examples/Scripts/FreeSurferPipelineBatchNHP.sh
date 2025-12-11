@@ -77,9 +77,9 @@ get_batch_options() {
 # Parse arguments
 get_batch_options "$@"
 
-# Check required parameters
+# Check required settings
 if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ]; then
-    echo "ERROR: Missing required parameters"
+    echo "ERROR: Missing required settings"
     Usage
 fi
 
