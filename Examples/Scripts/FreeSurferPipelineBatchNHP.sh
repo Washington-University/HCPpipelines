@@ -22,8 +22,8 @@ Usage () {
 # Edit these variables before running
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
-Subjlist="100307"
-SPECIES="Human"
+Subjlist="nhp_session1 nhp_session2"
+SPECIES="Macaque"
 RunMode="Default"
 T2wType="T2w"
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
