@@ -102,11 +102,11 @@ if [ -z ${EnvironmentScript} ] ; then
 fi
 source $EnvironmentScript
 
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
 #HACK: work around the log tool name hack in SetUpSPECIES.sh
 #since debug.shlib will be active by default, set the log toolname back to the Batch script
 log_SetToolName "$(basename -- "$0")"
 
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 
 #BrainScaleFactor="1"
