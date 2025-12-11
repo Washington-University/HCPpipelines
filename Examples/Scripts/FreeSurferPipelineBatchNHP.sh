@@ -7,7 +7,7 @@ set -e
 Usage () {
     echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> [--T2wType=<type>] [--EnvironmentScript=<path>]"
     echo ""
-    echo "Required Options:"
+    echo "Options:"
     echo "  --StudyFolder: Path to the study folder containing subject data"
     echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
     echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
