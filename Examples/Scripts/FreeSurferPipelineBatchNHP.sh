@@ -78,15 +78,11 @@ get_batch_options() {
 get_batch_options "$@"
 
 # Check required settings
-if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ]; then
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ] || [ -z "$EnvironmentScript" ]; then
     echo "ERROR: Missing required settings"
     Usage
 fi
 
-# Load environment script
-if [ -z ${EnvironmentScript} ] ; then
-    EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-fi
 source $EnvironmentScript
 
 # Log the originating call
