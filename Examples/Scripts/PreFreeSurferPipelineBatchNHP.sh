@@ -21,8 +21,8 @@ Usage () {
 # ==== User-editable section ====
 # Edit these variables before running
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
-Subjlist="100307 100610"
-SPECIES="Human"
+Subjlist="nhp_session1 nhp_session2"
+SPECIES="Macaque"
 RunMode="Default"
 BrainExtract="INVIVO"
 StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
