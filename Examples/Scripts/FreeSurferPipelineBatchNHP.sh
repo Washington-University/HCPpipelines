@@ -5,7 +5,7 @@ set -e
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 Usage () {
-    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> [--T2wType=<type>] [--EnvironmentScript=<path>]"
+    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> --T2wType=<type> --EnvironmentScript=<path>"
     echo ""
     echo "Options:"
     echo "  --StudyFolder: Path to the study folder containing subject data"
@@ -58,6 +58,10 @@ get_batch_options() {
                 ;;
             --RunMode=*)
                 RunMode=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --EnvironmentScript=*)
+                EnvironmentScript=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             *)
