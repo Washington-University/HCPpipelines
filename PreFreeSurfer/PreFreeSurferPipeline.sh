@@ -346,6 +346,9 @@ UseJacobian="$(opts_StringToBool ${UseJacobian})"
 # Set UsePhaseZero to 1 or 0
 UsePhaseZero=$(opts_StringToBool "$UsePhaseZero") 
 
+# Set BetBiasFieldCor to 1 or 0
+BetBiasFieldCor=$(opts_StringToBool "$BetBiasFieldCor")
+
 # Use --printcom=echo for just printing everything and not actually
 # running the commands (the default is to actually run the commands)
 RUN="" # SHORT CIRCUT RUN SO IT DOESNT DO ANYTHING 

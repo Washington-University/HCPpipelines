@@ -70,6 +70,9 @@ if [ "$BrainExtract" != "EXVIVO" ] && [ "$BrainExtract" != "INVIVO" ]; then
     log_Err_Abort "Invalid value for BrainExtract: '$BrainExtract'. Must be either 'EXVIVO' or 'INVIVO'."
 fi
 
+# Set BetBiasFieldCor to 1 or 0
+BetBiasFieldCor=$(opts_StringToBool "$BetBiasFieldCor")
+
 # set betspecieslabel based on species
 case $SPECIES in
   *Human*)
@@ -176,7 +179,7 @@ elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
   centerx=$(echo "$dim1*0.5" | bc | awk '{printf "%d", $1}')
   centery=$(echo "$dim2*0.48" | bc| awk '{printf "%d", $1}')
   centerz=$(echo "$dim3 - $BetTop2Center/$pixdim3" | bc | awk '{printf "%d", $1}') 
-  if [ "$BetBiasFieldCor" = TRUE ] ; then
+  if (($BetBiasFieldCor)) ; then
     BC="-B"
   fi
   verbose_echo " --> Run initial BET with options: -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC"
