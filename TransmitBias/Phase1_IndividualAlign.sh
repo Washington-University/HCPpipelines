@@ -40,13 +40,16 @@ opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...
 opts_AddOptional '--pt-bbr-threshold' 'ptbbrthresh' 'number' "mincost threshold for reinitializing fMRI bbregister with flirt (may need to be increased for aging-related reduction of gray/white contrast), default 0.5" '0.5'
 
 #receive correction
-opts_AddOptional '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of unprocessed T1w images, for correcting non-PSN data"
-opts_AddOptional '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of unprocessed T2w images, for correcting non-PSN data"
+opts_AddOptional '--unproc-t1w-list' 'T1wunprocstr' 'image1@image2...' "list of unprocessed T1w images used in the structural pipelines, for correcting data originally processed with uncorrected receive-coil bias present (i.e., without using pre-scan normalize) - this also requires specifying --unproc-t2w-list, and either:
+
+1) --receive-bias-body-coil and --receive-bias-head-coil
+
+or 2) --raw-nopsn-t1w and --raw-psn-t1w"
+opts_AddOptional '--unproc-t2w-list' 'T2wunprocstr' 'image1@image2...' "list of unprocessed T2w images used in the structural pipelines (only needed when using --unproc-t1w-list)"
 opts_AddOptional '--receive-bias-body-coil' 'biasBCin' 'file' "image acquired with body coil receive, to be used with --receive-bias-head-coil"
 opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acquired with head coil receive"
-opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the bias-corrected version of the T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps"
-opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "the uncorrected version of the --raw-psn-t1w image"
-
+opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "a raw T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps - this can/should be one of the images in --unproc-t1w-list"
+opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the receive-bias-corrected version of the --raw-nopsn-t1w image"
 #longitudinal options
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
 opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
