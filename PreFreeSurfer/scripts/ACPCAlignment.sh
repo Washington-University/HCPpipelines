@@ -181,6 +181,8 @@ elif [[ "$SPECIES" != "Human" ]] && [ $BrainExtract = INVIVO ] ; then
   centerz=$(echo "$dim3 - $BetTop2Center/$pixdim3" | bc | awk '{printf "%d", $1}') 
   if (($BetBiasFieldCor)) ; then
     BC="-B"
+  else
+    BC=""
   fi
   verbose_echo " --> Run initial BET with options: -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC"
   ${FSLDIR}/bin/bet4animal "$WD"/robustroi.nii.gz "$WD"/robustroi_brain -m -r $BetRadius -c $centerx $centery $centerz -f $BetFraction -z $betspecieslabel $BC
