@@ -45,7 +45,7 @@ if [[ "$SPECIES" == *Human* ]] ; then
     BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
     betcenter="45,55,39"         # comma separated voxel coordinates in T1wTemplate2mm
     betradius="75"               # brain radius for bet
-    betbiasfieldcor="TRUE"
+    betbiasfieldcor="TRUE"       # indicates whether to correct bias field for BET (TRUE or FALSE)
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="86"           # Distance between top of FOV and center of brain
 
@@ -85,7 +85,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     betcenter="46,53,52"         # comma separated voxel coordinates in T1wTemplate2mm
-    betbiasfieldcor="TRUE"
+    betbiasfieldcor="TRUE"       # indicates whether to correct bias field for BET (TRUE or FALSE)
     betradius="45"               # brain radius for bet
     betfraction="0.3"            # fractional intensity threshold for bet
     bettop2center="60"           # Distance between top of FOV and center of brain
@@ -132,9 +132,9 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     if [[ "$SPECIES" == *Mac30BS* ]] ; then     # Rhesus and Cyno hybrid template
 
         betcenter="48,56,51"         # comma separated voxel coordinates in T1wTemplate2mm
-        betradius="35"
-        betbiasfieldcor="TRUE"
-        betfraction="0.2"
+        betradius="35"               # brain radius for bet
+        betbiasfieldcor="TRUE"       # indicates whether to correct bias field for BET (TRUE or FALSE)
+        betfraction="0.2"            # fractional intensity threshold for bet
         bettop2center="30"           # distance in mm from the top of FOV to the center of brain in robustroi
 
         BrainTemplate="Mac30BS"
@@ -155,10 +155,10 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     elif [[ "$SPECIES" == *Cyno* ]] ; then
 
         betcenter="48,56,47"         # comma separated voxel coordinates in T1wTemplate2mm
-        betradius="30"
-        betbiasfieldcor="TRUE"
-        betfraction="0.3"
-        bettop2center="34"
+        betradius="30"               # brain radius for bet
+        betbiasfieldcor="TRUE"       # indicates whether to correct bias field for BET (TRUE or FALSE)
+        betfraction="0.3"            # fractional intensity threshold for bet
+        bettop2center="34"           # Distance between top of FOV and center of brain
 
         BrainTemplate="Mac25Cyno"
         T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
@@ -179,9 +179,9 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     elif [[ "$SPECIES" == *Rhesus* ]] ; then
     
         betcenter="48,56,51"         # comma separated voxel coordinates in T1wTemplate2mm
-        betradius="35"
-        betbiasfieldcor="TRUE"
-        betfraction="0.2"
+        betradius="35"               # brain radius for bet
+        betbiasfieldcor="TRUE"       # indicates whether to correct bias field for BET (TRUE or FALSE)
+        betfraction="0.2"            # fractional intensity threshold for bet
         bettop2center="30"           # distance in mm from the top of FOV to the center of brain in robustroi
 
         #BrainTemplate="MacaqueYerkes19"
@@ -215,10 +215,10 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     elif [[ "$SPECIES" == *Snow* ]] ; then
 
         betcenter="48,56,51"        # comma separated voxel coordinates in T1wTemplate2mm
-        betradius="40"
-        betbiasfieldcor="TRUE"
-        betfraction=0.3
-        bettop2center="30"    
+        betradius="40"              # brain radius for bet
+        betbiasfieldcor="TRUE"      # indicates whether to correct bias field for BET (TRUE or FALSE)
+        betfraction=0.3             # fractional intensity threshold for bet
+        bettop2center="30"          # Distance between top of FOV and center of brain
 
         BrainTemplate="Mac6Snow"
         T1wTemplate="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_T1w_restore_${StrucRes}mm.nii.gz"
@@ -257,9 +257,9 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="50"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     betcenter="50,40,30"         # comma separated voxel coordinates in T1wTemplate2mm
-    betradius="12"
-    betfraction="0.5"
-    betbiasfieldcor="FALSE"
+    betradius="12"               # brain radius for bet
+    betfraction="0.5"            # fractional intensity threshold for bet
+    betbiasfieldcor="FALSE"      # indicates whether to correct bias field for BET (TRUE or FALSE)
     bettop2center="12"           # distance in mm from the top of FOV to the center of brain in robustroi
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
@@ -303,10 +303,10 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="40"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
     betcenter="48,60,42"         # comma separated voxel coordinates in T1wTemplate2mm
-    betbiasfieldcor="FALSE"
-    betradius="20"
-    betfraction="0.4"
-    bettop2center="16"
+    betbiasfieldcor="FALSE"      # indicates whether to correct bias field for BET (TRUE or FALSE)
+    betradius="20"               # brain radius for bet
+    betfraction="0.4"            # fractional intensity threshold for bet
+    bettop2center="16"           # Distance between top of FOV and center of brain
 
     FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Marmoset_0.4mm.cnf" #FNIRT 2mm T1w Config
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_marmoset_fMRI.cnf" #Config for topup or "NONE" if not used

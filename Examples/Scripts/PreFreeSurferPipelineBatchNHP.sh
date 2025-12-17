@@ -116,7 +116,7 @@ log_SetToolName "$(basename -- "$0")"
 #BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
 #betcenter="45,55,39"         # comma separated voxel coordinates in T1wTemplate2mm
 #betradius="75"               # brain radius for bet
-#betbiasfieldcor="FALSE"
+#betbiasfieldcor="FALSE"      # indicates whether to correct bias field for BET (TRUE or FALSE)
 #betfraction="0.3"            # fractional intensity threshold for bet
 #bettop2center="86"           # Distance between top of FOV and center of brain
 
