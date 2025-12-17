@@ -327,7 +327,8 @@ for Subject in $Subjlist ; do
         --betcenter=${betcenter} \
         --betradius=${betradius} \
         --betfraction=${betfraction} \
-        --bettop2center=${bettop2center} "
+        --bettop2center=${bettop2center} \
+        --betbiasfieldcor=${betbiasfieldcor} "
 
     echo ". ${EnvironmentScript}"
 
