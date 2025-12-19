@@ -23,8 +23,10 @@ B1Tx - b1 transmit sequence magnitude/phase pair, requires --transmit-group-name
 
 PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, requires --average-myelin"
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'name' "output folder (e.g. S900)"
-opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good transmit data (e.g. Partial)"
 opts_AddMandatory '--voltages' 'VoltagesFile' 'file' "text file of scanner calibrated transmit voltages for each subject"
+
+#AFI or B1Tx
+opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good transmit data (e.g. Partial)"
 
 #AFI-specific
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"
