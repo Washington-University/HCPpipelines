@@ -50,6 +50,7 @@ opts_AddOptional '--receive-bias-body-coil' 'biasBCin' 'file' "image acquired wi
 opts_AddOptional '--receive-bias-head-coil' 'biasHCin' 'file' "matched image acquired with head coil receive"
 opts_AddOptional '--raw-nopsn-t1w' 'rawT1wBiased' 'file' "a raw T1w image acquired with pre-scan normalize, which was used to generate the original myelin maps - this can/should be one of the images in --unproc-t1w-list"
 opts_AddOptional '--raw-psn-t1w' 'rawT1wPSN' 'file' "the receive-bias-corrected version of the --raw-nopsn-t1w image"
+
 #longitudinal options
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
 opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
