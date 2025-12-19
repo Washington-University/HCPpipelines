@@ -29,7 +29,7 @@ opts_AddOptional '--manual-receive' 'useRCfilesStr' 'TRUE or FALSE' "whether Pha
 opts_AddOptional '--all-myelin-out' 'myelinCiftiAll' 'file' "output cifti file for concatenated uncorrected myelin"
 
 #AFI or B1Tx
-opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good B1Tx data (e.g. Partial)"
+opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good AFI or B1Tx data (e.g. Partial)"
 
 #AFI-specific
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"

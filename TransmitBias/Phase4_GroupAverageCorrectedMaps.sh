@@ -26,7 +26,7 @@ opts_AddMandatory '--group-average-name' 'GroupAverageName' 'name' "output folde
 opts_AddMandatory '--voltages' 'VoltagesFile' 'file' "text file of scanner calibrated transmit voltages for each subject"
 
 #AFI or B1Tx
-opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good transmit data (e.g. Partial)"
+opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good AFI or B1Tx data (e.g. Partial)"
 
 #AFI-specific
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"
