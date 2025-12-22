@@ -586,7 +586,7 @@ do
 		"${extract_cmd[@]}"
 	done
 
-	if ((mrFIXExtractDoVolBool))
+	if ((mrFIXExtractDoVolBool && ${#mrFIXExtractConcatNamesArr[@]} > 0)) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
 	then
 		# Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
 		cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
@@ -605,3 +605,4 @@ do
 done
 
 log_Msg "Completing main functionality"
+

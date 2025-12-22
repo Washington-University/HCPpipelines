@@ -70,11 +70,15 @@ ConcatRegName="MSMAll"
 Maps=(sulc curvature corrThickness thickness)
 MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames and MRFixNames must exactly match the way MR FIX was run on the subjects
-MRFixConcatNames=(fMRI_CONCAT_ALL)
 #SPECIAL: if your data used two (or more) MR FIX runs (which is generally not recommended), specify them like this, with no whitespace before or after the %:
 #MRFixConcatNames=(concat12 concat34)
 #MRFixNames=(run1 run2%run3 run4)
+MRFixConcatNames=(fMRI_CONCAT_ALL)
 MRFixNames=(rfMRI_REST1_AP rfMRI_REST1_PA tfMRI_GUESSING_PA tfMRI_GUESSING_AP tfMRI_CARIT_PA tfMRI_CARIT_AP tfMRI_EMOTION_PA rfMRI_REST2_AP rfMRI_REST2_PA)
+#to make a concatenated subset of the runs, use these:
+MRFixExtractConcatNames=(rfMRI_REST)
+MRFixExtractNames=(rfMRI_REST1_AP rfMRI_REST1_PA rfMRI_REST2_AP rfMRI_REST2_PA)
+MRFixExtractDoVolume=TRUE
 #fixNames are for if single-run ICA FIX was used (not recommended)
 fixNames=()
 #dontFixNames are for runs that didn't have any kind of ICA artifact removal run on them (very not recommended)
@@ -130,6 +134,8 @@ MRFixConcatNames=$(IFS=@; echo "${MRFixConcatNames[*]}")
 MRFixNames=$(IFS=@; echo "${MRFixNames[*]}")
 fixNames=$(IFS=@; echo "${fixNames[*]}")
 dontFixNames=$(IFS=@; echo "${dontFixNames[*]}")
+MRFixExtractConcatNames=$(IFS=@; echo "${MRFixExtractConcatNames[*]}")
+MRFixExtractNames=$(IFS=@; echo "${MRFixExtractNames[*]}")
 
 for Subject in "${Subjlist[@]}" ; do
     echo "    ${Subject}"
@@ -154,6 +160,9 @@ for Subject in "${Subjlist[@]}" ; do
         --myelin-maps="$MyelinMaps" \
         --multirun-fix-concat-names="$MRFixConcatNames" \
         --multirun-fix-names="$MRFixNames" \
+        --multirun-fix-extract-concat-names="$MRFixExtractConcatNames" \
+        --multirun-fix-extract-names="$MRFixExtractNames" \
+        --multirun-fix-extract-volume="$MRFixExtractDoVolume" \
         --fix-names="$fixNames" \
         --dont-fix-names="$dontFixNames" \
         --smoothing-fwhm="$SmoothingFWHM" \
