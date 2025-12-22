@@ -128,6 +128,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="3.5"
 
+	is_valid_macaque_species=0
 
     if [[ "$SPECIES" == *Mac30BS* ]] ; then     # Rhesus and Cyno hybrid template
 
@@ -152,6 +153,8 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/MacaqueRIKEN16.Parial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
+		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+
     elif [[ "$SPECIES" == *Cyno* ]] ; then
 
         betcenter="48,56,47"         # comma separated voxel coordinates in T1wTemplate2mm
@@ -175,6 +178,8 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/Mac25Cyno_v3.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
+
+		is_valid_macaque_species=$((is_valid_macaque_species + 1))
 
     elif [[ "$SPECIES" == *Rhesus* ]] ; then
     
@@ -212,6 +217,8 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/Mac25Rhesus_v5.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
+		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+
     elif [[ "$SPECIES" == *Snow* ]] ; then
 
         betcenter="48,56,51"        # comma separated voxel coordinates in T1wTemplate2mm
@@ -235,8 +242,15 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/MacaqueRIKEN16.Parial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
+
+		is_valid_macaque_species=$((is_valid_macaque_species + 1))
     fi
 
+	if [ $is_valid_macaque_species != 1 ]; then
+		echo "Error: Invalid macaque species: $SPECIES. Please specify macaque species, such as RhesusMacaque, MacaqueMac30BS, CynoMacaque, SnowMacaque."
+		exit 1
+	fi
+	
     #PostFreeSurferPipeLineBatch.sh
     MyelinMappingFWHM="3" # based on median cortical thickness of macaque
     SurfaceSmoothingFWHM="2" # 4 by default
