@@ -224,7 +224,8 @@ for Subject in $Subjlist ; do
 
     if [ -z "$GradientDistortionCoeffs" ] ; then
         GradientDistortionCoeffs="NONE"               #Location of Coeffs file or "NONE" to skip
-
+	fi
+	
     BiasFieldSmoothingSigma="${BiasFieldSmoothingSigma:-5}"  # Useally set to 5. "NONE" if not used
 
     # adapt human convention
