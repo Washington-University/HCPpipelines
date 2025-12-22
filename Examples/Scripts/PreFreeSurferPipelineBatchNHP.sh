@@ -22,7 +22,7 @@ Usage () {
 # Edit these variables before running
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 Subjlist="nhp_session1 nhp_session2"
-SPECIES="Macaque"
+SPECIES="RhesusMacaque" # "Chimp", "MacaqueMac30BS", "CynoMacaque", "RhesusMacaque" ,"SnowMacaque", "Marmoset" or "NightMonkey"
 RunMode="Default"
 BrainExtract="INVIVO"
 StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
@@ -225,7 +225,7 @@ for Subject in $Subjlist ; do
     if [ -z "$GradientDistortionCoeffs" ] ; then
         GradientDistortionCoeffs="NONE"               #Location of Coeffs file or "NONE" to skip
 	fi
-	
+
     BiasFieldSmoothingSigma="${BiasFieldSmoothingSigma:-5}"  # Useally set to 5. "NONE" if not used
 
     # adapt human convention
