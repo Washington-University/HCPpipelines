@@ -247,7 +247,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     fi
 
 	if [ $is_valid_macaque_species != 1 ]; then
-		echo "Error: Invalid macaque species: $SPECIES. Please specify macaque species, such as RhesusMacaque, MacaqueMac30BS, CynoMacaque, SnowMacaque."
+		echo "Error: Invalid macaque species & template: $SPECIES. Please specify macaque species, such as RhesusMacaque, CynoMacaque, SnowMacaque. You can also use MacaqueMac30BS (Rhesus and Cyno hybrid template)."
 		exit 1
 	fi
 	
