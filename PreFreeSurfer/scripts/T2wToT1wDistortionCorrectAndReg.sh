@@ -62,25 +62,25 @@ opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' "output corrected T2w image"
 opts_AddMandatory '--ot2warp' 'OutputT2wTransform' 'warpfield' "output warpfield for distortion correction of T2w image"
 
 opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method used for readout distortion correction:
-        '${SPIN_ECHO_METHOD_OPT}'
-           use Spin Echo Field Maps for readout distortion correction
+    '${SPIN_ECHO_METHOD_OPT}'
+        use Spin Echo Field Maps for readout distortion correction
 
-        '${PHILIPS_METHOD_OPT}'
-           use Philips specific Gradient Echo Field Maps for readout distortion correction
-        
-        '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
-           use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapcombined argument).
-           This option is maintained for backward compatibility.
+    '${PHILIPS_METHOD_OPT}'
+        use Philips specific Gradient Echo Field Maps for readout distortion correction
+    
+    '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
+        use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in a single NIfTI file, via --fmapcombined argument).
+        This option is maintained for backward compatibility.
 
-        '${GE_HEALTHCARE_METHOD_OPT}'
-           use GE HealthCare specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
+    '${GE_HEALTHCARE_METHOD_OPT}'
+        use GE HealthCare specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
 
-        '${SIEMENS_METHOD_OPT}'
-           use Siemens specific Gradient Echo Field Maps for readout distortion correction
+    '${SIEMENS_METHOD_OPT}'
+        use Siemens specific Gradient Echo Field Maps for readout distortion correction
 
-        '${FIELDMAP_METHOD_OPT}'
-           equivalent to ${SIEMENS_METHOD_OPT} (preferred)
-           This option is maintained for backward compatibility."
+    '${FIELDMAP_METHOD_OPT}'
+        equivalent to ${SIEMENS_METHOD_OPT} (preferred)
+        This option is maintained for backward compatibility."
 
 #optional args 
 
@@ -106,6 +106,17 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "topup config file"
 
 opts_AddOptional '--gdcoeffs' 'GradientDistortionCoeffs' 'file' "gradient distortion coefficients (SIEMENS file)"
 
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (head-first-spine), HFSx (head-first-sphinx) - TH 2023"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "HFS, HFP, FFS or FFP"
+
+opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' 'image' "input spin echo negative phase encoding image 2"
+
+opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' 'image' "input spin echo positive phase encoding image 2"
+
+opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'image' "input spin echo zero phase encoding image"
+
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
 #Tim special parsing 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Use jacobian" 
 
@@ -141,7 +152,7 @@ log_Check_Env_Var HCPPIPEDIR_Global
 #
 # Output images (in $WD/T2w2T1w):  sqrtT1wbyT2w  T2w_reg.mat  T2w_reg_init.mat
 #                                  T2w_dc_reg  (the warp field)
-#                                  T2w_reg     (the warped image)
+#                                  T2w_reg     (the warpped image)
 # Output images (not in $WD):  ${OutputT2wTransform}   ${OutputT2wImage}
 #        Note that these outputs are copies of the last two images (respectively) from the T2w2T1w subdirectory
 
@@ -309,11 +320,11 @@ case $DistortionCorrection in
         # --------------------------
 
         if [[ ${SEUnwarpDir} = [xyij] ]] ; then
-          ScoutInputName="${SpinEchoPhaseEncodePositive}"
+            ScoutInputName="${SpinEchoPhaseEncodePositive}"
         elif [[ ${SEUnwarpDir} = -[xyij] || ${SEUnwarpDir} = [xyij]- ]] ; then
-          ScoutInputName="${SpinEchoPhaseEncodeNegative}"
+            ScoutInputName="${SpinEchoPhaseEncodeNegative}"
         else
-          log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
+            log_Err_Abort "Invalid entry for --seunwarpdir ($SEUnwarpDir)"
         fi
 
         # Use topup to distortion correct the scout scans
@@ -322,8 +333,11 @@ case $DistortionCorrection in
             --workingdir=${WD}/FieldMap \
             --phaseone=${SpinEchoPhaseEncodeNegative} \
             --phasetwo=${SpinEchoPhaseEncodePositive} \
+            --phaseone2=${SpinEchoPhaseEncodeNegative2} \
+            --phasetwo2=${SpinEchoPhaseEncodePositive2} \
+            --phasezero=${SpinEchoPhaseEncodeZero}  \
             --scoutin=${ScoutInputName} \
-            --echospacing=${SEEchoSpacing} \
+            --seechospacing=${SEEchoSpacing} \
             --unwarpdir=${SEUnwarpDir} \
             --ofmapmag=${WD}/Magnitude \
             --ofmapmagbrain=${WD}/Magnitude_brain \
@@ -331,7 +345,9 @@ case $DistortionCorrection in
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
             --topupconfig=${TopupConfig} \
-            --usejacobian=${UseJacobian}
+            --usejacobian=${UseJacobian}  \
+            --truepatientposition="$TruePatientPosition" \
+            --scannerpatientposition="$ScannerPatientPosition"
 
         ;;
 
@@ -347,13 +363,13 @@ UnwarpDir=${UnwarpDir//i/x}
 UnwarpDir=${UnwarpDir//j/y}
 UnwarpDir=${UnwarpDir//k/z}
 if [ "${UnwarpDir}" = "-x" ] ; then
-  UnwarpDir="x-"
+    UnwarpDir="x-"
 fi
 if [ "${UnwarpDir}" = "-y" ] ; then
-  UnwarpDir="y-"
+    UnwarpDir="y-"
 fi
 if [ "${UnwarpDir}" = "-z" ] ; then
-  UnwarpDir="z-"
+    UnwarpDir="z-"
 fi
 
 ### LOOP over available modalities ###
@@ -364,24 +380,24 @@ for TXw in $Modalities ; do
 
     # set up required variables
     if [ $TXw = T1w ] ; then
-      TXwImage=$T1wImage
-      TXwImageBrain=$T1wImageBrain
-      TXwSampleSpacing=$T1wSampleSpacing
-      TXwImageBasename=$T1wImageBasename
-      TXwImageBrainBasename=$T1wImageBrainBasename
+        TXwImage=$T1wImage
+        TXwImageBrain=$T1wImageBrain
+        TXwSampleSpacing=$T1wSampleSpacing
+        TXwImageBasename=$T1wImageBasename
+        TXwImageBrainBasename=$T1wImageBrainBasename
     else
-      TXwImage=$T2wImage
-      TXwImageBrain=$T2wImageBrain
-      TXwSampleSpacing=$T2wSampleSpacing
-      TXwImageBasename=$T2wImageBasename
-      TXwImageBrainBasename=$T2wImageBrainBasename
+        TXwImage=$T2wImage
+        TXwImageBrain=$T2wImageBrain
+        TXwSampleSpacing=$T2wSampleSpacing
+        TXwImageBasename=$T2wImageBasename
+        TXwImageBrainBasename=$T2wImageBrainBasename
     fi
 
     if [ "${TXwImage}" = "NONE" ] ; then
-      verbose_echo "      ... Skipping $TXw"
-      continue
+        verbose_echo "      ... Skipping $TXw"
+        continue
     else
-      verbose_echo "      ... $TXw"
+        verbose_echo "      ... $TXw"
     fi
 
     # Forward warp the fieldmap magnitude and register to TXw image (transform phase image too)
@@ -394,12 +410,53 @@ for TXw in $Modalities ; do
 
         ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
-            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            if [[ "$SPECIES" != *Marmoset* ]] ; then
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            else            
+                ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/Fieldmap2${TXw}.mat ${WD}/Magnitude.nii.gz ${WD}/../../${TXw}/${TXw}.nii.gz
+                ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}_init.mat -concat ${WD}/../../${TXw}/xfms/acpc.mat ${WD}/Fieldmap2${TXw}.mat
+                ${FSLDIR}/bin/flirt -in  ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}_init.mat -interp spline -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat -finesearch 2
+                ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -concat ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat  ${WD}/Fieldmap2${TXwImageBasename}_init.mat
+                rm -f ${WD}/Fieldmap2${TXwImageBasename}_tmp.mat                        
+            fi
             ;;
 
         ${SPIN_ECHO_METHOD_OPT})
-            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
-            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            if [[ ! $SPECIES == *Marmoset* ]] ; then
+                ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude_brain -r ${WD}/Magnitude_brain -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_brain_warpped${TXw}
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_brain_warpped${TXw} -ref ${TXwImageBrain} -out ${WD}/Magnitude_brain_warpped${TXw}2${TXwImageBasename} -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            else  # Marmoset data does not work well for BET-based brain extraction, thus start from the head image and scanner coordinates
+                ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Magnitude -r ${WD}/Magnitude -w ${WD}/FieldMap_Warp${TXw}.nii.gz -o ${WD}/Magnitude_warpped${TXw}
+                # Register fieldmap to ACPC space assuming that head is not much moving during scans between SEfield and structure
+                ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/Fieldmap2${TXw}.mat ${WD}/Magnitude.nii.gz ${WD}/../../${TXw}/${TXw}.nii.gz
+                ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}_init.mat -concat ${WD}/../../${TXw}/xfms/acpc.mat ${WD}/Fieldmap2${TXw}.mat
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}_init.mat -interp spline -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init
+
+                # Brain extract fieldmap assuming that head is not much moving during scans between SEField and structure
+                ${FSLDIR}/bin/fslmaths ${TXwImageBrain} -bin -dilM -dilM -dilM ${WD}/${TXw}_acpc_brain_mask_dil
+                ${FSLDIR}/bin/fslmaths ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init -mas ${WD}/${TXw}_acpc_brain_mask_dil ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init_brain
+
+                # Register fieldmap magnitude (head) to structure
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_TMP1 -omat ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat -nosearch
+
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat $Cost | head -1 | cut -f1 -d' ' >  ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_cost.txt
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_cost.txt
+                # Register fieldmap magnitude (brain) to structure
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_TMP2 -omat ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat -nosearch $Cost $Schedule
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init -ref ${TXwImage} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_cost.txt
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_init_brain -ref ${TXwImageBrain} -schedule $FSLDIR/etc/flirtsch/measurecost1.sch -init ${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat $Cost | head -1 | cut -f1 -d' ' >>  ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_cost.txt
+                # Find smaller mincost registration matrix between those for brain and head and use it to concat matrices
+                MinCost=($(cat ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}_cost.txt))
+                if [[ $(echo "${MinCost[1]} < ${MinCost[3]}" | bc ) == 1 ]] ; then
+                    MinMat=${WD}/Fieldmap2${TXwImageBasename}_TMP1.mat
+                else
+                    MinMat=${WD}/Fieldmap2${TXwImageBasename}_TMP2.mat
+                fi
+                ${FSLDIR}/bin/convert_xfm -omat ${WD}/Fieldmap2${TXwImageBasename}.mat -concat ${MinMat}  ${WD}/Fieldmap2${TXwImageBasename}_init.mat
+                # Resampling with the concat matrix
+                ${FSLDIR}/bin/flirt -in ${WD}/Magnitude_warpped${TXw} -ref ${TXwImage} -applyxfm -init ${WD}/Fieldmap2${TXwImageBasename}.mat -interp spline -out ${WD}/Magnitude_warpped${TXw}2${TXwImageBasename}
+            fi
             ;;
 
         *)
@@ -426,9 +483,9 @@ for TXw in $Modalities ; do
 
     verbose_echo "      ... Copying files"
     if [ $TXw = T1w ] ; then
-       ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBasename}_Warp ${OutputT1wTransform}
-       ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasename} ${OutputT1wImage}
-       ${FSLDIR}/bin/imcp ${WD}/${TXwImageBrainBasename} ${OutputT1wImageBrain}
+        ${FSLDIR}/bin/imcp ${WD}/FieldMap2${TXwImageBasename}_Warp ${OutputT1wTransform}
+        ${FSLDIR}/bin/imcp ${WD}/${TXwImageBasename} ${OutputT1wImage}
+        ${FSLDIR}/bin/imcp ${WD}/${TXwImageBrainBasename} ${OutputT1wImageBrain}
     fi
 
 done
@@ -436,38 +493,62 @@ done
 ### END LOOP over modalities ###
 
 if [ "${T2wImage}" == "NONE" ] ; then
-  verbose_echo ""
-  verbose_red_echo " ---> Skipping T2w to T1w registration"
+    verbose_echo ""
+    verbose_red_echo " ---> Skipping T2w to T1w registration"
 
 else
         
-  verbose_echo ""
-  verbose_red_echo " ---> Running T2w to T1w registration"
+    verbose_echo ""
+    verbose_red_echo " ---> Running T2w to T1w registration"
+    if [[ "$SPECIES" != "Human" ]] ; then
+        ### Create tentative biasfield corrected image to improve T2w-to-T1w registration - TH Jan 2021
+        mkdir -p ${WD}/T2w2T1w
+        PipelineScripts=${HCPPIPEDIR_PreFS}
+        if [ ! -z ${BiasFieldSmoothingSigma} ] ; then
+            BiasFieldSmoothingSigma="--bfsigma=${BiasFieldSmoothingSigma}"
+        fi
+        ${PipelineScripts}/BiasFieldCorrection_sqrtT1wXT2w.sh \
+            --workingdir=${WD}/T2w2T1w/BiasFieldCorrection_sqrtT1wXT2w \
+            --T1im=${WD}/${T1wImageBasename} \
+            --T1brain=${WD}/${T1wImageBrainBasename} \
+            --T2im=${WD}/${T2wImageBasename} \
+            --obias=${WD}/T2w2T1w/BiasField_acpc \
+            --oT1im=${WD}/${T1wImageBasename}_restore \
+            --oT1brain=${WD}/${T1wImageBasename}_restore_brain \
+            --oT2im=${WD}/${T2wImageBasename}_restore \
+            --oT2brain=${WD}/${T2wImageBasename}_restore_brain \
+            ${BiasFieldSmoothingSigma}
+    fi
+    ### Now do T2w to T1w registration
+    mkdir -p ${WD}/T2w2T1w
 
-  ### Now do T2w to T1w registration
-  mkdir -p ${WD}/T2w2T1w
+    # Main registration: between corrected T2w and corrected T1w
+    verbose_echo "      ... Corrected T2w to T1w"
+    if [ "$SPECIES" != "Human" ] ; then
+        ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBasename}_restore_brain --t1=${WD}/${T1wImageBasename}_restore --t1brain=${WD}/${T1wImageBasename}_restore_brain --out=${WD}/T2w2T1w/T2w_reg  
+    else
+        ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
+    fi
+    # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
+    verbose_echo "      ... Making a warpfield from original"
+    ${FSLDIR}/bin/convertwarp --relout --rel --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
+    verbose_echo "      ... Applying warpfield"
+    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
 
-  # Main registration: between corrected T2w and corrected T1w
-  verbose_echo "      ... Corrected T2w to T1w"
-  ${FSLDIR}/bin/epi_reg --epi=${WD}/${T2wImageBrainBasename} --t1=${WD}/${T1wImageBasename} --t1brain=${WD}/${T1wImageBrainBasename} --out=${WD}/T2w2T1w/T2w_reg
+    # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
+    ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
 
-  # Make a warpfield directly from original (non-corrected) T2w to corrected T1w  (and apply it)
-  verbose_echo "      ... Making a warpfield from original"
-  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${T1wImage} --warp1=${WD}/FieldMap2${T2wImageBasename}_Warp.nii.gz --postmat=${WD}/T2w2T1w/T2w_reg.mat -o ${WD}/T2w2T1w/T2w_dc_reg
-  verbose_echo "      ... Applying warpfield"
-  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${T2wImage} --ref=${T1wImage} --warp=${WD}/T2w2T1w/T2w_dc_reg --out=${WD}/T2w2T1w/T2w_reg
-
-  # Add 1 to avoid exact zeros within the image (a problem for myelin mapping?)
-  ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg.nii.gz -add 1 ${WD}/T2w2T1w/T2w_reg.nii.gz -odt float
-
-  # QA image
-  verbose_echo "      ... Creating QA image"
-  ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
-
-  # Copy files to specified destinations
-  verbose_echo "      ... Copying files"
-  ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
-  ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
+    # QA image
+    verbose_echo "      ... Creating QA image"
+    if [ "$SPECIES" != "Human" ] ; then
+        ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${WD}/${T1wImageBasename}_restore -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float
+    else
+        ${FSLDIR}/bin/fslmaths ${WD}/T2w2T1w/T2w_reg -mul ${T1wImage} -sqrt ${WD}/T2w2T1w/sqrtT1wbyT2w -odt float    
+    fi
+    # Copy files to specified destinations
+    verbose_echo "      ... Copying files"
+    ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_dc_reg ${OutputT2wTransform}
+    ${FSLDIR}/bin/imcp ${WD}/T2w2T1w/T2w_reg ${OutputT2wImage}
 fi
 
 verbose_green_echo "---> Finished T2w To T1w Distortion Correction and Registration"
