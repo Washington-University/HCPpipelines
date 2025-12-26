@@ -122,7 +122,7 @@ if (( ! TemplateProcessing )); then
     LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
 
     log_Msg "Organizing the folder structure for: ${Timepoint_cross}"
-    # create the symlink
+
     TargetDIR="${StudyFolder}/${Timepoint_cross}.long.${Template}/T1w"
     mkdir -p "${TargetDIR}"
 
@@ -132,13 +132,14 @@ if (( ! TemplateProcessing )); then
     fi
 
     tp_folder_hcp="${TargetDIR}/${Timepoint_cross}.long.${Template}"
-    ln -sf "$tp_folder_fslong" "$tp_folder_hcp"
-    if [ ! -d "$tp_folder_hcp" ]; then
-    	log_Err_Abort "Could not create required symlink from $tp_folder_fslong to $tp_folder_hcp"
+    if [ -d "$tp_folder_hcp" ]; then 
+        rm -rf "$tp_folder_hcp"
+    fi
+    mv "$tp_folder_fslong" "$tp_folder_hcp"
+    if (( $? )); then 
+       	log_Err_Abort "Could not move $tp_folder_fslong to $tp_folder_hcp"
     fi
 
-    # remove the symlink in the subject's folder
-    rm -rf "${LongDIR}/${Timepoint_cross}"
 fi
 
 ############################################################################################################
