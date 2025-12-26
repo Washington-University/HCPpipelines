@@ -418,6 +418,21 @@ post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEdd
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
 
+# Clean up large diffusion files. Skip symlinks
+if (( IsLongitudinal )); then 
+    patterns_to_clean=(
+        'rawdata/Pos_[1-9]\.nii\.gz'
+        'rawdata/Neg_[1-9]\.nii\.gz'
+        'eddy/Pos_Neg\.nii\.gz'
+        'eddy/eddy_unwarped_images\.nii\.gz' 
+        'data/data\.nii\.gz'
+        'data/warped/data_warped\.nii\.gz' 
+    )
+    for pattern in "${patterns_to_clean[@]}"; do
+        find "${StudyFolder}/${DWIName}" -type f -regex "${StudyFolder}/${DWIName}/${pattern}" -delete
+    done
+fi
+
 log_Msg "Completed!"
 exit 0
 
