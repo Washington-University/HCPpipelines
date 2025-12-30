@@ -11,7 +11,7 @@
 # Global default values
 DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="HCA6002236 HCA6002237"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
 
 DEFAULT_POSSIBLE_VISITS="V1_MR V2_MR V3_MR"

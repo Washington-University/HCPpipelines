@@ -6,7 +6,7 @@ PossibleVisits=(V1_MR V2_MR V3_MR)
 ExcludeVisits=()
 Templates=(HCA6002236_V1_V2_V3)
 
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Requirements for this script
 #  installed versions of: FSL, FreeSurfer, Connectome Workbench (wb_command), gradunwarp (HCP version)

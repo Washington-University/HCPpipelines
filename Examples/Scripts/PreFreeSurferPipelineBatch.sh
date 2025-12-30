@@ -134,7 +134,7 @@ main()
 	Sessionlist="100307 100610"                             # Space delimited list of session IDs
 
 	# Set variable value that sets up environment
-	EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" # Pipeline environment script
+	EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # Pipeline environment script
 
 	# Use any command line specified options to override any of the variable settings above
 	if [ -n "${command_line_specified_study_folder}" ]; then
