@@ -130,7 +130,7 @@ main()
 	get_batch_options "$@"
 
 	# Set variable values that locate and specify data to process
-	StudyFolder="${HOME}/projects/Pipelines_ExampleData" # Location of Session folders (named by sessionID)
+	StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" # Location of Session folders (named by sessionID)
 	Sessionlist="100307 100610"                             # Space delimited list of session IDs
 
 	# Set variable value that sets up environment

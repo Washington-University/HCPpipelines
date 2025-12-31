@@ -9,7 +9,7 @@
 # 3. Both longitudinal and cross-sectional sessions exist in the study folder.
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
+DEFAULT_STUDY_FOLDER="${HOME}/data/HCPpipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="HCA6002236 HCA6002237"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"

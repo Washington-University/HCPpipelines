@@ -2,7 +2,7 @@
 #set -xv
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
+DEFAULT_STUDY_FOLDER="${HOME}/data/HCPpipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="100307 100610"
 DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
