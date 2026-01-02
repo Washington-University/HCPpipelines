@@ -80,6 +80,7 @@ opts_ShowValues
 
 log_Check_Env_Var FSLDIR
 
+
 T1wRestoreBasename=`remove_ext $T1wRestore`;
 T1wRestoreBasename=`basename $T1wRestoreBasename`;
 T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
@@ -99,7 +100,7 @@ echo "PWD = `pwd`" >> $WD/xfms/log.txt
 echo "date: `date`" >> $WD/xfms/log.txt
 echo " " >> $WD/xfms/log.txt
 
-########################################## DO WORK ##########################################
+########################################## DO WORK ########################################## 
 
 # Linear then non-linear registration to MNI
 verbose_echo " --> Linear then non-linear registration to MNI"
@@ -117,6 +118,7 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestore}
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestoreBrain}
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
+${FSLDIR}/bin/imcp ${OutputT1wImage} ${OutputT1wImage}_orig
 
 # T2w set of warped outputs (brain/whole-head + restored/orig)
 if [ ! "${T2wImage}" = "NONE" ] ; then
@@ -135,7 +137,7 @@ verbose_echo " "
 log_Msg "END: AtlasRegistration to MNI152"
 echo " END: `date`" >> $WD/xfms/log.txt
 
-########################################## QA STUFF ##########################################
+########################################## QA STUFF ########################################## 
 
 if [ -e $WD/xfms/qa.txt ] ; then rm -f $WD/xfms/qa.txt ; fi
 echo "cd `pwd`" >> $WD/xfms/qa.txt
