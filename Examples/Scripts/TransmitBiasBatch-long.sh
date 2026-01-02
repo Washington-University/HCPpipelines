@@ -31,7 +31,7 @@ function identify_timepoints
 
 #environment configuration
 queue="long.q"
-StudyFolder="${HOME}/data/Pipelines_ExampleData"
+StudyFolder="${HOME}/data/HCPpipelines_ExampleData"
 EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 source "$EnvironmentScript"
 

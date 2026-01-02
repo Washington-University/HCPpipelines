@@ -61,7 +61,7 @@ function identify_timepoints
 get_batch_options "$@"
 
 #Location of Subject folders (named by subjectID)
-StudyFolder="${HOME}/data/Pipelines_ExampleData"
+StudyFolder="${HOME}/data/HCPpipelines_ExampleData"
 EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 #list longitudinal template IDs, one per subject
