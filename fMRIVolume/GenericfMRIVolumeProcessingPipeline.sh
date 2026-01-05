@@ -41,6 +41,7 @@ PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
 ON_SCANNER_METHOD_OPT="OnScanner"
+NN_METHOD_OPT="NN"
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -99,7 +100,12 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
 
         '${ON_SCANNER_METHOD_OPT}'
              do not do any additional SDC
-             NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC"			 
+               NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC
+
+        '${NN_METHOD_OPT}'
+             use an NN-generated distortion-corrected SBRef/Scout (see --sbref-dc) to derive a fieldmap-less SDC warp"
+
+    opts_AddOptional '--sbref-dc' 'SBRefDC' 'volume' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Only used when --dcmethod='${NN_METHOD_OPT}'. Must be in the same voxel grid as --fmriscout/derived scout." "NONE"
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 
@@ -372,6 +378,12 @@ case "$DistortionCorrection" in
         fi
         ;;
 
+    ${NN_METHOD_OPT})
+        if [[ "${SBRefDC}" == "" || "${SBRefDC}" == "NONE" ]]; then
+            log_Err_Abort "--sbref-dc must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
+
     ${NONE_METHOD_OPT}|${ON_SCANNER_METHOD_OPT})
         # Do nothing
         ;;
@@ -381,15 +393,20 @@ case "$DistortionCorrection" in
         ;;
 
 esac
-# Additionally, EchoSpacing and UnwarpDir needed for all except NONE
-if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" || $DistortionCorrection != "${ON_SCANNER_METHOD_OPT}" ]]; then
-    if [ -z ${EchoSpacing} ]; then
-        log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-    if [ -z ${UnwarpDir} ]; then
-        log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
-    fi
-fi
+# Additionally, EchoSpacing and UnwarpDir needed for methods that explicitly model/apply SDC
+case "$DistortionCorrection" in
+    ${NONE_METHOD_OPT}|${ON_SCANNER_METHOD_OPT}|${NN_METHOD_OPT})
+        # Do nothing
+        ;;
+    *)
+        if [ -z ${EchoSpacing} ]; then
+            log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${UnwarpDir} ]; then
+            log_Err_Abort "--unwarpdir must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
+esac
 
 
 # Convert BiasCorrection value to all UPPERCASE (to allow the user the flexibility to use NONE, None, none, legacy, Legacy, etc.)
@@ -693,7 +710,7 @@ else
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
             ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
         #skip large files that will be generated
-        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then 
+        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
         	continue
         else
             cp -r "$fd" "$fMRIFolderLong/"
@@ -906,6 +923,11 @@ if [ $fMRIReference = "NONE" ] ; then
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
 
+    sbrefdc=""
+    if [[ "${DistortionCorrection}" == "${NN_METHOD_OPT}" ]]; then
+        sbrefdc="--sbref-dc=${SBRefDC}"
+    fi
+
     ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
@@ -937,7 +959,8 @@ if [ $fMRIReference = "NONE" ] ; then
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
-        --t1w-cross2long-xfm="$T1wCross2LongXfm"
+        --t1w-cross2long-xfm="$T1wCross2LongXfm" \
+        "${sbrefdc[@]}"
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -d ${DCFolder} ] ; then
@@ -1136,8 +1159,8 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 # remove the link to the original time series in longitudinal session
 # to avoid potential storage issue as
 # symlinks tend to become hard copies over time.
-if (( IsLongitudinal )); then 
-    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz 
+if (( IsLongitudinal )); then
+    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz
 fi
 
 #Econ
