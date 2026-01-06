@@ -101,10 +101,6 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
         '${NN_METHOD_OPT}'
              use an NN-generated distortion-corrected SBRef/Scout (via --sbref-dc) to derive a fieldmap-less SDC warp"
 
-opts_AddOptional '--sbref-dc' 'SBRefDC' 'image' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Required when --method='${NN_METHOD_OPT}'. Must match --scoutin voxel grid." ""
-
-
-#Optional Args
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
@@ -138,6 +134,8 @@ opts_AddOptional '--fmriname' 'NameOffMRI' 'name' "name of fmri run"
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' "longitudinal processing" "0"
 
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. Mandatory if is-longitudinal is set." "NONE"
+
+opts_AddOptional '--sbref-dc' 'SBRefDC' 'image' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Required when --method='${NN_METHOD_OPT}'. Must match --scoutin voxel grid." ""
 
 opts_ParseArguments "$@"
 
@@ -536,8 +534,8 @@ if (( ! IsLongitudinal )); then
             SBRefDCBase=$(${FSLDIR}/bin/remove_ext "$SBRefDC")
 
             # Copy scout and NN corrected scout into working directory
-            cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
-            cp ${SBRefDCBase}.nii.gz ${WD}/SBRef_dc.nii.gz
+            imcp "$ScoutInputName" "$WD/Scout"
+            imcp "$SBRefDC" "$WD/SBRef_dc"
 
             # Sanity check: voxel grid must match
             for key in dim1 dim2 dim3 pixdim1 pixdim2 pixdim3
@@ -561,9 +559,6 @@ if (( ! IsLongitudinal )); then
             # Convert coefficients to relative warpfield and jacobian (both in SBRef_dc/scout grid)
             ${FSLDIR}/bin/fnirtfileutils --in=${WD}/WarpField_coeff --ref=${WD}/SBRef_dc.nii.gz --out=${WD}/WarpField
             ${FSLDIR}/bin/fnirtfileutils --in=${WD}/WarpField_coeff --ref=${WD}/SBRef_dc.nii.gz --jac=${WD}/Jacobian
-
-            # Ensure output scout has expected basename (without explicit extension in later commands)
-            ${FSLDIR}/bin/imcp ${WD}/${ScoutInputFile}${ScoutExtension}.nii.gz ${WD}/${ScoutInputFile}${ScoutExtension}
 
             # Optional jacobian modulation of undistorted scout
             if ((UseJacobian))

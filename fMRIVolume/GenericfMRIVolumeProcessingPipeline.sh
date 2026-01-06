@@ -923,11 +923,6 @@ if [ $fMRIReference = "NONE" ] ; then
     log_Msg "mkdir -p ${DCFolder}"
     mkdir -p ${DCFolder}
 
-    sbrefdc=""
-    if [[ "${DistortionCorrection}" == "${NN_METHOD_OPT}" ]]; then
-        sbrefdc="--sbref-dc=${SBRefDC}"
-    fi
-
     ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
         --workingdir=${DCFolder} \
         --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
@@ -960,7 +955,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
         --t1w-cross2long-xfm="$T1wCross2LongXfm" \
-        "${sbrefdc[@]}"
+        --sbref-dc=${SBRefDC}
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -d ${DCFolder} ] ; then
