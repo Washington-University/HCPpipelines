@@ -49,6 +49,7 @@ opts_AddOptional '--profumo-threads' 'ProfumoThreads' 'integer' "number of threa
 opts_AddOptional '--profumo-dof-correction' 'DOFCorrection' 'float' "DOF correction for PROFUMO" '0.5'
 opts_AddOptional '--profumo-cov-model' 'CovModel' 'string' "covariance model for PROFUMO" 'Subject'
 opts_AddOptional '--profumo-singularity' 'ProfumoSingularity' 'path' "path to PROFUMO singularity container"
+opts_AddOptional '--profumo-random-seed' 'RandomSeed' 'integer' "random seed for PROFUMO" '123'
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
@@ -171,7 +172,7 @@ do
                 /opt/profumo/C++/PROFUMO "${ProfumoConfig}" \
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
-                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}"
+                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}"
             
             log_Msg "Running PROFUMO postprocessing"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
