@@ -1,8 +1,8 @@
-#!/bin/bash 
+#!/bin/bash
 
 # Requirements for this script
 #  installed versions of: FSL, FreeSurfer
-#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, HCPPIPEDIR_Global 
+#  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, HCPPIPEDIR_Global
 
 # ---------------------------------------------------------------------------
 #  Constants for specification of susceptibility distortion Correction Method
@@ -10,13 +10,14 @@
 
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
-# For GE HealthCare Fieldmap Distortion Correction methods 
+# For GE HealthCare Fieldmap Distortion Correction methods
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
-GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap"
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 NONE_METHOD_OPT="NONE"
+NN_METHOD_OPT="NN"
 
 # --------------------------------------------------------------------------------
 #  Usage Description Function
@@ -61,7 +62,7 @@ opts_AddMandatory '--usejacobian' 'UseJacobian' 'true or false' "apply jacobian 
 
 opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'coefficients (Siemens Format)' "Gradient non-linearity distortion coefficients (Siemens format), set to "NONE" to skip gradient non-linearity distortion correction (GDC)."
 
-opts_AddMandatory '--biascorrection' 'BiasCorrection' 'SEBASED OR LEGACY OR NONE' "Method to use for receive coil bias field correction: 
+opts_AddMandatory '--biascorrection' 'BiasCorrection' 'SEBASED OR LEGACY OR NONE' "Method to use for receive coil bias field correction:
         'SEBASED'
              use bias field derived from spin echo images, must also use --method='${SPIN_ECHO_METHOD_OPT}'
              Note: --fmriname=<name of fmri run> required for 'SEBASED' bias correction method
@@ -95,10 +96,11 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              use Philips specific Gradient Echo Field Maps for SDC
 
         '${NONE_METHOD_OPT}'
-             do not use any SDC"
+             do not use any SDC
 
+        '${NN_METHOD_OPT}'
+             use an NN-generated distortion-corrected SBRef/Scout (via --sbref-dc) to derive a fieldmap-less SDC warp"
 
-#Optional Args 
 opts_AddOptional '--workingdir' 'WD' 'path' 'working dir'
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'spacing (seconds)' "*effective* echo spacing of fMRI input, in seconds"
@@ -133,6 +135,8 @@ opts_AddOptional '--is-longitudinal' 'IsLongitudinal' "longitudinal processing" 
 
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. Mandatory if is-longitudinal is set." "NONE"
 
+opts_AddOptional '--sbref-dc' 'SBRefDC' 'image' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Required when --method='${NN_METHOD_OPT}'. Must match --scoutin voxel grid."
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -164,6 +168,14 @@ then
     TopupConfig="$HCPPIPEDIR"/global/config/b02b0.cnf
 fi
 
+if [[ "$DistortionCorrection" == "${NN_METHOD_OPT}" ]]
+then
+    if [[ "$SBRefDC" == "" ]]
+    then
+        log_Err_Abort "--sbref-dc must be specified with --method=${NN_METHOD_OPT}"
+    fi
+fi
+
 ################################################### OUTPUT FILES #####################################################
 
 # Outputs (in $WD):
@@ -181,7 +193,7 @@ fi
 #      Jacobian2T1w
 #      ${ScoutInputFile}
 #      ${ScoutInputFile}2T1w_init
-#      ${ScoutInputFile}_warp     
+#      ${ScoutInputFile}_warp
 #
 #    FreeSurfer section:
 #      fMRI2str.mat  fMRI2str
@@ -236,16 +248,16 @@ log_Msg "START"
 #ScoutExtension must initialize for both cross-sectional and longitudinal modes.
 
 case $DistortionCorrection in
-	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} )
-		ScoutExtension="_undistorted" 
+    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${NN_METHOD_OPT} )
+		ScoutExtension="_undistorted"
 	;;
 	${NONE_METHOD_OPT})
-		ScoutExtension="_nosdc" 
+		ScoutExtension="_nosdc"
 	;;
 esac
 
 
-if (( ! IsLongitudinal )); then 
+if (( ! IsLongitudinal )); then
 
     mkdir -p $WD
 
@@ -269,7 +281,7 @@ if (( ! IsLongitudinal )); then
     if [[ ${UnwarpDir} != [xyzijk] && ${UnwarpDir} != -[xyzijk] && ${UnwarpDir} != [xyzijk]- ]]; then
         log_Err_Abort "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
     fi
-        
+
     # FSL's naming convention for 'epi_reg --pedir' is {x,y,z,-x,-y,-z}
     # So, swap out any {i,j,k} for {x,y,z} (using bash pattern replacement)
     # and then make sure any '-' sign is preceding
@@ -324,7 +336,7 @@ if (( ! IsLongitudinal )); then
                     --ofmapmagbrain=${WD}/Magnitude_brain \
                     --ofmap=${WD}/FieldMap \
                     --gdcoeffs=${GradientDistortionCoeffs}
-            
+
             elif [ $DistortionCorrection = "${GE_HEALTHCARE_METHOD_OPT}" ] ; then
                 # --------------------------------------------
                 # -- GE HealthCare Gradient Echo Field Maps --
@@ -360,7 +372,7 @@ if (( ! IsLongitudinal )); then
                     --gdcoeffs=${GradientDistortionCoeffs}
 
             else
-                log_Err_Abort "Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"            
+                log_Err_Abort "Script programming error. Unhandled Distortion Correction Method: ${DistortionCorrection}"
             fi
 
             cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
@@ -428,7 +440,7 @@ if (( ! IsLongitudinal )); then
                 --gdcoeffs=${GradientDistortionCoeffs} \
                 --topupconfig=${TopupConfig} \
                 --usejacobian=${UseJacobian}
-            
+
 
             #If NHP, brain extract scout for registration
             if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
@@ -469,7 +481,7 @@ if (( ! IsLongitudinal )); then
             else
             log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
             fi
-			
+
             # generate combined warpfields and spline interpolated images + apply bias field correction
             log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
             ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
@@ -512,6 +524,69 @@ if (( ! IsLongitudinal )); then
 
             ;;
 
+        ${NN_METHOD_OPT})
+
+            # -------------------------------
+            # -- NN SBRef-based distortion correction
+            # -------------------------------
+
+            # Allow caller to pass with or without extension
+            SBRefDCBase=$(${FSLDIR}/bin/remove_ext "$SBRefDC")
+
+            # Copy scout and NN corrected scout into working directory
+            imcp "$ScoutInputName" "$WD/Scout"
+            imcp "$SBRefDC" "$WD/SBRef_dc"
+
+            # Sanity check: voxel grid must match
+            for key in dim1 dim2 dim3 pixdim1 pixdim2 pixdim3
+            do
+                a=$(${FSLDIR}/bin/fslval ${WD}/Scout $key)
+                b=$(${FSLDIR}/bin/fslval ${WD}/SBRef_dc $key)
+                if [[ "$a" != "$b" ]]
+                then
+                    log_Err_Abort "--sbref-dc must match --scoutin voxel grid (mismatch on ${key}: scout=${a}, sbrefdc=${b}). Resample your SBRef_dc to the scout grid before running."
+                fi
+            done
+
+            # Estimate a nonlinear warp from distorted scout -> NN undistorted scout
+            # We use FNIRT coefficient output and convert it to a relative warpfield (HCP convention)
+            log_Msg "estimate nonlinear warp from distorted scout to NN SBRef_dc"
+            ${FSLDIR}/bin/flirt -in ${WD}/Scout.nii.gz -ref ${WD}/SBRef_dc.nii.gz -omat ${WD}/Scout2SBRef_dc.mat -out ${WD}/Scout2SBRef_dc.nii.gz
+
+            # FNIRT (affine-initialized)
+            ${FSLDIR}/bin/fnirt --in=${WD}/Scout.nii.gz --ref=${WD}/SBRef_dc.nii.gz --aff=${WD}/Scout2SBRef_dc.mat --cout=${WD}/WarpField_coeff --iout=${WD}/${ScoutInputFile}${ScoutExtension}.nii.gz
+
+            # Convert coefficients to relative warpfield and jacobian (both in SBRef_dc/scout grid)
+            ${FSLDIR}/bin/fnirtfileutils --in=${WD}/WarpField_coeff --ref=${WD}/SBRef_dc.nii.gz --out=${WD}/WarpField
+            ${FSLDIR}/bin/fnirtfileutils --in=${WD}/WarpField_coeff --ref=${WD}/SBRef_dc.nii.gz --jac=${WD}/Jacobian
+
+            # Optional jacobian modulation of undistorted scout
+            if ((UseJacobian))
+            then
+                log_Msg "apply Jacobian correction to NN-undistorted scout image"
+                ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFile}${ScoutExtension} -mul ${WD}/Jacobian.nii.gz ${WD}/${ScoutInputFile}${ScoutExtension}
+            fi
+
+            # Register undistorted scout image to T1w (initial)
+            log_Msg "register NN-undistorted scout image to T1w"
+            if [ $PreregisterTool = "epi_reg" ] ; then
+                log_Msg "... running epi_reg (dof ${dof})"
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}${ScoutExtension} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
+            elif [ $PreregisterTool = "flirt" ] ; then
+                log_Msg "... running flirt"
+                ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof ${dof}
+            else
+                log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
+            fi
+
+            # Combine SDC warp with initial scout->T1w affine to create init warp and init-resampled scout
+            log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
+            ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
+
+            ;;
+
         ${NONE_METHOD_OPT})
 
                 # NOTE: To work with later code a uniform Jacobian is created.
@@ -519,11 +594,11 @@ if (( ! IsLongitudinal )); then
                 log_Msg "---> No distortion correction"
                 log_Msg "---> Copy Scout image"
                 ${FSLDIR}/bin/imcp ${ScoutInputName} ${WD}/${ScoutInputFile}${ScoutExtension}
-                
+
                 log_Msg "---> Creating uniform Jacobian Volume"
                 # Create fake Jacobian Volume for Regular Fieldmaps (all ones)
                 ${FSLDIR}/bin/fslmaths ${T1wImage} -mul 0 -add 1 -bin ${WD}/Jacobian.nii.gz
-                
+
                 log_Msg "---> register scout image to T1w"
                 # register scout image to T1w
                 # this is just an initial registration, refined later in this script, but it is actually pretty good
@@ -536,7 +611,7 @@ if (( ! IsLongitudinal )); then
                 fi
 
                 # In the NONE condition, we have no distortion Warpfield.  Convert the Scout2T1 registration (affine)
-                # to its warp field equivalent, since we need "${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp" later            
+                # to its warp field equivalent, since we need "${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp" later
                 # generate Scout2T1 warpfield and spline interpolated images
                 log_Msg "generate combined warpfields and spline interpolated images"
                 ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
@@ -639,7 +714,7 @@ if (( ! IsLongitudinal )); then
     log_Msg "${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm does not exist. FreeSurferNHP.sh was not used."
 
     # Run Normally
-    log_Msg "Run Normally" 
+    log_Msg "Run Normally"
     # Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
     log_Msg "Use \"hidden\" bbregister DOF options"
     ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.nii.gz --surf white.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat --bold --reg ${WD}/EPItoT1w.dat --${dof} --o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w.nii.gz
@@ -705,10 +780,10 @@ then
             #don't need the T1w versions
             #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
-        
+
 		#required in longitudinal mode
 		mkdir -p "$SessionFolder/T1w/Results/$NameOffMRI"
-		
+
         #copy recieve field, pseudo transmit field, and dropouts, etc to results dir
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_dropouts"
         ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/T1w/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
