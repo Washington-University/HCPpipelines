@@ -105,7 +105,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
         '${NN_METHOD_OPT}'
              use an NN-generated distortion-corrected SBRef/Scout (see --sbref-dc) to derive a fieldmap-less SDC warp"
 
-    opts_AddOptional '--sbref-dc' 'SBRefDC' 'volume' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Only used when --dcmethod='${NN_METHOD_OPT}'. Must be in the same voxel grid as --fmriscout/derived scout." "NONE"
+opts_AddOptional '--sbref-dc' 'SBRefDC' 'volume' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Only used when --dcmethod='${NN_METHOD_OPT}'. Must be in the same voxel grid as --fmriscout/derived scout."
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 

@@ -135,7 +135,7 @@ opts_AddOptional '--is-longitudinal' 'IsLongitudinal' "longitudinal processing" 
 
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. Mandatory if is-longitudinal is set." "NONE"
 
-opts_AddOptional '--sbref-dc' 'SBRefDC' 'image' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Required when --method='${NN_METHOD_OPT}'. Must match --scoutin voxel grid." ""
+opts_AddOptional '--sbref-dc' 'SBRefDC' 'image' "NN-generated distortion-corrected SBRef/Scout (fieldmap-less SDC). Required when --method='${NN_METHOD_OPT}'. Must match --scoutin voxel grid."
 
 opts_ParseArguments "$@"
 
