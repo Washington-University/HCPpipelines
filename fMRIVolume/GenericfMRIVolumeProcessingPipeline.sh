@@ -99,7 +99,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
 
         '${ON_SCANNER_METHOD_OPT}'
              do not do any additional SDC
-             NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC"			 
+             NOTE: Requires SDC to have been already performed on the scanner or for the pulse sequence not to require SDC"
 
 opts_AddOptional '--echospacing' 'EchoSpacing' 'number' "effective echo spacing of fMRI input or  in seconds"
 
@@ -382,7 +382,7 @@ case "$DistortionCorrection" in
 
 esac
 # Additionally, EchoSpacing and UnwarpDir needed for all except NONE
-if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" || $DistortionCorrection != "${ON_SCANNER_METHOD_OPT}" ]]; then
+if [[ $DistortionCorrection != "${NONE_METHOD_OPT}" && $DistortionCorrection != "${ON_SCANNER_METHOD_OPT}" ]]; then
     if [ -z ${EchoSpacing} ]; then
         log_Err_Abort "--echospacing must be specified with --dcmethod=${DistortionCorrection}"
     fi
@@ -693,7 +693,7 @@ else
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
             ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
         #skip large files that will be generated
-        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then 
+        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
         	continue
         else
             cp -r "$fd" "$fMRIFolderLong/"
@@ -1136,8 +1136,8 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 # remove the link to the original time series in longitudinal session
 # to avoid potential storage issue as
 # symlinks tend to become hard copies over time.
-if (( IsLongitudinal )); then 
-    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz 
+if (( IsLongitudinal )); then
+    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz
 fi
 
 #Econ
