@@ -187,9 +187,6 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
-if [[ "$Species" == "NONE" ]]; then
-    Species=""
-fi
 
 
 
