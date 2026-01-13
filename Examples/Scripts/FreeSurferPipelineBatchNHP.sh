@@ -11,7 +11,7 @@ Usage () {
     echo "  --StudyFolder: Path to the study folder containing subject data"
     echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
     echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
-    echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhes, MacaqueFusc, NightMonkey, Marmoset)"
+    echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhesus, MacaqueSnow, NightMonkey, Marmoset)"
     echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
     echo ""
     exit 1
