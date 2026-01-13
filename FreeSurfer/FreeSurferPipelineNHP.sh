@@ -151,7 +151,7 @@ opts_AddOptional '--conf2hires' 'conf2hires' 'TRUE/FALSE' "Indicates that the sc
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
 # NHP options
-opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhes|MacaqueFusc|NightMonkey|Marmoset' "Species type (required).  Controls species-specific processing parameters" ""
+opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhesus|MacaqueSnow|NightMonkey|Marmoset' "Species type (required).  Controls species-specific processing parameters" 
 
 opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FShires|FSFinish' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish (default: Default)" "Default"
 
