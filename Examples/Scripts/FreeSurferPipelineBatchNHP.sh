@@ -153,8 +153,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t2="$T2wImage" \
         --flair="$isFLAIR" \
         --species="$SPECIES" \
-        --runmode="$RunMode" \
-		--runlocal="$RunLocal"
+        --runmode="$RunMode" 
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -165,8 +164,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t2="$T2wImage" \
         --flair="$isFLAIR" \
         --species="$SPECIES" \
-        --runmode="$RunMode" \
-        --runlocal="$RunLocal"
+        --runmode="$RunMode" 
     echo ". ${EnvironmentScript}"
 
 done
