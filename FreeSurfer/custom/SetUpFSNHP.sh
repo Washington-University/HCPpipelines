@@ -122,7 +122,11 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
     TemplateWMSkeleton="NONE"                                 # wmskeleton is not effective for snow monkey 
 
+  else
+    echo "No Macaque subspecies matched the provided species name: $SPECIES" 1>&2
+    exit 1
   fi
+
   GCA="RB_all_2016-05-10.vc700.gca"
   GCASkull="RB_all_withskull_2016-05-10.vc700.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"
