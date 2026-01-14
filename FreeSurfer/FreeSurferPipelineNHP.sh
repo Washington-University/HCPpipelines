@@ -181,7 +181,7 @@ if [[ "$T1wImage" == "NONE" ]]; then
     T1wImage=""
 fi
 if [[ "$T1wImageBrain" == "NONE" ]]; then
-    T1wImage=""
+    T1wImageBrain=""
 fi
 if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
