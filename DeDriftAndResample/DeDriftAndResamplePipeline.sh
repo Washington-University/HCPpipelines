@@ -35,8 +35,9 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"       # also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
@@ -505,12 +506,19 @@ for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ${dontFixNames[@]+"${dontFixName
 		log_Msg "Hemisphere: ${Hemisphere}"
 		log_Msg "Structure: ${Structure}"
 
-		${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
-		${Caret7_Command} -metric-dilate ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -nearest
-		${Caret7_Command} -metric-mask ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+		#use temporary files that will be deleted even if the pipeline errors out
+		tempfiles_create DeDrift_"$Subject"_"$fMRIName"_resampleFromNative_XXXXXX.func.gii resampletemp
+		tempfiles_add "$resampletemp"_smooth"$SmoothingFWHM".func.gii
+		
+		${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA "$resampletemp" -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
+		${Caret7_Command} -metric-dilate "$resampletemp" ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 "$resampletemp" -nearest
+		${Caret7_Command} -metric-mask "$resampletemp" ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii "$resampletemp"
 		Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
-		${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${Sigma} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-		${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+		${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii "$resampletemp" ${Sigma} "$resampletemp"_smooth"$SmoothingFWHM".func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+		${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} "$resampletemp"_smooth"$SmoothingFWHM".func.gii
+		
+		#these temporaries may be big, don't just leave them in /tmp until the end of the script
+		rm -f "$resampletemp" "$resampletemp"_smooth"$SmoothingFWHM".func.gii
 	done
 done
 
