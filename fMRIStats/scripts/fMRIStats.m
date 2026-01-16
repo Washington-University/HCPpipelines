@@ -1,17 +1,22 @@
-function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTCS,CleanedCIFTITCS,CleanedVolumeTCS,CIFTIOutputName,VolumeOutputName,CleanUpEffects,ProcessVolume,Caret7_Command)
+function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTCS,CleanedCIFTITCS,CleanedVolumeTCS,CIFTIOutputName,VolumeOutputName,CleanUpEffectsStr,ProcessVolumeStr,Caret7_Command)
 
+  % parse boolean strings ('0' or '1' from bash opts_StringToBool)
+  CleanUpEffects = strcmp(CleanUpEffectsStr, '1');
+  ProcessVolume = strcmp(ProcessVolumeStr, '1');
+
+  % load data
   MeanCIFTI = ciftiopen(MeanCIFTI,Caret7_Command);
   sICATCS = ciftiopen(sICATCS,Caret7_Command);
   Signal = load(Signal);
   CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
   sICATCSSignal = sICATCS.cdata(Signal,:)';
 
-  if strcmp(CleanUpEffects,'YES')
+  if CleanUpEffects
     OrigCIFTITCS = ciftiopen(OrigCIFTITCS,Caret7_Command);
     OrigCIFTITCS.cdata = demean(OrigCIFTITCS.cdata,2);
   end
 
-  if strcmp(ProcessVolume,'YES')
+  if ProcessVolume
     VolumeGeometryName = MeanVolume;
     MeanVolume = read_avw(MeanVolume);
     CleanedVolumeTCS = read_avw(CleanedVolumeTCS);
@@ -21,7 +26,7 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
     MeanVolume2DMasked = MeanVolume2D(MASK);
     CleanedVolumeTCS2DMasked = CleanedVolumeTCS2D(MASK,:);
     clear CleanedVolumeTCS CleanedVolumeTCS2D
-    if strcmp(CleanUpEffects,'YES')
+    if CleanUpEffects
       OrigVolumeTCS = read_avw(OrigVolumeTCS);
       OrigVolumeTCS2D = reshape(OrigVolumeTCS,size(MeanVolume,1) * size(MeanVolume,2) * size(MeanVolume,3),size(OrigVolumeTCS,4));
       OrigVolumeTCS2DMasked = OrigVolumeTCS2D(MASK,:);
@@ -45,7 +50,7 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
   fCNR = ReconSTD ./ UnstructSTD;
   PercBOLD = ReconSTD ./ MeanCIFTI.cdata * 100;
 
-  if strcmp(CleanUpEffects,'YES')
+  if CleanUpEffects
     CIFTIStruct = CleanedCIFTITCS;
     CIFTIStruct.cdata = OrigCIFTITCS.cdata-CleanedCIFTITCS.cdata;
     StructSTD = std(CIFTIStruct.cdata,[],2);
@@ -68,7 +73,7 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
   ciftisave(CIFTIOutput,CIFTIOutputName,Caret7_Command);
 
 
-  if strcmp(ProcessVolume,'YES')
+  if ProcessVolume
     VolumeBetas2DMasked = (pinv(sICATCSSignal) * CleanedVolumeTCS2DMasked')';
     VolumeRecon2DMasked = VolumeBetas2DMasked * sICATCSSignal';
     ReconSTD = std(VolumeRecon2DMasked,[],2);
@@ -80,7 +85,7 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
     PercBOLD = ReconSTD ./ MeanVolume2DMasked * 100;
 
 
-    if strcmp(CleanUpEffects,'YES')
+    if CleanUpEffects
       VolumeStruct2DMasked = OrigVolumeTCS2DMasked-CleanedVolumeTCS2DMasked;
       StructSTD = std(VolumeStruct2DMasked,[],2);
       VolumeStructUnstruct2DMasked = OrigVolumeTCS2DMasked-VolumeRecon2DMasked;
@@ -103,3 +108,4 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
 
 end
 
+end
