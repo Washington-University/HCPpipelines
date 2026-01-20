@@ -997,7 +997,7 @@ if [ "$RunMode" -lt 6 ]; then
 	echo "0 0 0 1" >> ${eye_dat_file}
 	echo "round" >> ${eye_dat_file}
 
-	if [ "${T2wImage}" != "NONE" ] ; then
+	if [[ "${T2wImage}" != "" ]] ; then
 		# ----------------------------------------------------------------------
 		log_Msg "Making T2w to T1w registration available in FSL format"
 		# ----------------------------------------------------------------------
