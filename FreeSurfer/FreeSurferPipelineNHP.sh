@@ -759,8 +759,8 @@ if [ "$RunMode" -lt 2 ] ; then
 	cmd=("$PipelineScripts"/IntensityCor.sh "$SubjectDIR"/"$SubjectID"/mri/orig.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz -t1 -m "$IntensityCor","$BiasFieldFastSmoothingSigma" "$StrongBias_args")
 	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
-	log_Msg "...second recon-all for normaliztion1"
-	${recon_all_cmd} -normalization ${extra_reconall_args} ${ExpertOpts}
+	log_Msg "...second recon-all for normalization"
+	"${recon_all_cmd[@]}" -normalization "${extra_reconall_args[@]}"
 
 fi
 
