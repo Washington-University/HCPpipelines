@@ -23,7 +23,7 @@ Usage () {
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 Subjlist="nhp_session1 nhp_session2"
-SPECIES="Macaque"
+SPECIES="MacaqueRhesus"
 RunMode="Default"
 T2wType="T2w"
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
