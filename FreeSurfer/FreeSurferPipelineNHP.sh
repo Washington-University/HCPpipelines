@@ -172,7 +172,7 @@ opts_ShowValues
 extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manual[@]}"})
 
 #parse booleans
-flair=$(opts_ToBool "$flair")
+flair=$(opts_StringToBool "$flair")
 existing_subject=$(opts_StringToBool "$existing_subject")
 conf2hires=$(opts_StringToBool "$conf2hires")
 
