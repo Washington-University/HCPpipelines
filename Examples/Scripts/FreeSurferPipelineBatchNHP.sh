@@ -13,7 +13,8 @@ Usage () {
     echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
     echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhesus, MacaqueSnow, NightMonkey, Marmoset)"
     echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
-    echo ""
+    echo "  --RunLocal: Run locally (TRUE or FALSE, default: FALSE)"
+	echo ""
     exit 1
 }
 
@@ -27,6 +28,7 @@ SPECIES="MacaqueRhesus"
 RunMode="Default"
 T2wType="T2w"
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+RunLocal="FALSE"
 
 # Parse command line arguments
 get_batch_options() {
@@ -64,6 +66,10 @@ get_batch_options() {
                 EnvironmentScript=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
+            --runlocal)
+                RunLocal="TRUE"
+                index=$(( index + 1 ))
+                ;;
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -92,8 +98,11 @@ echo "$@"
 #    QUEUE="-q long.q"
 #fi
 
-PRINTCOM=""
-#PRINTCOM="echo"
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
 
 
@@ -112,7 +121,7 @@ PRINTCOM=""
 for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
 
     #Input Variables
-    SubjectID="$Subject" #FreeSurfer Subject ID Name
+    Subject="$Subject" #FreeSurfer Subject ID Name
     SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
     T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
     T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
@@ -127,8 +136,16 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         T2wImage="NONE"
         T2wType=NONE
     fi
+
+	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh"
+      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+	else
+      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh"
+      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+	fi
   
-    ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
+    "${queuing_command[@]}" ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
         --subject="$Subject" \
         --subjectDIR="$SubjectDIR" \
         --t1="$T1wImage" \
@@ -136,7 +153,8 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t2="$T2wImage" \
         --flair="$isFLAIR" \
         --species="$SPECIES" \
-        --runmode="$RunMode" 
+        --runmode="$RunMode" \
+		--runlocal="$RunLocal"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -147,8 +165,8 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t2="$T2wImage" \
         --flair="$isFLAIR" \
         --species="$SPECIES" \
-        --runmode="$RunMode" 
-
+        --runmode="$RunMode" \
+        --runlocal="$RunLocal"
     echo ". ${EnvironmentScript}"
 
 done
