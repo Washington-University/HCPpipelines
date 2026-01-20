@@ -944,7 +944,7 @@ if [ "$RunMode" -lt 5 ]; then
 
 	make_t1w_hires_nifti_file "${mridir}"
 
-	if [ "${T2wImage}" != "NONE" ] ; then
+		if [[ "${T2wImage}" != "" ]] ; then
 
 		make_t2w_hires_nifti_file "${mridir}"
 
