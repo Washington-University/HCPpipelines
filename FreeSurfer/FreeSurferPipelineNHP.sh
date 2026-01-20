@@ -927,16 +927,17 @@ if [ "$RunMode" -lt 5 ]; then
 
 	if [ $(echo "$ScaleFactor < 6" | bc) = 1 ] ; then  # brain is larger than the rat
 		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
-		${recon_all_cmd} -cortribbon ${recon_all_pial} ${ExpertOpts} ${conf2hiresflag}
+		#don't quote $recon_all_pial, we don't want to pass an empty string
+		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}"
 		log_Msg "...rescale volume and surface to native space"
 		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
 	else
 		log_Msg "...rescale volume and surface to native space"
 		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
 		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
-		${recon_all_cmd} -cortribbon ${recon_all_pial} ${ExpertOpts} ${conf2hiresflag}
+		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}"
 	fi
 
 	# ----------------------------------------------------------------------
