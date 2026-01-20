@@ -714,7 +714,7 @@ if [ "$RunMode" -lt 2 ] ; then
 		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
 		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
 
-		if [ "${T2wImage}" != "NONE" ] ; then
+		if [[ "${T2wImage}" != "" ]] ; then
 			log_Msg "Scale T2w volume"
 			${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T2wImage" "$ScaleFactor" $(remove_ext ${T2wImage})_scaled
 		fi
