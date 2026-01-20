@@ -4,9 +4,6 @@ function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRINam
     Subjlist = strsplit(SubjListRaw, '@');
     PFMdim = str2double(PFMdimStr);
     RunsXNumTimePoints = str2double(RunsXNumTimePointsStr);
-    CIFTI = str2double(CIFTIVerticesStr);
-    CIFTIVol = str2double(CIFTIVolumeStr);
-    
     wbcommand = 'wb_command';
     
     c = 1;

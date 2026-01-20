@@ -66,7 +66,7 @@ function ImportPFMNotes(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIP
             ciftisave(PFMTCS, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
             ciftisave(PFMSpectra, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
-            unix(['cp ' PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii ' StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
+            copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
         end
     end
 end
