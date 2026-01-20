@@ -579,7 +579,7 @@ fi
 # By default, refine pial surfaces using T2 (if T2w image provided).
 # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
 # this can be accomplished using --extra-reconall-arg=-noT2pial
-if [ "${T2wImage}" != "NONE" ] ; then
+if [[ "${T2wImage}" != "" ]] ; then
 	if [ "${flair}" = "TRUE" ] ; then
 		recon_all_pial="-FLAIRpial"
 		recon_all_T2input=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
