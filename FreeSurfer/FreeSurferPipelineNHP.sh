@@ -1102,8 +1102,8 @@ if [ "$RunMode" -lt 6 ]; then
 
 	make_t1w_hires_nifti_file "${mridir}"
 
-	if [ "${T2wImage}" != "NONE" ] ; then
-
+	if [[ "${T2wImage}" != "" ]] ; then
+	
 		make_t2w_hires_nifti_file "${mridir}"
 
 		make_t1wxt2w_qc_file "${mridir}"
