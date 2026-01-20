@@ -847,8 +847,7 @@ if [ "$RunMode" -lt 3 ] ; then
 	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
 	log_Msg "...third recon-all steps for segmentation with GCA"
-	${recon_all_cmd} -calabel -gca-dir $GCAdir -gca $GCA -normalization2 -maskbfs ${extra_reconall_args} ${ExpertOpts}
-
+	"${recon_all_cmd[@]}" -calabel -gca-dir "$GCAdir" -gca "$GCA" -normalization2 -maskbfs "${extra_reconall_args[@]}"
 fi
 
 if [ "$RunMode" -lt 4 ]; then
