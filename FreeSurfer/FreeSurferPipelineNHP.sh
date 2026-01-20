@@ -737,10 +737,13 @@ if [ "$RunMode" -lt 2 ] ; then
 		rm -rf "$SubjectDIR"/"$SubjectID""$ScaleSuffix"
 	fi
 	
-	recon_all_initrun=" -motioncor"
-	recon_all_initrun+="$recon_all_T1input"
-	recon_all_initrun+="$recon_all_T1braininput"
-	recon_all_initrun+="$recon_all_T2input"
+	recon_all_initrun=(-motioncor)
+	if ((! existing_subject))
+	then
+	    recon_all_initrun+=(-i "$(remove_ext "$T1wImage")_scaled.nii.gz"
+	    -emregmask "$(remove_ext "$T1wImageBrain")_scaled.nii.gz")
+	fi
+	recon_all_initrun+=(${recon_all_T2input[@]+"${recon_all_T2input[@]}"}))
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd} ${recon_all_initrun} ${extra_reconall_args} ${ExpertOpts}"
 	${recon_all_cmd} ${recon_all_initrun} ${extra_reconall_args} ${ExpertOpts}
