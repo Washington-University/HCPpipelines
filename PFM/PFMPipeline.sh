@@ -36,9 +36,9 @@ opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g.
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder containing Results.ppp"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--profumo-config' 'ProfumoConfig' 'path' "path to PROFUMO JSON configuration file"
-opts_AddMandatory '--profumo-tr' 'TR' "repetition time for PROFUMO analysis"
+opts_AddMandatory '--profumo-tr' 'TR' "repetition time for PROFUMO analysis" "repetition time for PROFUMO analysis in seconds"
 opts_AddMandatory '--ref-image' 'RefImage' 'path' "reference image for PROFUMO postprocessing"
-opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' "total timepoints across runs (e.g., 4800 for rest, 3880 for task)"
+opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' "total timepoints across runs" "total timepoints across runs"
 opts_AddMandatory '--concat-name' 'ConcatName' "concatenated fMRI name if using multi-run data" ''
 opts_AddMandatory '--volume-template-file' 'VolumeTemplateFile' "volume template file path" ''
 
