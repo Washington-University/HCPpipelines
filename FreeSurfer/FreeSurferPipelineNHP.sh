@@ -694,7 +694,7 @@ LF="$SubjectDIR"/"$SubjectID"/scripts/recon-all.log
 
 
 if [ "$RunMode" -lt 2 ] ; then
-	if [ "${existing_subject}" != "TRUE" ] ; then
+	if ((! existing_subject)) ; then
 
 		# ----------------------------------------------------------------------
 		log_Msg "Thresholding T1w image to eliminate negative voxel values"
