@@ -634,8 +634,9 @@ for cmd in mri_normalize mri_segment mri_fill mris_inflate1 mris_inflate2 mris_s
 done
 
 # options for conf2hires
+c2hxopts=""
 if [ ! -z "$T1normSigma" ] ; then
-	c2hxopts=" --t1norm-sigma $T1normSigma"
+	c2hxopts+=" --t1norm-sigma $T1normSigma"
 fi
 if [ ! -z "$T2normSigma" ] ; then
 	c2hxopts+=" --t2norm-sigma $T2normSigma"
