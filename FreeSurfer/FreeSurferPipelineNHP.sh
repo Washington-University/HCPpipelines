@@ -581,19 +581,17 @@ fi
 # this can be accomplished using --extra-reconall-arg=-noT2pial
 if [ "${T2wImage}" != "NONE" ] ; then
 	if [ "${flair}" = "TRUE" ] ; then
-		recon_all_pial=" -FLAIRpial"
-		recon_all_T2input=" -FLAIR $(remove_ext ${T2wImage})_scaled.nii.gz"
+		recon_all_pial="-FLAIRpial"
+		recon_all_T2input=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
 		T2Type=FLAIR
 	else
-		recon_all_pial=" -T2pial"
-		recon_all_T2input=" -T2 $(remove_ext ${T2wImage})_scaled.nii.gz"
+		recon_all_pial="-T2pial"
+		recon_all_T2input=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
 		T2Type=T2
 	fi
-	if [ -e "$SubjectDIR"/"$SubjectID"/mri/transforms/${T2Type}raw.lta ] ; then
-		rm "$SubjectDIR"/"$SubjectID"/mri/transforms/${T2Type}raw.lta # remove this otherwise conf2hires will not update this - TH
-	fi
+	rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
 else
-		recon_all_T2input=""
+		recon_all_T2input=()
 		recon_all_pial=""
 		T2Type="NONE"		
 fi
