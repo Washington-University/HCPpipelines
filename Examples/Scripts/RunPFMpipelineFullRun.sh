@@ -210,6 +210,8 @@ main() {
     ProfumoThreads="14"
     DOFCorrection="0.5"
     CovModel="Subject"
+    nStarts="100" # number of multi-start iterations for PROFUMO
+    RandomSeed="2" # random seed for PROFUMO reproducibility
     # RefImage will be auto-set based on data type below
 
     # build Profumo data location json
@@ -263,6 +265,8 @@ main() {
                                     --profumo-threads="$ProfumoThreads" \
                                     --profumo-dof-correction="$DOFCorrection" \
                                     --profumo-cov-model="$CovModel" \
+                                    --profumo-multi-start-iterations="$nStarts"\
+                                    --profumo-random-seed="$RandomSeed" \
                                     --ref-image="$RefImage" \
                                     --volume-template-file="$VolumeTemplateCIFTI"
     

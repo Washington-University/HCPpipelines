@@ -50,6 +50,8 @@ opts_AddOptional '--profumo-dof-correction' 'DOFCorrection' 'float' "DOF correct
 opts_AddOptional '--profumo-cov-model' 'CovModel' 'string' "covariance model for PROFUMO" 'Subject'
 opts_AddOptional '--profumo-singularity' 'ProfumoSingularity' 'path' "path to PROFUMO singularity container"
 opts_AddOptional '--profumo-random-seed' 'RandomSeed' 'integer' "random seed for PROFUMO" '123'
+opts_AddOptional '--profumo-multi-start-iterations' 'MultiStartIterations' 'integer' "number of iterations of group-level spatial decomposition before inferring full model" '5'
+opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initialise the decomposition based on spatial maps"
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
@@ -119,9 +121,9 @@ then
     RegString="_$RegName"
 fi
 
-# Auto-generate output strings
-OutputSTRING="_d${PFMdim}_${GroupAverageName}_WR"
-OutputPrefix="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_PFMs_tclean"
+# Auto-generate output strings (include random seed for uniqueness)
+OutputSTRING="_d${PFMdim}_${GroupAverageName}_seed${RandomSeed}_WR"
+OutputPrefix="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${RandomSeed}_PFMs_tclean"
 
 # Volume template file path
 # VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.2.dscalar.nii"
@@ -158,6 +160,13 @@ do
             # Create output directory
             mkdir -p "${PFMFolder}"
             
+            # Build optional initialMaps argument
+            InitialMapsArg=""
+            if [[ -n "${InitialMaps}" && -f "${InitialMaps}" ]]
+            then
+                InitialMapsArg="--initialMaps ${InitialMaps}"
+            fi
+            
             # log_Msg "Running PROFUMO decomposition with dimension ${PFMdim}"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
@@ -165,14 +174,16 @@ do
                 /opt/profumo/C++/PROFUMO "${ProfumoConfig}" \
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
-                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}"
+                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" \
+                --multiStartIterations "${MultiStartIterations}" ${InitialMapsArg}
             apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 "${ProfumoSingularity}" \
                 /opt/profumo/C++/PROFUMO "${ProfumoConfig}" \
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
-                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}"
+                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
+                --multiStartIterations "${MultiStartIterations}" ${InitialMapsArg}
             
             log_Msg "Running PROFUMO postprocessing"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
