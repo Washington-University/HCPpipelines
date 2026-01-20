@@ -688,7 +688,7 @@ if [ ! -z "$c2hxopts" ] ; then
 	log_Msg "conf2hires expert opts: $c2hxopts"
 	echo "conf2hiresNHP $c2hxopts" >> "$SubjectDIR"/"$SubjectID".expert.opts
 fi
-ExpertOpts="-expert "$SubjectDIR"/"$SubjectID".expert.opts -xopts-overwrite"
+extra_reconall_args+=(-expert "$SubjectDIR"/"$SubjectID".expert.opts -xopts-overwrite)
 
 log_Msg "recon-all log: $SubjectDIR/$SubjectID/scripts/recon-all.log"
 LF="$SubjectDIR"/"$SubjectID"/scripts/recon-all.log
