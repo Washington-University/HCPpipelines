@@ -880,8 +880,8 @@ if [ "$RunMode" -lt 4 ]; then
 	fi
 	
 	log_Msg "...fourth recon-all steps with edited filled.mgz"
-	${recon_all_cmd} ${FILL} -tessellate -smooth1 -inflate1 -qsphere -fix -white -smooth2 -inflate2 -curvHK -sphere -surfreg -avgcurvtifpath $GCAdir -avgcurvtif $AvgCurvTif -jacobian_white -cortparc  ${extra_reconall_args} ${ExpertOpts}
-
+    #don't quote $FILL, we don't want to pass an empty string
+	"${recon_all_cmd[@]}" $FILL -tessellate -smooth1 -inflate1 -qsphere -fix -white -smooth2 -inflate2 -curvHK -sphere -surfreg -avgcurvtifpath "$GCAdir" -avgcurvtif "$AvgCurvTif" -jacobian_white -cortparc "${extra_reconall_args[@]}"
 fi
 
 if [ "$RunMode" -lt 5 ]; then
