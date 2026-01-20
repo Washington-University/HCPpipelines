@@ -599,27 +599,19 @@ else
 fi
 
 
-recon_all_cmd="recon-all.v6.hiresNHP"
-recon_all_cmd+=" -subjid ${SubjectID}"
-recon_all_cmd+=" -sd ${SubjectDIR}"
 
-if [ ! -z "${extra_reconall_args}" ] ; then
-	extra_reconall_args=" ${extra_reconall_args}"
-fi
-extra_reconall_args+=" -openmp ${num_cores}"	
+recon_all_cmd=(recon-all.v6.hiresNHP -subjid "$SubjectID" -sd "$SubjectDIR")
+extra_reconall_args+=(-openmp "$num_cores")
 if [ ! -z "${recon_all_seed}" ] ; then
-	extra_reconall_args+=" -norandomness -rng-seed ${recon_all_seed}"
+	extra_reconall_args+=(-norandomness -rng-seed "$recon_all_seed")
 fi
-log_Msg "seed_cmd_appendix: ${seed_cmd_appendix}"
-
 if [[ ! -z "$GCSdir" && ! -z "$GCS" ]] ; then
-	extra_reconall_args+=" -gcs-dir $GCSdir -gcs $GCS"
+	extra_reconall_args+=(-gcs-dir $GCSdir -gcs $GCS)
 fi
-
 # The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
 if [ "${conf2hires}" = "TRUE" ] ; then
-	conf2hiresflag=" -conf2hires"
+	extra_reconall_args=+(-conf2hires)
 fi
 
 # expert options for recon-all
