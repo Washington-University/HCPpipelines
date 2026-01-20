@@ -136,9 +136,6 @@ if (( ! TemplateProcessing )); then
         rm -rf "$tp_folder_hcp"
     fi
     mv "$tp_folder_fslong" "$tp_folder_hcp"
-    if (( $? )); then 
-       	log_Err_Abort "Could not move $tp_folder_fslong to $tp_folder_hcp"
-    fi
 
 fi
 
