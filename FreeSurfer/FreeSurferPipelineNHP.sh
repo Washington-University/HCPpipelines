@@ -747,10 +747,6 @@ if [ "$RunMode" -lt 2 ] ; then
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
 	"${recon_all_cmd[@]}" "${recon_all_initrun[@]}" "${extra_reconall_args[@]}"
-	return_code=$?
-	if [ "${return_code}" != "0" ] ; then
-		log_Err_Abort "recon-all command failed with return_code: ${return_code}"
-	fi
 
 	log_Msg "...brainmasking, intensitycor"
 	cmd=(fslmaths $(remove_ext ${T1wImageBrain})_scaled.nii.gz -thr 0 "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz)
