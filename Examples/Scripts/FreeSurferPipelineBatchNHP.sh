@@ -121,7 +121,6 @@ QUEUE=""
 for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
 
     #Input Variables
-    Subject="$Subject" #FreeSurfer Subject ID Name
     SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
     T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
     T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
