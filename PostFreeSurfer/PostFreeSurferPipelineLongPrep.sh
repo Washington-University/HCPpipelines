@@ -122,23 +122,24 @@ if (( ! TemplateProcessing )); then
     LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
 
     log_Msg "Organizing the folder structure for: ${Timepoint_cross}"
-    # create the symlink
+
     TargetDIR="${StudyFolder}/${Timepoint_cross}.long.${Template}/T1w"
     mkdir -p "${TargetDIR}"
 
+    # tp_folder_fslong stores folder where longitudinal FreeSurfer stores timepoint output natively.
+    # Example of how it would look like, given Template=123456_V1_V2, Subject=123456, Timepoint=123456_V1:
+    # $tp_folder_fslong=$StudyFolder/123456.long.123456_V1_V2/T1w/123456_V1.long.123456_V1_V2
     tp_folder_fslong="${LongDIR}/${Timepoint_cross}.long.${Template}"
     if [ ! -d "$tp_folder_fslong" ]; then
-    	log_Err_Abort "Folder $tp_folder_fslong does not exist, was longitudinal FreeSurfer run?"
-    fi
+    	log_Err_Abort "Folder $tp_folder_fslong does not exist, was longitudinal FreeSurfer run?"        
 
+    # tp_folder_hcp contains target timepoint folder in HCP pipelines.
+    # $tp_folder_hcp=$StudyFolder/123456_V1.long.123456_V1_V2/T1w/123456_V1.long.123456_V1_V2
     tp_folder_hcp="${TargetDIR}/${Timepoint_cross}.long.${Template}"
-    ln -sf "$tp_folder_fslong" "$tp_folder_hcp"
-    if [ ! -d "$tp_folder_hcp" ]; then
-    	log_Err_Abort "Could not create required symlink from $tp_folder_fslong to $tp_folder_hcp"
+    if [ -d "$tp_folder_hcp" ]; then 
+        rm -rf "$tp_folder_hcp"
     fi
-
-    # remove the symlink in the subject's folder
-    rm -rf "${LongDIR}/${Timepoint_cross}"
+    mv "$tp_folder_fslong" "$tp_folder_hcp"
 fi
 
 ############################################################################################################
@@ -410,7 +411,7 @@ if (( TemplateProcessing ==  1 )); then
             rm -rf "$AtlasSpaceFolder_timepoint/xfms"
         fi
         mkdir -p "${AtlasSpaceFolder_timepoint}"
-        ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
+        cp -r "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
 
         #one mask for all timepoints.
         cp "${AtlasSpaceFolder_template}/$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"

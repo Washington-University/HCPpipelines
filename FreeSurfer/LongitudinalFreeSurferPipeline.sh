@@ -263,15 +263,15 @@ log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
 log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
 log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 
-LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
-mkdir -p "${LongDIR}"
+TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
+mkdir -p "${TemplateT1wDir}"
 
 if (( start_stage < 1 )); then 
 
   #prepare session folder structure
   for Session in ${Sessions} ; do
     Source="${StudyFolder}/${Session}/T1w/${Session}"
-    Target="${LongDIR}/${Session}"
+    Target="${TemplateT1wDir}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     ln -sf ${Source} ${Target}
   done
@@ -281,7 +281,7 @@ if (( start_stage < 1 )); then
   # ----------------------------------------------------------------------
 
   recon_all_cmd="recon-all.v6.hires"
-  recon_all_cmd+=" -sd ${LongDIR}"
+  recon_all_cmd+=" -sd ${TemplateT1wDir}"
   recon_all_cmd+=" -base ${TemplateID}"
   for Session in ${Sessions} ; do
     recon_all_cmd+=" -tp ${Session}"
@@ -313,7 +313,7 @@ if (( end_stage > 0 )); then
   for Session in ${Sessions} ; do
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
-    recon_all_cmd+=" -sd ${LongDIR}"
+    recon_all_cmd+=" -sd ${TemplateT1wDir}"
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
     
     recon_all_cmd+=" $extra_reconall_args_long "
@@ -343,6 +343,13 @@ if (( end_stage > 0 )); then
   #Finalize jobs in this stage.
   par_finalize_stage $parallel_mode $max_jobs
 fi
+
+#clean up symlinks 
+for Session in ${Sessions} ; do
+  unlink "${TemplateT1wDir}/${Session}"
+done
+#this symlink isn't used downstream
+unlink "${TemplateT1wDir}/fsaverage"
 
 # ----------------------------------------------------------------------
 log_Msg "Completed main functionality"
