@@ -575,28 +575,6 @@ if [ "${existing_subject}" = "TRUE" ] ; then
 		rm "$SubjectDIR"/"$SubjectID"/scripts/IsRunning.lh+rh
 	fi
 fi
-	
-# By default, refine pial surfaces using T2 (if T2w image provided).
-# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
-# this can be accomplished using --extra-reconall-arg=-noT2pial
-if [[ "${T2wImage}" != "" ]] ; then
-	if [ "${flair}" = "TRUE" ] ; then
-		recon_all_pial="-FLAIRpial"
-		recon_all_T2input=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
-		T2Type=FLAIR
-	else
-		recon_all_pial="-T2pial"
-		recon_all_T2input=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
-		T2Type=T2
-	fi
-	rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
-else
-		recon_all_T2input=()
-		recon_all_pial=""
-		T2Type="NONE"		
-fi
-
-
 
 recon_all_cmd=(recon-all.v6.hiresNHP -subjid "$SubjectID" -sd "$SubjectDIR")
 extra_reconall_args+=(-openmp "$num_cores")
@@ -738,6 +716,26 @@ if [ "$RunMode" -lt 2 ] ; then
 	    recon_all_initrun+=(-i "$(remove_ext "$T1wImage")_scaled.nii.gz"
 	    -emregmask "$(remove_ext "$T1wImageBrain")_scaled.nii.gz")
 	fi
+    # By default, refine pial surfaces using T2 (if T2w image provided).
+    # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
+    # this can be accomplished using --extra-reconall-arg=-noT2pial
+    if [[ "${T2wImage}" != "" ]] ; then
+        if [ "${flair}" = "TRUE" ] ; then
+            recon_all_pial="-FLAIRpial"
+            recon_all_T2input=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
+            T2Type=FLAIR
+        else
+            recon_all_pial="-T2pial"
+            recon_all_T2input=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
+            T2Type=T2
+        fi
+        rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
+    else
+            recon_all_T2input=()
+            recon_all_pial=""
+            T2Type="NONE"		
+    fi
+
 	recon_all_initrun+=(${recon_all_T2input[@]+"${recon_all_T2input[@]}"}))
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
