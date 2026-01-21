@@ -681,10 +681,6 @@ if [ "$RunMode" -lt 2 ] ; then
 		log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
 		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
-		return_code=$?
-		if [ "${return_code}" != "0" ] ; then
-			log_Err_Abort "fslmaths command failed with return_code: ${return_code}"
-		fi
 
 		## This section scales them so that FreeSurfer 6 can work properly in scaled space. The data will be
 		## rescaled to the original space by a script, RescaleVolumeAndSurface.sh, after FS was finished - TH 2017-2023 
