@@ -736,7 +736,7 @@ if [ "$RunMode" -lt 2 ] ; then
             T2Type="NONE"		
     fi
 
-	recon_all_initrun+=(${recon_all_T2input[@]+"${recon_all_T2input[@]}"}))
+	recon_all_initrun+=(${recon_all_T2input[@]+"${recon_all_T2input[@]}"})
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
 	"${recon_all_cmd[@]}" "${recon_all_initrun[@]}" "${extra_reconall_args[@]}"
