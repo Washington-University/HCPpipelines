@@ -382,10 +382,6 @@ make_t1w_hires_nifti_file()
 
     log_Msg "Creating ${t1w_output_file} with mri_convert_cmd: ${mri_convert_cmd}"
     ${mri_convert_cmd}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "mri_convert command failed with return code: ${return_code}"
-    fi
 
     popd
 }
@@ -439,10 +435,6 @@ make_t2w_hires_nifti_file()
 
     log_Msg "Creating ${t2w_output_file} with mri_vol2vol_cmd: ${mri_vol2vol_cmd}"
     ${mri_vol2vol_cmd}
-    return_code=$?
-    if [ "${return_code}" != 0 ]; then
-        log_Err_Abort "mri_vol2vol command failed with return code: ${return_code}"
-    fi
 
     popd
 }
@@ -483,10 +475,6 @@ make_t1wxt2w_qc_file()
 
     log_Msg "Creating ${output_file} with fslmaths_cmd: ${fslmaths_cmd}"
     ${fslmaths_cmd}
-    return_code=$?
-    if [ "${return_code}" != "0" ]; then
-        log_Err_Abort "fslmaths command failed with return code: ${return_code}"
-    fi
 
     popd
 }
@@ -959,10 +947,6 @@ if [ "$RunMode" -lt 6 ]; then
 		log_Msg "Clean up file: ${zero_threshold_T1wImage}"
 		# ----------------------------------------------------------------------
 		rm ${zero_threshold_T1wImage}
-		return_code=$?
-		if [ "${return_code}" != "0" ] ; then
-			log_Err_Abort "rm ${zero_threshold_T1wImage} failed with return_code: ${return_code}"
-		fi
 
 	fi
 
@@ -1018,10 +1002,6 @@ if [ "$RunMode" -lt 6 ]; then
 		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
 
 		${tkregister_cmd}
-		return_code=$?
-		if [ "${return_code}" != "0" ] ; then
-			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
-		fi
 
 		log_Msg "...Concatenate the ${t2_or_flair}raw->orig and orig->rawavg transforms"
 		mri_concatenate_lta_cmd="mri_concatenate_lta"
@@ -1032,10 +1012,6 @@ if [ "$RunMode" -lt 6 ]; then
 		log_Msg "......The following concatenates transforms/${t2_or_flair}raw.lta and transforms/orig-to-rawavg.lta to get Q.lta"
 		log_Msg "......mri_concatenate_lta_cmd: ${mri_concatenate_lta_cmd}"
 		${mri_concatenate_lta_cmd}
-		return_code=$?
-		if [ "${return_code}" != "0" ] ; then
-			log_Err_Abort "mri_concatenate_lta command failed with return_code: ${return_code}"
-		fi
 
 		log_Msg "...Convert to FSL format"
 		tkregister_cmd="tkregister2"
@@ -1049,10 +1025,6 @@ if [ "$RunMode" -lt 6 ]; then
 		log_Msg "......tkregister_cmd: ${tkregister_cmd}"
 
 		${tkregister_cmd}
-		return_code=$?
-		if [ "${return_code}" != "0" ] ; then
-			log_Err_Abort "tkregister command failed with return_code: ${return_code}"
-		fi
 
 		log_Msg "...Clean up"
 		rm deleteme.dat
@@ -1081,10 +1053,6 @@ if [ "$RunMode" -lt 6 ]; then
 	for hemi in lh rh; do
 		for surf in white pial; do
 			mri_surf2surf --s ${SubjectID} --sval-xyz "$surf" --reg "$reg" --tval-xyz ${mridir}/rawavg.mgz --tval "$surf".deformed --surfreg "$surf" --hemi "$hemi"
-			return_code=$?
-			if [ "${return_code}" != "0" ] ; then
-				log_Err_Abort "mri_surf2surf command for $hemi hemisphere $surf failed with return_code: ${return_code}"
-			fi
 		done
 	done
 	
