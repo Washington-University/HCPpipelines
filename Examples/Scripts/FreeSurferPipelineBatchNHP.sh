@@ -147,7 +147,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
   
     "${queuing_command[@]}" ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
         --subject="$Subject" \
-        --subject-dir="$SubjectDIR" \
+        --session-dir="$SubjectDIR" \
         --t1w-image="$T1wImage" \
         --t1w-brain="$T1wImageBrain" \
         --t2w-image="$T2wImage" \
@@ -158,7 +158,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
     echo set -- --subject="$Subject" \
-        --subject-dir="$SubjectDIR" \
+        --session-dir="$SubjectDIR" \
         --t1w-image="$T1wImage" \
         --t1w-brain="$T1wImageBrain" \
         --t2w-image="$T2wImage" \
