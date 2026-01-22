@@ -979,7 +979,7 @@ if [ "$RunMode" -lt 6 ]; then
 
 		pushd ${mridir}
 
-		if [ "${flair}" = "TRUE" ] ; then
+		if ((flair)) ; then
 			t2_or_flair="FLAIR"
 		else
 			t2_or_flair="T2"
