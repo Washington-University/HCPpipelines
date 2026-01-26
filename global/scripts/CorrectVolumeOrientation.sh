@@ -152,7 +152,7 @@ elif [ $TruePosition = HFS ] ; then
   echo " 0  0  1  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  1  0  0" >> ${tmp}_reorient_I.world.mat
   echo " 0  0  0  1" >> ${tmp}_reorient_I.world.mat
-elif [ $PatientPosition = HFP ] ; then
+elif [ $TruePosition = HFP ] ; then
   # rotation x=-90
   echo " 1  0  0  0" >  ${tmp}_reorient_I.world.mat
   echo " 0  0 -1  0" >> ${tmp}_reorient_I.world.mat
