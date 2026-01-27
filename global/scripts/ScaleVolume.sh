@@ -23,9 +23,7 @@ fi
 T1wImage=$(remove_ext "$1")
 ScaleFactor="$2"
 out=$(remove_ext "$3")
-if [ "${4:-x}" != x ] ; then
-	outmat=$4
-fi
+outmat="${4:-}"
 
 tmpmat=tmp_$$
 
