@@ -128,7 +128,7 @@ if [ $affine != NONE ] ; then
 fi
 
 function readsform () {
-"${CARET7DIR}/wb_command -nifti-information -print-header "$1" | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$2"
+"${CARET7DIR}"/wb_command -nifti-information -print-header "$1" | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$2"
 echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$2"
 }
 
