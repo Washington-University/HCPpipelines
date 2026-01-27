@@ -38,7 +38,19 @@ log_Msg "START: ScaleVolume.sh"
 # ----------------------------------------------------------------------
 log_Msg " reading sform from input"
 # ----------------------------------------------------------------------
-newsform=$(wb_command -nifti-information -print-header "$T1wImage"  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4} END {printf "%.8f\t%.8f\t%.8f\t%.8f\n",0,0,0,1}')
+read -a sform <<<"$(wb_command -nifti-information -print-header "$T1wImage".nii.gz  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}')"
+newsform=()
+sumsform=0
+for ((i = 0; i < 12; ++i))
+do
+   newsform+=("$(echo "${sform[$i]}" | awk '{printf "%.8f\n",$1*'$ScaleFactor'}')")
+   if [ $i -lt 11 ] ; then     sumsform=$(echo "${sform[$i]}+${sumsform}" | bc -l)
+   fi
+done
+if [ "${sumsform}" = 0 ] ; then
+  log_Err "No information in sform. Please correct input sform" 
+  exit 1;
+fi
 dims=("$(fslval "$T1wImage" dim1)" "$(fslval "$T1wImage" dim2)" "$(fslval "$T1wImage" dim3)")
 # ----------------------------------------------------------------------
 log_Msg " creating reference volume"
