@@ -575,64 +575,64 @@ done
 
 # options for conf2hires
 c2hxopts=""
-if [ ! -z "$T1normSigma" ] ; then
-	c2hxopts+=" --t1norm-sigma $T1normSigma"
+if [ -n "${T1normSigma:-}" ] ; then
+	c2hxopts+=" --t1norm-sigma ${T1normSigma}"
 fi
-if [ ! -z "$T2normSigma" ] ; then
-	c2hxopts+=" --t2norm-sigma $T2normSigma"
+if [ -n "${T2normSigma:-}" ] ; then
+	c2hxopts+=" --t2norm-sigma ${T2normSigma}"
 fi
-if [ ! -z "$VariableSigma" ] ; then
-	c2hxopts+=" --variablesigma $VariableSigma"
+if [ -n "${VariableSigma:-}" ] ; then
+	c2hxopts+=" --variablesigma ${VariableSigma}"
 fi
-if [ ! -z "$PialSigma" ] ; then
-	c2hxopts+=" --psigma $PialSigma"
+if [ -n "${PialSigma:-}" ] ; then
+	c2hxopts+=" --psigma ${PialSigma}"
 fi
-if [ ! -z "$WhiteSigma" ] ; then
-	c2hxopts+=" --wsigma $WhiteSigma"
+if [ -n "${WhiteSigma:-}" ] ; then
+	c2hxopts+=" --wsigma ${WhiteSigma}"
 fi
-if [ ! -z "$SmoothNiter" ] ; then
-	c2hxopts+=" --smooth $SmoothNiter"
+if [ -n "${SmoothNiter:-}" ] ; then
+	c2hxopts+=" --smooth ${SmoothNiter}"
 fi
-if [ ! -z "$NSigmaAbove" ] ; then
-	c2hxopts+=" --nsigma_above $NSigmaAbove"
+if [ -n "${NSigmaAbove:-}" ] ; then
+	c2hxopts+=" --nsigma_above ${NSigmaAbove}"
 fi
-if [ ! -z "$NSigmaBelow" ] ; then
-	c2hxopts+=" --nsigma_below $NSigmaBelow"
+if [ -n "${NSigmaBelow:-}" ] ; then
+	c2hxopts+=" --nsigma_below ${NSigmaBelow}"
 fi
-if [ ! -z "$WMProjAbs" ] ; then
-	c2hxopts+=" --wm-proj-abs $WMProjAbs"
+if [ -n "${WMProjAbs:-}" ] ; then
+	c2hxopts+=" --wm-proj-abs ${WMProjAbs}"
 fi
-if [ ! -z "$WMSeg_wlo" ] ; then
-	c2hxopts+=" --wlo $WMSeg_wlo"
+if [ -n "${WMSeg_wlo:-}" ] ; then
+	c2hxopts+=" --wlo ${WMSeg_wlo}"
 fi
-if [ ! -z "$WMSeg_ghi" ] ; then
-	c2hxopts+=" --ghi $WMSeg_ghi"
+if [ -n "${WMSeg_ghi:-}" ] ; then
+	c2hxopts+=" --ghi ${WMSeg_ghi}"
 fi
-if [ ! -z "$MIN_GRAY_AT_WHITE_BORDER" ] ; then
-	c2hxopts+=" --min_gray_at_white_border $MIN_GRAY_AT_WHITE_BORDER"
+if [ -n "${MIN_GRAY_AT_WHITE_BORDER:-}" ] ; then
+	c2hxopts+=" --min_gray_at_white_border ${MIN_GRAY_AT_WHITE_BORDER}"
 fi
-if [ ! -z "$MAX_GRAY_AT_CSF_BORDER" ] ; then
-	c2hxopts+=" --max_gray_at_csf_border $MAX_GRAY_AT_CSF_BORDER"
+if [ -n "${MAX_GRAY_AT_CSF_BORDER:-}" ] ; then
+	c2hxopts+=" --max_gray_at_csf_border ${MAX_GRAY_AT_CSF_BORDER}"
 fi
-if [ ! -z "$MIN_GRAY_AT_CSF_BORDER" ] ; then
-	c2hxopts+=" --min_gray_at_csf_border $MIN_GRAY_AT_CSF_BORDER"
+if [ -n "${MIN_GRAY_AT_CSF_BORDER:-}" ] ; then
+	c2hxopts+=" --min_gray_at_csf_border ${MIN_GRAY_AT_CSF_BORDER}"
 fi
-if [ ! -z "$MAX_GRAY" ] ; then
-	c2hxopts+=" --max_gray $MAX_GRAY"
+if [ -n "${MAX_GRAY:-}" ] ; then
+	c2hxopts+=" --max_gray ${MAX_GRAY}"
 fi
-if [ ! -z "$MAX_CSF" ] ; then
-	c2hxopts+=" --max_csf $MAX_CSF"
+if [ -n "${MAX_CSF:-}" ] ; then
+	c2hxopts+=" --max_csf ${MAX_CSF}"
 fi
-if [ ! -z "$SmoothNiterPial" ] ; then
-	c2hxopts+=" --smoothpial $SmoothNiterPial"
+if [ -n "${SmoothNiterPial:-}" ] ; then
+	c2hxopts+=" --smoothpial ${SmoothNiterPial}"
 fi
-if [ ! -z "$MaxThickness" ] ; then
-	c2hxopts+=" --max $MaxThickness"
+if [ -n "${MaxThickness:-}" ] ; then
+	c2hxopts+=" --max ${MaxThickness}"
 fi
-if [ "$CopyBiasFromConf" = "TRUE" ] ; then
+if [ "${CopyBiasFromConf:-}" = "TRUE" ] ; then
 	c2hxopts+=" --copy-bias-from-conf"
 fi	
-if [ ! -z "$c2hxopts" ] ; then
+if [ -n "${c2hxopts:-}" ] ; then
 	log_Msg "conf2hires expert opts: $c2hxopts"
 	echo "conf2hiresNHP $c2hxopts" >> "$SubjectDIR"/"$SubjectID".expert.opts
 fi
