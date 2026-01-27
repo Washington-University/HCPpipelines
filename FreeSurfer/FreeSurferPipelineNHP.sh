@@ -553,8 +553,8 @@ extra_reconall_args+=(-openmp "$num_cores")
 if [ ! -z "${recon_all_seed}" ] ; then
 	extra_reconall_args+=(-norandomness -rng-seed "$recon_all_seed")
 fi
-if [[ ! -z "$GCSdir" && ! -z "$GCS" ]] ; then
-	extra_reconall_args+=(-gcs-dir $GCSdir -gcs $GCS)
+if [[ -n "${GCSdir:-}" && -n "${GCS:-}" ]] ; then
+    extra_reconall_args+=(-gcs-dir "$GCSdir" -gcs "$GCS")
 fi
 # The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
