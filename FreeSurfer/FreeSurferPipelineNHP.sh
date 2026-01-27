@@ -559,7 +559,7 @@ fi
 # The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
 if ((conf2hires)); then
-	extra_reconall_args=+(-conf2hires)
+	extra_reconall_args+=(-conf2hires)
 fi
 
 # expert options for recon-all
