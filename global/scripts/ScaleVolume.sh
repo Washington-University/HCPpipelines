@@ -38,7 +38,7 @@ log_Msg "START: ScaleVolume.sh"
 # ----------------------------------------------------------------------
 log_Msg " reading sform from input"
 # ----------------------------------------------------------------------
-newsform=$(wb_command -nifti-information -print-header "$T1wImage"  | grep -3 "effective sform" | tail -3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4} END {printf "%.8f\t%.8f\t%.8f\t%.8f\n",0,0,0,1}')
+newsform=$(wb_command -nifti-information -print-header "$T1wImage"  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4} END {printf "%.8f\t%.8f\t%.8f\t%.8f\n",0,0,0,1}')
 dims=("$(fslval "$T1wImage" dim1)" "$(fslval "$T1wImage" dim2)" "$(fslval "$T1wImage" dim3)")
 # ----------------------------------------------------------------------
 log_Msg " creating reference volume"
