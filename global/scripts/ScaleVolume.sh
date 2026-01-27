@@ -25,7 +25,6 @@ if [ "${4:-x}" != x ] ; then
 	outmat=$4
 fi
 
-interp="${interp:-CUBIC}" # The script is irrelevant to resampling method.
 tmpmat=tmp_$$
 
 source "$HCPPIPEDIR"/global/scripts/log.shlib "$@"  # Logging related functions
