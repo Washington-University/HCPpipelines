@@ -55,7 +55,7 @@ echo "0 0 $ScaleFactor 0" >> "$tmpmat"
 echo "0 0 0 1" >> "$tmpmat"
 $CARET7DIR/wb_command -volume-resample $(imglob -extension "$T1wImage") "$out".nii.gz CUBIC "$out".nii.gz -affine "$tmpmat"
 
-if [ "${outmat:-x}" != x ] ; then
+if [[ "${outmat:-}" != "" ]] ; then
 	mv $tmpmat $outmat
 else
 	rm $tmpmat
