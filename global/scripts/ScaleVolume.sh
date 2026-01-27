@@ -28,7 +28,9 @@ fi
 interp="${interp:-CUBIC}" # The script is irrelevant to resampling method.
 tmpmat=tmp_$$
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
+source "$HCPPIPEDIR"/global/scripts/log.shlib "$@"  # Logging related functions
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+
 log_SetToolName "ScaleVolume.sh"
 # ----------------------------------------------------------------------
 log_Msg "START: ScaleVolume.sh"
