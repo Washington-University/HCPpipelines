@@ -518,22 +518,6 @@ case "$RunMode" in
 		;;
 esac
 
-
-# ----------------------------------------------------------------------
-log_Msg "Figure out the number of cores to use."
-# ----------------------------------------------------------------------
-# Both the SGE and PBS cluster schedulers use the environment variable NSLOTS to indicate the
-# number of cores a job will use. If this environment variable is set, we will use it to
-num_cores=0
-# determine the number of cores to tell recon-all to use.
-
-if [[ -z ${NSLOTS} ]] ; then
-	num_cores=8
-else
-	num_cores="${NSLOTS}"
-fi
-log_Msg "num_cores: ${num_cores}"
-
 if ((! existing_subject)) ; then
 
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
