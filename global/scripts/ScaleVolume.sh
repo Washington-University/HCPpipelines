@@ -16,7 +16,9 @@ echo "Usage: $(basename $0) <input> <scale factor> <output scaled volume> [outpu
 exit 1;
 }
 
-[[ "${3:-}" = "" ]] && usage_exit
+if (($# < 3)); then
+    usage_exit
+fi
 
 T1wImage=$(remove_ext "$1")
 ScaleFactor="$2"
