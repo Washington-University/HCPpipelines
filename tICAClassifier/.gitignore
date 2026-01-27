@@ -1,0 +1,39 @@
+# Models(too large for git)
+models/
+finalized_models/
+*.pkl
+*.h5
+*.hdf5
+*.model
+*.tar.gz
+
+# Data files
+data/
+datasets_category/
+prepare_data/
+*.npy
+*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Config
+.env
+config.json
