@@ -43,9 +43,8 @@ newsform=()
 sumsform=0
 for ((i = 0; i < 12; ++i))
 do
-   newsform+=("$(echo "${sform[$i]}" | awk '{printf "%.8f\n",$1*'$ScaleFactor'}')")
-   if [ $i -lt 11 ] ; then     sumsform=$(echo "${sform[$i]}+${sumsform}" | bc -l)
-   fi
+  newsform+=("$(echo "${sform[$i]}" | awk '{printf "%.8f\n",$1*'$ScaleFactor'}')")
+  sumsform=$(echo "${sform[$i]}+${sumsform}" | bc -l)
 done
 if [ "${sumsform}" = 0 ] ; then
   log_Err "No information in sform. Please correct input sform" 
