@@ -1,0 +1,171 @@
+#!/bin/bash 
+set -e
+# Requirements for this script
+#  installed versions of: FSL6.0.4 or higher , FreeSurfer (version 6.0 or higher) , gradunwarp (python code from MGH)
+#  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
+
+Usage () {
+    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> --T2wType=<type> --EnvironmentScript=<path>"
+    echo ""
+    echo "Options:"
+    echo "  --StudyFolder: Path to the study folder containing subject data"
+    echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
+    echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
+    echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhesus, MacaqueSnow, NightMonkey, Marmoset)"
+    echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
+    echo "  --RunLocal: Run locally (TRUE or FALSE, default: FALSE)"
+	echo ""
+    exit 1
+}
+
+# ==== User-editable section ====
+
+# Edit these variables before running
+
+StudyFolder="${HOME}/projects/Pipelines_ExampleData"
+Subjlist="nhp_session1 nhp_session2"
+SPECIES="MacaqueRhesus"
+RunMode="Default"
+T2wType="T2w"
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+RunLocal="FALSE"
+
+# Parse command line arguments
+get_batch_options() {
+    local arguments=("$@")
+    
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+    
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+        
+        case ${argument} in
+            --StudyFolder=*)
+                StudyFolder=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Subject=*)
+                Subjlist=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --T2wType=*)
+                T2wType=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Species=*)
+                SPECIES=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --RunMode=*)
+                RunMode=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --EnvironmentScript=*)
+                EnvironmentScript=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --runlocal)
+                RunLocal="TRUE"
+                index=$(( index + 1 ))
+                ;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                Usage
+                ;;
+        esac
+    done
+}
+
+# Parse arguments
+get_batch_options "$@"
+
+# Check required settings
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ] || [ -z "$EnvironmentScript" ]; then
+    echo "ERROR: Missing required settings"
+    Usage
+fi
+
+source $EnvironmentScript
+
+# Log the originating call
+echo "$@"
+
+#if [ X$SGE_ROOT != X ] ; then
+#    QUEUE="-q long.q"
+#fi
+
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
+
+
+
+
+########################################## INPUT
+
+
+
+
+########################################## 
+
+#Scripts called by this script do assume they run on the outputs of the PreFreeSurfer Pipeline
+
+######################################### DO WORK ##########################################
+
+for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
+
+    #Input Variables
+    SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
+    T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+    T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
+    isFLAIR=false
+    if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
+        T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+        T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
+        if [ "$T2wType" = "FLAIR" ] ; then 
+            isFLAIR=true
+        fi
+    else
+        T2wImage="NONE"
+        T2wType=NONE
+    fi
+
+	if [[ "${RunLocal}" == "TRUE" || "$QUEUE" == "" ]] ; then
+      echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh"
+      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+	else
+      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh"
+      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+	fi
+  
+    "${queuing_command[@]}" ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipelineNHP.sh \
+        --subject="$Subject" \
+        --session-dir="$SubjectDIR" \
+        --t1w-image="$T1wImage" \
+        --t1w-brain="$T1wImageBrain" \
+        --t2w-image="$T2wImage" \
+        --flair="$isFLAIR" \
+        --species="$SPECIES" \
+        --runmode="$RunMode" 
+
+    # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+    echo set -- --subject="$Subject" \
+        --session-dir="$SubjectDIR" \
+        --t1w-image="$T1wImage" \
+        --t1w-brain="$T1wImageBrain" \
+        --t2w-image="$T2wImage" \
+        --flair="$isFLAIR" \
+        --species="$SPECIES" \
+        --runmode="$RunMode" 
+    echo ". ${EnvironmentScript}"
+
+done
+
+
