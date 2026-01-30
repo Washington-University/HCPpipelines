@@ -2,8 +2,7 @@
 
 set -eu
 
-# fMRIStatsExample.sh
-#
+
 # Example script to run fMRIStats pipeline on multiple subjects to compute 
 # fMRI quality metrics (mTSNR, fCNR, percent BOLD) after ICA+FIX cleanup
 
@@ -116,32 +115,85 @@ get_options() {
 #   to compute quality metrics on ICA+FIX cleaned data
 #
 main() {
+
     # get command line options
     get_options "$@"
 
     # set up pipeline environment variables and software
     source "${EnvironmentScript}"
 
+    # load parallel processing library
+    source "$HCPPIPEDIR"/global/scripts/parallel.shlib
+
     # general settings
+    # set list of fMRI runs on which ICA+FIX has been run, use @ to separate runs
     fMRINames="rfMRI_REST1_7T_PA@rfMRI_REST2_7T_AP@rfMRI_REST3_7T_PA@rfMRI_REST4_7T_AP"
+
+    # set the file name component representing the preprocessing already done, e.g. '_hp2000_clean'
     fMRIProcSTRING="_hp2000_clean_rclean_tclean"
+
+    # set temporal highpass full-width (2*sigma) used in ICA+FIX, should match with $fMRIProcSTRING
     HighPass="2000"
-    # Only process surface data (CIFTI)
+
+    # set whether to process volume data in addition to surface data
     ProcessVolume="false"
-    # Basic metrics only (mTSNR, fCNR, %BOLD)
+
+    # set whether to compute cleanup effects metrics (comparing cleaned vs uncleaned data)
     CleanUpEffects="false"
 
-    # fMRIStats pipeline
-    fsl_sub -q matlabparallelhigh.q "$HCPPIPEDIR"/fMRIStats/fMRIStats.sh \
-        --study-folder="$StudyFolder" \
-        --subject-list="$Subjlist" \
-        --fmri-names="$fMRINames" \
-        --high-pass="$HighPass" \
-        --proc-string="$fMRIProcSTRING" \
-        --reg-name="$RegName" \
-        --process-volume="$ProcessVolume" \
-        --cleanup-effects="$CleanUpEffects" \
-        --matlab-run-mode="$MatlabMode"
+    # set how many subjects to process in parallel, defaults to all detected physical cores, '-1'
+    parLimit=-1
+    # end of general inputs
+
+    # set registration string
+    if [ "${RegName}" != "NONE" ] ; then
+        RegString="_${RegName}"
+    else
+        RegString=""
+    fi
+
+    # Convert @ separated lists to arrays
+    IFS='@' read -ra SubjectArray <<< "$Subjlist"
+    IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
+
+
+    # Loop through subjects and queue parallel jobs
+    for Subject in "${SubjectArray[@]}"
+    do
+        # Build list of fMRI files that exist for this subject
+        fMRIExist=()
+        for fMRIName in "${fMRINamesArray[@]}"
+        do
+            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${fMRIProcSTRING}.dtseries.nii" ]]
+            then
+                fMRIExist+=("${fMRIName}")
+            fi
+        done
+        
+        # Convert array to @ separated string for passing to fMRIStats
+        fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
+        
+        # Only queue job if subject has data
+        if [[ "$fMRINamesForSub" != "" ]]
+        then
+            fsl_sub -q matlabparallelhigh.q "$HCPPIPEDIR"/fMRIStats/fMRIStats.sh \
+                --study-folder="$StudyFolder" \
+                --subject="$Subject" \
+                --fmri-names="$fMRINamesForSub" \
+                --high-pass="$HighPass" \
+                --proc-string="$fMRIProcSTRING" \
+                --reg-name="$RegName" \
+                --process-volume="$ProcessVolume" \
+                --cleanup-effects="$CleanUpEffects" \
+                --matlab-run-mode="$MatlabMode"
+        else
+            echo "Skipping ${Subject}: no runs with cleaned data found"
+        fi
+    done
+    
 }
 
+#
+# Invoke the main function to get things started
+#
 main "$@"
