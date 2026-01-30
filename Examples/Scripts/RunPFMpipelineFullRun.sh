@@ -168,6 +168,7 @@ main() {
     # general inputs
     fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR@BOLD_REST_3_AP@BOLD_REST_4_PA"
     # fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR"
+    randSeed=2 # random seed for PROFUMO 
 
     OutputfMRIName="Mac25Rhesus_v5_BOLD_REST_CONCAT_PFM"
     # set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
@@ -179,8 +180,8 @@ main() {
 
 
     # PFM settings for REST data
-    PFMdim="46"  # or 92 depending on your PROFUMO results
-    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_d${PFMdim}
+    PFMdim="16"  # set the PFM dimensionality
+    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_d${PFMdim}_s${randSeed}_M1k
     # Reference image for PROFUMO
     RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP_Atlas_hppd2_clean_meanvn.dscalar.nii"
 
@@ -196,22 +197,18 @@ main() {
     FixLegacyBiasString="NO"
     ScaleFactor="0.01"
 
-    # CIFTI settings
-    CIFTIVertices="27559" # of rows in cifti
-    CIFTIVolume="66480"
-
     # Volume template file
-    VolumeTemplateCIFTI="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/Mac25Rhesus_v5_BOLD_REST_CONCAT_WF8/tICA_d46/sICA_VolMaps_46.dscalar.nii"
+    VolumeTemplateCIFTI="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus/Mac25Rhesus_v5/MNINonLinear/Results/Mac25Rhesus_v5_VolMaps_16_template.dscalar.nii"
 
     # PROFUMO settings
     ProfumoSingularity="/media/myelin/burke/projects/Mac25Rhesus/HCPpipelines/PFM/profumo_v2.sif" 
     ProfumoConfig="${PFMFolder}/dataLocations.json"  
-    TR="1.0"
+    TR="0.702"
     ProfumoThreads="14"
     DOFCorrection="0.5"
     CovModel="Subject"
-    nStarts="100" # number of multi-start iterations for PROFUMO
-    RandomSeed="2" # random seed for PROFUMO reproducibility
+    nStarts="1000" # number of multi-start iterations for PROFUMO
+    RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
     # RefImage will be auto-set based on data type below
 
     # build Profumo data location json
@@ -249,8 +246,6 @@ main() {
                                     --concat-name="$ConcatName" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
-                                    --cifti-vertices="$CIFTIVertices" \
-                                    --cifti-volume="$CIFTIVolume" \
                                     --rsn-method="$RSNMethod" \
                                     --low-dims="$LowDims" \
                                     --fix-legacy-bias="$FixLegacyBiasString" \
