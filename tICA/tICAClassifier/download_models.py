@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download pre-trained tICA classifier models from Hugging Face
+Download pre-trained tICA classifier models from BALSA
 """
 import os
 import sys
@@ -11,11 +11,8 @@ def download_models():
     except ImportError:
         sys.exit(1)
     
-    #Note_AY: classifier is too big(around 39 GB) to directly push to github
-    #curretnly using AY's own Hugging face
-    #so we might need to create our lab's own hugging face account 
-    #then update the repo id 
-    repo_id = "YOUR_LAB_ORG/tICA-classifier"
+    #Note_AY: need to be updated once upload to BALSA
+    repo_id = ""
     local_dir = "./models"
     
     print("Downloading tICA Classifier Models")

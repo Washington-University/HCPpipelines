@@ -142,6 +142,7 @@ while stabCount < stabThresh
         EN(:,i)=en(1:Out.DOF);
         MaxX=x(i);
         DOF=min(find(lambda <= 0)); 
+   
         lambda=[lambda(1:DOF-1); zeros(Out.DOF-DOF+1,1,'single')];
         lambda=lambda(1:Out.DOF);
     end
