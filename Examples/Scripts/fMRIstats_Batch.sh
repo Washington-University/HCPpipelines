@@ -122,10 +122,7 @@ main() {
     # set up pipeline environment variables and software
     source "${EnvironmentScript}"
 
-    # load parallel processing library
-    source "$HCPPIPEDIR"/global/scripts/parallel.shlib
-
-    # general settings
+     # general settings
     # set list of fMRI runs on which ICA+FIX has been run, use @ to separate runs
     fMRINames="rfMRI_REST1_7T_PA@rfMRI_REST2_7T_AP@rfMRI_REST3_7T_PA@rfMRI_REST4_7T_AP"
 
