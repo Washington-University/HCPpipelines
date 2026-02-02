@@ -167,22 +167,45 @@ do
             ;;
     esac
     
-    #matlab function arguments
-    matlab_argarray=("$MeanCIFTI" "$MeanVolume" "$sICATCS" "$Signal" "$OrigCIFTITCS" "$OrigVolumeTCS" "$CleanedCIFTITCS" "$CleanedVolumeTCS" "$CIFTIOutput" "$VolumeOutput" "$CleanUpEffects" "$ProcessVolume" "$Caret7_Command")
+    #matlab function arguments - build name-value pairs for optional args
+    # Required positional arguments
+    matlab_positional=("$MeanCIFTI" "$sICATCS" "$Signal" "$CleanedCIFTITCS" "$CIFTIOutput")
+    
+    # Build name-value pairs for optional arguments
+    matlab_opts=()
+    matlab_opts+=("ProcessVolume" "$ProcessVolume")
+    matlab_opts+=("CleanUpEffects" "$CleanUpEffects")
+    matlab_opts+=("Caret7_Command" "$Caret7_Command")
+    
+    # Add conditionally required arguments based on flags
+    if [[ "$CleanUpEffects" == "1" ]]; then
+        matlab_opts+=("OrigCIFTITCS" "$OrigCIFTITCS")
+    fi
+    
+    if [[ "$ProcessVolume" == "1" ]]; then
+        matlab_opts+=("MeanVolume" "$MeanVolume")
+        matlab_opts+=("CleanedVolumeTCS" "$CleanedVolumeTCS")
+        matlab_opts+=("VolumeOutputName" "$VolumeOutput")
+        
+        if [[ "$CleanUpEffects" == "1" ]]; then
+            matlab_opts+=("OrigVolumeTCS" "$OrigVolumeTCS")
+        fi
+    fi
     
     #shortcut in case the folder gets renamed
     this_script_dir=$(dirname "$0")
     
     case "$MatlabMode" in
         (0)
-            matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+            # For compiled MATLAB, pass all args (positional + name-value pairs flattened)
+            matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_positional[@]}" "${matlab_opts[@]}")
             log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
             "${matlab_cmd[@]}"
             ;;
         (1 | 2)
-            #reformat argument array so matlab sees them as strings
+            #reformat positional arguments
             matlab_args=""
-            for thisarg in "${matlab_argarray[@]}"
+            for thisarg in "${matlab_positional[@]}"
             do
                 if [[ "$matlab_args" != "" ]]
                 then
@@ -190,6 +213,13 @@ do
                 fi
                 matlab_args+="'$thisarg'"
             done
+            
+            #add name-value pairs
+            for ((i=0; i<${#matlab_opts[@]}; i+=2))
+            do
+                matlab_args+=", '${matlab_opts[i]}', '${matlab_opts[i+1]}'"
+            done
+            
             matlabcode="
                 addpath('$HCPPIPEDIR/fMRIStats/scripts');
                 fMRIStats($matlab_args);"

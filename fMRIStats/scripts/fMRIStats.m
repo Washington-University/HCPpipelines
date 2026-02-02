@@ -1,4 +1,4 @@
-function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTCS,CleanedCIFTITCS,CleanedVolumeTCS,CIFTIOutputName,VolumeOutputName,CleanUpEffectsStr,ProcessVolumeStr,Caret7_Command)
+function fMRIStats(MeanCIFTI, sICATCS, Signal, CleanedCIFTITCS, CIFTIOutputName, varargin)
 % fMRIStats - Compute fMRI quality metrics from ICA-cleaned data
 %
 % This function computes several fMRI quality metrics including:
@@ -12,11 +12,108 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
 %
 % If CleanUpEffects is enabled, additional metrics comparing cleaned vs
 % uncleaned data are computed to assess the effect of sICA or sICA+tICA cleanup.
+%
+% Usage:
+%   fMRIStats(MeanCIFTI, sICATCS, Signal, CleanedCIFTITCS, CIFTIOutputName, ...)
+%
+% Required arguments:
+%   MeanCIFTI        - Path to mean CIFTI file
+%   sICATCS          - Path to sICA timecourse CIFTI
+%   Signal           - Path to signal component indices text file
+%   CleanedCIFTITCS  - Path to cleaned CIFTI timeseries
+%   CIFTIOutputName  - Output path for CIFTI results
+%
+% Optional name-value arguments (with defaults):
+%   'ProcessVolume'    - '0' or '1' to process volume data (default: '0')
+%   'CleanUpEffects'   - '0' or '1' to compute cleanup comparison metrics (default: '0')
+%   'tICAmode'         - 'sICA' or 'sICA+tICA' mode (default: 'sICA')
+%   'Caret7_Command'   - Path to wb_command (default: 'wb_command')
+%
+% Conditionally required (based on flags above):
+%   'OrigCIFTITCS'     - Path to original CIFTI timeseries (required if CleanUpEffects='1')
+%   'MeanVolume'       - Path to mean volume file (required if ProcessVolume='1')
+%   'CleanedVolumeTCS' - Path to cleaned volume timeseries (required if ProcessVolume='1')
+%   'VolumeOutputName' - Output path for volume results (required if ProcessVolume='1')
+%   'OrigVolumeTCS'    - Path to original volume timeseries (required if CleanUpEffects='1' AND ProcessVolume='1')
+%   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if tICAmode='sICA+tICA')
+%   'tICAcomponentText'- Path to tICA component indices text file (required if tICAmode='sICA+tICA')
+%
+% Examples:
+%   % Basic CIFTI-only processing:
+%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile)
+%
+%   % With cleanup effects comparison:
+%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile, ...
+%             'CleanUpEffects', '1', 'OrigCIFTITCS', origFile)
+%
+%   % With volume processing:
+%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile, ...
+%             'ProcessVolume', '1', 'MeanVolume', meanVol, ...
+%             'CleanedVolumeTCS', cleanedVol, 'VolumeOutputName', volOutput)
 
-%% Parse boolean strings
+%% Parse optional arguments using inputParser
+p = inputParser;
+p.FunctionName = 'fMRIStats';
+
+% Control flags (with defaults)
+addParameter(p, 'ProcessVolume', '0', @ischar);
+addParameter(p, 'CleanUpEffects', '0', @ischar);
+addParameter(p, 'tICAmode', 'sICA', @ischar);
+addParameter(p, 'Caret7_Command', 'wb_command', @ischar);
+
+% Conditionally required arguments (default to empty)
+addParameter(p, 'OrigCIFTITCS', '', @ischar);
+addParameter(p, 'MeanVolume', '', @ischar);
+addParameter(p, 'CleanedVolumeTCS', '', @ischar);
+addParameter(p, 'VolumeOutputName', '', @ischar);
+addParameter(p, 'OrigVolumeTCS', '', @ischar);
+addParameter(p, 'tICAcomponentTCS', '', @ischar);
+addParameter(p, 'tICAcomponentText', '', @ischar);
+
+parse(p, varargin{:});
+opts = p.Results;
+
+%% Parse boolean strings and assign to local variables
 % Boolean arguments are passed as '0' or '1' strings from bash opts_StringToBool
-CleanUpEffects = strcmp(CleanUpEffectsStr, '1');
-ProcessVolume = strcmp(ProcessVolumeStr, '1');
+CleanUpEffects = strcmp(opts.CleanUpEffects, '1');
+ProcessVolume = strcmp(opts.ProcessVolume, '1');
+Caret7_Command = opts.Caret7_Command;
+
+%% Validate conditionally required arguments
+if CleanUpEffects && isempty(opts.OrigCIFTITCS)
+    error('fMRIStats:MissingArgument', ...
+          'OrigCIFTITCS is required when CleanUpEffects=''1''');
+end
+
+if ProcessVolume
+    if isempty(opts.MeanVolume)
+        error('fMRIStats:MissingArgument', ...
+              'MeanVolume is required when ProcessVolume=''1''');
+    end
+    if isempty(opts.CleanedVolumeTCS)
+        error('fMRIStats:MissingArgument', ...
+              'CleanedVolumeTCS is required when ProcessVolume=''1''');
+    end
+    if isempty(opts.VolumeOutputName)
+        error('fMRIStats:MissingArgument', ...
+              'VolumeOutputName is required when ProcessVolume=''1''');
+    end
+    if CleanUpEffects && isempty(opts.OrigVolumeTCS)
+        error('fMRIStats:MissingArgument', ...
+              'OrigVolumeTCS is required when both ProcessVolume=''1'' and CleanUpEffects=''1''');
+    end
+end
+
+if strcmp(opts.tICAmode, 'sICA+tICA')
+    if isempty(opts.tICAcomponentTCS)
+        error('fMRIStats:MissingArgument', ...
+              'tICAcomponentTCS is required when tICAmode=''sICA+tICA''');
+    end
+    if isempty(opts.tICAcomponentText)
+        error('fMRIStats:MissingArgument', ...
+              'tICAcomponentText is required when tICAmode=''sICA+tICA''');
+    end
+end
 
 %% Load CIFTI data
 % Load mean image, ICA timecourses, signal component indices, and cleaned timeseries
@@ -27,8 +124,7 @@ CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
 % Extract only the signal component timecourses (transpose: timepoints x components)
 sICATCSSignal = sICATCS.cdata(Signal,:)';
-tICAmode = false;  % ToDo
-if tICAmode
+if strcmp(opts.tICAmode,'sICA+tICA')
   % ToDo: load tICA timecourse sdseries, and single component text, 
   % regress out noise and set that as the sICATCSSignal
 end
@@ -36,15 +132,15 @@ end
 
 %% Load original CIFTI data for cleanup effects comparison
 if CleanUpEffects
-  OrigCIFTITCS = ciftiopen(OrigCIFTITCS,Caret7_Command);
+  OrigCIFTITCS = ciftiopen(opts.OrigCIFTITCS,Caret7_Command);
   OrigCIFTITCS.cdata = demean(OrigCIFTITCS.cdata,2);  % demean across time
 end  % if CleanUpEffects (load original CIFTI)
 
 %% Load and prepare volume data (if requested)
 if ProcessVolume
-  VolumeGeometryName = MeanVolume;  % save filename for later geometry copy
-  MeanVolume = read_avw(MeanVolume);
-  CleanedVolumeTCS = read_avw(CleanedVolumeTCS);
+  VolumeGeometryName = opts.MeanVolume;  % save filename for later geometry copy
+  MeanVolume = read_avw(opts.MeanVolume);
+  CleanedVolumeTCS = read_avw(opts.CleanedVolumeTCS);
   
   % Reshape 4D volumes to 2D (voxels x time) for easier processing
   nVoxels = size(MeanVolume,1) * size(MeanVolume,2) * size(MeanVolume,3);
@@ -59,7 +155,7 @@ if ProcessVolume
   
   % Load original volume data for cleanup effects comparison
   if CleanUpEffects
-    OrigVolumeTCS = read_avw(OrigVolumeTCS);
+    OrigVolumeTCS = read_avw(opts.OrigVolumeTCS);
     OrigVolumeTCS2D = reshape(OrigVolumeTCS, nVoxels, size(OrigVolumeTCS,4));
     OrigVolumeTCS2DMasked = OrigVolumeTCS2D(MASK,:);
     OrigVolumeTCS2DMasked = demean(OrigVolumeTCS2DMasked,2);
@@ -174,8 +270,8 @@ if ProcessVolume
                          size(MeanVolume,3), size(VolumeOutput2DMasked,2));
   
   % Save and copy geometry from original
-  save_avw(VolumeOutput,VolumeOutputName,'f',[1 1 1 1]);
-  unix(['fslcpgeom ' VolumeGeometryName ' ' VolumeOutputName ' -d']);
+  save_avw(VolumeOutput,opts.VolumeOutputName,'f',[1 1 1 1]);
+  unix(['fslcpgeom ' VolumeGeometryName ' ' opts.VolumeOutputName ' -d']);
 end  % if ProcessVolume
 
 end  % function fMRIStats
