@@ -22,7 +22,7 @@ $log_ToolName: computes fMRI statistics including mTSNR, fCNR, and percent BOLD
 
 Usage: $log_ToolName PARAMETER...
 
-PARAMETERs are [ ] = optional; < > = user supplied value
+PARAMETERs are [ ] = optional; < > = user supplied vfalue
 "
     #automatic argument descriptions
     opts_ShowArguments
@@ -155,18 +155,48 @@ do
             then
                 log_Err_Abort "To use compiled matlab, you must set and export the variable MATLAB_COMPILER_RUNTIME"
             fi
-            log_Err_Abort "Compiled MATLAB mode not yet implemented for this script"
             ;;
         (1)
-            matlab -nodisplay -nosplash <<M_PROG
-addpath('${HCPPIPEDIR}/fMRIStats/scripts'); fMRIStats('${MeanCIFTI}','${MeanVolume}','${sICATCS}','${Signal}','${OrigCIFTITCS}','${OrigVolumeTCS}','${CleanedCIFTITCS}','${CleanedVolumeTCS}','${CIFTIOutput}','${VolumeOutput}','${CleanUpEffects}','${ProcessVolume}','${Caret7_Command}');
-M_PROG
+            matlab_interpreter=(matlab -nodisplay -nosplash)
             ;;
         (2)
-            octave-cli -q --eval "addpath('${HCPPIPEDIR}/fMRIStats/scripts'); fMRIStats('${MeanCIFTI}','${MeanVolume}','${sICATCS}','${Signal}','${OrigCIFTITCS}','${OrigVolumeTCS}','${CleanedCIFTITCS}','${CleanedVolumeTCS}','${CIFTIOutput}','${VolumeOutput}','${CleanUpEffects}','${ProcessVolume}','${Caret7_Command}');"
+            matlab_interpreter=(octave-cli -q --no-window-system)
             ;;
         (*)
-            log_Err_Abort "Unsupported MATLAB run mode: $MatlabMode"
+            log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
+            ;;
+    esac
+    
+    #matlab function arguments
+    matlab_argarray=("$MeanCIFTI" "$MeanVolume" "$sICATCS" "$Signal" "$OrigCIFTITCS" "$OrigVolumeTCS" "$CleanedCIFTITCS" "$CleanedVolumeTCS" "$CIFTIOutput" "$VolumeOutput" "$CleanUpEffects" "$ProcessVolume" "$Caret7_Command")
+    
+    #shortcut in case the folder gets renamed
+    this_script_dir=$(dirname "$0")
+    
+    case "$MatlabMode" in
+        (0)
+            matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+            log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
+            "${matlab_cmd[@]}"
+            ;;
+        (1 | 2)
+            #reformat argument array so matlab sees them as strings
+            matlab_args=""
+            for thisarg in "${matlab_argarray[@]}"
+            do
+                if [[ "$matlab_args" != "" ]]
+                then
+                    matlab_args+=", "
+                fi
+                matlab_args+="'$thisarg'"
+            done
+            matlabcode="
+                addpath('$HCPPIPEDIR/fMRIStats/scripts');
+                fMRIStats($matlab_args);"
+            
+            log_Msg "running matlab code: $matlabcode"
+            "${matlab_interpreter[@]}" <<<"$matlabcode"
+            echo
             ;;
     esac
     
