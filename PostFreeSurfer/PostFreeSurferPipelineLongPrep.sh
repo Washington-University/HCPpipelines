@@ -114,34 +114,6 @@ else
     echo "Timepoint_cross: $Timepoint_cross"
 fi
 
-#########################################################################################
-# Organizing and cleaning up the folder structure
-#########################################################################################
-if (( ! TemplateProcessing )); then
-
-    LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
-
-    log_Msg "Organizing the folder structure for: ${Timepoint_cross}"
-
-    TargetDIR="${StudyFolder}/${Timepoint_cross}.long.${Template}/T1w"
-    mkdir -p "${TargetDIR}"
-
-    # tp_folder_fslong stores folder where longitudinal FreeSurfer stores timepoint output natively.
-    # Example of how it would look like, given Template=123456_V1_V2, Subject=123456, Timepoint=123456_V1:
-    # $tp_folder_fslong=$StudyFolder/123456.long.123456_V1_V2/T1w/123456_V1.long.123456_V1_V2
-    tp_folder_fslong="${LongDIR}/${Timepoint_cross}.long.${Template}"
-    if [ ! -d "$tp_folder_fslong" ]; then
-    	log_Err_Abort "Folder $tp_folder_fslong does not exist, was longitudinal FreeSurfer run?"        
-
-    # tp_folder_hcp contains target timepoint folder in HCP pipelines.
-    # $tp_folder_hcp=$StudyFolder/123456_V1.long.123456_V1_V2/T1w/123456_V1.long.123456_V1_V2
-    tp_folder_hcp="${TargetDIR}/${Timepoint_cross}.long.${Template}"
-    if [ -d "$tp_folder_hcp" ]; then 
-        rm -rf "$tp_folder_hcp"
-    fi
-    mv "$tp_folder_fslong" "$tp_folder_hcp"
-fi
-
 ############################################################################################################
 # The next block computes the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (long_template).
 Timepoint_long=$Timepoint_cross.long.$Template
