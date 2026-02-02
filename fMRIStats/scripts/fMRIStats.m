@@ -162,7 +162,7 @@ if ProcessVolume
   
   %% Save volume output
   % Unmask and reshape back to 4D
-  VolumeOutput2D = single(zeros(length(MeanVolume2D), size(VolumeOutput2DMasked,2)));
+  VolumeOutput2D = zeros(numel(MeanVolume2D), size(VolumeOutput2DMasked,2),'single');
   VolumeOutput2D(MASK,:) = VolumeOutput2DMasked;
   VolumeOutput = reshape(VolumeOutput2D, size(MeanVolume,1), size(MeanVolume,2), ...
                          size(MeanVolume,3), size(VolumeOutput2DMasked,2));
