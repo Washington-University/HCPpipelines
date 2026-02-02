@@ -39,7 +39,7 @@ opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration name, def
 opts_AddOptional '--process-volume' 'ProcessVolumeStr' 'TRUE or FALSE' "whether to process volume data, default 'false'" 'false'
 opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whether to compute cleanup effects metrics, default 'false'" 'false'
 opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" 'clean_rclean_tclean'
-opts_AddOptional '--tica-mode' 'tICAmode' 'sICA or sICA+tICA' "ICA mode: 'sICA' for spatial ICA only, 'sICA+tICA' for combined spatial+temporal ICA, default 'sICA'" 'sICA'
+opts_AddOptional '--ica-mode' 'ICAmode' 'sICA or sICA+tICA' "ICA mode: 'sICA' for spatial ICA only, 'sICA+tICA' for combined spatial+temporal ICA, default 'sICA'" 'sICA'
 opts_AddOptional '--tica-component-tcs' 'tICAcomponentTCS' 'path' "path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)" ''
 opts_AddOptional '--tica-component-text' 'tICAcomponentText' 'path' "path to tICA component signal indices text file (required if --tica-mode=sICA+tICA)" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -72,6 +72,14 @@ if [ "${RegName}" != "NONE" ] ; then
 else
     RegString=""
 fi
+
+# Warn if using tICA+sICA mode with cleanup effects but no tclean in processing string
+if [[ "$ICAmode" == "sICA+tICA" ]] && [[ "$CleanUpEffects" == "1" ]]; then
+    if [[ "$ProcSTRING" != *"tclean"* ]]; then
+        log_Warn "Using tICA+sICA mode with CleanUpEffects=true, but ProcSTRING does not contain 'tclean'. Processing string is: '$ProcSTRING'"
+    fi
+fi
+
 
 # Convert @ separated fMRI names to array
 IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
@@ -179,7 +187,7 @@ do
     matlab_opts=()
     matlab_opts+=("ProcessVolume" "$ProcessVolume")
     matlab_opts+=("CleanUpEffects" "$CleanUpEffects")
-    matlab_opts+=("tICAmode" "$tICAmode")
+    matlab_opts+=("ICAmode" "$ICAmode")
     matlab_opts+=("Caret7_Command" "$Caret7_Command")
     
     # Add conditionally required arguments based on flags
@@ -198,7 +206,7 @@ do
     fi
     
     # Add tICA arguments if in sICA+tICA mode
-    if [[ "$tICAmode" == "sICA+tICA" ]]; then
+    if [[ "$ICAmode" == "sICA+tICA" ]]; then
         matlab_opts+=("tICAcomponentTCS" "$tICAcomponentTCS")
         matlab_opts+=("tICAcomponentText" "$tICAcomponentText")
     fi

@@ -142,7 +142,7 @@ main() {
     CleanUpEffects="false"
 
     # tICA mode
-    tICAmode="sICA" # options: sICA or sICA+tICA
+    ICAmode="sICA" # options: 'sICA' or 'sICA+tICA'
     tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)
     tICAcomponentText="" # path to tICA component signal indices text file (required if --tica-mode=sICA+tICA)
   
@@ -199,7 +199,7 @@ main() {
                 --reg-name="$RegName" \
                 --process-volume="$ProcessVolume" \
                 --cleanup-effects="$CleanUpEffects" \
-                --tica-mode="$tICAmode" \
+                --ica-mode="$ICAmode" \
                 --tica-component-tcs="$tICAcomponentTCS" \
                 --tica-component-text="$tICAcomponentText" \
                 --matlab-run-mode="$MatlabMode"
