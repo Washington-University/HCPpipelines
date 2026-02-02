@@ -137,18 +137,20 @@ end
 MeanCIFTI = ciftiopen(MeanCIFTI,Caret7_Command);
 CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
-switch  opts.ICAmode
+switch opts.ICAmode
   case 'sICA'
+    % Load component timecourses and extract only the signal component timecourses 
     sICATCS = ciftiopen(opts.sICATCS,Caret7_Command);
-    Signal = load(opts.Signal,'-ascii');  % indices of signal (non-noise) ICA components
-    % Extract only the signal component timecourses (transpose: timepoints x components)
-    sICATCSSignal = sICATCS.cdata(Signal,:)';
+    Signal = load(opts.Signal,'-ascii'); % indices of signal (non-noise) ICA components
+    icaTCSsignal = sICATCS.cdata(Signal,:)';% transpose to timepoints x components
   case 'sICA+tICA'
     % sICATCS = ciftiopen(sICATCS,Caret7_Command);
     % Noise = load(Noise,'-ascii');  % indices of noise ICA components
-    sICATCSSignal = foo;
+    icaTCSsignal = foo;
+
+    
     % ToDo: load tICA component timecourse sdseries, and noise component text, 
-    % regress out noise and set that as the sICATCSSignal
+    % regress out noise and set that as the icaTCSsignal
 end
 
 %% Load original CIFTI data for cleanup effects comparison
@@ -191,11 +193,11 @@ CIFTIOutput = MeanCIFTI;
 % Regress signal ICA timecourses into cleaned data to get spatial betas
 % Beta = (X'X)^-1 * X' * Y, where X = ICA timecourses, Y = cleaned data
 CIFTIBetas = MeanCIFTI;
-CIFTIBetas.cdata = (pinv(sICATCSSignal) * CleanedCIFTITCS.cdata')';
+CIFTIBetas.cdata = (pinv(icaTCSsignal) * CleanedCIFTITCS.cdata')';
 
 % Reconstruct signal timeseries from betas and ICA timecourses
 CIFTIRecon = CleanedCIFTITCS;
-CIFTIRecon.cdata = CIFTIBetas.cdata * sICATCSSignal';
+CIFTIRecon.cdata = CIFTIBetas.cdata * icaTCSsignal';
 ReconSTD = std(CIFTIRecon.cdata,[],2);  % signal amplitude (std across time)
 
 % Compute unstructured noise as residual after removing reconstructed signal
@@ -252,8 +254,8 @@ ciftisave(CIFTIOutput,CIFTIOutputName,Caret7_Command);
 if ProcessVolume
   %% Compute volume signal reconstruction
   % Same approach as CIFTI: regress ICA timecourses, reconstruct signal
-  VolumeBetas2DMasked = (pinv(sICATCSSignal) * CleanedVolumeTCS2DMasked')';
-  VolumeRecon2DMasked = VolumeBetas2DMasked * sICATCSSignal';
+  VolumeBetas2DMasked = (pinv(icaTCSsignal) * CleanedVolumeTCS2DMasked')';
+  VolumeRecon2DMasked = VolumeBetas2DMasked * icaTCSsignal';
   ReconSTD = std(VolumeRecon2DMasked,[],2);
   
   % Unstructured noise residual

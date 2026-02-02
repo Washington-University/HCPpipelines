@@ -133,15 +133,14 @@ do
     
     # sICA files (only needed for sICA mode)
     if [[ "$ICAmode" == "sICA" ]]; then
-        sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"
-        
+        sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
         if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
             Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
         else
             Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
         fi
     fi
-    
+
     OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
     OrigVolumeTCS="${fMRIFolder}/${fMRIName}.nii.gz"
     CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
