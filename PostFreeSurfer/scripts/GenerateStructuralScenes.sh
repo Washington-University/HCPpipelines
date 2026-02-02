@@ -146,6 +146,7 @@ function copyTemplateFiles {
         if ((verbose)); then
             echo "Copying template files to $targetDir as symlinks"
         fi
+        #symlinks review: absolute path, not changed, needs attention.
         for FIL in "$templateDir"/S1200.{MyelinMap,sulc}* "$templateDir"/../MNI152_T1_0.8mm.nii.gz; do
             FN=$(basename "$FIL")
             ln -s "$FIL" "$targetDir/$FN"
