@@ -80,7 +80,6 @@ if [[ "$ICAmode" == "sICA+tICA" ]] && [[ "$CleanUpEffects" == "1" ]]; then
     fi
 fi
 
-
 # Convert @ separated fMRI names to array
 IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
 
@@ -131,12 +130,16 @@ do
     
     MeanCIFTI="${fMRIFolder}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
     MeanVolume="${fMRIFolder}/${fMRIName}_mean.nii.gz"
-    sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"
     
-    if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
-        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
-    else
-        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
+    # sICA files (only needed for sICA mode)
+    if [[ "$ICAmode" == "sICA" ]]; then
+        sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"
+        
+        if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
+            Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
+        else
+            Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
+        fi
     fi
     
     OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
@@ -151,11 +154,13 @@ do
     if [ ! -e "${MeanCIFTI}" ]; then
         log_Err_Abort "Required file not found: ${MeanCIFTI}"
     fi
-    if [ ! -e "${sICATCS}" ]; then
-        log_Err_Abort "Required file not found: ${sICATCS}"
-    fi
-    if [ ! -e "${Signal}" ]; then
-        log_Err_Abort "Required file not found: ${Signal}"
+    if [[ "$ICAmode" == "sICA" ]]; then
+        if [ ! -e "${sICATCS}" ]; then
+            log_Err_Abort "Required file not found: ${sICATCS}"
+        fi
+        if [ ! -e "${Signal}" ]; then
+            log_Err_Abort "Required file not found: ${Signal}"
+        fi
     fi
     if [ ! -e "${CleanedCIFTITCS}" ]; then
         log_Err_Abort "Required file not found: ${CleanedCIFTITCS}"
@@ -181,7 +186,7 @@ do
     
     #matlab function arguments - build name-value pairs for optional args
     # Required positional arguments
-    matlab_positional=("$MeanCIFTI" "$sICATCS" "$Signal" "$CleanedCIFTITCS" "$CIFTIOutput")
+    matlab_positional=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput")
     
     # Build name-value pairs for optional arguments
     matlab_opts=()
@@ -189,6 +194,12 @@ do
     matlab_opts+=("CleanUpEffects" "$CleanUpEffects")
     matlab_opts+=("ICAmode" "$ICAmode")
     matlab_opts+=("Caret7_Command" "$Caret7_Command")
+    
+    # Add sICA arguments if in sICA mode
+    if [[ "$ICAmode" == "sICA" ]]; then
+        matlab_opts+=("sICATCS" "$sICATCS")
+        matlab_opts+=("Signal" "$Signal")
+    fi
     
     # Add conditionally required arguments based on flags
     if [[ "$CleanUpEffects" == "1" ]]; then

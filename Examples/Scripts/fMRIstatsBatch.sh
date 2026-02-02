@@ -143,8 +143,10 @@ main() {
 
     # tICA mode
     ICAmode="sICA" # options: 'sICA' or 'sICA+tICA'
-    tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)
-    tICAcomponentText="" # path to tICA component signal indices text file (required if --tica-mode=sICA+tICA)
+    # If ICAmode="sICA", sICATCS and Signal are auto-constructed from standard paths
+    # If ICAmode="sICA+tICA", you need to provide these:
+    tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --ica-mode=sICA+tICA)
+    tICAcomponentText="" # path to tICA component signal indices text file (required if --ica-mode=sICA+tICA)
   
 
     # end of general inputs

@@ -1,4 +1,4 @@
-function fMRIStats(MeanCIFTI, sICATCS, Signal, CleanedCIFTITCS, CIFTIOutputName, varargin)
+function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
 % fMRIStats - Compute fMRI quality metrics from ICA-cleaned data
 %
 % This function computes several fMRI quality metrics including:
@@ -14,40 +14,42 @@ function fMRIStats(MeanCIFTI, sICATCS, Signal, CleanedCIFTITCS, CIFTIOutputName,
 % uncleaned data are computed to assess the effect of sICA or sICA+tICA cleanup.
 %
 % Usage:
-%   fMRIStats(MeanCIFTI, sICATCS, Signal, CleanedCIFTITCS, CIFTIOutputName, ...)
+%   fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, ...)
 %
 % Required arguments:
 %   MeanCIFTI        - Path to mean CIFTI file
-%   sICATCS          - Path to sICA timecourse CIFTI
-%   Signal           - Path to signal component indices text file
 %   CleanedCIFTITCS  - Path to cleaned CIFTI timeseries
 %   CIFTIOutputName  - Output path for CIFTI results
 %
 % Optional name-value arguments (with defaults):
 %   'ProcessVolume'    - '0' or '1' to process volume data (default: '0')
 %   'CleanUpEffects'   - '0' or '1' to compute cleanup comparison metrics (default: '0')
-%   'ICAmode'         - 'sICA' or 'sICA+tICA' mode (default: 'sICA')
+%   'ICAmode'          - 'sICA' or 'sICA+tICA' mode (default: 'sICA')
 %   'Caret7_Command'   - Path to wb_command (default: 'wb_command')
 %
-% Conditionally required (based on flags above):
+% Conditionally required (based on ICAmode):
+%   'sICATCS'          - Path to sICA timecourse CIFTI (required if ICAmode='sICA')
+%   'Signal'           - Path to signal component indices text file (required if ICAmode='sICA')
+%   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
+%   'tICAcomponentText'- Path to tICA component indices text file (required if ICAmode='sICA+tICA')
+%
+% Conditionally required (based on other flags):
 %   'OrigCIFTITCS'     - Path to original CIFTI timeseries (required if CleanUpEffects='1')
 %   'MeanVolume'       - Path to mean volume file (required if ProcessVolume='1')
 %   'CleanedVolumeTCS' - Path to cleaned volume timeseries (required if ProcessVolume='1')
 %   'VolumeOutputName' - Output path for volume results (required if ProcessVolume='1')
 %   'OrigVolumeTCS'    - Path to original volume timeseries (required if CleanUpEffects='1' AND ProcessVolume='1')
-%   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
-%   'tICAcomponentText'- Path to tICA component indices text file (required if ICAmode='sICA+tICA')
 %
 % Examples:
-%   % Basic CIFTI-only processing:
-%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile)
+%   % Basic CIFTI-only processing with sICA:
+%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile)
 %
 %   % With cleanup effects comparison:
-%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile, ...
+%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile, ...
 %             'CleanUpEffects', '1', 'OrigCIFTITCS', origFile)
 %
 %   % With volume processing:
-%   fMRIStats(meanFile, icaTCS, signalFile, cleanedFile, outputFile, ...
+%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile, ...
 %             'ProcessVolume', '1', 'MeanVolume', meanVol, ...
 %             'CleanedVolumeTCS', cleanedVol, 'VolumeOutputName', volOutput)
 
@@ -60,6 +62,10 @@ addParameter(p, 'ProcessVolume', '0', @ischar);
 addParameter(p, 'CleanUpEffects', '0', @ischar);
 addParameter(p, 'ICAmode', 'sICA', @ischar);
 addParameter(p, 'Caret7_Command', 'wb_command', @ischar);
+
+% sICA mode arguments (conditionally required)
+addParameter(p, 'sICATCS', '', @ischar);
+addParameter(p, 'Signal', '', @ischar);
 
 % Conditionally required arguments (default to empty)
 addParameter(p, 'OrigCIFTITCS', '', @ischar);
@@ -104,6 +110,17 @@ if ProcessVolume
     end
 end
 
+if strcmp(opts.ICAmode, 'sICA')
+    if isempty(opts.sICATCS)
+        error('fMRIStats:MissingArgument', ...
+              'sICATCS is required when ICAmode=''sICA''');
+    end
+    if isempty(opts.Signal)
+        error('fMRIStats:MissingArgument', ...
+              'Signal is required when ICAmode=''sICA''');
+    end
+end
+
 if strcmp(opts.ICAmode, 'sICA+tICA')
     if isempty(opts.tICAcomponentTCS)
         error('fMRIStats:MissingArgument', ...
@@ -118,17 +135,21 @@ end
 %% Load CIFTI data
 % Load mean image, ICA timecourses, signal component indices, and cleaned timeseries
 MeanCIFTI = ciftiopen(MeanCIFTI,Caret7_Command);
-sICATCS = ciftiopen(sICATCS,Caret7_Command);
-Signal = load(Signal);  % indices of signal (non-noise) ICA components
 CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
-% Extract only the signal component timecourses (transpose: timepoints x components)
-sICATCSSignal = sICATCS.cdata(Signal,:)';
-if strcmp(opts.ICAmode,'sICA+tICA')
-  % ToDo: load tICA component timecourse sdseries, and signal component text, 
-  % regress out noise and set that as the sICATCSSignal
+switch  opts.ICAmode
+  case 'sICA'
+    sICATCS = ciftiopen(opts.sICATCS,Caret7_Command);
+    Signal = load(opts.Signal,'-ascii');  % indices of signal (non-noise) ICA components
+    % Extract only the signal component timecourses (transpose: timepoints x components)
+    sICATCSSignal = sICATCS.cdata(Signal,:)';
+  case 'sICA+tICA'
+    % sICATCS = ciftiopen(sICATCS,Caret7_Command);
+    % Noise = load(Noise,'-ascii');  % indices of noise ICA components
+    sICATCSSignal = foo;
+    % ToDo: load tICA component timecourse sdseries, and noise component text, 
+    % regress out noise and set that as the sICATCSSignal
 end
-
 
 %% Load original CIFTI data for cleanup effects comparison
 if CleanUpEffects
