@@ -345,12 +345,17 @@ if (( end_stage > 0 )); then
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
-#clean up symlinks 
+#clean up symlinks and organize longitudinal session folder structure
 for Session in ${Sessions} ; do
-  unlink "${TemplateT1wDir}/${Session}"
+  rm -f "${TemplateT1wDir}/${Session}"
+  LongSession=${Session}.long.${TemplateID}
+  LongSessionT1wDir="$StudyFolder/${LongSession}/T1w"
+  mkdir -p "$LongSessionT1wDir"
+  mv "${TemplateT1wDir}/${LongSession}" "${LongSessionT1wDir}"/
 done
+
 #this symlink isn't used downstream
-unlink "${TemplateT1wDir}/fsaverage"
+rm -f "${TemplateT1wDir}/fsaverage"
 
 # ----------------------------------------------------------------------
 log_Msg "Completed main functionality"
