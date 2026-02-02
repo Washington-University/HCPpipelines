@@ -273,7 +273,8 @@ if (( start_stage < 1 )); then
     Source="${StudyFolder}/${Session}/T1w/${Session}"
     Target="${TemplateT1wDir}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
-    ln -sf ${Source} ${Target}
+    #symlinks review: changed from absolute to relative. 
+    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/T1w/$Session" "$Session" )
   done
 
   # ----------------------------------------------------------------------
