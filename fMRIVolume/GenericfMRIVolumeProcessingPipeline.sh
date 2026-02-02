@@ -109,6 +109,12 @@ opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' 'file' "negative p
 
 opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' 'file' "positive polarity SE-EPI image"
 
+opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' 'file' "second negative polarity SE-EPI image" "NONE"
+
+opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' 'file' "second positive polarity SE-EPI image" "NONE"
+
+opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'file' "zero-phase SE-EPI image" "NONE"
+
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file to use"
 
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "field map magnitude images (@-separated)"
@@ -132,6 +138,25 @@ opts_AddOptional '--wb-resample' 'useWbResample' 'true/false' "Use wb_command to
 opts_AddOptional '--echoTE' 'echoTE' '@ delimited list of numbers' "TE for each echo (unused for single echo)" "0"
 
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0 (compiled), 1 (interpreted), or 2 (Octave)' "defaults to $g_matlab_default_mode" "$g_matlab_default_mode"
+
+opts_AddOptional '--mctype' 'MotionCorrectionType' 'MCFLIRT OR FLIRT' "What type of motion correction to use (MCFLIRT default)" "MCFLIRT"
+
+opts_AddOptional '--bbr' 'BBR' 'T2w, T1w or NONE' "BBR contrast to use for EPI to T1w registration" "T2w"
+
+opts_AddOptional '--wmprojabs' 'WMProjAbs' 'number' "FreeSurfer wm-proj-abs value" "2"
+
+opts_AddOptional '--runmode' 'RunMode' '1,2,3' "Which stages to run: 1=all, 2=skip GDC+MC, 3=OneStepResample+Intensity only" "1"
+
+opts_AddOptional '--initworldmat' 'InitWorldMat' 'file' "Initial world matrix to apply to sform (optional)" ""
+
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position (e.g. HFS, FFS, HFSx, FFSx)" "HFS"
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position (e.g. HFS, FFS)" "HFS"
+
+opts_AddOptional '--SEPhaseZeroFSBrainmask' 'SpinEchoPhaseEncodeZeroFSBrainmask' 'file' "FS brainmask for SEPhaseZero (or NONE)" "NONE"
+
+opts_AddOptional '--species' 'SPECIES' 'string' "Species label (Human, Macaque, Marmoset, etc.)" "Human"
+
+opts_AddOptional '--brainscalefactor' 'BrainScaleFactor' 'number' "Brain scale factor for motion correction (e.g. 1 for human)" "1"
 
 # -------- "LegacyStyleData" MODE OPTIONS --------
 
@@ -826,6 +851,10 @@ if (( ! IsLongitudinal )); then
         ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc_warp 0 3
         ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp -mul 0 "$fMRIFolder"/"$NameOffMRI"_gdc_warp
         ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$ScoutName"_gdc
+		if [[ $SPECIES != "Human" ]] ; then
+			${RUN} ${FSLDIR}/bin/fslmerge -t "$fMRIFolder"/"$ScoutName"_gdc_warp "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc
+			${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc_warp -mul 0 "$fMRIFolder"/"$ScoutName"_gdc_warp
+		fi
         #make fake jacobians of all 1s, for completeness
         ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$OrigScoutName" -mul 0 -add 1 "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian
         ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc_warp "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian 0 1
@@ -833,6 +862,45 @@ if (( ! IsLongitudinal )); then
     fi
 fi # if (( ! IsLongitudinal ))
 
+# Correct orientaion for sphinx-positioned data - current scanner does not allow settings of sphinx position. But this orientation correction should be done AFTER gradient distortion correction.  - TH Oct 2023
+if [[ $SPECIES != "Human" ]] ; then
+    if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+        log_Msg "Reorient $TruePatientPosition data with a scanner patient position of $ScannerPatientPosition"
+        if [ ! -z "$InitWorldMat" ] ; then
+            log_Msg "Apply init rigid-body transformation to sform"
+            initmat="--init=${InitWorldMat}"
+        else
+            initmat=""
+        fi
+        ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$ScoutName"_gdc.nii.gz --out="$fMRIFolder"/"$ScoutName"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE $initmat
+        ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz --out="$fMRIFolder"/"$NameOffMRI"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE $initmat
+        for vol in "$NameOffMRI"_gdc_warp_jacobian.nii.gz "$ScoutName"_gdc_warp_jacobian.nii.gz ; do
+            ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$vol" --out="$fMRIFolder"/"$vol" --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" $initmat
+        done
+        convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
+        convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+
+    else # assume orientaion information of input volumes is correct and reorient to the conventional orientation (RPI)
+        log_Msg "Reorient to std"
+        fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc  
+        fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc   
+        for vol in "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
+	        fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
+        done
+        if [ ! -z "$InitWorldMat" ] ; then
+            log_Msg "Apply init rigid-body transformation to sform"
+            for vol in "$ScoutName"_gdc  "$NameOffMRI"_gdc "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
+                ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -3 "effective sform" | tail -3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
+                echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$fMRIFolder"/"$vol"_effectivesform.mat
+     	        convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
+	            ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
+                rm  "$fMRIFolder"/${vol}_newsform.mat "$fMRIFolder"/"$vol"_effectivesform.mat
+            done
+        fi 
+        convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
+        convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+    fi
+fi
 #Split echos.
 tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
 if [[ ${nEcho} -gt 1 ]]; then
@@ -871,7 +939,9 @@ if (( ! IsLongitudinal )); then
         "$fMRIFolder"/"$MotionMatrixFolder" \
         "$MotionMatrixPrefix" \
         "$MotionCorrectionType" \
-        "$fMRIReferenceReg"
+        "$fMRIReferenceReg" \
+		"$BrainScaleFactor" \
+		"$SPECIES"
 fi
 
 # In longitudinal mode, the rest of this script re-runs the same code as in cross-sectional.
@@ -918,6 +988,10 @@ if [ $fMRIReference = "NONE" ] ; then
         --echodiff=${deltaTE} \
         --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
         --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+	    --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
+        --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
+        --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+        --SEPhaseZeroFSBrainmask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
         --echospacing=${EchoSpacing} \
         --unwarpdir=${UnwarpDir} \
         --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
@@ -937,7 +1011,13 @@ if [ $fMRIReference = "NONE" ] ; then
         --usejacobian=${UseJacobian} \
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
-        --t1w-cross2long-xfm="$T1wCross2LongXfm"
+        --t1w-cross2long-xfm="$T1wCross2LongXfm" \
+        --bbr=${BBR}   \
+        --wmprojabs=${WMProjAbs} \
+        --scannerpatientposition=${ScannerPatientPosition} \
+        --truepatientposition=${TruePatientPosition} \
+        --initworldmat=${InitWorldMat}
+
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
     if [ -d ${DCFolder} ] ; then
@@ -985,7 +1065,8 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
-        --wb-resample=${useWbResample}
+        --wb-resample=${useWbResample} \
+		--species=${SPECIES}
 
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
