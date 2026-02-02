@@ -11,7 +11,7 @@ function fMRIStats(MeanCIFTI,MeanVolume,sICATCS,Signal,OrigCIFTITCS,OrigVolumeTC
 % the reconstructed signal from the cleaned data.
 %
 % If CleanUpEffects is enabled, additional metrics comparing cleaned vs
-% uncleaned data are computed to assess the effect of ICA cleanup.
+% uncleaned data are computed to assess the effect of sICA or sICA+tICA cleanup.
 
 %% Parse boolean strings
 % Boolean arguments are passed as '0' or '1' strings from bash opts_StringToBool
@@ -27,6 +27,12 @@ CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
 % Extract only the signal component timecourses (transpose: timepoints x components)
 sICATCSSignal = sICATCS.cdata(Signal,:)';
+tICAmode = false;  % ToDo
+if tICAmode
+  % ToDo: load tICA timecourse sdseries, and single component text, 
+  % regress out noise and set that as the sICATCSSignal
+end
+
 
 %% Load original CIFTI data for cleanup effects comparison
 if CleanUpEffects

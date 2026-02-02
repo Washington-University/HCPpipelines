@@ -7,15 +7,17 @@ set -eu
 # fMRI quality metrics (mTSNR, fCNR, percent BOLD) after ICA+FIX cleanup
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/projects/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
+DEFAULT_STUDY_FOLDER="/mnt/myelin/brainmappers/Connectome_Project/YA_HCP_Final" # location of Subject folders (named by subjectID)
+DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
+# DEFAULT_STUDY_FOLDER="${HOME}/projects/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
+# DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
 
 # example subjects, separated by @
-DEFAULT_SUBJECT_LIST="100610@102311"
+DEFAULT_SUBJECT_LIST="100206@100307"
 DEFAULT_REG_NAME="MSMAll" # the registration string corresponding to the input files, which must be specified the same in MSMAll pipeline
 DEFAULT_MATLAB_MODE=1 # MatlabMode
 DEFAULT_RUN_LOCAL=0
-DEFAULT_QUEUE=""
+DEFAULT_QUEUE="matlabparallel.q"
 
 get_options() {
     local scriptName=$(basename "$0")
@@ -123,12 +125,12 @@ main() {
     # set up pipeline environment variables and software
     source "${EnvironmentScript}"
 
-     # general settings
+    # general settings
     # set list of fMRI runs on which ICA+FIX has been run, use @ to separate runs
-    fMRINames="rfMRI_REST1_7T_PA@rfMRI_REST2_7T_AP@rfMRI_REST3_7T_PA@rfMRI_REST4_7T_AP"
+    fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
 
-    # set the file name component representing the preprocessing already done, e.g. '_hp2000_clean'
-    fMRIProcSTRING="_hp2000_clean_rclean_tclean"
+    # set the file name component representing the preprocessing already done, e.g. '_clean'
+    fMRIProcSTRING="_clean_rclean"
 
     # set temporal highpass full-width (2*sigma) used in ICA+FIX, should match with $fMRIProcSTRING
     HighPass="2000"
@@ -160,7 +162,7 @@ main() {
         fMRIExist=()
         for fMRIName in "${fMRINamesArray[@]}"
         do
-            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${fMRIProcSTRING}.dtseries.nii" ]]
+            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}${fMRIProcSTRING}.dtseries.nii" ]]
             then
                 fMRIExist+=("${fMRIName}")
             fi
@@ -172,7 +174,17 @@ main() {
         # Only queue job if subject has data
         if [[ "$fMRINamesForSub" != "" ]]
         then
-            fsl_sub -q matlabparallelhigh.q "$HCPPIPEDIR"/fMRIStats/fMRIStats.sh \
+            if ((RunLocal)) || [[ "$QUEUE" == "" ]]
+            then
+                echo "running locally"
+                queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+            else
+                echo "queueing with fsl_sub to to $QUEUE"
+                queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+            fi
+
+            # fMRIStats pipeline
+            "${queuing_command[@]}" "$HCPPIPEDIR"/fMRIStats/fMRIStats.sh \
                 --study-folder="$StudyFolder" \
                 --subject="$Subject" \
                 --fmri-names="$fMRINamesForSub" \
