@@ -34,11 +34,11 @@ PARAMETERs are [ ] = optional; < > = user supplied vfalue
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" '--path'
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject ID (e.g. 100610)"
 opts_AddMandatory '--fmri-names' 'fMRINames' 'string' "@-separated list of fMRI run names (e.g. rfMRI_REST1_LR@rfMRI_REST2_LR)"
-opts_AddMandatory '--high-pass' 'HighPass' 'integer' "the high pass filter value used in ICA+FIX"
-opts_AddMandatory '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (e.g. _hp2000_clean)"
+opts_AddMandatory '--high-pass' 'HighPass' 'string' "the high pass filter value used in ICA+FIX"
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration name, default 'NONE'" 'NONE'
 opts_AddOptional '--process-volume' 'ProcessVolumeStr' 'TRUE or FALSE' "whether to process volume data, default 'false'" 'false'
 opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whether to compute cleanup effects metrics, default 'false'" 'false'
+opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" 'clean_rclean_tclean'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -82,7 +82,7 @@ do
     fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
     
     # Check if cleaned data exists
-    if [[ -f "${fMRIFolder}/${fMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii" ]]
+    if [[ -f "${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii" ]]
     then
         # Check if ICA folder and signal file exist
         if [[ -d "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica" ]]
@@ -130,10 +130,10 @@ do
     
     OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
     OrigVolumeTCS="${fMRIFolder}/${fMRIName}.nii.gz"
-    CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
-    CleanedVolumeTCS="${fMRIFolder}/${fMRIName}${ProcSTRING}.nii.gz"
-    CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}${ProcSTRING}_fMRIStats.dscalar.nii"
-    VolumeOutput="${fMRIFolder}/${fMRIName}${ProcSTRING}_fMRIStats.nii.gz"
+    CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+    CleanedVolumeTCS="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}.nii.gz"
+    CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_fMRIStats.dscalar.nii"
+    VolumeOutput="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}_fMRIStats.nii.gz"
     
     # Validate required input files exist
     if [ ! -e "${MeanCIFTI}" ]; then
