@@ -141,6 +141,12 @@ main() {
     # set whether to compute cleanup effects metrics (comparing cleaned vs uncleaned data)
     CleanUpEffects="false"
 
+    # tICA mode
+    tICAmode="sICA" # options: sICA or sICA+tICA
+    tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)
+    tICAcomponentText="" # path to tICA component signal indices text file (required if --tica-mode=sICA+tICA)
+  
+
     # end of general inputs
 
     # set registration string
@@ -193,6 +199,9 @@ main() {
                 --reg-name="$RegName" \
                 --process-volume="$ProcessVolume" \
                 --cleanup-effects="$CleanUpEffects" \
+                --tica-mode="$tICAmode" \
+                --tica-component-tcs="$tICAcomponentTCS" \
+                --tica-component-text="$tICAcomponentText" \
                 --matlab-run-mode="$MatlabMode"
         else
             echo "Skipping ${Subject}: no runs with cleaned data found"
