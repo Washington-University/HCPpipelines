@@ -31,7 +31,8 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
 %   'sICATCS'          - Path to sICA timecourse CIFTI (required if ICAmode='sICA')
 %   'Signal'           - Path to signal component indices text file (required if ICAmode='sICA')
 %   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
-%   'tICAcomponentText'- Path to tICA component indices text file (required if ICAmode='sICA+tICA')
+%   'tICAcomponentNoise'- Path to tICA component noise indices text file (required if ICAmode='sICA+tICA')
+%   'RunRange'         - start@end sample indices for current run in concatenated tICA (required if ICAmode='sICA+tICA')
 %
 % Conditionally required (based on other flags):
 %   'OrigCIFTITCS'     - Path to original CIFTI timeseries (required if CleanUpEffects='1')
@@ -74,7 +75,8 @@ addParameter(p, 'CleanedVolumeTCS', '', @ischar);
 addParameter(p, 'VolumeOutputName', '', @ischar);
 addParameter(p, 'OrigVolumeTCS', '', @ischar);
 addParameter(p, 'tICAcomponentTCS', '', @ischar);
-addParameter(p, 'tICAcomponentText', '', @ischar);
+addParameter(p, 'tICAcomponentNoise', '', @ischar);
+addParameter(p, 'RunRange', '', @ischar);
 
 parse(p, varargin{:});
 opts = p.Results;
@@ -130,6 +132,18 @@ if strcmp(opts.ICAmode, 'sICA+tICA')
         error('fMRIStats:MissingArgument', ...
               'tICAcomponentText is required when ICAmode=''sICA+tICA''');
     end
+    if isempty(opts.RunRange)
+        error('fMRIStats:MissingArgument', ...
+              'RunRange is required when ICAmode=''sICA+tICA''');
+    end
+    % Parse @-separated RunRange string into start and end sample indices
+    RunRangeParsed = str2double(strsplit(opts.RunRange, '@'));
+    if numel(RunRangeParsed) ~= 2 || any(isnan(RunRangeParsed))
+        error('fMRIStats:InvalidArgument', ...
+              'RunRange must be start@end integers, got: %s', opts.RunRange);
+    end
+    RunStart = RunRangeParsed(1);
+    RunEnd = RunRangeParsed(2);
 end
 
 %% Load CIFTI data
@@ -144,13 +158,23 @@ switch opts.ICAmode
     Signal = load(opts.Signal,'-ascii'); % indices of signal (non-noise) ICA components
     icaTCSsignal = sICATCS.cdata(Signal,:)';% transpose to timepoints x components
   case 'sICA+tICA'
-    % sICATCS = ciftiopen(sICATCS,Caret7_Command);
-    % Noise = load(Noise,'-ascii');  % indices of noise ICA components
-    icaTCSsignal = foo;
+    tICATCS = ciftiopen(opts.tICAcomponentTCS,Caret7_Command);
+    Noise = load(opts.tICAcomponentNoise,'-ascii');  % indices of noise ICA components
+    Signal = setdiff(1:size(tICATCS.cdata,1),Noise);
+    icaTCSsignal = tICATCS.cdata(Signal,:);
+    icaTCSsignal = icaTCSsignal(:,RunStart:RunEnd)';% extra run samples from concat and transpose to timepoints x components
 
-    
     % ToDo: load tICA component timecourse sdseries, and noise component text, 
-    % regress out noise and set that as the icaTCSsignal
+    % regress out tICA noise out of sICA and and set that as the icaTCSsignal
+    % do I need to do this? Shouldn't the tclean cleanedCIFTITCS already have tICA noise removed?
+    %
+    % % Beta = (X'X)^-1 * X' * Y, where X = ICA timecourses, Y = cleaned data
+    % CIFTIBetas = MeanCIFTI;
+    % CIFTIBetas.cdata = (pinv(icaTCSsignal) * CleanedCIFTITCS.cdata')';
+
+    % % Reconstruct signal timeseries from betas and (t)ICA timecourses
+    % CIFTIRecon = CleanedCIFTITCS;
+    % CIFTIRecon.cdata = CIFTIBetas.cdata * icaTCSsignal';
 end
 
 %% Load original CIFTI data for cleanup effects comparison

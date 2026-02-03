@@ -8,7 +8,7 @@ set -eu
 
 # Global default values
 DEFAULT_STUDY_FOLDER="/mnt/myelin/brainmappers/Connectome_Project/YA_HCP_Final" # location of Subject folders (named by subjectID)
-DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
+DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5_SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
 # DEFAULT_STUDY_FOLDER="${HOME}/projects/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
 # DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
 
@@ -130,7 +130,7 @@ main() {
     fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
 
     # set the file name component representing the preprocessing already done, e.g. '_clean'
-    fMRIProcSTRING="_clean_rclean"
+    fMRIProcSTRING="_clean_rclean_tclean"
 
     # set temporal highpass full-width (2*sigma) used in ICA+FIX, should match with $fMRIProcSTRING
     HighPass="2000"
@@ -144,10 +144,13 @@ main() {
     # tICA mode
     ICAmode="sICA+tICA" # options: 'sICA' or 'sICA+tICA'
     # If ICAmode="sICA", sICATCS and Signal are auto-constructed from standard paths
-    # If ICAmode="sICA+tICA", you need to provide these:
-    tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --ica-mode=sICA+tICA)
-    tICAcomponentText="" # path to tICA component signal indices text file (required if --ica-mode=sICA+tICA)
-  
+    #
+    # If ICAmode="sICA+tICA", you can provide:
+    #   - tICAcomponentTCS: @ delimited list or text file with one path per subject
+    #   - tICAcomponentNoise: single group file 
+    # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 
+    tICAcomponentTCS="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100610/MNINonLinear/fsaverage_LR32k/100610.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii@/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
+    tICAcomponentNoise="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll3T1071/MNINonLinear/Results/rfMRI_REST/Pre_tICA/tICA_d82/Noise.txt" # path to tICA component noise indices text file (same for all subjects)
 
     # end of general inputs
 
@@ -162,10 +165,18 @@ main() {
     IFS='@' read -ra SubjectArray <<< "$Subjlist"
     IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
 
+    # Parse tICA timecourse input (can be file or @ delimited list, one per subject)
+    tICAcomponentTCSArray=()
+    if [[ -f "$tICAcomponentTCS" ]]; then
+        mapfile -t tICAcomponentTCSArray < "$tICAcomponentTCS"
+    else
+        IFS='@' read -ra tICAcomponentTCSArray <<< "$tICAcomponentTCS"
+    fi
 
     # Loop through subjects and queue parallel jobs
-    for Subject in "${SubjectArray[@]}"
+    for ((subjectIndex = 0; subjectIndex < ${#SubjectArray[@]}; ++subjectIndex))
     do
+        Subject="${SubjectArray[$subjectIndex]}"
         # Build list of fMRI files that exist for this subject
         fMRIExist=()
         for fMRIName in "${fMRINamesArray[@]}"
@@ -202,8 +213,8 @@ main() {
                 --process-volume="$ProcessVolume" \
                 --cleanup-effects="$CleanUpEffects" \
                 --ica-mode="$ICAmode" \
-                --tica-component-tcs="$tICAcomponentTCS" \
-                --tica-component-text="$tICAcomponentText" \
+                --tica-component-tcs="${tICAcomponentTCSArray[$subjectIndex]}" \
+                --tica-component-noise="$tICAcomponentNoise" \
                 --matlab-run-mode="$MatlabMode"
         else
             echo "Skipping ${Subject}: no runs with cleaned data found"

@@ -41,7 +41,7 @@ opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whethe
 opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" 'clean_rclean_tclean'
 opts_AddOptional '--ica-mode' 'ICAmode' 'sICA or sICA+tICA' "ICA mode: 'sICA' for spatial ICA only, 'sICA+tICA' for combined spatial+temporal ICA, default 'sICA'" 'sICA'
 opts_AddOptional '--tica-component-tcs' 'tICAcomponentTCS' 'path' "path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)" ''
-opts_AddOptional '--tica-component-text' 'tICAcomponentText' 'path' "path to tICA component signal indices text file (required if --tica-mode=sICA+tICA)" ''
+opts_AddOptional '--tica-component-noise' 'tICAcomponentText' 'path' "path to tICA component noise indices text file (required if --tica-mode=sICA+tICA)" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -121,7 +121,27 @@ fi
 
 log_Msg "Processing ${#fMRIExist[@]} run(s) for ${Subject}"
 
+# For sICA+tICA mode, collect the start and end sample indices for each run
+if [[ "$ICAmode" == "sICA+tICA" ]]; then
+    RunRangeArray=()
+    cumulativeSamples=0
+    for fMRIName in "${fMRIExist[@]}"
+    do
+        fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
+        CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+        # Get number of time samples 
+        nSamples=$("${Caret7_Command}" -file-information "${CleanedCIFTITCS}" -only-number-of-maps)
+        # Calculate start (1-indexed) and end sample for this run
+        startSample=$((cumulativeSamples + 1))
+        endSample=$((cumulativeSamples + nSamples))
+        RunRangeArray+=("${startSample}@${endSample}")
+        cumulativeSamples=${endSample}
+        log_Msg "Run ${fMRIName}: samples ${startSample} to ${endSample}"
+    done
+fi
+
 # Process each ready run
+runIndex=0
 for fMRIName in "${fMRIExist[@]}"
 do
     log_Msg "Running fMRIStats on: ${fMRIName}"
@@ -216,6 +236,7 @@ do
     if [[ "$ICAmode" == "sICA+tICA" ]]; then
         matlab_opts+=("tICAcomponentTCS" "$tICAcomponentTCS")
         matlab_opts+=("tICAcomponentText" "$tICAcomponentText")
+        matlab_opts+=("RunRange" "${RunRangeArray[$runIndex]}")
     fi
     
     #shortcut in case the folder gets renamed
@@ -257,6 +278,7 @@ do
     esac
     
     log_Msg "Completed: ${fMRIName}"
+    runIndex=$((runIndex + 1))
 done
 
 log_Msg "fMRIStats processing complete for subject ${Subject}"
