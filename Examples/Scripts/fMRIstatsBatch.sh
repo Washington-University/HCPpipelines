@@ -136,13 +136,13 @@ main() {
     HighPass="2000"
 
     # set whether to process volume data in addition to surface data
-    ProcessVolume="false"
+    ProcessVolume="TRUE"
 
     # set whether to compute cleanup effects metrics (comparing cleaned vs uncleaned data)
-    CleanUpEffects="false"
+    CleanUpEffects="TRUE"
 
     # tICA mode
-    ICAmode="sICA" # options: 'sICA' or 'sICA+tICA'
+    ICAmode="sICA+tICA" # options: 'sICA' or 'sICA+tICA'
     # If ICAmode="sICA", sICATCS and Signal are auto-constructed from standard paths
     # If ICAmode="sICA+tICA", you need to provide these:
     tICAcomponentTCS="" # path to tICA timecourse CIFTI (required if --ica-mode=sICA+tICA)

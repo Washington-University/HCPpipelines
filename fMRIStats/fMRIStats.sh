@@ -126,13 +126,17 @@ for fMRIName in "${fMRIExist[@]}"
 do
     log_Msg "Running fMRIStats on: ${fMRIName}"
     
+    # Construct filepaths
     fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
-    
     MeanCIFTI="${fMRIFolder}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
     MeanVolume="${fMRIFolder}/${fMRIName}_mean.nii.gz"
-    
-    # sICA files (only needed for sICA mode)
-    if [[ "$ICAmode" == "sICA" ]]; then
+    OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
+    OrigVolumeTCS="${fMRIFolder}/${fMRIName}.nii.gz"
+    CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+    CleanedVolumeTCS="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}.nii.gz"
+    CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
+    VolumeOutput="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
+    if [[ "$ICAmode" == "sICA" ]]; then # (only needed for sICA mode)
         sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
         if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
             Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
@@ -140,14 +144,7 @@ do
             Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
         fi
     fi
-
-    OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
-    OrigVolumeTCS="${fMRIFolder}/${fMRIName}.nii.gz"
-    CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
-    CleanedVolumeTCS="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}.nii.gz"
-    CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_fMRIStats.dscalar.nii"
-    VolumeOutput="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}_fMRIStats.nii.gz"
-    # tICAcomponentTCS and tICAcomponentText are not constructed here becuase they are not necessaily programmatically named
+    # tICAcomponentTCS and tICAcomponentText are not constructed here because they are not necessarily programmatically named
     
     # Validate required input files exist
     if [ ! -e "${MeanCIFTI}" ]; then
