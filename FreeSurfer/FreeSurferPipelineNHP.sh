@@ -557,8 +557,10 @@ if [[ -n "${GCSdir:-}" && -n "${GCS:-}" ]] ; then
 fi
 # The -conf2hires flag should come after the ${extra_reconall_args} string, since it needs
 # to have the "final say" over a couple settings within recon-all
+#-conf2hires is more of a step than a setting, can't just include it in all calls
+conf2hiresflag=""
 if ((conf2hires)); then
-	extra_reconall_args+=(-conf2hires)
+	conf2hiresflag="-conf2hires"
 fi
 
 # expert options for recon-all
