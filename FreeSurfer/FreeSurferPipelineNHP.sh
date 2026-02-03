@@ -549,7 +549,6 @@ if [ "${existing_subject}" = "TRUE" ] ; then
 fi
 
 recon_all_cmd=(recon-all.v6.hiresNHP -subjid "$SubjectID" -sd "$SubjectDIR")
-extra_reconall_args+=(-openmp "$num_cores")
 if [ ! -z "${recon_all_seed}" ] ; then
 	extra_reconall_args+=(-norandomness -rng-seed "$recon_all_seed")
 fi
