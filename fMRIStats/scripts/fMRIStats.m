@@ -1,10 +1,11 @@
-function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
+function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal, varargin)
 % fMRIStats - Compute fMRI quality metrics from ICA-cleaned data
 %
 % This function computes several fMRI quality metrics including:
 %   - Modified TSNR (mTSNR): Mean / UnstructuredNoiseSTD
 %   - Functional CNR (fCNR): SignalSTD / UnstructuredNoiseSTD  
 %   - Percent BOLD: SignalSTD / Mean * 100
+% where SignalSTD is the variation of interest
 %
 % The signal is estimated by regressing the ICA signal component timecourses
 % into the cleaned data. Unstructured noise is the residual after removing
@@ -20,6 +21,8 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
 %   MeanCIFTI        - Path to mean CIFTI file
 %   CleanedCIFTITCS  - Path to cleaned CIFTI timeseries
 %   CIFTIOutputName  - Output path for CIFTI results
+%   sICATCS          - Path to sICA timecourse CIFTI
+%   Signal           - Path to signal component indices text file
 %
 % Optional name-value arguments (with defaults):
 %   'ProcessVolume'    - '0' or '1' to process volume data (default: '0')
@@ -28,8 +31,6 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
 %   'Caret7_Command'   - Path to wb_command (default: 'wb_command')
 %
 % Conditionally required (based on ICAmode):
-%   'sICATCS'          - Path to sICA timecourse CIFTI (required if ICAmode='sICA')
-%   'Signal'           - Path to signal component indices text file (required if ICAmode='sICA')
 %   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
 %   'tICAcomponentNoise'- Path to tICA component noise indices text file (required if ICAmode='sICA+tICA')
 %   'RunRange'         - start@end sample indices for current run in concatenated tICA (required if ICAmode='sICA+tICA')
@@ -43,14 +44,14 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, varargin)
 %
 % Examples:
 %   % Basic CIFTI-only processing with sICA:
-%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile)
+%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile)
 %
 %   % With cleanup effects comparison:
-%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile, ...
+%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile, ...
 %             'CleanUpEffects', '1', 'OrigCIFTITCS', origFile)
 %
 %   % With volume processing:
-%   fMRIStats(meanFile, cleanedFile, outputFile, 'sICATCS', icaTCS, 'Signal', signalFile, ...
+%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile, ...
 %             'ProcessVolume', '1', 'MeanVolume', meanVol, ...
 %             'CleanedVolumeTCS', cleanedVol, 'VolumeOutputName', volOutput)
 
@@ -63,10 +64,6 @@ addParameter(p, 'ProcessVolume', '0', @ischar);
 addParameter(p, 'CleanUpEffects', '0', @ischar);
 addParameter(p, 'ICAmode', 'sICA', @ischar);
 addParameter(p, 'Caret7_Command', 'wb_command', @ischar);
-
-% sICA mode arguments (conditionally required)
-addParameter(p, 'sICATCS', '', @ischar);
-addParameter(p, 'Signal', '', @ischar);
 
 % Conditionally required arguments (default to empty)
 addParameter(p, 'OrigCIFTITCS', '', @ischar);
@@ -112,25 +109,15 @@ if ProcessVolume
     end
 end
 
-if strcmp(opts.ICAmode, 'sICA')
-    if isempty(opts.sICATCS)
-        error('fMRIStats:MissingArgument', ...
-              'sICATCS is required when ICAmode=''sICA''');
-    end
-    if isempty(opts.Signal)
-        error('fMRIStats:MissingArgument', ...
-              'Signal is required when ICAmode=''sICA''');
-    end
-end
 
 if strcmp(opts.ICAmode, 'sICA+tICA')
     if isempty(opts.tICAcomponentTCS)
         error('fMRIStats:MissingArgument', ...
               'tICAcomponentTCS is required when ICAmode=''sICA+tICA''');
     end
-    if isempty(opts.tICAcomponentText)
+    if isempty(opts.tICAcomponentNoise)
         error('fMRIStats:MissingArgument', ...
-              'tICAcomponentText is required when ICAmode=''sICA+tICA''');
+              'tICAcomponentNoise is required when ICAmode=''sICA+tICA''');
     end
     if isempty(opts.RunRange)
         error('fMRIStats:MissingArgument', ...
@@ -151,30 +138,21 @@ end
 MeanCIFTI = ciftiopen(MeanCIFTI,Caret7_Command);
 CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
-switch opts.ICAmode
-  case 'sICA'
-    % Load component timecourses and extract only the signal component timecourses 
-    sICATCS = ciftiopen(opts.sICATCS,Caret7_Command);
-    Signal = load(opts.Signal,'-ascii'); % indices of signal (non-noise) ICA components
-    icaTCSsignal = sICATCS.cdata(Signal,:)';% transpose to timepoints x components
-  case 'sICA+tICA'
+% sICATCS and Signal are now positional arguments, already provided
+% Load component timecourses and extract only the signal component timecourses 
+sICATCSall = ciftiopen(sICATCS,Caret7_Command);
+Signal_indices = load(Signal,'-ascii'); % indices of signal (non-noise) ICA components
+sICATCSSignal = sICATCSall.cdata(Signal_indices,:)';% transpose to timepoints x components
+
+if strcmp(opts.ICAmode, 'sICA+tICA')
     tICATCS = ciftiopen(opts.tICAcomponentTCS,Caret7_Command);
-    Noise = load(opts.tICAcomponentNoise,'-ascii');  % indices of noise ICA components
-    Signal = setdiff(1:size(tICATCS.cdata,1),Noise);
-    icaTCSsignal = tICATCS.cdata(Signal,:);
-    icaTCSsignal = icaTCSsignal(:,RunStart:RunEnd)';% extra run samples from concat and transpose to timepoints x components
+    Noise_indices = load(opts.tICAcomponentNoise,'-ascii');  % indices of noise tICA components
 
-    % ToDo: load tICA component timecourse sdseries, and noise component text, 
-    % regress out tICA noise out of sICA and and set that as the icaTCSsignal
-    % do I need to do this? Shouldn't the tclean cleanedCIFTITCS already have tICA noise removed?
-    %
-    % % Beta = (X'X)^-1 * X' * Y, where X = ICA timecourses, Y = cleaned data
-    % CIFTIBetas = MeanCIFTI;
-    % CIFTIBetas.cdata = (pinv(icaTCSsignal) * CleanedCIFTITCS.cdata')';
-
-    % % Reconstruct signal timeseries from betas and (t)ICA timecourses
-    % CIFTIRecon = CleanedCIFTITCS;
-    % CIFTIRecon.cdata = CIFTIBetas.cdata * icaTCSsignal';
+    % Regress tICA noise components out of sICA component timecourses
+    betaICA = pinv(tICATCS.cdata(:,RunStart:RunEnd),1e-6)' * sICATCSSignal;
+    tICAnoise = tICATCS.cdata(Noise_indices,:)' * betaICA(Noise_indices,:);
+    sICATCSSignal = sICATCSSignal - tICAnoise(RunStart:RunEnd,:);% sICA components by time without the tICA-identified noise
+    % Because everything downstream is based on sICA components, we now no longer need the tICA components
 end
 
 %% Load original CIFTI data for cleanup effects comparison
@@ -217,11 +195,11 @@ CIFTIOutput = MeanCIFTI;
 % Regress signal ICA timecourses into cleaned data to get spatial betas
 % Beta = (X'X)^-1 * X' * Y, where X = ICA timecourses, Y = cleaned data
 CIFTIBetas = MeanCIFTI;
-CIFTIBetas.cdata = (pinv(icaTCSsignal) * CleanedCIFTITCS.cdata')';
+CIFTIBetas.cdata = (pinv(sICATCSSignal) * CleanedCIFTITCS.cdata')';
 
 % Reconstruct signal timeseries from betas and ICA timecourses
 CIFTIRecon = CleanedCIFTITCS;
-CIFTIRecon.cdata = CIFTIBetas.cdata * icaTCSsignal';
+CIFTIRecon.cdata = CIFTIBetas.cdata * sICATCSSignal';
 ReconSTD = std(CIFTIRecon.cdata,[],2);  % signal amplitude (std across time)
 
 % Compute unstructured noise as residual after removing reconstructed signal
@@ -263,23 +241,41 @@ if CleanUpEffects
                        StructSTD StructUnstructSTD mTSNROrig fCNROrig Ratio];
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2),...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD',...
-     'StructuredArtifactSTD','StructuredAndUnstructuredSTD','UncleanedTSNR','UncleanedFunctionalCNR','CleanUpRatio'});
-else
+     'StructuredArtifactSTD','StructuredAndUnstructuredSTD','','UncleanedFunctionalCNR','CleanUpRatio'});
+  % Summary CSV file
+  fid = fopen(strrep(CIFTIOutputName,'.cifti','_summary.csv'),'w');
+  fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
+  fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
+    sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
+    harmmean(CIFTIOutput.cdata(:,4)),harmmean(CIFTIOutput.cdata(:,5)),...
+    sqrt(mean(CIFTIOutput.cdata(:,7)).^2),sqrt(mean(CIFTIOutput.cdata(:,8)).^2),...
+    harmmean(CIFTIOutput.cdata(:,9)),harmmean(CIFTIOutput.cdata(:,10)),harmmean(CIFTIOutput.cdata(:,11)));
+  fclose(fid);
+else % UncleanedTSNR
   % Assemble output with basic metrics only
   CIFTIOutput.cdata = [MeanCIFTI.cdata UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2),...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD'});
+  % Summary CSV file (these are got)
+  fid = fopen(strrep(CIFTIOutputName,'.cifti','_summary.csv'),'w');
+  fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
+  fprintf(fid,'%s,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
+    sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
+    harmmean(CIFTIOutput.cdata(:,4)),harmmean(CIFTIOutput.cdata(:,5)));
+  fclose(fid);
 end  % if CleanUpEffects (CIFTI cleanup metrics)
 
 %% Save CIFTI output
 ciftisave(CIFTIOutput,CIFTIOutputName,Caret7_Command);
 
+
+
 %% Compute volume quality metrics (if requested)
 if ProcessVolume
   %% Compute volume signal reconstruction
   % Same approach as CIFTI: regress ICA timecourses, reconstruct signal
-  VolumeBetas2DMasked = (pinv(icaTCSsignal) * CleanedVolumeTCS2DMasked')';
-  VolumeRecon2DMasked = VolumeBetas2DMasked * icaTCSsignal';
+  VolumeBetas2DMasked = (pinv(sICATCSSignal) * CleanedVolumeTCS2DMasked')';
+  VolumeRecon2DMasked = VolumeBetas2DMasked * sICATCSSignal';
   ReconSTD = std(VolumeRecon2DMasked,[],2);
   
   % Unstructured noise residual
@@ -305,8 +301,26 @@ if ProcessVolume
       
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD ...
                            StructSTD StructUnstructSTD mTSNROrig fCNROrig Ratio];
+    % Summary CSV file
+    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_summary.csv'),'w');
+    fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
+    fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
+      sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...
+      harmmean(VolumeOutput2DMasked(:,4)),harmmean(VolumeOutput2DMasked(:,5)),...
+      sqrt(mean(VolumeOutput2DMasked(:,7).^2)),sqrt(mean(VolumeOutput2DMasked(:,8).^2)),...
+      harmmean(VolumeOutput2DMasked(:,9)),harmmean(VolumeOutput2DMasked(:,10)),harmmean(VolumeOutput2DMasked(:,11)));
+    fclose(fid);
+
   else
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
+    % Summary CSV file
+    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_summary.csv'),'w');
+    fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
+    fprintf(fid,'%s,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
+      sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...
+      harmmean(VolumeOutput2DMasked(:,4)),harmmean(VolumeOutput2DMasked(:,5)));
+    fclose(fid);
+
   end  % if CleanUpEffects (volume cleanup metrics)
   
   %% Save volume output

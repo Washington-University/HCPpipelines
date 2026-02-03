@@ -143,9 +143,12 @@ main() {
 
     # tICA mode
     ICAmode="sICA+tICA" # options: 'sICA' or 'sICA+tICA'
-    # If ICAmode="sICA", sICATCS and Signal are auto-constructed from standard paths
+    # 
+    # sICATCS and Signal are always required (auto-constructed from standard paths):
+    #   - sICATCS: {fMRIFolder}/{fMRIName}_hp{HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii
+    #   - Signal: {fMRIFolder}/{fMRIName}_hp{HighPass}.ica/HandSignal.txt or Signal.txt
     #
-    # If ICAmode="sICA+tICA", you can provide:
+    # If ICAmode="sICA+tICA", you can also provide:
     #   - tICAcomponentTCS: @ delimited list or text file with one path per subject
     #   - tICAcomponentNoise: single group file 
     # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 

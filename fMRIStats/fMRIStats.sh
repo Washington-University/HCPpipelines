@@ -41,7 +41,7 @@ opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whethe
 opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" 'clean_rclean_tclean'
 opts_AddOptional '--ica-mode' 'ICAmode' 'sICA or sICA+tICA' "ICA mode: 'sICA' for spatial ICA only, 'sICA+tICA' for combined spatial+temporal ICA, default 'sICA'" 'sICA'
 opts_AddOptional '--tica-component-tcs' 'tICAcomponentTCS' 'path' "path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)" ''
-opts_AddOptional '--tica-component-noise' 'tICAcomponentText' 'path' "path to tICA component noise indices text file (required if --tica-mode=sICA+tICA)" ''
+opts_AddOptional '--tica-component-noise' 'tICAcomponentNoise' 'path' "path to tICA component noise indices text file (required if --tica-mode=sICA+tICA)" ''
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
 1 = interpreted MATLAB
@@ -156,27 +156,25 @@ do
     CleanedVolumeTCS="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}.nii.gz"
     CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
     VolumeOutput="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
-    if [[ "$ICAmode" == "sICA" ]]; then # (only needed for sICA mode)
-        sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
-        if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
-            Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
-        else
-            Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
-        fi
+    
+    # sICATCS and Signal are always required (used in all ICA modes)
+    sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
+    if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
+        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
+    else
+        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
     fi
-    # tICAcomponentTCS and tICAcomponentText are not constructed here because they are not necessarily programmatically named
+    # tICAcomponentTCS and tICAcomponentNoise are not constructed here because they are not necessarily programmatically named
     
     # Validate required input files exist
     if [ ! -e "${MeanCIFTI}" ]; then
         log_Err_Abort "Required file not found: ${MeanCIFTI}"
     fi
-    if [[ "$ICAmode" == "sICA" ]]; then
-        if [ ! -e "${sICATCS}" ]; then
-            log_Err_Abort "Required file not found: ${sICATCS}"
-        fi
-        if [ ! -e "${Signal}" ]; then
-            log_Err_Abort "Required file not found: ${Signal}"
-        fi
+    if [ ! -e "${sICATCS}" ]; then
+        log_Err_Abort "Required file not found: ${sICATCS}"
+    fi
+    if [ ! -e "${Signal}" ]; then
+        log_Err_Abort "Required file not found: ${Signal}"
     fi
     if [ ! -e "${CleanedCIFTITCS}" ]; then
         log_Err_Abort "Required file not found: ${CleanedCIFTITCS}"
@@ -202,7 +200,7 @@ do
     
     #matlab function arguments - build name-value pairs for optional args
     # Required positional arguments
-    matlab_positional=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput")
+    matlab_positional=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
     
     # Build name-value pairs for optional arguments
     matlab_opts=()
@@ -210,12 +208,6 @@ do
     matlab_opts+=("CleanUpEffects" "$CleanUpEffects")
     matlab_opts+=("ICAmode" "$ICAmode")
     matlab_opts+=("Caret7_Command" "$Caret7_Command")
-    
-    # Add sICA arguments if in sICA mode
-    if [[ "$ICAmode" == "sICA" ]]; then
-        matlab_opts+=("sICATCS" "$sICATCS")
-        matlab_opts+=("Signal" "$Signal")
-    fi
     
     # Add conditionally required arguments based on flags
     if [[ "$CleanUpEffects" == "1" ]]; then
@@ -235,7 +227,7 @@ do
     # Add tICA arguments if in sICA+tICA mode
     if [[ "$ICAmode" == "sICA+tICA" ]]; then
         matlab_opts+=("tICAcomponentTCS" "$tICAcomponentTCS")
-        matlab_opts+=("tICAcomponentText" "$tICAcomponentText")
+        matlab_opts+=("tICAcomponentNoise" "$tICAcomponentNoise")
         matlab_opts+=("RunRange" "${RunRangeArray[$runIndex]}")
     fi
     
