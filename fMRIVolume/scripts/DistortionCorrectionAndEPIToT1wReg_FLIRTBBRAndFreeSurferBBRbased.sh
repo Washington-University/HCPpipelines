@@ -264,7 +264,7 @@ case $DistortionCorrection in
 esac
 
 
-if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
+if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
     mkdir -p $WD
 
     # Record the input options in a log file
@@ -274,7 +274,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
     echo " " >> $WD/log.txt
 
     if [ ! -e ${WD}/FieldMap ] ; then
-    mkdir ${WD}/FieldMap
+        mkdir ${WD}/FieldMap
     fi
 
     ########################################## DO WORK ##########################################
@@ -402,7 +402,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
                 fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
 
                 # register scout to T1w image using fieldmap
-                if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then
+                if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then # - for NHP TH 2017-2024
 				    # when EPI data does not have clear contrat between gray/white bbr is not be effective - Takuya Hayashi inserted for NHP
                     log_Msg "Run epi_reg_dof_nobbr"
 					${HCPPIPEDIR_Global}/epi_reg_dof_nobbr --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
@@ -410,7 +410,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
 				    ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
                 fi
             else
-			    if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then
+			    if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then # - for NHP TH 2017-2024
                     log_Msg "Brain Extract of Scout using BET"
                     bet ${WD}/Scout.nii.gz ${WD}/Scout_brain.nii.gz -f 0.3
                     log_Msg "Run epi_reg_dof_nobbr"
@@ -465,7 +465,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
                 --initworldmat=${InitWorldMat} \
                 --usejacobian=${UseJacobian}
             
-            if [ $SPECIES != "Human"]; then 
+            if [ $SPECIES != "Human"]; then # - for NHP TH 2017-2024
 				########################################
 				Scout="Magnitude"
 				ScoutInputFileSE="SEFieldmag"
@@ -566,7 +566,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
 				log_Msg "use undistorted SE field mag as a scout for registration with FS-BBR in NHP"
 				${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/Magnitude -r ${T1wImage} --premat="${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat" -o ${WD}/${ScoutInputFileSE}_undistorted2T1w_init
 
-            else
+            else # for Human
                 # create a spline interpolated image of scout (distortion corrected in same space)
                 log_Msg "create a spline interpolated image of scout (distortion corrected in same space)"
                 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${WD}/WarpField.nii.gz -o ${WD}/${ScoutInputFile}${ScoutExtension}
@@ -585,13 +585,13 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
             log_Msg "register undistorted scout image to T1w"
 
             if [ $PreregisterTool = "epi_reg" ] ; then
-            log_Msg "... running epi_reg (dof ${dof})"
-            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}${ScoutExtension} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
+                log_Msg "... running epi_reg (dof ${dof})"
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFile}${ScoutExtension} --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
             elif [ $PreregisterTool = "flirt" ] ; then
-            log_Msg "... running flirt"
-            ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof ${dof}
+                log_Msg "... running flirt"
+                ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFile}${ScoutExtension} -ref ${WD}/${T1wBrainImageFile} -out ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init -omat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -dof ${dof}
             else
-            log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
+                log_Err_Abort "--preregistertool=${PreregisterTool} is not a valid setting."
             fi
 			
             # generate combined warpfields and spline interpolated images + apply bias field correction
@@ -699,7 +699,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then
     export SUBJECTS_DIR
 	#Check to see if FreeSurferNHP.sh was used
     log_Msg "Check to see if FreeSurferNHP.sh was used"
-    if [ "$SPECIES" != "Human" ] ; then
+    if [ "$SPECIES" != "Human" ] ; then # - for NHP TH 2017-2024
 	    if [ "$BBR" = "T1w" ]; then
 	        BBRopt="--t1 --${dof}"
             BBRopt+="--wm-proj-abs 1.1 --gm-proj-abs 0.2 "  # macaque MION EPI/pial surface registration. TO DO: marmoset MION  - TH 2023
