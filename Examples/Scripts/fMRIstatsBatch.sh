@@ -126,15 +126,14 @@ main() {
     source "${EnvironmentScript}"
 
     # general settings
-    # set list of fMRI runs on which ICA+FIX has been run, use @ to separate runs
-    fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
-    # set fMRINames = ConcatNames is ICA-FIX was run multi-run
+    # set list of fMRI runs on which ICA+FIX has been run, use @ to separate multiple
+    ConcatNames="tfMRI_Concat"
 
     # set the file name component representing the preprocessing already done, e.g. '_clean'
     fMRIProcSTRING="_clean_rclean_tclean"
 
     # set temporal highpass full-width (2*sigma) used in ICA+FIX, should match with $fMRIProcSTRING
-    HighPass="2000"
+    HighPass="0"
 
     # set whether to process volume data in addition to surface data
     ProcessVolume="TRUE"
@@ -146,15 +145,15 @@ main() {
     ICAmode="sICA+tICA" # options: 'sICA' or 'sICA+tICA'
     # 
     # sICATCS and Signal are always required (auto-constructed from standard paths):
-    #   - sICATCS: {fMRIFolder}/{fMRIName}_hp{HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii
-    #   - Signal: {fMRIFolder}/{fMRIName}_hp{HighPass}.ica/HandSignal.txt or Signal.txt
+    #   - sICATCS: {fMRIFolder}/{ConcatName}_hp{HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii
+    #   - Signal: {fMRIFolder}/{ConcatName}_hp{HighPass}.ica/HandSignal.txt or Signal.txt
     #
     # If ICAmode="sICA+tICA", you can also provide:
     #   - tICAcomponentTCS: @ delimited list one path per subject
     #   - tICAcomponentNoise: single group file 
     # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 
-    tICAcomponentTCS="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
-    tICAcomponentNoise="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll3T1071/MNINonLinear/Results/rfMRI_REST/Pre_tICA/tICA_d82/Noise.txt" # path to tICA component noise indices text file (same for all subjects)
+    tICAcomponentTCS="${StudyFolder}/100307/MNINonLinear/fsaverage_LR32k/100307.tfMRI_Concat_d72_WF6_S1200_MSMAll3T475T_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
+    tICAcomponentNoise="${StudyFolder}/S1200_MSMAll3T1071/MNINonLinear/Results/tfMRI_Concat/Pre_tICA/tICA_d72/Noise.txt" # path to tICA component noise indices text file (same for all subjects)
 
     # end of general inputs
 
@@ -167,7 +166,7 @@ main() {
 
     # Convert @ separated lists to arrays
     IFS='@' read -ra SubjectArray <<< "$Subjlist"
-    IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
+    IFS='@' read -ra ConcatNamesArray <<< "$ConcatNames"
     IFS='@' read -ra tICAcomponentTCSArray <<< "$tICAcomponentTCS"
 
     # Loop through subjects and queue parallel jobs
@@ -176,19 +175,19 @@ main() {
         Subject="${SubjectArray[$subjectIndex]}"
         # Build list of fMRI files that exist for this subject
         fMRIExist=()
-        for fMRIName in "${fMRINamesArray[@]}"
+        for ConcatName in "${ConcatNamesArray[@]}"
         do
-            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}${fMRIProcSTRING}.dtseries.nii" ]]
+            if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_hp${HighPass}${fMRIProcSTRING}.dtseries.nii" ]]
             then
-                fMRIExist+=("${fMRIName}")
+                fMRIExist+=("${ConcatName}")
             fi
         done
         
         # Convert array to @ separated string for passing to fMRIStats
-        fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
+        ConcatNamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
         
         # Only queue job if subject has data
-        if [[ "$fMRINamesForSub" != "" ]]
+        if [[ "$ConcatNamesForSub" != "" ]]
         then
             if ((RunLocal)) || [[ "$QUEUE" == "" ]]
             then
@@ -203,7 +202,7 @@ main() {
             "${queuing_command[@]}" "$HCPPIPEDIR"/fMRIStats/fMRIStats.sh \
                 --study-folder="$StudyFolder" \
                 --subject="$Subject" \
-                --fmri-names="$fMRINamesForSub" \
+                --concat-names="$ConcatNamesForSub" \
                 --high-pass="$HighPass" \
                 --proc-string="$fMRIProcSTRING" \
                 --reg-name="$RegName" \

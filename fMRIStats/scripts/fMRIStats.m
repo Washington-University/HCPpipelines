@@ -33,8 +33,6 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal,
 % Conditionally required (based on ICAmode):
 %   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
 %   'tICAcomponentNoise'- Path to tICA component noise indices text file (required if ICAmode='sICA+tICA')
-%   'RunRange'         - start@end sample indices for current run in concatenated tICA (required if ICAmode='sICA+tICA')
-%                        (allows for backwards compatability with single-run fix)
 %
 % Conditionally required (based on other flags):
 %   'OrigCIFTITCS'     - Path to original CIFTI timeseries (required if CleanUpEffects='1')
@@ -74,7 +72,6 @@ addParameter(p, 'VolumeOutputName', '', @ischar);
 addParameter(p, 'OrigVolumeTCS', '', @ischar);
 addParameter(p, 'tICAcomponentTCS', '', @ischar);
 addParameter(p, 'tICAcomponentNoise', '', @ischar);
-addParameter(p, 'RunRange', '', @ischar);
 
 parse(p, varargin{:});
 opts = p.Results;
@@ -120,18 +117,6 @@ if strcmp(opts.ICAmode, 'sICA+tICA')
         error('fMRIStats:MissingArgument', ...
               'tICAcomponentNoise is required when ICAmode=''sICA+tICA''');
     end
-    if isempty(opts.RunRange)
-        error('fMRIStats:MissingArgument', ...
-              'RunRange is required when ICAmode=''sICA+tICA''');
-    end
-    % Parse @-separated RunRange string into start and end sample indices
-    RunRangeParsed = str2double(strsplit(opts.RunRange, '@'));
-    if numel(RunRangeParsed) ~= 2 || any(isnan(RunRangeParsed))
-        error('fMRIStats:InvalidArgument', ...
-              'RunRange must be start@end integers, got: %s', opts.RunRange);
-    end
-    RunStart = RunRangeParsed(1);
-    RunEnd = RunRangeParsed(2);
 end
 
 %% Load CIFTI data
@@ -149,9 +134,9 @@ if strcmp(opts.ICAmode, 'sICA+tICA')
     Noise_indices = load(opts.tICAcomponentNoise,'-ascii');  % indices of noise tICA components
 
     % Regress tICA noise components out of sICA component timecourses
-    betaICA = pinv(tICATCS.cdata(:,RunStart:RunEnd),1e-6)' * sICATCSSignal;
+    betaICA = pinv(tICATCS.cdata,1e-6)' * sICATCSSignal;
     tICAnoise = tICATCS.cdata(Noise_indices,:)' * betaICA(Noise_indices,:);
-    sICATCSSignal = sICATCSSignal - tICAnoise(RunStart:RunEnd,:);% sICA components by time without the tICA-identified noise
+    sICATCSSignal = sICATCSSignal - tICAnoise;% sICA components by time without the tICA-identified noise
     % Because everything downstream is based on sICA components, we now no longer need the tICA components
 end
 

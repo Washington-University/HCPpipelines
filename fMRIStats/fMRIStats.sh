@@ -33,7 +33,7 @@ PARAMETERs are [ ] = optional; < > = user supplied vfalue
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" '--path'
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject ID (e.g. 100610)"
-opts_AddMandatory '--fmri-names' 'fMRINames' 'string' "@-separated list of fMRI run names (e.g. rfMRI_REST1_LR@rfMRI_REST2_LR)"
+opts_AddMandatory '--concat-names' 'ConcatNames' 'string' "@-separated list of fMRI concat names (e.g. tfMRI_ALLTASKS)"
 opts_AddMandatory '--high-pass' 'HighPass' 'string' "the high pass filter value used in ICA+FIX"
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration name, default 'NONE'" 'NONE'
 opts_AddOptional '--process-volume' 'ProcessVolumeStr' 'TRUE or FALSE' "whether to process volume data, default 'false'" 'false'
@@ -81,34 +81,34 @@ if [[ "$ICAmode" == "sICA+tICA" ]] && [[ "$CleanUpEffects" == "1" ]]; then
 fi
 
 # Convert @ separated fMRI names to array
-IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
+IFS='@' read -ra ConcatNamesArray <<< "$ConcatNames"
 
-log_Msg "Processing subject ${Subject} with ${#fMRINamesArray[@]} run(s)"
+log_Msg "Processing subject ${Subject} with ${#ConcatNamesArray[@]} run(s)"
 
 # Check which runs exist for this subject
 fMRIExist=()
-for fMRIName in "${fMRINamesArray[@]}"
+for ConcatName in "${ConcatNamesArray[@]}"
 do
-    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
+    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}"
     
     # Check if cleaned data exists
-    if [[ -f "${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii" ]]
+    if [[ -f "${fMRIFolder}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii" ]]
     then
         # Check if ICA folder and signal file exist
-        if [[ -d "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica" ]]
+        if [[ -d "${fMRIFolder}/${ConcatName}_hp${HighPass}.ica" ]]
         then
-            if [[ -f "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ]] || \
-               [[ -f "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt" ]]
+            if [[ -f "${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/HandSignal.txt" ]] || \
+               [[ -f "${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/Signal.txt" ]]
             then
-                fMRIExist+=("${fMRIName}")
+                fMRIExist+=("${ConcatName}")
             else
-                log_Warn "Skipping ${fMRIName}: Signal.txt not found"
+                log_Warn "Skipping ${ConcatName}: Signal.txt not found"
             fi
         else
-            log_Warn "Skipping ${fMRIName}: ICA folder not found"
+            log_Warn "Skipping ${ConcatName}: ICA folder not found"
         fi
     else
-        log_Warn "Skipping ${fMRIName}: cleaned data not found"
+        log_Warn "Skipping ${ConcatName}: cleaned data not found"
     fi
 done
 
@@ -121,48 +121,28 @@ fi
 
 log_Msg "Processing ${#fMRIExist[@]} run(s) for ${Subject}"
 
-# For sICA+tICA mode, collect the start and end sample indices for each run
-if [[ "$ICAmode" == "sICA+tICA" ]]; then
-    RunRangeArray=()
-    cumulativeSamples=0
-    for fMRIName in "${fMRIExist[@]}"
-    do
-        fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
-        CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
-        # Get number of time samples 
-        nSamples=$("${Caret7_Command}" -file-information "${CleanedCIFTITCS}" -only-number-of-maps)
-        # Calculate start (1-indexed) and end sample for this run
-        startSample=$((cumulativeSamples + 1))
-        endSample=$((cumulativeSamples + nSamples))
-        RunRangeArray+=("${startSample}@${endSample}")
-        cumulativeSamples=${endSample}
-        log_Msg "Run ${fMRIName}: samples ${startSample} to ${endSample}"
-    done
-fi
-
 # Process each ready run
-runIndex=0
-for fMRIName in "${fMRIExist[@]}"
+for ConcatName in "${fMRIExist[@]}"
 do
-    log_Msg "Running fMRIStats on: ${fMRIName}"
+    log_Msg "Running fMRIStats on: ${ConcatName}"
     
     # Construct filepaths
-    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}"
-    MeanCIFTI="${fMRIFolder}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
-    MeanVolume="${fMRIFolder}/${fMRIName}_mean.nii.gz"
-    OrigCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}.dtseries.nii"
-    OrigVolumeTCS="${fMRIFolder}/${fMRIName}.nii.gz"
-    CleanedCIFTITCS="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
-    CleanedVolumeTCS="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}.nii.gz"
-    CIFTIOutput="${fMRIFolder}/${fMRIName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
-    VolumeOutput="${fMRIFolder}/${fMRIName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
+    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}"
+    MeanCIFTI="${fMRIFolder}/${ConcatName}_Atlas${RegString}_mean.dscalar.nii"
+    MeanVolume="${fMRIFolder}/${ConcatName}_mean.nii.gz"
+    OrigCIFTITCS="${fMRIFolder}/${ConcatName}_Atlas${RegString}.dtseries.nii"
+    OrigVolumeTCS="${fMRIFolder}/${ConcatName}.nii.gz"
+    CleanedCIFTITCS="${fMRIFolder}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+    CleanedVolumeTCS="${fMRIFolder}/${ConcatName}_hp${HighPass}${ProcSTRING}.nii.gz"
+    CIFTIOutput="${fMRIFolder}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
+    VolumeOutput="${fMRIFolder}/${ConcatName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
     
     # sICATCS and Signal are always required (used in all ICA modes)
-    sICATCS="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
-    if [ -e "${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
-        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/HandSignal.txt"
+    sICATCS="${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
+    if [ -e "${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/HandSignal.txt" ] ; then
+        Signal="${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/HandSignal.txt"
     else
-        Signal="${fMRIFolder}/${fMRIName}_hp${HighPass}.ica/Signal.txt"
+        Signal="${fMRIFolder}/${ConcatName}_hp${HighPass}.ica/Signal.txt"
     fi
     # tICAcomponentTCS and tICAcomponentNoise are not constructed here because they are not necessarily programmatically named
     
@@ -229,7 +209,6 @@ do
     if [[ "$ICAmode" == "sICA+tICA" ]]; then
         matlab_args_array+=("tICAcomponentTCS" "$tICAcomponentTCS")
         matlab_args_array+=("tICAcomponentNoise" "$tICAcomponentNoise")
-        matlab_args_array+=("RunRange" "${RunRangeArray[$runIndex]}")
     fi
     
     #shortcut in case the folder gets renamed
@@ -264,8 +243,7 @@ do
             ;;
     esac
     
-    log_Msg "Completed: ${fMRIName}"
-    runIndex=$((runIndex + 1))
+    log_Msg "Completed: ${ConcatName}"
 done
 
 log_Msg "fMRIStats processing complete for subject ${Subject}"
