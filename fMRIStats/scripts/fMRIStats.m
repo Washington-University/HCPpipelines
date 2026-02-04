@@ -217,6 +217,18 @@ fCNR = ReconSTD ./ UnstructSTD;
 % Percent BOLD: signal amplitude as percentage of mean
 PercBOLD = ReconSTD ./ MeanCIFTI.cdata * 100;
 
+%% Get cortical and subcortical indices from CIFTI header
+% Note: ciftiopen loads CIFTI header with already-converted 1-based indexing
+[cortex_indices, subcortex_indices] = deal([]);
+for i = 1:numel(CIFTIOutput.diminfo{1}.models)
+    model = CIFTIOutput.diminfo{1}.models{i};
+    if strcmp(model.type, 'surf')
+        cortex_indices = [cortex_indices, model.start:model.start+model.count-1];
+    else
+        subcortex_indices = [subcortex_indices, model.start:model.start+model.count-1];
+    end
+end
+
 %% Compute CIFTI cleanup effects metrics (comparing cleaned vs uncleaned)
 if CleanUpEffects
   % Structured artifact = what was removed by cleaning
@@ -242,26 +254,45 @@ if CleanUpEffects
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2),...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD',...
      'StructuredArtifactSTD','StructuredAndUnstructuredSTD','','UncleanedFunctionalCNR','CleanUpRatio'});
-  % Summary CSV file
-  fid = fopen(strrep(CIFTIOutputName,'.cifti','_summary.csv'),'w');
-  fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
-  fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
-    sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
-    mean(CIFTIOutput.cdata(:,4)),mean(CIFTIOutput.cdata(:,5)),...
-    sqrt(mean(CIFTIOutput.cdata(:,7)).^2),sqrt(mean(CIFTIOutput.cdata(:,8)).^2),...
-    mean(CIFTIOutput.cdata(:,9)),mean(CIFTIOutput.cdata(:,10)),mean(CIFTIOutput.cdata(:,11)));
+  % Summary CSV file - separate cortex and subcortex
+  fid = fopen(strrep(CIFTIOutputName,'.dscalar.nii','Summary.csv'),'w');
+  fprintf(fid,'OutputFile,Region,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
+  
+  % Report metrics for each region
+  regions = struct('name', {'Cortex', 'Subcortex'}, 'indices', {cortex_indices, subcortex_indices});
+  for r = 1:numel(regions)
+      if ~isempty(regions(r).indices)
+          idx = regions(r).indices;
+          fprintf(fid,'%s,%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',CIFTIOutputName,regions(r).name,...
+            mean(CIFTIOutput.cdata(idx,1)),...
+            sqrt(mean(CIFTIOutput.cdata(idx,2).^2)),sqrt(mean(CIFTIOutput.cdata(idx,3)).^2),...
+            mean(CIFTIOutput.cdata(idx,4)),mean(CIFTIOutput.cdata(idx,5)),...
+            sqrt(mean(CIFTIOutput.cdata(idx,7)).^2),sqrt(mean(CIFTIOutput.cdata(idx,8)).^2),...
+            mean(CIFTIOutput.cdata(idx,9)),mean(CIFTIOutput.cdata(idx,10)),mean(CIFTIOutput.cdata(idx,11)));
+      end
+  end
   fclose(fid);
-else % UncleanedTSNR
+else % Basic metrics only (no cleanup effects)
   % Assemble output with basic metrics only
   CIFTIOutput.cdata = [MeanCIFTI.cdata UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2),...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD'});
-  % Summary CSV file (these are got)
-  fid = fopen(strrep(CIFTIOutputName,'.cifti','_summary.csv'),'w');
-  fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
-  fprintf(fid,'%s,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
-    sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
-    mean(CIFTIOutput.cdata(:,4)),mean(CIFTIOutput.cdata(:,5)));
+  
+  % Summary CSV file - separate cortex and subcortex
+  fid = fopen(strrep(CIFTIOutputName,'.dscalar.nii','Summary.csv'),'w');
+  fprintf(fid,'OutputFile,Region,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
+  
+  % Report metrics for each region
+  regions = struct('name', {'Cortex', 'Subcortex'}, 'indices', {cortex_indices, subcortex_indices});
+  for r = 1:numel(regions)
+      if ~isempty(regions(r).indices)
+          idx = regions(r).indices;
+          fprintf(fid,'%s,%s,%g,%g,%g,%g,%g\n',CIFTIOutputName,regions(r).name,...
+            mean(CIFTIOutput.cdata(idx,1)),...
+            sqrt(mean(CIFTIOutput.cdata(idx,2).^2)),sqrt(mean(CIFTIOutput.cdata(idx,3)).^2),...
+            mean(CIFTIOutput.cdata(idx,4)),mean(CIFTIOutput.cdata(idx,5)));
+      end
+  end
   fclose(fid);
 end  % if CleanUpEffects (CIFTI cleanup metrics)
 
@@ -302,7 +333,7 @@ if ProcessVolume
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD ...
                            StructSTD StructUnstructSTD mTSNROrig fCNROrig Ratio];
     % Summary CSV file
-    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_summary.csv'),'w');
+    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','Summary.csv'),'w');
     fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
     fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
       sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...
@@ -314,7 +345,7 @@ if ProcessVolume
   else
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
     % Summary CSV file
-    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_summary.csv'),'w');
+    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','Summary.csv'),'w');
     fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
     fprintf(fid,'%s,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
       sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...

@@ -13,7 +13,7 @@ DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac
 # DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
 
 # example subjects, separated by @
-DEFAULT_SUBJECT_LIST="100206@100307"
+DEFAULT_SUBJECT_LIST="100307"
 DEFAULT_REG_NAME="MSMAll" # the registration string corresponding to the input files, which must be specified the same in MSMAll pipeline
 DEFAULT_MATLAB_MODE=1 # MatlabMode
 DEFAULT_RUN_LOCAL=0
@@ -153,7 +153,7 @@ main() {
     #   - tICAcomponentTCS: @ delimited list one path per subject
     #   - tICAcomponentNoise: single group file 
     # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 
-    tICAcomponentTCS="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100610/MNINonLinear/fsaverage_LR32k/100610.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii@/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
+    tICAcomponentTCS="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
     tICAcomponentNoise="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll3T1071/MNINonLinear/Results/rfMRI_REST/Pre_tICA/tICA_d82/Noise.txt" # path to tICA component noise indices text file (same for all subjects)
 
     # end of general inputs
