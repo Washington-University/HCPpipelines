@@ -7,10 +7,8 @@ set -eu
 # fMRI quality metrics (mTSNR, fCNR, percent BOLD) after ICA+FIX cleanup
 
 # Global default values
-DEFAULT_STUDY_FOLDER="/mnt/myelin/brainmappers/Connectome_Project/YA_HCP_Final" # location of Subject folders (named by subjectID)
-DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5_SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
-# DEFAULT_STUDY_FOLDER="${HOME}/projects/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
-# DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
+DEFAULT_STUDY_FOLDER="${HOME}/projects/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # location of HCP Pipeline environment script
 
 # example subjects, separated by @
 DEFAULT_SUBJECT_LIST="100307"
