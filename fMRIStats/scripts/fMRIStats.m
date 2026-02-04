@@ -238,7 +238,7 @@ if CleanUpEffects
                        StructSTD StructUnstructSTD mTSNROrig fCNROrig Ratio];
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2),...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD',...
-     'StructuredArtifactSTD','StructuredAndUnstructuredSTD','','UncleanedFunctionalCNR','CleanUpRatio'});
+     'StructuredArtifactSTD','StructuredAndUnstructuredSTD','UncleanedTSNR','UncleanedFunctionalCNR','CleanUpRatio'});
   % Summary CSV file - separate cortex and subcortex
   fid = fopen(strrep(CIFTIOutputName,'.dscalar.nii','Summary.csv'),'w');
   fprintf(fid,'OutputFile,Region,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
