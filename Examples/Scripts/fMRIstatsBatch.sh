@@ -150,7 +150,7 @@ main() {
     #   - Signal: {fMRIFolder}/{fMRIName}_hp{HighPass}.ica/HandSignal.txt or Signal.txt
     #
     # If ICAmode="sICA+tICA", you can also provide:
-    #   - tICAcomponentTCS: @ delimited list or text file with one path per subject
+    #   - tICAcomponentTCS: @ delimited list one path per subject
     #   - tICAcomponentNoise: single group file 
     # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 
     tICAcomponentTCS="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100610/MNINonLinear/fsaverage_LR32k/100610.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii@/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/100307/MNINonLinear/fsaverage_LR32k/100307.rfMRI_REST_d82_WF6_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
@@ -168,14 +168,7 @@ main() {
     # Convert @ separated lists to arrays
     IFS='@' read -ra SubjectArray <<< "$Subjlist"
     IFS='@' read -ra fMRINamesArray <<< "$fMRINames"
-
-    # Parse tICA timecourse input (can be file or @ delimited list, one per subject)
-    tICAcomponentTCSArray=()
-    if [[ -f "$tICAcomponentTCS" ]]; then
-        mapfile -t tICAcomponentTCSArray < "$tICAcomponentTCS"
-    else
-        IFS='@' read -ra tICAcomponentTCSArray <<< "$tICAcomponentTCS"
-    fi
+    IFS='@' read -ra tICAcomponentTCSArray <<< "$tICAcomponentTCS"
 
     # Loop through subjects and queue parallel jobs
     for ((subjectIndex = 0; subjectIndex < ${#SubjectArray[@]}; ++subjectIndex))

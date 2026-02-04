@@ -198,37 +198,38 @@ do
             ;;
     esac
     
-    #matlab function arguments - build name-value pairs for optional args
-    # Required positional arguments
-    matlab_positional=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
+    #matlab function arguments - build array of all arguments (positional + name-value pairs)
+    matlab_args_array=()
     
-    # Build name-value pairs for optional arguments
-    matlab_opts=()
-    matlab_opts+=("ProcessVolume" "$ProcessVolume")
-    matlab_opts+=("CleanUpEffects" "$CleanUpEffects")
-    matlab_opts+=("ICAmode" "$ICAmode")
-    matlab_opts+=("Caret7_Command" "$Caret7_Command")
+    # Positional arguments
+    matlab_args_array+=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
+    
+    # Optional name-value pairs
+    matlab_args_array+=("ProcessVolume" "$ProcessVolume")
+    matlab_args_array+=("CleanUpEffects" "$CleanUpEffects")
+    matlab_args_array+=("ICAmode" "$ICAmode")
+    matlab_args_array+=("Caret7_Command" "$Caret7_Command")
     
     # Add conditionally required arguments based on flags
     if [[ "$CleanUpEffects" == "1" ]]; then
-        matlab_opts+=("OrigCIFTITCS" "$OrigCIFTITCS")
+        matlab_args_array+=("OrigCIFTITCS" "$OrigCIFTITCS")
     fi
     
     if [[ "$ProcessVolume" == "1" ]]; then
-        matlab_opts+=("MeanVolume" "$MeanVolume")
-        matlab_opts+=("CleanedVolumeTCS" "$CleanedVolumeTCS")
-        matlab_opts+=("VolumeOutputName" "$VolumeOutput")
+        matlab_args_array+=("MeanVolume" "$MeanVolume")
+        matlab_args_array+=("CleanedVolumeTCS" "$CleanedVolumeTCS")
+        matlab_args_array+=("VolumeOutputName" "$VolumeOutput")
         
         if [[ "$CleanUpEffects" == "1" ]]; then
-            matlab_opts+=("OrigVolumeTCS" "$OrigVolumeTCS")
+            matlab_args_array+=("OrigVolumeTCS" "$OrigVolumeTCS")
         fi
     fi
     
     # Add tICA arguments if in sICA+tICA mode
     if [[ "$ICAmode" == "sICA+tICA" ]]; then
-        matlab_opts+=("tICAcomponentTCS" "$tICAcomponentTCS")
-        matlab_opts+=("tICAcomponentNoise" "$tICAcomponentNoise")
-        matlab_opts+=("RunRange" "${RunRangeArray[$runIndex]}")
+        matlab_args_array+=("tICAcomponentTCS" "$tICAcomponentTCS")
+        matlab_args_array+=("tICAcomponentNoise" "$tICAcomponentNoise")
+        matlab_args_array+=("RunRange" "${RunRangeArray[$runIndex]}")
     fi
     
     #shortcut in case the folder gets renamed
@@ -237,26 +238,20 @@ do
     case "$MatlabMode" in
         (0)
             # For compiled MATLAB, pass all args (positional + name-value pairs flattened)
-            matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_positional[@]}" "${matlab_opts[@]}")
+            matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_args_array[@]}")
             log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
             "${matlab_cmd[@]}"
             ;;
         (1 | 2)
-            #reformat positional arguments
+            # Format all arguments as comma-separated quoted strings
             matlab_args=""
-            for thisarg in "${matlab_positional[@]}"
+            for arg in "${matlab_args_array[@]}"
             do
                 if [[ "$matlab_args" != "" ]]
                 then
                     matlab_args+=", "
                 fi
-                matlab_args+="'$thisarg'"
-            done
-            
-            #add name-value pairs
-            for ((i=0; i<${#matlab_opts[@]}; i+=2))
-            do
-                matlab_args+=", '${matlab_opts[i]}', '${matlab_opts[i+1]}'"
+                matlab_args+="'$arg'"
             done
             
             matlabcode="
