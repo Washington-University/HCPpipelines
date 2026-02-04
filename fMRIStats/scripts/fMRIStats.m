@@ -34,6 +34,7 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal,
 %   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
 %   'tICAcomponentNoise'- Path to tICA component noise indices text file (required if ICAmode='sICA+tICA')
 %   'RunRange'         - start@end sample indices for current run in concatenated tICA (required if ICAmode='sICA+tICA')
+%                        (allows for backwards compatability with single-run fix)
 %
 % Conditionally required (based on other flags):
 %   'OrigCIFTITCS'     - Path to original CIFTI timeseries (required if CleanUpEffects='1')
@@ -138,7 +139,6 @@ end
 MeanCIFTI = ciftiopen(MeanCIFTI,Caret7_Command);
 CleanedCIFTITCS = ciftiopen(CleanedCIFTITCS,Caret7_Command);
 
-% sICATCS and Signal are now positional arguments, already provided
 % Load component timecourses and extract only the signal component timecourses 
 sICATCSall = ciftiopen(sICATCS,Caret7_Command);
 Signal_indices = load(Signal,'-ascii'); % indices of signal (non-noise) ICA components
@@ -247,9 +247,9 @@ if CleanUpEffects
   fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
   fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
     sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
-    harmmean(CIFTIOutput.cdata(:,4)),harmmean(CIFTIOutput.cdata(:,5)),...
+    mean(CIFTIOutput.cdata(:,4)),mean(CIFTIOutput.cdata(:,5)),...
     sqrt(mean(CIFTIOutput.cdata(:,7)).^2),sqrt(mean(CIFTIOutput.cdata(:,8)).^2),...
-    harmmean(CIFTIOutput.cdata(:,9)),harmmean(CIFTIOutput.cdata(:,10)),harmmean(CIFTIOutput.cdata(:,11)));
+    mean(CIFTIOutput.cdata(:,9)),mean(CIFTIOutput.cdata(:,10)),mean(CIFTIOutput.cdata(:,11)));
   fclose(fid);
 else % UncleanedTSNR
   % Assemble output with basic metrics only
@@ -261,7 +261,7 @@ else % UncleanedTSNR
   fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
   fprintf(fid,'%s,%g,%g,%g,%g,%g\n',CIFTIOutputName,mean(CIFTIOutput.cdata(:,1)),...
     sqrt(mean(CIFTIOutput.cdata(:,2).^2)),sqrt(mean(CIFTIOutput.cdata(:,3)).^2),...
-    harmmean(CIFTIOutput.cdata(:,4)),harmmean(CIFTIOutput.cdata(:,5)));
+    mean(CIFTIOutput.cdata(:,4)),mean(CIFTIOutput.cdata(:,5)));
   fclose(fid);
 end  % if CleanUpEffects (CIFTI cleanup metrics)
 
@@ -306,9 +306,9 @@ if ProcessVolume
     fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
     fprintf(fid,'%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
       sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...
-      harmmean(VolumeOutput2DMasked(:,4)),harmmean(VolumeOutput2DMasked(:,5)),...
+      mean(VolumeOutput2DMasked(:,4)),mean(VolumeOutput2DMasked(:,5)),...
       sqrt(mean(VolumeOutput2DMasked(:,7).^2)),sqrt(mean(VolumeOutput2DMasked(:,8).^2)),...
-      harmmean(VolumeOutput2DMasked(:,9)),harmmean(VolumeOutput2DMasked(:,10)),harmmean(VolumeOutput2DMasked(:,11)));
+      mean(VolumeOutput2DMasked(:,9)),mean(VolumeOutput2DMasked(:,10)),mean(VolumeOutput2DMasked(:,11)));
     fclose(fid);
 
   else
@@ -318,7 +318,7 @@ if ProcessVolume
     fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
     fprintf(fid,'%s,%g,%g,%g,%g,%g\n',opts.VolumeOutputName,mean(VolumeOutput2DMasked(:,1)),...
       sqrt(mean(VolumeOutput2DMasked(:,2).^2)),sqrt(mean(VolumeOutput2DMasked(:,3)).^2),...
-      harmmean(VolumeOutput2DMasked(:,4)),harmmean(VolumeOutput2DMasked(:,5)));
+      mean(VolumeOutput2DMasked(:,4)),mean(VolumeOutput2DMasked(:,5)));
     fclose(fid);
 
   end  % if CleanUpEffects (volume cleanup metrics)

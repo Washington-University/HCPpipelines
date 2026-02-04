@@ -128,6 +128,7 @@ main() {
     # general settings
     # set list of fMRI runs on which ICA+FIX has been run, use @ to separate runs
     fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL"
+    # set fMRINames = ConcatNames is ICA-FIX was run multi-run
 
     # set the file name component representing the preprocessing already done, e.g. '_clean'
     fMRIProcSTRING="_clean_rclean_tclean"
