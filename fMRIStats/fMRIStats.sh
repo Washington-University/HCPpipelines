@@ -179,10 +179,7 @@ do
     esac
     
     #matlab function arguments - build array of all arguments (positional + name-value pairs)
-    matlab_args_array=()
-    
-    # Positional arguments
-    matlab_args_array+=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
+    matlab_args_array+("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
     
     # Optional name-value pairs
     matlab_args_array+=("ProcessVolume" "$ProcessVolume")
