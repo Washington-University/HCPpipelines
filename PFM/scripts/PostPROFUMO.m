@@ -1,5 +1,5 @@
-function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
-% PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
+function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder)
+% PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder)
 % This function imports PROFUMO results and generates CIFTI-format time courses
 % and power spectra for each subject. The outputs are used for subsequent
 % group-level PFM analysis.
@@ -11,7 +11,7 @@ function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProc
 %   ConcatName - Name of concatenated fMRI dataset (empty if single runs)
 %   fMRIProcSTRING - Processing string component (e.g., '_Atlas_hp200_clean')
 %   OutputfMRIName - Name of output fMRI dataset
-%   OutputPrefix - Prefix for output files
+%   OutputSTRING - Output string for files
 %   RegString - Registration string
 %   LowResMesh - Mesh resolution (e.g., '10' for 10k)
 %   TR - Repetition time in seconds
@@ -91,15 +91,15 @@ for s = 1:numel(Subjlist)
 
     %% Save individual-level results
     % Save original and amplitude-modulated time courses and spectra
-    ciftisave(PFMTCSorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_ts_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-    ciftisave(PFMSpectraorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_spectra_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+    ciftisave(PFMTCSorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+    ciftisave(PFMSpectraorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
-    ciftisave(PFMTCS, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-    ciftisave(PFMSpectra, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+    ciftisave(PFMTCS, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+    ciftisave(PFMSpectra, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
     %% Copy individual PFM maps
     % Link PROFUMO spatial maps to subject's fsaverage space directory
-    copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputPrefix RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
+    copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
   end  % if numel(subfMRINames) ~= 0
 end  % for s = 1:numel(Subjlist)
 end

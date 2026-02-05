@@ -145,11 +145,11 @@ main() {
     # StartStep="RunPROFUMO"
     # StopStep=""
 
-    StartStep="RunPROFUMO"
+    StartStep="PostPROFUMO"
     StopStep="GroupPFMs"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
-    parLimit=-1
+    parLimit=5
 
     
     # general inputs
@@ -157,7 +157,7 @@ main() {
     # fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR"
     randSeed=1 # random seed for PROFUMO 
 
-    OutputfMRIName="Mac25Rhesus_v5_BOLD_REST_CONCAT_PFM"
+    OutputfMRIName="BOLD_REST_CONCAT"
     # set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
     ConcatName="BOLD_REST_CONCAT"
     # set the output spectra size for individual projection, RunsXNumTimePoints
@@ -168,7 +168,7 @@ main() {
 
     # PFM settings for REST data
     PFMdim="16"  # set the PFM dimensionality
-    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_d${PFMdim}_s${randSeed}_test
+    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${GroupAverageName}_${OutputfMRIName}_PFM_d${PFMdim}_s${randSeed}_test
     # Reference image for PROFUMO
     RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP_Atlas_hppd2_clean_meanvn.dscalar.nii"
 
@@ -178,8 +178,8 @@ main() {
     # set the mesh resolution, like '32' for 32k_fs_LR
     LowResMesh="10"
 
-    # Define OutputPrefix with seed designation
-    OutputPrefix="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs_tclean"
+    # Define OutputSTRING with seed designation
+    OutputSTRING="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs"
 
     # RSN regression settings
     LowDims="6"
@@ -227,7 +227,7 @@ main() {
                                     --subject-list="$Subjlist" \
                                     --fmri-names="$fMRINames" \
                                     --output-fmri-name="$OutputfMRIName" \
-                                    --output-prefix="$OutputPrefix" \
+                                    --output-string="$OutputSTRING" \
                                     --proc-string="$fMRIProcSTRING" \
                                     --group-average-name="$GroupAverageName" \
                                     --pfm-dimension="$PFMdim" \

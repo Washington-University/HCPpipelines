@@ -1,5 +1,5 @@
-function GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
-% GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
+function GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputSTRING, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
+% GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputSTRING, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
 % This function aggregates individual subject PFM results and computes
 % group-level time course masks, spectra, maps, and statistics.
 %
@@ -7,7 +7,7 @@ function GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, LowR
 %   StudyFolder - Path to the study directory
 %   SubjlistRaw - Subject list as @ separated string
 %   PFMdim - PFM dimensionality
-%   OutputPrefix - Prefix for output files
+%   OutputSTRING - Output string for files
 %   RegName - Registration string (e.g., '_MSMAll')
 %   LowResMesh - Mesh resolution (e.g., '32' for 32k_fs_LR)
 %   RunsXNumTimePoints - Total expected timepoints across runs
@@ -38,10 +38,10 @@ for iS = 1:nS
   
   %% Load individual PFM results from standard subject locations
   % Load spatial maps, volume maps, time courses, and power spectra
-  PFMMapsSub = ciftiopen([subjDir '/' subj '.' OutputPrefix '_DR' RegName '.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
-  PFMVolMapsSub = ciftiopen([subjDir '/' subj '.' OutputPrefix '_DR' RegName '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
-  TCSSub = ciftiopen([subjDir '/' subj '.' OutputPrefix '_DR' RegName '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-  SpectraSub = ciftiopen([subjDir '/' subj '.' OutputPrefix '_DR' RegName '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+  PFMMapsSub = ciftiopen([subjDir '/' subj '.' OutputSTRING '_DR' RegName '.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
+  PFMVolMapsSub = ciftiopen([subjDir '/' subj '.' OutputSTRING '_DR' RegName '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
+  TCSSub = ciftiopen([subjDir '/' subj '.' OutputSTRING '_DR' RegName '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+  SpectraSub = ciftiopen([subjDir '/' subj '.' OutputSTRING '_DR' RegName '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
   %% Clean up NaNs and Infs in volume maps
   % Replace invalid values with zeros to prevent propagation to group statistics

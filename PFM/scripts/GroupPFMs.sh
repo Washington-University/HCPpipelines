@@ -34,7 +34,7 @@ PARAMETERs are [ ] = optional; < > = user supplied value
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
 opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of subject IDs separated by @s"
 opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g., 76, 92, 65)"
-opts_AddMandatory '--output-prefix' 'OutputPrefix' 'string' "output prefix for files"
+opts_AddMandatory '--output-string' 'OutputSTRING' 'string' "output string for files"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution"
 opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' 'integer' "total timepoints across runs (e.g., 4800 for rest, 3880 for task)"
@@ -82,7 +82,7 @@ esac
 this_script_dir=$(dirname "$0")
 
 #matlab function arguments converted to strings
-matlab_argarray=("$StudyFolder" "$SubjlistRaw" "$PFMdim" "$OutputPrefix" "$RegString" "$LowResMesh" "$RunsXNumTimePoints" "$PFMFolder")
+matlab_argarray=("$StudyFolder" "$SubjlistRaw" "$PFMdim" "$OutputSTRING" "$RegString" "$LowResMesh" "$RunsXNumTimePoints" "$PFMFolder")
 
 case "$MatlabMode" in
     (0)

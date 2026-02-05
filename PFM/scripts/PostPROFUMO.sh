@@ -36,7 +36,7 @@ opts_AddMandatory '--subject-list' 'SubjListRaw' '100206@100307...' 'list of sub
 opts_AddMandatory '--fmri-names' 'fMRIListRaw' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' 'list of fmri run names separated by @s'
 opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing"
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to use for PFM pipeline outputs"
-opts_AddMandatory '--output-prefix' 'OutputPrefix' 'string' "output prefix for files"
+opts_AddMandatory '--output-string' 'OutputSTRING' 'string' "output string for files"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution"
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder"
@@ -89,7 +89,7 @@ IFS='@' read -a fMRIList <<<"$fMRIListRaw"
 this_script_dir=$(dirname "$0")
 
 #matlab function arguments converted to strings
-matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputPrefix" "$RegString" "$LowResMesh" "$TR" "$PFMFolder")
+matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputSTRING" "$RegString" "$LowResMesh" "$TR" "$PFMFolder")
 
 case "$MatlabMode" in
     (0)
