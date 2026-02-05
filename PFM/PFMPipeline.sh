@@ -200,7 +200,7 @@ do
                 "${RESULTS_PATH}" \
                 "${REAL_REF_IMAGE}"
             ;;
-        (ImportPFMNotes)
+        (PostPROFUMO)
             log_Msg "Running PostPROFUMO step"
             "$HCPPIPEDIR"/PFM/scripts/PostPROFUMO.sh \
                 --study-folder="$StudyFolder" \
