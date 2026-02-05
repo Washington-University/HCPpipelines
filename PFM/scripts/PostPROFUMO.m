@@ -26,7 +26,7 @@ wbcommand = 'wb_command';
 
 %% Main loop: Process each subject
 for s = 1:numel(Subjlist)
-  s  % Display subject index
+  fprintf('Processing subject %d/%d: %s\n', s, numel(Subjlist), Subjlist{s});
   
   %% Identify available fMRI runs for this subject
   % Determine which fMRI runs exist for this subject
@@ -34,10 +34,10 @@ for s = 1:numel(Subjlist)
   subfMRINames = {};
   if ~strcmp(ConcatName, '')
     % Multi-run data: check if concatenated dataset exists
-    if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'])
+    if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'],'file')
       c = 1;
       for r = 1:numel(fMRINames)
-        if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'])
+        if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
           subfMRINames{c} = fMRINames{r};
           c = c + 1;
         end
@@ -47,7 +47,7 @@ for s = 1:numel(Subjlist)
     % Single-run data: check which runs exist
     c = 1;
     for r = 1:numel(fMRINames)
-      if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'])
+      if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
         subfMRINames{c} = fMRINames{r};
         c = c + 1;
       end

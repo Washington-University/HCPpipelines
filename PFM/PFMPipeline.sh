@@ -257,7 +257,7 @@ do
                     --surf-reg-name="$RegName"
                     --low-res="$LowResMesh"
                     --proc-string="_$fMRIProcSTRING"
-                    --method="$RSNMethod"
+                    --method="dual"
                     --low-ica-dims="$LowDims"
                     --low-ica-template-name="$LowDimTemplate"
                     --output-string="$OutputPrefix"
