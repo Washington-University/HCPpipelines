@@ -179,7 +179,6 @@ main() {
     LowResMesh="10"
 
     # RSN regression settings
-    RSNMethod="dual"  # dual or single (default: dual)
     LowDims="6"
     FixLegacyBiasString="NO"
     ScaleFactor="0.01"
@@ -233,7 +232,7 @@ main() {
                                     --concat-name="$ConcatName" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
-                                    --rsn-method="$RSNMethod" \
+                                    --rsn-method=dual \
                                     --low-dims="$LowDims" \
                                     --fix-legacy-bias="$FixLegacyBiasString" \
                                     --scale-factor="$ScaleFactor" \
