@@ -23,7 +23,7 @@ defaultStopAfter="${pipelineSteps[${#pipelineSteps[@]} - 1]}"
 stepsText="$(IFS=$'\n'; echo "${pipelineSteps[*]}")"
 
 #description to use in usage
-opts_SetScriptDescription "implements complete PFM pipeline with four main steps: Run PROFUMO, Import PFM Notes, RSN Regression, and PFM Notes Group processing"
+opts_SetScriptDescription "implements complete PFM pipeline with four main steps: Run PROFUMO, Post-PROFUMO, RSN Regression, and Group PFM processing"
 
 #mandatory parameters
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains all subjects"
@@ -36,7 +36,7 @@ opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g.
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder containing Results.ppp"
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--profumo-config' 'ProfumoConfig' 'path' "path to PROFUMO JSON configuration file"
-opts_AddMandatory '--profumo-tr' 'TR' "repetition time for PROFUMO analysis" "repetition time for PROFUMO analysis in seconds"
+opts_AddMandatory '--profumo-tr' 'TR' "seconds" "repetition time for PROFUMO analysis"
 opts_AddMandatory '--ref-image' 'RefImage' 'path' "reference image for PROFUMO postprocessing"
 opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' "total timepoints across runs" "total timepoints across runs"
 opts_AddMandatory '--concat-name' 'ConcatName' "concatenated fMRI name if using multi-run data" ''
@@ -55,7 +55,6 @@ opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initiali
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
 
 #RSN regression specific parameters
-opts_AddOptional '--rsn-method' 'RSNMethod' 'weighted or dual' "RSN regression method: weighted (WR) or dual (DR) - default: dual" 'dual'
 opts_AddOptional '--low-dims' 'LowDims' 'string' "low dimensionalities for RSN regression" '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'
 opts_AddOptional '--low-dims-template-file' 'LowDimTemplate' 'path' "low dimensionality template name for RSN regression" ''
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBias' 'YES or NO' 'whether the input data used legacy bias correction' 'NO'
@@ -247,20 +246,10 @@ do
                     continue
                 fi
                 
-                # Set maps and timeseries based on method (following your example exactly)
-                if [[ "$RSNMethod" == "single" ]]
-                then
-                    # TimeSeries="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.${OutputPrefix}_${RegName}_ts.${LowResMesh}k_fs_LR.sdseries.nii"
-                    TimeSeries="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.${OutputPrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii"
-                elif [[ "$RSNMethod" == "dual" ]]
-                then
-                    # GroupMaps="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.${OutputPrefix}_${RegName}_origmaps.${LowResMesh}k_fs_LR.dscalar.nii"
-                    # GroupMaps="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.${OutputPrefix}_origmaps.${LowResMesh}k_fs_LR.dscalar.nii"
-                    GroupMaps="${PFMFolder}/Results.ppp/Maps/Group.dscalar.nii"
-                    TimeSeries=""
-                fi
+                # Set maps for dual regression
+                GroupMaps="${PFMFolder}/Results.ppp/Maps/Group.dscalar.nii"
                 
-                # Build RSN regression command (exactly like your example)
+                # Build RSN regression command 
                 rsn_cmd=("$HCPPIPEDIR"/global/scripts/RSNregression.sh
                     --study-folder="$StudyFolder"
                     --subject="$Subject"
@@ -277,17 +266,8 @@ do
                     --output-z=1
                     --fix-legacy-bias="$FixLegacyBias"
                     --scale-factor="$ScaleFactor"
+                    --group-maps="$GroupMaps"
                 )
-                
-                # Add conditional arguments based on method
-                if [[ "$RSNMethod" == "dual" ]]
-                then
-                    rsn_cmd+=(--group-maps="$GroupMaps")
-                fi
-                if [[ "$RSNMethod" == "single" ]]
-                then
-                    rsn_cmd+=(--timeseries="$TimeSeries")
-                fi
                 
                 # Queue parallel job
                 par_addjob "${rsn_cmd[@]}"
