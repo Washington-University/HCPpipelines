@@ -1,17 +1,17 @@
-function ImportPFMNotes(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
+function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
     
     Subjlist = strsplit(SubjListRaw, '@');
     fMRINames = strsplit(fMRIListRaw, '@');
     TR = str2double(TR);
     wbcommand = 'wb_command';
     
-    for s = 1:length(Subjlist)
+    for s = 1:numel(Subjlist)
         s
         subfMRINames = {};
         if ~strcmp(ConcatName, '')
             if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'])
                 c = 1;
-                for r = 1:length(fMRINames)
+                for r = 1:numel(fMRINames)
                     if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'])
                         subfMRINames{c} = fMRINames{r};
                         c = c + 1;
@@ -20,7 +20,7 @@ function ImportPFMNotes(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIP
             end
         else
             c = 1;
-            for r = 1:length(fMRINames)
+            for r = 1:numel(fMRINames)
                 if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'])
                     subfMRINames{c} = fMRINames{r};
                     c = c + 1;
@@ -28,20 +28,17 @@ function ImportPFMNotes(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIP
             end                    
         end
         
-        if length(subfMRINames) ~= 0
+        if numel(subfMRINames) ~= 0
             origTCS = [];
             TCS = [];
-            for r = 1:length(subfMRINames)
+            for r = 1:numel(subfMRINames)
                 runTCS = load([PFMFolder '/Results.ppp/TimeCourses/sub-' Subjlist{s} '_run-' subfMRINames{r} '.csv']);
                 runAmp = load([PFMFolder '/Results.ppp/Amplitudes/sub-' Subjlist{s} '_run-' subfMRINames{r} '.csv']);
 
                 origTCS = [origTCS ; runTCS];
-                TCS = [TCS ; runTCS .* repmat(runAmp', length(runTCS), 1)];
+                TCS = [TCS ; runTCS .* repmat(runAmp', numel(runTCS), 1)];
             end
             
-            % sICATCS = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputfMRIName OutputSTRING RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-            % sICASpectra = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputfMRIName OutputSTRING RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-     
             PFMTCSorig = cifti_struct_create_sdseries(origTCS','step',TR);
             % PFMTCSorig.diminfo{1,2} = sICATCS.diminfo{1,2};
             ts.Nnodes = size(origTCS, 2);

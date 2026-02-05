@@ -16,13 +16,13 @@ source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
 g_matlab_default_mode=1
 
-#add steps to this array and in the switch cases below
-pipelineSteps=(RunPROFUMO ImportPFMNotes RSNRegression PFMNotesGroup)
+# add steps to this array and in the switch cases below
+pipelineSteps=(RunPROFUMO PostPROFUMO RSNRegression GroupPFMs)
 defaultStart="${pipelineSteps[0]}"
 defaultStopAfter="${pipelineSteps[${#pipelineSteps[@]} - 1]}"
 stepsText="$(IFS=$'\n'; echo "${pipelineSteps[*]}")"
 
-#description to use in usage - syntax of parameters is now explained automatically
+#description to use in usage
 opts_SetScriptDescription "implements complete PFM pipeline with four main steps: Run PROFUMO, Import PFM Notes, RSN Regression, and PFM Notes Group processing"
 
 #mandatory parameters
@@ -202,8 +202,8 @@ do
                 "${REAL_REF_IMAGE}"
             ;;
         (ImportPFMNotes)
-            log_Msg "Running ImportPFMNotes step"
-            "$HCPPIPEDIR"/PFM/scripts/ImportPFMNotes.sh \
+            log_Msg "Running PostPROFUMO step"
+            "$HCPPIPEDIR"/PFM/scripts/PostPROFUMO.sh \
                 --study-folder="$StudyFolder" \
                 --subject-list="$SubjlistRaw" \
                 --fmri-names="$fMRINames" \
@@ -296,9 +296,9 @@ do
             # Run the jobs
             par_runjobs "$parLimit"
             ;;
-        (PFMNotesGroup)
-            log_Msg "Running PFMNotesGroup step"
-            "$HCPPIPEDIR"/PFM/scripts/PFMNotesGroup.sh \
+        (GroupPFMs)
+            log_Msg "Running GroupPFMs step"
+            "$HCPPIPEDIR"/PFM/scripts/GroupPFMs.sh \
                 --study-folder="$StudyFolder" \
                 --subject-list="$SubjlistRaw" \
                 --pfm-dimension="$PFMdim" \

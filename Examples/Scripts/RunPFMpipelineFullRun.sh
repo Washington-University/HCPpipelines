@@ -4,40 +4,27 @@ set -eu
 
 # This is an example script to run the full PFM postprocessing pipeline
 # Steps involved:
-# 1. ImportPFMNotes - Import PFM results and create time courses, spectra, and maps
-# 2. RSNRegression - Run RSN regression on PFM data for dual regression
-# 3. PFMNotesGroup - Generate group-level statistics and averages
+# 1. RunPROFUMO - Run PROFUMO analysis
+# 2. PostPROFUMO - Create time courses, spectra, and maps from PFM results
+# 3. RSNRegression - Run RSN regression on PFM data for dual regression
+# 4. GroupPFMs - Generate group-level statistics and averages
 #
 # Please make sure that PROFUMO, ICA-FIX, MSMAll and MakeAverageDataset are done properly 
-# matching the input arguments before running this PFM pipeline
-
-# Global default values
-DEFAULT_STUDY_FOLDER="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus"
-DEFAULT_SUBJECT_LIST="$(find ${DEFAULT_STUDY_FOLDER} -maxdepth 1 -type d -name "A*" -exec basename {} \; | paste -sd@ -)"
-# fourRunSubjects=$(ls $DEFAULT_STUDY_FOLDER/A*/MNINonLinear/Results/BOLD_REST_4_PA -d | awk -F'/' '{print $(NF-3)}' | tr '\n' ' ')
-# DEFAULT_SUBJECT_LIST=$(echo "${DEFAULT_SUBJECT_LIST}" | tr ' ' '\n' | grep -vxFf <(echo "${fourRunSubjects}" | tr ' ' '\n') | tr '\n' ' ') # remove four run subjects
-
-
-DEFAULT_ENVIRONMENT_SCRIPT="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5/Mac25Rhesus_v5_SetUpHCPPipeline.sh"
-DEFAULT_GROUP_NAME="Mac25Rhesus_v5" # the group average name, which must be specified the same in MakeAverageDataset before running this tICA script
-DEFAULT_REG_NAME="" # the registration string corresponding to the input files, which must be specified the same in MSMAll pipeline before running this tICA script
-DEFAULT_MATLAB_MODE=1 # MatlabMode
-DEFAULT_RUN_LOCAL=0
-DEFAULT_QUEUE="matlabparallelhigh.q" 
+# matching the input arguments before running this PFM pipeline 
 
 get_options() {
     local scriptName=$(basename "$0")
     local arguments=("$@")
 
-    # initialize global variables
-    StudyFolder="${DEFAULT_STUDY_FOLDER}"
-    Subjlist="${DEFAULT_SUBJECT_LIST}"
-    EnvironmentScript="${DEFAULT_ENVIRONMENT_SCRIPT}"
-    GroupAverageName="${DEFAULT_GROUP_NAME}"
-    RegName="${DEFAULT_REG_NAME}"
-    MatlabMode="${DEFAULT_MATLAB_MODE}"
-    RunLocal="${DEFAULT_RUN_LOCAL}"
-    QUEUE="${DEFAULT_QUEUE}"
+    # initialize variables
+    StudyFolder="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus"
+    Subjlist="$(find ${StudyFolder} -maxdepth 1 -type d -name "A*" -exec basename {} \; | paste -sd@ -)"
+    EnvironmentScript="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5/Mac25Rhesus_v5_SetUpHCPPipeline.sh"
+    GroupAverageName="Mac25Rhesus_v5"
+    RegName=""
+    MatlabMode=1
+    RunLocal=0
+    QUEUE="matlabparallelhigh.q"
 
     # parse arguments
     local index argument
@@ -150,16 +137,16 @@ main() {
     # set the start step beginning from RunPROFUMO which is by default the first step
     # StartStep="RunPROFUMO"
     # StopStep="RunPROFUMO"  
-    # StartStep="ImportPFMNotes"
-    # StopStep="ImportPFMNotes"  
-    # StartStep="ImportPFMNotes"
+    # StartStep="PostPROFUMO"
+    # StopStep="PostPROFUMO"  
+    # StartStep="PostPROFUMO"
     # StartStep="RSNRegression"  
     # StopStep="RSNRegression"
     # StartStep="RunPROFUMO"
     # StopStep="RSNRegression"
 
     StartStep="RunPROFUMO"
-    StopStep="PFMNotesGroup"
+    StopStep="GroupPFMs"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
     parLimit=-1

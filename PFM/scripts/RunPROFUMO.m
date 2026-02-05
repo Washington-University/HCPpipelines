@@ -1,4 +1,4 @@
-function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRIName, PFMdimStr, OutputPrefix, RegString, LowResMesh, RunsXNumTimePointsStr, CIFTIVerticesStr, CIFTIVolumeStr, PFMFolder)
+function RunPROFUMO(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRIName, PFMdimStr, OutputPrefix, RegString, LowResMesh, RunsXNumTimePointsStr, CIFTIVerticesStr, CIFTIVolumeStr, PFMFolder)
     
     % Parse string inputs
     Subjlist = strsplit(SubjListRaw, '@');
@@ -9,13 +9,13 @@ function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRINam
     c = 1;
     SubjFolderlist = {};
     StudyFolderNumber = [];
-    for i = 1:length(Subjlist)
+    for i = 1:numel(Subjlist)
         SubjFolderlist{c} = [StudyFolder '/' Subjlist{i}];
         StudyFolderNumber = [StudyFolderNumber 1];
         c = c + 1;
     end
 
-    for i = 1:length(Subjlist)
+    for i = 1:numel(Subjlist)
         if ~isfile([StudyFolder '/' Subjlist{i} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutputPrefix '_DR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'])
             Subjlist{i}
         end
@@ -23,13 +23,13 @@ function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRINam
 
     s1 = 0;
     m1 = 0;
-    TCSMask = zeros(PFMdim, RunsXNumTimePoints, length(SubjFolderlist), 'single');
-    TCSAll = zeros(PFMdim, RunsXNumTimePoints, length(SubjFolderlist), 'single');
+    TCSMask = zeros(PFMdim, RunsXNumTimePoints, numel(SubjFolderlist), 'single');
+    TCSAll = zeros(PFMdim, RunsXNumTimePoints, numel(SubjFolderlist), 'single');
     SpectraOne = [];
     PFMMapsOne = [];
     PFMVolMapsOne = [];
     
-    for i = 1:length(SubjFolderlist)
+    for i = 1:numel(SubjFolderlist)
         Subjlist{i}
         if exist([SubjFolderlist{i} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutputPrefix RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'])
             PFMMapsSub = ciftiopen([SubjFolderlist{i} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutputPrefix '_DR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
@@ -45,7 +45,7 @@ function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRINam
             COND(i) = cond(TCSSub.cdata);
             
             if StudyFolderNumber(i) == 1
-                if length(TCSSub.cdata) == RunsXNumTimePoints
+                if numel(TCSSub.cdata) == RunsXNumTimePoints
                     TCSMask(:, :, i) = repmat(1, PFMdim, RunsXNumTimePoints, 1);
                     if isempty(SpectraOne)
                         SpectraOne = SpectraSub;
@@ -68,9 +68,9 @@ function PFMNotesGroup(StudyFolder, SubjListRaw, GroupAverageName, OutputfMRINam
     end
 
     TCSMaskConcat = TCSSub;
-    TCSMaskConcat.cdata = squeeze(reshape(TCSMask, PFMdim, RunsXNumTimePoints * length(SubjFolderlist)));
+    TCSMaskConcat.cdata = squeeze(reshape(TCSMask, PFMdim, RunsXNumTimePoints * numel(SubjFolderlist)));
     TCSFullConcat = TCSSub;
-    TCSFullConcat.cdata = squeeze(reshape(TCSAll, PFMdim, RunsXNumTimePoints * length(SubjFolderlist)));
+    TCSFullConcat.cdata = squeeze(reshape(TCSAll, PFMdim, RunsXNumTimePoints * numel(SubjFolderlist)));
     ciftisavereset(TCSMaskConcat, [PFMFolder '/PFM_TCSMASK_' num2str(PFMdim) '.sdseries.nii'], wbcommand);
     ciftisavereset(TCSFullConcat, [PFMFolder '/PFM_TCS_' num2str(PFMdim) '.sdseries.nii'], wbcommand);
 

@@ -94,7 +94,7 @@ matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fM
 
 case "$MatlabMode" in
     (0)
-        matlab_cmd=("$this_script_dir/Compiled_ImportPFMNotes/run_ImportPFMNotes.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
+        matlab_cmd=("$this_script_dir/Compiled_PostPROFUMO/run_PostPROFUMO.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
         log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
         "${matlab_cmd[@]}"
         ;;
@@ -113,7 +113,7 @@ case "$MatlabMode" in
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$this_script_dir');
             addpath('$HCPCIFTIRWDIR');
-            ImportPFMNotes($matlab_args);"
+            PostPROFUMO($matlab_args);"
 
         log_Msg "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"

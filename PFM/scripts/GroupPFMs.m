@@ -1,4 +1,4 @@
-function PFMNotesGroup(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
+function GroupPFMs(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, LowResMesh, RunsXNumTimePoints, PFMFolder)
 
   %% example parameters for 1071 3T MSMAll Rest
   % StudyFolder = '/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final';
@@ -9,9 +9,6 @@ function PFMNotesGroup(StudyFolder, SubjlistRaw, PFMdim, OutputPrefix, RegName, 
   % LowResMesh = '32';
   % RunsXNumTimePoints = 4800;
   % PFMFolder = '/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll3T1071/MNINonLinear/Results/rfMRI_REST/PFMs_chpc';
-  %
-  % CIFTIVertices = 91282; % no longer used
-  % CIFTIVol = 283226 ;% no longer used
 
   wbcommand = 'wb_command';
 
