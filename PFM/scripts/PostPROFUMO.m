@@ -71,28 +71,24 @@ for s = 1:numel(Subjlist)
     %% Create original time course and spectral CIFTI files
     % Generate CIFTI structure for unmodulated time courses
     PFMTCSorig = cifti_struct_create_sdseries(origTCS','step',TR);
-    % PFMTCSorig.diminfo{1,2} = sICATCS.diminfo{1,2};
     
-    % Compute power spectra for original time courses
+    % Store power spectra 
     ts.Nnodes = size(origTCS, 2);
     ts.Nsubjects = 1;
     ts.ts = origTCS;
     ts.NtimepointsPerSubject = size(origTCS, 1);
     PFMSpectraorig = cifti_struct_create_sdseries(nets_spectra_sp(ts)','step',1/TR);
-    % PFMSpectraorig.diminfo{1,2} = sICASpectra.diminfo{1,2};
     
-    %% Create amplitude-modulated time course and spectral CIFTI files
-    % Generate CIFTI structure for amplitude-modulated time courses
+    %% Create  time course and spectral CIFTI files
+    % Generate CIFTI structure for  time courses
     PFMTCS = cifti_struct_create_sdseries(TCS');
-    % PFMTCS.diminfo{1,2} = sICATCS.diminfo{1,2};       
     
-    % Compute power spectra for amplitude-modulated time courses
+    % Store power spectra 
     ts.Nnodes = size(TCS, 2);
     ts.Nsubjects = 1;
     ts.ts = TCS;
     ts.NtimepointsPerSubject = size(TCS, 1);
     PFMSpectra = cifti_struct_create_sdseries(nets_spectra_sp(ts)','step',1/TR);
-    % PFMSpectra.diminfo{1,2} = sICASpectra.diminfo{1,2};
 
     %% Save individual-level results
     % Save original and amplitude-modulated time courses and spectra
