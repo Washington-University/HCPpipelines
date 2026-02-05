@@ -19,12 +19,12 @@ get_options() {
     # initialize variables
     StudyFolder="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus"
     Subjlist="$(find ${StudyFolder} -maxdepth 1 -type d -name "A*" -exec basename {} \; | paste -sd@ -)"
-    EnvironmentScript="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5/Mac25Rhesus_v5_SetUpHCPPipeline.sh"
+    EnvironmentScript="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5_SetUpHCPPipeline.sh"
     GroupAverageName="Mac25Rhesus_v5"
     RegName=""
     MatlabMode=1
     RunLocal=0
-    QUEUE="matlabparallelhigh.q"
+    QUEUE="matlabparallelhigh.q@brainmappers-desktop3"
 
     # parse arguments
     local index argument
@@ -143,7 +143,7 @@ main() {
     # StartStep="RSNRegression"  
     # StopStep="RSNRegression"
     # StartStep="RunPROFUMO"
-    # StopStep="RSNRegression"
+    # StopStep=""
 
     StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
@@ -155,7 +155,7 @@ main() {
     # general inputs
     fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR@BOLD_REST_3_AP@BOLD_REST_4_PA"
     # fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR"
-    randSeed=2 # random seed for PROFUMO 
+    randSeed=1 # random seed for PROFUMO 
 
     OutputfMRIName="Mac25Rhesus_v5_BOLD_REST_CONCAT_PFM"
     # set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
@@ -168,7 +168,7 @@ main() {
 
     # PFM settings for REST data
     PFMdim="16"  # set the PFM dimensionality
-    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_d${PFMdim}_s${randSeed}_M1k
+    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_d${PFMdim}_s${randSeed}_test
     # Reference image for PROFUMO
     RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP_Atlas_hppd2_clean_meanvn.dscalar.nii"
 
@@ -177,6 +177,9 @@ main() {
 
     # set the mesh resolution, like '32' for 32k_fs_LR
     LowResMesh="10"
+
+    # Define OutputPrefix with seed designation
+    OutputPrefix="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs_tclean"
 
     # RSN regression settings
     LowDims="6"
@@ -193,7 +196,7 @@ main() {
     ProfumoThreads="14"
     DOFCorrection="0.5"
     CovModel="Subject"
-    nStarts="1000" # number of multi-start iterations for PROFUMO
+    nStarts="1" # number of multi-start iterations for PROFUMO
     RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
     # RefImage will be auto-set based on data type below
 
@@ -224,6 +227,7 @@ main() {
                                     --subject-list="$Subjlist" \
                                     --fmri-names="$fMRINames" \
                                     --output-fmri-name="$OutputfMRIName" \
+                                    --output-prefix="$OutputPrefix" \
                                     --proc-string="$fMRIProcSTRING" \
                                     --group-average-name="$GroupAverageName" \
                                     --pfm-dimension="$PFMdim" \
@@ -232,7 +236,6 @@ main() {
                                     --concat-name="$ConcatName" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
-                                    --rsn-method=dual \
                                     --low-dims="$LowDims" \
                                     --fix-legacy-bias="$FixLegacyBiasString" \
                                     --scale-factor="$ScaleFactor" \

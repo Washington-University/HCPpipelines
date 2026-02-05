@@ -1,5 +1,5 @@
-function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
-% PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
+function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
+% PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputPrefix, RegString, LowResMesh, TR, PFMFolder)
 % This function imports PROFUMO results and generates CIFTI-format time courses
 % and power spectra for each subject. The outputs are used for subsequent
 % group-level PFM analysis.
@@ -11,7 +11,6 @@ function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProc
 %   ConcatName - Name of concatenated fMRI dataset (empty if single runs)
 %   fMRIProcSTRING - Processing string component (e.g., '_Atlas_hp200_clean')
 %   OutputfMRIName - Name of output fMRI dataset
-%   OutputSTRING - Output naming string
 %   OutputPrefix - Prefix for output files
 %   RegString - Registration string
 %   LowResMesh - Mesh resolution (e.g., '10' for 10k)

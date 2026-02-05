@@ -30,6 +30,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains al
 opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of subject IDs separated by @s"
 opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of fmri run names separated by @s"
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to use for PFM pipeline outputs"
+opts_AddMandatory '--output-prefix' 'OutputPrefix' 'string' "output prefix for individual subject files (typically includes dimension, group name, and seed)"
 opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_MSMAll_hp2000_clean_rclean_tclean'"
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'string' 'name to use for the group output folder'
 opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g., 76, 92, 65)"
@@ -118,10 +119,6 @@ then
     RegString="_$RegName"
 fi
 
-# Auto-generate output strings (include random seed for uniqueness)
-OutputSTRING="_d${PFMdim}_${GroupAverageName}_seed${RandomSeed}_WR"
-OutputPrefix="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${RandomSeed}_PFMs_tclean"
-
 # Volume template file path
 # VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.2.dscalar.nii"
 
@@ -209,7 +206,6 @@ do
                 --concat-name="$ConcatName" \
                 --proc-string="$fMRIProcSTRING" \
                 --output-fmri-name="$OutputfMRIName" \
-                --output-string="$OutputSTRING" \
                 --output-prefix="$OutputPrefix" \
                 --surf-reg-name="$RegName" \
                 --low-res-mesh="$LowResMesh" \
@@ -260,7 +256,7 @@ do
                     --method="dual"
                     --low-ica-dims="$LowDims"
                     --low-ica-template-name="$LowDimTemplate"
-                    --output-string="$OutputPrefix"
+                    --output-prefix="$OutputPrefix"
                     --output-spectra="$RunsXNumTimePoints"
                     --volume-template-cifti="$VolumeTemplateFile"
                     --output-z=1
