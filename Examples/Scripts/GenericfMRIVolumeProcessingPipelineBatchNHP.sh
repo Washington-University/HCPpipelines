@@ -250,7 +250,7 @@ for Subject in $(echo $Subjlist | sed -e 's/@/ /g'); do   # loop for subjects
 
      #${FSLDIR}/bin/fsl_sub $QUEUE -l $StudyFolder/$Subject/logs \
      if [ $DryRun = "FALSE" ] ; then
-     ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipelineNHP.sh \
+     ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
       --path=$StudyFolder \
       --subject=$Subject \
       --fmriname=$fMRIName \
@@ -290,7 +290,7 @@ for Subject in $(echo $Subjlist | sed -e 's/@/ /g'); do   # loop for subjects
       if [ $DryRun = FALSE ] ; then
        CMD="set --"
       else
-       CMD="${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipelineNHP.sh"
+       CMD="${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
       fi
        echo "$CMD --path=$StudyFolder \
       --subject=$Subject \
