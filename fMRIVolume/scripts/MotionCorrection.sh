@@ -26,8 +26,8 @@ OutputMotionMatrixFolder="\$6"
 OutputMotionMatrixNamePrefix="\$7"
 MotionCorrectionType="\$8"
 fMRIReferenceReg="\$9"
-SPECIES="\$10"
-BrainScaleFactor="\$11"
+BrainScaleFactor="\$10"
+SPECIES="\$11"
 EOF
 }
 
