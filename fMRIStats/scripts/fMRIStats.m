@@ -249,8 +249,7 @@ if CleanUpEffects
   for r = 1:numel(regions)
     if ~isempty(regions(r).indices)
       idx = regions(r).indices;
-      fprintf(fid, ...
-        '%s,%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n', ...
+      fprintf(fid, '%s,%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n', ...
         CIFTIOutputName, ... % Output cifti file name
         regions(r).name, ... % Region (Cortex or Subcortex)
         mean(CIFTIOutput.cdata(idx,1)), ... % MeanSignal
@@ -282,8 +281,7 @@ else % Basic metrics only (no cleanup effects)
   for r = 1:numel(regions)
     if ~isempty(regions(r).indices)
       idx = regions(r).indices;
-      fprintf(fid, ...
-        '%s,%s,%g,%g,%g,%g,%g\n', ...
+      fprintf(fid, '%s,%s,%g,%g,%g,%g,%g\n', ...
         CIFTIOutputName, ... % Output cifti file name
         regions(r).name, ... % Region (Cortex or Subcortex)
         mean(CIFTIOutput.cdata(idx,1)), ... % MeanSignal
@@ -353,8 +351,7 @@ if ProcessVolume
     % Summary CSV file
     fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_Summary.csv'),'w');
     fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
-    fprintf(fid, ...
-      '%s,%g,%g,%g,%g,%g\n', ...
+    fprintf(fid, '%s,%g,%g,%g,%g,%g\n', ...
       opts.VolumeOutputName, ... % Output cifti file name
       mean(VolumeOutput2DMasked(:,1)), ... % MeanSignal
       sqrt(mean(VolumeOutput2DMasked(:,2).^2)), ... % UnstructuredNoiseSTD
