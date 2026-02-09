@@ -106,8 +106,3 @@ function createHeadMask() {
     
     echo "Head mask created: $headMask"
 }
-
-# Run the function if script is executed directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    createHeadMask "$@"
-fi
