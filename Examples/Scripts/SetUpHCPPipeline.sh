@@ -26,6 +26,8 @@ export MATLAB_COMPILER_RUNTIME=/export/matlab/MCR/R2022b
 # If a suitable version of wb_command is on your $PATH, CARET7DIR can be blank
 export CARET7DIR=
 export HCPCIFTIRWDIR="$HCPPIPEDIR"/global/matlab/cifti-matlab
+export HIPPUNFOLDPATH="${HOME}/pipeline_tools/HippUnfold/khanlab_hippunfold_latest.sif"
+export HIPPUNFOLD_CACHE_DIR="${HOME}/.cache/hippunfold"
 
 ## Set up FSL (if not already done so in the running environment)
 ## Uncomment the following 2 lines (remove the leading #) and correct the FSLDIR setting for your setup
