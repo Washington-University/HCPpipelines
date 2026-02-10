@@ -109,7 +109,6 @@ get_options() {
 }
 
 #
-# Function Description
 #   Main processing of this script
 #
 #   Gets user specified command line options and runs fMRIStats on multiple subjects
