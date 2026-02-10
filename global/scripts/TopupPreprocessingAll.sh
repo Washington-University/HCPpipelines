@@ -307,10 +307,10 @@ else
         fi
         log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
         for vol in PhaseOne PhaseTwo PhaseOne_gdc PhaseTwo_gdc $Phase2ndSet; do
-            ${GlobalScripts}/CorrectVolumeOrientation --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition "$initmat"
+            ${GlobalScripts}/CorrectVolumeOrientation.sh --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition "$initmat"
         done
     else
-        log_Msg "Reorient to std" 
+        log_Msg "Reorient to std"
         if [ $Phase2ndDir = TRUE ] ; then
             Phase2ndSet="PhaseOne2 PhaseTwo2 PhaseOne2_gdc PhaseTwo2_gdc"
         else
