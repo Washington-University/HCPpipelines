@@ -6,6 +6,12 @@ then
     source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
 fi
 
+if [[ "$(type -t tempfiles_add)" == "function" ]]
+then
+    log_Warn "developer warning: tempfiles.shlib sourced more than once in a script"
+    return 0
+fi
+
 #call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason, including crash or interrupt)
 function tempfiles_add()
 {
