@@ -794,7 +794,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
 
             # 3rd registration of distorted SBRef-to-SEField with FS-BBR
             if [ $BBR = "T1w" ]; then
-                log_Msg "registeration of distorted T1w-contrast SBRef to distorted T1w with T1w-BBR"
+                log_Msg "registration of distorted T1w-contrast SBRef to distorted T1w with T1w-BBR"
                 # create brain ourter surface boundary
                 ${FSLDIR}/bin/applywarp --rel -i ${WD}/brainmask_fs --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/SEFieldmag_undistorted_hires -o  ${WD}/brainmask_fs2Fieldmap --interp=trilinear
                 ${FSLDIR}/bin/fslmaths ${WD}/brainmask_fs2Fieldmap -thr 0.5 -bin ${WD}/brainmask_fs2Fieldmap
