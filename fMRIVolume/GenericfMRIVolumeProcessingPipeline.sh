@@ -689,7 +689,8 @@ else
     mkdir -p "$fMRIFolderLong"
     for fd in "$fMRIFolder"/*; do
         fname="$(basename "$fd")"
-        #create link to the original fMRI series
+        # create relative link to the original fMRI series
+        # symlink review note: Relative links should be OK
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
             ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
         #skip large files that will be generated
@@ -948,7 +949,8 @@ else
         log_Warn "     ... removing stale link"
         rm ${DCFolder}
     fi
-    ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
+    #symlink review: link changed to relative. 
+    ( cd "$fMRIFolder" && ln -sf "../fMRIReference/${DCFolderName}" "${DCFolderName}" )
 
     if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
         log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"
@@ -1073,8 +1075,9 @@ if [[ ${nEcho} -gt 1 ]]; then
     # # fit T2* and S0 then Combine Echoes
     log_Msg "Fitting T2* and combining Echoes"
 
-    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz
-    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz
+    #symlink review: links changed to relative.
+    ( ${RUN} cd "$EchoDir" && ${RUN} ln -sf "../${NameOffMRI}_nonlin_norm.nii.gz" "${NameOffMRI}_nonlin_norm.nii.gz" )
+    ( ${RUN} cd "$EchoDir" && ${RUN} ln -sf "../${NameOffMRI}_SBRef_nonlin_norm.nii.gz" "${NameOffMRI}_SBRef_nonlin_norm.nii.gz" )
 
     echo ${echoTE} > ${EchoDir}/TEs.txt
 

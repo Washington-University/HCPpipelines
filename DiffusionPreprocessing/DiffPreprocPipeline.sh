@@ -418,6 +418,11 @@ post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEdd
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
 
+# Clean up diffusion files in raw space for longitudinal runs
+if (( IsLongitudinal )); then 
+    rm -rf "${StudyFolder}/${DWIName}"
+fi
+
 log_Msg "Completed!"
 exit 0
 

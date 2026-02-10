@@ -280,6 +280,7 @@ foreach hemi ($hemilist)
   end
   # Create symbolic links
   pushd $sdir
+    #symlinks review: all relative, should be OK
   ln -sf $hemi.white.rawavg.conf $hemi.white |& tee -a $LF
   if(! $#MMode) then
     ln -sf $hemi.pial.rawavg.conf  $hemi.pial |& tee -a $LF
@@ -299,9 +300,11 @@ if($#MMode) then
   # Long: create a symlink to long mm input if needed. Normal stream
   # does not copy or link the multimodal input. Should probably
   # overwrite what is there to force update.
+  # symlinks review: this is absolute link. Kept as is, needs attention.
   if(! -e $MM && $longitudinal) then
     set MMcross = ${SUBJECTS_DIR}/${tpNid}/mri/orig/${MMode}raw.mgz
     cd orig
+    # symlinks review: relative, OK
     set cmd = (ln -sf $MMcross ${MMode}raw.mgz)
     echo $cmd | tee -a $LF
     ln -sf $MMcross ${MMode}raw.mgz |& tee -a $LF
@@ -372,6 +375,7 @@ if($#MMode) then
   echo $cmd | tee -a $LF
   $cmd |& tee -a $LF
   if($status) goto error_exit;
+  #symlinks review: relative, OK
   ln -sf conf.${MMode}.mgz ${MMode}.mgz
 
   # Now place the pial using the ${MMode}
