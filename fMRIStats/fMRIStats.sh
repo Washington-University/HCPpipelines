@@ -14,21 +14,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 g_matlab_default_mode=1
 
 #this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: computes fMRI statistics including mTSNR, fCNR, and percent BOLD
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied vfalue
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
+opts_SetScriptDescription "computes fMRI statistics including mTSNR, fCNR, and percent BOLD"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" '--path'
