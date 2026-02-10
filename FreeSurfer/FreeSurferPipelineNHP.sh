@@ -816,7 +816,7 @@ if [ "$RunMode" -lt 4 ]; then
 	## or aseg.presurf.edit.mgz was found, the script uses each as wm.mgz, brainmask.mnz, brain.finalsurfs.mgz and aseg.presurf.mgz respectively.
 	## ${PipelineScripts}/IntensityNormalize.sh may be useful for normalizing intensity of white matter or grey matter to create
 	## brain.finalsurfs.edit.mgz,
-	cmd=("$PipelineScripts"/SubcortSegment.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat "$mri_segment_args")
+	cmd=("$PipelineScripts"/SubcortSegment.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat ${mri_segment_args:-${mri_segment_args}})
 	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
 
 	mridir=${SubjectDIR}/${SubjectID}/mri
