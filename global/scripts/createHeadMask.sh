@@ -18,10 +18,10 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 opts_SetScriptDescription "Create head mask from T1w and T2w images, and brain mask"
 
 ## Define arguments
-opts_AddMandatory '--t1w' 'T1wImage' 'path' "full path to T1w image (default filename: T1w_acpc_dc_restore.nii.gz)"
-opts_AddMandatory '--t2w' 'T2wImage' 'path' "full path to T2w image (default filename: T2w_acpc_dc_restore.nii.gz)"
-opts_AddMandatory '--brain-mask' 'BrainMaskFile' 'path' "full path to brain mask file (default filename: brainmask_fs.nii.gz)"
-opts_AddMandatory '--output-filename' 'OutputFile' 'path' "full path to output head mask file (default filename: Head.nii.gz)"
+opts_AddMandatory '--t1w' 'T1wImage' 'path' "full path to T1w image (e.g., <subjDir>/T1w/T1w_acpc_dc_restore.nii.gz)"
+opts_AddMandatory '--t2w' 'T2wImage' 'path' "full path to T2w image (e.g., <subjDir>/T2w/T2w_acpc_dc_restore.nii.gz)"
+opts_AddMandatory '--brain-mask' 'BrainMaskFile' 'path' "full path to brain mask file (e.g., <subjDir>/T1w/brainmask_fs.nii.gz)"
+opts_AddMandatory '--output-filename' 'OutputFile' 'path' "full path to output head mask file (e.g., <subjDir>/T1w/Head.nii.gz)"
 
 opts_ParseArguments "$@"
 
