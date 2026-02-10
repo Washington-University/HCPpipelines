@@ -572,7 +572,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
                     
                     if [ "$SPECIES" != "Human" ] ; then
-                        if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+                        if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
                             log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
                             ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation.sh --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
                             ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
