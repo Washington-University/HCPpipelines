@@ -829,7 +829,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
         cp ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/SBRef_dc -r ${T1wImage} --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat --postmat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
 
-        if [[ $UseJacobian == "true" ]] ; then
+        if ((UseJacobian)) ; then
             log_Msg "apply Jacobian correction to scout image"
             if [[ "$UseBiasField" != "" ]]; then
                 ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -div ${UseBiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
