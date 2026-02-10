@@ -1,108 +1,64 @@
 #!/bin/bash
-function createHeadMask() {
-    # createHeadMask - Create head mask from T1w and T2w images
-    #
-    # Usage: createHeadMask --study-folder=<path> --subject=<subj> [--t1w=<filename>] [--t2w=<filename>] [--brain-mask=<filename>] [--output-filename=<filename>]
-    #
-    # Required arguments:
-    #   --study-folder=<path>    Path to study folder
-    #   --subject=<subj>         Subject ID
-    #
-    # Optional arguments:
-    # (All of these files are expected to be in the subject's /T1w folder))
-    #   --t1w=<filename>         T1w image filename (default: T1w_acpc_dc_restore.nii.gz)
-    #   --t2w=<filename>         T2w image filename (default: T2w_acpc_dc_restore.nii.gz)
-    #   --brain-mask=<filename>  Brain mask filename (default: brainmask_fs.nii.gz)
-    #   --output-filename=<filename> Output head mask filename (default: Head.nii.gz)
-    #
-    # Output:
-    #   Head mask file in the subject's T1w folder
-    
-    local StudyFolder=""
-    local Subj=""
-    local T1w="T1w_acpc_dc_restore.nii.gz"
-    local T2w="T2w_acpc_dc_restore.nii.gz"
-    local brainMask="brainmask_fs.nii.gz"
-    local outputFilename="Head.nii.gz"
-    
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --study-folder=*)
-                StudyFolder="${1#*=}"
-                ;;
-            --subject=*)
-                Subj="${1#*=}"
-                ;;
-            --t1w=*)
-                T1w="${1#*=}"
-                ;;
-            --t2w=*)
-                T2w="${1#*=}"
-                ;;
-            --brain-mask=*)
-                brainMask="${1#*=}"
-                ;;
-            --output-filename=*)
-                outputFilename="${1#*=}"
-                ;;
-            *)
-                echo "ERROR: Unrecognized option: $1" >&2
-                return 1
-                ;;
-        esac
-        shift
-    done
-    
-    # Validate required arguments
-    if [[ -z "$StudyFolder" ]]; then
-        echo "ERROR: --study-folder is required" >&2
-        return 1
-    fi
-    
-    if [[ -z "$Subj" ]]; then
-        echo "ERROR: --subject is required" >&2
-        return 1
-    fi
-    
-    if [[ ! -d "$StudyFolder" ]]; then
-        echo "ERROR: StudyFolder does not exist: $StudyFolder" >&2
-        return 1
-    fi
-    
-    # Set input and output paths
-    local T1wFolder="${StudyFolder}/${Subj}/T1w"
-    local headMask="${T1wFolder}/${outputFilename}"
-    
-    # Validate input files exist
-    if [[ ! -f "${T1wFolder}/${T1w}" ]]; then
-        echo "ERROR: T1w image not found: ${T1wFolder}/${T1w}" >&2
-        return 1
-    fi
-    
-    if [[ ! -f "${T1wFolder}/${T2w}" ]]; then
-        echo "ERROR: T2w image not found: ${T1wFolder}/${T2w}" >&2
-        return 1
-    fi
-    
-    if [[ ! -f "${T1wFolder}/${brainMask}" ]]; then
-        echo "ERROR: Brain mask not found: ${T1wFolder}/${brainMask}" >&2
-        return 1
-    fi
-    
-    # Prepare temp files
-    source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
-    tempfiles_create HeadSize_bottomslice_XXXXXX.nii.gz botslicetemp
-    tempfiles_create HeadSize_Head_XXXXXX.nii.gz headtemp
-    
-    # Main Processing
-    # taken from https://github.com/Washington-University/HCPpipelines/blob/39b9e03c90b80cdc22c81342defe5db7b674a642/TransmitBias/scripts/CreateTransmitBiasROIs.sh#L49C1-L54C71 
-    fslmaths "${T1wFolder}/${T1w}" -mul "${T1wFolder}/${T2w}" -sqrt "$headtemp"
-    brainmean=$(fslstats "$headtemp" -k "${T1wFolder}/${brainMask}" -M | tr -d ' ')
-    fslmaths "$headtemp" -div "$brainmean" -thr 0.25 -bin -dilD -dilD -dilD -dilD -ero -ero -ero "$headtemp"
-    fslmaths "$headtemp" -mul 0 -add 1 -roi 0 -1 0 -1 0 1 0 1 "$botslicetemp"
-    fslmaths "$headtemp" -add "$botslicetemp" -bin -fillh -ero "$headtemp"
-    wb_command -volume-remove-islands "$headtemp" "$headMask"
-    
-    echo "Head mask created: $headMask"
-}
+set -eu
+
+## Guess HCPPIPEDIR if not set
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
+fi
+
+## Source libraries
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+
+## Description of this script to use in usage
+opts_SetScriptDescription "Create head mask from T1w and T2w images, and brain mask"
+
+## Define arguments
+opts_AddMandatory '--t1w' 'T1wImage' 'path' "full path to T1w image (default filename: T1w_acpc_dc_restore.nii.gz)"
+opts_AddMandatory '--t2w' 'T2wImage' 'path' "full path to T2w image (default filename: T2w_acpc_dc_restore.nii.gz)"
+opts_AddMandatory '--brain-mask' 'BrainMaskFile' 'path' "full path to brain mask file (default filename: brainmask_fs.nii.gz)"
+opts_AddMandatory '--output-filename' 'OutputFile' 'path' "full path to output head mask file (default filename: Head.nii.gz)"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+## Display the parsed/default values
+opts_ShowValues
+
+## Validate that input files exist and that output directory exists and is writable
+if [[ ! -f "$T1wImage" ]]; then
+    log_Err_Abort "T1w image not found: $T1wImage"
+fi
+if [[ ! -f "$T2wImage" ]]; then
+    log_Err_Abort "T2w image not found: $T2wImage"
+fi
+if [[ ! -f "$BrainMaskFile" ]]; then
+    log_Err_Abort "Brain mask not found: $BrainMaskFile"
+fi
+outDir="$(dirname "$OutputFile")"
+if [[ ! -d "$outDir" || ! -w "$outDir" ]]; then
+    log_Err_Abort "Output directory does not exist or is not writable: $outDir"
+fi
+
+## Prepare temp files
+tempfiles_create HeadSize_bottomslice_XXXXXX.nii.gz botslicetemp
+tempfiles_create HeadSize_Head_XXXXXX.nii.gz headtemp
+
+## Main processing
+#taken from https://github.com/Washington-University/HCPpipelines/blob/39b9e03c90b80cdc22c81342defe5db7b674a642/TransmitBias/scripts/CreateTransmitBiasROIs.sh#L49C1-L54C71 
+fslmaths "$T1wImage" -mul "$T2wImage" -sqrt "$headtemp"
+brainmean=$(fslstats "$headtemp" -k "$BrainMaskFile" -M | tr -d ' ')
+fslmaths "$headtemp" -div "$brainmean" -thr 0.25 -bin -dilD -dilD -dilD -dilD -ero -ero -ero "$headtemp"
+fslmaths "$headtemp" -mul 0 -add 1 -roi 0 -1 0 -1 0 1 0 1 "$botslicetemp"
+fslmaths "$headtemp" -add "$botslicetemp" -bin -fillh -ero "$headtemp"
+wb_command -volume-remove-islands "$headtemp" "$OutputFile"
+
+log_Msg "Head mask created: $OutputFile"
