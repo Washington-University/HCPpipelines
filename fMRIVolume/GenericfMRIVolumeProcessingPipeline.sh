@@ -872,10 +872,11 @@ if [[ $SPECIES != "Human" ]] ; then
         else
             initmat=""
         fi
-        ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$ScoutName"_gdc.nii.gz --out="$fMRIFolder"/"$ScoutName"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE $initmat
-        ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz --out="$fMRIFolder"/"$NameOffMRI"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE $initmat
+        #NOTE: don't quote ${initmat}, we don't want to pass an empty string
+        "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$ScoutName"_gdc.nii.gz --out="$fMRIFolder"/"$ScoutName"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
+        "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz --out="$fMRIFolder"/"$NameOffMRI"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
         for vol in "$NameOffMRI"_gdc_warp_jacobian.nii.gz "$ScoutName"_gdc_warp_jacobian.nii.gz ; do
-            ${GlobalScripts}/CorrectVolumeOrientation --in="$fMRIFolder"/"$vol" --out="$fMRIFolder"/"$vol" --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" $initmat
+            "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$vol" --out="$fMRIFolder"/"$vol" --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" ${initmat}
         done
         convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
         convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
