@@ -237,7 +237,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
         fi
         log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
         for vol in PhaseOne PhaseTwo PhaseOne_gdc PhaseTwo_gdc PhaseOne_gdc_warp PhaseTwo_gdc_warp $Phase2ndSet; do
-            ${GlobalScripts}/CorrectVolumeOrientation --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition $initmat
+            ${GlobalScripts}/CorrectVolumeOrientation.sh --in=${WD}/${vol}.nii.gz --out=${WD}/${vol} --tposition=$TruePatientPosition --sposition=$ScannerPatientPosition $initmat
         done
 
     else
