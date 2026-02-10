@@ -150,7 +150,7 @@ main() {
     #   - tICAcomponentTCS: @ delimited list one path per subject
     #   - tICAcomponentNoise: single group file 
     # These files path are not automatically constructed because their names and locations are not necessarily programmatically derivable 
-    tICAcomponentTCS="${StudyFolder}/100307/MNINonLinear/fsaverage_LR32k/100307.tfMRI_Concat_d72_WF6_S1200_MSMAll3T475T_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited or file)
+    tICAcomponentTCS="${StudyFolder}/100307/MNINonLinear/fsaverage_LR32k/100307.tfMRI_Concat_d72_WF6_S1200_MSMAll3T475T_WR_tICA_MSMAll_ts.32k_fs_LR.sdseries.nii" # path to tICA timecourse CIFTI (@ delimited)
     tICAcomponentNoise="${StudyFolder}/S1200_MSMAll3T1071/MNINonLinear/Results/tfMRI_Concat/Pre_tICA/tICA_d72/Noise.txt" # path to tICA component noise indices text file (same for all subjects)
 
     # end of general inputs
