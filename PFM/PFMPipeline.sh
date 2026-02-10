@@ -56,8 +56,6 @@ opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initiali
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
 
 #RSN regression specific parameters
-opts_AddOptional '--low-dims' 'LowDims' 'string' "low dimensionalities for RSN regression" '7@8@9@10@11@12@13@14@15@16@17@18@19@20@21'
-opts_AddOptional '--low-dims-template-file' 'LowDimTemplate' 'path' "low dimensionality template name for RSN regression" ''
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBias' 'YES or NO' 'whether the input data used legacy bias correction' 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'float' 'scale factor for RSN regression' '0.01'
 
@@ -254,8 +252,6 @@ do
                     --low-res="$LowResMesh"
                     --proc-string="_$fMRIProcSTRING"
                     --method="dual"
-                    --low-ica-dims="$LowDims"
-                    --low-ica-template-name="$LowDimTemplate"
                     --output-string="$OutputSTRING"
                     --output-spectra="$RunsXNumTimePoints"
                     --volume-template-cifti="$VolumeTemplateFile"
