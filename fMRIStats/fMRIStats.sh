@@ -13,7 +13,6 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 g_matlab_default_mode=1
 
-#this function gets called by opts_ParseArguments when --help is specified
 opts_SetScriptDescription "computes fMRI statistics including mTSNR, fCNR, and percent BOLD"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
