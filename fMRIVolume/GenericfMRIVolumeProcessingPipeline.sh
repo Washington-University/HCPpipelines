@@ -864,7 +864,7 @@ fi # if (( ! IsLongitudinal ))
 
 # Correct orientaion for sphinx-positioned data - current scanner does not allow settings of sphinx position. But this orientation correction should be done AFTER gradient distortion correction.  - TH Oct 2023
 if [[ $SPECIES != "Human" ]] ; then
-    if [[ ("$TruePatientPosition" = "HFSx" || "$TruePatientPosition" = "FFSx" || "$TruePatientPosition" = "HFS" || "$TruePatientPosition" = "FFS" ) && ( "$TruePatientPosition" != "$ScannerPatientPosition") ]] ; then
+    if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
         log_Msg "Reorient $TruePatientPosition data with a scanner patient position of $ScannerPatientPosition"
         if [ ! -z "$InitWorldMat" ] ; then
             log_Msg "Apply init rigid-body transformation to sform"
