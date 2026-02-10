@@ -785,7 +785,6 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
                 vnum=$(${FSLDIR}/bin/zeropad $((VolumeNumber + 1)) 2)
                 PhaseVol=One
             fi
-            #imcp ${WD}/FieldMap/SBRef2Warpfield ${WD}/FieldMap/SBRef2Phase${PhaseVol}_gdc_initI 
             cp ${WD}/FieldMap/SBRef2Warpfield.mat ${WD}/FieldMap/SBRef2Warpfield_initI.mat
             ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileSE}_distorted_siglossweight -dilM ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil
 
