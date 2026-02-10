@@ -891,7 +891,7 @@ if [[ $SPECIES != "Human" ]] ; then
         if [ ! -z "$InitWorldMat" ] ; then
             log_Msg "Apply init rigid-body transformation to sform"
             for vol in "$ScoutName"_gdc  "$NameOffMRI"_gdc "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
-                ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -3 "effective sform" | tail -3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
+                ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
                 echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$fMRIFolder"/"$vol"_effectivesform.mat
      	        convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
 	            ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
