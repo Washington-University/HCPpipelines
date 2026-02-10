@@ -34,6 +34,8 @@ opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component
 opts_AddMandatory '--fix-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass'
 opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use for the group output folder'
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60'"
+opts_AddMandatory '--model-dir' 'ModelDir' 'path' "path to finalized_models/ directory"
+
 #TSC: doesn't default to MSMAll because we don't have that default string in the MSMAll pipeline
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 #sICA
@@ -86,7 +88,9 @@ opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA 
 opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the data should use ReCleanSignal.txt for DVARS' 'NO'
 
 #tICA Component Classification
-#not integrated yet
+opts_AddOptional  '--threshold'         'Threshold'        'float'   "signal classification threshold, default 0.5" '0.5'
+opts_AddOptional  '--python-executable' 'PythonExec'       'path'    "python executable to use, default python3" 'python3'
+
 
 #tICA Cleanup
 opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text file containing the component numbers to be removed by cleanup, separated by spaces, requires either --ica-mode=REUSE_TICA or --starting-step=CleanData"
@@ -691,15 +695,16 @@ do
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
-            #REUSE_TICA mode shouldn't attempt this (or give an error)
             if [[ "$tICAmode" == "USE" ]]
             then
-                #skip to next pipeline stage
                 continue
             fi
-            #don't abort for "not implemented", we still want it to write the config if possible
-            log_Err "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
-            break
+            "$HCPPIPEDIR"/tICA/scripts/ClassifyTICA.sh \
+                --study-folder="$StudyFolder" \
+                --out-group-name="$GroupAverageName" \
+                --fmri-output-name="$OutputfMRIName" \
+                --ica-dim="$tICADim" \
+                --model-dir="$ModelDir"
             ;;
         (CleanData)
             if [[ "$NuisanceListTxt" == "" ]]
