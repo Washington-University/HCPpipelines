@@ -143,7 +143,7 @@ if [[ "$SPECIES" != "Human" ]] ; then
         outputOrig=${WorkingDirectory}/${OutputfMRIBasenameOrig}
         mkdir -p $outputOrig
         pi=$(echo "scale=10; 4*a(1)" | bc -l)
-        for i in `ls ${output}/MAT_????.mat` ; do
+        for i in "$output"/MAT_????.mat ; do
             ii=$(basename $i | sed -e 's/.mat//g')
             convert_xfm -omat ${output}/${ii}_I.mat -concat ${output}/${ii}.mat ${WorkingDirectory}/scale.mat
             convert_xfm -omat ${outputOrig}/${ii}.mat -concat  ${WorkingDirectory}/rescale.mat ${output}/${ii}_I.mat
