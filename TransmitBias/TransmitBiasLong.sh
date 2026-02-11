@@ -43,7 +43,7 @@ opts_AddOptional '--afi-angle' 'AFITargFlipAngle' 'number' "target flip angle of
 opts_AddOptional '--b1tx-phase-divisor' 'B1TxDiv' 'number' "what to divide the phase map by to obtain proportion of intended flip angle, default 800" '800'
 
 #PseudoTransmit-specific. Should be the same as in the corresponding cross-sectional calls.
-opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "fmri runs to use SE/SBRef files from, separated by @"
+opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "fmri runs to use SE/SBRef files from, separated by @. For per-session lists, separate session-specific sets using % (e.g., run1@run2%run2%run1@run3)."
 opts_AddOptional '--pt-bbr-threshold' 'ptbbrthresh' 'number' "mincost threshold for reinitializing fMRI bbregister with flirt (may need to be increased for aging-related reduction of gray/white contrast), default 0.5" '0.5'
 opts_AddOptional '--myelin-template' 'ReferenceTemplate' 'file' "expected transmit-corrected group-average myelin pattern (for testing correction parameters)"
 opts_AddOptional '--group-uncorrected-myelin' 'GroupUncorrectedMyelin' 'file' "the group-average uncorrected myelin file (to set the appropriate scaling of the myelin template)"
@@ -102,8 +102,27 @@ opts_ShowValues
 
 IFS=@ read -r -a Sessions <<< "${SessionList}"
 
+# Handle per-session fMRI name sets.
+# Default behavior: a single set applies to all sessions.
+# New behavior: multiple per-session sets separated by |, with one set per session.
+fMRINamesPerSession=()
+if [[ "${fMRINames:-}" == *"%"* ]]; then
+    IFS='%' read -r -a fMRINamesPerSession <<< "${fMRINames}"
+    if ((${#fMRINamesPerSession[@]} != ${#Sessions[@]})); then
+        log_Err_Abort "--pt-fmri-names contains ${#fMRINamesPerSession[@]} per-session set(s), but --sessions contains ${#Sessions[@]} session(s). When using %, provide exactly one set per session in the same order as --sessions."
+    fi
+fi
+
 #Run Transmit Bias for all sessions, wait for them to finish.
-for Session in "${Sessions[@]}"; do
+for i in "${!Sessions[@]}"; do
+    Session="${Sessions[$i]}"
+    SessionfMRINames="${fMRINames}"
+    if ((${#fMRINamesPerSession[@]})); then
+        SessionfMRINames="${fMRINamesPerSession[$i]}"
+    fi
+    if [[ "$mode" == "PseudoTransmit" ]]; then
+        log_Msg "TransmitBiasLong: session '$Session' using --pt-fmri-names='$SessionfMRINames'"
+    fi
     cmd=("$HCPPIPEDIR"/TransmitBias/RunIndividualOnly.sh    \
         --study-folder="$StudyFolder"                       \
         --session="$Session"                                \
@@ -114,7 +133,7 @@ for Session in "${Sessions[@]}"; do
         --afi-tr-two="$AFITRtwo"                            \
         --afi-angle="$AFITargFlipAngle"                     \
         --b1tx-phase-divisor="$B1TxDiv"                     \
-        --pt-fmri-names="$fMRINames"                        \
+        --pt-fmri-names="$SessionfMRINames"                 \
         --pt-bbr-threshold="$ptbbrthresh"                   \
         --myelin-template="$ReferenceTemplate"              \
         --group-uncorrected-myelin="$GroupUncorrectedMyelin" \
