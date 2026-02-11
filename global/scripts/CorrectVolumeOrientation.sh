@@ -31,7 +31,7 @@ Example protocols and usages:
 Ex) #1. the simplest usage is when an MRI volume (MRI.nii.gz) is scanned in the 
 true position of HFSx but the scanner's Patient Position is set to HFP.
 
-$ CorrectVolumeOrientation --in=MRI.nii.gz --tposition=HFSx --sposition=HFP 
+$ CorrectVolumeOrientation.sh --in=MRI.nii.gz --tposition=HFSx --sposition=HFP 
   --out=MRI2reorient.nii.gz
 
 Ex) #2. structural MRI scanned in true position of HFS on day1 (T1w_d1_HFS) and 
@@ -44,9 +44,9 @@ and initialized for head position using fast T1w scanned on day2. In this case,
 the option --ref is useful to 'fake' the output volume as if it were scanned on 
 the same position as in day1.
 
-$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
+$ CorrectVolumeOrientation.sh --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
   --sposition=HFP --ref=T1w_d1_HFS.nii.gz --out=T1w_d2_reorient.nii.gz
-$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
+$ CorrectVolumeOrientation.sh --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
   --sposition=HFP --init=T1w_d2_reorient2ref.world.mat 
   --out=fMRI_d2_reorient2ref.nii.gz
 
@@ -59,11 +59,11 @@ to HFP. In this case, the structural MRI scan in day1 must be corrected for the
 head orientation first, then the structural and functional MRI in day2 are 
 treated as in #1.
 
-$ CorrectVolumeOrientation --in=T1w_d1_HFSx.nii.gz --tposition=HFSx 
+$ CorrectVolumeOrientation.sh --in=T1w_d1_HFSx.nii.gz --tposition=HFSx 
   --sposition=HFP --out=T1w_d1_reorient.nii.gz
-$ CorrectVolumeOrientation --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
+$ CorrectVolumeOrientation.sh --in=T1w_d2_HFSx.nii.gz --tposition=HFSx 
   --sposition=HFP --ref=T1w_d1_reorient.nii.gz --out=T1w_d2_reorient.nii.gz
-$ CorrectVolumeOrientation --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
+$ CorrectVolumeOrientation.sh --in=fMRI_d2_HFSx.nii.gz --tposition=HFSx 
   --sposition=HFP --init=T1w_d2_reorient2ref.world.mat 
   --out=fMRI_d2_reorient2ref.nii.gz
 
