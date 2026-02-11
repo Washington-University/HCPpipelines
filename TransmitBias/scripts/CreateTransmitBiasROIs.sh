@@ -43,15 +43,13 @@ else
     flirt -in "$T1wFolder"/T1w_acpc_dc_restore.nii.gz -ref "$T1wFolder"/T1w_acpc_dc_restore.nii.gz -applyisoxfm "$transmitRes" -out "$T1wFolder"/T1w_acpc_dc_restore."$transmitRes".nii.gz -interp spline -noresampblur
 fi
 
-#Compute Head Size
-tempfiles_create TransmitBias_bottomslice_XXXXXX.nii.gz botslicetemp
-tempfiles_create TransmitBias_Head_XXXXXX.nii.gz headtemp
-fslmaths "$T1wFolder"/T1w_acpc_dc_restore.nii.gz -mul "$T1wFolder"/T2w_acpc_dc_restore.nii.gz -sqrt "$headtemp"
-brainmean=$(fslstats "$headtemp" -k "$T1wFolder"/brainmask_fs.nii.gz -M | tr -d ' ')
-fslmaths "$headtemp" -div "$brainmean" -thr 0.25 -bin -dilD -dilD -dilD -dilD -ero -ero -ero "$headtemp"
-fslmaths "$headtemp" -mul 0 -add 1 -roi 0 -1 0 -1 0 1 0 1 "$botslicetemp"
-fslmaths "$headtemp" -add "$botslicetemp" -bin -fillh -ero "$headtemp"
-wb_command -volume-remove-islands "$headtemp" "$T1wFolder"/Head.nii.gz
+#Create Head Mask
+createHeadMask \
+    --t1w="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
+    --t2w="$T1wFolder"/T2w_acpc_dc_restore.nii.gz \
+    --brain-mask="$T1wFolder"/brainmask_fs.nii.gz \
+    --output-filename="$T1wFolder"/Head.nii.gz
+
 
 #ROI Operations
 applywarp --interp=nn -i "$T1wFolder"/Head.nii.gz -r "$T1wFolder"/T1w_acpc_dc_restore."$transmitRes".nii.gz -o "$T1wFolder"/Head."$transmitRes".nii.gz
