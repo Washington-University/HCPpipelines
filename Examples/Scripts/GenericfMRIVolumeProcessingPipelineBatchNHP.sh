@@ -1,348 +1,479 @@
-#!/bin/bash 
+#!/bin/bash
 
-Usage () {
-echo ""
-echo "Usage $0 <StudyFolder> <Subject ID> [options]"
-echo ""
-echo "   Options:"
-echo "       -m <num> :           : BBR (0: no-BBR, 1: T1w-based (e.g. MION fMRI), 2: T2w-based [default])"
-echo "       -S <num>             : specify Nth session (applying to RunMode 1-3) You need all sets of variables in hcppipe_conf.txt"
-echo "                              (i.e., Tasklist, Taskreflist, TopupPositive, TopupNegative, PhaseEncodingList,"
-echo "                              and DwellTime, TruePatientPosition [HFS, HFSx, FFSx], ScannerPatientPosition "
-echo "                              [HFS, HFP, FFS, FFP])"
-echo "       -f <fmriname>        : specify fmriname"
-echo "       -b <num>             : bias field correction (0: NONE [default], 1: T1w-based, 2: SE-EPI-based)"
-echo "       -R <MCFLIRT | FLIRT> : Motion correction type (defulat=MCFLIRT)"
-echo "       -s <1-3>             : RunMode:" 
-echo "                              1 : MotionCorrection and subsequent step 2 and 3"
-echo "                              2 : DistortionCorrectionAndEPI2T1wReg and subsequent step 3"
-echo "                              3 : OneStemResampling and IntensityNormalization"
-#echo "                              4 : MotionCorrectXRuns"
-#echo "                              5 : ResampleXRuns"
-echo "       -n                   : do not use Jacobian"
-echo "       -t <TRUE or FALSE>   : use T2w as PhaseZero (default: TRUE), do not use this when you scanned fMRI in the different session of T2w"
-echo "       -d                   : dry run (print commands in the terminal but not run)" 
-echo ""
-exit 1;
+
+get_batch_options() {
+    local arguments=("$@")
+
+    command_line_specified_study_folder=""
+    command_line_specified_subj=""
+    command_line_specified_run_local="FALSE"
+
+    local index=0
+    local numArgs=${#arguments[@]}
+    local argument
+
+    while [ ${index} -lt ${numArgs} ]; do
+        argument=${arguments[index]}
+
+        case ${argument} in
+            --StudyFolder=*)
+                command_line_specified_study_folder=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Subject=*)
+                command_line_specified_subj=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --runlocal)
+                command_line_specified_run_local="TRUE"
+                index=$(( index + 1 ))
+                ;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+                ;;
+        esac
+    done
 }
-[ "$2" = "" ] && Usage
 
-if [ "$SPECIES" = "" ] ; then echo "ERROR: please export SPECIES first to any of Macaque, MacaqueCyno, MacaqueRhesus, Marmoset, NightMonkey, Chimp, Human"; exit 1;fi
-if [ "$HCPPIPEDIR" = "" ] ; then echo "ERROR please export HCPPIPEDIR before running this script"; exit 1; fi
-EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-source ${EnvironmentScript}
-source $HCPPIPEDIR/Examples/Scripts/SetUpSPECIES.sh $SPECIES
-source $HCPPIPEDIR/FreeSurfer/custom/SetUpFSNHP.sh
+get_batch_options "$@"
 
-# WMProjAbs
+########################################## EDIT BELOW ##########################################
 
-StudyFolder=$1;
-Subjlist=$2;
+# Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/NHP_Data"
 
-shift;shift;
-### Optional arguments####
-BBR="T2w";
-Bias="0";
+# Space delimited list of subject IDs
+Subjlist="SubjectA"
+
+# Pipeline environment script
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+
+# Species label (Macaque, MacaqueCyno, MacaqueRhesus, Marmoset, NightMonkey, Chimp, Human)
+SPECIES="Macaque"
+
+# BBR contrast for EPI to T1w registration (NONE, T1w, or T2w)
+#   NONE: no boundary-based registration
+#   T1w:  T1w-based BBR (e.g. for MION fMRI)
+#   T2w:  T2w-based BBR (default)
+BBR="T2w"
+
+# Receive coil bias field correction method (NONE, LEGACY, or SEBASED)
+#   SEBASED calculates bias field from spin echo images (requires TOPUP)
+#   LEGACY uses the T1w bias field
+BiasCorrection="NONE"
+
+# Motion correction type (MCFLIRT or FLIRT)
 MCType="MCFLIRT"
+
+# RunMode: which stages to run
+#   1: MotionCorrection and all subsequent steps (default)
+#   2: DistortionCorrectionAndEPI2T1wReg and subsequent steps
+#   3: OneStepResampling and IntensityNormalization only
 RunMode="1"
+
+# Jacobian correction (True or False)
+# Defaults to True for TOPUP, False for FIELDMAP if not set
+UseJacobian="True"
+
+# Use T2w image as phase-zero reference (TRUE or FALSE)
+# Set to FALSE when fMRI was scanned in a different session from T2w
 UseT2wAsPhaseZero="TRUE"
+
+# Dry run mode (TRUE or FALSE)
+# When TRUE, prints pipeline commands without executing them
 DryRun="FALSE"
 
-while getopts m:f:b:R:s:nS:t:d OPT
- do
- case "$OPT" in 
-   "m" ) moveto="$OPTARG";;
-   "f" ) fmriname="`remove_ext $OPTARG`";;
-   "b" ) Bias="$OPTARG";;
-   "R" ) MCType="$OPTARG";;
-   "s" ) RunMode="$OPTARG" ;;
-   "S" ) SpecSessionlist="$OPTARG" ;;
-   "n" ) UseJacobian="false" ;;
-   "t" ) UseT2wAsPhaseZero="$OPTARG";;
-   "d" ) DryRun="TRUE";;
-    * )  usage_exit;;
- esac
-done;
+# Session filter: leave empty to process all sessions
+# Set to specific session number(s), e.g., "1" or "1 3"
+SpecSessionlist=""
 
-if [ "$moveto" = "0" ] ; then
-	BBR="NONE"
-elif [ "$moveto" = "1" ] ; then
-	BBR="T1w"
-elif [ "$moveto" = "2" ] ; then
-	BBR="T2w"
+# fMRI name filter: leave empty to process all fMRI runs in each session
+# Set to a specific fMRI name (without extension) to process only that run
+fmriname=""
+
+# Species-specific variables
+# These are set by SetUpSPECIES.sh (sourced after EnvironmentScript).
+# Override here only if you need non-default values for your dataset.
+# Example values for Macaque:
+#   FinalFMRIResolution="1.25"
+#   TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+#   WMProjAbs="1"
+#   BrainScaleFactor="0.36"
+#   betspecieslabel="1"
+
+########################################## END EDIT ##########################################
+
+# Use any command line specified options to override variable settings above
+if [ -n "${command_line_specified_study_folder}" ]; then
+    StudyFolder="${command_line_specified_study_folder}"
 fi
 
-if [ "$Bias" = 0 ] ; then
-    	BiasCorrection="NONE" #NONE, LEGACY, or SEBASED: LEGACY uses the T1w bias field, SEBASED calculates bias field from spin echo images (which requires TOPUP distortion correction)
-elif [ "$Bias" = 1 ] ; then
-    	BiasCorrection="LEGACY"
-elif [ "$Bias" = 2 ] ; then
-    	BiasCorrection="SEBASED"
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
 fi
-##############################
 
-PRINTCOM=""
-#PRINTCOM="echo"
-#QUEUE="-T 360"
-unset Tasklist
-unset Gradient
+# Report major script control variables
+echo "StudyFolder: ${StudyFolder}"
+echo "Subjlist: ${Subjlist}"
+echo "EnvironmentScript: ${EnvironmentScript}"
+echo "SPECIES: ${SPECIES}"
+echo "Run locally: ${command_line_specified_run_local}"
 
-for Subject in $(echo $Subjlist | sed -e 's/@/ /g'); do   # loop for subjects
-  if [ "$Tasklist" = "" ] ; then 
-   if [ -e ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt ] ; then
-    source ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt
+# Set up pipeline environment variables and software
+source "$EnvironmentScript"
 
-   else
-    echo "Cannot find hcppipe_conf.txt in ${Subject}/RawData";
-    echo "Exiting without processing.";
-    exit 1;
-   fi
-  fi
+# Set up species-specific environment variables
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES"
+source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh
 
- OrigTasklist=$(echo $Tasklist | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTaskreflist=$(echo $Taskreflist | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTopupPositive=$(echo $TopupPositive | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTopupNegative=$(echo $TopupNegative | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigPhaseEncodinglist=$(echo $PhaseEncodinglist | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigFmriconcatlist=$(echo $Fmriconcatlist | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigDwellTime=$(echo $DwellTime | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigInitWorldMat=$(echo $InitWorldMat | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigScannerPatientPosition=$(echo $ScannerPatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTruePatientPosition=$(echo $TruePatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTopupPositive2=$(echo $TopupPositive2 | sed -e 's/^@//g' | sed -e 's/@$//g')
- OrigTopupNegative2=$(echo $TopupNegative2 | sed -e 's/^@//g' | sed -e 's/@$//g')
- AllfMRINames=$(echo $(echo $OrigTasklist | sed -e 's/@/ /g') | sed -e 's/ /@/g') # fMRINames separated by @
+# The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
+#
+#BrainScaleFactor="1"        # Brain scale factor relative to human (e.g. 0.36 for macaque)
+#CorticalScaleFactor="1"     # Cortical scale factor
+#
+#### fMRIVolume-relevant variables
+#FinalFMRIResolution="2"     # Target final resolution of fMRI data in mm
+#TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"  # Config for topup or "NONE" if not used
+#WMProjAbs="2"               # FreeSurfer wm-proj-abs value
+#betspecieslabel="1"          # Species label for bet4animal (0=smallest, 4=largest brain)
+#betfraction="0.3"            # Fractional intensity threshold for bet
+#
+#### PreFreeSurfer-relevant variables (not used in fMRIVolume)
+#BrainSize="150"              # BrainSize in mm, distance between top of FOV and bottom of brain
+#betcenter="45,55,39"         # Comma separated voxel coordinates in T1wTemplate2mm
+#betradius="75"               # Brain radius for bet
+#betbiasfieldcor="FALSE"      # Whether to correct bias field for BET
+#bettop2center="86"           # Distance between top of FOV and center of brain
+#BiasFieldSmoothingSigma="5.0"
+#FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf"
+#T1wTemplate, T1wTemplateBrain, T1wTemplate2mm, T2wTemplate, etc.
+#
+# If you want to override SetUpSPECIES.sh values, uncomment and edit the
+# relevant lines above after the source command.
 
- if [ ! -z $SpecSessionlist ] ; then
-	Sessionlist=$(echo $SpecSessionlist | sed -e 's/,/ /g')
- else
-	nsession=$(echo $OrigTasklist | awk -F"@" '{print NF}')
-	Sessionlist=$(seq 1 $nsession);
- fi
+# Export species-specific environment variables used by subscripts
+export betspecieslabel
 
- for session in $Sessionlist ; do   # loop for sessions
+# Log the originating call
+echo "$@"
 
-  SessionTasklist=$(echo $OrigTasklist | cut -d '@' -f ${session})
-  SessionTaskreflist=$(echo $OrigTaskreflist | cut -d '@' -f ${session})
-  SessionTopupPositive=$(echo $OrigTopupPositive | cut -d '@' -f ${session})
-  SessionTopupNegative=$(echo $OrigTopupNegative | cut -d '@' -f ${session})
-  PhaseEncodinglist=$(echo $OrigPhaseEncodinglist | cut -d '@' -f ${session})
-  fmriconcat=$(echo $OrigFmriconcatlist | cut -d '@' -f ${session} | sed -e 's/ //g')
-  DwellTime=$(echo $OrigDwellTime | cut -d '@' -f ${session} | sed -e 's/ //g')
-  ScannerPatientPosition=$(echo $OrigScannerPatientPosition | cut -d '@' -f ${session} | sed -e 's/ //g')
-  TruePatientPosition=$(echo $OrigTruePatientPosition | cut -d '@' -f ${session} | sed -e 's/ //g')
-  SessionTopupPositive2=$(echo $OrigTopupPositive2 | cut -d '@' -f ${session})
-  SessionTopupNegative2=$(echo $OrigTopupNegative2 | cut -d '@' -f ${session})
+#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+#DO NOT include "-q " at the beginning
+#default to no queue, implying run local
+QUEUE=""
+#QUEUE="hcp_priority.q"
 
-  if [ ! -z "$OrigInitWorldMat" ] ; then
-    InitWorldMat=${StudyFolder}/${Subject}/RawData/$(echo $OrigInitWorldMat | cut -d '@' -f ${session} | sed -e 's/ //g')
-    if [ ! -e $InitWorldMat ] ; then
-         echo "ERROR: cannot find $InitWorldMat"
-         exit 1;
-    fi
-  fi
-  if [ -z "$TruePatientPosition" ] ; then
-        TruePatientPosition=HFS
-  fi
-  if [ -z "$ScannerPatientPosition" ] ; then
-        ScannerPatientPosition=HFS
-  fi
+if [[ -n $HCPPIPEDEBUG ]]
+then
+    set -x
+fi
 
-  nSessionTasklist=$(echo $SessionTasklist | wc -w)
-  fmrinumlist=""
-  if [ -n "$fmriname"  ] ; then
-    j=1; 
-    for i in $SessionTasklist; do 
-      if [[ "$(remove_ext $i)" = "$fmriname" ]] ; then 
-        fmrinumlist="$j" ;
-      fi;
-      j=`expr $j + 1`;
-    done
-  else
-    fmrinumlist=$(seq 1 $nSessionTasklist)
-  fi
+########################################## INPUTS ##########################################
 
-  for fmrinum in $fmrinumlist ; do
-    fMRINameOrig=$(echo $SessionTasklist | cut -d " " -f $fmrinum)
-    UnwarpDir=$(echo $PhaseEncodinglist | cut -d " " -f $fmrinum)
-    fMRIName=$(basename $(remove_ext $fMRINameOrig))
+# NHP data layout:
+#
+#   ${StudyFolder}/${Subject}/RawData/<fMRIName>.nii.gz
+#   ${StudyFolder}/${Subject}/RawData/<SBRefName>.nii.gz
+#   ${StudyFolder}/${Subject}/RawData/<TopupPositive>.nii.gz
+#   ${StudyFolder}/${Subject}/RawData/<TopupNegative>.nii.gz
+#   ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt
+#
+# The hcppipe_conf.txt file defines per-session task lists, fieldmap files,
+# encoding directions, dwell times, patient positions, etc.
+# Sessions are separated by @ delimiters within each variable.
 
-    #echo "Removing initial 10 volumes from fMRI time series data"
-    #${HCPPIPEDIR}/global/scripts/removeinitvolumes.sh ${StudyFolder}/${Subject}/RawData/${fMRIName} 10
-    fMRITimeSeries=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$fMRIName)
-    fMRISBRef=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTaskreflist | cut -d " " -f $fmrinum)) #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
+######################################### DO WORK ##########################################
 
-    if [[ $fMRITimeSeries = "" || $fMRISBRef = "" ]] ; then
-      	echo " ERROR: cannot find fmri runs"; exit 1;
-    fi
-    ###Previous data was processed with 2x the correct echo spacing because ipat was not accounted for###
-    #DwellTime="0.00115" #Echo Spacing or Dwelltime of fMRI image = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples) 
-    if [[ -n $SessionTopupPositive  && -n $SessionTopupNegative ]] ; then
-	   DistortionCorrection="TOPUP" #FIELDMAP or TOPUP, distortion correction is required for accurate processing
-	   #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data),
-	   #set to NONE if using regular FIELDMAP
+SCRIPT_NAME=$(basename "$0")
+echo "$SCRIPT_NAME"
 
-      if [ -n $(echo $SessionTopupNegative | cut -d " " -f $fmrinum) ] ; then
-    		SpinEchoPhaseEncodeNegative=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative | cut -d " " -f $fmrinum))
-	   else
-    		SpinEchoPhaseEncodeNegative=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative | cut -d " " -f 1))
-	   fi
-	   #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data),
-	   #set to NONE if using regular FIELDMAP
-	   if [ -n $(echo $SessionTopupPositive | cut -d " " -f $fmrinum) ] ; then
-    		SpinEchoPhaseEncodePositive=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive | cut -d " " -f $fmrinum))
-	   else
-    		SpinEchoPhaseEncodePositive=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive | cut -d " " -f 1))
-	   fi
-	   PhaseInputName="NONE" #Expects a 3D Phase volume, set to NONE if using TOPUP
-	   MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D timepoints, set to NONE if using TOPUP
+for Subject in $Subjlist ; do
+    echo "${SCRIPT_NAME}: Processing Subject: ${Subject}"
 
-      # Jacobian
-      UseJacobian="${UseJacobian:-True}"
-
-      # second SEPhase
-      if [[ -n $SessionTopupPositive2 && -n $SessionTopupNegative2 ]] ; then
-		  if [ -n $(echo $SessionTopupNegative2 | cut -d " " -f $fmrinum) ] ; then
-	    		SpinEchoPhaseEncodeNegative2=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative2 | cut -d " " -f $fmrinum))
-		  else
-	    		SpinEchoPhaseEncodeNegative2=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative2 | cut -d " " -f 1))
-		  fi
-		  if [ -n $(echo $SessionTopupPositive2 | cut -d " " -f $fmrinum) ] ; then
-	    		SpinEchoPhaseEncodePositive2=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive2 | cut -d " " -f $fmrinum))
-		  else
-	    		SpinEchoPhaseEncodePositive2=$(imglob -extension ${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive2 | cut -d " " -f 1))
-		  fi
-	   else
-		  SpinEchoPhaseEncodeNegative2=NONE
-		  SpinEchoPhaseEncodePositive2=NONE
-      fi
-
-      # use T2w as a phase zero - TH Jan 2023
-      if [[ $(imtest ${StudyFolder}/${Subject}/T2w/T2w) = 1 && $UseT2wAsPhaseZero = TRUE ]] ; then
-         SpinEchoPhaseEncodeZero=${StudyFolder}/${Subject}/T2w/T2w
-	     SpinEchoPhaseEncodeZeroFSBrainmask=${StudyFolder}/${Subject}/T2w/T2w_brainmask_fs
-	  else
-         SpinEchoPhaseEncodeZero=NONE
-	  fi
-
-
-    elif [[ $MagnitudeInputName != "" && PhaseInputName != "" ]] ; then
-
-       MagnitudeInputNAME="`imglob -extension ${StudyFolder}/${Subject}/RawData/${MagnitudeInputName}`"
-       PhaseInputNAME="`imglob -extension ${StudyFolder}/${Subject}/RawData/${PhaseInputName}`"
-       DistortionCorrection="FIELDMAP"
-       DeltaTE="1.02" #2.46ms for 3T, 1.02ms for 7T, set to NONE if using TOPUP
-       DeltaTE="2.46"
-       UseJacobian="${UseJacobian:-False}"
-
+    # Source per-subject configuration
+    # If hcppipe_conf.txt exists, it will be sourced to set the variables below.
+    # Otherwise, set these variables manually in this section.
+    if [ -e "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt" ] ; then
+        source "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt"
     else
-       echo "ERROR: no fieldmap data supplied" ;  
-       exit 1
+        echo "${SCRIPT_NAME}: hcppipe_conf.txt not found for ${Subject}, using inline defaults"
+        # Set these variables manually when hcppipe_conf.txt is not available.
+        # Sessions are separated by @ delimiters. Within each session, runs are space-delimited.
+        # Example for a single session with two fMRI runs:
+        #   Tasklist="rest1 task1"
+        #   Taskreflist="rest1_SBRef task1_SBRef"
+        #   TopupPositive="SE_AP SE_AP"
+        #   TopupNegative="SE_PA SE_PA"
+        #   PhaseEncodinglist="y y"
+        #   DwellTime="0.00058"
+        #   TruePatientPosition="HFS"
+        #   ScannerPatientPosition="HFS"
+        # Example for two sessions (separated by @):
+        #   Tasklist="rest1 task1@rest2 task2"
+        Tasklist=""
+        Taskreflist=""
+        TopupPositive=""
+        TopupNegative=""
+        PhaseEncodinglist=""
+        Fmriconcatlist=""
+        DwellTime=""
+        InitWorldMat=""
+        ScannerPatientPosition=""
+        TruePatientPosition=""
+        TopupPositive2=""
+        TopupNegative2=""
+        Gradient=""
+        MagnitudeInputName=""
+        PhaseInputName=""
     fi
 
-    # Gradient unwarping
-    GradientDistortionCoeffs="NONE" #Gradient distortion correction coefficents, set to NONE to turn off
-    if [ "$Gradient" != "" ] ; then
-      GradientDistortionCoeffs="${GradientDistortionCoeffsDIR}/coeff_${Gradient}.grad"
+    # Parse @-delimited session variables from hcppipe_conf.txt
+    OrigTasklist=$(echo $Tasklist | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTaskreflist=$(echo $Taskreflist | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTopupPositive=$(echo $TopupPositive | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTopupNegative=$(echo $TopupNegative | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigPhaseEncodinglist=$(echo $PhaseEncodinglist | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigFmriconcatlist=$(echo $Fmriconcatlist | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigDwellTime=$(echo $DwellTime | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigInitWorldMat=$(echo $InitWorldMat | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigScannerPatientPosition=$(echo $ScannerPatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTruePatientPosition=$(echo $TruePatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTopupPositive2=$(echo $TopupPositive2 | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTopupNegative2=$(echo $TopupNegative2 | sed -e 's/^@//g' | sed -e 's/@$//g')
+
+    # Determine session list
+    if [ -n "$SpecSessionlist" ] ; then
+        Sessionlist="$SpecSessionlist"
+    else
+        nsession=$(echo $OrigTasklist | awk -F"@" '{print NF}')
+        Sessionlist=$(seq 1 $nsession)
     fi
 
-    if [[ "${RunMode}" = 1 || "${RunMode}" = 2 || "${RunMode}" = 3 ]] ; then
+    for session in $Sessionlist ; do
+        echo "  ${SCRIPT_NAME}: Processing Session: ${session}"
 
-     #${FSLDIR}/bin/fsl_sub $QUEUE -l $StudyFolder/$Subject/logs \
-     if [ $DryRun = "FALSE" ] ; then
-     ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
-      --path=$StudyFolder \
-      --subject=$Subject \
-      --fmriname=$fMRIName \
-      --fmritcs=$fMRITimeSeries \
-      --fmriscout=$fMRISBRef \
-      --SEPhaseNeg=$SpinEchoPhaseEncodeNegative \
-      --SEPhasePos=$SpinEchoPhaseEncodePositive \
-      --SEPhaseNeg2=$SpinEchoPhaseEncodeNegative2 \
-      --SEPhasePos2=$SpinEchoPhaseEncodePositive2 \
-      --SEPhaseZero=$SpinEchoPhaseEncodeZero \
-      --SEPhaseZeroFSBrainmask=$SpinEchoPhaseEncodeZeroFSBrainmask \
-      --fmapmag=$MagnitudeInputNAME \
-      --fmapphase=$PhaseInputNAME \
-      --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
-      --echodiff=$DeltaTE \
-      --unwarpdir=$UnwarpDir \
-      --fmrires=$FinalFMRIResolution \
-      --dcmethod=$DistortionCorrection \
-      --gdcoeffs=$GradientDistortionCoeffs \
-      --topupconfig=$TopUpConfig \
-      --printcom=$PRINTCOM \
-      --biascorrection=$BiasCorrection \
-      --usejacobian=$UseJacobian \
-      --mctype=${MCType}      \
-      --bbr=${BBR}      \
-      --wmprojabs=${WMProjAbs}  \
-      --initworldmat=${InitWorldMat} \
-      --scannerpatientposition=${ScannerPatientPosition} \
-      --truepatientposition=${TruePatientPosition} \
-      --species=${SPECIES} \
-      --betspecieslabel=${betspecieslabel} \
-      --brainscalefactor=${BrainScaleFactor} \
-      --runmode=${RunMode}
-      fi
-   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-      if [ $DryRun = FALSE ] ; then
-       CMD="set --"
-      else
-       CMD="${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
-      fi
-       echo "$CMD --path=$StudyFolder \
-      --subject=$Subject \
-      --fmriname=$fMRIName \
-      --fmritcs=$fMRITimeSeries \
-      --fmriscout=$fMRISBRef \
-      --SEPhaseNeg=$SpinEchoPhaseEncodeNegative \
-      --SEPhasePos=$SpinEchoPhaseEncodePositive \
-      --SEPhaseNeg2=$SpinEchoPhaseEncodeNegative2 \
-      --SEPhasePos2=$SpinEchoPhaseEncodePositive2 \
-      --SEPhaseZero=$SpinEchoPhaseEncodeZero \
-      --SEPhaseZeroFSBrainmask=$SpinEchoPhaseEncodeZeroFSBrainmask \
-      --fmapmag=$MagnitudeInputNAME \
-      --fmapphase=$PhaseInputNAME \
-      --fmapgeneralelectric=$GEB0InputName \
-      --echospacing=$DwellTime \
-      --echodiff=$DeltaTE \
-      --unwarpdir=$UnwarpDir \
-      --fmrires=$FinalFMRIResolution \
-      --dcmethod=$DistortionCorrection \
-      --gdcoeffs=$GradientDistortionCoeffs \
-      --topupconfig=$TopUpConfig \
-      --printcom=$PRINTCOM \
-      --biascorrection=$BiasCorrection \
-      --usejacobian=$UseJacobian \
-      --mctype=${MCType} \
-      --bbr=${BBR}   \
-      --wmprojabs=${WMProjAbs}  \
-      --initworldmat=${InitWorldMat} \
-      --scannerpatientposition=${ScannerPatientPosition} \
-      --truepatientposition=${TruePatientPosition} \
-      --species=${SPECIES} \
-      --betspecieslabel=${betspecieslabel} \
-      --brainscalefactor=${BrainScaleFactor} \
-      --runmode=${RunMode}"
+        # Extract session-specific variables
+        SessionTasklist=$(echo $OrigTasklist | cut -d '@' -f ${session})
+        SessionTaskreflist=$(echo $OrigTaskreflist | cut -d '@' -f ${session})
+        SessionTopupPositive=$(echo $OrigTopupPositive | cut -d '@' -f ${session})
+        SessionTopupNegative=$(echo $OrigTopupNegative | cut -d '@' -f ${session})
+        PhaseEncodinglist=$(echo $OrigPhaseEncodinglist | cut -d '@' -f ${session})
+        fmriconcat=$(echo $OrigFmriconcatlist | cut -d '@' -f ${session} | sed -e 's/ //g')
+        DwellTime=$(echo $OrigDwellTime | cut -d '@' -f ${session} | sed -e 's/ //g')
+        ScannerPatientPosition=$(echo $OrigScannerPatientPosition | cut -d '@' -f ${session} | sed -e 's/ //g')
+        TruePatientPosition=$(echo $OrigTruePatientPosition | cut -d '@' -f ${session} | sed -e 's/ //g')
+        SessionTopupPositive2=$(echo $OrigTopupPositive2 | cut -d '@' -f ${session})
+        SessionTopupNegative2=$(echo $OrigTopupNegative2 | cut -d '@' -f ${session})
 
-      if [ $DryRun = FALSE ] ; then
-        echo ". ${EnvironmentScript}"
-      fi
-    fi
-   done
- done 
+        # Validate InitWorldMat if specified
+        if [ -n "$OrigInitWorldMat" ] ; then
+            InitWorldMat="${StudyFolder}/${Subject}/RawData/$(echo $OrigInitWorldMat | cut -d '@' -f ${session} | sed -e 's/ //g')"
+            if [ ! -e "$InitWorldMat" ] ; then
+                echo "ERROR: cannot find $InitWorldMat"
+                exit 1
+            fi
+        fi
 
- if   [[ "${RunMode}" = 4 ]] ; then
+        # Default patient positions to HFS if not specified
+        if [ -z "$TruePatientPosition" ] ; then
+            TruePatientPosition=HFS
+        fi
+        if [ -z "$ScannerPatientPosition" ] ; then
+            ScannerPatientPosition=HFS
+        fi
 
-    ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeMotionCorrectXRunsNHP.sh $StudyFolder $Subject $AllfMRINames -x
+        # Determine fMRI run list
+        nSessionTasklist=$(echo $SessionTasklist | wc -w)
+        fmrinumlist=""
+        if [ -n "$fmriname" ] ; then
+            j=1
+            for i in $SessionTasklist; do
+                if [[ "$(remove_ext $i)" = "$fmriname" ]] ; then
+                    fmrinumlist="$j"
+                fi
+                j=$((j + 1))
+            done
+        else
+            fmrinumlist=$(seq 1 $nSessionTasklist)
+        fi
 
- elif [[ "${RunMode}" = 5 ]] ; then
+        for fmrinum in $fmrinumlist ; do
+            fMRINameOrig=$(echo $SessionTasklist | cut -d " " -f $fmrinum)
+            UnwarpDir=$(echo $PhaseEncodinglist | cut -d " " -f $fmrinum)
+            fMRIName=$(basename $(remove_ext $fMRINameOrig))
 
-    ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeMotionCorrectXRunsNHP.sh $StudyFolder $Subject $AllfMRINames -r ${BBR} 
+            echo "    ${SCRIPT_NAME}: Processing fMRI: ${fMRIName}"
 
- fi
+            fMRITimeSeries=$(imglob -extension "${StudyFolder}/${Subject}/RawData/${fMRIName}")
+            fMRISBRef=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTaskreflist | cut -d " " -f $fmrinum)")
+
+            if [[ "$fMRITimeSeries" = "" || "$fMRISBRef" = "" ]] ; then
+                echo "ERROR: cannot find fMRI runs for ${fMRIName}"
+                exit 1
+            fi
+
+            # Distortion correction setup
+            if [[ -n $SessionTopupPositive && -n $SessionTopupNegative ]] ; then
+                DistortionCorrection="TOPUP"
+
+                if [ -n "$(echo $SessionTopupNegative | cut -d " " -f $fmrinum)" ] ; then
+                    SpinEchoPhaseEncodeNegative=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative | cut -d " " -f $fmrinum)")
+                else
+                    SpinEchoPhaseEncodeNegative=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative | cut -d " " -f 1)")
+                fi
+
+                if [ -n "$(echo $SessionTopupPositive | cut -d " " -f $fmrinum)" ] ; then
+                    SpinEchoPhaseEncodePositive=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive | cut -d " " -f $fmrinum)")
+                else
+                    SpinEchoPhaseEncodePositive=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive | cut -d " " -f 1)")
+                fi
+
+                PhaseInputName="NONE"
+                MagnitudeInputName="NONE"
+                GEB0InputName="NONE"
+                DeltaTE="NONE"
+                UseJacobian="${UseJacobian:-True}"
+
+                # Second SE Phase (optional)
+                if [[ -n $SessionTopupPositive2 && -n $SessionTopupNegative2 ]] ; then
+                    if [ -n "$(echo $SessionTopupNegative2 | cut -d " " -f $fmrinum)" ] ; then
+                        SpinEchoPhaseEncodeNegative2=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative2 | cut -d " " -f $fmrinum)")
+                    else
+                        SpinEchoPhaseEncodeNegative2=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupNegative2 | cut -d " " -f 1)")
+                    fi
+                    if [ -n "$(echo $SessionTopupPositive2 | cut -d " " -f $fmrinum)" ] ; then
+                        SpinEchoPhaseEncodePositive2=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive2 | cut -d " " -f $fmrinum)")
+                    else
+                        SpinEchoPhaseEncodePositive2=$(imglob -extension "${StudyFolder}/${Subject}/RawData/$(echo $SessionTopupPositive2 | cut -d " " -f 1)")
+                    fi
+                else
+                    SpinEchoPhaseEncodeNegative2=NONE
+                    SpinEchoPhaseEncodePositive2=NONE
+                fi
+
+                # Use T2w as a phase zero reference
+                if [[ $(imtest "${StudyFolder}/${Subject}/T2w/T2w") = 1 && "$UseT2wAsPhaseZero" = "TRUE" ]] ; then
+                    SpinEchoPhaseEncodeZero="${StudyFolder}/${Subject}/T2w/T2w"
+                    SpinEchoPhaseEncodeZeroFSBrainmask="${StudyFolder}/${Subject}/T2w/T2w_brainmask_fs"
+                else
+                    SpinEchoPhaseEncodeZero=NONE
+                    SpinEchoPhaseEncodeZeroFSBrainmask=NONE
+                fi
+
+            elif [[ "$MagnitudeInputName" != "" && "$PhaseInputName" != "" ]] ; then
+
+                MagnitudeInputName="$(imglob -extension "${StudyFolder}/${Subject}/RawData/${MagnitudeInputName}")"
+                PhaseInputName="$(imglob -extension "${StudyFolder}/${Subject}/RawData/${PhaseInputName}")"
+                DistortionCorrection="FIELDMAP"
+                DeltaTE="2.46" # 2.46ms for 3T, 1.02ms for 7T
+                GEB0InputName="NONE"
+                UseJacobian="${UseJacobian:-False}"
+                SpinEchoPhaseEncodeNegative="NONE"
+                SpinEchoPhaseEncodePositive="NONE"
+                SpinEchoPhaseEncodeNegative2="NONE"
+                SpinEchoPhaseEncodePositive2="NONE"
+                SpinEchoPhaseEncodeZero="NONE"
+                SpinEchoPhaseEncodeZeroFSBrainmask="NONE"
+
+            else
+                echo "ERROR: no fieldmap data supplied"
+                exit 1
+            fi
+
+            # Gradient distortion correction
+            GradientDistortionCoeffs="NONE"
+            if [ -n "$Gradient" ] ; then
+                GradientDistortionCoeffs="${GradientDistortionCoeffsDIR}/coeff_${Gradient}.grad"
+            fi
+
+            # Establish queuing command
+            if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+                echo "About to locally run ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+                queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+            else
+                echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh"
+                queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+            fi
+
+            # Override queuing for dry run
+            if [ "$DryRun" = "TRUE" ] ; then
+                queuing_command=(echo)
+            fi
+
+            "${queuing_command[@]}" "$HCPPIPEDIR"/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
+                --path="$StudyFolder" \
+                --subject="$Subject" \
+                --fmriname="$fMRIName" \
+                --fmritcs="$fMRITimeSeries" \
+                --fmriscout="$fMRISBRef" \
+                --SEPhaseNeg="$SpinEchoPhaseEncodeNegative" \
+                --SEPhasePos="$SpinEchoPhaseEncodePositive" \
+                --SEPhaseNeg2="$SpinEchoPhaseEncodeNegative2" \
+                --SEPhasePos2="$SpinEchoPhaseEncodePositive2" \
+                --SEPhaseZero="$SpinEchoPhaseEncodeZero" \
+                --SEPhaseZeroFSBrainmask="$SpinEchoPhaseEncodeZeroFSBrainmask" \
+                --fmapmag="$MagnitudeInputName" \
+                --fmapphase="$PhaseInputName" \
+                --fmapcombined="$GEB0InputName" \
+                --echospacing="$DwellTime" \
+                --echodiff="$DeltaTE" \
+                --unwarpdir="$UnwarpDir" \
+                --fmrires="$FinalFMRIResolution" \
+                --dcmethod="$DistortionCorrection" \
+                --gdcoeffs="$GradientDistortionCoeffs" \
+                --topupconfig="$TopUpConfig" \
+                --biascorrection="$BiasCorrection" \
+                --usejacobian="$UseJacobian" \
+                --mctype="$MCType" \
+                --bbr="$BBR" \
+                --wmprojabs="$WMProjAbs" \
+                --initworldmat="$InitWorldMat" \
+                --scannerpatientposition="$ScannerPatientPosition" \
+                --truepatientposition="$TruePatientPosition" \
+                --species="$SPECIES" \
+                --brainscalefactor="$BrainScaleFactor" \
+                --runmode="$RunMode"
+
+            # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+            echo "set -- --path=$StudyFolder \
+                --subject=$Subject \
+                --fmriname=$fMRIName \
+                --fmritcs=$fMRITimeSeries \
+                --fmriscout=$fMRISBRef \
+                --SEPhaseNeg=$SpinEchoPhaseEncodeNegative \
+                --SEPhasePos=$SpinEchoPhaseEncodePositive \
+                --SEPhaseNeg2=$SpinEchoPhaseEncodeNegative2 \
+                --SEPhasePos2=$SpinEchoPhaseEncodePositive2 \
+                --SEPhaseZero=$SpinEchoPhaseEncodeZero \
+                --SEPhaseZeroFSBrainmask=$SpinEchoPhaseEncodeZeroFSBrainmask \
+                --fmapmag=$MagnitudeInputName \
+                --fmapphase=$PhaseInputName \
+                --fmapcombined=$GEB0InputName \
+                --echospacing=$DwellTime \
+                --echodiff=$DeltaTE \
+                --unwarpdir=$UnwarpDir \
+                --fmrires=$FinalFMRIResolution \
+                --dcmethod=$DistortionCorrection \
+                --gdcoeffs=$GradientDistortionCoeffs \
+                --topupconfig=$TopUpConfig \
+                --biascorrection=$BiasCorrection \
+                --usejacobian=$UseJacobian \
+                --mctype=$MCType \
+                --bbr=$BBR \
+                --wmprojabs=$WMProjAbs \
+                --initworldmat=$InitWorldMat \
+                --scannerpatientposition=$ScannerPatientPosition \
+                --truepatientposition=$TruePatientPosition \
+                --species=$SPECIES \
+                --brainscalefactor=$BrainScaleFactor \
+                --runmode=$RunMode"
+
+            echo ". ${EnvironmentScript}"
+
+        done
+    done
 done
-
-
