@@ -1,0 +1,56 @@
+{
+    "brain_region_stat_groupnorm": [
+        "brain_region_stat_groupnorm_1",
+        "brain_region_stat_groupnorm_5",
+        "brain_region_stat_groupnorm_9",
+        "brain_region_stat_groupnorm_13",
+        "brain_region_stat_groupnorm_17",
+        "brain_region_stat_groupnorm_21",
+        "brain_region_stat_groupnorm_25",
+        "brain_region_stat_groupnorm_29"
+    ],
+    "boundary_stat_groupnorm": [
+        "boundary_stat_groupnorm_1",
+        "boundary_stat_groupnorm_5",
+        "boundary_stat_groupnorm_9",
+        "boundary_stat_groupnorm_13"
+    ],
+    "vas_stat_groupnorm": [
+        "vas_stat_groupnorm_1",
+        "vas_stat_groupnorm_4",
+        "vas_stat_groupnorm_7",
+        "vas_stat_groupnorm_10",
+        "vas_stat_groupnorm_13",
+        "vas_stat_groupnorm_16",
+        "vas_stat_groupnorm_19",
+        "vas_stat_groupnorm_22",
+        "vas_stat_groupnorm_25"
+    ],
+    "brain_region_stat_Zss": [
+        "brain_region_stat_Zss_1",
+        "brain_region_stat_Zss_5",
+        "brain_region_stat_Zss_9",
+        "brain_region_stat_Zss_13",
+        "brain_region_stat_Zss_17",
+        "brain_region_stat_Zss_21",
+        "brain_region_stat_Zss_25",
+        "brain_region_stat_Zss_29"
+    ],
+    "boundary_stat_Zss": [
+        "boundary_stat_Zss_1",
+        "boundary_stat_Zss_5",
+        "boundary_stat_Zss_9",
+        "boundary_stat_Zss_13"
+    ],
+    "vas_stat_Zss": [
+        "vas_stat_Zss_1",
+        "vas_stat_Zss_4",
+        "vas_stat_Zss_7",
+        "vas_stat_Zss_10",
+        "vas_stat_Zss_13",
+        "vas_stat_Zss_16",
+        "vas_stat_Zss_19",
+        "vas_stat_Zss_22",
+        "vas_stat_Zss_25"
+    ]
+}
