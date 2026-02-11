@@ -709,7 +709,7 @@ if [ "$RunMode" -lt 2 ] ; then
 
 	log_Msg "...brainmasking, intensitycor"
 	cmd=(fslmaths $(remove_ext ${T1wImageBrain})_scaled.nii.gz -thr 0 "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz)
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
 
 	cmd=(mri_convert "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz --conform)
 	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
