@@ -50,7 +50,6 @@ fi
     --brain-mask="$T1wFolder"/brainmask_fs.nii.gz \
     --output-filename="$T1wFolder"/Head.nii.gz
 
-
 #ROI Operations
 applywarp --interp=nn -i "$T1wFolder"/Head.nii.gz -r "$T1wFolder"/T1w_acpc_dc_restore."$transmitRes".nii.gz -o "$T1wFolder"/Head."$transmitRes".nii.gz
 
