@@ -152,6 +152,8 @@ opts_AddOptional '--initworldmat' 'InitWorldMat' 'matrix' "Initial world matrix 
 
 opts_AddOptional '--SEPhaseZeroFSBrainmask' 'SpinEchoPhaseEncodeZeroFSBrainmask' 'mask' "FreeSurfer brain mask for SEPhaseZero (NHP-specific)" ""
 
+opts_AddOptional '--species' 'SPECIES' 'string' "Species label (Human, Macaque, Marmoset, etc.)" "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -160,6 +162,18 @@ then
 fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
+
+# Derive betspecieslabel from SPECIES if not already set in the environment
+if [ -z "$betspecieslabel" ] ; then
+    case "$SPECIES" in
+        Human)          betspecieslabel=4 ;;
+        Chimp)          betspecieslabel=3 ;;
+        Macaque*|Rhesus*|Cyno*) betspecieslabel=1 ;;
+        Marmoset)       betspecieslabel=0 ;;
+        NightMonkey)    betspecieslabel=0 ;;
+        *)              betspecieslabel=1 ;;
+    esac
+fi
 
 if (( $IsLongitudinal )); then
     if [ ! -f "$T1wCross2LongXfm" ]; then
@@ -402,23 +416,23 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
                 fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
 
                 # register scout to T1w image using fieldmap
-                if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then # - for NHP TH 2017-2024
-				    # when EPI data does not have clear contrat between gray/white bbr is not be effective - Takuya Hayashi inserted for NHP
+                if [[ "$SPECIES" != "Human" && "$BBR" == "NONE" ]] ; then # - for NHP TH 2017-2024
+                    # when EPI data does not have clear contrast between gray/white, bbr is not effective - Takuya Hayashi inserted for NHP
                     log_Msg "Run epi_reg_dof_nobbr"
-					${HCPPIPEDIR_Global}/epi_reg_dof_nobbr --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
-				else
-				    ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
+                    ${HCPPIPEDIR_Global}/epi_reg_dof_nobbr --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
+                else
+                    ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
                 fi
             else
-			    if [ "$SPECIES" != "Human" && "$BBR" == "NONE" ] ; then # - for NHP TH 2017-2024
+                if [[ "$SPECIES" != "Human" && "$BBR" == "NONE" ]] ; then # - for NHP TH 2017-2024
                     log_Msg "Brain Extract of Scout using BET"
                     bet ${WD}/Scout.nii.gz ${WD}/Scout_brain.nii.gz -f 0.3
                     log_Msg "Run epi_reg_dof_nobbr"
                     ${HCPPIPEDIR_Global}/epi_reg_dof_nobbr --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}_undistorted --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
-				else
+                else
                     # register scout to T1w image using fieldmap
                     ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
-
+                fi
             fi
 
             # create spline interpolated output for scout to T1w + apply bias field correction
@@ -465,7 +479,7 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
                 --initworldmat=${InitWorldMat} \
                 --usejacobian=${UseJacobian}
             
-            if [ $SPECIES != "Human"]; then # - for NHP TH 2017-2024
+            if [[ $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
 				########################################
 				Scout="Magnitude"
 				ScoutInputFileSE="SEFieldmag"
@@ -561,8 +575,8 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
 				${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat="${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat" -o ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_warp
 				${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat="${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat" -o ${WD}/Jacobian2T1w.nii.gz
 
-				# 1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
-				# Use SE filed magnitude for input of FS-BBR registration
+				# 1-step resample from input (gdc) scout - NOTE: jacobian modulation is handled below, and is optional
+				# Use SE field magnitude for input of FS-BBR registration
 				log_Msg "use undistorted SE field mag as a scout for registration with FS-BBR in NHP"
 				${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/Magnitude -r ${T1wImage} --premat="${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat" -o ${WD}/${ScoutInputFileSE}_undistorted2T1w_init
 
@@ -924,6 +938,8 @@ if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
         log_Msg "calculating final warpfield of SBRef2T1w (fMRI2str.nii.gz)"
         ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFileGE}_undistorted2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
 
+        fi # DistortionCorrection != SPIN_ECHO_METHOD_OPT
+
     else # Human
 	    log_Msg "${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm does not exist. FreeSurferNHP.sh was not used."
 
@@ -1018,8 +1034,6 @@ if [[ $DistortionCorrection == $SPIN_ECHO_METHOD_OPT ]]; then
             #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/T1w/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
     fi
-else
-    
 fi
 
 # Create warped image with spline interpolation, bias correction and (optional) Jacobian modulation
