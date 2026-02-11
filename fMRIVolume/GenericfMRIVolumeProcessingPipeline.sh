@@ -1017,7 +1017,8 @@ if [ $fMRIReference = "NONE" ] ; then
         --wmprojabs=${WMProjAbs} \
         --scannerpatientposition=${ScannerPatientPosition} \
         --truepatientposition=${TruePatientPosition} \
-        --initworldmat=${InitWorldMat}
+        --initworldmat=${InitWorldMat} \
+        --species=${SPECIES}
 
 else
     log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
