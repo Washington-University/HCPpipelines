@@ -44,7 +44,7 @@ else
 fi
 
 #Create Head Mask
-createHeadMask \
+"$HCPPIPEDIR"/global/scripts/createHeadMask.sh \
     --t1w="$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
     --t2w="$T1wFolder"/T2w_acpc_dc_restore.nii.gz \
     --brain-mask="$T1wFolder"/brainmask_fs.nii.gz \
