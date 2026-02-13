@@ -73,20 +73,20 @@ if [[ -n "$fMRINames" ]]; then # Single-run FIX processing
   IFS='@' read -ra ConcatArray <<< "$ConcatNames"
   # Verify that concat-names contains exactly one name for single-run FIX
   if [ ${#ConcatArray[@]} -ne 1 ]; then
-  log_Err_Abort "When --fmri-names is provided for single-run FIX processing, --concat-names must contain exactly one name."
+    log_Err_Abort "When --fmri-names is provided for single-run FIX processing, --concat-names must contain exactly one name."
   fi
   ConcatName="${ConcatArray[0]}"
   # Count the time samples in each run
   runLengths=()
   for Name in "${NamesArray[@]}"; do
-  fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
-  CleanedCIFTITCS="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
-  if [[ -f "$CleanedCIFTITCS" ]]; then
-  samp=$(fslval "$CleanedCIFTITCS" dim5 | xargs)
-  runLengths+=("$samp")
-  else
-  log_Err_Abort "Required file not found: ${CleanedCIFTITCS}"
-  fi
+    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+    CleanedCIFTITCS="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+    if [[ -f "$CleanedCIFTITCS" ]]; then
+      samp=$(fslval "$CleanedCIFTITCS" dim5 | xargs)
+      runLengths+=("$samp")
+    else
+      log_Err_Abort "Required file not found: ${CleanedCIFTITCS}"
+    fi
   done
 else # Multi-run FIX processing
   # Convert @ separated ConcatNames to array
