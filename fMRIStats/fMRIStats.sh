@@ -330,6 +330,7 @@ else  # Single-run FIX processing - average across individual runs then create s
   for ((m=0; m<nMetrics; m++)); do
     if [[ "${metricNames[$m]}" =~ STD$ ]]; then
       stdIndices+=($((m+1)))
+    else
       meanIndices+=($((m+1)))
     fi
   done
