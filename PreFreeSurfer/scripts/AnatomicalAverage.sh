@@ -51,6 +51,7 @@ log_Check_Env_Var FSLDIR
 crop=$(opts_StringToBool "$crop")
 cleanup=$(opts_StringToBool "$cleanup")
 
+
 #########################################################################################################
 
 IFS='@' read -a imagelist <<<"$imagesStr"
@@ -66,7 +67,7 @@ if [ X$wdir = X ] ; then
 fi
 if [ ! -d $wdir ] ; then
     if [ -f $wdir ] ; then 
-		log_Err_Abort "A file already exists with the name $wdir - cannot use this as the working directory"
+        log_Err_Abort "A file already exists with the name $wdir - cannot use this as the working directory"
     fi
     mkdir $wdir
 fi
@@ -79,6 +80,7 @@ for fn in "${imagelist[@]}" ; do
     $FSLDIR/bin/imln $fn $wdir/$bnm   ## TODO - THIS FAILS WHEN GIVEN RELATIVE PATHS
     newimlist="$newimlist $wdir/$bnm"
 done
+
 
 # for each image reorient, register to std space, (optionally do "get transformed FOV and crop it based on this")
 for fn in $newimlist ; do
@@ -99,16 +101,16 @@ im1=`echo $newimlist | awk '{ print $1 }'`;
 for im2 in $newimlist ; do
     if [ $im2 != $im1 ] ; then
         # register version of two images (whole heads still)
-		$FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
-		
+        $FSLDIR/bin/flirt -in ${im2}_roi -ref ${im1}_roi -omat ${im2}_to_im1.mat -out ${im2}_to_im1 -dof 6 -searchrx -30 30 -searchry -30 30 -searchrz -30 30 
+
         # transform std space brain mask
-		$FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
-		
+        $FSLDIR/bin/flirt -init ${im1}_std2roi.mat -in "$StandardMask" -ref ${im1}_roi -out ${im1}_roi_linmask -applyxfm
+
         # re-register using the brain mask as a weighting image
         #TSC: "-nosearch" only sets angle to 0, still optimizes translation
-		$FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
+        $FSLDIR/bin/flirt -in ${im2}_roi -init ${im2}_to_im1.mat -omat ${im2}_to_im1_linmask.mat -out ${im2}_to_im1_linmask -ref ${im1}_roi -refweight ${im1}_roi_linmask -nosearch
     else
-		cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
+        cp $FSLDIR/etc/flirtsch/ident.mat ${im1}_to_im1_linmask.mat
     fi
 done
 
