@@ -328,7 +328,10 @@ else  # Single-run FIX processing - average across individual runs then create s
   meanIndices=()
   stdIndices=()
   for ((m=0; m<nMetrics; m++)); do
-    [[ "${metricNames[$m]}" =~ STD$ ]] && stdIndices+=($((m+1))) || meanIndices+=($((m+1)))
+    if [[ "${metricNames[$m]}" =~ STD$ ]]; then
+      stdIndices+=($((m+1)))
+      meanIndices+=($((m+1)))
+    fi
   done
   
   # Create two temporary CIFTIs per run: one with MEAN metrics, one with STD metrics
