@@ -162,13 +162,16 @@ NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
 #       2mm and 1mm cases because it doesn't know the peculiarities of the
 #       MNI template FOVs
-if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
+if [[ $SPECIES != Human ]] ; then
+    ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+elif [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
     ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
 elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
     ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
 else
-  ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
-  ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
 fi
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}

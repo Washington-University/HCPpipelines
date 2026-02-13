@@ -26,7 +26,8 @@ OutputMotionMatrixFolder="\$6"
 OutputMotionMatrixNamePrefix="\$7"
 MotionCorrectionType="\$8"
 fMRIReferenceReg="\$9"
-
+BrainScaleFactor="\$10"
+SPECIES="\$11"
 EOF
 }
 
@@ -79,6 +80,8 @@ OutputMotionMatrixFolder="$6"
 OutputMotionMatrixNamePrefix="$7"
 MotionCorrectionType="$8"
 fMRIReferenceReg="$9"
+BrainScaleFactor="$10"
+SPECIES="$11"
 
 verbose_red_echo "---> ${MotionCorrectionType} based motion correction"
 verbose_echo " "
@@ -92,10 +95,29 @@ verbose_echo "     OutputMotionMatrixFolder: ${OutputMotionMatrixFolder}"
 verbose_echo " OutputMotionMatrixNamePrefix: ${OutputMotionMatrixNamePrefix}"
 verbose_echo "         MotionCorrectionType: ${MotionCorrectionType}"
 verbose_echo "             fMRIReferenceReg: ${fMRIReferenceReg}"
+verbose_echo "             BrainScaleFactor: ${BrainScaleFactor}"
+verbose_echo "                      SPECIES: ${SPECIES}"
 verbose_echo " "
 
 OutputfMRIBasename=`basename ${OutputfMRI}`
 
+if [[ "$SPECIES" != "Human" ]] ; then
+    # Scaling brain size to adapt to size dependency of mcflirt - TH 2024
+    if [[ ! -z "$BrainScaleFactor" && ! $(echo "$BrainScaleFactor == 1" | bc) = 1 ]] ; then
+        log_Msg "Scaling brain with a factor = $BrainScaleFactor"
+        ${HCPPIPEDIR_Global}/ScaleVolume.sh ${Scout}.nii.gz ${BrainScaleFactor} ${WorkingDirectory}/scout_scale.nii.gz ${WorkingDirectory}/scale.world.mat
+        ${FSLDIR}/bin/convert_xfm -omat ${WorkingDirectory}/rescale.world.mat -inverse ${WorkingDirectory}/scale.world.mat
+        ${CARET7DIR}/wb_command -convert-affine -from-world ${WorkingDirectory}/scale.world.mat -to-flirt ${WorkingDirectory}/scale.mat ${Scout}.nii.gz ${WorkingDirectory}/scout_scale.nii.gz 
+        ${CARET7DIR}/wb_command -convert-affine -from-world ${WorkingDirectory}/rescale.world.mat -to-flirt ${WorkingDirectory}/rescale.mat ${WorkingDirectory}/scout_scale.nii.gz ${Scout}.nii.gz
+        ${CARET7DIR}/wb_command -volume-resample ${InputfMRI}.nii.gz ${WorkingDirectory}/scout_scale.nii.gz ENCLOSING_VOXEL ${WorkingDirectory}/fmri_scale.nii.gz -affine ${WorkingDirectory}/scale.world.mat
+        InputfMRIOrig="$InputfMRI"
+        OutputfMRIBasenameOrig="$OutputfMRIBasename"
+        ScoutOrig="$Scout"
+        InputfMRI="${WorkingDirectory}/fmri_scale.nii.gz"
+        Scout="${WorkingDirectory}/scout_scale.nii.gz"
+        OutputfMRIBasename="${OutputfMRIBasename}_scale"
+    fi
+fi
 # Do motion correction
 log_Msg "Do motion correction"
 case "$MotionCorrectionType" in
@@ -112,6 +134,39 @@ case "$MotionCorrectionType" in
         exit 1
     ;;
 esac
+
+if [[ "$SPECIES" != "Human" ]] ; then
+    # Rescaling brain size - TH 2024
+    if [[ ! -z "$BrainScaleFactor" && ! $(echo "$BrainScaleFactor == 1" | bc) = 1 ]] ; then
+        log_Msg "Rescaling brain"
+        output=${WorkingDirectory}/${OutputfMRIBasename}
+        outputOrig=${WorkingDirectory}/${OutputfMRIBasenameOrig}
+        mkdir -p $outputOrig
+        pi=$(echo "scale=10; 4*a(1)" | bc -l)
+        for i in "$output"/MAT_????.mat ; do
+            ii=$(basename $i | sed -e 's/.mat//g')
+            convert_xfm -omat ${output}/${ii}_I.mat -concat ${output}/${ii}.mat ${WorkingDirectory}/scale.mat
+            convert_xfm -omat ${outputOrig}/${ii}.mat -concat  ${WorkingDirectory}/rescale.mat ${output}/${ii}_I.mat
+            # Use 'avscale' to create file containing Translations (in mm) and Rotations (in deg)
+            mm=`${FSLDIR}/bin/avscale --allparams ${outputOrig}/${ii}.mat ${ScoutOrig}.nii.gz | grep "Translations" | awk '{print $5 " " $6 " " $7}'`
+            mmx=`echo $mm | cut -d " " -f 1`
+            mmy=`echo $mm | cut -d " " -f 2`
+            mmz=`echo $mm | cut -d " " -f 3`
+            radians=`${FSLDIR}/bin/avscale --allparams ${outputOrig}/${ii}.mat  ${ScoutOrig}.nii.gz | grep "Rotation Angles" | awk '{print $6 " " $7 " " $8}'`
+            radx=`echo $radians | cut -d " " -f 1`
+            degx=`echo "$radx * (180 / $pi)" | bc -l`
+            rady=`echo $radians | cut -d " " -f 2`
+            degy=`echo "$rady * (180 / $pi)" | bc -l`
+            radz=`echo $radians | cut -d " " -f 3`
+            degz=`echo "$radz * (180 / $pi)" | bc -l`
+            # The "%.6f" formatting specifier allows the numeric value to be as wide as it needs to be to accomodate the number
+            # Then we mandate (include) a single space as a delimiter between values.
+            echo `printf "%.6f" $mmx` `printf "%.6f" $mmy` `printf "%.6f" $mmz` `printf "%.6f" $degx` `printf "%.6f" $degy` `printf "%.6f" $degz` >> ${outputOrig}/mc.par
+        done
+        ${CARET7DIR}/wb_command -volume-resample ${WorkingDirectory}/${OutputfMRIBasename}.nii.gz ${ScoutOrig}.nii.gz CUBIC ${WorkingDirectory}/${OutputfMRIBasenameOrig}.nii.gz -affine ${WorkingDirectory}/rescale.world.mat
+        OutputfMRIBasename=$OutputfMRIBasenameOrig
+    fi
+fi
 
 # Run nonlinear registration if needed
 
