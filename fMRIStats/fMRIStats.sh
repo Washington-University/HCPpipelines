@@ -378,7 +378,7 @@ else  # Single-run FIX processing - average across individual runs then create s
   stdIdx=0
   indexOrder=()
   for ((m=0; m<nMetrics; m++)); do
-    if [[ " ${meanIndices[@]} " =~ " $((m+1)) " ]]; then
+    if [[ " ${meanIndices[@]} " == *" $((m+1)) "* ]]; then
       meanIdx=$((meanIdx+1))
       indexOrder+=("mean" "$meanIdx")
     else
