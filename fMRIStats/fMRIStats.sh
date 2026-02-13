@@ -286,7 +286,23 @@ if [[ -z "$fMRINames" ]]; then
   for Name in "${fMRIExist[@]}"; do
     fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
     CIFTIOutput="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
-    "$HCPPIPEDIR/fMRIStats/scripts/fMRIStats_SummaryCSV.sh" "$CIFTIOutput" "${CIFTIOutput//.dscalar.nii/_Summary.csv}" "$Caret7_Command" 
+    
+    # Call fMRIStats_SummaryCSV MATLAB function
+    matlab_args="'$CIFTIOutput'"
+    matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
+    
+    matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
+    case "$MatlabMode" in
+      (0)
+        matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$CIFTIOutput" "$Caret7_Command")
+        log_Msg "running compiled matlab command for SummaryCSV: ${matlab_cmd[*]}"
+        "${matlab_cmd[@]}"
+        ;;
+      (1 | 2)
+        log_Msg "running matlab code: $matlabcode"
+        "${matlab_interpreter[@]}" <<<"$matlabcode"
+        ;;
+    esac
   done
 else  # Single-run FIX processing - average across individual runs then create summary CSV
   log_Msg "Averaging fMRIStats across ${#fMRIExist[@]} single-run FIX runs"
@@ -386,8 +402,22 @@ else  # Single-run FIX processing - average across individual runs then create s
   "$Caret7_Command" -cifti-merge "$AveragedCIFTIOutput" "${mergeCmd[@]}"
   log_Msg "Created averaged CIFTI with metrics in original order: $AveragedCIFTIOutput"
   
-  # Generate summary CSV
-  "$HCPPIPEDIR/fMRIStats/scripts/fMRIStats_SummaryCSV.sh" "$AveragedCIFTIOutput" "${AveragedCIFTIOutput//.dscalar.nii/_Summary.csv}" "$Caret7_Command"
+  # Generate summary CSV using MATLAB
+  matlab_args="'$AveragedCIFTIOutput'"
+  matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
+  
+  matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
+  case "$MatlabMode" in
+    (0)
+      matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$AveragedCIFTIOutput" "$Caret7_Command")
+      log_Msg "running compiled matlab command for SummaryCSV: ${matlab_cmd[*]}"
+      "${matlab_cmd[@]}"
+      ;;
+    (1 | 2)
+      log_Msg "running matlab code: $matlabcode"
+      "${matlab_interpreter[@]}" <<<"$matlabcode"
+      ;;
+  esac
   
   # Repeat for volumes if requested, repeating the same steps as for CIFTI but with subvolumes instead of indices, and averaging MEAN metrics with simple mean and STD metrics with RMS
   if [[ "$ProcessVolume" == "1" && ${#volFiles[@]} -gt 0 ]]; then
