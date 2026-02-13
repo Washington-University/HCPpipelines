@@ -1,4 +1,3 @@
-
 function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal, varargin)
 % fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal, varargin)
 %
@@ -30,6 +29,7 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal,
 %   'CleanUpEffects'   - '0' or '1' to compute cleanup comparison metrics (default: '0')
 %   'ICAmode'          - 'sICA' or 'sICA+tICA' mode (default: 'sICA')
 %   'Caret7_Command'   - Path to wb_command (default: 'wb_command')
+%   'runSamps'         - @-delimited string of start@stop sample indices for single-run FIX processing (optional)
 %
 % Conditionally required (based on ICAmode):
 %   'tICAcomponentTCS' - Path to tICA timecourse CIFTI (required if ICAmode='sICA+tICA')
@@ -41,19 +41,7 @@ function fMRIStats(MeanCIFTI, CleanedCIFTITCS, CIFTIOutputName, sICATCS, Signal,
 %   'CleanedVolumeTCS' - Path to cleaned volume timeseries (required if ProcessVolume='1')
 %   'VolumeOutputName' - Output path for volume results (required if ProcessVolume='1')
 %   'OrigVolumeTCS'    - Path to original volume timeseries (required if CleanUpEffects='1' AND ProcessVolume='1')
-%
-% Examples:
-%   % Basic CIFTI-only processing with sICA:
-%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile)
-%
-%   % With cleanup effects comparison:
-%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile, ...
-%             'CleanUpEffects', '1', 'OrigCIFTITCS', origFile)
-%
-%   % With volume processing:
-%   fMRIStats(meanFile, cleanedFile, outputFile, icaTCS, signalFile, ...
-%             'ProcessVolume', '1', 'MeanVolume', meanVol, ...
-%             'CleanedVolumeTCS', cleanedVol, 'VolumeOutputName', volOutput)
+%   'runSamps'         - @-delimited string of start@stop sample indices (required if ICAmode='sICA+tICA' AND using single-run FIX)
 
 %% Parse optional arguments using inputParser
 p = inputParser;
@@ -64,6 +52,7 @@ addParameter(p, 'ProcessVolume', '0', @ischar);
 addParameter(p, 'CleanUpEffects', '0', @ischar);
 addParameter(p, 'ICAmode', 'sICA', @ischar);
 addParameter(p, 'Caret7_Command', 'wb_command', @ischar);
+addParameter(p, 'runSamps', '', @ischar);
 
 % Conditionally required arguments (default to empty)
 addParameter(p, 'OrigCIFTITCS', '', @ischar);
@@ -129,13 +118,24 @@ sICATCSall = ciftiopen(sICATCS,Caret7_Command);
 Signal_indices = load(Signal,'-ascii'); % indices of signal (non-noise) ICA components
 sICATCSSignal = sICATCSall.cdata(Signal_indices,:)';% transpose to timepoints x components
 
+%% Check if runing on SR-FIX data
+if ~isempty(opts.runSamps)
+  runSamps = str2double(strsplit(opts.runSamps, '@'));
+  runSamps = runSamps(1):runSamps(2);
+  SRFIX = true;
+else
+  runSamps = [1:size(sICATCSSignal,1)];  % default to full length for multi-run FIX
+  SRFIX = false;
+end
+
+%% If in sICA+tICA mode, regress tICA-identified noise components out of sICA component timecourses
 if strcmp(opts.ICAmode, 'sICA+tICA')
   tICATCS = ciftiopen(opts.tICAcomponentTCS,Caret7_Command);
   Noise_indices = load(opts.tICAcomponentNoise,'-ascii');  % indices of noise tICA components
 
   % Regress tICA noise components out of sICA component timecourses
-  betaICA = pinv(tICATCS.cdata,1e-6)' * sICATCSSignal;
-  tICAnoise = tICATCS.cdata(Noise_indices,:)' * betaICA(Noise_indices,:);
+  betaICA = pinv(tICATCS.cdata(:,runSamps),1e-6)' * sICATCSSignal;
+  tICAnoise = tICATCS.cdata(Noise_indices,runSamps)' * betaICA(Noise_indices,:);
   sICATCSSignal = sICATCSSignal - tICAnoise;% sICA components by time without the tICA-identified noise
   % Because everything downstream is based on sICA components, we now no longer need the tICA components
   clear tICATCS Noise_indices betaICA tICAnoise 
@@ -240,59 +240,11 @@ if CleanUpEffects
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2), ...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD', ...
     'StructuredArtifactSTD','StructuredAndUnstructuredSTD','UncleanedTSNR','UncleanedFunctionalCNR','CleanUpRatio'});
-  % Summary CSV file - separate cortex and subcortex
-  fid = fopen(strrep(CIFTIOutputName,'.dscalar.nii','_Summary.csv'),'w');
-  fprintf(fid,'OutputFile,Region,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
-
-  % Report metrics for each region
-  regions = struct('name', {'Cortex', 'Subcortex'}, 'indices', {cortex_indices, subcortex_indices});
-  for r = 1:numel(regions)
-    if ~isempty(regions(r).indices)
-      idx = regions(r).indices;
-      fprintf(fid, '%s,%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n', ...
-        CIFTIOutputName, ... % Output cifti file name
-        regions(r).name, ... % Region (Cortex or Subcortex)
-        mean(CIFTIOutput.cdata(idx,1)), ... % MeanSignal
-        sqrt(mean(CIFTIOutput.cdata(idx,2).^2)), ... % UnstructuredNoiseSTD
-        sqrt(mean(CIFTIOutput.cdata(idx,3).^2)), ... % SignalSTD
-        mean(CIFTIOutput.cdata(idx,4)), ... % ModifiedTSNR
-        mean(CIFTIOutput.cdata(idx,5)), ... % FunctionalCNR
-        sqrt(mean(CIFTIOutput.cdata(idx,7).^2)), ... % StructuredArtifactSTD
-        sqrt(mean(CIFTIOutput.cdata(idx,8).^2)), ... % StructuredAndUnstructuredSTD
-        mean(CIFTIOutput.cdata(idx,9)), ... % UncleanedTSNR
-        mean(CIFTIOutput.cdata(idx,10)), ... % UncleanedFunctionalCNR
-        mean(CIFTIOutput.cdata(idx,11)) ... % CleanUpRatio
-      );
-    end
-  end
-  fclose(fid);
 else % Basic metrics only (no cleanup effects)
   % Assemble output with basic metrics only
   CIFTIOutput.cdata = [MeanCIFTI.cdata UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
   CIFTIOutput.diminfo{1,2} = cifti_diminfo_make_scalars(size(CIFTIOutput.cdata,2), ...
     {'Mean','UnstructuredNoiseSTD','SignalSTD','ModifiedTSNR','FunctionalCNR','PercentBOLD'});
-
-  % Summary CSV file - separate cortex and subcortex
-  fid = fopen(strrep(CIFTIOutputName,'.dscalar.nii','_Summary.csv'),'w');
-  fprintf(fid,'OutputFile,Region,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
-
-  % Report metrics for each region
-  regions = struct('name', {'Cortex', 'Subcortex'}, 'indices', {cortex_indices, subcortex_indices});
-  for r = 1:numel(regions)
-    if ~isempty(regions(r).indices)
-      idx = regions(r).indices;
-      fprintf(fid, '%s,%s,%g,%g,%g,%g,%g\n', ...
-        CIFTIOutputName, ... % Output cifti file name
-        regions(r).name, ... % Region (Cortex or Subcortex)
-        mean(CIFTIOutput.cdata(idx,1)), ... % MeanSignal
-        sqrt(mean(CIFTIOutput.cdata(idx,2).^2)), ... % UnstructuredNoiseSTD
-        sqrt(mean(CIFTIOutput.cdata(idx,3).^2)), ... % SignalSTD
-        mean(CIFTIOutput.cdata(idx,4)), ... % ModifiedTSNR
-        mean(CIFTIOutput.cdata(idx,5)) ... % FunctionalCNR
-      );
-    end
-  end
-  fclose(fid);
 end  % if CleanUpEffects (CIFTI cleanup metrics)
 
 %% Save CIFTI output
@@ -329,37 +281,8 @@ if ProcessVolume
 
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD ...
       StructSTD StructUnstructSTD mTSNROrig fCNROrig Ratio];
-    % Summary CSV file
-    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_Summary.csv'),'w');
-    fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR,StructuredArtifactSTD,StructuredAndUnstructuredSTD,UncleanedTSNR,UncleanedFunctionalCNR,CleanUpRatio\n');
-    fprintf(fid, '%s,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n', ...
-      opts.VolumeOutputName, ... % Output cifti file name
-      mean(VolumeOutput2DMasked(:,1)), ... % MeanSignal
-      sqrt(mean(VolumeOutput2DMasked(:,2).^2)), ... % UnstructuredNoiseSTD
-      sqrt(mean(VolumeOutput2DMasked(:,3).^2)), ... % SignalSTD
-      mean(VolumeOutput2DMasked(:,4)), ... % ModifiedTSNR
-      mean(VolumeOutput2DMasked(:,5)), ... % FunctionalCNR
-      sqrt(mean(VolumeOutput2DMasked(:,7).^2)), ... % StructuredArtifactSTD
-      sqrt(mean(VolumeOutput2DMasked(:,8).^2)), ... % StructuredAndUnstructuredSTD
-      mean(VolumeOutput2DMasked(:,9)), ... % UncleanedTSNR
-      mean(VolumeOutput2DMasked(:,10)), ... % UncleanedFunctionalCNR
-      mean(VolumeOutput2DMasked(:,11)) ... % CleanUpRatio
-    );
-    fclose(fid);
   else
     VolumeOutput2DMasked = [MeanVolume2DMasked UnstructSTD ReconSTD mTSNR fCNR PercBOLD];
-    % Summary CSV file
-    fid = fopen(strrep(opts.VolumeOutputName,'.nii.gz','_Summary.csv'),'w');
-    fprintf(fid,'OutputFile,MeanSignal,UnstructuredNoiseSTD,SignalSTD,ModifiedTSNR,FunctionalCNR\n');
-    fprintf(fid, '%s,%g,%g,%g,%g,%g\n', ...
-      opts.VolumeOutputName, ... % Output cifti file name
-      mean(VolumeOutput2DMasked(:,1)), ... % MeanSignal
-      sqrt(mean(VolumeOutput2DMasked(:,2).^2)), ... % UnstructuredNoiseSTD
-      sqrt(mean(VolumeOutput2DMasked(:,3).^2)), ... % SignalSTD
-      mean(VolumeOutput2DMasked(:,4)), ... % ModifiedTSNR
-      mean(VolumeOutput2DMasked(:,5)) ... % FunctionalCNR
-    );
-    fclose(fid);
   end  % if CleanUpEffects (volume cleanup metrics)
 
   %% Save volume output
