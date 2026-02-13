@@ -337,14 +337,12 @@ else  # Single-run FIX processing - average across individual runs then create s
   # Create two temporary CIFTIs per run: one with MEAN metrics, one with STD metrics
   if [[ ${#meanIndices[@]} -gt 0 ]]; then
     for r in "${!ciftiFiles[@]}"; do
-      echo "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_mean.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${meanIndices[@]}")
       "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_mean.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${meanIndices[@]}")
     done
   fi
   
   if [[ ${#stdIndices[@]} -gt 0 ]]; then
     for r in "${!ciftiFiles[@]}"; do
-      echo "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_std.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${stdIndices[@]}")
       "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_std.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${stdIndices[@]}")
     done
   fi
@@ -357,7 +355,6 @@ else  # Single-run FIX processing - average across individual runs then create s
     for ((r=0; r<N; r++)); do
       meanArgs+=(-var "m${r}" "$tmpDir/run${r}_mean.dscalar.nii")
     done
-    echo "$Caret7_Command" -cifti-math "$meanExpr" "$tmpDir/avg_mean.dscalar.nii" "${meanArgs[@]}"
     "$Caret7_Command" -cifti-math "$meanExpr" "$tmpDir/avg_mean.dscalar.nii" "${meanArgs[@]}"
   fi
   
@@ -369,7 +366,6 @@ else  # Single-run FIX processing - average across individual runs then create s
     for ((r=0; r<N; r++)); do
       stdArgs+=(-var "s${r}" "$tmpDir/run${r}_std.dscalar.nii")
     done
-    echo "$Caret7_Command" -cifti-math "$stdExpr" "$tmpDir/avg_std.dscalar.nii" "${stdArgs[@]}"
     "$Caret7_Command" -cifti-math "$stdExpr" "$tmpDir/avg_std.dscalar.nii" "${stdArgs[@]}"
   fi
 
@@ -448,7 +444,6 @@ else  # Single-run FIX processing - average across individual runs then create s
       for ((r=0; r<N; r++)); do
         meanVolArgs+=(-var "m${r}" "$tmpDir/run${r}_mean.nii.gz")
       done
-      echo "$Caret7_Command" -volume-math "$meanVolExpr" "$tmpDir/avg_mean.nii.gz" "${meanVolArgs[@]}"
       "$Caret7_Command" -volume-math "$meanVolExpr" "$tmpDir/avg_mean.nii.gz" "${meanVolArgs[@]}"
     fi
     
@@ -458,7 +453,6 @@ else  # Single-run FIX processing - average across individual runs then create s
       for ((r=0; r<N; r++)); do
         stdVolArgs+=(-var "s${r}" "$tmpDir/run${r}_std.nii.gz")
       done
-      echo "$Caret7_Command" -volume-math "$stdVolExpr" "$tmpDir/avg_std.nii.gz" "${stdVolArgs[@]}"
       "$Caret7_Command" -volume-math "$stdVolExpr" "$tmpDir/avg_std.nii.gz" "${stdVolArgs[@]}"
     fi
     
