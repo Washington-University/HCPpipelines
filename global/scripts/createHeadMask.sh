@@ -33,7 +33,7 @@ fi
 ## Display the parsed/default values
 opts_ShowValues
 
-## Validate that input files exist and that output directory exists and is writable
+## Validate that input files exist
 if [[ ! -f "$T1wImage" ]]; then
     log_Err_Abort "T1w image not found: $T1wImage"
 fi
@@ -42,10 +42,6 @@ if [[ ! -f "$T2wImage" ]]; then
 fi
 if [[ ! -f "$BrainMaskFile" ]]; then
     log_Err_Abort "Brain mask not found: $BrainMaskFile"
-fi
-outDir="$(dirname "$OutputFile")"
-if [[ ! -d "$outDir" || ! -w "$outDir" ]]; then
-    log_Err_Abort "Output directory does not exist or is not writable: $outDir"
 fi
 
 ## Prepare temp files
