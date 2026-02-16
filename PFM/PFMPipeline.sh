@@ -149,14 +149,12 @@ do
             # Calculate low rank data parameter
             LowRankData=$((PFMdim * 5))
             
-            # if PFM output directory exists, clear it, becuase otherwise PROFUMO create + files instead of overwriting existing ones
+            # if PFM output directory exists, clear it (except dataLocations.json) because PROFUMO otherwise creates "+" files instead of overwriting
             if [[ -d "${PFMFolder}" ]]
             then
                 log_Warn "PFM output folder ${PFMFolder} already exists, clearing contents"
-                rm -rf "${PFMFolder:?}"
+                find "${PFMFolder}" -mindepth 1 -not -name "dataLocations.json" -delete
             fi
-
-            # Create output directory
             mkdir -p "${PFMFolder}"
             
             # Build optional initialMaps argument
