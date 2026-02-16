@@ -149,6 +149,13 @@ do
             # Calculate low rank data parameter
             LowRankData=$((PFMdim * 5))
             
+            # if PFM output directory exists, clear it, becuase otherwise PROFUMO create + files instead of overwriting existing ones
+            if [[ -d "${PFMFolder}" ]]
+            then
+                log_Warn "PFM output folder ${PFMFolder} already exists, clearing contents"
+                rm -rf "${PFMFolder:?}"
+            fi
+
             # Create output directory
             mkdir -p "${PFMFolder}"
             
