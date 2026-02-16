@@ -125,7 +125,7 @@ for Session in $Sesslist ; do
 
     SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
     FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
-    ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+    #ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
     UseIndMean="YES"
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
