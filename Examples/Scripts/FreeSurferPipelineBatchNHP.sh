@@ -10,7 +10,7 @@ Usage () {
     echo "Options:"
     echo "  --StudyFolder: Path to the study folder containing subject data"
     echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
-    echo "  --T2wType: T2w image type (T2w or FLAIR, default: T2w)"
+    echo "  --T2wType: T2w image type (T2w or FLAIR or T1wFLAIR, default: T2w)"
     echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhesus, MacaqueSnow, NightMonkey, Marmoset)"
     echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
     echo "  --RunLocal: Run locally (TRUE or FALSE, default: FALSE)"
@@ -130,6 +130,10 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
         if [ "$T2wType" = "FLAIR" ] ; then 
             isFLAIR=true
+            isT1wFLAIR=false
+        elif [ "$T2wType" = "T1wFLAIR" ] ; then
+            isFLAIR=false
+            isT1wFLAIR=true
         fi
     else
         T2wImage="NONE"
@@ -151,6 +155,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t1w-brain="$T1wImageBrain" \
         --t2w-image="$T2wImage" \
         --flair="$isFLAIR" \
+        --t1wflair="$isT1wFLAIR" \
         --species="$SPECIES" \
         --runmode="$RunMode" 
 
@@ -162,6 +167,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t1w-brain="$T1wImageBrain" \
         --t2w-image="$T2wImage" \
         --flair="$isFLAIR" \
+        --t1wflair="$isT1wFLAIR" \
         --species="$SPECIES" \
         --runmode="$RunMode" 
     echo ". ${EnvironmentScript}"

@@ -20,6 +20,7 @@ set CopyBiasFromConf = 0;
 set MMode = T2
 set DoT2 = 1
 set DoFLAIR = 0
+set DoT1wFLAIR = 0
 set T1normSigma = 8;
 set MMnormSigma = 8; 
 set MMBBRcon = t2;
@@ -399,7 +400,7 @@ if($#MMode) then
   $cmd |& tee -a $LF
   if($status) goto error_exit;
 
-  if($DoFLAIR) then
+  if($DoT1wFLAIR) then
     # Use T1w divided by FLAIR instead of FLAIR itself - TH 2025
     set cmd = (fscalc rawavg.brain.finalsurfs.mgz div rawavg.${MMode}.prenorm.mgz gt 0 mul 100 lt 1000 --o rawavg.${MMode}.prenorm.mgz)
     echo "\n#===============================" | tee -a $LF
@@ -462,9 +463,10 @@ if($#MMode) then
       # set cmd = ($cmd -T2 rawavg.$MMode -nsigma_above 0 -nsigma_below $p_NSigmaBelow)
     endif
     if($DoFLAIR) then
-       # Use T1w divided by FLAIR as if T2w since the former has high signal in CSF like T2w, TH 2025 
-       set cmd = ($cmd -T2 rawavg.${MMode} -nsigma_above $p_NSigmaAbove  -nsigma_below $p_NSigmaBelow)
-       #set cmd = ($cmd -FLAIR rawavg.$MMode -nsigma_above $p_NSigmaAbove -nsigma_below $p_NSigmaBelow)
+      set cmd = ($cmd -FLAIR rawavg.$MMode -nsigma_above $p_NSigmaAbove -nsigma_below $p_NSigmaBelow)
+    else if($DoT1wFLAIR) then
+      # Use T1w divided by FLAIR as if T2w since the former has high signal in CSF like T2w, TH 2025 
+      set cmd = ($cmd -T2 rawavg.${MMode} -nsigma_above $p_NSigmaAbove  -nsigma_below $p_NSigmaBelow)
     endif
     set cmd = ($cmd $subject $hemi)
     date | tee -a $LF
@@ -589,6 +591,17 @@ while( $#argv != 0 )
     case "--no-flair":
     case "--no-FLAIR":
       set DoFLAIR = 0;
+      set MMode = ()
+      breaksw
+
+    case "--T1wFLAIR":
+    case "--t1wflair":
+      set DoT1wFLAIR = 1;
+      set MMode = FLAIR
+      breaksw
+    case "--no-t1wflair":
+    case "--no-T1wFLAIR":
+      set DoT1wFLAIR = 0;
       set MMode = ()
       breaksw
 
@@ -840,6 +853,7 @@ usage_exit:
   echo "  --t2, --no-t2 (default $DoT2)"
   echo "  --mm-norm-sigma sigma : smoothing level for T2 mri_normalize ($MMnormSigma)"
   echo "  --flair, --no-flair (default $DoFLAIR)"
+  echo "  --t1wflair, --no-t1wflair (default $DoT1wFLAIR)"
   echo "  --threads nthreads "
   echo "  --copy-bias-from-conf : copy bias field from conformed instead of computing directly"
   echo "  --cubic, --trilin (default $interp), only applies with --copy-bias-from-conf"
