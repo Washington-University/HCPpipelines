@@ -142,13 +142,13 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   SmoothNiter="1"                                             # default: 2, 1 for hires
   SmoothNiterPial=""                                          # for woT2pial & pial                                            
 
-  if ((isFLAIR)) ; then                                       # control T2 pial
+  if ((isFLAIR)) ; then                                              # control T2-FLAIR pial
+    NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
+    NSigmaBelow="4"                                           # T2w/FLAIR version, default=3
+  else                                                                     # control T2 pial
     NSigmaAbove="0"                                           # 2: FS6 default
     NSigmaBelow="3"                                           # 3: FS6 default
-  else                                                        # control T2-FLAIR pial
-    NSigmaAbove="3"                                           # T2w/FLAIR version, default=3 
-    NSigmaBelow="4"                                           # T2w/FLAIR version, default=3  
-  fi    
+  fi
   WMProjAbs="0.7"                                             # effective for bbregister
   MaxThickness="8"                                            # FS6 conf2hires       
   CopyBiasFromConf="TRUE"                                     # FS6 conf2hires
