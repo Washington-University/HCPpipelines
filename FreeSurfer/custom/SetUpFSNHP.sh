@@ -37,10 +37,6 @@ if [[ "$SPECIES" == *Human* ]] ; then
   GCA="RB_all_2016-05-10.vc700.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"
 
-  # FS BBR in DiffusionPreprocPipeline
-  FSBBRDIFF=TRUE
-  DiffWMProjAbs="2"
-
 elif [[ "$SPECIES" == *Chimp* ]] ; then
 
   IntensityCor="FAST"
@@ -78,10 +74,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   GCAdir="${HCPPIPEDIR_Templates}/ChimpYerkes29"
   GCA="RB_all_2008-03-26.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"
-
-  # FS BBR in DiffusionPreprocPipeline
-  FSBBRDIFF=TRUE
-  DiffWMProjAbs="1"
 
 elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by TH and AU
 
@@ -162,10 +154,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   MaxThicknessFS5="4"                                         # FS5.3.0 HighResPial    
   GreySigmaFS5="5"                                            # FS5.3.0 HighResPial
 
-  # FS BBR in DiffusionPreprocPipeline
-  FSBBRDIFF=TRUE
-  DiffWMProjAbs="0.7"
-
 elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU and TH
 
   IntensityCor="FAST"
@@ -223,10 +211,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
   GCSdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
   GCS="MarmosetRIKEN25_2025-08-26.gcs"
   
-  # FS BBR in DiffusionPreprocPipeline
-  FSBBRDIFF=TRUE
-  DiffWMProjAbs="0.5"
-
 elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH, TI in Aug 2020
 
   IntensityCor="FAST"
@@ -266,10 +250,6 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH
   GCA="RB_all_2016-05-10.vc700.gca"
   GCASkull="RB_all_withskull_2016-05-10.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"
-
-  # FS BBR in DiffusionPreprocPipeline
-  FSBBRDIFF=TRUE
-  DiffWMProjAbs="0.3"
 
 else
 
