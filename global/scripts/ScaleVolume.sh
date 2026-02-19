@@ -25,10 +25,11 @@ ScaleFactor="$2"
 out=$(remove_ext "$3")
 outmat="${4:-}"
 
-tmpmat=tmp_$$
-
 source "$HCPPIPEDIR"/global/scripts/log.shlib "$@"  # Logging related functions
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
+
+tempfiles_create scaleVol_XXXXXX.mat tmpmat
 
 log_SetToolName "ScaleVolume.sh"
 # ----------------------------------------------------------------------
@@ -66,9 +67,7 @@ echo "0 0 0 1" >> "$tmpmat"
 $CARET7DIR/wb_command -volume-resample "$T1wImage".nii.gz "$out".nii.gz CUBIC "$out".nii.gz -affine "$tmpmat"
 
 if [[ "${outmat:-}" != "" ]] ; then
-	mv $tmpmat $outmat
-else
-	rm $tmpmat
+	cp "$tmpmat" "$outmat"
 fi
 # ----------------------------------------------------------------------
 log_Msg "End: ScaleVolume.sh"
