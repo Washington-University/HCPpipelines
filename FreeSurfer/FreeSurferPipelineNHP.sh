@@ -717,14 +717,14 @@ if [ "$RunMode" -lt 2 ] ; then
 
 	log_Msg "...brainmasking, intensitycor"
 	cmd=(fslmaths $(remove_ext ${T1wImageBrain})_scaled.nii.gz -thr 0 "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz)
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	cmd=(mri_convert "$SubjectDIR"/"$SubjectID"/mri/brainmask.orig.nii.gz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz --conform)
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	## This section replaces 'FS -nuintensirycor' for NHP - TH 2017-2023
 	cmd=("$PipelineScripts"/IntensityCor.sh "$SubjectDIR"/"$SubjectID"/mri/orig.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz -t1 -m "$IntensityCor","$BiasFieldFastSmoothingSigma" ${StrongBias_args:-})
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	log_Msg "...second recon-all for normalization"
 	"${recon_all_cmd[@]}" -normalization "${extra_reconall_args[@]}"
@@ -743,49 +743,49 @@ if [ "$RunMode" -lt 3 ] ; then
 			DilateDistance=1 
 
 			cmd=(mri_convert "$mridir"/brainmask.conf.mgz "$mridir"/brainmask.conf.nii.gz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(fslmaths "$mridir"/brainmask.conf.nii.gz -bin  "$mridir"/brainmask.conf.bin.nii.gz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=($CARET7DIR/wb_command -volume-dilate "$mridir"/brainmask.conf.bin.nii.gz $DilateDistance NEAREST "$mridir"/brainmask.bin.nii.gz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(mri_convert "$mridir"/brainmask.bin.nii.gz "$mridir"/brainmask.bin.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(mri_mask "$mridir"/T1.mgz "$mridir"/brainmask.bin.mgz "$mridir"/brainmask.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 			
 			cmd=(rm "$mridir"/brainmask.bin.nii.gz "$mridir"/brainmask.conf.nii.gz "$mridir"/brainmask.conf.bin.nii.gz "$mridir"/brainmask.bin.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 		elif [ "$SkullStripMethod" = FS ] ; then
 
 			cmd=(mri_em_register -uns 3 -mask "$mridir"/brainmask.conf.mgz "$mridir"/nu.mgz "$GCAdir"/"$GCA" "$mridir"/transforms/talairach_init.lta)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(mri_convert "$mridir"/brainmask.conf.mgz "$mridir"/brainmask.conf.nii.gz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(fslmaths "$mridir"/brainmask.conf.nii.gz -bin -dilM -dilM "$mridir"/brainmask.conf.dil2.nii.gz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(mri_convert "$mridir"/brainmask.conf.dil2.nii.gz "$mridir"/brainmask.conf.dil2.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(mri_mask "$mridir"/T1.mgz "$mridir"/brainmask.conf.dil2.mgz "$mridir"/T1_prebrainmask.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			# mri_watershed in NHP requires pre-masked input to minimize probability of failure (<5%)- TH Jan 2024
 			cmd=(mri_watershed -T1 -less -r 70 -c 127 107 108 -atlas "$GCAdir"/"$GCA" "$mridir"/transforms/talairach_init.lta "$mridir"/T1_prebrainmask.mgz "$mridir"/brainmask.auto.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(cp "$mridir"/brainmask.auto.mgz "$mridir"/brainmask.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 			cmd=(rm "$mridir"/brainmask.conf.dil2.nii.gz "$mridir"/brainmask.conf.nii.gz "$mridir"/brainmask.conf.dil2.mgz)
-			echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 		fi
 
 	else
@@ -795,10 +795,10 @@ if [ "$RunMode" -lt 3 ] ; then
 			vol="${vol}+"
 		done
 		cmd=(cp "$mridir"/brainmask.edit.mgz "$mridir"/${vol}.mgz)
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 		cmd=(cp "$mridir"/brainmask.edit.mgz "$mridir"/brainmask.mgz)
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 		checkfile="$mridir"/brainmask.finalsurfs.mgz
 		if [ -e "$checkfile" ] ; then
@@ -811,7 +811,7 @@ if [ "$RunMode" -lt 3 ] ; then
 	## This section replaces function of 'recon-all -gcareg, -canorm and -careg' using FLIRT and FNIRT - TH 2017-2024
 	log_Msg "...registration to GCA template"
 	cmd=("$PipelineScripts"/Conf2GCAReg_FNIRTbased.sh "$SubjectDIR" "$SubjectID" "$GCAdir/$GCA")
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	log_Msg "...third recon-all steps for segmentation with GCA"
 	"${recon_all_cmd[@]}" -calabel -gca-dir "$GCAdir" -gca "$GCA" -normalization2 -maskbfs "${extra_reconall_args[@]}"
@@ -825,7 +825,7 @@ if [ "$RunMode" -lt 4 ]; then
 	## ${PipelineScripts}/IntensityNormalize.sh may be useful for normalizing intensity of white matter or grey matter to create
 	## brain.finalsurfs.edit.mgz,
 	cmd=("$PipelineScripts"/SubcortSegment.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat ${mri_segment_args:-${mri_segment_args}})
-	echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; ${cmd[@]} |& tee -a $LF
+	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	mridir=${SubjectDIR}/${SubjectID}/mri
 
@@ -900,11 +900,11 @@ if [ "$RunMode" -lt 5 ]; then
 		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}" ${conf2hiresflag}
 		log_Msg "...rescale volume and surface to native space"
 		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 	else
 		log_Msg "...rescale volume and surface to native space"
 		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
-		echo -e "$(date)\n#===============================\n${cmd[@]}\n" |& tee -a $LF; "${cmd[@]}" |& tee -a $LF
+		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
 		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}" ${conf2hiresflag}
 	fi
