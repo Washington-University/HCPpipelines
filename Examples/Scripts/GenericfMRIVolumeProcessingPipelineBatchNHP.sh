@@ -68,11 +68,11 @@ BiasCorrection="NONE"
 # Motion correction type (MCFLIRT or FLIRT)
 MCType="MCFLIRT"
 
-# RunMode: which stages to run
-#   1: MotionCorrection and all subsequent steps (default)
-#   2: DistortionCorrectionAndEPI2T1wReg and subsequent steps
-#   3: OneStepResampling and IntensityNormalization only
-RunMode="1"
+# RunMode: which stage to resume processing from
+#   Default: run all stages (default)
+#   DistortionCorrection: skip GDC and MotionCorrection
+#   OneStepResampling: skip GDC, MotionCorrection, and DistortionCorrection
+RunMode="Default"
 
 # Jacobian correction (True or False)
 # Defaults to True for TOPUP, False for FIELDMAP if not set
