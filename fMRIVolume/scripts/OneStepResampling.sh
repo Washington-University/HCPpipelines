@@ -71,6 +71,7 @@ opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb_command
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 
+opts_AddOptional '--species' 'SPECIES' 'species' "species name" "Human"
 
 opts_ParseArguments "$@"
 
