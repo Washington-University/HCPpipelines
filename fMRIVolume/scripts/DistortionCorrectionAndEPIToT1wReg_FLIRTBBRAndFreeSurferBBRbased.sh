@@ -278,7 +278,7 @@ case $DistortionCorrection in
 esac
 
 
-if [[ ! $IsLongitudinal || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
+if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
     mkdir -p $WD
 
     # Record the input options in a log file
