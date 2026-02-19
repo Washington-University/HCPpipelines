@@ -145,7 +145,7 @@ opts_AddOptional '--bbr' 'BBR' 'T2w, T1w or NONE' "BBR contrast to use for EPI t
 
 opts_AddOptional '--wmprojabs' 'WMProjAbs' 'number' "FreeSurfer wm-proj-abs value" "2"
 
-opts_AddOptional '--runmode' 'RunMode' '1,2,3' "Which stages to run: 1=all, 2=skip GDC+MC, 3=OneStepResample+Intensity only" "1"
+opts_AddOptional '--runmode' 'RunMode' 'string' "specify from which step to resume processing instead of starting from the beginning. Value must be one of: Default, DistortionCorrection, OneStepResampling (default: Default)" "Default"
 
 opts_AddOptional '--initworldmat' 'InitWorldMat' 'file' "Initial world matrix to apply to sform (optional)" ""
 
@@ -486,6 +486,22 @@ then
 fi
 log_Msg "RUN: ${RUN}"
 
+# Convert the --runmode string argument into a numeric code
+case "$RunMode" in
+    Default|1|"")
+        RunMode=1
+        ;;
+    DistortionCorrection|2)
+        RunMode=2
+        ;;
+    OneStepResampling|3)
+        RunMode=3
+        ;;
+    *)
+        log_Err_Abort "Error: invalid --runmode '$RunMode', must be one of: Default, DistortionCorrection, OneStepResampling"
+        ;;
+esac
+
 # Setup PATHS
 GlobalScripts=${HCPPIPEDIR_Global}
 PipelineScripts=${HCPPIPEDIR_fMRIVol}
@@ -699,6 +715,12 @@ ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolder=$ResultsFolderCross
 
+fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
+
+# ---- Stage 1: Copy input, GDC, Orientation Correction, Echo Splitting, Motion Correction
+
+if [ "$RunMode" -lt 2 ] ; then
+
 if (( ! IsLongitudinal )); then
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
     if [ ! -e "$fMRIFolder" ] ; then
@@ -726,11 +748,15 @@ else
     done
 fi
 
+fi  # RunMode < 2 (end of input copy stage)
+
 if [[ $nEcho -gt 1 ]] ; then
     log_Msg "$nEcho TE's supplied, running in multi-echo mode"
     NumFrames=$("${FSLDIR}"/bin/fslval "${fMRIFolder}/${OrigTCSName}" dim4)
     FramesPerEcho=$((NumFrames / nEcho))
 fi
+
+if [ "$RunMode" -lt 2 ] ; then
 
 #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
 if (( ! IsLongitudinal )); then
@@ -902,15 +928,10 @@ if [[ $SPECIES != "Human" ]] ; then
         convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
     fi
 fi
-#Split echos.
-tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
+#Split echos (echo name arrays are set up after Stage 1 for all RunModes).
 if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
     for iEcho in $(seq 0 $((nEcho-1))) ; do
-        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
-        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
-        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
-        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
         wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
             -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
         wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
@@ -920,11 +941,6 @@ if [[ ${nEcho} -gt 1 ]]; then
         wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
             -subvolume "$(( iEcho + 1 ))"
     done
-else
-    tcsEchoesOrig[0]="${OrigTCSName}"
-    sctEchoesOrig[0]="${OrigScoutName}"
-    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
-    sctEchoesGdc[0]="${ScoutName}_gdc"
 fi
 
 if (( ! IsLongitudinal )); then
@@ -945,6 +961,24 @@ if (( ! IsLongitudinal )); then
 		"$SPECIES"
 fi
 
+fi  # RunMode < 2 (end of GDC/MotionCorrection stage)
+
+# Set up echo name arrays (needed for DistortionCorrection and OneStepResampling regardless of RunMode)
+tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
+if [[ ${nEcho} -gt 1 ]]; then
+    for iEcho in $(seq 0 $((nEcho-1))) ; do
+        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
+        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")"
+        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
+        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
+    done
+else
+    tcsEchoesOrig[0]="${OrigTCSName}"
+    sctEchoesOrig[0]="${OrigScoutName}"
+    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
+    sctEchoesGdc[0]="${ScoutName}_gdc"
+fi
+
 # In longitudinal mode, the rest of this script re-runs the same code as in cross-sectional.
 # For that to function correctly, we need all relevant directories to
 # point to the longitudinal session.
@@ -957,16 +991,20 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
-
-    if [[ $nEcho -gt 1 ]] ; then
-        EchoDir="${fMRIFolder}/MultiEcho"
-        mkdir -p "$EchoDir"
-    fi
 fi
 
-#EPI Distortion Correction and EPI to T1w Registration
+# Ensure multi-echo directory is set up for all RunModes
+if [[ $nEcho -gt 1 ]] ; then
+    EchoDir="${fMRIFolder}/MultiEcho"
+    mkdir -p "$EchoDir"
+fi
+
+# ---- Stage 2: EPI Distortion Correction and EPI to T1w Registration
+
 DCFolderName=DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
 DCFolder=${fMRIFolder}/${DCFolderName}
+
+if [ "$RunMode" -lt 3 ] ; then
 
 if [ $fMRIReference = "NONE" ] ; then
     log_Msg "EPI Distortion Correction and EPI to T1w Registration"
@@ -1038,6 +1076,10 @@ else
         ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
     fi
 fi
+
+fi  # RunMode < 3 (end of DistortionCorrection stage)
+
+# ---- Stage 3: OneStepResampling, IntensityNormalization, Copy Results, Cleanup
 
 #One Step Resampling
 log_Msg "One Step Resampling"
