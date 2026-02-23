@@ -13,6 +13,12 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
+# Prepend FSLDIR/bin to PATH when set, so melodic is found when run from MATLAB's system()
+if [[ -n "${FSLDIR:-}" ]]
+then
+    export PATH="$FSLDIR/bin:$PATH"
+fi
+
 opts_SetScriptDescription "runs independent melodics in parallel for the purpose of melodicicasso.m"
 
 opts_AddMandatory '--inputs' 'inputs' 'input@input@input...' "input files for the melodic runs"
@@ -66,6 +72,12 @@ then
     par_set_log_dir "$logDir"
 fi
 
+# Verify melodic is on PATH before adding jobs
+if ! command -v melodic &> /dev/null
+then
+    log_Err_Abort "melodic not found on PATH. Verify FSL is installed and FSLDIR is set."
+fi
+
 for ((i = 0; i < ${#inputArray[@]}; ++i))
 do
     if [[ "$seeds" == "" ]]
@@ -76,5 +88,17 @@ do
     fi
 done
 
+# If par_runjobs fails, print log directory location and exit with same status
 par_runjobs "$numpar"
+runjobs_status=$?
+if (( runjobs_status != 0 ))
+then
+    if [[ "$logDir" != "" ]]
+    then
+        log_Err "par_runjobs failed with status $runjobs_status. Check job logs in: $logDir"
+    else
+        log_Err "par_runjobs failed with status $runjobs_status."
+    fi
+    exit $runjobs_status
+fi
 

@@ -100,14 +100,13 @@ end
 
 %% parse paths
 warning('off','MATLAB:MKDIR:DirectoryExists')
-% inputs
-vntsFile = sprintf('%s/%s_vnts.nii.gz',ConcatFolder,concatfmrihp);
-brainMaskFile = sprintf('%s/%s_brain_mask.nii.gz',ConcatFolder,concatfmri);
+vntsFile = fullfile(ConcatFolder,[concatfmrihp '_vnts.nii.gz']);
+brainMaskFile = fullfile(ConcatFolder,[concatfmri '_brain_mask.nii.gz']);
 if ~exist(vntsFile,'file');error('%s doesn''t exist!',vntsFile);end
 if ~exist(brainMaskFile,'file');error('%s doesn''t exist!',brainMaskFile);end
 
 % outputs
-outDir = sprintf('%s/%s.ica/filtered_func_data.ica',ConcatFolder,concatfmrihp);
+outDir = fullfile(ConcatFolder,[concatfmrihp '.ica'],'filtered_func_data.ica');
 if ~mkdir(outDir);error('Unable to make output folder!');end
 warning('on','MATLAB:MKDIR:DirectoryExists')
 
@@ -126,16 +125,20 @@ for iL = 1:nL
   nI = nICA(iL);
   nSteps = zeros(nI,1);
 %   tmpDir = tempname;
-  tmpDir = [outDir '/tmp_melodics'];
+  tmpDir = fullfile(outDir,'tmp_melodics');
   if exist(tmpDir,'dir');rmdir(tmpDir,'s');end
   mkdir(tmpDir);
   [A,W] = deal(cell(1,nI));
   bootIdx = round(rand(N,nI).*N + 0.5);
   if iL == 1 && strcmp(bootMode,'randinit')
-    bootFile = sprintf('%s/melodic_boot_vnts',tmpDir);
+    bootFile = fullfile(tmpDir,'melodic_boot_vnts');
     X = single(vnts);
     X = unmaskAndSpatiallyInflate(X,imSz,brainMask,mtxDim);
     writeNIFTI(X,bootFile,hdr);
+    bootFileGz = [bootFile '.nii.gz'];
+    if exist(bootFileGz,'file')
+      bootFile = bootFileGz;
+    end
     fprintf('Running with randinit only (no bootstrapping)\n'); % no bootstrapping
   else
     fprintf('Running with bootstrapping\n'); % prepare bootstraps (resampling with replacement)
@@ -147,14 +150,18 @@ for iL = 1:nL
   outputs = inputs;
   inits = inputs;
   for iI = 1:nI
-    meloDir = [tmpDir '/' num2str(iI)];
-    mkdir(meloDir);
+    meloDir = fullfile(tmpDir,num2str(iI));
     if ~strcmp(bootMode,'randinit')
-      bootFile = [meloDir '/melodic_boot_vnts'];
+      mkdir(meloDir);
+      bootFile = fullfile(meloDir,'melodic_boot_vnts');
       X = zeros(mtxDim, 'single');
       X(brainMask, :) = single(vnts(bootIdx(:, iI), :));
       X = unmaskAndSpatiallyInflate(X, imSz, brainMask, mtxDim);
       writeNIFTI(X, bootFile, hdr);
+      bootFileGz = [bootFile '.nii.gz'];
+      if exist(bootFileGz,'file')
+        bootFile = bootFileGz;
+      end
     end
     inputs{iI} = bootFile;
     outputs{iI} = meloDir;
@@ -181,14 +188,36 @@ for iL = 1:nL
 
   % load all melodic ouputs
   for iI = 1:nI 
-    meloDir = sprintf('%s/%i',tmpDir,iI);
-    nSteps(iI) = cellfun(@str2num,regexp(fileread([meloDir '/log.txt']),'(?<=after)(.*?)(?=steps)','match'));
+    meloDir = fullfile(tmpDir,num2str(iI));
+    logFile = fullfile(meloDir,'log.txt');
+    logContent = fileread(logFile);
+    matches = regexp(logContent,'(?<=after)(.*?)(?=steps)','match');
+    if isempty(matches)
+      % Try alternative pattern for different melodic log formats
+      matches = regexp(logContent,'(?<=converged after )(\d+)(?= steps)','match');
+    end
+    if isempty(matches)
+      warning('Could not parse step count from melodic log for run %d, setting to 0',iI);
+      nSteps(iI) = 0;
+    else
+      % Use first match only (scalar)
+      nSteps(iI) = str2num(matches{1});
+    end
     if ~stat
       fprintf('finished melodic %.3i/%.3i with %.3i steps.\n',iI,nI,nSteps(iI));
     else
       error(' melodic %.3i/%.3i failed!\n\n%s',iI,nI,out)
     end
-    A{iI} = load([meloDir '/melodic_mix'],'-ascii');
+    mixFile = fullfile(meloDir,'melodic_mix');
+    mixFileTxt = fullfile(meloDir,'melodic_mix.txt');
+    if ~exist(mixFile,'file') && ~exist(mixFileTxt,'file')
+      % Build diagnostic error message with last 25 lines of log
+      logLines = regexp(logContent,'\n','split');
+      lastLines = logLines(max(1,numel(logLines)-24):end);
+      diagnosticMsg = sprintf('Last 25 lines of log.txt:\n%s\n',strjoin(lastLines,sprintf('\n')));
+      error('melodic_mix not found in %s.\n%s',meloDir,diagnosticMsg);
+    end
+    A{iI} = load(mixFile,'-ascii');
     W{iI} = pinv(A{iI});
   end %for iI
 
@@ -197,14 +226,14 @@ for iL = 1:nL
     % run melodic once on original non-resampled data just to get whitening matix
     % (there doesn't seem to be a way to turn off ica, so using a big epsilon is the best I can do)
     fprintf('calculating whitening/dewhitening matrices ...\n')
-    meloDir = sprintf('%s/white',tmpDir);
+    meloDir = fullfile(tmpDir,'white');
     mkdir(meloDir);
     cmd = sprintf(...
             'melodic -i %s -o %s --Owhite --nobet --vn --dim="%i" --no_mm --eps=0.01 -m %s -v --debug',...
           vntsFile,meloDir,Dim,brainMaskFile);
     [stat,out] = system(cmd);
     if stat;error(' melodic whitening failed!\n\n%s',out);end
-    whiteningMatrix = load([meloDir '/melodic_white'],'-ascii');
+    whiteningMatrix = load(fullfile(meloDir,'melodic_white'),'-ascii');
 
     % populate common sR
     sR = struct();
@@ -246,13 +275,13 @@ for iL = 1:nL
   printFigs(outDir,iL)
 
   % save icasso's A as a paradigm file to be used as initialization for next level or final melodic
-  init_ica = [outDir '/icasso_A.mat'];
+  init_ica = fullfile(outDir,'icasso_A.mat');
   dlmwrite(init_ica, A, '\t'); %#ok<DLMWT> 
   [~,~] = system(sprintf('Text2Vest %s %s',init_ica,init_ica),'-echo');
 end %for iL
 
 % save sR for diagnostics
-save([outDir '/icasso_sR.mat'],'sR','-v7.3')
+save(fullfile(outDir,'icasso_sR.mat'),'sR','-v7.3')
 
 %% run melodic one more time (with mixture modeling), initialized by icasso's consensus A 
 fprintf('performing melodic with icasso warmstart ...\n')
