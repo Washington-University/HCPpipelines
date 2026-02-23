@@ -276,7 +276,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 
     if [ ! $Phase2ndDir = TRUE ] ; then
         # Merge both sets of images
-        ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc $mergezero 
+        ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
     else
         ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne2 -abs -bin -dilD -Tmin ${WD}/PhaseOne2_mask
         ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseOne2_mask -r ${WD}/PhaseOne2_mask -w ${WD}/PhaseOne2_gdc_warp -o ${WD}/PhaseOne2_mask_gdc
