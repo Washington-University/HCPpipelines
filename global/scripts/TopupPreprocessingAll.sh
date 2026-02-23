@@ -71,6 +71,8 @@ opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (de
 
 opts_AddOptional '--initworldmat' 'InitWorldMat' 'matrix' "world matrix moving func to structure space"
 
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
