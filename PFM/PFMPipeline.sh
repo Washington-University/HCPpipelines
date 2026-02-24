@@ -188,7 +188,7 @@ do
                 if ((ciftiVersion == 1)); then
                     continue # If already v1, leave it be
                 else # convert cifti to v1 cifti
-                    log_Msg "Converting CIFTI v2 to v1: $filePath"
+                    log_Warn "Converting CIFTI v2 to v1: $filePath"
                     wb_command -file-convert -cifti-version-convert "$filePath" 1 "$filePath"
                 fi
             done           
@@ -226,7 +226,7 @@ do
             #     if ((ciftiVersion == 2)); then
             #         continue # If already v2, leave it be
             #     else # convert cifti to v2 cifti
-            #         log_Msg "Converting CIFTI v1 to v2: $filePath"
+            #         log_Warn "Converting CIFTI v1 to v2: $filePath"
             #         wb_command -file-convert -cifti-version-convert "$filePath" 2 "$filePath"
             #     fi
             # done   
