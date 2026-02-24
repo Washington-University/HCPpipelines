@@ -13,12 +13,6 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/parallel.shlib" "$@"
 
-# Prepend FSLDIR/bin to PATH when set, so melodic is found when run from MATLAB's system()
-if [[ -n "${FSLDIR:-}" ]]
-then
-    export PATH="$FSLDIR/bin:$PATH"
-fi
-
 opts_SetScriptDescription "runs independent melodics in parallel for the purpose of melodicicasso.m"
 
 opts_AddMandatory '--inputs' 'inputs' 'input@input@input...' "input files for the melodic runs"
