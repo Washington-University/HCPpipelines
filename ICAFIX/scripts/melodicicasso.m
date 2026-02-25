@@ -151,8 +151,8 @@ for iL = 1:nL
   inits = inputs;
   for iI = 1:nI
     meloDir = fullfile(tmpDir,num2str(iI));
+    mkdir(meloDir);
     if ~strcmp(bootMode,'randinit')
-      mkdir(meloDir);
       bootFile = fullfile(meloDir,'melodic_boot_vnts');
       X = zeros(mtxDim, 'single');
       X(brainMask, :) = single(vnts(bootIdx(:, iI), :));
