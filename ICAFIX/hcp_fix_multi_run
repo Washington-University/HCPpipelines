@@ -648,8 +648,6 @@ then
     if [[ "$TrainingData" != /* && "$TrainingData" != "" ]]; then
         TrainingData="$(pwd)/$TrainingData"
     fi
-    #Make Concatenated Folder
-    ConcatFolder=$(dirname ${ConcatName})
 
     #Make Concatenated Folder
     ConcatFolder=$(dirname ${ConcatName})
