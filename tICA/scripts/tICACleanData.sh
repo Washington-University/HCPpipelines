@@ -13,20 +13,8 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 g_matlab_default_mode=1
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: regresses noise group temporal ICA components out of CIFTI and optionaly volume timeseries data and optionally correct the bias legacy field
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-}
+#description of this script to use in usage
+opts_SetScriptDescription "regresses noise group temporal ICA components out of CIFTI and optionaly volume timeseries data and optionally correct the bias legacy field"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value other than empty string if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
