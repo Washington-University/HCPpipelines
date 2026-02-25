@@ -173,25 +173,14 @@ do
                 LoadSequentiallyArg="--loadSequentially"
             fi
             
-            ## CIFTI v2 to v1 conversion workaround for Armadillo SIMD buffer alignment issue in PROFUMO
-            # Extract all file paths from the JSON 
-            cat "${ProfumoConfig}" | while IFS= read -r line; do
-                # Only process lines that contain .nii" (file paths)
-                if [[ "$line" != *'.nii"'* ]]; then continue;fi
-                
-                # Extract the file path from JSON value (text between colons and quotes)
-                # Pattern: "RUNNAME": "/path/to/file.nii"
-                filePath=$(echo "$line" | sed -E 's/^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
-                
-                # Check CIFTI version 
-                ciftiVersion=$(wb_command -nifti-information "$filePath" -print-xml -version 2 2>/dev/null | grep -oP 'CIFTI.*Version="\K[0-9]' || echo "")
-                if ((ciftiVersion == 1)); then
-                    continue # If already v1, leave it be
-                else # convert cifti to v1 cifti
-                    log_Warn "Converting CIFTI v2 to v1: $filePath"
-                    wb_command -file-convert -cifti-version-convert "$filePath" 1 "$filePath"
-                fi
-            done           
+            ## Rewrite input files with wb_command, as a failsafe to avoid SIMD buffer alignment issue in PROFUMO if 
+            ## files were written with an older version of cifti-matlab with 8-byte instead of 16-byte alignment. 
+            cat "${ProfumoConfig}" | \
+                while IFS= read -r line; do
+                    if [[ "$line" != *'.nii"'* ]]; then continue;fi # Only process lines that contain .nii"
+                    filePath=$(echo "$line" | sed -E 's/^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+                    wb_command -file-convert -cifti-version-convert "$filePath" 2 "$filePath"
+                done           
             
             # log_Msg "Running PROFUMO decomposition with dimension ${PFMdim}"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
@@ -210,27 +199,6 @@ do
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
                 --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
-            
-            ## Undo CIFTI v2 to v1 conversion workaround for Armadillo SIMD buffer alignment issue in PROFUMO
-            # currently comment out to just leave the files as v1 ciftis
-            # cat "${ProfumoConfig}" | while IFS= read -r line; do
-            #     # Only process lines that contain .nii" (file paths)
-            #     if [[ "$line" != *'.nii"'* ]]; then continue;fi
-                
-            #     # Extract the file path from JSON value (text between colons and quotes)
-            #     # Pattern: "RUNNAME": "/path/to/file.nii"
-            #     filePath=$(echo "$line" | sed -E 's/^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
-                
-            #     # Check CIFTI version 
-            #     ciftiVersion=$(wb_command -nifti-information "$filePath" -print-xml -version 2 2>/dev/null | grep -oP 'CIFTI.*Version="\K[0-9]' || echo "")
-            #     if ((ciftiVersion == 2)); then
-            #         continue # If already v2, leave it be
-            #     else # convert cifti to v2 cifti
-            #         log_Warn "Converting CIFTI v1 to v2: $filePath"
-            #         wb_command -file-convert -cifti-version-convert "$filePath" 2 "$filePath"
-            #     fi
-            # done   
-
             log_Msg "Running PROFUMO postprocessing"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
