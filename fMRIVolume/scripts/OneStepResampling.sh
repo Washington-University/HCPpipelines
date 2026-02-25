@@ -166,13 +166,15 @@ NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 if [[ $SPECIES != Human ]] ; then
     ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
     ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
-elif [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
-    ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
-elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
-    ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
 else
-    ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
-    ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
+        ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
+    elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
+        ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
+    else
+        ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
+        ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    fi
 fi
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}
