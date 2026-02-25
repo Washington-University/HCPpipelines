@@ -163,17 +163,28 @@ fi
 
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
-# Derive betspecieslabel from SPECIES if not already set in the environment
-if [ -z "$betspecieslabel" ] ; then
-    case "$SPECIES" in
-        Human)          betspecieslabel=4 ;;
-        Chimp)          betspecieslabel=3 ;;
-        Macaque*|Rhesus*|Cyno*) betspecieslabel=1 ;;
-        Marmoset)       betspecieslabel=0 ;;
-        NightMonkey)    betspecieslabel=0 ;;
-        *)              betspecieslabel=1 ;;
-    esac
-fi
+# set betspecieslabel based on species
+case $SPECIES in
+  *Human*)
+    betspecieslabel="0"
+    ;;
+  *Chimp*)
+    betspecieslabel="1"
+    ;;
+  *Macaque*)
+    betspecieslabel="2"
+    ;;
+  Marmoset)
+    betspecieslabel="3"
+    ;;
+  NightMonkey)
+    betspecieslabel="4"
+    ;;
+  *)
+    betspecieslabel=""
+    log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Rhesus, Chimp, NightMonkey, Marmoset."
+    ;;
+esac
 
 if (( $IsLongitudinal )); then
     if [ ! -f "$T1wCross2LongXfm" ]; then
